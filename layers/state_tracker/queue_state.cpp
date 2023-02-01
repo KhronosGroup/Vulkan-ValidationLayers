@@ -108,7 +108,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
 
 std::shared_future<void> QUEUE_STATE::Wait(uint64_t until_seq) {
     auto guard = Lock();
-    if (until_seq == UINT64_MAX) {
+    if (until_seq == vvl::kU64Max) {
         until_seq = seq_;
     }
     if (submissions_.empty() || until_seq < submissions_.begin()->seq) {
@@ -138,7 +138,7 @@ void QUEUE_STATE::NotifyAndWait(uint64_t until_seq) {
 
 uint64_t QUEUE_STATE::Notify(uint64_t until_seq) {
     auto guard = Lock();
-    if (until_seq == UINT64_MAX) {
+    if (until_seq == vvl::kU64Max) {
         until_seq = seq_;
     }
     if (request_seq_ < until_seq) {

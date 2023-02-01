@@ -900,24 +900,23 @@ typename Container::size_type EraseIf(Container &c, Predicate &&p) {
 }
 
 template <typename T>
-constexpr T MaxTypeValue(T) {
+constexpr T MaxTypeValue([[maybe_unused]] T) {
     return std::numeric_limits<T>::max();
 }
 
 template <typename T>
-constexpr T MaxTypeValue() {
-    return std::numeric_limits<T>::max();
-}
-
-template <typename T>
-constexpr T MinTypeValue(T) {
+constexpr T MinTypeValue([[maybe_unused]] T) {
     return std::numeric_limits<T>::min();
 }
 
-template <typename T>
-constexpr T MinTypeValue() {
-    return std::numeric_limits<T>::min();
-}
+// Typesafe UINT32_MAX
+constexpr auto kU32Max = std::numeric_limits<uint32_t>::max();
+// Typesafe UINT64_MAX
+constexpr auto kU64Max = std::numeric_limits<uint64_t>::max();
+// Typesafe INT32_MAX
+constexpr auto kI32Max = std::numeric_limits<int32_t>::max();
+// Typesafe INT64_MAX
+constexpr auto kI64Max = std::numeric_limits<int64_t>::max();
 
 template <typename T>
 T GetQuotientCeil(T numerator, T denominator) {

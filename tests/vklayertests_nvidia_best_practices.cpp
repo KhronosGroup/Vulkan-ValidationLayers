@@ -152,7 +152,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
 
-    if (general_queue_ci.queueFamilyIndex == UINT32_MAX || transfer_queue_ci.queueFamilyIndex == UINT32_MAX) {
+    if (general_queue_ci.queueFamilyIndex == vvl::kU32Max || transfer_queue_ci.queueFamilyIndex == vvl::kU32Max) {
         GTEST_SKIP() << "Test requires a general and a transfer queue";
     }
 
@@ -266,7 +266,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     compute_queue_ci.queueCount = 1;
     compute_queue_ci.pQueuePriorities = &defaultQueuePriority;
 
-    if (general_queue_ci.queueFamilyIndex == UINT32_MAX || compute_queue_ci.queueFamilyIndex == UINT32_MAX) {
+    if (general_queue_ci.queueFamilyIndex == vvl::kU32Max || compute_queue_ci.queueFamilyIndex == vvl::kU32Max) {
         // There's no asynchronous compute queue, skip.
         return;
     }

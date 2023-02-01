@@ -2214,7 +2214,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 bda_data[address_index++] = range.begin;
                 bda_data[size_index++] = range.end - range.begin;
             }
-            bda_data[address_index] = UINTPTR_MAX;
+            bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
             bda_data[size_index] = 0;
             vmaUnmapMemory(vmaAllocator, bda_input_block.allocation);
 

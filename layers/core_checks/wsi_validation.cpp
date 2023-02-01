@@ -1143,7 +1143,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
             }
         }
         const bool too_many_already_acquired = acquired_images > swapchain_image_count - min_image_count;
-        if (timeout == UINT64_MAX && too_many_already_acquired) {
+        if (timeout == vvl::kU64Max && too_many_already_acquired) {
             const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-vkAcquireNextImage2KHR-surface-07784"
                                                             : "VUID-vkAcquireNextImageKHR-surface-07783";
             const uint32_t acquirable = swapchain_image_count - min_image_count + 1;

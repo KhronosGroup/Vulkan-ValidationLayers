@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2015-2022 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -708,7 +708,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-surface-07783");
     uint32_t image_i;
     // NOTE: timeout MUST be UINT64_MAX to trigger the VUID
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, error_fence.handle(), &image_i);
+    vk::AcquireNextImageKHR(device(), m_swapchain, vvl::kU64Max, VK_NULL_HANDLE, error_fence.handle(), &image_i);
     m_errorMonitor->VerifyFound();
 
     // Cleanup
@@ -858,7 +858,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     auto acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
 
     acquire_info.swapchain = m_swapchain;
-    acquire_info.timeout = UINT64_MAX; // NOTE: timeout MUST be UINT64_MAX to trigger the VUID
+    acquire_info.timeout = vvl::kU64Max;  // NOTE: timeout MUST be UINT64_MAX to trigger the VUID
     acquire_info.fence = error_fence.handle();
     acquire_info.deviceMask = 0x1;
 

@@ -5194,7 +5194,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
-            if (x_sum > INT32_MAX) {
+            if (x_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetScissor-offset-00596",
                                  "vkCmdSetScissor: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
                                  ") of pScissors[%" PRIu32 "] will overflow int32_t.",
@@ -5202,7 +5202,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
-            if (y_sum > INT32_MAX) {
+            if (y_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetScissor-offset-00597",
                                  "vkCmdSetScissor: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
                                  ") of pScissors[%" PRIu32 "] will overflow int32_t.",
@@ -6053,7 +6053,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
-            if (x_sum > INT32_MAX) {
+            if (x_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetExclusiveScissorNV-offset-02038",
                                  "vkCmdSetExclusiveScissorNV: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
                                  ") of pScissors[%" PRIu32 "] will overflow int32_t.",
@@ -6061,7 +6061,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
-            if (y_sum > INT32_MAX) {
+            if (y_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetExclusiveScissorNV-offset-02039",
                                  "vkCmdSetExclusiveScissorNV: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
                                  ") of pScissors[%" PRIu32 "] will overflow int32_t.",
@@ -8284,7 +8284,7 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
-            if (x_sum > INT32_MAX) {
+            if (x_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-offset-03400",
                                  "%s: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64 ") of pScissors[%" PRIu32
                                  "] will overflow int32_t.",
@@ -8292,7 +8292,7 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
             }
 
             const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
-            if (y_sum > INT32_MAX) {
+            if (y_sum > vvl::kI32Max) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdSetScissorWithCount-offset-03401",
                                  "%s: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64 ") of pScissors[%" PRIu32
                                  "] will overflow int32_t.",
@@ -8501,7 +8501,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         "VkIndexType", pInfos[i].pGeometries[j].geometry.triangles.indexType,
                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
 
-                    if (pInfos[i].pGeometries[j].geometry.triangles.vertexStride > UINT32_MAX) {
+                    if (pInfos[i].pGeometries[j].geometry.triangles.vertexStride > vvl::kU32Max) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819",
                                          "%s():vertexStride must be less than or equal to 2^32-1", api_name);
                     }
@@ -8558,7 +8558,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545",
                                          "%s(): stride is not a multiple of 8.", api_name);
                     }
-                    if (pInfos[i].pGeometries[j].geometry.aabbs.stride > UINT32_MAX) {
+                    if (pInfos[i].pGeometries[j].geometry.aabbs.stride > vvl::kU32Max) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
                                          "%s(): stride must be less than or equal to 2^32-1.", api_name);
                     }
@@ -8621,7 +8621,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                              ParameterName::IndexVector{i, j}),
                                                "VkIndexType", pInfos[i].ppGeometries[j]->geometry.triangles.indexType,
                                                "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
-                    if (pInfos[i].ppGeometries[j]->geometry.triangles.vertexStride > UINT32_MAX) {
+                    if (pInfos[i].ppGeometries[j]->geometry.triangles.vertexStride > vvl::kU32Max) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819",
                                          "%s():vertexStride must be less than or equal to 2^32-1", api_name);
                     }
@@ -8674,7 +8674,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.aabbs.pNext", ParameterName::IndexVector{i, j}), NULL,
                         pInfos[i].ppGeometries[j]->geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);
-                    if (pInfos[i].ppGeometries[j]->geometry.aabbs.stride > UINT32_MAX) {
+                    if (pInfos[i].ppGeometries[j]->geometry.aabbs.stride > vvl::kU32Max) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
                                          "%s():stride must be less than or equal to 2^32-1", api_name);
                     }

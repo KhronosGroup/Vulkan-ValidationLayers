@@ -1709,7 +1709,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
                                                     VkImageAspectFlags aspect) const {
     bool skip = false;
 
-    const VkAccessFlags2 all = UINT64_MAX;  // core validation is responsible for detecting undefined flags.
+    const VkAccessFlags2 all = vvl::kU64Max;  // core validation is responsible for detecting undefined flags.
     VkAccessFlags2 allowed = 0;
 
     // Combinations taken from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2918

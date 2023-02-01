@@ -1088,7 +1088,7 @@ uint32_t VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags withou
             return i;
         }
     }
-    return UINT32_MAX;
+    return vvl::kU32Max;
 }
 
 void VkDeviceObj::SetDeviceQueue() {

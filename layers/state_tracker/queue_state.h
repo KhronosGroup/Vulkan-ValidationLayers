@@ -317,12 +317,12 @@ class QUEUE_STATE : public BASE_NODE {
     uint64_t Submit(CB_SUBMISSION &&submission);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
-    uint64_t Notify(uint64_t until_seq = UINT64_MAX);
+    uint64_t Notify(uint64_t until_seq = vvl::kU64Max);
 
     // Tell the queue and then wait for it to finish updating its state.
     // UINT64_MAX means to finish all submissions.
-    void NotifyAndWait(uint64_t until_seq = UINT64_MAX);
-    std::shared_future<void> Wait(uint64_t until_seq = UINT64_MAX);
+    void NotifyAndWait(uint64_t until_seq = vvl::kU64Max);
+    std::shared_future<void> Wait(uint64_t until_seq = vvl::kU64Max);
 
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;

@@ -3589,12 +3589,12 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
     uint64_t invocations = local_size_x * local_size_y;
     // Prevent overflow.
     bool fail = false;
-    if (invocations > UINT32_MAX || invocations > limit) {
+    if (invocations > vvl::kU32Max || invocations > limit) {
         fail = true;
     }
     if (!fail) {
         invocations *= local_size_z;
-        if (invocations > UINT32_MAX || invocations > limit) {
+        if (invocations > vvl::kU32Max || invocations > limit) {
             fail = true;
         }
     }
@@ -3768,12 +3768,12 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
     uint64_t invocations = local_size_x * local_size_y;
     // Prevent overflow.
     bool fail = false;
-    if (invocations > UINT32_MAX || invocations > max_workgroup_size) {
+    if (invocations > vvl::kU32Max || invocations > max_workgroup_size) {
         fail = true;
     }
     if (!fail) {
         invocations *= local_size_z;
-        if (invocations > UINT32_MAX || invocations > max_workgroup_size) {
+        if (invocations > vvl::kU32Max || invocations > max_workgroup_size) {
             fail = true;
         }
     }

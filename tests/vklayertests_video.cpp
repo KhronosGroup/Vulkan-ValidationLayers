@@ -578,13 +578,13 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     }
 
     // Invalid memoryBindIndex
-    uint32_t invalid_bind_index = UINT32_MAX;
+    uint32_t invalid_bind_index = vvl::kU32Max;
     for (uint32_t i = 0; i < mem_req_count; ++i) {
-        if (mem_reqs[i].memoryBindIndex < UINT32_MAX) {
+        if (mem_reqs[i].memoryBindIndex < vvl::kU32Max) {
             invalid_bind_index = mem_reqs[i].memoryBindIndex + 1;
         }
     }
-    if (invalid_bind_index != UINT32_MAX) {
+    if (invalid_bind_index != vvl::kU32Max) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07197");
         auto& invalid = bind_info[mem_req_count / 2];
         auto backup = invalid;
@@ -595,8 +595,8 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     }
 
     // Incompatible memory type
-    uint32_t invalid_mem_type_index = UINT32_MAX;
-    uint32_t invalid_mem_type_req_index = UINT32_MAX;
+    uint32_t invalid_mem_type_index = vvl::kU32Max;
+    uint32_t invalid_mem_type_req_index = vvl::kU32Max;
     auto mem_props = m_device->phy().memory_properties();
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         uint32_t mem_type_bits = mem_reqs[i].memoryRequirements.memoryTypeBits;
@@ -607,9 +607,9 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
                 break;
             }
         }
-        if (invalid_mem_type_index != UINT32_MAX) break;
+        if (invalid_mem_type_index != vvl::kU32Max) break;
     }
-    if (invalid_mem_type_index != UINT32_MAX) {
+    if (invalid_mem_type_index != vvl::kU32Max) {
         auto& mem_req = mem_reqs[invalid_mem_type_req_index].memoryRequirements;
 
         VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -631,14 +631,14 @@ TEST_F(VkVideoLayerTest, BindVideoSessionMemory) {
     }
 
     // Incorrectly aligned memoryOffset
-    uint32_t invalid_offset_align_index = UINT32_MAX;
+    uint32_t invalid_offset_align_index = vvl::kU32Max;
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         if (mem_reqs[i].memoryRequirements.alignment > 1) {
             invalid_offset_align_index = i;
             break;
         }
     }
-    if (invalid_offset_align_index != UINT32_MAX) {
+    if (invalid_offset_align_index != vvl::kU32Max) {
         auto& mem_req = mem_reqs[invalid_offset_align_index].memoryRequirements;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07199");

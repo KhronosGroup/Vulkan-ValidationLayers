@@ -1448,7 +1448,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     // Invalid VetexStride and Indexdata
     if (index_type_uint8) {
         VkAccelerationStructureGeometryKHR invalid_geometry_triangles = valid_geometry_triangles;
-        invalid_geometry_triangles.geometry.triangles.vertexStride = UINT32_MAX + 1ull;
+        invalid_geometry_triangles.geometry.triangles.vertexStride = vvl::kU32Max + 1ull;
         VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;
         invalid_build_info_khr.pGeometries = &invalid_geometry_triangles;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819");
