@@ -4784,7 +4784,7 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (queueFamilyIndex == UINT32_MAX) {
+    if (queueFamilyIndex == vvl::kU32Max) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     } else {
         // Create command pool on a non-graphics queue
@@ -4810,7 +4810,7 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (queueFamilyIndex == UINT32_MAX) {
+    if (queueFamilyIndex == vvl::kU32Max) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     } else {
         // Create Depth image
@@ -4858,7 +4858,7 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
 
     // Should be left with a tranfser queue
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (queueFamilyIndex == UINT32_MAX) {
+    if (queueFamilyIndex == vvl::kU32Max) {
         GTEST_SKIP() << "Non-graphics/compute queue family not found";
     }
 
@@ -5313,10 +5313,10 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
     const uint32_t transfer_only_qfi =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
-    if ((UINT32_MAX == transfer_only_qfi) && (UINT32_MAX == no_gfx_qfi)) {
+    if ((vvl::kU32Max == transfer_only_qfi) && (vvl::kU32Max == no_gfx_qfi)) {
         printf("No compute or transfer only queue family, skipping bindpoint and queue tests.\n");
     } else {
-        const uint32_t err_qfi = (UINT32_MAX == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
+        const uint32_t err_qfi = (vvl::kU32Max == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
 
         VkCommandPoolObj command_pool(m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
@@ -5336,7 +5336,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
         command_buffer.end();
 
         // If we succeed in testing only one condition above, we need to test the other below.
-        if ((UINT32_MAX != transfer_only_qfi) && (err_qfi != transfer_only_qfi)) {
+        if ((vvl::kU32Max != transfer_only_qfi) && (err_qfi != transfer_only_qfi)) {
             // Need to test the neither compute/gfx supported case separately.
             VkCommandPoolObj tran_command_pool(m_device, transfer_only_qfi);
             ASSERT_TRUE(tran_command_pool.initialized());
@@ -5470,12 +5470,12 @@ TEST_F(VkLayerTest, SetDynScissorParamTests) {
 
     std::vector<TestCase> test_cases = {{{{-1, 0}, {16, 16}}, "VUID-vkCmdSetScissor-x-00595"},
                                         {{{0, -1}, {16, 16}}, "VUID-vkCmdSetScissor-x-00595"},
-                                        {{{1, 0}, {INT32_MAX, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
-                                        {{{INT32_MAX, 0}, {1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
-                                        {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
-                                        {{{0, 1}, {16, INT32_MAX}}, "VUID-vkCmdSetScissor-offset-00597"},
-                                        {{{0, INT32_MAX}, {16, 1}}, "VUID-vkCmdSetScissor-offset-00597"},
-                                        {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
+                                        {{{1, 0}, {vvl::kI32Max, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
+                                        {{{vvl::kI32Max, 0}, {1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
+                                        {{{0, 0}, {uint32_t{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
+                                        {{{0, 1}, {16, vvl::kI32Max}}, "VUID-vkCmdSetScissor-offset-00597"},
+                                        {{{0, vvl::kI32Max}, {16, 1}}, "VUID-vkCmdSetScissor-offset-00597"},
+                                        {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
 
     for (const auto &test_case : test_cases) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuid);
@@ -5611,7 +5611,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
-    if (multi_draw_properties.maxMultiDrawCount < UINT32_MAX) {
+    if (multi_draw_properties.maxMultiDrawCount < vvl::kU32Max) {
         uint32_t draw_count = multi_draw_properties.maxMultiDrawCount + 1;
         std::vector<VkMultiDrawInfoEXT> max_multi_draws(draw_count);
         std::vector<VkMultiDrawIndexedInfoEXT> max_multi_indexed_draws(draw_count);
@@ -6239,12 +6239,12 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
         std::vector<TestCase> test_cases = {
             {{{-1, 0}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
             {{{0, -1}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
-            {{{1, 0}, {INT32_MAX, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-            {{{INT32_MAX, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-            {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-            {{{0, 1}, {16, INT32_MAX}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
-            {{{0, INT32_MAX}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
-            {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
+            {{{1, 0}, {vvl::kI32Max, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{vvl::kI32Max, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{0, 0}, {uint32_t{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{0, 1}, {16, vvl::kI32Max}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+            {{{0, vvl::kI32Max}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+            {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
 
         for (const auto &test_case : test_cases) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuid);

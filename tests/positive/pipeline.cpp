@@ -2705,7 +2705,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
 
     uint32_t image_index;
     ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
-    fence.wait(UINT32_MAX);
+    fence.wait(vvl::kU32Max);
 
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = swapchain_images[image_index];
@@ -4635,7 +4635,7 @@ TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
     }
 
     uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (transfer == UINT32_MAX) {
+    if (transfer == vvl::kU32Max) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
     VkQueueObj *queue = m_device->queue_family_queues(transfer)[0].get();

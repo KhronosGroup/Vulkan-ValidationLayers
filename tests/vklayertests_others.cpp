@@ -4558,7 +4558,7 @@ TEST_F(VkLayerTest, ValidateStride) {
         m_errorMonitor->VerifyFound();
 
         auto draw_count = m_device->phy().properties().limits.maxDrawIndirectCount;
-        if (draw_count != UINT32_MAX) {
+        if (draw_count != vvl::kU32Max) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-drawCount-02719");
             vk::CmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, draw_count + 1, 2);
             m_errorMonitor->VerifyFound();
@@ -5698,7 +5698,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     }
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         uint64_t bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
@@ -5706,7 +5706,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        if (signalValue < UINT64_MAX) {
+        if (signalValue < vvl::kU64Max) {
             signalValue++;
             timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
             waitValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
@@ -5838,7 +5838,7 @@ TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
     }
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         uint64_t bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
@@ -5846,7 +5846,7 @@ TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
         vk::QueueBindSparse(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        if (signalValue < UINT64_MAX) {
+        if (signalValue < vvl::kU64Max) {
             waitValue = bigValue;
 
             submit_info.signalSemaphoreCount = 0;
@@ -5941,7 +5941,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
     }
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         signal_sem_info.value += timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
         submit_info.waitSemaphoreInfoCount = 0;
@@ -5952,7 +5952,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
         fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
-        if (signal_sem_info.value < UINT64_MAX) {
+        if (signal_sem_info.value < vvl::kU64Max) {
             auto wait_sem_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
             wait_sem_info.semaphore = semaphore.handle();
             wait_sem_info.value = signal_sem_info.value + 1;
@@ -6445,7 +6445,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         VkSemaphore sem;
 
         semaphore_type_create_info.initialValue = 0;
@@ -6598,7 +6598,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     ASSERT_VK_SUCCESS(vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
-    if (timelineproperties.maxTimelineSemaphoreValueDifference < UINT64_MAX) {
+    if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
         // Regression test for value difference validations ran against binary semaphores
         semaphore_type_create_info.initialValue = 0;
         vk_testing::Semaphore timeline_sem(*m_device, semaphore_create_info);
@@ -8050,7 +8050,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     }
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03400");
-        VkRect2D scissor2 = {{1, 0}, {INT32_MAX, 16}};
+        VkRect2D scissor2 = {{1, 0}, {vvl::kI32Max, 16}};
         vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
@@ -8062,7 +8062,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03401");
-        VkRect2D scissor2 = {{0, 1}, {16, INT32_MAX}};
+        VkRect2D scissor2 = {{0, 1}, {16, vvl::kI32Max}};
         vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
@@ -8542,7 +8542,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
 
     // the indexes in pWaitSemaphores and pWaitSemaphoreValues should match
     VkSemaphore reversed[2] = {semaphore[1], semaphore[0]};
-    uint64_t reversed_values[2] = {UINT64_MAX /* ignored */, 20};
+    uint64_t reversed_values[2] = {vvl::kU64Max /* ignored */, 20};
     VkPipelineStageFlags wait_stages[2] = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -10209,8 +10209,8 @@ TEST_F(VkLayerTest, ValidateViewportStateScissorOverflow) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor_x = {{INT32_MAX / 2, 0}, {INT32_MAX / 2 + 64, 64}};
-    VkRect2D scissor_y = {{0, INT32_MAX / 2}, {64, INT32_MAX / 2 + 64}};
+    VkRect2D scissor_x = {{vvl::kI32Max / 2, 0}, {vvl::kI32Max / 2 + 64, 64}};
+    VkRect2D scissor_y = {{0, vvl::kI32Max / 2}, {64, vvl::kI32Max / 2 + 64}};
 
     const auto break_vp_x = [&](CreatePipelineHelper &helper) {
         helper.vp_state_ci_.viewportCount = 1;
@@ -10696,7 +10696,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == vvl::kU32Max) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
 

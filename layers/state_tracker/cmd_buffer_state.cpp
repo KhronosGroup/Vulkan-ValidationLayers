@@ -996,8 +996,8 @@ void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondar
 
         // State is trashed after executing secondary command buffers.
         // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-        trashedViewportMask = vvl::MaxTypeValue<uint32_t>();
-        trashedScissorMask = vvl::MaxTypeValue<uint32_t>();
+        trashedViewportMask = vvl::MaxTypeValue(trashedViewportMask);
+        trashedScissorMask = vvl::MaxTypeValue(trashedScissorMask);
         trashedViewportCount = true;
         trashedScissorCount = true;
 

@@ -92,7 +92,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersImage) {
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == vvl::kU32Max) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();
@@ -133,7 +133,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersBuffer) {
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == UINT32_MAX) {
+    if (no_gfx == vvl::kU32Max) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();

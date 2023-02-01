@@ -6010,7 +6010,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
     uint32_t queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
-    if (queue_family_index == UINT32_MAX) {
+    if (queue_family_index == vvl::kU32Max) {
         GTEST_SKIP() << "No non-graphics queue supporting compute found; skipped";
     }
 
@@ -6464,7 +6464,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
     uint32_t queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT, false);
-    if (queue_family_index == UINT32_MAX) {
+    if (queue_family_index == vvl::kU32Max) {
         GTEST_SKIP() << "No non-graphics queue supporting compute found";
     }
 
@@ -9567,7 +9567,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         VkImageFormatProperties img_limits;
         ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-        if (img_limits.maxArrayLayers != UINT32_MAX) {
+        if (img_limits.maxArrayLayers != vvl::kU32Max) {
             image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
         } else {
@@ -9610,7 +9610,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         VkImageFormatProperties img_limits;
         ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-        if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
+        if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
             image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
             if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02252");
@@ -9620,7 +9620,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
         }
 
-        if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
+        if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
             if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
@@ -10548,7 +10548,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
 
-    if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
+    if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
         // depth-stencil format image with VkImageStencilUsageCreateInfo with
         // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image width exceeding device maximum
         image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -10559,7 +10559,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
         printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
     }
 
-    if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
+    if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
         // depth-stencil format image with VkImageStencilUsageCreateInfo with
         // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
         image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -13789,7 +13789,7 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (transfer == UINT32_MAX) {
+    if (transfer == vvl::kU32Max) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
     VkQueueObj *queue = m_device->queue_family_queues(transfer)[0].get();

@@ -1035,7 +1035,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     // since its a non-disjoint image, finding VkImage in map is a duplicate
                     auto it = resources_bound.find(image_state->image());
                     if (it == resources_bound.end()) {
-                        std::array<uint32_t, 3> bound_index = {i, UINT32_MAX, UINT32_MAX};
+                        std::array<uint32_t, 3> bound_index = {i, vvl::kU32Max, vvl::kU32Max};
                         resources_bound.emplace(image_state->image(), bound_index);
                     } else {
                         skip |= LogError(
@@ -1101,11 +1101,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 auto it = resources_bound.find(image_state->image());
                 if (it == resources_bound.end()) {
-                    std::array<uint32_t, 3> bound_index = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
+                    std::array<uint32_t, 3> bound_index = {vvl::kU32Max, vvl::kU32Max, vvl::kU32Max};
                     bound_index[plane] = i;
                     resources_bound.emplace(image_state->image(), bound_index);
                 } else {
-                    if (it->second[plane] == UINT32_MAX) {
+                    if (it->second[plane] == vvl::kU32Max) {
                         it->second[plane] = i;
                     } else {
                         skip |= LogError(bind_info.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
@@ -1382,7 +1382,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         if (image_state->disjoint == true) {
             uint32_t total_planes = FormatPlaneCount(image_state->createInfo.format);
             for (uint32_t i = 0; i < total_planes; i++) {
-                if (resource.second[i] == UINT32_MAX) {
+                if (resource.second[i] == vvl::kU32Max) {
                     skip |= LogError(resource.first, "VUID-vkBindImageMemory2-pBindInfos-02858",
                                      "%s: Plane %u of the disjoint image was not bound. All %d planes need to bound individually "
                                      "in separate pBindInfos in a single call.",
