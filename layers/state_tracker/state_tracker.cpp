@@ -4790,6 +4790,40 @@ void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkComm
     }
 }
 
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX,
+                                                              uint32_t groupCountY, uint32_t groupCountZ) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->UpdateDrawCmd(CMD_DRAWMESHTASKSEXT);
+}
+
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                      VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->UpdateDrawCmd(CMD_DRAWMESHTASKSINDIRECTEXT);
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    if (!disabled[command_buffer_state] && buffer_state) {
+        cb_state->AddChild(buffer_state);
+    }
+}
+
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                           VkDeviceSize offset, VkBuffer countBuffer,
+                                                                           VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                           uint32_t stride) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->UpdateDrawCmd(CMD_DRAWMESHTASKSINDIRECTCOUNTEXT);
+    if (!disabled[command_buffer_state]) {
+        auto buffer_state = Get<BUFFER_STATE>(buffer);
+        auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
+        if (buffer_state) {
+            cb_state->AddChild(buffer_state);
+        }
+        if (count_buffer_state) {
+            cb_state->AddChild(count_buffer_state);
+        }
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdTraceRaysNV(
     VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer, VkDeviceSize raygenShaderBindingOffset,
     VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
