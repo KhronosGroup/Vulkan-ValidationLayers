@@ -448,7 +448,7 @@ class LockedSharedPtr : public std::shared_ptr<T> {
 //
 // snapshot: Return an array of elements (key, value pairs) that satisfy an optional
 // predicate. This can be used as a substitute for iterators in exceptional cases.
-template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = layer_data::hash<Key>>
+template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = vvl::hash<Key>>
 class vl_concurrent_unordered_map {
   public:
     template <typename... Args>
@@ -578,7 +578,7 @@ class vl_concurrent_unordered_map {
   private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
 
-    layer_data::unordered_map<Key, T, Hash> maps[BUCKETS];
+    vvl::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
         mutable std::shared_mutex lock;
         // Put each lock on its own cache line to avoid false cache line sharing.

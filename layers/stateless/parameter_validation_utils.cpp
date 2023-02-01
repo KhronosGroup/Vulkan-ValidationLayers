@@ -89,7 +89,7 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 ReadLockGuard StatelessValidation::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
-static layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+static vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 static std::shared_mutex secondary_cb_map_mutex;
 static ReadLockGuard CBReadLock() { return ReadLockGuard(secondary_cb_map_mutex); }
 static WriteLockGuard CBWriteLock() { return WriteLockGuard(secondary_cb_map_mutex); }
@@ -267,7 +267,7 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
 
             // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
             uint32_t ext_count = 0;
-            layer_data::unordered_set<std::string> dev_exts_enumerated{};
+            vvl::unordered_set<std::string> dev_exts_enumerated{};
             std::vector<VkExtensionProperties> ext_props{};
             instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
             ext_props.resize(ext_count);
@@ -2445,14 +2445,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             // <VkDynamicState, index in pDynamicStates, hash for enum key>
-            layer_data::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
+            vvl::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
             // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"
             if (create_info.pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *create_info.pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
                     const VkDynamicState dynamic_state = dynamic_state_info.pDynamicStates[state_index];
 
-                    if (layer_data::Contains(dynamic_state_map, dynamic_state)) {
+                    if (vvl::Contains(dynamic_state_map, dynamic_state)) {
                         skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
                                          "vkCreateGraphicsPipelines: %s was listed twice in the "
                                          "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32
@@ -2464,7 +2464,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
                 // Not allowed for graphics pipelines
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
@@ -2473,8 +2473,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, dynamic_state_map[VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR]);
             }
 
-            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT)) {
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT and "
                                  "VK_DYNAMIC_STATE_VIEWPORT both listed in pCreateInfos[%" PRIu32
@@ -2484,8 +2484,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  dynamic_state_map[VK_DYNAMIC_STATE_VIEWPORT]);
             }
 
-            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) &&
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR)) {
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) &&
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR)) {
                 skip |= LogError(
                     device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
                     "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_SCISSOR "
@@ -2505,16 +2505,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             // helpers for bool used multiple times below
-            const bool has_dynamic_viewport = layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT);
-            const bool has_dynamic_scissor = layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR);
+            const bool has_dynamic_viewport = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT);
+            const bool has_dynamic_scissor = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR);
             const bool has_dynamic_viewport_w_scaling_nv =
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
             const bool has_dynamic_exclusive_scissor_nv =
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
             const bool has_dynamic_viewport_with_count =
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
             const bool has_dynamic_scissor_with_count =
-                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+                vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -2597,7 +2597,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
                 }
 
-                layer_data::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
+                vvl::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
                     auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
                     auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
@@ -2632,7 +2632,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                layer_data::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
+                vvl::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
                     auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
                     auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);
@@ -2940,7 +2940,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, i);
                     }
 
-                    if (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
+                    if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
                         shading_rate_image_struct && shading_rate_image_struct->viewportCount > 0 &&
                         shading_rate_image_struct->pShadingRatePalettes == nullptr) {
                         skip |= LogError(
@@ -2981,7 +2981,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) &&
+                    if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) &&
                         !IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2990,7 +2990,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
+                    if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
                         !IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -3122,7 +3122,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             }
                         }
                         if (line_state->stippledLineEnable &&
-                            !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_EXT)) {
+                            !vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_EXT)) {
                             if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
@@ -3446,9 +3446,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
 
                     const bool dynamic_not_set =
-                        (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) ||
-                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) ||
-                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
+                        (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) ||
+                         !vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) ||
+                         !vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
 
                     // If any of the dynamic states are not set still need a valid array
                     if ((color_blend_state.attachmentCount > 0) && dynamic_not_set) {
@@ -3542,7 +3542,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                if (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&
+                if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&
                     (create_info.pRasterizationState->lineWidth != 1.0f)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749",
                                      "The line width state is static (pCreateInfos[%" PRIu32
@@ -5795,22 +5795,22 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
 
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     if (mutable_descriptor_type) {
-        layer_data::span<const VkDescriptorType> first_types, second_types;
+        vvl::span<const VkDescriptorType> first_types, second_types;
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
             const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
             auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
-            first_types = layer_data::make_span(pDescriptorTypes, descriptorTypeCount);
+            first_types = vvl::make_span(pDescriptorTypes, descriptorTypeCount);
         } else {
-            first_types = layer_data::make_span(all_descriptor_types.data(), all_descriptor_types.size());
+            first_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
             const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
             auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
-            second_types = layer_data::make_span(pDescriptorTypes, descriptorTypeCount);
+            second_types = vvl::make_span(pDescriptorTypes, descriptorTypeCount);
         } else {
-            second_types = layer_data::make_span(all_descriptor_types.data(), all_descriptor_types.size());
+            second_types = vvl::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }
 
         bool complete_overlap = first_types.size() == second_types.size();
@@ -6240,12 +6240,12 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuf
     uint64_t invocations = static_cast<uint64_t>(groupCountX) * static_cast<uint64_t>(groupCountY);
     // Prevent overflow.
     bool fail = false;
-    if (invocations > layer_data::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
+    if (invocations > vvl::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
         fail = true;
     }
     if (!fail) {
         invocations *= static_cast<uint64_t>(groupCountZ);
-        if (invocations > layer_data::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
+        if (invocations > vvl::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
             fail = true;
         }
     }
@@ -9052,7 +9052,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
 
     // check for distinct values
     {
-        layer_data::unordered_set<uint32_t> vertex_bindings(vertexBindingDescriptionCount);
+        vvl::unordered_set<uint32_t> vertex_bindings(vertexBindingDescriptionCount);
         for (uint32_t i = 0; i < vertexBindingDescriptionCount; ++i) {
             const uint32_t binding = pVertexBindingDescriptions[i].binding;
             auto const &binding_it = vertex_bindings.find(binding);
@@ -9066,7 +9066,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
             vertex_bindings.insert(binding);
         }
 
-        layer_data::unordered_set<uint32_t> vertex_locations(vertexAttributeDescriptionCount);
+        vvl::unordered_set<uint32_t> vertex_locations(vertexAttributeDescriptionCount);
         for (uint32_t i = 0; i < vertexAttributeDescriptionCount; ++i) {
             const uint32_t location = pVertexAttributeDescriptions[i].location;
             auto const &location_it = vertex_locations.find(location);

@@ -73,7 +73,7 @@ struct hash<VkFormat> {
 }
 
 // clang-format off
-static const layer_data::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
+static const vvl::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
     {VK_FORMAT_A1R5G5B5_UNORM_PACK16,
         {FORMAT_COMPATIBILITY_CLASS::_16BIT, 2, 1, {1, 1, 1}, 4,
         {{COMPONENT_TYPE::A, 1}, {COMPONENT_TYPE::R, 5}, {COMPONENT_TYPE::G, 5}, {COMPONENT_TYPE::B, 5}} }},
@@ -838,7 +838,7 @@ struct MULTIPLANE_COMPATIBILITY {
 
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
-static const layer_data::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
+static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
     { VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16, {{
         { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16 },
         { 2, 2, VK_FORMAT_R10X6G10X6_UNORM_2PACK16 }

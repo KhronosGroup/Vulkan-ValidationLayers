@@ -306,7 +306,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '// of a given SPIR-V opcode instruction\n'
             output += '//\n'
             output += '// clang-format off\n'
-            output += 'static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTable {\n'
+            output += 'static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {\n'
             for opcode, info in sorted(self.opcodes.items()):
                 output += f'    {{spv::{info["name"]}, {{"{info["name"]}", {info["hasType"]}, {info["hasResult"]}, {info["memoryScopePosition"]}, {info["executionScopePosition"]}, {info["imageOperandsPosition"]}}}}},\n'
             output += '};\n'

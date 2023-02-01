@@ -53,8 +53,8 @@ class StatelessValidation : public ValidationObject {
     safe_VkPhysicalDeviceFeatures2 physical_device_features2;
     void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
-    layer_data::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
-    layer_data::unordered_map<VkPhysicalDevice, layer_data::unordered_set<std::string>> device_extensions_enumerated{};
+    vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
+    vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<std::string>> device_extensions_enumerated{};
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -79,8 +79,8 @@ class StatelessValidation : public ValidationObject {
     DeviceExtensionProperties phys_dev_ext_props = {};
 
     struct SubpassesUsageStates {
-        layer_data::unordered_set<uint32_t> subpasses_using_color_attachment;
-        layer_data::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
         std::vector<VkSubpassDescriptionFlags> subpasses_flags;
         uint32_t color_attachment_count;
     };
@@ -89,7 +89,7 @@ class StatelessValidation : public ValidationObject {
     // updating a map of the renderpass usage states, and these accesses need thread protection. Use a mutex separate from the
     // parent object's to maintain that functionality.
     mutable std::mutex renderpass_map_mutex;
-    layer_data::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
     // Constructor for stateles validation tracking
     StatelessValidation() : device_createinfo_pnext(nullptr) { container_type = LayerObjectTypeParameterValidation; }
@@ -520,8 +520,8 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if (next != nullptr) {
-            layer_data::unordered_set<const void *> cycle_check;
-            layer_data::unordered_set<VkStructureType, layer_data::hash<int>> unique_stype_check;
+            vvl::unordered_set<const void *> cycle_check;
+            vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
 
             const char *disclaimer =
                 "This error is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that "

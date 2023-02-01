@@ -321,7 +321,7 @@ struct hash<VkFormat> {
 }
 
 // clang-format off
-static const layer_data::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
+static const vvl::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
 '''
             for f, info in sorted(self.allFormats.items()):
                 output += '    {{{},\n'.format(f)
@@ -357,7 +357,7 @@ struct MULTIPLANE_COMPATIBILITY {
 
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
-static const layer_data::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
+static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
 '''
 
             for f in sorted(self.planarFormats.keys()):

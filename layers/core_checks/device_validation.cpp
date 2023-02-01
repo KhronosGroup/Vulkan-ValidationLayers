@@ -78,7 +78,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
                                                      const char *vuid) const {
     bool skip = false;
     if (queue_families) {
-        layer_data::unordered_set<uint32_t> set;
+        vvl::unordered_set<uint32_t> set;
         for (uint32_t i = 0; i < queue_family_count; ++i) {
             std::string parameter_name = std::string(array_parameter_name) + "[" + std::to_string(i) + "]";
 
@@ -213,8 +213,8 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
         uint32_t protected_index;
         create_flags(uint32_t a, uint32_t b) : unprocted_index(a), protected_index(b) {}
     };
-    layer_data::unordered_map<uint32_t, create_flags> queue_family_map;
-    layer_data::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
+    vvl::unordered_map<uint32_t, create_flags> queue_family_map;
+    vvl::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
 
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;

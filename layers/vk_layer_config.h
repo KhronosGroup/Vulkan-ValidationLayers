@@ -1,6 +1,6 @@
 /* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ typedef enum VkLayerDbgActionBits {
 } VkLayerDbgActionBits;
 typedef VkFlags VkLayerDbgActionFlags;
 
-const layer_data::unordered_map<std::string, VkFlags> debug_actions_option_definitions = {
+const vvl::unordered_map<std::string, VkFlags> debug_actions_option_definitions = {
     {std::string("VK_DBG_LAYER_ACTION_IGNORE"), VK_DBG_LAYER_ACTION_IGNORE},
     {std::string("VK_DBG_LAYER_ACTION_CALLBACK"), VK_DBG_LAYER_ACTION_CALLBACK},
     {std::string("VK_DBG_LAYER_ACTION_LOG_MSG"), VK_DBG_LAYER_ACTION_LOG_MSG},
@@ -81,14 +81,14 @@ const layer_data::unordered_map<std::string, VkFlags> debug_actions_option_defin
 #endif
     {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
 
-const layer_data::unordered_map<std::string, VkFlags> report_flags_option_definitions = {
+const vvl::unordered_map<std::string, VkFlags> report_flags_option_definitions = {
     {std::string("warn"), VK_DEBUG_REPORT_WARNING_BIT_EXT},
     {std::string("info"), VK_DEBUG_REPORT_INFORMATION_BIT_EXT},
     {std::string("perf"), VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT},
     {std::string("error"), VK_DEBUG_REPORT_ERROR_BIT_EXT},
     {std::string("debug"), VK_DEBUG_REPORT_DEBUG_BIT_EXT}};
 
-const layer_data::unordered_map<std::string, VkFlags> log_msg_type_option_definitions = {{std::string("warn"), kWarningBit},
+const vvl::unordered_map<std::string, VkFlags> log_msg_type_option_definitions = {{std::string("warn"), kWarningBit},
                                                                                   {std::string("info"), kInformationBit},
                                                                                   {std::string("perf"), kPerformanceWarningBit},
                                                                                   {std::string("error"), kErrorBit},
@@ -100,7 +100,7 @@ VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const std::string &option,
-                                            layer_data::unordered_map<std::string, VkFlags> const &enum_data,
+                                            vvl::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
 VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);

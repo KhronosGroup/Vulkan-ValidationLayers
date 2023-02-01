@@ -1,6 +1,6 @@
 /* Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2022 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
+ * Copyright (c) 2015-2017, 2019-2023 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@
 
  */
 
-#ifndef LAYER_DATA_H
-#define LAYER_DATA_H
+#pragma once
 
 #include <cmath>
 
@@ -44,7 +43,7 @@
 #endif
 
 // namespace aliases to allow map and set implementations to easily be swapped out
-namespace layer_data {
+namespace vvl {
 
 #ifdef USE_ROBIN_HOOD_HASHING
 template <typename T>
@@ -113,7 +112,7 @@ template <typename T>
 using insert_iterator = std::insert_iterator<T>;
 #endif
 
-}  // namespace layer_data
+}  // namespace vvl
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
 // Useful in in situations where the needed size is unknown, but the typical size is known  If size increases beyond the
@@ -678,9 +677,8 @@ class value_type_helper_set {
 };
 
 template <typename Key, typename T, int N = 1>
-class small_unordered_map
-    : public small_container<Key, typename layer_data::unordered_map<Key, T>::value_type, layer_data::unordered_map<Key, T>,
-                             value_type_helper_map<layer_data::unordered_map<Key, T>>, N> {
+class small_unordered_map : public small_container<Key, typename vvl::unordered_map<Key, T>::value_type, vvl::unordered_map<Key, T>,
+                                                   value_type_helper_map<vvl::unordered_map<Key, T>>, N> {
   public:
     T &operator[](const Key &key) {
         for (int i = 0; i < N; ++i) {
@@ -706,7 +704,7 @@ class small_unordered_map
 };
 
 template <typename Key, int N = 1>
-class small_unordered_set : public small_container<Key, Key, layer_data::unordered_set<Key>, value_type_helper_set<Key>, N> {};
+class small_unordered_set : public small_container<Key, Key, vvl::unordered_set<Key>, value_type_helper_set<Key>, N> {};
 
 // For the given data key, look up the layer_data instance from given layer_data_map
 template <typename DATA_T>
@@ -753,7 +751,7 @@ void FreeLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &laye
     layer_data_map.erase(got);
 }
 
-namespace layer_data {
+namespace vvl {
 
 inline constexpr std::in_place_t in_place{};
 
@@ -927,5 +925,4 @@ T GetQuotientCeil(T numerator, T denominator) {
     return static_cast<T>(std::ceil(static_cast<double>(numerator) / static_cast<double>(denominator)));
 }
 
-}  // namespace layer_data
-#endif  // LAYER_DATA_H
+}  // namespace vvl

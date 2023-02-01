@@ -115,7 +115,7 @@ struct InstanceExtensions {
        InstanceReqVec requirements;
     };
 
-    typedef layer_data::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
+    typedef vvl::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
     static const InstanceInfoMap &get_info_map() {
         static const InstanceInfoMap info_map = {
             {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
@@ -662,7 +662,7 @@ struct DeviceExtensions : public InstanceExtensions {
        DeviceReqVec requirements;
     };
 
-    typedef layer_data::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
+    typedef vvl::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
     static const DeviceInfoMap &get_info_map() {
         static const DeviceInfoMap info_map = {
             {"VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})},

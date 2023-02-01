@@ -271,7 +271,7 @@ static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageA
 static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (SyncStageAccessFlags(1) << SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER);
 
 // Map of the StageAccessIndices from the StageAccess Bit
-const layer_data::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex>& syncStageAccessIndexByStageAccessBit();
+const vvl::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex>& syncStageAccessIndexByStageAccessBit();
 
 struct SyncStageAccessInfoType {
     const char *name;

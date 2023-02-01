@@ -283,8 +283,8 @@ public:
     WriteLockGuard WriteLock() override;
 
     vl_concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;
-    layer_data::unordered_map<VkCommandPool, layer_data::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
-    layer_data::unordered_map<VkDevice, layer_data::unordered_set<VkQueue>> device_queues_map;
+    vvl::unordered_map<VkCommandPool, vvl::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
+    vvl::unordered_map<VkDevice, vvl::unordered_set<VkQueue>> device_queues_map;
 
     // Track per-descriptorsetlayout and per-descriptorset whether read_only is used.
     // This is used to (sloppily) implement the relaxed externsync rules for read_only

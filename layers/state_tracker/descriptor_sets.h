@@ -84,14 +84,14 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
 
     const uint32_t maxSets;  // Max descriptor sets allowed in this pool
     const safe_VkDescriptorPoolCreateInfo createInfo;
-    using TypeCountMap = layer_data::unordered_map<uint32_t, uint32_t>;
+    using TypeCountMap = vvl::unordered_map<uint32_t, uint32_t>;
     const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
     uint32_t available_sets_;        // Available descriptor sets in this pool
     TypeCountMap available_counts_;  // Available # of descriptors of each type in this pool
-    layer_data::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets_;  // Collection of all sets in this pool
+    vvl::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets_;  // Collection of all sets in this pool
     ValidationStateTracker *dev_data_;
     mutable std::shared_mutex lock_;
 };
@@ -225,7 +225,7 @@ class DescriptorSetLayoutDef {
 
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
-    layer_data::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
+    vvl::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
 
@@ -876,7 +876,7 @@ class DescriptorSet : public BASE_NODE {
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
-    typedef layer_data::unordered_set<uint32_t> TrackedBindings;
+    typedef vvl::unordered_set<uint32_t> TrackedBindings;
     static void FilterOneBindingReq(const BindingReqMap::value_type &binding_req_pair, BindingReqMap *out_req,
                                     const TrackedBindings &set, uint32_t limit);
     void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &, const BindingReqMap &in_req,
@@ -949,13 +949,13 @@ class DescriptorSet : public BASE_NODE {
     // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
     // expensive validation operation (typically per-draw)
     // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef layer_data::unordered_map<uint32_t, uint64_t> VersionedBindings;
+    typedef vvl::unordered_map<uint32_t, uint64_t> VersionedBindings;
     // this structure is stored in a map in CMD_BUFFER_STATE, with an entry for every descriptor set.
     struct CachedValidation {
         TrackedBindings command_binding_and_usage;  // Persistent for the life of the recording
         TrackedBindings non_dynamic_buffers;        // Persistent for the life of the recording
         TrackedBindings dynamic_buffers;            // Dirtied (flushed) each BindDescriptorSet
-        layer_data::unordered_map<const PIPELINE_STATE *, VersionedBindings>
+        vvl::unordered_map<const PIPELINE_STATE *, VersionedBindings>
             image_samplers;  // Tested vs. changes to CB's ImageLayout
     };
     const DescriptorSetLayout &Layout() const { return *layout_; }

@@ -80,7 +80,7 @@ void DebugPrintf::DestroyBuffer(DPFBufferInfo &buffer_info) {
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool DebugPrintf::InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+bool DebugPrintf::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
                                    uint32_t *unique_shader_id) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
@@ -128,7 +128,7 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    const bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
+    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
                                        csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
@@ -238,7 +238,7 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string &form
     return parsed_strings;
 }
 
-std::string DebugPrintf::FindFormatString(layer_data::span<const uint32_t> pgm, uint32_t string_id) {
+std::string DebugPrintf::FindFormatString(vvl::span<const uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
     SHADER_MODULE_STATE module_state(pgm);
     if (module_state.words_.empty()) {
@@ -313,7 +313,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
-        layer_data::span<const uint32_t> pgm;
+        vvl::span<const uint32_t> pgm;
 
         DPFOutputRecord *debug_record = reinterpret_cast<DPFOutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned

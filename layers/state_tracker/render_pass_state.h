@@ -101,7 +101,7 @@ class RENDER_PASS_STATE : public BASE_NODE {
     const std::vector<SubpassVec> self_dependencies;
     using DAGNodeVec = std::vector<DAGNode>;
     const DAGNodeVec subpass_to_node;
-    using FirstReadMap = layer_data::unordered_map<uint32_t, bool>;
+    using FirstReadMap = vvl::unordered_map<uint32_t, bool>;
     const FirstReadMap attachment_first_read;
     const SubpassVec attachment_first_subpass;
     const SubpassVec attachment_last_subpass;

@@ -242,8 +242,8 @@ static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stages) {
     return result;
 }
 
-static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
-    layer_data::unordered_set<uint32_t> result;
+static vvl::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
+    vvl::unordered_set<uint32_t> result;
     for (const auto &stage : stage_states) {
         if (!stage.entrypoint) {
             continue;

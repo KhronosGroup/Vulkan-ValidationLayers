@@ -1097,7 +1097,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 }
 
 static bool FindDependency(const uint32_t index, const uint32_t dependent, const std::vector<DAGNode> &subpass_to_node,
-                           layer_data::unordered_set<uint32_t> &processed_nodes) {
+                           vvl::unordered_set<uint32_t> &processed_nodes) {
     // If we have already checked this node we have not found a dependency path so return false.
     if (processed_nodes.count(index)) return false;
     processed_nodes.insert(index);
@@ -1130,7 +1130,7 @@ bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint
         auto next_elem = std::find(node.next.begin(), node.next.end(), sp.index);
         if (prev_elem == node.prev.end() && next_elem == node.next.end()) {
             // If no dependency exits an implicit dependency still might. If not, throw an error.
-            layer_data::unordered_set<uint32_t> processed_nodes;
+            vvl::unordered_set<uint32_t> processed_nodes;
             if (!(FindDependency(subpass, sp.index, subpass_to_node, processed_nodes) ||
                   FindDependency(sp.index, subpass, subpass_to_node, processed_nodes))) {
                 skip |=
@@ -1380,7 +1380,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
 
         // Track if attachments are used as input as well as another type
-        layer_data::unordered_set<uint32_t> input_attachments;
+        vvl::unordered_set<uint32_t> input_attachments;
 
         if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading)) {
             if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -2002,7 +2002,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
         }
     }
     // Find for each attachment the subpasses that use them.
-    layer_data::unordered_set<uint32_t> attachment_indices;
+    vvl::unordered_set<uint32_t> attachment_indices;
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         attachment_indices.clear();
@@ -3122,7 +3122,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (!non_zero_device_render_area) {
             if (static_cast<int64_t>(view_state->image_state->createInfo.extent.width) <
-                layer_data::GetQuotientCeil(
+                vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06119"
@@ -3138,7 +3138,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
 
             if (static_cast<int64_t>(view_state->image_state->createInfo.extent.height) <
-                layer_data::GetQuotientCeil(
+                vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06121"
@@ -3163,7 +3163,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
                     IMAGE_STATE *image_state = view_state->image_state.get();
                     if (image_state->createInfo.extent.width <
-                        layer_data::GetQuotientCeil(
+                        vvl::GetQuotientCeil(
                             offset_x + width,
                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06120",
@@ -3176,7 +3176,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                          rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
                     }
                     if (image_state->createInfo.extent.height <
-                        layer_data::GetQuotientCeil(
+                        vvl::GetQuotientCeil(
                             offset_y + height,
                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06122",
@@ -3342,7 +3342,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
             IMAGE_STATE *image_state = view_state->image_state.get();
             if (image_state->createInfo.extent.width <
-                layer_data::GetQuotientCeil(
+                vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06112"
@@ -3358,7 +3358,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
             if (image_state->createInfo.extent.height <
-                layer_data::GetQuotientCeil(
+                vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06114"
@@ -3469,7 +3469,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
                 IMAGE_STATE *image_state = view_state->image_state.get();
                 if (image_state->createInfo.extent.width <
-                    layer_data::GetQuotientCeil(offset_x + width,
+                    vvl::GetQuotientCeil(offset_x + width,
                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06113",
@@ -3482,7 +3482,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                 }
                 if (image_state->createInfo.extent.height <
-                    layer_data::GetQuotientCeil(offset_y + height,
+                    vvl::GetQuotientCeil(offset_y + height,
                                                 phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06115",

@@ -970,7 +970,7 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
     //      a span of the container. This does not work for applications which create and destroy many instances and
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array Core{groupName}Enums = {{ {enum_entry_map["core"]} }};
-    static const layer_data::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<{groupName}>> Extended{groupName}Enums = {{\n'''
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<{groupName}>> Extended{groupName}Enums = {{\n'''
                         for k,v in enum_entry_map.items():
                             if k != 'core':
                                 enum_entry += f'        {{ &DeviceExtensions::{k.lower()}, {{ {v} }} }},\n'

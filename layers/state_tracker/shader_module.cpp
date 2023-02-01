@@ -125,7 +125,7 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         //
         // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
         // converting parts of this to be generated from the machine-readable spec instead.
-        layer_data::unordered_set<uint32_t> worklist;
+        vvl::unordered_set<uint32_t> worklist;
         worklist.insert(entrypoint_insn.Word(2));
 
         while (!worklist.empty()) {
@@ -1005,7 +1005,7 @@ void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_w
     }
 }
 
-void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, layer_data::unordered_set<uint32_t>& accessible_ids,
+void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, vvl::unordered_set<uint32_t>& accessible_ids,
                                               const StructInfo& data) const {
     for (const auto& id : accessible_ids) {
         const Instruction* insn = FindDef(id);
@@ -1141,7 +1141,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
     if (!init_complete && (type == spv::OpMemberDecorate)) return false;
 
     bool found_write = false;
-    layer_data::unordered_set<uint32_t> worklist;
+    vvl::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.Word(2));
 
     // Follow instructions in call graph looking for writes to target
@@ -1196,8 +1196,8 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
 // Returns the id from load_members that matched the object_id, otherwise returns zero
 static uint32_t CheckObjectIDFromOpLoad(
     uint32_t object_id, const std::vector<uint32_t>& operator_members,
-    const layer_data::unordered_map<uint32_t, uint32_t>& load_members,
-    const layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>>& accesschain_members) {
+    const vvl::unordered_map<uint32_t, uint32_t>& load_members,
+    const vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>>& accesschain_members) {
     for (auto load_id : operator_members) {
         if (object_id == load_id) return load_id;
         auto load_it = load_members.find(load_id);
@@ -1362,7 +1362,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
         }
 
         case spv::OpTypeStruct: {
-            layer_data::unordered_set<uint32_t> nonwritable_members;
+            vvl::unordered_set<uint32_t> nonwritable_members;
             const bool is_storage_buffer = (storage_class == spv::StorageClassStorageBuffer) ||
                                            (module_state.GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit));
             for (const Instruction* insn : static_data_.member_decoration_inst) {
@@ -1398,11 +1398,11 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     }
 }
 
-layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction& entrypoint) const {
-    layer_data::unordered_set<uint32_t> location_list;
+vvl::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction& entrypoint) const {
+    vvl::unordered_set<uint32_t> location_list;
     const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
-    layer_data::unordered_set<uint32_t> store_pointer_ids;
-    layer_data::unordered_map<uint32_t, uint32_t> accesschain_members;
+    vvl::unordered_set<uint32_t> store_pointer_ids;
+    vvl::unordered_map<uint32_t, uint32_t> accesschain_members;
 
     for (const Instruction& insn : GetInstructions()) {
         switch (insn.Opcode()) {
@@ -1460,8 +1460,8 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
         return false;
     }
 
-    layer_data::unordered_map<uint32_t, uint32_t> member_components;
-    layer_data::unordered_map<uint32_t, uint32_t> member_patch;
+    vvl::unordered_map<uint32_t, uint32_t> member_components;
+    vvl::unordered_map<uint32_t, uint32_t> member_patch;
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
     for (const Instruction* insn : static_data_.member_decoration_inst) {

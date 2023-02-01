@@ -1990,7 +1990,7 @@ void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
 
 
 
-const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extensions = {
+const vvl::unordered_map<std::string, DeprecationData>  deprecated_extensions = {
     {"VK_AMD_draw_indirect_count", {kExtPromoted, "VK_KHR_draw_indirect_count"}},
     {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
     {"VK_AMD_gpu_shader_int16", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
@@ -2087,7 +2087,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_VALVE_mutable_descriptor_type", {kExtPromoted, "VK_EXT_mutable_descriptor_type"}},
 };
 
-const layer_data::unordered_map<std::string, std::string> special_use_extensions = {
+const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_AMD_buffer_marker", "devtools"},
     {"VK_AMD_shader_info", "devtools"},
     {"VK_EXT_border_color_swizzle", "glemulation, d3demulation"},

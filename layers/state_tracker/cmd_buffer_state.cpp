@@ -944,7 +944,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
     }
 }
 
-void CMD_BUFFER_STATE::ExecuteCommands(layer_data::span<const VkCommandBuffer> secondary_command_buffers) {
+void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
     RecordCmd(CMD_EXECUTECOMMANDS);
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto sub_cb_state = dev_data->GetWrite<CMD_BUFFER_STATE>(sub_command_buffer);
@@ -996,8 +996,8 @@ void CMD_BUFFER_STATE::ExecuteCommands(layer_data::span<const VkCommandBuffer> s
 
         // State is trashed after executing secondary command buffers.
         // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-        trashedViewportMask = layer_data::MaxTypeValue<uint32_t>();
-        trashedScissorMask = layer_data::MaxTypeValue<uint32_t>();
+        trashedViewportMask = vvl::MaxTypeValue<uint32_t>();
+        trashedScissorMask = vvl::MaxTypeValue<uint32_t>();
         trashedViewportCount = true;
         trashedScissorCount = true;
 
@@ -1128,7 +1128,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         set_info.validated_set_binding_req_map.begin(),
                                         set_info.validated_set_binding_req_map.end(),
-                                        layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                                        vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs);
                 } else {
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);

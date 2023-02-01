@@ -104,7 +104,7 @@ bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
 
 const char* VendorSpecificTag(BPVendorFlags vendors) {
     // Cache built vendor tags in a map
-    static layer_data::unordered_map<BPVendorFlags, std::string> tag_map;
+    static vvl::unordered_map<BPVendorFlags, std::string> tag_map;
 
     auto res = tag_map.find(vendors);
     if (res == tag_map.end()) {
@@ -830,8 +830,8 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
     }
 }
 
-void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, layer_data::span<const VkResult> error_codes,
-                                        layer_data::span<const VkResult> success_codes) const {
+void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, vvl::span<const VkResult> error_codes,
+                                        vvl::span<const VkResult> success_codes) const {
     auto error = std::find(error_codes.begin(), error_codes.end(), result);
     if (error != error_codes.end()) {
         constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
@@ -4409,10 +4409,10 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
-        layer_data::unordered_set<const IMAGE_STATE*> sparse_images;
+        vvl::unordered_set<const IMAGE_STATE*> sparse_images;
         // Track images getting metadata bound by this call in a set, it'll be recorded into the image_state
         // in RecordQueueBindSparse.
-        layer_data::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
+        vvl::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bind_info.imageBindCount; ++i) {
             const auto& image_bind = bind_info.pImageBinds[i];

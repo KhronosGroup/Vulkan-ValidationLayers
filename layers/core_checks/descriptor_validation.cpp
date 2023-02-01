@@ -364,7 +364,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) const {
     bool skip = false;
-    layer_data::unordered_set<uint32_t> bindings;
+    vvl::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
 
     const auto *flags_pCreateInfo = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
@@ -737,7 +737,7 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingReqMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE &cb_state,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
-    std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+    std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
     if (descriptor_set.GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
         checked_layouts.emplace();
     }

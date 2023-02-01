@@ -55,7 +55,7 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
     // in a map keyed by VulkanTypedHandle. This also allows looking for specific
     // parent types without locking every weak_ptr.
-    using NodeMap = layer_data::unordered_map<VulkanTypedHandle, std::weak_ptr<BASE_NODE>>;
+    using NodeMap = vvl::unordered_map<VulkanTypedHandle, std::weak_ptr<BASE_NODE>>;
     using NodeList = small_vector<std::shared_ptr<BASE_NODE>, 4, uint32_t>;
 
     template <typename Handle>

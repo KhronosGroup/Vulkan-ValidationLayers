@@ -29,7 +29,7 @@ class ValidationStateTracker;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
 
-using SupportedVideoProfiles = layer_data::unordered_set<std::shared_ptr<const class VideoProfileDesc>>;
+using SupportedVideoProfiles = vvl::unordered_set<std::shared_ptr<const class VideoProfileDesc>>;
 
 // The VideoProfileDesc contains the entire video profile description, which includes all
 // parameters specified in VkVideoProfileInfoKHR and its pNext chain. This includes any
@@ -146,7 +146,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
 
       private:
         std::mutex mutex_;
-        layer_data::unordered_set<VideoProfileDesc const *, VideoProfileDesc::hash, VideoProfileDesc::compare> set_;
+        vvl::unordered_set<VideoProfileDesc const *, VideoProfileDesc::hash, VideoProfileDesc::compare> set_;
 
         std::shared_ptr<const VideoProfileDesc> GetOrCreate(const ValidationStateTracker *dev_data,
                                                             VkVideoProfileInfoKHR const *profile);
@@ -196,8 +196,8 @@ class VideoPictureResource {
     VkImageSubresourceRange GetImageSubresourceRange(IMAGE_VIEW_STATE const *image_view_state, uint32_t layer);
 };
 
-using VideoPictureResources = layer_data::unordered_set<VideoPictureResource, VideoPictureResource::hash>;
-using BoundVideoPictureResources = layer_data::unordered_map<VideoPictureResource, int32_t, VideoPictureResource::hash>;
+using VideoPictureResources = vvl::unordered_set<VideoPictureResource, VideoPictureResource::hash>;
+using BoundVideoPictureResources = vvl::unordered_map<VideoPictureResource, int32_t, VideoPictureResource::hash>;
 
 struct VideoPictureID {
     // Used by H.264 to indicate it's a top field picture
@@ -289,7 +289,7 @@ class VideoSessionDeviceState {
     bool initialized_;
     std::vector<bool> is_active_;
     std::vector<VideoPictureResources> all_pictures_;
-    std::vector<layer_data::unordered_map<VideoPictureID, VideoPictureResource, VideoPictureID::hash>> pictures_per_id_;
+    std::vector<vvl::unordered_map<VideoPictureID, VideoPictureResource, VideoPictureID::hash>> pictures_per_id_;
 };
 
 class VIDEO_SESSION_STATE : public BASE_NODE {
@@ -298,7 +298,7 @@ class VIDEO_SESSION_STATE : public BASE_NODE {
         VkMemoryRequirements requirements;
         bool bound;
     };
-    using MemoryBindingMap = layer_data::unordered_map<uint32_t, MemoryBindingInfo>;
+    using MemoryBindingMap = vvl::unordered_map<uint32_t, MemoryBindingInfo>;
 
     const safe_VkVideoSessionCreateInfoKHR create_info;
     std::shared_ptr<const VideoProfileDesc> profile;
@@ -372,16 +372,16 @@ class VIDEO_SESSION_PARAMETERS_STATE : public BASE_NODE {
     using ParameterKey = uint32_t;
 
     struct H264Parameters {
-        layer_data::unordered_map<H264SPSKey, StdVideoH264SequenceParameterSet> sps;
-        layer_data::unordered_map<H264PPSKey, StdVideoH264PictureParameterSet> pps;
+        vvl::unordered_map<H264SPSKey, StdVideoH264SequenceParameterSet> sps;
+        vvl::unordered_map<H264PPSKey, StdVideoH264PictureParameterSet> pps;
         uint32_t spsCapacity;
         uint32_t ppsCapacity;
     };
 
     struct H265Parameters {
-        layer_data::unordered_map<H265VPSKey, StdVideoH265VideoParameterSet> vps;
-        layer_data::unordered_map<H265SPSKey, StdVideoH265SequenceParameterSet> sps;
-        layer_data::unordered_map<H265PPSKey, StdVideoH265PictureParameterSet> pps;
+        vvl::unordered_map<H265VPSKey, StdVideoH265VideoParameterSet> vps;
+        vvl::unordered_map<H265SPSKey, StdVideoH265SequenceParameterSet> sps;
+        vvl::unordered_map<H265PPSKey, StdVideoH265PictureParameterSet> pps;
         uint32_t vpsCapacity;
         uint32_t spsCapacity;
         uint32_t ppsCapacity;
@@ -495,4 +495,4 @@ class VIDEO_SESSION_PARAMETERS_STATE : public BASE_NODE {
 using VideoSessionUpdateList =
     std::vector<std::function<bool(const ValidationStateTracker *dev_data, const VIDEO_SESSION_STATE *vs_state,
                                    VideoSessionDeviceState &dev_state, bool do_validate)>>;
-using VideoSessionUpdateMap = layer_data::unordered_map<VkVideoSessionKHR, VideoSessionUpdateList>;
+using VideoSessionUpdateMap = vvl::unordered_map<VkVideoSessionKHR, VideoSessionUpdateList>;

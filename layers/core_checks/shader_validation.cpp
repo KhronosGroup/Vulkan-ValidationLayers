@@ -1269,7 +1269,7 @@ void GetSpecConstantValue(StageCreateInfo const *pStage, uint32_t spec_id, void 
 // Returns true if the value has been accurately filled out.
 static bool GetIntConstantValue(const Instruction *insn, const SHADER_MODULE_STATE &module_state,
                                 safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                const layer_data::unordered_map<uint32_t, uint32_t> &id_to_spec_id, uint32_t *value) {
+                                const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id, uint32_t *value) {
     const Instruction *type_id = module_state.FindDef(insn->Word(1));
     if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
         return false;
@@ -1326,9 +1326,9 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
     bool skip = false;
 
     // Map SPIR-V result ID to specialization constant id (SpecId decoration value)
-    layer_data::unordered_map<uint32_t, uint32_t> id_to_spec_id;
+    vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
     // Map SPIR-V result ID to the ID of its type.
-    layer_data::unordered_map<uint32_t, uint32_t> id_to_type_id;
+    vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
 
     struct CoopMatType {
         uint32_t scope, rows, cols;
@@ -1338,7 +1338,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
         CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_NV), all_constant(false) {}
 
         void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, safe_VkPipelineShaderStageCreateInfo const *pStage,
-                  const layer_data::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
+                  const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
             const Instruction *insn = module_state.FindDef(id);
             uint32_t component_type_id = insn->Word(2);
             uint32_t scope_id = insn->Word(3);
@@ -2658,7 +2658,7 @@ bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_sta
         return skip;
     }
 
-    layer_data::unordered_set<uint32_t> emitted_streams;
+    vvl::unordered_set<uint32_t> emitted_streams;
     bool output_points = false;
     // TODO - Don't do a full loop here over the module
     for (const Instruction &insn : module_state.GetInstructions()) {
@@ -2982,7 +2982,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             // The new optimized SPIR-V will NOT match the original SHADER_MODULE_STATE object parsing, so a new SHADER_MODULE_STATE
             // object is needed. This an issue due to each pipeline being able to reuse the same shader module but with different
             // spec constant values.
-            SHADER_MODULE_STATE spec_mod(layer_data::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
+            SHADER_MODULE_STATE spec_mod(vvl::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
 
             // According to https://github.com/KhronosGroup/Vulkan-Docs/issues/1671 anything labeled as "static use" (such as if an
             // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not
@@ -2990,7 +2990,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             // "static use" rules and need to be validated still.
 
             // see ValidateComputeSharedMemory() for details why we might track max block size
-            layer_data::unordered_set<uint32_t> aliased_id;
+            vvl::unordered_set<uint32_t> aliased_id;
             bool find_max_block = false;
 
             uint32_t workgroup_size_id = 0;  // result id can't be zero

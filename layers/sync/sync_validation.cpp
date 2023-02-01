@@ -966,7 +966,7 @@ void AccessContext::EraseIf(Predicate &&pred) {
     for (const auto address_type : kAddressTypes) {
         auto &accesses = GetAccessStateMap(address_type);
         // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
-        layer_data::EraseIf(accesses, pred);
+        vvl::EraseIf(accesses, pred);
     }
 }
 
@@ -4142,7 +4142,7 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &
 QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
     QueueBatchContext::BatchSet snapshot = GetQueueLastBatchSnapshot();
     auto append = [&snapshot](const std::shared_ptr<QueueBatchContext> &batch) {
-        if (batch && !layer_data::Contains(snapshot, batch)) {
+        if (batch && !vvl::Contains(snapshot, batch)) {
             snapshot.emplace(batch);
         }
         return false;
@@ -7630,7 +7630,7 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) 
     ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
     // Eliminate waitable fences from the current queue.
-    layer_data::EraseIf(waitable_fences_, [waited_queue](const SignaledFence &sf) { return sf.second.queue_id == waited_queue; });
+    vvl::EraseIf(waitable_fences_, [waited_queue](const SignaledFence &sf) { return sf.second.queue_id == waited_queue; });
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
@@ -7642,7 +7642,7 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult resul
     });
 
     // As we we've waited for everything on device, any waits are mooted. (except for acquires)
-    layer_data::EraseIf(waitable_fences_, [](SignaledFences::value_type &waitable) { return waitable.second.acquired.Invalid(); });
+    vvl::EraseIf(waitable_fences_, [](SignaledFences::value_type &waitable) { return waitable.second.acquired.Invalid(); });
 }
 
 struct QueuePresentCmdState {
@@ -7659,7 +7659,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!enabled[sync_validation_queue_submit]) return skip;
 
-    layer_data::TlsGuard<QueuePresentCmdState> cmd_state(&skip, signaled_semaphores_);
+    vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -7715,7 +7715,7 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
     // static payload
-    layer_data::TlsGuard<QueuePresentCmdState> cmd_state;
+    vvl::TlsGuard<QueuePresentCmdState> cmd_state;
 
     // See ValidationStateTracker::PostCallRecordQueuePresentKHR for spec excerpt supporting
     if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_DEVICE_LOST) {
@@ -7805,7 +7805,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!enabled[sync_validation_queue_submit]) return skip;
 
-    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, signaled_semaphores_);
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -7864,7 +7864,7 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
     // static payload
-    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state;
+    vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
 
     if (VK_SUCCESS != result) return;  // dispatched QueueSubmit failed
     if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
@@ -8299,7 +8299,7 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
                                            const VkPresentInfoKHR &present_info, const PresentedImages &presented_images,
                                            SignaledSemaphores &signaled) {
     ConstBatchSet batches_resolved;
-    for (VkSemaphore sem : layer_data::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount)) {
+    for (VkSemaphore sem : vvl::make_span(present_info.pWaitSemaphores, present_info.waitSemaphoreCount)) {
         std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(sem, presented_images, signaled);
         if (resolved) {
             batches_resolved.emplace(std::move(resolved));
@@ -8373,7 +8373,7 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
     ConstBatchSet batches_resolved;
     const uint32_t wait_count = submit_info.waitSemaphoreInfoCount;
     const VkSemaphoreSubmitInfo *wait_infos = submit_info.pWaitSemaphoreInfos;
-    for (const auto &wait_info : layer_data::make_span(wait_infos, wait_count)) {
+    for (const auto &wait_info : vvl::make_span(wait_infos, wait_count)) {
         std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(wait_info.semaphore, wait_info.stageMask, signaled);
         if (resolved) {
             batches_resolved.emplace(std::move(resolved));
@@ -8396,7 +8396,7 @@ void QueueBatchContext::CommonSetupAccessContext(const std::shared_ptr<const Que
     if (prev) {
         // Copy in the event state from the previous batch (on this queue)
         events_context_.DeepCopy(prev->events_context_);
-        if (!layer_data::Contains(batches_resolved, prev)) {
+        if (!vvl::Contains(batches_resolved, prev)) {
             // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
             access_context_.ResolveFromContext(NoopBarrierAction(), prev->access_context_);
             batches_resolved.emplace(prev);
@@ -8412,7 +8412,7 @@ void QueueBatchContext::CommonSetupAccessContext(const std::shared_ptr<const Que
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     async_batches_ =
         sync_state_->GetQueueLastBatchSnapshot([&batches_resolved](const std::shared_ptr<const QueueBatchContext> &batch) {
-            return !layer_data::Contains(batches_resolved, batch);
+            return !vvl::Contains(batches_resolved, batch);
         });
     for (const auto &async_batch : async_batches_) {
         const QueueId async_queue = async_batch->GetQueueId();
@@ -8437,7 +8437,7 @@ void QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info)
     const VkCommandBufferSubmitInfo *const cb_infos = submit_info.pCommandBufferInfos;
     command_buffers_.reserve(cb_count);
 
-    for (const auto &cb_info : layer_data::make_span(cb_infos, cb_count)) {
+    for (const auto &cb_info : vvl::make_span(cb_infos, cb_count)) {
         auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(cb_info.commandBuffer);
         if (cb_state) {
             tag_range_.end += cb_state->access_context.GetTagLimit();

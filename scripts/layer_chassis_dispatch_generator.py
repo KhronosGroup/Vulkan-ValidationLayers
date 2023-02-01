@@ -1204,7 +1204,7 @@ void DispatchGetPrivateData(
     layer_data->device_dispatch_table.GetPrivateData(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
-layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 
 std::shared_mutex dispatch_secondary_cb_map_mutex;
 

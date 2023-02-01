@@ -207,7 +207,7 @@ struct SubresourceRangeErrorCodes {
     const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
 };
 
-typedef layer_data::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+typedef vvl::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 // Much of the data stored in CMD_BUFFER_STATE is only used by core validation, and is
 // set up by Record calls in class CoreChecks. Because both the state tracker and
@@ -250,11 +250,11 @@ struct SemaphoreSubmitState {
     const CoreChecks* core;
     VkQueue queue;
     VkQueueFlags queue_flags;
-    layer_data::unordered_set<VkSemaphore> signaled_semaphores;
-    layer_data::unordered_set<VkSemaphore> unsignaled_semaphores;
-    layer_data::unordered_set<VkSemaphore> internal_semaphores;
-    layer_data::unordered_map<VkSemaphore, uint64_t> timeline_signals;
-    layer_data::unordered_map<VkSemaphore, uint64_t> timeline_waits;
+    vvl::unordered_set<VkSemaphore> signaled_semaphores;
+    vvl::unordered_set<VkSemaphore> unsignaled_semaphores;
+    vvl::unordered_set<VkSemaphore> internal_semaphores;
+    vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
+    vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
 
     SemaphoreSubmitState(const CoreChecks* core_, VkQueue q_, VkQueueFlags queue_flags_)
         : core(core_), queue(q_), queue_flags(queue_flags_) {}
@@ -748,7 +748,7 @@ class CoreChecks : public ValidationStateTracker {
         const VkFramebuffer framebuffer;
         bool record_time_validate;
         const std::vector<uint32_t>& dynamic_offsets;
-        std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
+        std::optional<vvl::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
     };
     using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;
 

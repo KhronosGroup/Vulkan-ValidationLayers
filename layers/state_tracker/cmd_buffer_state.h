@@ -87,7 +87,7 @@ class EVENT_STATE : public BASE_NODE {
 // Only CoreChecks uses this, but the state tracker stores it.
 constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
 using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
-typedef layer_data::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
+typedef vvl::unordered_map<VkEvent, VkPipelineStageFlags2KHR> EventToStageMap;
 
 // Track command pools and their command buffers
 class COMMAND_POOL_STATE : public BASE_NODE {
@@ -98,7 +98,7 @@ class COMMAND_POOL_STATE : public BASE_NODE {
     const VkQueueFlags queue_flags;
     const bool unprotected;  // can't be used for protected memory
     // Cmd buffers allocated from this pool
-    layer_data::unordered_map<VkCommandBuffer, CMD_BUFFER_STATE *> commandBuffers;
+    vvl::unordered_map<VkCommandBuffer, CMD_BUFFER_STATE *> commandBuffers;
 
     COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
                        VkQueueFlags flags);
@@ -150,9 +150,9 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-typedef layer_data::unordered_map<const IMAGE_STATE *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
+typedef vvl::unordered_map<const IMAGE_STATE *, std::shared_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
-typedef layer_data::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
+typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>
     CommandBufferAliasedLayoutMap;
 
 class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
@@ -230,7 +230,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         std::shared_ptr<std::vector<SUBPASS_INFO>> subpasses;
         std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> attachments;
     };
-    layer_data::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
+    vvl::unordered_map<VkDescriptorSet, std::vector<CmdDrawDispatchInfo>> validate_descriptorsets_in_queuesubmit;
 
     // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
     // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
@@ -284,19 +284,19 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    layer_data::unordered_set<std::shared_ptr<BASE_NODE>> object_bindings;
-    layer_data::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
+    vvl::unordered_set<std::shared_ptr<BASE_NODE>> object_bindings;
+    vvl::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
 
-    layer_data::unordered_set<VkEvent> waitedEvents;
+    vvl::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
-    layer_data::unordered_set<QueryObject> activeQueries;
-    layer_data::unordered_set<QueryObject> startedQueries;
-    layer_data::unordered_set<QueryObject> resetQueries;
-    layer_data::unordered_set<QueryObject> updatedQueries;
+    vvl::unordered_set<QueryObject> activeQueries;
+    vvl::unordered_set<QueryObject> startedQueries;
+    vvl::unordered_set<QueryObject> resetQueries;
+    vvl::unordered_set<QueryObject> updatedQueries;
     CommandBufferImageLayoutMap image_layout_map;
     CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
@@ -304,7 +304,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // If primary, the secondary command buffers we will call.
-    layer_data::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
+    vvl::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const ValidationStateTracker &device_data, const class QUEUE_STATE &queue_state,
                                              const CMD_BUFFER_STATE &cb_state)>;
@@ -320,7 +320,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
-    layer_data::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
+    vvl::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
         descriptorset_cache;
     IndexBufferBinding index_buffer_binding;
     bool performance_lock_acquired = false;
@@ -375,7 +375,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         AddChild(base);
     }
     template <typename StateObject>
-    void AddChildren(layer_data::span<std::shared_ptr<StateObject>> &child_nodes) {
+    void AddChildren(vvl::span<std::shared_ptr<StateObject>> &child_nodes) {
         for (auto &child_node : child_nodes) {
             AddChild(child_node);
         }
@@ -461,7 +461,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo);
     void DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo);
 
-    void ExecuteCommands(layer_data::span<const VkCommandBuffer> secondary_command_buffers);
+    void ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,
                                        uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
