@@ -173,6 +173,28 @@ static inline int MostSignificantBit(uint32_t mask) {
 #endif
 }
 
+static inline int u_ffs(int val) {
+#ifdef WIN32
+    unsigned long bit_pos = 0;
+    if (_BitScanForward(&bit_pos, val) != 0) {
+        bit_pos += 1;
+    }
+    return bit_pos;
+#else
+    return ffs(val);
+#endif
+}
+
+// Returns the 0-based index of the LSB. An input mask of 0 yields -1
+static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
+
+template <typename FlagBits, typename Flags>
+FlagBits LeastSignificantFlag(Flags flags) {
+    const int bit_shift = LeastSignificantBit(flags);
+    assert(bit_shift != -1);
+    return static_cast<FlagBits>(1ull << bit_shift);
+}
+
 // Iterates over all set bits and calls the callback with a bit mask corresponding to each flag.
 // FlagBits and Flags follow Vulkan naming convensions for flag types.
 // An example of a more efficient implementation: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
@@ -181,7 +203,7 @@ void IterateFlags(Flags flags, Callback callback) {
     uint32_t bit_shift = 0;
     while (flags) {
         if (flags & 1) {
-            if (!callback(static_cast<FlagBits>(1ull << bit_shift))) return;
+            callback(static_cast<FlagBits>(1ull << bit_shift));
         }
         flags >>= 1;
         ++bit_shift;
@@ -382,18 +404,6 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &whitelist);
-
-static inline int u_ffs(int val) {
-#ifdef WIN32
-    unsigned long bit_pos = 0;
-    if (_BitScanForward(&bit_pos, val) != 0) {
-        bit_pos += 1;
-    }
-    return bit_pos;
-#else
-    return ffs(val);
-#endif
-}
 
 #ifdef __cplusplus
 }
