@@ -166,15 +166,18 @@ struct FragmentOutputState {
         : FragmentOutputState(p, rp, create_info.subpass) {
         if (create_info.pColorBlendState) {
             if (create_info.pColorBlendState) {
-                color_blend_state = ToSafeColorBlendState(*create_info.pColorBlendState);
-                dual_source_blending = GetDualSourceBlending(color_blend_state.get());
+                const auto &cbci = *create_info.pColorBlendState;
+                color_blend_state = ToSafeColorBlendState(cbci);
+                // In case of being dynamic state
+                if (cbci.pAttachments) {
+                    dual_source_blending = GetDualSourceBlending(color_blend_state.get());
+                    if (cbci.attachmentCount) {
+                        attachments.reserve(cbci.attachmentCount);
+                        std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachments));
+                    }
+                    blend_constants_enabled = IsBlendConstantsEnabled(attachments);
+                }
             }
-            const auto &cbci = *create_info.pColorBlendState;
-            if (cbci.attachmentCount) {
-                attachments.reserve(cbci.attachmentCount);
-                std::copy(cbci.pAttachments, cbci.pAttachments + cbci.attachmentCount, std::back_inserter(attachments));
-            }
-            blend_constants_enabled = IsBlendConstantsEnabled(attachments);
         }
 
         if (create_info.pMultisampleState) {
