@@ -50,7 +50,7 @@ bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDyn
                                          const char *msg_code) const {
     if (!(cb_state.status[status])) {
         return LogError(cb_state.commandBuffer(), msg_code, "%s: %s state not set for this command buffer.",
-                        CommandTypeString(cmd_type), DynamicStateString(status).c_str());
+                        CommandTypeString(cmd_type), DynamicStateToString(status));
     }
     return false;
 }
@@ -193,7 +193,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         skip |= LogError(objlist, vuid.dynamic_state_setting_commands,
                          "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands",
                          CommandTypeString(cmd_type), report_data->FormatHandle(pipeline.pipeline()).c_str(),
-                         DynamicStateString(invalid_status).c_str());
+                         DynamicStatesToString(invalid_status).c_str());
     }
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.

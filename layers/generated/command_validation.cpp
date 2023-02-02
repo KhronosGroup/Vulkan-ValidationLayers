@@ -1561,7 +1561,11 @@ static CBDynamicStatus ConvertToCBDynamicStatus(VkDynamicState state) {
     }
 }
 
-std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
+const char* DynamicStateToString(CBDynamicStatus status) {
+    return string_VkDynamicState(ConvertToDynamicState(status));
+}
+
+std::string DynamicStatesToString(CBDynamicFlags const &dynamic_state) {
     std::string ret;
     // enum is not zero based
     for (int index = 1; index < CB_DYNAMIC_STATUS_NUM; ++index) {

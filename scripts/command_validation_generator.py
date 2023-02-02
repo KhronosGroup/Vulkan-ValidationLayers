@@ -264,7 +264,8 @@ typedef enum CBDynamicStatus {\n'''
 } CBDynamicStatus;
 
 using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATUS_NUM>;
-std::string DynamicStateString(CBDynamicFlags const &dynamic_state);
+const char* DynamicStateToString(CBDynamicStatus status);
+std::string DynamicStatesToString(CBDynamicFlags const &dynamic_state);
 struct VkPipelineDynamicStateCreateInfo;
 CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);
 '''
@@ -527,7 +528,11 @@ static CBDynamicStatus ConvertToCBDynamicStatus(VkDynamicState state) {
 '''
 
         output += '''
-std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
+const char* DynamicStateToString(CBDynamicStatus status) {
+    return string_VkDynamicState(ConvertToDynamicState(status));
+}
+
+std::string DynamicStatesToString(CBDynamicFlags const &dynamic_state) {
     std::string ret;
     // enum is not zero based
     for (int index = 1; index < CB_DYNAMIC_STATUS_NUM; ++index) {
