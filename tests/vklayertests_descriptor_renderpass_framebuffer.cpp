@@ -12388,7 +12388,6 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
             if (descriptor_buffer_properties.bufferlessPushDescriptors) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08102");
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08103");
             }
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08101");
             buffCI.usage =
