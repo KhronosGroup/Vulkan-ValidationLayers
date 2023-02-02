@@ -572,7 +572,8 @@ typedef enum CBDynamicStatus {
 } CBDynamicStatus;
 
 using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATUS_NUM>;
-std::string DynamicStateString(CBDynamicFlags const &dynamic_state);
+const char* DynamicStateToString(CBDynamicStatus status);
+std::string DynamicStatesToString(CBDynamicFlags const &dynamic_state);
 struct VkPipelineDynamicStateCreateInfo;
 CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);
 
