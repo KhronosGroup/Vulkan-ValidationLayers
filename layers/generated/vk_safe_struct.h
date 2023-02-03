@@ -488,9 +488,7 @@ struct safe_VkShaderModuleCreateInfo {
     // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
     template<typename Container>
     void SetCode(const Container &code) {
-        if (pCode) {
-            delete[] pCode;
-        }
+        delete[] pCode;
         codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
         pCode = new uint32_t[code.size()];
         std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));

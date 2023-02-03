@@ -463,13 +463,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
-        if (gs) {
-            delete gs;
-        }
-        if (tcs && tes) {
-            delete tcs;
-            delete tes;
-        }
+        delete gs;
+        delete tcs;
+        delete tes;
     }
     auto c_queue = m_device->GetDefaultComputeQueue();
     if (c_queue && descriptor_indexing) {
