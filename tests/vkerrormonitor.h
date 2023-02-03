@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ class ErrorMonitor {
     // function and its definition.
     bool IgnoreMessage(std::string const &msg) const;
     bool AnyDesiredMsgFound() const;
-    void DumpFailureMsgs() const;
     void MonitorReset();
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }
 
@@ -79,7 +78,6 @@ class ErrorMonitor {
     std::unordered_multiset<std::string> failure_message_strings_;
     std::vector<std::string> ignore_message_strings_;
     std::vector<std::string> allowed_message_strings_;
-    std::vector<std::string> other_messages_;
     mutable std::mutex mutex_;
     std::atomic<bool> *bailout_{};
     bool message_found_{};
