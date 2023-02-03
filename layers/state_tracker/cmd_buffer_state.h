@@ -200,6 +200,23 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         std::bitset<32> discard_rectangles;
         // VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT
         VkSampleCountFlagBits rasterization_samples;
+
+        // maxColorAttachments is at max 8 on all known implementations currently
+        std::bitset<32> color_blend_enable_attachments;    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT
+        std::bitset<32> color_blend_equation_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
+        std::bitset<32> color_write_mask_attachments;      // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
+        std::bitset<32> color_blend_advanced_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
+
+        // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
+        // setting the state, it will fail in ValidateCBDynamicStatus() for us. Some values (ex. the bitset) are tracking in
+        // replacement for static_status/dynamic_status so this needs to reset along with those
+        void reset() {
+            discard_rectangles.reset();
+            color_blend_enable_attachments.reset();
+            color_blend_equation_attachments.reset();
+            color_write_mask_attachments.reset();
+            color_blend_advanced_attachments.reset();
+        }
     } dynamic_state_value;
 
     std::string begin_rendering_func_name;
@@ -268,6 +285,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
     std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> active_attachments;
     std::set<std::shared_ptr<IMAGE_VIEW_STATE>> attachments_view_states;
+    vvl::unordered_set<uint32_t> active_color_attachments_index;
 
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
@@ -443,6 +461,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents);
+    void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses);
     void EndRenderPass(CMD_TYPE cmd_type);
 
     void BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo);

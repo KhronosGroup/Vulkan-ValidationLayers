@@ -9700,7 +9700,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07628");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-firstAttachment-07477");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -9810,7 +9810,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07635");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-firstAttachment-07479");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -10325,6 +10325,77 @@ TEST_F(VkLayerTest, DynamicRasterizationSamples) {
 
     // Should be valid now
     vkCmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicColorBlendAttchment) {
+    TEST_DESCRIPTION("Test all color blend attachments are dynamically set at draw time.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state3_features);
+    GetPhysicalDeviceFeatures2(features2);
+
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
+        GTEST_SKIP() << "DynamicState3 features not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    constexpr uint32_t color_attachments = 2;
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(color_attachments));
+
+    auto vkCmdSetColorBlendEnableEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendEnableEXT>("vkCmdSetColorBlendEnableEXT");
+
+    std::stringstream fsSource;
+    fsSource << "#version 450\n";
+    for (uint32_t i = 0; i < color_attachments; ++i) {
+        fsSource << "layout(location = " << i << ") out vec4 c" << i << ";\n";
+    }
+    fsSource << " void main() {\n";
+    for (uint32_t i = 0; i < color_attachments; ++i) {
+        fsSource << "c" << i << " = vec4(0.0f);\n";
+    }
+
+    fsSource << "}";
+    VkShaderObj fs(this, fsSource.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT};
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dynamic_create_info.pDynamicStates = dynamic_states;
+    dynamic_create_info.dynamicStateCount = 1;
+
+    CreatePipelineHelper pipe(*this, color_attachments);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dyn_state_ci_ = dynamic_create_info;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkBool32 color_blend_enabled[2] = {VK_FALSE, VK_FALSE};
+    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-firstAttachment-07476");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // all are set now so should work
+    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 2, &color_blend_enabled[0]);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -11745,6 +11816,150 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
+    TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
+
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdSetDiscardRectangleEXT =
+        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+
+    auto discard_rect_ci = LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
+    discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
+    discard_rect_ci.discardRectangleCount = 1;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &discard_rect_ci;
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkRect2D discard_rectangles = {{0, 0}, {16, 16}};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // The dynamic state was not set for this lifetime of this command buffer
+    // implicitly via vkBeginCommandBuffer
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07751");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    // set again for this command buffer
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // reset command buffer from the pool
+    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07751");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
+    TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
+    GetPhysicalDeviceProperties2(sample_locations_props);
+
+    if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";
+    }
+
+    auto vkCmdSetSampleLocationsEXT =
+        reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetSampleLocationsEXT"));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+
+    pipe.CreateGraphicsPipeline();
+
+    VkSampleLocationEXT sample_location = {0.5f, 0.5f};
+    auto sample_locations_info = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = 1;
+    sample_locations_info.pSampleLocations = &sample_location;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // The dynamic state was not set for this lifetime of this command buffer
+    // implicitly via vkBeginCommandBuffer
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06666");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    // set again for this command buffer
+    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    // reset command buffer from the pool
+    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06666");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
