@@ -498,8 +498,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMappedMemoryRangeDeviceLimits(const char* func_name, uint32_t mem_range_count,
                                                const VkMappedMemoryRange* mem_ranges) const;
     bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE& cb_state, const CMD_BUFFER_STATE& sub_cb_state) const;
-    bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE& cb_state, VkCommandBuffer secondaryBuffer,
-                             const CMD_BUFFER_STATE& sub_cb_state, const char* caller) const;
+    bool ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE& cb_state,
+                                            VkCommandBuffer secondaryBuffer, const CMD_BUFFER_STATE& sub_cb_state,
+                                            const char* caller) const;
     bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo) const;
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const char* caller_name) const;
@@ -514,7 +515,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type,
                                   const VkSubpassEndInfo* pSubpassEndInfo) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
-    bool ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo* pCreateInfo) const;
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
     bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
