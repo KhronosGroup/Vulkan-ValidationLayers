@@ -135,17 +135,13 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         }
     }
 
-    int32_t location = 0;
-    if (text_vuid != nullptr) {
-        // Hash for vuid text
-        location = XXH32(text_vuid, strlen(text_vuid), 8);
-    }
+    const uint32_t message_id_number = text_vuid ? vvl_vuid_hash(text_vuid) : 0U;
 
     auto callback_data = LvlInitStruct<VkDebugUtilsMessengerCallbackDataEXT>();
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
-    callback_data.messageIdNumber = static_cast<int32_t>(location);
-    callback_data.pMessage = NULL;
+    callback_data.messageIdNumber = vvl_bit_cast<int32_t>(message_id_number);
+    callback_data.pMessage = nullptr;
     callback_data.queueLabelCount = static_cast<uint32_t>(queue_labels.size());
     callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
     callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
@@ -182,7 +178,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
             oss << "Object " << index++ << ": VK_NULL_HANDLE, type = " << string_VkObjectType(src_object.objectType) << "; ";
         }
     }
-    oss << "| MessageID = 0x" << std::hex << location << " | " << message;
+    oss << "| MessageID = 0x" << std::hex << message_id_number << " | " << message;
     std::string composite = oss.str();
 
     const auto callback_list = &debug_data->debug_callback_list;
@@ -214,7 +210,8 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
             // VK_EXT_debug_report callback (deprecated)
             if (current_callback.debug_report_callback_function_ptr(
                     msg_flags, convertCoreObjectToDebugReportObject(object_name_info[0].objectType),
-                    object_name_info[0].objectHandle, location, 0, layer_prefix, composite.c_str(), current_callback.pUserData)) {
+                    object_name_info[0].objectHandle, message_id_number, 0, layer_prefix, composite.c_str(),
+                    current_callback.pUserData)) {
                 bail = true;
             }
         }
@@ -334,7 +331,7 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, const std::string
         return false;
     }
     // If message is in filter list, bail out very early
-    const uint32_t message_id = XXH32(vuid_text.data(), vuid_text.size(), 8);
+    const uint32_t message_id = vvl_vuid_hash(vuid_text);
     if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
         != debug_data->filter_message_ids.end()) {
         return false;
@@ -569,4 +566,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
 #endif
 
     return false;
+}
+
+uint32_t vvl_vuid_hash(std::string_view vuid) {
+    constexpr uint32_t seed = 8;
+    return XXH32(vuid.data(), vuid.size(), seed);
 }

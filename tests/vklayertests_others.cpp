@@ -30,6 +30,8 @@
 #include "core_validation_error_enums.h"
 #include "layer_validation_tests.h"
 #include "vk_layer_utils.h"
+#include "generated/vk_validation_error_messages.h"
+#include "vk_layer_logging.h"
 
 class MessageIdFilter {
   public:
@@ -392,7 +394,33 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 }
 
-TEST_F(VkLayerTest, MessageIdFilterString) {
+TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
+    TEST_DESCRIPTION("Ensure there are no VUID hash collisions");
+
+    constexpr uint64_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text[0]);
+    std::vector<uint32_t> hashes;
+    hashes.reserve(num_vuids);
+    for (const auto &vuid_spec_text_pair : vuid_spec_text) {
+        const uint32_t hash = vvl_vuid_hash(vuid_spec_text_pair.vuid);
+        hashes.push_back(hash);
+    }
+    std::sort(hashes.begin(), hashes.end());
+    const auto it = std::adjacent_find(hashes.begin(), hashes.end());
+    ASSERT_TRUE(it == hashes.end());
+}
+
+TEST_F(VkLayerTest, VuidHashStability) {
+    TEST_DESCRIPTION("Ensure stability of VUID hashes clients rely on for filtering");
+
+    ASSERT_TRUE(vvl_vuid_hash("VUID-VkRenderPassCreateInfo-pNext-01963") == 0xa19880e3);
+    ASSERT_TRUE(vvl_vuid_hash("VUID-BaryCoordKHR-BaryCoordKHR-04154") == 0xcc72e520);
+    ASSERT_TRUE(vvl_vuid_hash("VUID-FragDepth-FragDepth-04213") == 0x840af838);
+    ASSERT_TRUE(vvl_vuid_hash("VUID-RayTmaxKHR-RayTmaxKHR-04349") == 0x8e67514c);
+    ASSERT_TRUE(vvl_vuid_hash("VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379") == 0x2f574188);
+    ASSERT_TRUE(vvl_vuid_hash("VUID-StandaloneSpirv-MeshEXT-07111") == 0xee813cd2);
+}
+
+TEST_F(VkLayerTest, VuidIdFilterString) {
     TEST_DESCRIPTION("Validate that message id string filtering is working");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -425,7 +453,7 @@ TEST_F(VkLayerTest, MessageIdFilterString) {
                          nullptr);
 }
 
-TEST_F(VkLayerTest, MessageIdFilterHexInt) {
+TEST_F(VkLayerTest, VuidFilterHexInt) {
     TEST_DESCRIPTION("Validate that message id hex int filtering is working");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -458,7 +486,7 @@ TEST_F(VkLayerTest, MessageIdFilterHexInt) {
                          nullptr);
 }
 
-TEST_F(VkLayerTest, MessageIdFilterInt) {
+TEST_F(VkLayerTest, VuidFilterInt) {
     TEST_DESCRIPTION("Validate that message id decimal int filtering is working");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
