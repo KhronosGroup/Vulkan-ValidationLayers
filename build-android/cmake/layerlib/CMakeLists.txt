@@ -85,7 +85,6 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/render_pass_validation.cpp
         ${SRC_DIR}/layers/state_tracker/video_session_state.cpp
         ${SRC_DIR}/layers/core_checks/video_validation.cpp
-        ${SRC_DIR}/layers/core_checks/core_validation.cpp
         ${SRC_DIR}/layers/core_checks/drawdispatch_validation.cpp
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
         ${SRC_DIR}/layers/state_tracker/descriptor_sets.cpp

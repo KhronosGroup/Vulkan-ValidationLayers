@@ -1079,7 +1079,6 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t bar
     }
 }
 
-// explictly instantiate this template so it can be used in core_validation.cpp
 template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                  const VkImageMemoryBarrier *barrier);
 template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,

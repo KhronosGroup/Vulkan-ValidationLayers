@@ -62,7 +62,6 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/render_pass_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/render_pass_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/video_session_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/video_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/core_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/drawdispatch_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/descriptor_validation.cpp

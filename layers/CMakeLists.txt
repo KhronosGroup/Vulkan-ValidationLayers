@@ -168,7 +168,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/cmd_buffer_dynamic_validation.cpp
     core_checks/cmd_buffer_validation.cpp
     core_checks/copy_blit_resolve_validation.cpp
-    core_checks/core_validation.cpp
     core_checks/core_validation.h
     core_checks/descriptor_validation.cpp
     core_checks/device_validation.cpp

@@ -2579,3 +2579,259 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateMeshShaderStage(*cb_state, cmd_type, false);
     return skip;
 }
+
+// Validate overall state at the time of a draw call
+bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type, const bool indexed,
+                                         const VkPipelineBindPoint bind_point) const {
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *function = CommandTypeString(cmd_type);
+    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const auto &last_bound = cb_state.lastBound[lv_bind_point];
+    const auto *last_pipeline = last_bound.pipeline_state;
+
+    if (nullptr == last_pipeline) {
+        return LogError(cb_state.commandBuffer(), vuid.pipeline_bound,
+                        "Must not call %s on this command buffer while there is no %s pipeline bound.", function,
+                        string_VkPipelineBindPoint(bind_point));
+    }
+    const PIPELINE_STATE &pipeline = *last_pipeline;
+
+    bool result = false;
+
+    for (const auto &ds : last_bound.per_set) {
+        if (pipeline.descriptor_buffer_mode) {
+            if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
+                result |= LogError(objlist, vuid.descriptor_buffer_set_offset_missing,
+                                   "%s: pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
+                                   function, string_VkPipelineBindPoint(bind_point),
+                                   report_data->FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
+                break;
+            }
+
+        } else {
+            if (ds.bound_descriptor_buffer.has_value()) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                result |= LogError(objlist, vuid.descriptor_buffer_bit_not_set,
+                                   "%s: pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
+                                   " (index=%" PRIu32 " offset=%" PRIu64 ")",
+                                   function, string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
+                                   ds.bound_descriptor_buffer->offset);
+                break;
+            }
+        }
+    }
+
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
+        result |= ValidateDrawDynamicState(cb_state, pipeline, cmd_type);
+        result |= ValidatePipelineDrawtimeState(last_bound, cb_state, cmd_type, pipeline);
+
+        if (indexed && !cb_state.index_buffer_binding.bound()) {
+            return LogError(cb_state.commandBuffer(), vuid.index_binding,
+                            "%s: Index buffer object has not been bound to this command buffer.", function);
+        }
+
+        if (cb_state.activeRenderPass && cb_state.activeFramebuffer) {
+            // Verify attachments for unprotected/protected command buffer.
+            if (enabled_features.core11.protectedMemory == VK_TRUE && cb_state.active_attachments) {
+                uint32_t i = 0;
+                for (const auto &view_state : *cb_state.active_attachments.get()) {
+                    const auto &subpass = cb_state.active_subpasses->at(i);
+                    if (subpass.used && view_state && !view_state->Destroyed()) {
+                        std::string image_desc = "Image is ";
+                        image_desc.append(string_VkImageUsageFlagBits(subpass.usage));
+                        // Because inputAttachment is read only, it doesn't need to care protected command buffer case.
+                        // Some CMD_TYPE could not be protected. See VUID 02711.
+                        if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
+                            vuid.protected_command_buffer != kVUIDUndefined) {
+                            result |= ValidateUnprotectedImage(cb_state, *view_state->image_state, function,
+                                                               vuid.protected_command_buffer, image_desc.c_str());
+                        }
+                        result |= ValidateProtectedImage(cb_state, *view_state->image_state, function,
+                                                         vuid.unprotected_command_buffer, image_desc.c_str());
+                    }
+                    ++i;
+                }
+            }
+        }
+    }
+    // Now complete other state checks
+    std::string error_string;
+    auto const &pipeline_layout = pipeline.PipelineLayoutState();
+
+    // Check if the current pipeline is compatible for the maximum used set with the bound sets.
+    if (!pipeline.descriptor_buffer_mode) {
+        if (!pipeline.active_slots.empty() && !IsBoundSetCompat(pipeline.max_active_slot, last_bound, *pipeline_layout)) {
+            LogObjectList objlist(pipeline.pipeline());
+            const auto layouts = pipeline.PipelineLayoutStateUnion();
+            std::ostringstream pipe_layouts_log;
+            if (layouts.size() > 1) {
+                pipe_layouts_log << "a union of layouts [ ";
+                for (const auto &layout : layouts) {
+                    objlist.add(layout->layout());
+                    pipe_layouts_log << report_data->FormatHandle(layout->layout()) << " ";
+                }
+                pipe_layouts_log << "]";
+            } else {
+                pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
+            }
+            objlist.add(last_bound.pipeline_layout);
+            result |= LogError(objlist, vuid.compatible_pipeline,
+                               "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
+                               ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
+                               function, report_data->FormatHandle(pipeline.pipeline()).c_str(), pipe_layouts_log.str().c_str(),
+                               pipeline.max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
+        } else {
+            // if the bound set is not copmatible, the rest will just be extra redundant errors
+            for (const auto &set_binding_pair : pipeline.active_slots) {
+                uint32_t set_index = set_binding_pair.first;
+                const auto set_info = last_bound.per_set[set_index];
+                if (!set_info.bound_descriptor_set) {
+                    result |= LogError(cb_state.commandBuffer(), vuid.compatible_pipeline,
+                                       "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
+                                       report_data->FormatHandle(pipeline.pipeline()).c_str(), set_index);
+                } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index,
+                                                         error_string)) {
+                    // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
+                    VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
+                    const LogObjectList objlist(set_handle, pipeline_layout->layout());
+                    result |= LogError(objlist, vuid.compatible_pipeline,
+                                       "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
+                                       report_data->FormatHandle(set_handle).c_str(), set_index,
+                                       report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
+                } else {  // Valid set is bound and layout compatible, validate that it's updated
+                    // Pull the set node
+                    const auto *descriptor_set = set_info.bound_descriptor_set.get();
+                    assert(descriptor_set);
+                    // Validate the draw-time state for this descriptor set
+                    std::string err_str;
+                    // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
+                    // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
+                    // Here, the currently bound pipeline determines whether an image validation check is redundant...
+                    // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
+                    cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
+                    const auto &binding_req_map = reduced_map.FilteredMap(cb_state, pipeline);
+
+                    // We can skip validating the descriptor set if "nothing" has changed since the last validation.
+                    // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
+                    // any dynamic descriptors, always revalidate rather than caching the values. We currently only
+                    // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
+                    // binding_req_map which could potentially be expensive.
+                    bool descriptor_set_changed =
+                        !reduced_map.IsManyDescriptors() ||
+                        // Revalidate each time if the set has dynamic offsets
+                        set_info.dynamicOffsets.size() > 0 ||
+                        // Revalidate if descriptor set (or contents) has changed
+                        set_info.validated_set != descriptor_set ||
+                        set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                        (!disabled[image_layout_validation] &&
+                         set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
+                    bool need_validate =
+                        descriptor_set_changed ||
+                        // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
+                        !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
+                                       binding_req_map.begin(), binding_req_map.end());
+
+                    if (need_validate) {
+                        if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
+                            // Only validate the bindings that haven't already been validated
+                            BindingReqMap delta_reqs;
+                            std::set_difference(binding_req_map.begin(), binding_req_map.end(),
+                                                set_info.validated_set_binding_req_map.begin(),
+                                                set_info.validated_set_binding_req_map.end(),
+                                                vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                            result |=
+                                ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function, vuid);
+                        } else {
+                            result |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state,
+                                                        function, vuid);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Verify if push constants have been set
+    // NOTE: Currently not checking whether active push constants are compatible with the active pipeline, nor whether the
+    //       "life times" of push constants are correct.
+    //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
+    if (!cb_state.push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges)) {
+        for (const auto &stage : pipeline.stage_state) {
+            const auto *push_constants =
+                stage.module_state->FindEntrypointPushConstant(stage.create_info->pName, stage.create_info->stage);
+            if (!push_constants || !push_constants->IsUsed()) {
+                continue;
+            }
+
+            // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
+            if (!cb_state.push_constant_data_ranges && !enabled_features.core13.maintenance4) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline_layout->layout(), pipeline.pipeline());
+                result |= LogError(objlist, vuid.push_constants_set,
+                                   "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
+                                   "pipeline layout %s.",
+                                   function, string_VkShaderStageFlags(stage.stage_flag).c_str(),
+                                   report_data->FormatHandle(pipeline_layout->layout()).c_str());
+            }
+
+            const auto it = cb_state.push_constant_data_update.find(stage.stage_flag);
+            if (it == cb_state.push_constant_data_update.end()) {
+                // This error has been printed in ValidatePushConstantUsage.
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
+                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo2) const {
+    if (pSampleLocationsInfo1->sampleLocationsPerPixel != pSampleLocationsInfo2->sampleLocationsPerPixel ||
+        pSampleLocationsInfo1->sampleLocationGridSize.width != pSampleLocationsInfo2->sampleLocationGridSize.width ||
+        pSampleLocationsInfo1->sampleLocationGridSize.height != pSampleLocationsInfo2->sampleLocationGridSize.height ||
+        pSampleLocationsInfo1->sampleLocationsCount != pSampleLocationsInfo2->sampleLocationsCount) {
+        return false;
+    }
+    for (uint32_t i = 0; i < pSampleLocationsInfo1->sampleLocationsCount; ++i) {
+        if (pSampleLocationsInfo1->pSampleLocations[i].x != pSampleLocationsInfo2->pSampleLocations[i].x ||
+            pSampleLocationsInfo1->pSampleLocations[i].y != pSampleLocationsInfo2->pSampleLocations[i].y) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller_name = CommandTypeString(cmd_type);
+
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), buffer_state, caller_name, vuid.indirect_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(cb_state.commandBuffer(), buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     vuid.indirect_buffer_bit, caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    if (cb_state.unprotected == false) {
+        skip |= LogError(cb_state.Handle(), vuid.indirect_protected_cb,
+                         "%s: Indirect commands can't be used in protected command buffers.", caller_name);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateIndirectCountCmd(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &count_buffer_state,
+                                          VkDeviceSize count_buffer_offset, CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller_name = CommandTypeString(cmd_type);
+
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), count_buffer_state, caller_name,
+                                          vuid.indirect_count_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(cb_state.commandBuffer(), count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     vuid.indirect_count_buffer_bit, caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.createInfo.size) {
+        const LogObjectList objlist(cb_state.Handle(), count_buffer_state.Handle());
+        skip |= LogError(objlist, vuid.indirect_count_offset,
+                         "%s: countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
+                         caller_name, count_buffer_offset, count_buffer_state.createInfo.size);
+    }
+    return skip;
+}

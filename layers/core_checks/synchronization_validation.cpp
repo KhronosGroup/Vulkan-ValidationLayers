@@ -48,6 +48,22 @@
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
 
+ReadLockGuard CoreChecks::ReadLock() const {
+    if (fine_grained_locking) {
+        return ReadLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return ReadLockGuard(validation_object_mutex);
+    }
+}
+
+WriteLockGuard CoreChecks::WriteLock() {
+    if (fine_grained_locking) {
+        return WriteLockGuard(validation_object_mutex, std::defer_lock);
+    } else {
+        return WriteLockGuard(validation_object_mutex);
+    }
+}
+
 extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                         const VkImageMemoryBarrier *barrier);
 extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
