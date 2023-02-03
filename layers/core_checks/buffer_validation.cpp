@@ -315,10 +315,11 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 
         if ((external_memory_info->handleTypes & compatible_types) != external_memory_info->handleTypes) {
-            skip |= LogError(device, "VUID-VkBufferCreateInfo-pNext-00920",
-                             "vkCreateBuffer(): VkBufferCreateInfo pNext chain contains VkExternalMemoryBufferCreateInfo with "
-                             "unsupported or incompatible handleTypes flags (%s).",
-                             string_VkExternalMemoryHandleTypeFlags(external_memory_info->handleTypes).c_str());
+            skip |= LogError(
+                device, "VUID-VkBufferCreateInfo-pNext-00920",
+                "vkCreateBuffer(): VkBufferCreateInfo pNext chain contains VkExternalMemoryBufferCreateInfo with handleTypes flags "
+                "(%s) that are not reported as compatible by vkGetPhysicalDeviceExternalBufferProperties.",
+                string_VkExternalMemoryHandleTypeFlags(external_memory_info->handleTypes).c_str());
         }
     }
 
