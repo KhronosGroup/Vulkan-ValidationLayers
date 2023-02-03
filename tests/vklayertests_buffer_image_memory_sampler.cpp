@@ -12433,6 +12433,161 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, BufferMemoryWithUnsupportedExternalHandleType) {
+    TEST_DESCRIPTION("Bind buffer memory with unsupported external memory handle type.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    const auto buffer_info =
+        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto exportable_types =
+        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (exportable_types == AllVkExternalMemoryHandleTypeFlagBits) {
+        GTEST_SKIP() << "This test requires at least one unsupported handle type, but all handle types are supported";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+    external_buffer_info.handleTypes = handle_type;
+
+    // Create memory object with unsupported handle type
+    const auto not_supported_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(~exportable_types);
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = handle_type | not_supported_type;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    vk_testing::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, BufferMemoryWithNotCompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Bind buffer memory with not compatible external memory handle types.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    const auto buffer_info =
+        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto exportable_types =
+        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+    const auto compatible_types = GetCompatibleHandleTypes(*this, buffer_info, handle_type);
+    if ((exportable_types & compatible_types) == exportable_types) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+    external_buffer_info.handleTypes = handle_type;
+
+    // Create memory object with incompatible handle types
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = exportable_types;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    vk_testing::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ImageMemoryWithUnsupportedExternalHandleType) {
+    TEST_DESCRIPTION("Bind image memory with unsupported external memory handle type.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    auto image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    // This test does not support the AHB handle type, which does not
+    // allow to query memory requirements before memory is bound
+    exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (exportable_types == AllVkExternalMemoryHandleTypeFlagBits) {
+        GTEST_SKIP() << "This test requires at least one unsupported handle type, but all handle types are supported";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+    external_image_info.handleTypes = handle_type;
+
+    // Create memory object with unsupported handle type
+    const auto not_supported_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(~exportable_types);
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = handle_type | not_supported_type;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    vk_testing::Image image(*m_device, image_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Bind image memory with not compatible external memory handle types.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Create export image
+    auto external_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    auto image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    // This test does not support the AHB handle type, which does not
+    // allow to query memory requirements before memory is bound
+    exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
+    const auto compatible_types = GetCompatibleHandleTypes(*this, image_info, handle_type);
+    if ((exportable_types & compatible_types) == exportable_types) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+    external_image_info.handleTypes = handle_type;
+
+    // Create memory object with incompatible handle types
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = exportable_types;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    vk_testing::Image image(*m_device, image_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
