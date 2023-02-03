@@ -21,14 +21,14 @@
  *
  */
 
-#ifndef LAYER_LOGGING_H
-#define LAYER_LOGGING_H
+#pragma once
 
 #include <array>
 #include <cstdarg>
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "vk_layer_config.h"
@@ -461,4 +461,4 @@ static inline void EraseCmdDebugUtilsLabel(debug_report_data *report_data, VkCom
     report_data->debugUtilsCmdBufLabels.erase(command_buffer);
 }
 
-#endif  // LAYER_LOGGING_H
+uint32_t vvl_vuid_hash(std::string_view vuid);

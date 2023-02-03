@@ -249,7 +249,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
         token = GetNextToken(&raw_id_list, delimiter, &pos);
         uint32_t int_id = TokenToUint(token);
         if (int_id == 0) {
-            const uint32_t id_hash = XXH32(token.data(), token.size(), 8);  // String
+            const uint32_t id_hash = vvl_vuid_hash(token);
             if (id_hash != 0) {
                 int_id = id_hash;
             }
