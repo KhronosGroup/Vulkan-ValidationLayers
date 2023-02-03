@@ -263,23 +263,31 @@ class LvtFileOutputGenerator(OutputGenerator):
             if item[1] is not None:
                 table += '#endif // %s\n' % item[1]
 
-        table += '\n\n'
-        table += 'void InitDispatchTable() {\n'
-        table += '\n'
-        table += '#if(WIN32)\n'
-        table += '    const char filename[] = "vulkan-1.dll";\n'
-        table += '#elif(__APPLE__)\n'
-        table += '    const char filename[] = "libvulkan.dylib";\n'
-        table += '#else\n'
-        table += '    const char filename[] = "libvulkan.so";\n'
-        table += '#endif\n'
-        table += '\n'
-        table += '    auto lib_handle = open_library(filename);\n'
-        table += '\n'
-        table += '    if (lib_handle == nullptr) {\n'
-        table += '        printf("%s\\n", open_library_error(filename));\n'
-        table += '        exit(1);\n'
-        table += '    }\n\n'
+        table += '''
+
+void InitDispatchTable() {
+
+#if(WIN32)
+    const char filename[] = "vulkan-1.dll";
+    auto lib_handle = open_library(filename);
+#elif(__APPLE__)
+    const char filename[] = "libvulkan.dylib";
+    auto lib_handle = open_library(filename);
+#else
+    const char *filename = "libvulkan.so";
+    auto lib_handle = open_library(filename);
+    if (!lib_handle) {
+        filename = "libvulkan.so.1";
+        lib_handle = open_library(filename);
+    }
+#endif
+
+    if (lib_handle == nullptr) {
+        printf("%s\\n", open_library_error(filename));
+        exit(1);
+    }
+
+'''
 
         for item in entries:
             # Remove 'vk' from proto name

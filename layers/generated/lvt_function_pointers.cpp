@@ -346,13 +346,18 @@ void InitDispatchTable() {
 
 #if(WIN32)
     const char filename[] = "vulkan-1.dll";
+    auto lib_handle = open_library(filename);
 #elif(__APPLE__)
     const char filename[] = "libvulkan.dylib";
-#else
-    const char filename[] = "libvulkan.so";
-#endif
-
     auto lib_handle = open_library(filename);
+#else
+    const char *filename = "libvulkan.so";
+    auto lib_handle = open_library(filename);
+    if (!lib_handle) {
+        filename = "libvulkan.so.1";
+        lib_handle = open_library(filename);
+    }
+#endif
 
     if (lib_handle == nullptr) {
         printf("%s\n", open_library_error(filename));
