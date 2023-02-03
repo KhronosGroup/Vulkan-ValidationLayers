@@ -828,34 +828,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     return result;
 }
 
-bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const char *caller_name, VkQueueFlags required_flags,
-                                       const char *error_code) const {
-    auto pool = cb_state.command_pool;
-    if (pool) {
-        const uint32_t queue_family_index = pool->queueFamilyIndex;
-        const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
-        if (!(required_flags & queue_flags)) {
-            string required_flags_string;
-            for (auto flag : {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_SPARSE_BINDING_BIT,
-                              VK_QUEUE_PROTECTED_BIT}) {
-                if (flag & required_flags) {
-                    if (required_flags_string.size()) {
-                        required_flags_string += " or ";
-                    }
-                    required_flags_string += string_VkQueueFlagBits(flag);
-                }
-            }
-            return LogError(cb_state.commandBuffer(), error_code,
-                            "%s(): Called in command buffer %s which was allocated from the command pool %s which was created with "
-                            "queueFamilyIndex %u which doesn't contain the required %s capability flags.",
-                            caller_name, report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
-                            report_data->FormatHandle(pool->commandPool()).c_str(), queue_family_index,
-                            required_flags_string.c_str());
-        }
-    }
-    return false;
-}
-
 bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
                                           const VkSampleLocationsInfoEXT *pSampleLocationsInfo2) const {
     if (pSampleLocationsInfo1->sampleLocationsPerPixel != pSampleLocationsInfo2->sampleLocationsPerPixel ||
