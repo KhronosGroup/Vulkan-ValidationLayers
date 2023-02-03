@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ void ErrorMonitor::MonitorReset() {
     desired_message_strings_.clear();
     ignore_message_strings_.clear();
     allowed_message_strings_.clear();
-    other_messages_.clear();
 }
 
 void ErrorMonitor::Reset() {
@@ -101,13 +100,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
 
         if (!found_expected) {
             result = VK_TRUE;
-            // TODO: Fix unexpected android failures
-#if !defined(ANDROID)
             ADD_FAILURE() << error_string;
-#else
-            printf("Unexpected: %s\n", msgString);
-#endif
-            other_messages_.push_back(error_string);
         }
     }
     return result;
@@ -126,17 +119,6 @@ void ErrorMonitor::SetError(const char *const errorString) {
 void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
     auto guard = Lock();
     bailout_ = bailout;
-}
-
-void ErrorMonitor::DumpFailureMsgs() const {
-    if (other_messages_.empty()) {
-        return;
-    }
-
-    std::cout << "Other error messages logged for this test were:" << std::endl;
-    for (auto const &msg : other_messages_) {
-        std::cout << "     " << msg << std::endl;
-    }
 }
 
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
@@ -161,14 +143,6 @@ void ErrorMonitor::VerifyFound() {
             for (const auto &desired_msg : desired_message_strings_) {
                 ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
             }
-        } else if (!other_messages_.empty()) {
-            // Fail test case for any unexpected errors
-#if defined(ANDROID)
-            // This will get unexpected errors into the adb log
-            for (auto msg : other_messages_) {
-                __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
-            }
-#endif
         }
         MonitorReset();
     }
@@ -188,14 +162,6 @@ void ErrorMonitor::VerifyNotFound() {
         for (const auto &msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
-    } else if (!other_messages_.empty()) {
-        // Fail test case for any unexpected errors
-#if defined(ANDROID)
-        // This will get unexpected errors into the adb log
-        for (auto msg : other_messages_) {
-            __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
-        }
-#endif
     }
     MonitorReset();
 }
