@@ -48,6 +48,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/core_checks/core_validation.cpp',
     'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
     'layers/core_checks/cmd_buffer_dynamic_validation.cpp',
+    'layers/core_checks/cmd_buffer_validation.cpp',
     'layers/core_checks/copy_blit_resolve_validation.cpp',
     'layers/state_tracker/descriptor_sets.cpp',
     'layers/core_checks/descriptor_validation.cpp',

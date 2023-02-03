@@ -69,6 +69,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/state_tracker/buffer_state.cpp
         ${SRC_DIR}/layers/state_tracker/cmd_buffer_state.cpp
         ${SRC_DIR}/layers/core_checks/cmd_buffer_dynamic_validation.cpp
+        ${SRC_DIR}/layers/core_checks/cmd_buffer_validation.cpp
         ${SRC_DIR}/layers/core_checks/copy_blit_resolve_validation.cpp
         ${SRC_DIR}/layers/core_checks/device_validation.cpp
         ${SRC_DIR}/layers/state_tracker/device_memory_state.cpp
