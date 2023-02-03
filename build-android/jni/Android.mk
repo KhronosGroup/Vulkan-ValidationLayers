@@ -48,6 +48,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/base_node.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/cmd_buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cmd_buffer_dynamic_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cmd_buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/copy_blit_resolve_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_state.cpp
