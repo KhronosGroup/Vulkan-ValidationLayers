@@ -3613,6 +3613,7 @@ void ValidationStateTracker::PostCallRecordCmdEndConditionalRenderingEXT(VkComma
 void ValidationStateTracker::RecordCmdEndRenderingRenderPassState(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->activeRenderPass = nullptr;
+    cb_state->active_color_attachments_index.clear();
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
@@ -5394,6 +5395,9 @@ void ValidationStateTracker::PostCallRecordCmdSetColorBlendEnableEXT(VkCommandBu
                                                                      uint32_t attachmentCount, const VkBool32 *pColorBlendEnables) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCOLORBLENDENABLEEXT, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET);
+    for (uint32_t i = 0; i < attachmentCount; i++) {
+        cb_state->dynamic_state_value.color_blend_enable_attachments.set(firstAttachment + i);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
@@ -5401,6 +5405,9 @@ void ValidationStateTracker::PostCallRecordCmdSetColorBlendEquationEXT(VkCommand
                                                                        const VkColorBlendEquationEXT *pColorBlendEquations) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCOLORBLENDEQUATIONEXT, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET);
+    for (uint32_t i = 0; i < attachmentCount; i++) {
+        cb_state->dynamic_state_value.color_blend_equation_attachments.set(firstAttachment + i);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
@@ -5408,6 +5415,9 @@ void ValidationStateTracker::PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuff
                                                                    const VkColorComponentFlags *pColorWriteMasks) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCOLORWRITEMASKEXT, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET);
+    for (uint32_t i = 0; i < attachmentCount; i++) {
+        cb_state->dynamic_state_value.color_write_mask_attachments.set(firstAttachment + i);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer,
@@ -5444,6 +5454,9 @@ void ValidationStateTracker::PostCallRecordCmdSetColorBlendAdvancedEXT(VkCommand
                                                                        const VkColorBlendAdvancedEXT *pColorBlendAdvanced) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCOLORBLENDADVANCEDEXT, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET);
+    for (uint32_t i = 0; i < attachmentCount; i++) {
+        cb_state->dynamic_state_value.color_blend_advanced_attachments.set(firstAttachment + i);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,

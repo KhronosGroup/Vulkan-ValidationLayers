@@ -93,9 +93,6 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                                     vuid.dynamic_alpha_to_coverage_enable);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_alpha_to_one_enable);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_logic_op_enable);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET, cmd_type, vuid.dynamic_color_blend_enable);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET, cmd_type, vuid.dynamic_color_blend_equation);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET, cmd_type, vuid.dynamic_color_write_mask);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET, cmd_type, vuid.dynamic_rasterization_stream);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET, cmd_type,
                                     vuid.dynamic_conservative_rasterization_mode);
@@ -104,7 +101,6 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clip_enable);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET, cmd_type,
                                     vuid.dynamic_sample_locations_enable);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET, cmd_type, vuid.dynamic_color_blend_advanced);
     skip |=
         ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET, cmd_type, vuid.dynamic_provoking_vertex_mode);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET, cmd_type,
@@ -180,6 +176,42 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                                  CommandTypeString(cmd_type), i);
                 break;
             }
+        }
+    }
+
+    // must set the state for all active color attachments in the current subpass
+    for (const uint32_t &color_index : cb_state.active_color_attachments_index) {
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+            !cb_state.dynamic_state_value.color_blend_enable_attachments.test(color_index)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(objlist, vuid.dynamic_color_blend_enable,
+                             "%s: vkCmdSetColorBlendEnableEXT was not set for color attachment index %" PRIu32
+                             " for this command buffer.",
+                             CommandTypeString(cmd_type), color_index);
+        }
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+            !cb_state.dynamic_state_value.color_blend_equation_attachments.test(color_index)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(objlist, vuid.dynamic_color_blend_equation,
+                             "%s: vkCmdSetColorBlendEquationEXT was not set for color attachment index %" PRIu32
+                             " for this command buffer.",
+                             CommandTypeString(cmd_type), color_index);
+        }
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) &&
+            !cb_state.dynamic_state_value.color_write_mask_attachments.test(color_index)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(objlist, vuid.dynamic_color_write_mask,
+                             "%s: vkCmdSetColorWriteMaskEXT was not set for color attachment index %" PRIu32
+                             " for this command buffer.",
+                             CommandTypeString(cmd_type), color_index);
+        }
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
+            !cb_state.dynamic_state_value.color_blend_advanced_attachments.test(color_index)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(objlist, vuid.dynamic_color_blend_advanced,
+                             "%s: vkCmdSetColorBlendAdvancedEXT was not set for color attachment index %" PRIu32
+                             " for this command buffer.",
+                             CommandTypeString(cmd_type), color_index);
         }
     }
 

@@ -143,6 +143,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
     status.reset();
     static_status.reset();
+    dynamic_state_value.reset();
     inheritedViewportDepths.clear();
     usedViewportScissorCount = 0;
     pipelineStaticViewportCount = 0;
@@ -166,6 +167,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     activeRenderPass = nullptr;
     active_attachments = nullptr;
     active_subpasses = nullptr;
+    active_color_attachments_index.clear();
     attachments_view_states.clear();
     activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
     activeSubpass = 0;
@@ -459,7 +461,7 @@ void CMD_BUFFER_STATE::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery
     });
 }
 
-void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
+void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::vector<SUBPASS_INFO> &subpasses) {
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
         const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -475,6 +477,7 @@ void UpdateSubpassAttachments(const safe_VkSubpassDescription2 &subpass, std::ve
             subpasses[attachment_index].used = true;
             subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
+            active_color_attachments_index.insert(index);
         }
         if (subpass.pResolveAttachments) {
             const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
@@ -590,6 +593,7 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
     activeRenderPass = nullptr;
     active_attachments = nullptr;
     active_subpasses = nullptr;
+    active_color_attachments_index.clear();
     activeSubpass = 0;
     activeFramebuffer = VK_NULL_HANDLE;
 }
@@ -618,6 +622,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     hasRenderPassInstance = true;
 
     active_attachments = nullptr;
+    active_color_attachments_index.clear();
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
@@ -625,6 +630,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     auto &attachments = *(active_attachments.get());
 
     for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+        active_color_attachments_index.insert(i);
         auto &colorAttachment = attachments[GetDynamicColorAttachmentImageIndex(i)];
         auto &colorResolveAttachment = attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
         colorAttachment = nullptr;
