@@ -89,6 +89,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/valid_param_values.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/query_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/queue_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/ray_tracing_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/wsi_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.cpp

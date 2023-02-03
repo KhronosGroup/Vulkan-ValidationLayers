@@ -116,6 +116,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/state_tracker/image_layout_map.cpp
         ${SRC_DIR}/layers/subresource_adapter.cpp
         ${SRC_DIR}/layers/core_checks/query_validation.cpp
+        ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
         ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
         ${SRC_DIR}/layers/xxhash.cpp)

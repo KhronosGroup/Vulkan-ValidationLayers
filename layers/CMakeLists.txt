@@ -178,6 +178,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/image_layout_validation.cpp
     core_checks/pipeline_validation.cpp
     core_checks/query_validation.cpp
+    core_checks/queue_validation.cpp
     core_checks/ray_tracing_validation.cpp
     core_checks/render_pass_validation.cpp
     core_checks/shader_validation.cpp

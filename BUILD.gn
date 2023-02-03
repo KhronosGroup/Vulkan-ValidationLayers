@@ -126,6 +126,7 @@ core_validation_sources = [
   "layers/core_checks/image_layout_validation.cpp",
   "layers/core_checks/pipeline_validation.cpp",
   "layers/core_checks/query_validation.cpp",
+  "layers/core_checks/queue_validation.cpp",
   "layers/core_checks/ray_tracing_validation.cpp",
   "layers/core_checks/render_pass_validation.cpp",
   "layers/core_checks/shader_validation.cpp",
