@@ -10,12 +10,11 @@ if (CMAKE_CURRENT_SOURCE_DIR MATCHES "sources/third_party/vulkan/src")
 endif()
 
 # Enable beta Vulkan extensions
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
+add_definitions(-DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DXXH_NO_LONG_LONG -DVK_PROTOTYPES)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror \
         -Wno-unused-function -Wno-unused-const-variable \
-        -Wno-c++98-compat-pedantic -DVK_PROTOTYPES \
-        -DVK_USE_PLATFORM_ANDROID_KHR")
+        -Wno-c++98-compat-pedantic")
 
 if (BUILD_IN_NDK)
     # NDK directory structure:
@@ -52,7 +51,8 @@ add_library(layer_utils STATIC
         ${SRC_DIR}/layers/vk_layer_extension_utils.cpp
         ${SRC_DIR}/layers/vk_layer_logging.cpp
         ${SRC_DIR}/layers/vk_layer_utils.cpp
-        ${SRC_DIR}/layers/generated/vk_format_utils.cpp)
+        ${SRC_DIR}/layers/generated/vk_format_utils.cpp
+        ${SRC_DIR}/layers/xxhash.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_clone}")
 
 # assume shaderc already built externally
@@ -61,7 +61,7 @@ set_target_properties(SPIRV-Tools-prebuilt PROPERTIES IMPORTED_LOCATION
     ${SPIRV_LIB})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
-                     -fvisibility=hidden -DXXH_NO_LONG_LONG")
+                     -fvisibility=hidden")
 add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/android_validation.cpp
         ${SRC_DIR}/layers/state_tracker/state_tracker.cpp
@@ -118,8 +118,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/query_validation.cpp
         ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
-        ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
-        ${SRC_DIR}/layers/xxhash.cpp)
+        ${SRC_DIR}/layers/core_checks/wsi_validation.cpp)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
