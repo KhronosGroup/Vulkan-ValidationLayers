@@ -1,0 +1,395 @@
+{
+    "comments": [
+        "This is an internal CI filter for LunarG"
+    ],
+    "Vulkan-ValidationLayers": {
+        "WinTestOS": {
+            "AMD Radeon (TM) RX 570X": {
+                "blacklist": [
+                    "VkLayerTest.NonSemanticInfoEnabled"
+                ]
+            },
+            "AMD Radeon RX 6800 XT": {
+                "comments": [
+                    "VkLayerTest.RayTracingPipelineDeferredOp doesn't fail when run indvidiually"
+                ],
+                "blacklist": [
+                    "VkLayerTest.VUID_VkVertexInputAttributeDescription_offset_00622",
+                    "VkLayerTest.InvalidCmdPushConstantRange",
+                    "VkLayerTest.CreatePipelineExceedVertexMaxComponentsWithBuiltins",
+                    "VkLayerTest.CreatePipelineExceedFragmentMaxComponentsWithBuiltins",
+                    "VkLayerTest.PipelineMaxPerStageResources",
+                    "VkLayerTest.LimitsMaxSampleMaskWords",
+                    "VkLayerTest.TestRuntimeSpirvTransformFeedback",
+                    "VkLayerTest.RayTracingLibraryFlags",
+                    "VkLayerTest.ExceedMemoryAllocationCount",
+                    "VkLayerTest.ExceedSamplerAllocationCount",
+                    "VkLayerTest.DSBufferInfoErrors",
+                    "VkLayerTest.CreateDescriptorUpdateTemplate",
+                    "VkLayerTest.DynamicRenderingCommandBufferInheritanceRenderingInfo",
+                    "VkLayerTest.DynamicRenderingGraphicsPipelineCreateInfo",
+                    "VkGpuAssistedLayerTest.GpuDrawIndirectCountDeviceLimit",
+                    "VkPositiveLayerTest.RayTracingPipelineShaderGroupsKHR",
+
+                    "VkLayerTest.RayTracingPipelineDeferredOp"
+                ]
+            },
+            "NVIDIA GeForce RTX 2080 Ti": {
+                "comments": [
+                    "VkGpuAssistedLayerTest.GpuBufferDeviceAddressOOB seems to be hitting a spirv-opt bug where invalid spirv is produced. See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4983.",
+                    "VkVideoLayerTest.VideoCodingScope has a sporadic 32-bit failure believed to be a driver bug.  https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5175",
+                    "VkVideoLayerTest.BeginCodingUnsupportedCodecOp https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5279",
+                    "VkVideoLayerTest.InUseDestroyed has a sporadic failure believed to be a driver bug. https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5272"
+                ],
+                "blacklist": [
+                    "VkPositiveGraphicsLibraryLayerTest.NotAttachmentDynamicBlendEnable",
+                    "VkGpuAssistedLayerTest.GpuBufferDeviceAddressOOB",
+                    "VkVideoLayerTest.*",
+                    "VkPositiveVideoLayerTest.*"
+                ]
+            }
+        },
+        "LinuxTestOS": {
+            "AMD Radeon RX 6800 XT (RADV NAVI21)": {
+                "blacklist": [
+                    "VkLayerTest.TransformFeedbackCmdBindTransformFeedbackBuffersEXT",
+                    "VkLayerTest.TransformFeedbackCmdBeginTransformFeedbackEXT",
+                    "VkLayerTest.TransformFeedbackCmdEndTransformFeedbackEXT",
+                    "VkLayerTest.BindImageMemorySwapchain",
+                    "VkPositiveLayerTest.CmdClearAttachmentTestsDynamicRendering",
+                    "VkPositiveLayerTest.CmdCopySwapchainImage",
+                    "VkPositiveLayerTest.DestroySwapchainWithBoundImages",
+
+                    "VkLayerTest.TestBindBufferMemoryDeviceGroup",
+                    "VkLayerTest.DuplicatePhysicalDevices",
+                    "VkLayerTest.InvalidImageCreateFlagWithPhysicalDeviceCount",
+                    "VkLayerTest.CmdCopyUnboundAccelerationStructure",
+                    "VkLayerTest.BuildAccelerationStructureKHR",
+                    "VkLayerTest.TestWriteAccelerationStructureMemory",
+                    "VkLayerTest.TestBeginRenderingInvalidFragmentShadingRateImage",
+                    "VkLayerTest.TestBeginRenderingFragmentShadingRateImageView",
+                    "VkLayerTest.TestBeginRenderingFragmentShadingRateAttachmentSize",
+                    "VkLayerTest.TestBeginRenderingFragmentShadingRateAttachmentSizeWithDeviceGroupExt",
+                    "VkLayerTest.TransferImageToSwapchainWithInvalidLayoutDeviceGroup",
+                    "VkLayerTest.InvalidDeviceMask",
+                    "VkPositiveLayerTest.TransferImageToSwapchainDeviceGroup",
+                    "VkPositiveLayerTest.ImagelessLayoutTracking"
+                ]
+            },
+
+            "AMD RADV SIENNA_CICHLID": {
+                "blacklist": [
+                    "VkLayerTest.TestBindBufferMemoryDeviceGroup",
+                    "VkLayerTest.DuplicatePhysicalDevices",
+                    "VkLayerTest.InvalidImageCreateFlagWithPhysicalDeviceCount",
+                    "VkLayerTest.InvalidDeviceMask",
+                    "VkPositiveLayerTest.BindSparseFreeMemory"
+                ]
+            },
+
+            "AMD RADV NAVI14 (ACO)": {
+                "blacklist": [
+                    "VkDebugPrintfTest.GpuDebugPrintf",
+                    "VkLayerTest.CopyMutableDescriptors",
+                    "VkLayerTest.InvalidWriteMutableDescriptorSet",
+                    "VkLayerTest.DescriptorUpdateTemplateEntryWithInlineUniformBlock"
+                ]
+            },
+
+            "NVIDIA GeForce GTX 950": {
+                "issue": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4716",
+                "blacklist": [
+                    "VkLayerTest.TestBindBufferMemoryDeviceGroup",
+                    "VkLayerTest.DuplicatePhysicalDevices",
+                    "VkLayerTest.InvalidImageCreateFlagWithPhysicalDeviceCount",
+                    "VkLayerTest.TransferImageToSwapchainWithInvalidLayoutDeviceGroup",
+                    "VkLayerTest.InvalidDeviceMask",
+                    "VkPositiveLayerTest.TransferImageToSwapchainDeviceGroup",
+                    "VkPositiveLayerTest.ImagelessLayoutTracking"
+                ]
+            }
+        },
+        "MacTestOS": {
+            "Apple M1": {
+                "issue": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5143",
+                "blacklist": [
+                    "VkPositiveLayerTest.FramebufferWithAttachmentsTo3DImageMultipleSubpasses",
+                    "VkPositiveLayerTest.UseFirstQueueUnqueried",
+                    "VkPositiveLayerTest.GetDevProcAddrExtensions",
+                    "VkPositiveLayerTest.QueueThreading",
+                    "VkPositiveLayerTest.PSOPolygonModeValid",
+                    "VkPositiveLayerTest.CreateGraphicsPipelineWithIgnoredPointers",
+                    "VkAmdBestPracticesLayerTest.NumberOfSubmissions",
+                    "VkLayerTest.ImagelessFramebufferWith3DImage",
+                    "VkLayerTest.DynamicRenderingCreateGraphicsPipelineNoInfo",
+                    "VkLayerTest.StageMaskGsTsEnabled",
+                    "VkLayerTest.MixedTimelineAndBinarySemaphores",
+                    "VkLayerTest.ExportMetalObjects",
+                    "VkLayerTest.PipelineRenderpassCompatibility",
+                    "VkLayerTest.CreatePipelineCheckFragmentShaderInterlockEnabled",
+                    "VkLayerTest.ValidateVariableSampleLocations",
+                    "VkLayerTest.CreateGraphicsPipelineNullRenderPass",
+                    "VkLayerTest.TestMaxFragmentDualSrcAttachments",
+                    "VkGpuAssistedLayerTest.GpuValidationInlineUniformBlockAndMiscGpu",
+                    "VkGraphicsLibraryLayerTest.ImplicitVUIDs",
+                    "VkPortabilitySubsetTest.CreateGraphicsPipelinesRasterizationState",
+                    "VkSyncValTest.SyncCopyOptimalMultiPlanarHazards",
+
+                    "VkPositiveLayerTest.ClearRectWith2DArray",
+                    "VkPositiveLayerTest.EventStageMaskSecondaryCommandBuffer",
+                    "VkPositiveLayerTest.TestCreatingFramebufferFrom3DImage",
+                    "VkPositiveLayerTest.TwoInstances",
+                    "VkPositiveLayerTest.StatelessValidationDisable",
+                    "VkPositiveLayerTest.ParameterLayerFeatures2Capture",
+                    "VkPositiveLayerTest.EnumeratePhysicalDeviceGroups",
+                    "VkPositiveLayerTest.CreatePipelineAttribMatrixType",
+                    "VkPositiveLayerTest.CreatePipelineAttribArrayType",
+                    "VkPositiveLayerTest.CreatePipelineAttribComponents",
+                    "VkPositiveLayerTest.AllowedDuplicateStype",
+                    "VkPositiveLayerTest.ImageDescriptor3D2DSubresourceLayout",
+                    "VkPositiveLayerTest.TopologyAtRasterizer",
+                    "VkPositiveLayerTest.TestPervertexNVShaderAttributes",
+                    "VkPositiveLayerTest.TestShaderInputOutputMatch",
+                    "VkPositiveLayerTest.LoosePointSizeWrite",
+                    "VkPositiveLayerTest.TestShaderInputAndOutputComponents",
+                    "VkPositiveLayerTest.OpTypeArraySpecConstant",
+                    "VkPositiveLayerTest.WaitEventThenSet",
+                    "VkArmBestPracticesLayerTest.RedundantRenderPassStore",
+                    "VkLayerTest.ImageBarrierWithBadRange",
+                    "VkLayerTest.CreateImageViewFormatMismatchUnrelated",
+                    "VkLayerTest.CreateImageViewDifferentClass",
+                    "VkLayerTest.MultiplaneIncompatibleViewFormat",
+                    "VkLayerTest.CreateImageViewInvalidSubresourceRange",
+                    "VkLayerTest.CreateImageMiscErrors",
+                    "VkLayerTest.CreateImageViewIncompatibleFormat",
+                    "VkLayerTest.CreateImageViewIncompatibleDepthFormat",
+                    "VkLayerTest.InvalidImageFormatList",
+                    "VkLayerTest.InvalidImageFormatListSizeCompatible",
+                    "VkLayerTest.BlockTexelViewInvalidLevelOrLayerCount",
+                    "VkLayerTest.BlockTexelViewInvalidType",
+                    "VkLayerTest.BlockTexelViewInvalidFormat",
+                    "VkLayerTest.CascadedInvalidation",
+                    "VkLayerTest.InvalidVertexAttributeAlignment",
+                    "VkLayerTest.ResolveImageImageType",
+                    "VkLayerTest.WriteDescriptorSetIdentitySwizzle",
+                    "VkLayerTest.Maint1BindingSliceOf3DImage",
+                    "VkLayerTest.InlineUniformBlockEXT",
+                    "VkLayerTest.SwapchainAcquireImageRetired",
+                    "VkLayerTest.DynamicRenderingInSecondaryCommandBuffers",
+                    "VkLayerTest.ImagelessFramebufferRenderPassBeginImageViewMismatchTests",
+                    "VkLayerTest.InstanceExtensionDependencies",
+                    "VkLayerTest.InstanceBadStype",
+                    "VkLayerTest.InstanceDuplicatePnextStype",
+                    "VkLayerTest.InstanceAppInfoBadStype",
+                    "VkLayerTest.InstanceValidationFeaturesBadFlags",
+                    "VkLayerTest.DestroyInstanceAllocationCallbacksCompatibility",
+                    "VkLayerTest.VersionCheckPromotedAPIs",
+                    "VkLayerTest.LayerInfoMessages",
+                    "VkLayerTest.UseObjectWithWrongDevice",
+                    "VkLayerTest.InvalidCmdBufferEventDestroyed",
+                    "VkLayerTest.DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled",
+                    "VkLayerTest.Features12Features13AndpNext",
+                    "VkLayerTest.RequiredPromotedFeaturesExtensions",
+                    "VkLayerTest.FeaturesVariablePointer",
+                    "VkLayerTest.InvalidQueryPoolCreate",
+                    "VkLayerTest.StageMaskHost",
+                    "VkLayerTest.EventInUseDestroyedSignaled",
+                    "VkLayerTest.InUseDestroyedSignaled",
+                    "VkLayerTest.EventStageMaskOneCommandBufferPass",
+                    "VkLayerTest.EventStageMaskOneCommandBufferFail",
+                    "VkLayerTest.EventStageMaskTwoCommandBufferPass",
+                    "VkLayerTest.EventStageMaskTwoCommandBufferFail",
+                    "VkLayerTest.ThreadCommandBufferCollision",
+                    "VkLayerTest.Maintenance1AndNegativeViewport",
+                    "VkLayerTest.ApiVersion1_1AndNegativeViewport",
+                    "VkLayerTest.ResetEventThenSet",
+                    "VkLayerTest.InvalidGetDeviceQueue",
+                    "VkLayerTest.ValidateArrayLength",
+                    "VkLayerTest.InvalidCombinationOfDeviceFeatures",
+                    "VkLayerTest.Features12AndppEnabledExtensionNames",
+                    "VkLayerTest.InstanceCreateEnumeratePortability",
+                    "VkLayerTest.CreatePipelineBadVertexAttributeFormat",
+                    "VkLayerTest.CreatePipelineLayoutExcessDescriptorsOverall",
+                    "VkLayerTest.CreatePipelineAttribNotConsumed",
+                    "VkLayerTest.CreatePipelineAttribLocationMismatch",
+                    "VkLayerTest.CreatePipelineAttribTypeMismatch",
+                    "VkLayerTest.SwapchainAcquireImageNoSync",
+                    "VkLayerTest.SwapchainAcquireImageNoSync2KHR",
+                    "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore",
+                    "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore2KHR",
+                    "VkLayerTest.SwapchainAcquireTooManyImages",
+                    "VkLayerTest.GetSwapchainImageAndTryDestroy",
+                    "VkLayerTest.SwapchainAcquireTooManyImages2KHR",
+                    "VkLayerTest.WarningSwapchainCreateInfoPreTransform",
+                    "VkLayerTest.SwapchainAcquireImageWithSignaledSemaphore",
+                    "VkLayerTest.GetSwapchainImagesCountButNotImages",
+                    "VkGpuAssistedLayerTest.GpuBufferDeviceAddressOOB",
+                    "VkGpuAssistedLayerTest.ValidationFeatures",
+                    "VkPortabilitySubsetTest.CreateImageView",
+                    "VkPortabilitySubsetTest.CreateGraphicsPipelinesColorBlendAttachmentState",
+                    "VkPortabilitySubsetTest.UpdateDescriptorSets",
+                    "VkPortabilitySubsetTest.ShaderValidation",
+                    "VkSyncValTest.SyncQSPresentAcquire",
+
+                    "VkLayerTest.InvalidExportExternalImageHandleType"
+                ]
+            }
+        },
+        "PixelC": {
+            "comments": [
+                "this device failed with an inability to install the new",
+                "package.  Disabling for now until this can be understood",
+                "and repaired."
+            ],
+            "disabled": true,
+            "blacklist": [
+                "VkLayerTest.PipelineInvalidAdvancedBlend",
+                "VkLayerTest.ImageDrmFormatModifer",
+                "VkLayerTest.BeginQueryTypeTransformFeedbackStream",
+                "VkLayerTest.DrawIndirectByteCountEXT",
+                "VkLayerTest.SwapchainAcquireImageNoSync",
+                "VkLayerTest.SwapchainAcquireImageNoSync2KHR",
+                "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore",
+                "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore2KHR",
+                "VkLayerTest.SwapchainAcquireTooManyImages",
+                "VkLayerTest.GetSwapchainImageAndTryDestroy",
+                "VkLayerTest.SwapchainAcquireTooManyImages2KHR",
+                "VkLayerTest.WarningSwapchainCreateInfoPreTransform",
+                "VkLayerTest.SwapchainAcquireImageWithSignaledSemaphore",
+                "VkLayerTest.GetSwapchainImagesCountButNotImages",
+                "VkPositiveLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkLayerTest.CreateImageMiscErrors",
+                "VkLayerTest.AndroidHardwareBufferDedicatedUsageDS",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions"
+            ]
+        },
+        "Pixel3": {
+            "blacklist": [
+                "VkLayerTest.InvalidMixingProtectedResources",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions",
+                "VkLayerTest.ValidateImportMemoryHandleType",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalImage",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalCameraFormat"
+            ]
+        },
+        "ShieldTV": {
+            "blacklist": [
+                "VkPositiveLayerTest.ExtensionsInCreateInstance",
+                "VkLayerTest.SamplerImageViewFormatUnsupportedFilter",
+                "VkLayerTest.TransformFeedbackCmdBindTransformFeedbackBuffersEXT",
+                "VkLayerTest.TransformFeedbackCmdBeginTransformFeedbackEXT",
+                "VkLayerTest.TransformFeedbackCmdEndTransformFeedbackEXT",
+                "VkLayerTest.AndroidHardwareBufferExporttBuffer",
+                "VkLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkLayerTest.AttachmentShouldNotBeTransient",
+                "VkLayerTest.NotSupportProvokingVertexModePerPipeline",
+                "VkLayerTest.PipelineInvalidAdvancedBlend",
+                "VkLayerTest.InvalidFragmentDensityMapLayerCount",
+                "VkLayerTest.FramebufferCreateErrors",
+                "VkLayerTest.InvalidMixingProtectedResources",
+                "VkLayerTest.SwapchainAcquireImageNoSync",
+                "VkLayerTest.SwapchainAcquireImageNoSync2KHR",
+                "VkLayerTest.SwapchainAcquireTooManyImages",
+                "VkLayerTest.GetSwapchainImageAndTryDestroy",
+                "VkLayerTest.SwapchainAcquireTooManyImages2KHR",
+                "VkLayerTest.WarningSwapchainCreateInfoPreTransform",
+                "VkLayerTest.SwapchainAcquireImageWithSignaledSemaphore",
+                "VkLayerTest.GetSwapchainImagesCountButNotImages",
+                "VkLayerTest.InvalidMemoryMapping",
+                "VkBestPracticesLayerTest.AttachmentShouldNotBeTransient",
+                "VkPositiveLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkLayerTest.CreatePipelineLayoutExcessPerStageDescriptors",
+                "VkLayerTest.CreatePipelineLayoutExcessDescriptorsOverall",
+                "VkLayerTest.InvlidPipelineDiscardRectangle",
+                "VkLayerTest.InvalidCmdSetDiscardRectangleEXTRectangleCount",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions",
+                "VkSyncValTest.SyncQSPresentAcquire",
+                "VkLayerTest.ValidateImportMemoryHandleType"
+            ]
+        },
+        "GalaxyS10": {
+            "blacklist": [
+                "VkLayerTest.PipelineInvalidAdvancedBlend",
+                "VkLayerTest.ImageDrmFormatModifer",
+                "VkLayerTest.BeginQueryTypeTransformFeedbackStream",
+                "VkLayerTest.DrawIndirectByteCountEXT",
+                "VkLayerTest.SwapchainAcquireImageNoSync",
+                "VkLayerTest.SwapchainAcquireImageNoSync2KHR",
+                "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore",
+                "VkLayerTest.SwapchainAcquireImageNoBinarySemaphore2KHR",
+                "VkLayerTest.SwapchainAcquireTooManyImages",
+                "VkLayerTest.GetSwapchainImageAndTryDestroy",
+                "VkLayerTest.SwapchainAcquireTooManyImages2KHR",
+                "VkLayerTest.WarningSwapchainCreateInfoPreTransform",
+                "VkLayerTest.SwapchainAcquireImageWithSignaledSemaphore",
+                "VkLayerTest.GetSwapchainImagesCountButNotImages",
+                "VkLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkPositiveLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkPositiveLayerTest.GetTimelineSemThreadRace",
+                "VkLayerTest.CreateImageMiscErrors",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions",
+                "VkLayerTest.InvalidExportExternalBufferHandleType"
+            ]
+        },
+        "GalaxyS22": {
+            "ro.bootimage.build.fingerprint": "samsung/r0sxxx/r0s:12/SP1A.210812.016/S901BXXU2BVKB:user/release-keys",
+            "blacklist": [
+                "VkLayerTest.TestShaderZeroInitializeWorkgroupMemory",
+                "VkPositiveLayerTest.RayTracingValidateGetAccelerationStructureBuildSizes",
+                "VkLayerTest.BindImageInvalidMemoryType",
+                "VkLayerTest.BindInvalidMemory",
+                "VkLayerTest.BindInvalidMemory2Disjoint",
+                "VkLayerTest.InitSwapchainPotentiallyIncompatibleFlag",
+                "VkLayerTest.RayTracingLibraryFlags",
+                "VkPositiveLayerTest.RayTracingPipelineShaderGroupsKHR",
+                "VkLayerTest.InvalidProtectedQueue",
+                "VkLayerTest.AndroidHardwareBufferDedicatedUsageDS",
+                "VkLayerTest.AndroidHardwareBufferImportBufferHandleType",
+                "VkLayerTest.RayTracingPipelineCreateInfoKHR",
+                "VkLayerTest.RayTracingPipelineShaderGroupsKHR",
+                "VkLayerTest.RayTracingInvalidPipelineFlags",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions",
+                "VkPositiveLayerTest.AndroidHardwareBufferMemoryRequirements",
+                "VkPositiveLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalImage",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalCameraFormat"
+            ]
+        },
+        "Pixel_3a_XL": {
+            "blacklist": []
+        },
+        "Pixel_6": {
+            "comments": [
+                "The first set of tests crash.  The second set fail.",
+                "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4425",
+                "VkLayerTest.InvalidStructPNext has its own issue: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4490"
+            ],
+            "blacklist": [
+                "VkLayerTest.AndroidHardwareBufferMemoryAllocation",
+                "VkLayerTest.AndroidHardwareBufferExportBuffer",
+                "VkLayerTest.InlineUniformBlockEXT",
+                "VkLayerTest.TransformFeedbackCmdBindTransformFeedbackBuffersEXT",
+                "VkLayerTest.TransformFeedbackCmdBeginTransformFeedbackEXT",
+                "VkLayerTest.TransformFeedbackCmdEndTransformFeedbackEXT",
+                "VkArmBestPracticesLayerTest.RedundantRenderPassStore",
+                "VkPositiveLayerTest.AndroidHardwareBufferDepthStencil",
+                "VkPositiveLayerTest.TestShaderInputAndOutputStructComponents",
+                "VkLayerTest.CreateImageMaxLimitsViolation",
+                "VkLayerTest.AndroidHardwareBufferImportBuffer",
+                "VkLayerTest.AndroidHardwareBufferImportBufferHandleType",
+                "VkLayerTest.FramebufferCreateErrors",
+                "VkLayerTest.InvalidMixingProtectedResources",
+                "VkLayerTest.InvalidStructPNext",
+                "VkPositiveLayerTest.GetTimelineSemThreadRace",
+                "VkPositiveLayerTest.WaitTimelineSemThreadRace",
+                "VkLayerTest.CreateImageMiscErrors",
+                "VkLayerTest.InvalidExportExternalBufferHandleType",
+                "VkLayerTest.AndroidHardwareBufferDedicatedUsageDS",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalImage",
+                "VkPositiveLayerTest.AndroidHardwareBufferExternalCameraFormat",
+                "VkBestPracticesLayerTest.UseDeprecatedInstanceExtensions",
+                "VkPositiveLayerTest.ClearRectWith2DArray"
+            ]
+        }
+    }
+}

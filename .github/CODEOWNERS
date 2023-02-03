@@ -15,3 +15,6 @@
 # ~~~
 
 * @KhronosGroup/VVL-CODEOWNERS
+
+# @lunarpapillo must be notified prior to any blacklist.json changes being merged
+blacklist.json @lunarpapillo
