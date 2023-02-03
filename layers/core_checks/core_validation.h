@@ -40,7 +40,7 @@
 #include "state_tracker/video_session_state.h"
 #include "sync/sync_vuid_maps.h"
 
-// Set of VUID that need to go between core_validation.cpp and drawdispatch_validation.cpp
+// Set of VUID that need to go between drawdispatch_validation.cpp and rest of CoreChecks
 struct DrawDispatchVuid {
     const char* pipeline_bound = kVUIDUndefined;
     const char* index_binding = kVUIDUndefined;

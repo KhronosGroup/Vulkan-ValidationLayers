@@ -784,3 +784,15 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
     return CheckCommandBuffersInFlight(command_pool_state.get(), "reset command pool with",
                                        "VUID-vkResetCommandPool-commandPool-00040");
 }
+
+// For given obj node, if it is use, flag a validation error and return callback result, else return false
+bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const char *caller_name, const char *error_code) const {
+    if (disabled[object_in_use]) return false;
+    auto obj_struct = obj_node->Handle();
+    bool skip = false;
+    if (obj_node->InUse()) {
+        skip |= LogError(device, error_code, "Cannot call %s on %s that is currently in use by a command buffer.", caller_name,
+                         report_data->FormatHandle(obj_struct).c_str());
+    }
+    return skip;
+}
