@@ -189,6 +189,10 @@ TEST_F(VkLayerTest, InstanceBadValidationFlags) {
 void* VKAPI_PTR DummyAlloc(void*, size_t size, size_t alignment, VkSystemAllocationScope) {
     size_t space = size + alignment - 1;
     void* mem_ptr = std::malloc(space);
+    if (!mem_ptr) {
+        printf("Dummy Alloc failed\n");
+        return nullptr;
+    }
     return std::align(alignment, size, mem_ptr, space);
 }
 void VKAPI_PTR DummyFree(void*, void* pMemory) {

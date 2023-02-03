@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
  * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -690,7 +690,10 @@ char **VkTestFramework::ReadFileData(const char *fileName) {
 
     while (fgetc(in) != EOF) count++;
 
-    fseek(in, 0, SEEK_SET);
+    if (fseek(in, 0, SEEK_SET) != 0) {
+        printf("Error fseek to start of file\n");
+        return 0;
+    }
 
     if (!(fdata = (char *)malloc(count + 2))) {
         printf("Error allocating memory\n");
