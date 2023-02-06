@@ -95,7 +95,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
                         # TODO These warnings also get turned on with -Wconversion in some versions of clang.
                         #      Leave off until further investigation.
                         -Wno-sign-conversion
-                        -Wno-shorten-64-to-32
                         -Wno-implicit-int-conversion
                         -Wno-enum-enum-conversion
                         -Wstring-conversion)
