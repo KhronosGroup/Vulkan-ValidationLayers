@@ -12483,12 +12483,9 @@ TEST_F(VkLayerTest, BufferMemoryWithUnsupportedExternalHandleType) {
     const auto not_supported_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(~exportable_types));
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type | not_supported_type;
-
     auto memory = AllocateBufferMemory(*this, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
     BindBufferMemory2(*this, buffer, memory);
     m_errorMonitor->VerifyFound();
@@ -12532,12 +12529,9 @@ TEST_F(VkLayerTest, BufferMemoryWithNotCompatibleExternalHandleTypes) {
     }
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = exportable_types;
-
     auto memory = AllocateBufferMemory(*this, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyBuffer(device(), buffer, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
     BindBufferMemory2(*this, buffer, memory);
     m_errorMonitor->VerifyFound();
@@ -12587,12 +12581,9 @@ TEST_F(VkLayerTest, ImageMemoryWithUnsupportedExternalHandleType) {
     const auto not_supported_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(~exportable_types));
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type | not_supported_type;
-
     auto memory = AllocateImageMemory(*this, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyImage(device(), image, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
     BindImageMemory2(*this, image, memory);
     m_errorMonitor->VerifyFound();
@@ -12643,12 +12634,9 @@ TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
     }
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = exportable_types;
-
     auto memory = AllocateImageMemory(*this, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyImage(device(), image, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
     BindImageMemory2(*this, image, memory);
     m_errorMonitor->VerifyFound();
