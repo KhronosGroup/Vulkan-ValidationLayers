@@ -12395,29 +12395,16 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
 
 TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
-
-#ifdef _WIN32
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-#else
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-#endif
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(ext_mem_extension_name);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create export image
-    VkExternalMemoryImageCreateInfo external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
-    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>(&external_info);
+    auto external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    auto image_info = LvlInitStruct<VkImageCreateInfo>(&external_info);
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.arrayLayers = 1;
     image_info.extent = {64, 64, 1};
@@ -12432,26 +12419,22 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
-    assert((exportable_types & handle_type) != 0);
+    const auto handle_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
     exportable_types &= ~handle_type;
-    auto handle_type2 = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
-    assert(handle_type2 != 0 && handle_type2 != handle_type);
+    const auto handle_type2 = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
+    assert(handle_type != handle_type2);
 
     external_info.handleTypes = handle_type;
     VkImage image_export = VK_NULL_HANDLE;
-    VkResult result = vk::CreateImage(device(), &image_info, NULL, &image_export);
-    if (result != VK_SUCCESS) {
+    if (vk::CreateImage(device(), &image_info, NULL, &image_export) != VK_SUCCESS) {
         GTEST_SKIP() << "Unable to create a valid external image";
     }
 
     // Create export memory with different handleType
-    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type2;
-    VkDeviceMemory memory = AllocateImageMemory(*this, image_export, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyImage(device(), image_export, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    auto memory = AllocateImageMemory(*this, image_export, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02728");
     vk::BindImageMemory(device(), image_export, memory, 0);
@@ -12675,29 +12658,16 @@ TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
 
 TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
-
-#ifdef _WIN32
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-#else
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-#endif
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(ext_mem_extension_name);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Create export buffer
-    VkExternalMemoryBufferCreateInfo external_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
-    VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>(&external_info);
+    auto external_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    auto buffer_info = LvlInitStruct<VkBufferCreateInfo>(&external_info);
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_info.size = 4096;
 
@@ -12705,26 +12675,22 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
-    assert((exportable_types & handle_type) != 0);
+    const auto handle_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
     exportable_types &= ~handle_type;
-    auto handle_type2 = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
-    assert(handle_type2 != 0 && handle_type2 != handle_type);
+    const auto handle_type2 = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << LeastSignificantBit(exportable_types));
+    assert(handle_type != handle_type2);
 
     external_info.handleTypes = handle_type;
     VkBuffer buffer_export = VK_NULL_HANDLE;
-    VkResult result = vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export);
-    if (result != VK_SUCCESS) {
+    if (vk::CreateBuffer(device(), &buffer_info, NULL, &buffer_export) != VK_SUCCESS) {
         GTEST_SKIP() << "Unable to create a valid external buffer";
     }
 
     // Create export memory with different handleType
-    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type2;
-    VkDeviceMemory memory = AllocateBufferMemory(*this, buffer_export, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    if (memory == VK_NULL_HANDLE) {
-        vk::DestroyBuffer(device(), buffer_export, nullptr);
-        GTEST_SKIP() << "Unable to allocate device memory with exportable handles";
-    }
+    auto memory = AllocateBufferMemory(*this, buffer_export, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    ASSERT_TRUE(memory != VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02726");
     vk::BindBufferMemory(device(), buffer_export, memory, 0);
