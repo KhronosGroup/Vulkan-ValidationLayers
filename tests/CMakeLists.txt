@@ -93,7 +93,10 @@ target_include_directories(vk_layer_validation_tests PRIVATE
 )
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
+    target_compile_options(vk_layer_validation_tests PRIVATE 
+        -Wno-sign-compare
+        -Wno-shorten-64-to-32
+    )
 elseif(MSVC)
     # Disable some signed/unsigned mismatch warnings.
     target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
