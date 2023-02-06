@@ -242,6 +242,7 @@ chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/generated/chassis.cpp",
   "layers/generated/valid_param_values.cpp",
+  "layers/generated/valid_param_values.h",
   "layers/generated/chassis.h",
   "layers/generated/chassis_dispatch_helper.h",
   "layers/generated/layer_chassis_dispatch.cpp",
