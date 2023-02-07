@@ -325,9 +325,9 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     // vkUnmapMemory()
     void unmap() const;
 
-    static VkMemoryAllocateInfo alloc_info(VkDeviceSize size, uint32_t memory_type_index);
+    static VkMemoryAllocateInfo alloc_info(VkDeviceSize size, uint32_t memory_type_index, void *alloc_info_pnext = nullptr);
     static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
-                                                        VkMemoryPropertyFlags mem_props);
+                                                        VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
 };
 
 class Fence : public internal::NonDispHandle<VkFence> {
@@ -504,7 +504,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     void bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset);
 
     const VkBufferCreateInfo &create_info() const { return create_info_; }
-    static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr);
+    static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
+                                          void *create_info_pnext = nullptr);
 
     VkBufferMemoryBarrier buffer_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
                                                 VkDeviceSize size) const {
@@ -574,13 +575,15 @@ class Image : public internal::NonDispHandle<VkImage> {
   public:
     explicit Image() : NonDispHandle(), format_features_(0) {}
     explicit Image(const Device &dev, const VkImageCreateInfo &info) : format_features_(0) { init(dev, info); }
+    explicit Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props,
+                   void *alloc_info_pnext = nullptr);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : format_features_(0) { init_no_mem(dev, info); }
 
     ~Image() noexcept;
     void destroy() noexcept;
 
     // vkCreateImage()
-    void init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props);
+    void init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
     void init(const Device &dev, const VkImageCreateInfo &info) { init(dev, info, 0); }
     void init_no_mem(const Device &dev, const VkImageCreateInfo &info);
 
@@ -999,15 +1002,16 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
     bool khr_ = false;
 };
 
-inline VkMemoryAllocateInfo DeviceMemory::alloc_info(VkDeviceSize size, uint32_t memory_type_index) {
-    VkMemoryAllocateInfo info = LvlInitStruct<VkMemoryAllocateInfo>();
+inline VkMemoryAllocateInfo DeviceMemory::alloc_info(VkDeviceSize size, uint32_t memory_type_index, void *alloc_info_pnext) {
+    VkMemoryAllocateInfo info = LvlInitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
     info.allocationSize = size;
     info.memoryTypeIndex = memory_type_index;
     return info;
 }
 
-inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families) {
-    VkBufferCreateInfo info = LvlInitStruct<VkBufferCreateInfo>();
+inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
+                                              void *create_info_pnext) {
+    VkBufferCreateInfo info = LvlInitStruct<VkBufferCreateInfo>(create_info_pnext);
     info.size = size;
     info.usage = usage;
 
