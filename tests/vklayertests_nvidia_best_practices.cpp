@@ -141,19 +141,28 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         GTEST_SKIP() << "Test requires sparseBinding";
     }
 
-    VkDeviceQueueCreateInfo general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
-    general_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT, 0);
+    auto general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
+    {
+        const std::optional<uint32_t> familyIndex =
+            m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT, 0);
+        if (!familyIndex) {
+            GTEST_SKIP() << "Required queue families not present";
+        }
+        general_queue_ci.queueFamilyIndex = familyIndex.value();
+    }
 
-    VkDeviceQueueCreateInfo transfer_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
-    transfer_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
-                                                                       VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+    auto transfer_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
-
-    if (general_queue_ci.queueFamilyIndex == vvl::kU32Max || transfer_queue_ci.queueFamilyIndex == vvl::kU32Max) {
-        GTEST_SKIP() << "Test requires a general and a transfer queue";
+    {
+        const std::optional<uint32_t> familyIndex = m_device->QueueFamilyMatching(
+            VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT, VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+        if (!familyIndex) {
+            GTEST_SKIP() << "Required queue families not present";
+        }
+        transfer_queue_ci.queueFamilyIndex = familyIndex.value();
     }
 
     VkDeviceQueueCreateInfo queue_cis[2] = {
@@ -256,19 +265,26 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     }
     InitState();
 
-    VkDeviceQueueCreateInfo general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
-    general_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0);
+    auto general_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
+    {
+        const std::optional<uint32_t> queueFamily = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, 0);
+        if (!queueFamily) {
+            GTEST_SKIP() << "Required queue families not present";
+        }
+        general_queue_ci.queueFamilyIndex = queueFamily.value();
+    }
 
-    VkDeviceQueueCreateInfo compute_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
-    compute_queue_ci.queueFamilyIndex = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    auto compute_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     compute_queue_ci.queueCount = 1;
     compute_queue_ci.pQueuePriorities = &defaultQueuePriority;
-
-    if (general_queue_ci.queueFamilyIndex == vvl::kU32Max || compute_queue_ci.queueFamilyIndex == vvl::kU32Max) {
-        // There's no asynchronous compute queue, skip.
-        return;
+    {
+        const std::optional<uint32_t> queueFamily = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+        if (!queueFamily) {
+            GTEST_SKIP() << "Required queue families not present";
+        }
+        compute_queue_ci.queueFamilyIndex = queueFamily.value();
     }
 
     VkDeviceQueueCreateInfo queue_cis[2] = {

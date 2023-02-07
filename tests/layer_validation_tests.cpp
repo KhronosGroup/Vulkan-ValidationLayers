@@ -2668,12 +2668,13 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
-    uint32_t compute_only_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (compute_only_queue_family_index != vvl::kU32Max) {
-        const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index);
+    const std::optional<uint32_t> compute_only_queue_family_index =
+        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (compute_only_queue_family_index) {
+        const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index.value());
         if (!compute_only_queues.empty()) {
             ray_tracing_queue = compute_only_queues[0]->handle();
-            ray_tracing_queue_family_index = compute_only_queue_family_index;
+            ray_tracing_queue_family_index = compute_only_queue_family_index.value();
         }
     }
 

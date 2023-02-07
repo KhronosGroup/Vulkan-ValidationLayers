@@ -4783,23 +4783,23 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (queueFamilyIndex == vvl::kU32Max) {
+    const std::optional<uint32_t> queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (!queueFamilyIndex) {
         GTEST_SKIP() << "Non-graphics queue family not found";
-    } else {
-        // Create command pool on a non-graphics queue
-        VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
-
-        // Setup command buffer on pool
-        VkCommandBufferObj command_buffer(m_device, &command_pool);
-        command_buffer.begin();
-
-        // Issue a graphics only command
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
-        VkViewport viewport = {0, 0, 16, 16, 0, 1};
-        command_buffer.SetViewport(0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
     }
+
+    // Create command pool on a non-graphics queue
+    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
+
+    // Setup command buffer on pool
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    // Issue a graphics only command
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    command_buffer.SetViewport(0, 1, &viewport);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
@@ -4809,44 +4809,44 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (queueFamilyIndex == vvl::kU32Max) {
+    const std::optional<uint32_t> queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (!queueFamilyIndex) {
         GTEST_SKIP() << "Non-graphics queue family not found";
-    } else {
-        // Create Depth image
-        const VkFormat ds_format = FindSupportedDepthOnlyFormat(gpu());
-
-        VkImageObj ds_image(m_device);
-        ds_image.Init(64, 64, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                      VK_IMAGE_TILING_OPTIMAL, 0);
-        ASSERT_TRUE(ds_image.initialized());
-
-        // Allocate buffers
-        VkBufferObj buffer;
-        VkMemoryPropertyFlags reqs = 0;
-        buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
-
-        VkBufferImageCopy region = {};
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {64, 64, 1};
-        region.bufferOffset = 0;
-
-        // Create command pool on a non-graphics queue
-        VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
-
-        // Setup command buffer on pool
-        VkCommandBufferObj command_buffer(m_device, &command_pool);
-        command_buffer.begin();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-07739");
-        vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), ds_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 1, &region);
-        m_errorMonitor->VerifyFound();
     }
+
+    // Create Depth image
+    const VkFormat ds_format = FindSupportedDepthOnlyFormat(gpu());
+
+    VkImageObj ds_image(m_device);
+    ds_image.Init(64, 64, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                  VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(ds_image.initialized());
+
+    // Allocate buffers
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k to have more then enough to copy
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {64, 64, 1};
+    region.bufferOffset = 0;
+
+    // Create command pool on a non-graphics queue
+    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
+
+    // Setup command buffer on pool
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-07739");
+    vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), ds_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &region);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
@@ -4857,8 +4857,9 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // Should be left with a tranfser queue
-    uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-    if (queueFamilyIndex == vvl::kU32Max) {
+    const std::optional<uint32_t> queueFamilyIndex =
+        m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+    if (!queueFamilyIndex) {
         GTEST_SKIP() << "Non-graphics/compute queue family not found";
     }
 
@@ -4882,7 +4883,7 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     region.bufferOffset = 5;
 
     // Create command pool on a non-graphics queue
-    VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
+    VkCommandPoolObj command_pool(m_device, queueFamilyIndex.value());
 
     // Setup command buffer on pool
     VkCommandBufferObj command_buffer(m_device, &command_pool);
@@ -5310,13 +5311,11 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
 
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
-    const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    const uint32_t transfer_only_qfi =
+    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<uint32_t> transfer_only_qfi =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
-    if ((vvl::kU32Max == transfer_only_qfi) && (vvl::kU32Max == no_gfx_qfi)) {
-        printf("No compute or transfer only queue family, skipping bindpoint and queue tests.\n");
-    } else {
-        const uint32_t err_qfi = (vvl::kU32Max == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
+    if (transfer_only_qfi || no_gfx_qfi) {
+        const uint32_t err_qfi = no_gfx_qfi ? no_gfx_qfi.value() : transfer_only_qfi.value();
 
         VkCommandPoolObj command_pool(m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
@@ -5336,9 +5335,9 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
         command_buffer.end();
 
         // If we succeed in testing only one condition above, we need to test the other below.
-        if ((vvl::kU32Max != transfer_only_qfi) && (err_qfi != transfer_only_qfi)) {
+        if (transfer_only_qfi && err_qfi != transfer_only_qfi.value()) {
             // Need to test the neither compute/gfx supported case separately.
-            VkCommandPoolObj tran_command_pool(m_device, transfer_only_qfi);
+            VkCommandPoolObj tran_command_pool(m_device, transfer_only_qfi.value());
             ASSERT_TRUE(tran_command_pool.initialized());
             VkCommandBufferObj tran_command_buffer(m_device, &tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
@@ -8613,13 +8612,12 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    const uint32_t INVALID_QUEUE = std::numeric_limits<uint32_t>::max();
-    if (INVALID_QUEUE == no_gfx_qfi) {
+    const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!no_gfx_qfi) {
         GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
     }
 
-    VkCommandPoolObj command_pool(m_device, no_gfx_qfi);
+    VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
     ASSERT_TRUE(command_pool.initialized());
     VkCommandBufferObj command_buffer(m_device, &command_pool);
 
