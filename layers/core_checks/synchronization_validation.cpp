@@ -15,28 +15,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Cody Northrop <cnorthrop@google.com>
- * Author: Michael Lentine <mlentine@google.com>
- * Author: Tobin Ehlis <tobine@google.com>
- * Author: Chia-I Wu <olv@google.com>
- * Author: Chris Forbes <chrisf@ijw.co.nz>
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Ian Elliott <ianelliott@google.com>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Author: Dustin Graves <dustin@lunarg.com>
- * Author: Jeremy Hayes <jeremy@lunarg.com>
- * Author: Jon Ashburn <jon@lunarg.com>
- * Author: Karl Schultz <karl@lunarg.com>
- * Author: Mark Young <marky@lunarg.com>
- * Author: Mike Schuchardt <mikes@lunarg.com>
- * Author: Mike Weiblen <mikew@lunarg.com>
- * Author: Tony Barbour <tony@LunarG.com>
- * Author: John Zulauf <jzulauf@lunarg.com>
- * Author: Shannon McPherson <shannon@lunarg.com>
- * Author: Jeremy Kniager <jeremyk@lunarg.com>
- * Author: Tobias Hector <tobias.hector@amd.com>
- * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 
 #include <algorithm>

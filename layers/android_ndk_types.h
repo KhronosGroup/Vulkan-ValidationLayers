@@ -1,6 +1,6 @@
 /* Copyright (c) 2018-2021 The Khronos Group Inc.
- * Copyright (c) 2018-2021 Valve Corporation
- * Copyright (c) 2018-2021 LunarG, Inc.
+ * Copyright (c) 2018-2023 Valve Corporation
+ * Copyright (c) 2018-2023 LunarG, Inc.
  * Copyright (C) 2018-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Dave Houlton <daveh@lunarg.com>
  */
 
 // Overview of Android NDK headers:

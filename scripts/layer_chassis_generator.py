@@ -16,10 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author: Tobin Ehlis <tobine@google.com>
-# Author: Mark Lobodzinski <mark@lunarg.com>
-# Author: Nadav Geva <nadav.geva@amd.com>
-#
 # This script generates the dispatch portion of a factory layer which intercepts
 # all Vulkan  functions. The resultant factory layer allows rapid development of
 # layers and interceptors.
@@ -563,9 +559,6 @@ class ValidationObject {
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Nadav Geva <nadav.geva@amd.com>
  */"""
 
     inline_custom_source_preamble_1 = """

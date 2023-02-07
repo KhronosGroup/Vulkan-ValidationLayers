@@ -7,8 +7,6 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #ifndef VKLAYERTESTS_VIDEO_H

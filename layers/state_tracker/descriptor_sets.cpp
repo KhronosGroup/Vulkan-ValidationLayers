@@ -14,11 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Tobin Ehlis <tobine@google.com>
- *         John Zulauf <jzulauf@lunarg.com>
- *         Jeremy Kniager <jeremyk@lunarg.com>
- *         Jeremy Gebben <jeremyg@lunarg.com>
  */
 
 #include "state_tracker/descriptor_sets.h"

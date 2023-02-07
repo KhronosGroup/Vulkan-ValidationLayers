@@ -14,10 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Courtney Goeltzenleuchter <courtney@LunarG.com>
- * Author: Cody Northrop <cody@lunarg.com>
- * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 #ifndef VKTESTBINDING_H

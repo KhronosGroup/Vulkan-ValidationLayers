@@ -14,14 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Courtney Goeltzenleuchter <courtneygo@google.com>
- * Author: Tobin Ehlis <tobine@google.com>
- * Author: Chris Forbes <chrisf@ijw.co.nz>
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Author: John Zulauf <jzulauf@lunarg.com>
- * Author: Camden Stocker <camden@lunarg.com>
  */
 #ifndef CORE_VALIDATION_ERROR_ENUMS_H_
 #define CORE_VALIDATION_ERROR_ENUMS_H_

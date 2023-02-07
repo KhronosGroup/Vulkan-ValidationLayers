@@ -15,16 +15,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Courtney Goeltzenleuchter <courtneygo@google.com>
- * Author: Tobin Ehlis <tobine@google.com>
- * Author: Chris Forbes <chrisf@ijw.co.nz>
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Author: John Zulauf <jzulauf@lunarg.com>
- * Author: Tobias Hector <tobias.hector@amd.com>
- * Author: Jeremy Gebben <jeremyg@lunarg.com>
- * Author: Nathaniel Cesario <nathaniel@lunarg.com>
  */
 
 #include "state_tracker/pipeline_layout_state.h"

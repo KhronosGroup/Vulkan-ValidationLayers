@@ -19,11 +19,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Author: Spencer Fricke <s.fricke@samsung.com>
- *
  ****************************************************************************/
 
 #include "vk_format_utils.h"

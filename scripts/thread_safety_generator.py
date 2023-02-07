@@ -17,9 +17,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: Mike Stroyan <stroyan@google.com>
-# Author: Mark Lobodzinski <mark@lunarg.com>
 
 import os,re,sys
 from generator import *
@@ -148,8 +145,6 @@ class ThreadOutputGenerator(OutputGenerator):
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Mark Lobodzinski <mark@lunarg.com>
  */"""
 
  # Note that the inline_custom_header_preamble template below contains three embedded template expansion identifiers.
