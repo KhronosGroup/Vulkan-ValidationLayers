@@ -13,12 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: Mark Lobodzinski <mark@lunarg.com>
-# Author: Mike Schuchardt <mikes@lunarg.com>
-# Author: Nathaniel Cesario <nathaniel@lunarg.com>
-# Author: Karl Schultz <karl@lunarg.com>
-# Author: Tony Barbour <tony@lunarg.com>
 
 # Script to determine if source code in Pull Request is properly formatted.
 #

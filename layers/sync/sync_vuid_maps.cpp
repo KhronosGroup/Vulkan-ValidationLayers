@@ -14,8 +14,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 #include "sync/sync_vuid_maps.h"
 #include "core_error_location.h"

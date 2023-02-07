@@ -15,11 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: Tobin Ehlis <tobine@google.com>
-# Author: Dave Houlton <daveh@lunarg.com>
-# Author: Shannon McPherson <shannon@lunarg.com>
-
 import argparse
 import common_codegen
 import csv
@@ -463,9 +458,6 @@ class OutputDatabase:
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Tobin Ehlis <tobine@google.com>
- * Author: Dave Houlton <daveh@lunarg.com>
  */
 
 #pragma once

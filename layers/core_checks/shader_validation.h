@@ -15,8 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Chris Forbes <chrisf@ijw.co.nz>
- *
  * The Shader Validation file is in charge of taking the Shader Module data and validating it
  */
 #ifndef VULKAN_SHADER_VALIDATION_H

@@ -16,10 +16,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: Mark Lobodzinski <mark@lunarg.com>
-# Author: Tobin Ehlis <tobine@google.com>
-# Author: John Zulauf <jzulauf@lunarg.com>
 
 import os,re,sys
 import xml.etree.ElementTree as etree
@@ -170,14 +166,6 @@ class HelperFileOutputGenerator(OutputGenerator):
         copyright += ' * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n'
         copyright += ' * See the License for the specific language governing permissions and\n'
         copyright += ' * limitations under the License.\n'
-        copyright += ' *\n'
-        copyright += ' * Author: Mark Lobodzinski <mark@lunarg.com>\n'
-        copyright += ' * Author: Courtney Goeltzenleuchter <courtneygo@google.com>\n'
-        copyright += ' * Author: Tobin Ehlis <tobine@google.com>\n'
-        copyright += ' * Author: Chris Forbes <chrisforbes@google.com>\n'
-        copyright += ' * Author: John Zulauf<jzulauf@lunarg.com>\n'
-        copyright += ' * Author: Tony Barbour <tony@lunarg.com>\n'
-        copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
     #

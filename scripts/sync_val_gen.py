@@ -16,9 +16,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: John Zulauf <jzulauf@lunarg.com>
-# Author: Jeremy Gebben <jeremyg@lunarg.com>
 import os
 import json
 import re

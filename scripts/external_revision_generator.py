@@ -16,9 +16,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Author: Cort Stratton <cort@google.com>
-# Author: Jean-Francois Roy <jfroy@google.com>
 
 import argparse
 import hashlib
@@ -54,10 +51,6 @@ def generate(symbol_name, commit_id, output_header_file):
         copyright += ' * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n'
         copyright += ' * See the License for the specific language governing permissions and\n'
         copyright += ' * limitations under the License.\n'
-        copyright += ' *\n'
-        copyright += ' * Author: Chris Forbes <chrisforbes@google.com>\n'
-        copyright += ' * Author: Cort Stratton <cort@google.com>\n'
-        copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         header_file.write(copyright)
         # Contents

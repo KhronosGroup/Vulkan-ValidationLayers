@@ -15,10 +15,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Camden Stocker <camden@lunarg.com>
- * Author: Nadav Geva <nadav.geva@amd.com>
- * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #include "best_practices/best_practices_validation.h"

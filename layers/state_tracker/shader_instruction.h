@@ -11,9 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Spencer Fricke <spencerfricke@gmail.com>
- *
+ * 
  * The Shader Instruction file is in charge of holding instruction information
  */
 #pragma once

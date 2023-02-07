@@ -11,9 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Spencer Fricke <s.fricke@samsung.com>
- *
+ * 
  * The Shader Module file is in charge of all things around creating and parsing an internal representation of a shader module
  */
 #ifndef VULKAN_SHADER_MODULE_H

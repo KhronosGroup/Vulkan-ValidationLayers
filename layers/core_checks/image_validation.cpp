@@ -17,11 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Shannon McPherson <shannon@lunarg.com>
- * Author: Tobias Hector <tobias.hector@amd.com>
- * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #include <string>

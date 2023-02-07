@@ -15,10 +15,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Chris Forbes <chrisf@ijw.co.nz>
- * Author: Dave Houlton <daveh@lunarg.com>
- * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
 #include "core_checks/shader_validation.h"

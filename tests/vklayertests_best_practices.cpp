@@ -10,9 +10,6 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Author: Camden Stocker <camden@lunarg.com>
- * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #include "cast_utils.h"

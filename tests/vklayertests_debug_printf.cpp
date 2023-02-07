@@ -9,10 +9,6 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Author: Mark Lobodzinski <mark@lunarg.com>
- * Author: Tony Barbour <tony@LunarG.com>
- * Author: Nathaniel Cesario <nathaniel@lunarg.com>
  */
 
 #include "layer_validation_tests.h"

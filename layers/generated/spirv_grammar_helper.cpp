@@ -18,8 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Spencer Fricke <s.fricke@samsung.com>
- *
  * This file is related to anything that is found in the SPIR-V grammar
  * file found in the SPIRV-Headers. Mainly used for SPIR-V util functions.
  *
