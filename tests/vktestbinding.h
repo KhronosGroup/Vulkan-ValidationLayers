@@ -325,7 +325,6 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     // vkUnmapMemory()
     void unmap() const;
 
-    static VkMemoryAllocateInfo alloc_info(VkDeviceSize size, uint32_t memory_type_index, void *alloc_info_pnext = nullptr);
     static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
                                                         VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
 };
@@ -1001,13 +1000,6 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
 
     bool khr_ = false;
 };
-
-inline VkMemoryAllocateInfo DeviceMemory::alloc_info(VkDeviceSize size, uint32_t memory_type_index, void *alloc_info_pnext) {
-    VkMemoryAllocateInfo info = LvlInitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
-    info.allocationSize = size;
-    info.memoryTypeIndex = memory_type_index;
-    return info;
-}
 
 inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
                                               void *create_info_pnext) {

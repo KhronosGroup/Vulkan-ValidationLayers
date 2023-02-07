@@ -905,15 +905,13 @@ TEST_F(VkLayerTest, QueryMemoryCommitmentWithoutLazyProperty) {
     VkImageObj image(m_device);
     image.init_no_mem(*m_device, image_ci);
 
-    auto mem_reqs = image.memory_requirements();
-    // memory_type_index is set to 0 here, but is set properly below
-    auto image_alloc_info = vk_testing::DeviceMemory::alloc_info(mem_reqs.size, 0);
+    const auto mem_reqs = image.memory_requirements();
+    auto image_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    image_alloc_info.allocationSize = mem_reqs.size;
 
-    bool pass;
     // the last argument is the "forbid" argument for set_memory_type, disallowing
     // that particular memory type rather than requiring it
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
-    if (!pass) {
+    if (!m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)) {
         GTEST_SKIP() << "Failed to set memory type";
     }
     vk_testing::DeviceMemory mem;
@@ -14259,12 +14257,14 @@ TEST_F(VkLayerTest, InvalidQueueBindSparseMemoryType) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_mem_alloc = vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, 0);
+    auto buffer_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
     buffer_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    VkMemoryAllocateInfo image_mem_alloc = vk_testing::DeviceMemory::alloc_info(image_mem_reqs.size, 0);
+    auto image_mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = lazily_allocated_index;
 
     vk_testing::DeviceMemory buffer_mem;
@@ -14320,8 +14320,8 @@ TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindSize) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const auto buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vk_testing::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -14367,8 +14367,8 @@ TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindResourceOffset) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const auto buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vk_testing::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -14416,8 +14416,8 @@ TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindSizeResourceOffset) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const auto buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vk_testing::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -14465,8 +14465,8 @@ TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindSizeMemoryOffset) {
 
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_mem_alloc =
-        vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const auto buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vk_testing::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -16098,8 +16098,8 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
 
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
-    VkMemoryAllocateInfo image_mem_alloc =
-        vk_testing::DeviceMemory::alloc_info(image_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const auto image_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vk_testing::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
