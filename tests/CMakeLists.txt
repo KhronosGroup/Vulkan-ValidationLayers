@@ -77,6 +77,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     vksyncvaltests.cpp
     vktestbinding.cpp
     vktestframework.cpp
+    ray_tracing_objects.h
+    ray_tracing_objects.cpp    
 )
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust

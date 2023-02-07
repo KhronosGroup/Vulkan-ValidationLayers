@@ -1969,10 +1969,210 @@ TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
         if (i > 0) {
             m_errorMonitor->VerifyFound();
         }
+    }
+}
+
+TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
+    TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
+    
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    GetPhysicalDeviceFeatures2(features2);
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported";
+    }
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    auto vkWriteAccelerationStructuresPropertiesKHR =
+        GetDeviceProcAddr<PFN_vkWriteAccelerationStructuresPropertiesKHR>("vkWriteAccelerationStructuresPropertiesKHR");
+    auto vkCmdWriteAccelerationStructuresPropertiesKHR =
+        GetDeviceProcAddr<PFN_vkCmdWriteAccelerationStructuresPropertiesKHR>("vkCmdWriteAccelerationStructuresPropertiesKHR");
+
+    // On host query with invalid query type
+    if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
+        rt::as::BuildGeometryInfoKHR as_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        as_build_info.GetDstAS()->SetBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
+
+        m_commandBuffer->begin();
+        as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        constexpr size_t stride = 1;
+        constexpr size_t data_size = sizeof(uint32_t) * stride;
+        uint8_t data[data_size];
+        // Incorrect query type
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03432");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_OCCLUSION, data_size, data, stride);
+        m_errorMonitor->VerifyFound();
+
+        // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, but stride is not a multiple of the size of VkDeviceSize
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, data_size, data, stride);
+        m_errorMonitor->VerifyFound();
+
+        // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, but stride is not a multiple
+        // of the size of VkDeviceSize
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
+                                                   data_size, data, stride);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // On device query with invalid query type
+    {
+        rt::as::BuildGeometryInfoKHR as_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
 
         cmd_buffer->end();
         vbos[i] = nullptr;
         ibos[i] = nullptr;
+        m_commandBuffer->begin();
+
+        as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+        // Incorrect query type
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-03432");
+        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                      VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->end();
+    }
+}
+
+TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
+    TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
+    
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    auto ray_tracing_maintenance1 = LvlInitStruct<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(&ray_query_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_maintenance1);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    GetPhysicalDeviceFeatures2(features2);
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported";
+    }
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery not supported";
+    }
+    if (ray_tracing_maintenance1.rayTracingMaintenance1 == VK_FALSE) {
+        GTEST_SKIP() << "rayTracingMaintenance1 not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    auto vkWriteAccelerationStructuresPropertiesKHR =
+        GetDeviceProcAddr<PFN_vkWriteAccelerationStructuresPropertiesKHR>("vkWriteAccelerationStructuresPropertiesKHR");
+    auto vkCmdWriteAccelerationStructuresPropertiesKHR =
+        GetDeviceProcAddr<PFN_vkCmdWriteAccelerationStructuresPropertiesKHR>("vkCmdWriteAccelerationStructuresPropertiesKHR");
+
+    // On host query with invalid query type
+    if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
+        rt::as::BuildGeometryInfoKHR as_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        as_build_info.GetDstAS()->SetBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
+
+        m_commandBuffer->begin();
+        as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        constexpr size_t stride = 1;
+        constexpr size_t data_size = sizeof(uint32_t) * stride;
+        uint8_t data[data_size];
+        // Incorrect query type
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_OCCLUSION, data_size, data, stride);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // On device query with invalid query type
+    {
+        rt::as::BuildGeometryInfoKHR as_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
+
+        m_commandBuffer->begin();
+
+        as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
+        // Incorrect query type
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-06742");
+        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                      VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
     }
 }
 
