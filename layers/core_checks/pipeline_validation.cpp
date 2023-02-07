@@ -2921,72 +2921,74 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             }
         }
 
-        for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
-            const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
-            if (color_format != VK_FORMAT_UNDEFINED) {
-                VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
-                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
-                    (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
-                     (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "]: pColorBlendState->blendEnable must be false ",
-                                     pipe_index);
-                }
-
-                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
-                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
-                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                         "]: color_format (%s) must be a format with potential format features that include "
-                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
-                                         pipe_index, string_VkFormat(color_format));
+        if (pipeline.fragment_output_state) {
+            for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
+                const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
+                if (color_format != VK_FORMAT_UNDEFINED) {
+                    VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
+                    if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
+                        (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
+                         (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "]: pColorBlendState->blendEnable must be false ",
+                                         pipe_index);
                     }
-                } else {
-                    if ((format_features &
-                         (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                        skip |=
-                            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
+
+                    if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
+                        if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
+                                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                             "]: color_format (%s) must be a format with potential format features that include "
+                                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                             pipe_index, string_VkFormat(color_format));
+                        }
+                    } else {
+                        if ((format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
+                                                VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                            skip |= LogError(
+                                device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
+                                "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                "]: color_format (%s) must be a format with potential format features that include "
+                                "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
+                                pipe_index, string_VkFormat(color_format));
+                        }
+                    }
+                }
+            }
+
+            if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
+                if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",
                                      "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                     "]: color_format (%s) must be a format with potential format features that include "
-                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
-                                     pipe_index, string_VkFormat(color_format));
-                    }
+                                     "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
+                                     "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                     pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat));
                 }
             }
-        }
 
-        if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
-                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                                 pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat));
+            if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
+                if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586",
+                                     "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                     "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
+                                     "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                     pipe_index, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+                }
             }
-        }
 
-        if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586",
+            if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+                (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+                (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589",
                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
-                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                                 pipe_index, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+                                 "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
+                                 "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
+                                 pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
+                                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
             }
-        }
-
-        if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
-            (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
-            (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
-                             "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
-                             pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
-                             string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
         if (pipeline.IsRenderPassStateRequired()) {
