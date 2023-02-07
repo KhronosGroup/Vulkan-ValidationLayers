@@ -661,7 +661,10 @@ VkMemoryRequirements Buffer::memory_requirements() const {
 }
 
 void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
-    EXPECT(vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset) == VK_SUCCESS);
+    const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
+    // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
+    // In the case of a validation error, it's part of the test logic how to handle it.
+    EXPECT(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
 void Buffer::bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset) {
@@ -733,7 +736,10 @@ VkMemoryRequirements Image::memory_requirements() const {
 }
 
 void Image::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
-    EXPECT(vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset) == VK_SUCCESS);
+    const auto result = vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset);
+    // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
+    // In the case of a validation error, it's part of the test logic how to handle it.
+    EXPECT(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
 VkSubresourceLayout Image::subresource_layout(const VkImageSubresource &subres) const {
