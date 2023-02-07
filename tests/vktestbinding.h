@@ -320,9 +320,13 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
     // vkUnmapMemory()
     void unmap() const;
-
-    static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
+	const auto &get_memory_allocate_info() { return memory_allocate_info_; }
+	
+	static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
                                                         VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
+                                                        
+  private:
+    VkMemoryAllocateInfo memory_allocate_info_{};
 };
 
 class Fence : public internal::NonDispHandle<VkFence> {
@@ -426,7 +430,7 @@ static constexpr NoMemT no_mem{};
 
 class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
-    explicit Buffer() : NonDispHandle() {}
+    explicit Buffer() : NonDispHandle(), create_info_(LvlInitStruct<decltype(create_info_)>()) {}
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info); }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props) {
         init(dev, info, mem_props);
@@ -440,9 +444,22 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         memflagsinfo.flags = alloc_flags;
         init(dev, info, mem_props, &memflagsinfo);
     }
+    explicit Buffer(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props, VkBufferUsageFlags usage,
+                    void *alloc_info_pnext) {
+        init(dev, size, mem_props, usage, alloc_info_pnext);
+    }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
-    Buffer &operator=(Buffer &&rhs) {
+    Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
+        create_info_ = std::move(rhs.create_info_);
+        internal_mem_ = std::move(rhs.internal_mem_);
+    }
+    Buffer &operator=(Buffer &&rhs) noexcept {
+        if (&rhs == this) {
+            return *this;
+        }
+        destroy();
+        internal_mem_.destroy();
         NonDispHandle::operator=(std::move(rhs));
         create_info_ = std::move(rhs.create_info_);
         internal_mem_ = std::move(rhs.internal_mem_);
@@ -539,7 +556,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
   private:
     VkBufferCreateInfo create_info_;
-
     DeviceMemory internal_mem_;
 };
 
@@ -738,7 +754,6 @@ class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationSt
 
   private:
     VkAccelerationStructureCreateInfoKHR info_;
-    DeviceMemory memory_;
     uint64_t opaque_handle_;
 };
 
