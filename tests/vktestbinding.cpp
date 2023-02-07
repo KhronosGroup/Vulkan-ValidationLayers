@@ -467,6 +467,7 @@ DeviceMemory::~DeviceMemory() noexcept { destroy(); }
 
 void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::AllocateMemory, dev, &info);
+    memory_allocate_info_ = info;
 }
 
 const void *DeviceMemory::map(VkFlags flags) const {
@@ -910,7 +911,7 @@ vk_testing::Buffer AccelerationStructureKHR::create_scratch_buffer(const Device 
         create_info.size = pCreateInfo->size;
     } else {
         create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+        create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 
