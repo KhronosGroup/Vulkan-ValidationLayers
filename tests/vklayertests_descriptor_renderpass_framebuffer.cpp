@@ -12900,10 +12900,9 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         m_errorMonitor->VerifyFound();
 
         {
-            const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-            const uint32_t INVALID_QUEUE = std::numeric_limits<uint32_t>::max();
-            if (INVALID_QUEUE != no_gfx_qfi) {
-                VkCommandPoolObj command_pool(m_device, no_gfx_qfi);
+            const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+            if (no_gfx_qfi) {
+                VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
                 ASSERT_TRUE(command_pool.initialized());
                 VkCommandBufferObj command_buffer(m_device, &command_pool);
 
@@ -13134,14 +13133,13 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
     }
 
     {
-        const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-        const uint32_t INVALID_QUEUE = std::numeric_limits<uint32_t>::max();
-        if (INVALID_QUEUE == no_gfx_qfi) {
+        const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+        if (!no_gfx_qfi) {
             GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
             return;
         }
 
-        VkCommandPoolObj command_pool(m_device, no_gfx_qfi);
+        VkCommandPoolObj command_pool(m_device, no_gfx_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
         VkCommandBufferObj command_buffer(m_device, &command_pool);
 

@@ -1355,9 +1355,13 @@ TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    const std::optional queueFamilyIndex = DeviceObj()->QueueFamilyMatching(0, 0, true);
+    if (!queueFamilyIndex) {
+        GTEST_SKIP() << "Required queue families not present";
+    }
+
     // vk::CreateInstance, and vk::CreateDevice tend to crash in the Loader Trampoline ATM, so choosing vk::CreateCommandPool
-    const VkCommandPoolCreateInfo cpci = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0,
-                                          DeviceObj()->QueueFamilyMatching(0, 0, true)};
+    const VkCommandPoolCreateInfo cpci = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0, queueFamilyIndex.value()};
     VkCommandPool cmdPool;
 
     struct Alloc {
@@ -10723,8 +10727,8 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
-    if (no_gfx == vvl::kU32Max) {
+    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
 
@@ -10743,7 +10747,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     buffer_memory_barrier.offset = 0;
     buffer_memory_barrier.size = 256;
     buffer_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    buffer_memory_barrier.dstQueueFamilyIndex = no_gfx;
+    buffer_memory_barrier.dstQueueFamilyIndex = no_gfx.value();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -10755,7 +10759,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_memory_barrier.image = image.handle();
     image_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_memory_barrier.dstQueueFamilyIndex = no_gfx;
+    image_memory_barrier.dstQueueFamilyIndex = no_gfx.value();
     image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_memory_barrier.subresourceRange.baseArrayLayer = 0;
     image_memory_barrier.subresourceRange.baseMipLevel = 0;
@@ -11532,15 +11536,16 @@ TEST_F(VkLayerTest, PipelineStatisticsQuery) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint32_t graphics_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
-    uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (graphics_queue_family_index == std::numeric_limits<uint32_t>::max() &&
-        compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+    const std::optional<uint32_t> graphics_queue_family_index =
+        m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
+    const std::optional<uint32_t> compute_queue_family_index =
+        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!graphics_queue_family_index && !compute_queue_family_index) {
         GTEST_SKIP() << "required queue families not found";
     }
 
-    if (graphics_queue_family_index != std::numeric_limits<uint32_t>::max()) {
-        VkCommandPoolObj command_pool(m_device, graphics_queue_family_index);
+    if (graphics_queue_family_index) {
+        VkCommandPoolObj command_pool(m_device, graphics_queue_family_index.value());
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -11560,8 +11565,8 @@ TEST_F(VkLayerTest, PipelineStatisticsQuery) {
         command_buffer.end();
     }
 
-    if (compute_queue_family_index != std::numeric_limits<uint32_t>::max()) {
-        VkCommandPoolObj command_pool(m_device, compute_queue_family_index);
+    if (compute_queue_family_index) {
+        VkCommandPoolObj command_pool(m_device, compute_queue_family_index.value());
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -11875,11 +11880,12 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
     GetPhysicalDeviceProperties2(phys_dev_props_2);
 
-    uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-    if (compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+    const std::optional<uint32_t> compute_queue_family_index =
+        m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (!compute_queue_family_index) {
         GTEST_SKIP() << "required queue family not found, skipping test";
     }
-    VkCommandPoolObj command_pool(m_device, compute_queue_family_index);
+    VkCommandPoolObj command_pool(m_device, compute_queue_family_index.value());
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();

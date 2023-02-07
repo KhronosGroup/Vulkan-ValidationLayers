@@ -66,8 +66,8 @@ class VkDeviceObj : public vk_testing::Device {
                 VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr);
 
     // Find a queue family with and without desired capabilities
-    uint32_t QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
-    uint32_t QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
+    std::optional<uint32_t> QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
+    std::optional<uint32_t> QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
         // an all_bits match with 0 matches all
         return QueueFamilyMatching(VkQueueFlags(0), capabilities, true /* all_bits with */);
     }

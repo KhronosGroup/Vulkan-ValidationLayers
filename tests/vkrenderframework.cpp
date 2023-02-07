@@ -32,6 +32,7 @@
 #include "vk_format_utils.h"
 #include "vk_extension_helper.h"
 #include "vk_layer_settings_ext.h"
+#include "layer_validation_tests.h"
 
 using std::string;
 using std::strncmp;
@@ -1080,15 +1081,15 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, vector<const char *>
     queue_props = phy().queue_properties();
 }
 
-uint32_t VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
-    for (uint32_t i = 0; i < queue_props.size(); i++) {
-        auto flags = queue_props[i].queueFlags;
-        bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
+std::optional<uint32_t> VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
+    for (uint32_t i = 0; i < size32(queue_props); i++) {
+        const auto flags = queue_props[i].queueFlags;
+        const bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;
         if (matches && ((flags & without) == 0) && (queue_props[i].queueCount > 0)) {
             return i;
         }
     }
-    return vvl::kU32Max;
+    return {};
 }
 
 void VkDeviceObj::SetDeviceQueue() {
