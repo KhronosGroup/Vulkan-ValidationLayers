@@ -489,8 +489,8 @@ void *DeviceMemory::map(VkFlags flags) {
 void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
 
 VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
-                                                           VkMemoryPropertyFlags mem_props) {
-    VkMemoryAllocateInfo info = alloc_info(reqs.size, 0);
+                                                           VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+    VkMemoryAllocateInfo info = alloc_info(reqs.size, 0, alloc_info_pnext);
     EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &info, mem_props));
     return info;
 }
@@ -641,8 +641,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     init_no_mem(dev, info);
 
-    auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props);
-    alloc_info.pNext = alloc_info_pnext;
+    auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext);
     internal_mem_.init(dev, alloc_info);
 
     bind_memory(internal_mem_, 0);
@@ -692,11 +691,17 @@ void BufferView::init(const Device &dev, const VkBufferViewCreateInfo &info) {
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
 
-void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props) {
+Image::Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext)
+    : format_features_(0) {
+    init(dev, info, mem_props, alloc_info_pnext);
+}
+
+void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     init_no_mem(dev, info);
 
     if (initialized()) {
-        internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props));
+        auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext);
+        internal_mem_.init(dev, alloc_info);
         bind_memory(internal_mem_, 0);
     }
 }
