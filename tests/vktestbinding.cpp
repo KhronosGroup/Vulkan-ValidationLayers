@@ -490,9 +490,10 @@ void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
 
 VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
-    VkMemoryAllocateInfo info = alloc_info(reqs.size, 0, alloc_info_pnext);
-    EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &info, mem_props));
-    return info;
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(alloc_info_pnext);
+    alloc_info.allocationSize = reqs.size;
+    EXPECT(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
+    return alloc_info;
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Fence, vk::DestroyFence)
