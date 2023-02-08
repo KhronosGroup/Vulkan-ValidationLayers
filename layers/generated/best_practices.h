@@ -2096,6 +2096,7 @@ const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_EXT_device_address_binding_report", "debugging, devtools"},
     {"VK_EXT_device_memory_report", "devtools"},
     {"VK_EXT_image_2d_view_of_3d", "glemulation"},
+    {"VK_EXT_image_sliced_view_of_3d", "d3demulation"},
     {"VK_EXT_legacy_dithering", "glemulation"},
     {"VK_EXT_line_rasterization", "cadsupport"},
     {"VK_EXT_mutable_descriptor_type", "d3demulation"},

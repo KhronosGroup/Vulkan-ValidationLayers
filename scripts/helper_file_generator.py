@@ -196,14 +196,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         name_define = nameElem.get('name')
         if 'EXTENSION_NAME' not in name_define:
             print("Error in vk.xml file -- extension name is not available")
-        requires = interface.get('requires')
+        requires = interface.get('depends')
         if requires is not None:
-            required_extensions = requires.split(',')
+            required_extensions = exprValues(parseExpr(requires))
         else:
             required_extensions = list()
-        requiresCore = interface.get('requiresCore')
-        if requiresCore is not None:
-            required_extensions.append('VK_VERSION_%s' % ('_'.join(requiresCore.split('.'))))
         info = { 'define': GetNameDefine(interface), 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info

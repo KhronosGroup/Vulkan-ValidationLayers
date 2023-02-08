@@ -752,6 +752,9 @@ if __name__ == '__main__':
     tree = etree.parse(args.registry)
     endTimer(args.time, '* Time to make ElementTree =')
 
+    # Filter out non-Vulkan extensions
+    [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and options.apiname not in sup.split(',')]
+
     # Load the XML tree into the registry object
     startTimer(args.time)
     reg.loadElementTree(tree)

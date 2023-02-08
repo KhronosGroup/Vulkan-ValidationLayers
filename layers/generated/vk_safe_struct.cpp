@@ -56694,6 +56694,192 @@ void safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT::initialize(const
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM(const VkPhysicalDeviceShaderCorePropertiesARM* in_struct) :
+    sType(in_struct->sType),
+    pixelRate(in_struct->pixelRate),
+    texelRate(in_struct->texelRate),
+    fmaRate(in_struct->fmaRate)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM),
+    pNext(nullptr),
+    pixelRate(),
+    texelRate(),
+    fmaRate()
+{}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src)
+{
+    sType = copy_src.sType;
+    pixelRate = copy_src.pixelRate;
+    texelRate = copy_src.texelRate;
+    fmaRate = copy_src.fmaRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM& safe_VkPhysicalDeviceShaderCorePropertiesARM::operator=(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pixelRate = copy_src.pixelRate;
+    texelRate = copy_src.texelRate;
+    fmaRate = copy_src.fmaRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::~safe_VkPhysicalDeviceShaderCorePropertiesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesARM::initialize(const VkPhysicalDeviceShaderCorePropertiesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pixelRate = in_struct->pixelRate;
+    texelRate = in_struct->texelRate;
+    fmaRate = in_struct->fmaRate;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesARM::initialize(const safe_VkPhysicalDeviceShaderCorePropertiesARM* copy_src)
+{
+    sType = copy_src->sType;
+    pixelRate = copy_src->pixelRate;
+    texelRate = copy_src->texelRate;
+    fmaRate = copy_src->fmaRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT(const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    imageSlicedViewOf3D(in_struct->imageSlicedViewOf3D)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT),
+    pNext(nullptr),
+    imageSlicedViewOf3D()
+{}
+
+safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT(const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    imageSlicedViewOf3D = copy_src.imageSlicedViewOf3D;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::operator=(const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageSlicedViewOf3D = copy_src.imageSlicedViewOf3D;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::~safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::initialize(const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    imageSlicedViewOf3D = in_struct->imageSlicedViewOf3D;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::initialize(const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    imageSlicedViewOf3D = copy_src->imageSlicedViewOf3D;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageViewSlicedCreateInfoEXT::safe_VkImageViewSlicedCreateInfoEXT(const VkImageViewSlicedCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    sliceOffset(in_struct->sliceOffset),
+    sliceCount(in_struct->sliceCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewSlicedCreateInfoEXT::safe_VkImageViewSlicedCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT),
+    pNext(nullptr),
+    sliceOffset(),
+    sliceCount()
+{}
+
+safe_VkImageViewSlicedCreateInfoEXT::safe_VkImageViewSlicedCreateInfoEXT(const safe_VkImageViewSlicedCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    sliceOffset = copy_src.sliceOffset;
+    sliceCount = copy_src.sliceCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewSlicedCreateInfoEXT& safe_VkImageViewSlicedCreateInfoEXT::operator=(const safe_VkImageViewSlicedCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    sliceOffset = copy_src.sliceOffset;
+    sliceCount = copy_src.sliceCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewSlicedCreateInfoEXT::~safe_VkImageViewSlicedCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewSlicedCreateInfoEXT::initialize(const VkImageViewSlicedCreateInfoEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    sliceOffset = in_struct->sliceOffset;
+    sliceCount = in_struct->sliceCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewSlicedCreateInfoEXT::initialize(const safe_VkImageViewSlicedCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    sliceOffset = copy_src->sliceOffset;
+    sliceCount = copy_src->sliceCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct) :
     sType(in_struct->sType),
     descriptorSetHostMapping(in_struct->descriptorSetHostMapping)
@@ -59992,6 +60178,150 @@ void safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::initialize(con
     sType = copy_src->sType;
     pipelineLibraryGroupHandles = copy_src->pipelineLibraryGroupHandles;
     pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    multiviewPerViewRenderAreas(in_struct->multiviewPerViewRenderAreas)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM),
+    pNext(nullptr),
+    multiviewPerViewRenderAreas()
+{}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    multiviewPerViewRenderAreas = copy_src.multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::operator=(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    multiviewPerViewRenderAreas = copy_src.multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::~safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::initialize(const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    multiviewPerViewRenderAreas = in_struct->multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::initialize(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    multiviewPerViewRenderAreas = copy_src->multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    perViewRenderAreaCount(in_struct->perViewRenderAreaCount),
+    pPerViewRenderAreas(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)in_struct->pPerViewRenderAreas, sizeof(VkRect2D)*in_struct->perViewRenderAreaCount);
+    }
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM),
+    pNext(nullptr),
+    perViewRenderAreaCount(),
+    pPerViewRenderAreas(nullptr)
+{}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src.pPerViewRenderAreas, sizeof(VkRect2D)*copy_src.perViewRenderAreaCount);
+    }
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::operator=(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src.pPerViewRenderAreas, sizeof(VkRect2D)*copy_src.perViewRenderAreaCount);
+    }
+
+    return *this;
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::~safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM()
+{
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct)
+{
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    perViewRenderAreaCount = in_struct->perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)in_struct->pPerViewRenderAreas, sizeof(VkRect2D)*in_struct->perViewRenderAreaCount);
+    }
+}
+
+void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    perViewRenderAreaCount = copy_src->perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src->pPerViewRenderAreas, sizeof(VkRect2D)*copy_src->perViewRenderAreaCount);
+    }
 }
 
 safe_VkAccelerationStructureGeometryTrianglesDataKHR::safe_VkAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR* in_struct) :
@@ -63434,6 +63764,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM:
+            safe_pNext = new safe_VkPhysicalDeviceShaderCorePropertiesARM(reinterpret_cast<const VkPhysicalDeviceShaderCorePropertiesARM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkImageViewSlicedCreateInfoEXT(reinterpret_cast<const VkImageViewSlicedCreateInfoEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
             safe_pNext = new safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(reinterpret_cast<const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(pNext));
             break;
@@ -63553,6 +63892,12 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM:
+            safe_pNext = new safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(reinterpret_cast<const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
@@ -64876,6 +65221,15 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderCorePropertiesARM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_SLICED_VIEW_OF_3D_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SLICED_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkImageViewSlicedCreateInfoEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(header);
             break;
@@ -64995,6 +65349,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM:
+            delete reinterpret_cast<const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

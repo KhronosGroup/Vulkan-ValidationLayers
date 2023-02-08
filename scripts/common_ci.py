@@ -104,7 +104,7 @@ def BuildVVL(args, build_tests=False):
     stats_script = os.path.join('..', 'scripts', 'vk_validation_stats.py')
     validusage = os.path.join(ext_dir, 'Vulkan-Headers', 'registry', 'validusage.json')
     outfile = os.path.join('layers', args.configuration, 'vuid_coverage_database.txt')
-    RunShellCmd(f'python3 {stats_script} {validusage} -text {outfile}', VVL_BUILD_DIR)
+    RunShellCmd(f'{sys.executable} {stats_script} {validusage} -text {outfile}', VVL_BUILD_DIR)
 
 #
 # Prepare Loader for executing Layer Validation Tests

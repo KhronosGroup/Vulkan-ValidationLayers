@@ -56,6 +56,7 @@ jobs:
             cxx: g++
           - cc: clang
             config: debug
+
     steps:
       - uses: actions/checkout@v3
       - uses: lukka/get-cmake@latest
@@ -66,7 +67,7 @@ jobs:
           python-version: '3.8'
       - name: Install build dependencies
         run: |
-          python3 -m pip install jsonschema
+          python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
@@ -91,8 +92,12 @@ jobs:
             external/${{ matrix.config }}/Vulkan-Headers/registry
             external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/${{ matrix.config }}/Vulkan-Headers/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }}
+        run: |
+          echo "PYTHONPATH = $PYTHONPATH"
+          python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }}
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
@@ -124,7 +129,7 @@ jobs:
           python-version: '3.8'
       - name: Install build dependencies
         run: |
-          python3 -m pip install jsonschema
+          python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
@@ -140,15 +145,17 @@ jobs:
           cache-name: cache-linux-cpp20
         with:
           path: |
-            external/${{ matrix.config }}/glslang/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Tools/build/install
-            external/${{ matrix.config }}/robin-hood-hashing/build/install
-            external/${{ matrix.config }}/googletest/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/registry
-            external/${{ matrix.config }}/SPIRV-Headers/include
+            external/release/glslang/build/install
+            external/release/Vulkan-Headers/build/install
+            external/release/SPIRV-Headers/build/install
+            external/release/SPIRV-Tools/build/install
+            external/release/robin-hood-hashing/build/install
+            external/release/googletest/build/install
+            external/release/Vulkan-Headers/registry
+            external/release/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/release/Vulkan-Headers/build/install/share/vulkan/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20'
         env:

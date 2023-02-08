@@ -944,6 +944,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetDiscardRectangleEXT,
     InterceptIdPreCallRecordCmdSetDiscardRectangleEXT,
     InterceptIdPostCallRecordCmdSetDiscardRectangleEXT,
+    InterceptIdPreCallValidateCmdSetDiscardRectangleEnableEXT,
+    InterceptIdPreCallRecordCmdSetDiscardRectangleEnableEXT,
+    InterceptIdPostCallRecordCmdSetDiscardRectangleEnableEXT,
+    InterceptIdPreCallValidateCmdSetDiscardRectangleModeEXT,
+    InterceptIdPreCallRecordCmdSetDiscardRectangleModeEXT,
+    InterceptIdPostCallRecordCmdSetDiscardRectangleModeEXT,
     InterceptIdPreCallValidateSetHdrMetadataEXT,
     InterceptIdPreCallRecordSetHdrMetadataEXT,
     InterceptIdPostCallRecordSetHdrMetadataEXT,
@@ -1046,6 +1052,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCountNV,
     InterceptIdPreCallRecordCmdDrawMeshTasksIndirectCountNV,
     InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountNV,
+    InterceptIdPreCallValidateCmdSetExclusiveScissorEnableNV,
+    InterceptIdPreCallRecordCmdSetExclusiveScissorEnableNV,
+    InterceptIdPostCallRecordCmdSetExclusiveScissorEnableNV,
     InterceptIdPreCallValidateCmdSetExclusiveScissorNV,
     InterceptIdPreCallRecordCmdSetExclusiveScissorNV,
     InterceptIdPostCallRecordCmdSetExclusiveScissorNV,
@@ -2567,6 +2576,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDiscardRectangleEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDiscardRectangleEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDiscardRectangleEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDiscardRectangleEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDiscardRectangleEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDiscardRectangleEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDiscardRectangleModeEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDiscardRectangleModeEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDiscardRectangleModeEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateSetHdrMetadataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetHdrMetadataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetHdrMetadataEXT);
@@ -2677,6 +2692,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMeshTasksIndirectCountNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetExclusiveScissorEnableNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetExclusiveScissorEnableNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetExclusiveScissorEnableNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetExclusiveScissorNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetExclusiveScissorNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetExclusiveScissorNV);

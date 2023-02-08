@@ -6,11 +6,13 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 How to generate the code:
 
 ```bash
-python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
+PYTHONPATH=$PYTHONPATH:$PWD/external/Vulkan-Headers/registry python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
 ```
 
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
 `scripts/` and `layers/generated/` in any PR.
+
+Note the addition of the Vulkan registry directory to `PYTHONPATH`. This is because the generation scripts depend on modules within the Vulkan registry.
 
 ## Cmake helper
 
@@ -20,6 +22,8 @@ the invocation of `scripts/generate_source.py` from the build directory:
 ```bash
 cmake --build . --target VulkanVL_generated_source
 ```
+
+Using the cmake target will also set `PYTHONPATH` properly, assuming a standard cmake invokation was made.
 
 ## How it works
 
