@@ -1,23 +1,32 @@
-# https://github.com/minicli/action-contributors
-name: Update CONTRIBUTORS file
+# Copyright (c) 2023 Valve Corporation
+# Copyright (c) 2023 LunarG, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 on:
-  # Update contributors list once a month
-  schedule:
-    - cron: "0 0 1 * *"
-  workflow_dispatch:
+    push:
+        branches:
+            - main
+
+# https://github.com/marketplace/actions/contribute-list
 jobs:
-  main:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: minicli/action-contributors@v3.3
-        name: "Update a projects CONTRIBUTORS file"
-        env:
-          CONTRIB_REPOSITORY: 'KhronosGroup/Vulkan-ValidationLayers'
-      # Automatically creates a PR with the updated list of contributors
-      - name: Create a PR
-        uses: peter-evans/create-pull-request@v3
-        with:
-          commit-message: 'docs: Update Contributors'
-          title: "[automated] Update Contributors File"
-          token: ${{ secrets.GITHUB_TOKEN }}
+    contrib-readme-job:
+        runs-on: ubuntu-latest
+        name: Automate CONTRIBUTORS.md
+        steps:
+            - name: Contribute List
+              uses: akhilmhdh/contributors-readme-action@v2.3.6
+              with:
+                readme_path: "CONTRIBUTORS.md"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
