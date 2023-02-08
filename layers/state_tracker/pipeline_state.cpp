@@ -126,6 +126,18 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                                                   pipe_state.pre_raster_state->geometry_shader);
                     }
                     break;
+                case VK_SHADER_STAGE_TASK_BIT_EXT:
+                    if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->task_shader) {
+                        stage_states.emplace_back(pipe_state.pre_raster_state->task_shader_ci,
+                                                  pipe_state.pre_raster_state->task_shader);
+                    }
+                    break;
+                case VK_SHADER_STAGE_MESH_BIT_EXT:
+                    if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->mesh_shader) {
+                        stage_states.emplace_back(pipe_state.pre_raster_state->mesh_shader_ci,
+                                                  pipe_state.pre_raster_state->mesh_shader);
+                    }
+                    break;
                 case VK_SHADER_STAGE_FRAGMENT_BIT:
                     if (pipe_state.fragment_shader_state && pipe_state.fragment_shader_state->fragment_shader) {
                         stage_states.emplace_back(pipe_state.fragment_shader_state->fragment_shader_ci.get(),
