@@ -65,7 +65,7 @@ class ConfigFile {
 
 static ConfigFile layer_config;
 
-VK_LAYER_EXPORT std::string GetEnvironment(const char *variable) {
+std::string GetEnvironment(const char *variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     const char *output = getenv(variable);
     return output == NULL ? "" : output;
@@ -103,8 +103,8 @@ VK_LAYER_EXPORT std::string GetEnvironment(const char *variable) {
 #endif
 }
 
-VK_LAYER_EXPORT const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
-VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option) {
+const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
+const char *GetLayerEnvVar(const char *option) {
     // NOTE: new code should use GetEnvironment directly. This is a workaround for the problem
     // described in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3048
     static std::string result;
@@ -112,11 +112,11 @@ VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option) {
     return result.c_str();
 }
 
-VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
+const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
 
 // If option is NULL or stdout, return stdout, otherwise try to open option
 // as a filename. If successful, return file handle, otherwise stdout
-VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name) {
+FILE *getLayerLogOutput(const char *option, const char *layer_name) {
     FILE *log_output = NULL;
     if (!option || !strcmp("stdout", option)) {
         log_output = stdout;
@@ -136,8 +136,7 @@ VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_na
 }
 
 // Map option strings to flag enum values
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkFlags> const &enum_data,
-                                            uint32_t option_default) {
+VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkFlags> const &enum_data, uint32_t option_default) {
     VkDebugReportFlagsEXT flags = option_default;
     string option_list = layer_config.GetOption(option.c_str());
 
@@ -172,7 +171,7 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const string &option, vvl::unordered
     return flags;
 }
 
-VK_LAYER_EXPORT void setLayerOption(const char *option, const char *value) { layer_config.SetOption(option, value); }
+void setLayerOption(const char *option, const char *value) { layer_config.SetOption(option, value); }
 
 // Constructor for ConfigFile. Initialize layers to log error messages to stdout by default. If a vk_layer_settings file is present,
 // its settings will override the defaults.
@@ -345,7 +344,7 @@ void ConfigFile::ParseFile(const char *filename) {
     }
 }
 
-VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags) {
+void PrintMessageFlags(VkFlags vk_flags, char *msg_flags) {
     bool separator = false;
 
     msg_flags[0] = 0;
@@ -374,7 +373,7 @@ VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags) {
     }
 }
 
-VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags) {
+void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags) {
     bool separator = false;
 
     msg_flags[0] = 0;
@@ -398,7 +397,7 @@ VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags) {
     }
 }
 
-VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
+void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
     bool separator = false;
 
     msg_flags[0] = 0;

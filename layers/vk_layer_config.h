@@ -33,7 +33,7 @@
 #define SECONDARY_VK_REGISTRY_HIVE_STR "HKEY_CURRENT_USER"
 #endif
 
-VK_LAYER_EXPORT std::string GetEnvironment(const char *variable);
+std::string GetEnvironment(const char *variable);
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,19 +94,19 @@ const vvl::unordered_map<std::string, VkFlags> log_msg_type_option_definitions =
                                                                                   {std::string("error"), kErrorBit},
                                                                                   {std::string("debug"), kDebugBit}};
 
-VK_LAYER_EXPORT const char *getLayerOption(const char *option);
-VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
-VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo();
+const char *getLayerOption(const char *option);
+const char *GetLayerEnvVar(const char *option);
+const SettingsFileInfo *GetLayerSettingsFileInfo();
 
-VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const std::string &option,
+FILE *getLayerLogOutput(const char *option, const char *layer_name);
+VkFlags GetLayerOptionFlags(const std::string &option,
                                             vvl::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
-VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);
-VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
-VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
-VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags);
+void setLayerOption(const char *option, const char *val);
+void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
+void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
+void PrintMessageType(VkFlags vk_flags, char *msg_flags);
 
 #ifdef __cplusplus
 }
