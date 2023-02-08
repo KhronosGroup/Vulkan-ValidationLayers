@@ -60,8 +60,8 @@ std::vector<VkImageLayout> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_khr_video_decode_queue, { VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,  } },
         { &DeviceExtensions::vk_khr_shared_presentable_image, { VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR,  } },
         { &DeviceExtensions::vk_ext_fragment_density_map, { VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT,  } },
-        { &DeviceExtensions::vk_nv_shading_rate_image, { VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,  } },
         { &DeviceExtensions::vk_khr_fragment_shading_rate, { VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,  } },
+        { &DeviceExtensions::vk_nv_shading_rate_image, { VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,  } },
         { &DeviceExtensions::vk_khr_video_encode_queue, { VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,  } },
         { &DeviceExtensions::vk_ext_attachment_feedback_loop_layout, { VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT,  } },
     };
@@ -537,8 +537,8 @@ std::vector<VkFilter> ValidationObject::ValidParamValues() const {
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkFilterEnums = { VK_FILTER_NEAREST, VK_FILTER_LINEAR,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkFilter>> ExtendedVkFilterEnums = {
-        { &DeviceExtensions::vk_img_filter_cubic, { VK_FILTER_CUBIC_EXT,  } },
         { &DeviceExtensions::vk_ext_filter_cubic, { VK_FILTER_CUBIC_EXT,  } },
+        { &DeviceExtensions::vk_img_filter_cubic, { VK_FILTER_CUBIC_EXT,  } },
     };
     std::vector<VkFilter> values(CoreVkFilterEnums.cbegin(), CoreVkFilterEnums.cend());
     std::set<VkFilter> unique_exts;
@@ -607,8 +607,8 @@ std::vector<VkDescriptorType> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_khr_acceleration_structure, { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,  } },
         { &DeviceExtensions::vk_nv_ray_tracing, { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,  } },
         { &DeviceExtensions::vk_qcom_image_processing, { VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM,  } },
-        { &DeviceExtensions::vk_valve_mutable_descriptor_type, { VK_DESCRIPTOR_TYPE_MUTABLE_EXT,  } },
         { &DeviceExtensions::vk_ext_mutable_descriptor_type, { VK_DESCRIPTOR_TYPE_MUTABLE_EXT,  } },
+        { &DeviceExtensions::vk_valve_mutable_descriptor_type, { VK_DESCRIPTOR_TYPE_MUTABLE_EXT,  } },
     };
     std::vector<VkDescriptorType> values(CoreVkDescriptorTypeEnums.cbegin(), CoreVkDescriptorTypeEnums.cend());
     std::set<VkDescriptorType> unique_exts;
@@ -652,6 +652,8 @@ std::vector<VkAttachmentStoreOp> ValidationObject::ValidParamValues() const {
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkAttachmentStoreOpEnums = { VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_STORE_OP_DONT_CARE,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkAttachmentStoreOp>> ExtendedVkAttachmentStoreOpEnums = {
+        { &DeviceExtensions::vk_ext_load_store_op_none, { VK_ATTACHMENT_STORE_OP_NONE,  } },
+        { &DeviceExtensions::vk_khr_dynamic_rendering, { VK_ATTACHMENT_STORE_OP_NONE,  } },
         { &DeviceExtensions::vk_qcom_render_pass_store_ops, { VK_ATTACHMENT_STORE_OP_NONE,  } },
     };
     std::vector<VkAttachmentStoreOp> values(CoreVkAttachmentStoreOpEnums.cbegin(), CoreVkAttachmentStoreOpEnums.cend());
@@ -674,8 +676,8 @@ std::vector<VkPipelineBindPoint> ValidationObject::ValidParamValues() const {
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkPipelineBindPointEnums = { VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkPipelineBindPoint>> ExtendedVkPipelineBindPointEnums = {
-        { &DeviceExtensions::vk_nv_ray_tracing, { VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,  } },
         { &DeviceExtensions::vk_khr_ray_tracing_pipeline, { VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,  } },
+        { &DeviceExtensions::vk_nv_ray_tracing, { VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,  } },
         { &DeviceExtensions::vk_huawei_subpass_shading, { VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI,  } },
     };
     std::vector<VkPipelineBindPoint> values(CoreVkPipelineBindPointEnums.cbegin(), CoreVkPipelineBindPointEnums.cend());
@@ -719,6 +721,7 @@ std::vector<VkIndexType> ValidationObject::ValidParamValues() const {
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkIndexTypeEnums = { VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkIndexType>> ExtendedVkIndexTypeEnums = {
+        { &DeviceExtensions::vk_khr_acceleration_structure, { VK_INDEX_TYPE_NONE_KHR,  } },
         { &DeviceExtensions::vk_nv_ray_tracing, { VK_INDEX_TYPE_NONE_KHR,  } },
         { &DeviceExtensions::vk_ext_index_type_uint8, { VK_INDEX_TYPE_UINT8_EXT,  } },
     };
@@ -847,8 +850,8 @@ std::vector<VkDescriptorUpdateTemplateType> ValidationObject::ValidParamValues()
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkDescriptorUpdateTemplateTypeEnums = { VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkDescriptorUpdateTemplateType>> ExtendedVkDescriptorUpdateTemplateTypeEnums = {
-        { &DeviceExtensions::vk_khr_push_descriptor, { VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR, VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR,  } },
-        { &DeviceExtensions::vk_khr_descriptor_update_template, { VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR,  } },
+        { &DeviceExtensions::vk_khr_descriptor_update_template, { VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR, VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR, VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR,  } },
+        { &DeviceExtensions::vk_khr_push_descriptor, { VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR, VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR, VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR,  } },
     };
     std::vector<VkDescriptorUpdateTemplateType> values(CoreVkDescriptorUpdateTemplateTypeEnums.cbegin(), CoreVkDescriptorUpdateTemplateTypeEnums.cend());
     std::set<VkDescriptorUpdateTemplateType> unique_exts;
@@ -1022,6 +1025,7 @@ std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() con
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkDebugReportObjectTypeEXTEnums = { VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkDebugReportObjectTypeEXT>> ExtendedVkDebugReportObjectTypeEXTEnums = {
+        { &DeviceExtensions::vk_ext_debug_report, { VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT,  } },
         { &DeviceExtensions::vk_khr_sampler_ycbcr_conversion, { VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT,  } },
         { &DeviceExtensions::vk_khr_descriptor_update_template, { VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT,  } },
         { &DeviceExtensions::vk_nvx_binary_import, { VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT,  } },
