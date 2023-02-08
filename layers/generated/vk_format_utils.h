@@ -132,15 +132,15 @@ enum class FORMAT_COMPATIBILITY_CLASS {
 
 // Numeric
 // Formats with more then one numeric type (VK_FORMAT_D16_UNORM_S8_UINT) will return false
-VK_LAYER_EXPORT bool FormatIsUNORM(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSNORM(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUSCALED(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSSCALED(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUINT(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSINT(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSRGB(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsSFLOAT(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsUFLOAT(VkFormat format);
+bool FormatIsUNORM(VkFormat format);
+bool FormatIsSNORM(VkFormat format);
+bool FormatIsUSCALED(VkFormat format);
+bool FormatIsSSCALED(VkFormat format);
+bool FormatIsUINT(VkFormat format);
+bool FormatIsSINT(VkFormat format);
+bool FormatIsSRGB(VkFormat format);
+bool FormatIsSFLOAT(VkFormat format);
+bool FormatIsUFLOAT(VkFormat format);
 
 // Types from "Interpretation of Numeric Format" table (OpTypeFloat vs OpTypeInt)
 static inline bool FormatIsSampledInt(VkFormat format) { return (FormatIsSINT(format) || FormatIsUINT(format)); }
@@ -152,54 +152,54 @@ static inline bool FormatIsSampledFloat(VkFormat format) {
 }
 
 // Compressed
-VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_HDR(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_ASTC_LDR(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_BC(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_EAC(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_ETC2(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
+bool FormatIsCompressed_ASTC_HDR(VkFormat format);
+bool FormatIsCompressed_ASTC_LDR(VkFormat format);
+bool FormatIsCompressed_BC(VkFormat format);
+bool FormatIsCompressed_EAC(VkFormat format);
+bool FormatIsCompressed_ETC2(VkFormat format);
+bool FormatIsCompressed_PVRTC(VkFormat format);
+bool FormatIsCompressed(VkFormat format);
 
 // Depth/Stencil
-VK_LAYER_EXPORT bool FormatIsDepthOrStencil(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsDepthAndStencil(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsDepthOnly(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsStencilOnly(VkFormat format);
+bool FormatIsDepthOrStencil(VkFormat format);
+bool FormatIsDepthAndStencil(VkFormat format);
+bool FormatIsDepthOnly(VkFormat format);
+bool FormatIsStencilOnly(VkFormat format);
 static inline bool FormatHasDepth(VkFormat format) { return (FormatIsDepthOnly(format) || FormatIsDepthAndStencil(format)); }
 static inline bool FormatHasStencil(VkFormat format) { return (FormatIsStencilOnly(format) || FormatIsDepthAndStencil(format)); }
-VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatStencilSize(VkFormat format);
-VK_LAYER_EXPORT FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format);
-VK_LAYER_EXPORT FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
+uint32_t FormatDepthSize(VkFormat format);
+uint32_t FormatStencilSize(VkFormat format);
+FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format);
+FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
 
 // Packed
-VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
+bool FormatIsPacked(VkFormat format);
 
 // YCbCr
-VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsXChromaSubsampled(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsYChromaSubsampled(VkFormat format);
+bool FormatRequiresYcbcrConversion(VkFormat format);
+bool FormatIsXChromaSubsampled(VkFormat format);
+bool FormatIsYChromaSubsampled(VkFormat format);
 
 // Multiplane
-VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
+bool FormatIsSinglePlane_422(VkFormat format);
+uint32_t FormatPlaneCount(VkFormat format);
 static inline bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
-VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 
 // Size
-VK_LAYER_EXPORT uint32_t FormatComponentCount(VkFormat format);
-VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format);
-VK_LAYER_EXPORT FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
-VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+uint32_t FormatComponentCount(VkFormat format);
+VkExtent3D FormatTexelBlockExtent(VkFormat format);
+FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
+bool FormatElementIsTexel(VkFormat format);
+uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
 // Components
-VK_LAYER_EXPORT bool FormatHasRed(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasGreen(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasBlue(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasAlpha(VkFormat format);
+bool FormatHasRed(VkFormat format);
+bool FormatHasGreen(VkFormat format);
+bool FormatHasBlue(VkFormat format);
+bool FormatHasAlpha(VkFormat format);
 
 
 // Utils/misc

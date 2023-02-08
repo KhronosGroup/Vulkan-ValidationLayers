@@ -392,7 +392,7 @@ static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplan
             output += '// Numeric\n'
             output += '// Formats with more then one numeric type (VK_FORMAT_D16_UNORM_S8_UINT) will return false\n'
             for key in self.numericFormats.keys():
-                output += 'VK_LAYER_EXPORT bool FormatIs{}(VkFormat format);\n'.format(key)
+                output += 'bool FormatIs{}(VkFormat format);\n'.format(key)
             output += '''
 // Types from "Interpretation of Numeric Format" table (OpTypeFloat vs OpTypeInt)
 static inline bool FormatIsSampledInt(VkFormat format) { return (FormatIsSINT(format) || FormatIsUINT(format)); }
@@ -421,8 +421,8 @@ static inline bool FormatIsSampledFloat(VkFormat format) {
         if self.headerFile:
             output += '// Compressed\n'
             for key in sorted(self.compressedFormats.keys()):
-                output += 'VK_LAYER_EXPORT bool FormatIsCompressed_{}(VkFormat format);\n'.format(key)
-            output += 'VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);\n'
+                output += 'bool FormatIsCompressed_{}(VkFormat format);\n'.format(key)
+            output += 'bool FormatIsCompressed(VkFormat format);\n'
 
         elif self.sourceFile:
             for key in sorted(self.compressedFormats.keys()):
@@ -449,16 +449,16 @@ static inline bool FormatIsSampledFloat(VkFormat format) {
         output = ''
         if self.headerFile:
             output += '''// Depth/Stencil
-VK_LAYER_EXPORT bool FormatIsDepthOrStencil(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsDepthAndStencil(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsDepthOnly(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsStencilOnly(VkFormat format);
+bool FormatIsDepthOrStencil(VkFormat format);
+bool FormatIsDepthAndStencil(VkFormat format);
+bool FormatIsDepthOnly(VkFormat format);
+bool FormatIsStencilOnly(VkFormat format);
 static inline bool FormatHasDepth(VkFormat format) { return (FormatIsDepthOnly(format) || FormatIsDepthAndStencil(format)); }
 static inline bool FormatHasStencil(VkFormat format) { return (FormatIsStencilOnly(format) || FormatIsDepthAndStencil(format)); }
-VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatStencilSize(VkFormat format);
-VK_LAYER_EXPORT FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format);
-VK_LAYER_EXPORT FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
+uint32_t FormatDepthSize(VkFormat format);
+uint32_t FormatStencilSize(VkFormat format);
+FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format);
+FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
 '''
         elif self.sourceFile:
             output += '\n// Return true if format is a depth OR stencil format\n'
@@ -574,7 +574,7 @@ VK_LAYER_EXPORT FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format
         output = ''
         if self.headerFile:
             output += '''// Packed
-VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
+bool FormatIsPacked(VkFormat format);
 '''
         elif self.sourceFile:
             output += '\n// Return true if format is a packed format\n'
@@ -592,9 +592,9 @@ VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
         output = ''
         if self.headerFile:
             output += '''// YCbCr
-VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsXChromaSubsampled(VkFormat format);
-VK_LAYER_EXPORT bool FormatIsYChromaSubsampled(VkFormat format);
+bool FormatRequiresYcbcrConversion(VkFormat format);
+bool FormatIsXChromaSubsampled(VkFormat format);
+bool FormatIsYChromaSubsampled(VkFormat format);
 '''
         elif self.sourceFile:
             output += '\n// Return true if format requires sampler YCBCR conversion\n'
@@ -630,11 +630,11 @@ VK_LAYER_EXPORT bool FormatIsYChromaSubsampled(VkFormat format);
         output = ''
         if self.headerFile:
             output += '''// Multiplane
-VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
+bool FormatIsSinglePlane_422(VkFormat format);
+uint32_t FormatPlaneCount(VkFormat format);
 static inline bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
-VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 '''
         elif self.sourceFile:
             output += '\n// Single-plane "_422" formats are treated as 2x1 compressed (for copies)\n'
@@ -692,18 +692,18 @@ VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plan
         output = ''
         if self.headerFile:
             output += '''// Size
-VK_LAYER_EXPORT uint32_t FormatComponentCount(VkFormat format);
-VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format);
-VK_LAYER_EXPORT FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
-VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);
-VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+uint32_t FormatComponentCount(VkFormat format);
+VkExtent3D FormatTexelBlockExtent(VkFormat format);
+FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
+bool FormatElementIsTexel(VkFormat format);
+uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
 // Components
-VK_LAYER_EXPORT bool FormatHasRed(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasGreen(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasBlue(VkFormat format);
-VK_LAYER_EXPORT bool FormatHasAlpha(VkFormat format);
+bool FormatHasRed(VkFormat format);
+bool FormatHasGreen(VkFormat format);
+bool FormatHasBlue(VkFormat format);
+bool FormatHasAlpha(VkFormat format);
 '''
         elif self.sourceFile:
             output += '''

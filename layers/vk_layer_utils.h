@@ -150,8 +150,8 @@ Stream &stream_join(Stream &stream, const String &sep, const Collection &values)
 typedef void *dispatch_key;
 static inline dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
 
-VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
-VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
+VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
+VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
@@ -374,14 +374,14 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
                                                 const char *layer_identifier);
 
-VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
                                                    const char *layer_identifier);
 
-VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &whitelist);
+VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
+bool white_list(const char *item, const std::set<std::string> &whitelist);
 
 static inline int u_ffs(int val) {
 #ifdef WIN32

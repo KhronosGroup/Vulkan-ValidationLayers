@@ -24,7 +24,7 @@
  * This file contains utility functions for layers
  */
 
-VK_LAYER_EXPORT VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions,
+VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions,
                                                      uint32_t *pCount, VkExtensionProperties *pProperties) {
     uint32_t copy_size;
 
@@ -43,7 +43,7 @@ VK_LAYER_EXPORT VkResult util_GetExtensionProperties(const uint32_t count, const
     return VK_SUCCESS;
 }
 
-VK_LAYER_EXPORT VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
+VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
                                                  VkLayerProperties *pProperties) {
     uint32_t copy_size;
 

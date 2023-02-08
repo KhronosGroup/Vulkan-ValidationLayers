@@ -1568,47 +1568,38 @@ static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDevice
 """
 
     inline_custom_source_postamble = """
-// loader-layer interface v0, just wrappers since there is only a layer
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
-                                                                                      VkExtensionProperties *pProperties) {
-    return vulkan_layer_chassis::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount,
-                                                                                  VkLayerProperties *pProperties) {
-    return vulkan_layer_chassis::EnumerateInstanceLayerProperties(pCount, pProperties);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pCount,
-                                                                                VkLayerProperties *pProperties) {
-    // the layer command handles VK_NULL_HANDLE just fine internally
-    assert(physicalDevice == VK_NULL_HANDLE);
-    return vulkan_layer_chassis::EnumerateDeviceLayerProperties(VK_NULL_HANDLE, pCount, pProperties);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
-                                                                                    const char *pLayerName, uint32_t *pCount,
-                                                                                    VkExtensionProperties *pProperties) {
-    // the layer command handles VK_NULL_HANDLE just fine internally
-    assert(physicalDevice == VK_NULL_HANDLE);
-    return vulkan_layer_chassis::EnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice dev, const char *funcName) {
-    return vulkan_layer_chassis::GetDeviceProcAddr(dev, funcName);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *funcName) {
-    return vulkan_layer_chassis::GetInstanceProcAddr(instance, funcName);
-}
-
-VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
-                                                                                           const char *funcName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
     return vulkan_layer_chassis::GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
-VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface *pVersionStruct) {
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define VVL_EXPORT __attribute__((visibility("default")))
+#else
+#define VVL_EXPORT
+#endif
+
+// The following functions need to match the `/DEF` and `--version-script` files
+// for consistency across platforms that don't accept those linker options.
+extern "C" {
+
+VVL_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char *funcName) {
+    return vulkan_layer_chassis::GetInstanceProcAddr(instance, funcName);
+}
+
+VVL_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice dev, const char *funcName) {
+    return vulkan_layer_chassis::GetDeviceProcAddr(dev, funcName);
+}
+
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {
+    return vulkan_layer_chassis::EnumerateInstanceLayerProperties(pCount, pProperties);
+}
+
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount, VkExtensionProperties *pProperties) {
+    return vulkan_layer_chassis::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
+}
+
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface *pVersionStruct) {
     assert(pVersionStruct != nullptr);
     assert(pVersionStruct->sType == LAYER_NEGOTIATE_INTERFACE_STRUCT);
 
@@ -1620,7 +1611,24 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
     }
 
     return VK_SUCCESS;
-}"""
+}
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t *pCount, VkLayerProperties *pProperties) {
+    // the layer command handles VK_NULL_HANDLE just fine internally
+    assert(physicalDevice == VK_NULL_HANDLE);
+    return vulkan_layer_chassis::EnumerateDeviceLayerProperties(VK_NULL_HANDLE, pCount, pProperties);
+}
+
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName, uint32_t *pCount, VkExtensionProperties *pProperties) {
+    // the layer command handles VK_NULL_HANDLE just fine internally
+    assert(physicalDevice == VK_NULL_HANDLE);
+    return vulkan_layer_chassis::EnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
+}
+#endif
+
+}  // extern "C"
+"""
 
     init_object_dispatch_vector = """
 #define BUILD_DISPATCH_VECTOR(name) \\
