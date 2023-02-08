@@ -1792,8 +1792,8 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
     if ((allowed | access) != allowed) {
         skip |=
             LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
-                       "%s: accessMask is %s, but for layout %s expected accessMask are %s.", string_VkAccessFlags2(access).c_str(),
-                       api_name.c_str(), string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
+                       "%s: accessMask is %s, but for layout %s expected accessMask are %s.", api_name.c_str(),
+                       string_VkAccessFlags2(access).c_str(), string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
     }
 
     return skip;
