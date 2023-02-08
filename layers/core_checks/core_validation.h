@@ -53,7 +53,9 @@ struct DrawDispatchVuid {
     const char* viewport_count = kVUIDUndefined;
     const char* scissor_count = kVUIDUndefined;
     const char* viewport_scissor_count = kVUIDUndefined;
-    const char* primitive_topology = kVUIDUndefined;
+    const char* primitive_topology_class = kVUIDUndefined;
+    const char* primitive_topology_class_ds3 = kVUIDUndefined;
+    const char* dynamic_primitive_topology = kVUIDUndefined;
     const char* corner_sampled_address_mode = kVUIDUndefined;
     const char* imageview_atomic = kVUIDUndefined;
     const char* push_constants_set = kVUIDUndefined;
