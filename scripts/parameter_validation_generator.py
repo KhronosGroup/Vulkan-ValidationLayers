@@ -360,6 +360,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result', 'promotion_info'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
         self.extension_number_map = dict()                # Mapping from extnumber -> extension element
+        self.extension_enums = dict()                     # Mapping from enum -> extension name
 
     #
     # Generate Copyright comment block for file
@@ -460,6 +461,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # TODO Issue 5103 - this is being used to remove false positive currently
                 promotedToCore = promotedTo is not None and 'VK_VERSION' in promotedTo
                 self.extension_number_map[extension.get('number')] = extension
+                for enum in extension.findall('*/enum'):
+                    enum_name = enum.get('name')
+                    alias = enum.get('alias')
+                    if enum_name not in self.extension_enums:
+                        self.extension_enums[enum_name] = set()
+                    self.extension_enums[enum_name].add(extensionName)
+                    if alias is not None:
+                        if alias not in self.extension_enums:
+                            self.extension_enums[alias] = set()
+                        self.extension_enums[alias].add(extensionName)
 
                 for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
                     if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
@@ -920,36 +931,18 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     for enum in groupElem:
                         name = enum.get('name')
                         if name is not None and enum.get('alias') is None and enum.get('supported') != 'disabled':
-                            enum_map_key = ['core']
+                            enum_map_key = set(['core'])
                             extnumber = enum.get('extnumber')
 
                             if extnumber is not None:
                                 # Find the actual, "promoted to" extension
                                 ext = self.extension_number_map[extnumber]
-                                enum_map_key = [ext.get('name')]
-                                promotedExt = ext.get('promotedto')
+                                enum_map_key = set([ext.get('name')])
 
-                                # NOTE: these are workarounds until an xml fix can be made (assuming the xml needs fixing and this isn't "expected")
-                                if promotedExt is None:
-                                    if name == 'VK_FILTER_CUBIC_EXT':
-                                        promotedExt = 'VK_EXT_filter_cubic'
-                                    elif name == 'VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR':
-                                        promotedExt = 'VK_KHR_fragment_shading_rate'
-                                    elif name == 'VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR':
-                                        promotedExt = 'VK_KHR_ray_tracing_pipeline'
+                                if name in self.extension_enums:
+                                    enum_map_key = enum_map_key.union(self.extension_enums[name])
 
-                                while promotedExt is not None:
-                                    if promotedExt.count('VK_VERSION') != 0: break
-                                    if not promotedExt.isnumeric():
-                                        for n, e in self.extension_number_map.items():
-                                            if e.get('name') == promotedExt:
-                                                promotedExt = n
-                                                break
-                                    ext = self.extension_number_map[promotedExt]
-                                    enum_map_key.append(ext.get('name'))
-                                    promotedExt = ext.get('promotedto')
-
-                            for k in enum_map_key:
+                            for k in sorted(enum_map_key):
                                 if k not in enum_entry_map:
                                     enum_entry_map[k] = f'{name}, '
                                 else:
