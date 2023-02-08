@@ -132,7 +132,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET, cmd_type,
                                     vuid.dynamic_coverage_reduction_mode);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.primitive_topology);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology);
 
     const auto rp_state = pipeline.RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
@@ -356,7 +356,10 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                 break;
         }
         if (!compatible_topology) {
-            skip |= LogError(pipeline.pipeline(), vuid.primitive_topology,
+            const char *vuid_error = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                         ? vuid.primitive_topology_class_ds3
+                                         : vuid.primitive_topology_class;
+            skip |= LogError(pipeline.pipeline(), vuid_error,
                              "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopologyEXT is "
                              "not compatible with the pipeline topology %s.",
                              CommandTypeString(cmd_type), string_VkPrimitiveTopology(cb_state.primitiveTopology),
