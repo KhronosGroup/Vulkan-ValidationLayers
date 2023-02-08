@@ -279,7 +279,7 @@ struct InstanceExtensions {
             }
         }
         // CreateInfo takes precedence over promoted
-        if (pCreateInfo->ppEnabledExtensionNames) {
+        if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                 if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                 auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
@@ -1261,7 +1261,7 @@ struct DeviceExtensions : public InstanceExtensions {
     DeviceExtensions(const InstanceExtensions& instance_ext) : InstanceExtensions(instance_ext) {}
 
     uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version,
-                                      const VkDeviceCreateInfo *pCreateInfo) {
+                                      const VkDeviceCreateInfo *pCreateInfo = nullptr) {
         // Initialize: this to defaults,  base class fields to input.
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
@@ -1367,7 +1367,7 @@ struct DeviceExtensions : public InstanceExtensions {
             }
         }
         // CreateInfo takes precedence over promoted
-        if (pCreateInfo->ppEnabledExtensionNames) {
+        if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
             for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                 if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                 auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);

@@ -879,6 +879,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
+    // We need to call this to properly check which device extensions have been promoted when validating query functions
+    // that take as input a physical device, which can be called before a logical device has been created.
+    framework->device_extensions.InitFromDeviceCreateInfo(&framework->instance_extensions, specified_version);
+
     OutputLayerStatusInfo(framework);
 
     thread_checker_obj->FinalizeInstanceValidationObject(framework, *pInstance);

@@ -250,6 +250,7 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     // Copy extension data into local object
     if (result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
+    this->device_extensions = instance_data->device_extensions;
 }
 
 void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count) {
