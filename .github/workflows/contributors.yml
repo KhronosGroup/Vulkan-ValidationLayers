@@ -1,0 +1,23 @@
+# https://github.com/minicli/action-contributors
+name: Update CONTRIBUTORS file
+on:
+  # Update contributors list once a month
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: minicli/action-contributors@v3.3
+        name: "Update a projects CONTRIBUTORS file"
+        env:
+          CONTRIB_REPOSITORY: 'KhronosGroup/Vulkan-ValidationLayers'
+      # Automatically creates a PR with the updated list of contributors
+      - name: Create a PR
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: 'docs: Update Contributors'
+          title: "[automated] Update Contributors File"
+          token: ${{ secrets.GITHUB_TOKEN }}
