@@ -19,6 +19,8 @@
 import os,re,sys,string
 import xml.etree.ElementTree as etree
 from collections import namedtuple, OrderedDict
+from pyparsing import ParseResults
+from parse_dependency import dependencyBNF
 
 # Copyright text prefixing all headers (list of strings).
 prefixStrings = [
@@ -185,3 +187,43 @@ def Guarded(ifdef, value):
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
+
+def parseExpr(expr): return dependencyBNF().parseString(expr, parseAll=True)
+
+def dependCheck(pr: ParseResults, token, op, start_group, end_group) -> None:
+    """
+    Run a set of callbacks on a boolean expression.
+
+    token: run on a non-operator, non-parenthetical token
+    op: run on an operator token
+    start_group: run on a '(' token
+    end_group: run on a ')' token
+    """
+
+    for r in pr:
+        if isinstance(r, ParseResults):
+            start_group()
+            dependCheck(r, token, op, start_group, end_group)
+            end_group()
+        elif r in ',+':
+            op(r)
+        else:
+            token(r)
+
+def exprValues(pr: ParseResults) -> list:
+    """
+    Return a list of all "values" (i.e., non-operators) in the parsed expression.
+    """
+
+    values = []
+    dependCheck(pr, lambda x: values.append(x), lambda x: None, lambda: None, lambda: None)
+    return values
+
+def exprToCpp(pr: ParseResults, opt = lambda x: x) -> str:
+    r = []
+    printExt = lambda x: r.append(opt(x))
+    printOp = lambda x: r.append(' && ' if x == '+' else ' || ')
+    openParen = lambda: r.append('(')
+    closeParen = lambda: r.append(')')
+    dependCheck(pr, printExt, printOp, openParen, closeParen)
+    return ''.join(r)

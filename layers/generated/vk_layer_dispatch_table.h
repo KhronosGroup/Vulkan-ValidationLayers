@@ -704,6 +704,8 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_EXT_discard_rectangles extension commands
     PFN_vkCmdSetDiscardRectangleEXT CmdSetDiscardRectangleEXT;
+    PFN_vkCmdSetDiscardRectangleEnableEXT CmdSetDiscardRectangleEnableEXT;
+    PFN_vkCmdSetDiscardRectangleModeEXT CmdSetDiscardRectangleModeEXT;
 
     // ---- VK_EXT_hdr_metadata extension commands
     PFN_vkSetHdrMetadataEXT SetHdrMetadataEXT;
@@ -773,6 +775,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawMeshTasksIndirectCountNV CmdDrawMeshTasksIndirectCountNV;
 
     // ---- VK_NV_scissor_exclusive extension commands
+    PFN_vkCmdSetExclusiveScissorEnableNV CmdSetExclusiveScissorEnableNV;
     PFN_vkCmdSetExclusiveScissorNV CmdSetExclusiveScissorNV;
 
     // ---- VK_NV_device_diagnostic_checkpoints extension commands

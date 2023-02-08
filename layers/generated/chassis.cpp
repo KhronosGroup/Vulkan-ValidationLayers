@@ -9807,6 +9807,48 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    discardRectangleEnable) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDiscardRectangleEnableEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDiscardRectangleEnableEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+    }
+    DispatchCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleEnableEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkDiscardRectangleModeEXT                   discardRectangleMode) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDiscardRectangleModeEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDiscardRectangleModeEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+    }
+    DispatchCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDiscardRectangleModeEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
+    }
+}
+
 
 
 
@@ -10824,6 +10866,29 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(
 
 
 
+
+VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstExclusiveScissor,
+    uint32_t                                    exclusiveScissorCount,
+    const VkBool32*                             pExclusiveScissorEnables) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetExclusiveScissorEnableNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetExclusiveScissorEnableNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
+    }
+    DispatchCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetExclusiveScissorEnableNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
+    }
+}
 
 VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(
     VkCommandBuffer                             commandBuffer,
@@ -13456,6 +13521,8 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
 }
 
 
+
+
 VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutHostMappingInfoVALVE(
     VkDevice                                    device,
     const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
@@ -14490,6 +14557,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -15503,6 +15571,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetRefreshCycleDurationGOOGLE", {kFuncTypeDev, (void*)GetRefreshCycleDurationGOOGLE}},
     {"vkGetPastPresentationTimingGOOGLE", {kFuncTypeDev, (void*)GetPastPresentationTimingGOOGLE}},
     {"vkCmdSetDiscardRectangleEXT", {kFuncTypeDev, (void*)CmdSetDiscardRectangleEXT}},
+    {"vkCmdSetDiscardRectangleEnableEXT", {kFuncTypeDev, (void*)CmdSetDiscardRectangleEnableEXT}},
+    {"vkCmdSetDiscardRectangleModeEXT", {kFuncTypeDev, (void*)CmdSetDiscardRectangleModeEXT}},
     {"vkSetHdrMetadataEXT", {kFuncTypeDev, (void*)SetHdrMetadataEXT}},
 #ifdef VK_USE_PLATFORM_IOS_MVK
     {"vkCreateIOSSurfaceMVK", {kFuncTypeInst, (void*)CreateIOSSurfaceMVK}},
@@ -15557,6 +15627,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksNV", {kFuncTypeDev, (void*)CmdDrawMeshTasksNV}},
     {"vkCmdDrawMeshTasksIndirectNV", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectNV}},
     {"vkCmdDrawMeshTasksIndirectCountNV", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountNV}},
+    {"vkCmdSetExclusiveScissorEnableNV", {kFuncTypeDev, (void*)CmdSetExclusiveScissorEnableNV}},
     {"vkCmdSetExclusiveScissorNV", {kFuncTypeDev, (void*)CmdSetExclusiveScissorNV}},
     {"vkCmdSetCheckpointNV", {kFuncTypeDev, (void*)CmdSetCheckpointNV}},
     {"vkGetQueueCheckpointDataNV", {kFuncTypeDev, (void*)GetQueueCheckpointDataNV}},

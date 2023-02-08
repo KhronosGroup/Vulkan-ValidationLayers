@@ -6774,6 +6774,34 @@ void ThreadSafety::PostCallRecordCmdSetDiscardRectangleEXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCmdSetDiscardRectangleEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    discardRectangleEnable) {
+    StartWriteObject(commandBuffer, "vkCmdSetDiscardRectangleEnableEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetDiscardRectangleEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBool32                                    discardRectangleEnable) {
+    FinishWriteObject(commandBuffer, "vkCmdSetDiscardRectangleEnableEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdSetDiscardRectangleModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkDiscardRectangleModeEXT                   discardRectangleMode) {
+    StartWriteObject(commandBuffer, "vkCmdSetDiscardRectangleModeEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetDiscardRectangleModeEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkDiscardRectangleModeEXT                   discardRectangleMode) {
+    FinishWriteObject(commandBuffer, "vkCmdSetDiscardRectangleModeEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordSetHdrMetadataEXT(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
@@ -7627,6 +7655,24 @@ void ThreadSafety::PostCallRecordCmdDrawMeshTasksIndirectCountNV(
     FinishWriteObject(commandBuffer, "vkCmdDrawMeshTasksIndirectCountNV");
     FinishReadObject(buffer, "vkCmdDrawMeshTasksIndirectCountNV");
     FinishReadObject(countBuffer, "vkCmdDrawMeshTasksIndirectCountNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdSetExclusiveScissorEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstExclusiveScissor,
+    uint32_t                                    exclusiveScissorCount,
+    const VkBool32*                             pExclusiveScissorEnables) {
+    StartWriteObject(commandBuffer, "vkCmdSetExclusiveScissorEnableNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetExclusiveScissorEnableNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstExclusiveScissor,
+    uint32_t                                    exclusiveScissorCount,
+    const VkBool32*                             pExclusiveScissorEnables) {
+    FinishWriteObject(commandBuffer, "vkCmdSetExclusiveScissorEnableNV");
     // Host access to commandBuffer must be externally synchronized
 }
 

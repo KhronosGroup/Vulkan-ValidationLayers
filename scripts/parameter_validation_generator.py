@@ -339,7 +339,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
         self.newFlags = set()                             # Map of flags typenames /defined in the current feature/
-        self.required_extensions = dict()                 # Dictionary of required extensions for each item in the current extension
+        self.required_extension_expressions = dict()      # Dictionary of required extension boolean expressions for each item in the current extension
         self.extension_type = ''                          # Type of active feature (extension), device or instance
         self.extension_names = dict()                     # Dictionary of extension names to extension name defines
         self.structextends_list = []                      # List of extensions which extend another struct
@@ -694,7 +694,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.newFlags = set()
         self.featureExtraProtect = GetFeatureProtect(interface)
         # Get base list of extension dependencies for all items in this extension
-        base_required_extensions = []
+        base_required_extension_expressions = []
+        base_req_exts = []
         if "VK_VERSION_1" not in self.featureName:
             index = 0
             while interface[0][index].tag == 'comment':
@@ -703,20 +704,20 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             name = nameElem.get('name')
             # Save Name Define to get correct enable name later
             self.extension_names[self.featureName] = name
-            # This extension is the first dependency for this command
-            base_required_extensions.append(self.featureName)
+            base_req_exts.append(self.featureName)
         # Add any defined extension dependencies to the base dependency list for this extension
-        requires = interface.get('requires')
+        requires = interface.get('depends')
         if requires is not None:
-            # Comma (',') will be replaced with plus ('+') soon here to harmonize meaning: ','==OR '+'==AND in <require> tag and requires="" attr
-            base_required_extensions.extend(requires.split(','))
+            base_req_exts.append(f'({requires})')
+        if len(base_req_exts) > 0:
+            base_required_extension_expressions.append(parseExpr('+'.join(base_req_exts)))
         # Build dictionary of extension dependencies for each item in this extension
-        self.required_extensions = dict()
+        self.required_extension_expressions = dict()
         for require_element in interface.findall('require'):
             # Copy base extension dependency list
-            required_extensions = list(base_required_extensions)
+            required_extension_expressions = list(base_required_extension_expressions)
             # Add any additional extension dependencies specified in this require block
-            additional_extensions = require_element.get('extension')
+            additional_extensions = require_element.get('depends')
             # require tags must split here by '+' as it is an AND operation according registry.adoc:
             #    == Attributes of tag:require tags
             #    attr:extension - optional, and only for tag:require tags.
@@ -725,10 +726,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             #    the logical expression in the string, where , is interpreted as a
             #    logical OR and '+' as a logical AND.
             if additional_extensions:
-                required_extensions.extend(additional_extensions.split('+'))
+                required_extension_expressions.append(parseExpr(additional_extensions))
             # Save full extension list for all named items
             for element in require_element.findall('*[@name]'):
-                self.required_extensions[element.get('name')] = required_extensions
+                self.required_extension_expressions[element.get('name')] = required_extension_expressions
 
         # And note if this is an Instance or Device extension
         self.extension_type = interface.get('type')
@@ -1700,36 +1701,30 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
             lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None, is_phys_device = command.params[0].type == 'VkPhysicalDevice')
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
-            if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
-                for ext in self.required_extensions[command.name]:
-                    if ',' in ext:
-                        extor_list = ext.split(',')
-                        ext_test = ''
-                        ext_name_define = ''
-                        for extor in extor_list:
-                            for extension in self.registry.extensions:
-                                if extension.attrib['name'] == extor:
-                                    if ext_name_define != '':
-                                        ext_name_define += ' " or " '
-                                    ext_name_define += GetNameDefine(extension)
-                                    break
-                            if ext_test != '':
-                                ext_test += ' || '
-                            ext_test += 'IsExtEnabled(device_extensions.%s)' % (extor.lower())
-                        ext_test = 'if (!(%s)) skip |= OutputExtensionError("%s", %s);\n' % (ext_test, command.name, ext_name_define)
-                        lines.insert(0, ext_test)
-                    else:
-                        ext_name_define = ''
-                        for extension in self.registry.extensions:
-                            if extension.attrib['name'] == ext:
-                                ext_name_define = GetNameDefine(extension)
-                                break
-                        ext_test = ''
-                        if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
-                            ext_test = 'if (!instance_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext.lower(), command.name, ext_name_define)
+            if (command.name in self.required_extension_expressions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
+                for expr in self.required_extension_expressions[command.name]:
+                    is_instance_command = command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance'
+                    contains_or = len([c for v in expr for c in v if c == ',']) > 0
+                    def ext_fn(x):
+                        ex_name = x.lower()
+                        instance = is_instance_command
+                        if 'VK_VERSION_' in x:
+                            ex_name = f'vk_feature_{ex_name[3:]}'
+                            instance = True
+                        if instance:
+                            return f'instance_extensions.{ex_name}'
                         else:
-                            ext_test = 'if (!IsExtEnabled(device_extensions.%s)) skip |= OutputExtensionError("%s", %s);\n' % (ext.lower(), command.name, ext_name_define)
-                        lines.insert(0, ext_test)
+                            return f'IsExtEnabled(device_extensions.{ex_name})'
+                    if contains_or:
+                        expr_str = exprToCpp(expr, ext_fn)
+                        name_str = exprToCpp(expr)
+                        lines.insert(0, f'if (!({expr_str})) skip |= OutputExtensionError("{command.name}", "{name_str}");\n')
+                    else:
+                        for ext in exprValues(expr):
+                            if is_instance_command:
+                                lines.insert(0, f'if (!{ext_fn(ext)}) skip |= OutputExtensionError("{command.name}", "{ext}");\n')
+                            else:
+                                lines.insert(0, f'if (!{ext_fn(ext)}) skip |= OutputExtensionError("{command.name}", "{ext}");\n')
             if lines:
                 func_sig = self.getCmdDef(command) + ' const {\n'
                 func_sig = func_sig.split('VKAPI_CALL vk')[1]
