@@ -2515,6 +2515,7 @@ std::pair<VkBufferObj &&, VkAccelerationStructureGeometryKHR> GetSimpleAABB(cons
 }
 
 void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);

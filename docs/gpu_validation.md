@@ -36,7 +36,8 @@ The layer also allocates a buffer that describes the length of all descriptor ar
 It only does this if the VK_EXT_descriptor_indexing extension is enabled.
 
 The layer also allocates a buffer that describes all addresses retrieved from vkGetBufferDeviceAddressEXT and the sizes of the corresponding buffers.
-It only does this if the VK_EXT_buffer_device_address extension is enabled.
+It only does this if the VK_EXT_buffer_device_address extension is enabled. Note that GPU validation will enable VK_EXT_buffer_device_address itself,
+but it only does this checking it the application enabled the extension.
 
 As the shader is executed, the instrumented shader code performs the run-time checks.
 If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
@@ -119,6 +120,11 @@ There are several limitations that may impede the operation of GPU-Assisted Vali
 
 Vulkan 1.1 or later is required because the GPU instrumentation code uses SPIR-V 1.3 features.
 Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
+
+### Buffer Device Address
+
+GPU-AV requires buffer device address support. This is to enable more efficient validation for applications
+that make heavy use of descriptor indexing. It also will allow GPU-AV to eventually support VK_EXT_descriptor_buffer.
 
 ### Descriptor Types
 
@@ -365,6 +371,7 @@ The design of each hooked function follows:
 * Modify the `VkPhysicalDeviceFeatures` to turn on two additional physical device features:
   * `fragmentStoresAndAtomics`
   * `vertexPipelineStoresAndAtomics`
+  * `bufferDeviceAddress`
 
 #### GpuPostCallRecordCreateDevice
 
@@ -784,55 +791,65 @@ then added to the validation error message.
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
 
+
 ### Shader Instrumentation Input Record Format for Descriptor Indexing
 
-Although the DI input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array.
-
-Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array.
-
-After the sets_to_sizes array is the sizes array, that contains the array size (or 1 if descriptor is not an array) of each descriptor in the set.  Bindings with no descriptor are filled in with zeros.
-
-After the sizes array is the sets_to_bindings array that for each descriptor set, indexes into the bindings_to_written array.  Word 0 contains the index that is the start of the sets_to_bindings array.
-
-After the sets_to_bindings array, is the bindings_to_written array that for each binding in the set, indexes to the start of that binding's entries in the written array.
-
-Lastly comes the written array, which indicates whether a given binding / array element has been written.
+The DI input state consists of an array of device addresses for each descriptor set. This array always has 32 entries, no matter how many
+bound descriptor sets the device supports. If a descriptor set is bound, its entry in the array will be the address of a buffer containing
+the per-binding and per-descriptor state.  Although each descriptor set input buffer is a linear array of unsigned integers, conceptually
+there are arrays within the linear array.
 
 Example:
 ```
-Assume Descriptor Set 0 looks like:                        And Descriptor Set 1 looks like:
+Assume Descriptor Set 0 looks like:                        And Descriptor Set 2 looks like:
   Binding                                                    Binding
      0          Array[3]                                       2          Array[4]
      1          Non Array                                      3          Array[5]
      3          Array[2]
 
-Here is what the input buffer should look like:
+DI input buffer index 0 and 2 will contain the addresses of buffers representing the state of each bound descriptor set. All other entries will be 0.
 
-   Index of                     sets_to_sizes                     sizes             sets_to_bindings                       bindings_to_written    written
-   sets_to_bindings
+The descriptor set buffer at index 0 will look like:
 
-     0 |11| sets_to_bindings     1 |3| set 0 sizes start at 3     3  |3| S0B0       11 |13| set 0 bindings start at 13        13 |21| S0B0        21 |1| S0B0I0 was written
-            starts at 11         2 |7| set 1 sizes start at 7     4  |1| S0B1       12 |17| set 1 bindings start at 17        14 |24| S0B1        22 |1| S0B0I1 was written
-                                                                  5  |0| S0B2                                                 15 |0 | S0B2        23 |1| S0B0I3 was written
-                                                                  6  |2| S0B3                                                 16 |25| S0B3        24 |1| S0B1 was written
-                                                                  7  |0| S1B0                                                 17 |0 | S1B0        25 |1| S0B3I0 was written
-                                                                  8  |0| S1B1                                                 18 |0 | S1B1        26 |1| S0B3I1 was written
-                                                                  9  |4| S1B2                                                 19 |27| S1B2        27 |0| S1B2I0 was not written
-                                                                  10 |5| S1B3                                                 20 |31| S1B3        28 |1| S1B2I1 was written
-                                                                                                                                                  29 |1| S1B2I2 was written
-                                                                                                                                                  30 |1| S1B2I3 was written
-                                                                                                                                                  31 |1| S1B3I0 was written
-                                                                                                                                                  32 |1| S1B3I1 was written
-                                                                                                                                                  33 |1| S1B3I2 was written
-                                                                                                                                                  34 |1| S1B3I3 was written
-                                                                                                                                                  35 |1| S1B3I4 was written
+Index	Value	Description
+0	4       number of bindings in this descriptor set
+1 	3 	number of descriptors in binding 0
+2 	1	number of descriptors in binding 1
+3 	0	number of descriptors in binding 2 (ignored)
+4	2	number of descriptors in binding 3
+5 	9	start of init data for binding 0
+6 	12	start of init data for binding 1
+7 	0	start of init data for binding 2  (ignored)
+8 	13	start of init data for binding 3
+9 	0 or 1	Is set 0 binding 0 index 0 written?
+10	0 or 1	Is set 0 binding 0 index 1 written?
+11	0 or 1	Is set 0 binding 0 index 2 written?
+12	0 or 1	Is set 0 binding 1 index 0 written?
+13	0 or 1	Is set 0 binding 3 index 0 written?
+14	0 or 1	Is set 0 binding 3 index 1 written?
+
+The descriptor set buffer at index 2 will look like:
+
+Index	Value	Description
+0	4       number of bindings in this descriptor set
+1 	0 	number of descriptors in binding 0 (ignored)
+2 	0	number of descriptors in binding 1 (ignored)
+3 	4	number of descriptors in binding 2
+4	5	number of descriptors in binding 3
+5 	0	start of init data for binding 0 (ignored)
+6 	0	start of init data for binding 1 (ignored)
+7 	9	start of init data for binding 2
+8 	13	start of init data for binding 3
+9 	0 or 1	Is set 2 binding 2 index 0 written?
+10	0 or 1	Is set 2 binding 2 index 1 written?
+11	0 or 1	Is set 2 binding 2 index 2 written?
+12	0 or 1	Is set 2 binding 2 index 3 written?
+13	0 or 1	Is set 2 binding 3 index 0 written?
+14	0 or 1	Is set 2 binding 3 index 1 written?
+15	0 or 1	Is set 2 binding 3 index 2 written?
+16	0 or 1	Is set 2 binding 3 index 3 written?
+17	0 or 1	Is set 2 binding 3 index 4 written?
 ```
-Alternately, you could describe the array size and write state data as:
-(set = s, binding = b, index = i) is not initialized if 
-```
-Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] == 0
-```
-and the array's size = Input[ Input[ s + 1 ] + b ] 
 
 ### Shader Instrumentation Input Record Format for buffer device address
 The input buffer for buffer_reference accesses consists of all addresses retrieved from vkGetBufferDeviceAddressEXT and the sizes of the corresponding buffers.
