@@ -97,7 +97,7 @@ struct PipelineStageState {
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
-    const std::vector<ResourceInterfaceVariable> *descriptor_variables;
+    const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
