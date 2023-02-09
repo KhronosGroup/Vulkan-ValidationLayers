@@ -601,3 +601,128 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, NotAttachmentDynamicBlendEnable) {
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
     pipe.CreateGraphicsPipeline(true, false);
 }
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, DynamicPrimitiveTopolgy) {
+    TEST_DESCRIPTION("VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY works when GPL is used");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dynamic_create_info.pDynamicStates = dynamic_states;
+    dynamic_create_info.dynamicStateCount = 1;
+
+    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    uint32_t subpass = 0;
+
+    auto ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    ia_state.primitiveRestartEnable = false;
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    vertex_input_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+    vertex_input_lib.gp_ci_.pInputAssemblyState = &ia_state;
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+
+    // change here and make sure other libraries don't consume this
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+        vs_ci.pCode = vs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+        pre_raster_lib.gp_ci_.pInputAssemblyState = &ia_state;
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
+    }
+
+    layout = pre_raster_lib.gp_ci_.layout;
+    render_pass = pre_raster_lib.gp_ci_.renderPass;
+    subpass = pre_raster_lib.gp_ci_.subpass;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+        fs_ci.pCode = fs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
+        frag_shader_lib.gp_ci_.layout = layout;
+        frag_shader_lib.gp_ci_.renderPass = render_pass;
+        frag_shader_lib.gp_ci_.subpass = subpass;
+        frag_shader_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+        frag_shader_lib.gp_ci_.pInputAssemblyState = &ia_state;
+        frag_shader_lib.CreateGraphicsPipeline(true, false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.gp_ci_.renderPass = render_pass;
+    frag_out_lib.gp_ci_.subpass = subpass;
+    frag_out_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+    frag_out_lib.gp_ci_.pInputAssemblyState = &ia_state;
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.pInputAssemblyState = &ia_state;
+    exe_pipe_ci.pDynamicState = &dynamic_create_info;
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdSetPrimitiveTopology(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

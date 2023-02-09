@@ -307,13 +307,16 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         }
     }
 
-    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) &&
+    // Makes sure topology is compatible (in same topology class)
+    // see vkspec.html#drawing-primitive-topology-class
+    if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
         !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
         bool compatible_topology = false;
-        const auto input_assembly_state = pipeline.InputAssemblyState();
-        switch (input_assembly_state->topology) {
+        const VkPrimitiveTopology pipeline_topology = pipeline.InputAssemblyState()->topology;
+        const VkPrimitiveTopology dynamic_topology = cb_state.dynamic_state_value.primitive_topology;
+        switch (pipeline_topology) {
             case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-                switch (cb_state.primitiveTopology) {
+                switch (dynamic_topology) {
                     case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
                         compatible_topology = true;
                         break;
@@ -325,7 +328,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
             case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
             case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-                switch (cb_state.primitiveTopology) {
+                switch (dynamic_topology) {
                     case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
                     case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
                     case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
@@ -341,7 +344,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
             case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
             case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-                switch (cb_state.primitiveTopology) {
+                switch (dynamic_topology) {
                     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
                     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
                     case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
@@ -354,7 +357,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                 }
                 break;
             case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-                switch (cb_state.primitiveTopology) {
+                switch (dynamic_topology) {
                     case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
                         compatible_topology = true;
                         break;
@@ -370,10 +373,10 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                                          ? vuid.primitive_topology_class_ds3
                                          : vuid.primitive_topology_class;
             skip |= LogError(pipeline.pipeline(), vuid_error,
-                             "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopologyEXT is "
+                             "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopology is "
                              "not compatible with the pipeline topology %s.",
-                             CommandTypeString(cmd_type), string_VkPrimitiveTopology(cb_state.primitiveTopology),
-                             string_VkPrimitiveTopology(input_assembly_state->topology));
+                             CommandTypeString(cmd_type), string_VkPrimitiveTopology(dynamic_topology),
+                             string_VkPrimitiveTopology(pipeline_topology));
         }
     }
 
