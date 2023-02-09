@@ -5770,6 +5770,36 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+
+bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance,
+                                                                        const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface) const {
+    bool skip = false;
+
+    const auto display = pCreateInfo->display;
+    const auto surface = pCreateInfo->surface;
+
+    // Beyond checking for nullptr not much we can do.
+    // EX: Calling wl_display_get_registry on an invalid display will crash the application.
+    if (display == nullptr) {
+        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-display-01304",
+                         "vkCreateWaylandSurfaceKHR: display must be valid Wayland wl_display but display is NULL!");
+    }
+
+    // Beyond checking for nullptr not much we can do.
+    // EX: Calling wl_surface_get_version on an invalid surface will crash the application.
+    if (surface == nullptr) {
+        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305",
+                         "vkCreateWaylandSurfaceKHR: surface must be valid Wayland wl_surface but surface is NULL!");
+    }
+
+    return skip;
+}
+
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
 static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
     bool partial_overlap = false;
 

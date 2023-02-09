@@ -1241,6 +1241,11 @@ class StatelessValidation : public ValidationObject {
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    bool manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkDescriptorPool *pDescriptorPool) const;

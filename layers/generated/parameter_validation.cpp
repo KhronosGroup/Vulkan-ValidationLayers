@@ -11238,6 +11238,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateWaylandSurfaceKHR", "pSurface", pSurface, "VUID-vkCreateWaylandSurfaceKHR-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     return skip;
 }
 

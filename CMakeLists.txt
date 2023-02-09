@@ -61,6 +61,7 @@ else()
     endif()
 
     if(BUILD_WSI_WAYLAND_SUPPORT)
+        pkg_check_modules(WAYlAND_CLIENT QUIET REQUIRED IMPORTED_TARGET wayland-client)
         target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
     endif()
 endif()

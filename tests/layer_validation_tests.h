@@ -255,7 +255,8 @@ class VkLayerTest : public VkRenderFramework {
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
-    void AddSurfaceExtension();
+    enum class WsiPreference { Default, Wayland, X11, XCB };
+    void AddSurfaceExtension(const WsiPreference preference = WsiPreference::Default);
     VkCommandBufferObj *CommandBuffer();
     void OOBRayTracingShadersTestBody(bool gpu_assisted);
 
