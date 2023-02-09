@@ -1564,7 +1564,7 @@ static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDevice
         };
 
         template <typename T>
-        std::vector<T> ValidParamValues() const;
+        vvl::span<T> ValidParamValues() const;
 """
 
     inline_custom_source_postamble = """

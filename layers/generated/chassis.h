@@ -6165,7 +6165,7 @@ class ValidationObject {
         };
 
         template <typename T>
-        std::vector<T> ValidParamValues() const;
+        vvl::span<T> ValidParamValues() const;
 };
 
 extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;

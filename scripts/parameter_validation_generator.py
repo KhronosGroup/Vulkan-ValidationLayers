@@ -950,7 +950,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     if alias is None:
                         enum_entry += f'''
 template<>
-std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
+vvl::span<{groupName}> ValidationObject::ValidParamValues() const {{
     // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
     //      Ideally "values" would be something like a static variable that is built once and this function returns
     //      a span of the container. This does not work for applications which create and destroy many instances and
@@ -961,14 +961,22 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
                             if k != 'core':
                                 enum_entry += f'        {{ &DeviceExtensions::{k.lower()}, {{ {v} }} }},\n'
                         enum_entry += f'''    }};
-    std::vector<{groupName}> values(Core{groupName}Enums.cbegin(), Core{groupName}Enums.cend());
-    std::set<{groupName}> unique_exts;
-    for (const auto& [extension, enums]: Extended{groupName}Enums) {{
-        if (IsExtEnabled(device_extensions.*extension)) {{
-            unique_exts.insert(enums.cbegin(), enums.cend());
+    constexpr int handle_size = sizeof(uint64_t);
+    using Key = std::bitset<handle_size * 2>; // Key: instance handle in upper 64 bits, device handle in lower 64 bits
+    static vvl::unordered_map<Key, std::vector<{groupName}>> values_map;
+
+    Key k = (Key(CastToUint64(instance)) << handle_size) | Key(CastToUint64(device));
+    auto& values = values_map[k];
+    if (values.empty()) {{
+        values.insert(values.begin(), Core{groupName}Enums.cbegin(), Core{groupName}Enums.cend());
+        std::set<{groupName}> unique_exts;
+        for (const auto& [extension, enums]: Extended{groupName}Enums) {{
+            if (IsExtEnabled(device_extensions.*extension)) {{
+                unique_exts.insert(enums.cbegin(), enums.cend());
+            }}
         }}
+        std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     }}
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
     return values;
 }}
 '''
@@ -982,7 +990,7 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
                 isEnum = ('FLAG_BITS' not in expandName)
                 if isEnum and alias is None:
                     if self.featureExtraProtect is not None: self.specializations += [ f'#ifdef {self.featureExtraProtect}'  ]
-                    self.specializations += [ f'template<> std::vector<{groupName}> ValidationObject::ValidParamValues() const;' ]
+                    self.specializations += [ f'template<> vvl::span<{groupName}> ValidationObject::ValidParamValues() const;' ]
                     if self.featureExtraProtect is not None: self.specializations += [ f'#endif // {self.featureExtraProtect}'  ]
     #
     # Capture command parameter info to be used for param check code generation.
