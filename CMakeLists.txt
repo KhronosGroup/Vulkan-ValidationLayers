@@ -25,7 +25,6 @@ set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")
 set(CMAKE_CXX_STANDARD ${VVL_CPP_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN "YES")
@@ -86,6 +85,15 @@ elseif (VVL_ENABLE_TSAN)
     add_compile_options(-fsanitize=thread)
     add_compile_options(-fno-omit-frame-pointer) # Get nicer stack traces in error messages
     add_link_options(-fsanitize=thread)
+endif()
+
+option(VVL_CLANG_TIDY "Use clang-tidy")
+if (VVL_CLANG_TIDY)
+    find_program(CLANG_TIDY NAMES clang-tidy)
+    if(NOT CLANG_TIDY)
+        message(FATAL_ERROR "clang-tidy not found!")
+    endif()
+    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}")
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
