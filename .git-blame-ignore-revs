@@ -1,3 +1,48 @@
+# Remove macro constants for numeric limits
+c5d638465eeed82ef384b8580b0b7793af8b2233
+
+# Rename namespace layer_data to namespace vvl
+4fab6d257112c08736c758a244344c0ae577d532
+
+# Remove core_validation.cpp
+e7b63ce7ba3187a65da8c757676c71330be29346
+
+# Move CoreCheck Image Layout validation to own file
+99b147ad63937e78a08ebd4f6fc86e04155e583b
+
+# Move CoreCheck Image validation to own file
+a3ce1e7992116b07a45e8af8cdbb66ba6c01219f
+
+# Move CoreCheck Sampler validation to Descriptor file
+633c7d107c6677a14fed4ef1b150306b57d46e69
+
+# Move CoreCheck PipelineLayout validation to Descriptor file
+15f3d3e5e892f066849a7beaf56cbb4fedb8ec96
+
+# Move CoreCheck Copy Blit Resolve validation to own file
+4d5ee2fa98fbd6235c9c07983e7d6ae7fcc0f7c6
+
+# Move Android Image checks to Android file
+f72bfb29cce167793c3e604a4638a9f4bd91b087
+
+# Move CoreCheck synchronization validation to own file
+d23f63c0b2c1905c9bd82e357829e46a1dee3dc9
+
+# Move CoreCheck CommandBuffer validation to own file
+8c0ecb3ef7be46b59bd4e18fed3dddabe3fab423
+
+# Move CoreCheck Queue validation to own file
+224dad99dba625b7452c020441e40466dd466f99
+
+# Move ValidateCmdQueueFlags to query file
+3d4a9ca39b55407a3237b4194e6efd88c756481c
+
+# Move CoreChecks Framebuffer to RenderPass file
+fbe247875b8b55923ad11011a0d6420f2524eb1a
+
+# Move ValidateGetImageSubresourceLayout2EXT
+409dbcee87295d39057e75ec57b9e5ed07fc5c19
+
 # Move files into dedicated folders
 ff547e3154ccb038206bf3f89ce497305128e9ca
 
