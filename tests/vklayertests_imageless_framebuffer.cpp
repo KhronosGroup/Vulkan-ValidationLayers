@@ -1359,9 +1359,11 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // random invalid struct for a framebuffer pNext change
+    auto invalid_struct = LvlInitStruct<VkCommandPoolCreateInfo>();
+
     VkFormat attachment_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFramebufferAttachmentImageInfo fb_fdm = LvlInitStruct<VkFramebufferAttachmentImageInfo>();
-    fb_fdm.pNext = &fb_fdm;
+    auto fb_fdm = LvlInitStruct<VkFramebufferAttachmentImageInfo>(&invalid_struct);
     fb_fdm.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     fb_fdm.width = 64;
     fb_fdm.height = 64;
@@ -1369,11 +1371,11 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     fb_fdm.viewFormatCount = 1;
     fb_fdm.pViewFormats = &attachment_format;
 
-    VkFramebufferAttachmentsCreateInfo fb_aci_fdm = LvlInitStruct<VkFramebufferAttachmentsCreateInfo>();
+    auto fb_aci_fdm = LvlInitStruct<VkFramebufferAttachmentsCreateInfo>();
     fb_aci_fdm.attachmentImageInfoCount = 1;
     fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
 
-    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>(&fb_aci_fdm);
+    auto framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>(&fb_aci_fdm);
     framebufferCreateInfo.width = 64;
     framebufferCreateInfo.height = 64;
     framebufferCreateInfo.layers = 1;
@@ -1381,9 +1383,32 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(m_framebuffer_attachments.size());
     framebufferCreateInfo.pAttachments = m_framebuffer_attachments.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext");
-    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-    m_errorMonitor->VerifyFound();
+    // VkFramebufferCreateInfo -pNext-> VkFramebufferAttachmentsCreateInfo
+    //                                             |-> VkFramebufferAttachmentImageInfo -pNext-> INVALID
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext");
+        vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // VkFramebufferCreateInfo -pNext-> VkFramebufferAttachmentsCreateInfo -pNext-> INVALID
+    {
+        fb_fdm.pNext = nullptr;
+        fb_aci_fdm.pNext = &invalid_struct;
+        // Has parent struct name in VUID since child stucture don't have a pNext VU
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pNext-pNext");
+        vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // VkFramebufferCreateInfo -pNext-> INVALID
+    {
+        fb_aci_fdm.pNext = nullptr;
+        framebufferCreateInfo.pNext = &invalid_struct;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pNext-pNext");
+        vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
