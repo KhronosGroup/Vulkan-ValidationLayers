@@ -151,7 +151,6 @@ void CMD_BUFFER_STATE::ResetCBState() {
     trashedScissorCount = false;
     usedDynamicViewportCount = false;
     usedDynamicScissorCount = false;
-    primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     dynamicColorWriteEnableAttachmentCount = 0;
 
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();

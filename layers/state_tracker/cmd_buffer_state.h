@@ -195,6 +195,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkStencilOp fail_op_back;
         VkStencilOp pass_op_back;
         VkStencilOp depth_fail_op_back;
+        // VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
+        VkPrimitiveTopology primitive_topology;
         // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT
         // maxDiscardRectangles is at max 8 on all known implementations currently
         std::bitset<32> discard_rectangles;
@@ -276,7 +278,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool usedDynamicScissorCount;
 
     uint32_t initial_device_mask;
-    VkPrimitiveTopology primitiveTopology;
 
     bool rasterization_disabled = false;
 

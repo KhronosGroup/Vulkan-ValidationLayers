@@ -5004,7 +5004,7 @@ void ValidationStateTracker::RecordCmdSetPrimitiveTopology(VkCommandBuffer comma
                                                            CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET);
-    cb_state->primitiveTopology = primitiveTopology;
+    cb_state->dynamic_state_value.primitive_topology = primitiveTopology;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
