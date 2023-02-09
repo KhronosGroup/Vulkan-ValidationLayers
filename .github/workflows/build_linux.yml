@@ -15,6 +15,11 @@
 
 name: Linux (formatting, build, test)
 
+# https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
     push:
     pull_request:
