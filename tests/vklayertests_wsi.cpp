@@ -15,6 +15,10 @@
 #include "layer_validation_tests.h"
 #include "core_validation_error_enums.h"
 
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#include "wayland-client.h"
+#endif
+
 TEST_F(VkLayerTest, InitSwapchainPotentiallyIncompatibleFlag) {
     TEST_DESCRIPTION("Initialize swapchain with potentially incompatible flags");
 
@@ -2872,6 +2876,94 @@ TEST_F(VkLayerTest, TestCreatingWin32Surface) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308");
     vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
+#endif
+}
+
+TEST_F(VkLayerTest, TestCreatingWaylandSurface) {
+    TEST_DESCRIPTION("Test creating wayland surface with invalid display/surface");
+
+#ifndef VK_USE_PLATFORM_WAYLAND_KHR
+    GTEST_SKIP() << "test not supported on platform";
+#else
+    AddSurfaceExtension(VkLayerTest::WsiPreference::Wayland);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    wl_display *display = nullptr;
+    wl_registry *registry = nullptr;
+    wl_surface *surface = nullptr;
+    wl_compositor *compositor = nullptr;
+    {
+        display = wl_display_connect(nullptr);
+        if (!display) {
+            GTEST_SKIP() << "couldn't create wayland surface";
+        }
+
+        auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+            (void)version;
+            const std::string_view interface_str = interface;
+            if (interface_str == "wl_compositor") {
+                auto compositor = reinterpret_cast<wl_compositor **>(data);
+                *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
+            }
+        };
+
+        auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
+            (void)data;
+            (void)registry;
+            (void)id;
+        };
+
+        registry = wl_display_get_registry(display);
+        ASSERT_TRUE(registry != nullptr);
+
+        const wl_registry_listener registry_listener = {global, global_remove};
+
+        wl_registry_add_listener(registry, &registry_listener, &compositor);
+
+        wl_display_dispatch(display);
+        ASSERT_TRUE(compositor);
+
+        surface = wl_compositor_create_surface(compositor);
+        ASSERT_TRUE(surface);
+
+        const uint32_t version = wl_surface_get_version(surface);
+        ASSERT_TRUE(version > 0);  // Ensure we have a valid surface
+    }
+
+    // Invalid display
+    {
+        auto surface_create_info = LvlInitStruct<VkWaylandSurfaceCreateInfoKHR>();
+        surface_create_info.display = nullptr;
+        surface_create_info.surface = surface;
+
+        VkSurfaceKHR vulkan_surface;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWaylandSurfaceCreateInfoKHR-display-01304");
+        vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Invalid surface
+    {
+        auto surface_create_info = LvlInitStruct<VkWaylandSurfaceCreateInfoKHR>();
+        surface_create_info.display = display;
+        surface_create_info.surface = nullptr;
+
+        VkSurfaceKHR vulkan_surface;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305");
+        vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Cleanup wayland objects
+    wl_surface_destroy(surface);
+    wl_compositor_destroy(compositor);
+    wl_registry_destroy(registry);
+    wl_display_disconnect(display);
 #endif
 }
 

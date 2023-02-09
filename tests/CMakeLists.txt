@@ -124,19 +124,11 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     VVL-SPIRV-LIBS
     GTest::gtest
     GTest::gtest_main
+    ${CMAKE_DL_LIBS}
+    $<TARGET_NAME_IF_EXISTS:PkgConfig::XCB>
+    $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
+    $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
-
-if (NOT WIN32)
-    target_link_libraries(vk_layer_validation_tests PRIVATE ${CMAKE_DL_LIBS})
-
-    if(BUILD_WSI_XCB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::XCB)
-    endif()
-
-    if (BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::X11)
-    endif()
-endif()
 
 option(INSTALL_TESTS "Install tests")
 if(INSTALL_TESTS)
