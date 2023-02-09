@@ -28,6 +28,12 @@ struct GpuAssistedDeviceMemoryBlock {
     vvl::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
 };
 
+struct GpuAssistedInputBuffers {
+    VkBuffer address_buffer;
+    VmaAllocation address_buffer_allocation;
+    std::vector<GpuAssistedDeviceMemoryBlock> descriptor_set_buffers;
+};
+
 struct GpuAssistedPreDrawResources {
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     VkDescriptorSet desc_set = VK_NULL_HANDLE;
@@ -149,7 +155,7 @@ namespace gpuav_state {
 class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
     std::vector<GpuAssistedBufferInfo> per_draw_buffer_list;
-    std::vector<GpuAssistedDeviceMemoryBlock> di_input_buffer_list;
+    std::vector<GpuAssistedInputBuffers> di_input_buffer_list;
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
     VkBuffer current_input_buffer = VK_NULL_HANDLE;
 
@@ -179,6 +185,7 @@ class GpuAssisted : public GpuAssistedBase {
         desired_features.vertexPipelineStoresAndAtomics = true;
         desired_features.fragmentStoresAndAtomics = true;
         desired_features.shaderInt64 = true;
+        force_buffer_device_address = true;
     }
 
     bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;

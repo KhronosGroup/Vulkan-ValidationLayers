@@ -192,12 +192,16 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator) {
+VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, bool use_buffer_device_address, VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
     allocator_info.device = device;
     allocator_info.physicalDevice = physical_device;
+
+    if (use_buffer_device_address) {
+        allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    }
 
     functions.vkGetInstanceProcAddr = static_cast<PFN_vkGetInstanceProcAddr>(gpuVkGetInstanceProcAddr);
     functions.vkGetDeviceProcAddr = static_cast<PFN_vkGetDeviceProcAddr>(gpuVkGetDeviceProcAddr);
@@ -284,6 +288,30 @@ void GpuAssistedBase::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDe
         delete modified_create_info->pEnabledFeatures;
         modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
+    if (force_buffer_device_address) {
+        // TODO How to handle multi-device
+        if (api_version > VK_API_VERSION_1_1) {
+            VkPhysicalDeviceVulkan12Features *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                LvlFindInChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext));
+            if (features12) {
+                features12->bufferDeviceAddress = VK_TRUE;
+            } else {
+                VkPhysicalDeviceBufferDeviceAddressFeatures *bda_features =
+                    const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
+                        LvlFindInChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info));
+                if (bda_features) {
+                    bda_features->bufferDeviceAddress = VK_TRUE;
+                } else {
+                    auto new_bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+                    new_bda_features.bufferDeviceAddress = VK_TRUE;
+                    new_bda_features.pNext = const_cast<void *>(modified_create_info->pNext);
+                    modified_create_info->pNext = new VkPhysicalDeviceBufferDeviceAddressFeatures(new_bda_features);
+                }
+            }
+        } else {
+            force_buffer_device_address = false;
+        }
+    }
 }
 
 void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
@@ -307,7 +335,7 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
     desc_set_bind_index = adjusted_max_desc_sets - 1;
 
-    VkResult result1 = UtilInitializeVma(instance, physical_device, device, &vmaAllocator);
+    VkResult result1 = UtilInitializeVma(instance, physical_device, device, force_buffer_device_address, &vmaAllocator);
     assert(result1 == VK_SUCCESS);
     desc_set_manager = std::make_unique<UtilDescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
 

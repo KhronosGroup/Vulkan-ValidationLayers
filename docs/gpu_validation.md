@@ -784,6 +784,8 @@ then added to the validation error message.
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
 
+## TODO - Change this to the new input buffer(s) scheme
+
 ### Shader Instrumentation Input Record Format for Descriptor Indexing
 
 Although the DI input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array.
