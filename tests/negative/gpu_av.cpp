@@ -827,6 +827,9 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
     if (IsPlatform(kGalaxyS10)) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
+    }
 
     VkPhysicalDeviceFeatures features = {};  // Make sure robust buffer access is not enabled
     ASSERT_NO_FATAL_FAILURE(InitState(&features));
@@ -1744,6 +1747,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
+    }
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
@@ -2042,6 +2048,9 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (DeviceValidationVersion() != VK_API_VERSION_1_1) {
@@ -2107,10 +2116,14 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
 
 TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
+    }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -2221,6 +2234,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
     }
 
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
@@ -2398,6 +2414,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
