@@ -8973,7 +8973,7 @@ TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    VkFormat render_format = VkTestFramework::GetFormat(instance_, m_device);
+    const VkFormat render_format = GetRenderTargetFormat();
 
     // Set format features from being found
     VkFormatProperties formatProps;

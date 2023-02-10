@@ -46,7 +46,6 @@ class VkImageObj;
 
 class VkTestFramework : public ::testing::Test {
   public:
-    VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
     static bool optionMatch(const char *option, char *optionLine);
     static void InitArgs(int *argc, char *argv[]);
     static void Finish();

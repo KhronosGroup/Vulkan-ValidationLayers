@@ -1,8 +1,8 @@
 //  VK tests
 //
 //  Copyright (c) 2015-2022 The Khronos Group Inc.
-//  Copyright (c) 2015-2022 Valve Corporation
-//  Copyright (c) 2015-2022 LunarG, Inc.
+//  Copyright (c) 2015-2023 Valve Corporation
+//  Copyright (c) 2015-2023 LunarG, Inc.
 //  Copyright (c) 2015-2022 Google, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,22 +28,6 @@ VkTestFramework::~VkTestFramework() {}
 // Define static elements
 int VkTestFramework::m_phys_device_index = -1;
 ANativeWindow *VkTestFramework::window = nullptr;
-
-VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *device) {
-    VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(device->phy().handle(), VK_FORMAT_B8G8R8A8_UNORM, &format_props);
-    if (format_props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT ||
-        format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
-        return VK_FORMAT_B8G8R8A8_UNORM;
-    }
-    vk::GetPhysicalDeviceFormatProperties(device->phy().handle(), VK_FORMAT_R8G8B8A8_UNORM, &format_props);
-    if (format_props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT ||
-        format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
-        return VK_FORMAT_R8G8B8A8_UNORM;
-    }
-    printf("Error - device does not support VK_FORMAT_B8G8R8A8_UNORM nor VK_FORMAT_R8G8B8A8_UNORM - exiting\n");
-    exit(0);
-}
 
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {}
 void VkTestFramework::Finish() {}
