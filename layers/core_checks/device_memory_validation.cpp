@@ -546,18 +546,17 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 
             // Validate export memory handles
             if (mem_info->export_handle_type_flags != 0) {
-                auto external_buffer_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
-                external_buffer_info.flags = buffer_state->createInfo.flags;
-                external_buffer_info.usage = buffer_state->createInfo.usage;
-                auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+                auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+                external_info.flags = buffer_state->createInfo.flags;
+                external_info.usage = buffer_state->createInfo.usage;
+                auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
                 bool export_supported = true;
 
                 // Check export operation support
                 auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
-                    external_buffer_info.handleType = flag;
-                    DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_buffer_info,
-                                                                      &external_buffer_properties);
-                    if ((external_buffer_properties.externalMemoryProperties.externalMemoryFeatures &
+                    external_info.handleType = flag;
+                    DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_info, &external_properties);
+                    if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
                          VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                         export_supported = false;
                         const LogObjectList objlist(buffer, mem);
@@ -567,14 +566,14 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                          "create flags (%s) and usage flags (%s).",
                                          api_name, report_data->FormatHandle(mem).c_str(),
                                          string_VkExternalMemoryHandleTypeFlagBits(flag),
-                                         string_VkBufferCreateFlags(external_buffer_info.flags).c_str(),
-                                         string_VkBufferUsageFlags(external_buffer_info.usage).c_str());
+                                         string_VkBufferCreateFlags(external_info.flags).c_str(),
+                                         string_VkBufferUsageFlags(external_info.usage).c_str());
                     }
                 };
                 IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_type_flags, check_export_support);
 
                 // The types of external memory handles must be compatible
-                const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+                const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
                 if (export_supported &&
                     (mem_info->export_handle_type_flags & compatible_types) != mem_info->export_handle_type_flags) {
                     const LogObjectList objlist(buffer, mem);
@@ -584,8 +583,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                      "flags (%s) and usage flags (%s).",
                                      api_name, report_data->FormatHandle(mem).c_str(),
                                      string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
-                                     string_VkBufferCreateFlags(external_buffer_info.flags).c_str(),
-                                     string_VkBufferUsageFlags(external_buffer_info.usage).c_str());
+                                     string_VkBufferCreateFlags(external_info.flags).c_str(),
+                                     string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
 
                 // Check if the memory meets the buffer's external memory requirements
@@ -1205,20 +1204,20 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 // Validate export memory handles
                 if (mem_info->export_handle_type_flags != 0) {
-                    auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
-                    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+                    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+                    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
                     image_info.format = image_state->createInfo.format;
                     image_info.type = image_state->createInfo.imageType;
                     image_info.tiling = image_state->createInfo.tiling;
                     image_info.usage = image_state->createInfo.usage;
                     image_info.flags = image_state->createInfo.flags;
-                    auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
-                    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+                    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+                    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
                     bool export_supported = true;
 
                     // Check export operation support
                     auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
-                        external_image_info.handleType = flag;
+                        external_info.handleType = flag;
                         auto result =
                             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
                         if (result != VK_SUCCESS) {
@@ -1233,7 +1232,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 string_VkImageType(image_info.type), string_VkImageTiling(image_info.tiling),
                                 string_VkImageUsageFlags(image_info.usage).c_str(),
                                 string_VkImageCreateFlags(image_info.flags).c_str(), string_VkResult(result));
-                        } else if ((external_image_properties.externalMemoryProperties.externalMemoryFeatures &
+                        } else if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
                                     VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1251,7 +1250,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_type_flags, check_export_support);
 
                     // The types of external memory handles must be compatible
-                    const auto compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                    const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
                     if (export_supported &&
                         (mem_info->export_handle_type_flags & compatible_types) != mem_info->export_handle_type_flags) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);

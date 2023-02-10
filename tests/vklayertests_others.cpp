@@ -7475,7 +7475,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     buffer_export.init_no_mem(*m_device, buffer_info);
 
     auto importable_buffer_types =
-        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
     importable_buffer_types &= ~handle_type;  // we need to find a flag that is different from handle_type
     if (importable_buffer_types == 0) GTEST_SKIP() << "Cannot find two different buffer handle types, skipping test";
     auto wrong_buffer_handle_type =
@@ -7525,7 +7525,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     image_export.init_no_mem(*m_device, image_info);
 
     auto importable_image_types =
-        FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+        FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
     importable_image_types &= ~handle_type;  // we need to find a flag that is different from handle_type
     if (importable_image_types == 0) GTEST_SKIP() << "Cannot find two different image handle types, skipping test";
     auto wrong_image_handle_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_image_types));
@@ -10604,7 +10604,7 @@ TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
 
     const auto supported_types_nv =
         FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
-    const auto supported_types = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!supported_types_nv || !supported_types) {
         GTEST_SKIP() << "Cannot find one regular handle type and one nvidia extension's handle type";
     }
@@ -11366,7 +11366,7 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    const auto supported_types = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (supported_types) {
         external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
         VkImage test_image;

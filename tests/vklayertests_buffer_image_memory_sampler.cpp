@@ -12398,7 +12398,7 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }
@@ -12446,7 +12446,7 @@ TEST_F(VkLayerTest, BufferMemoryWithUnsupportedExternalHandleType) {
     const auto buffer_info =
         vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_types =
-        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -12466,8 +12466,8 @@ TEST_F(VkLayerTest, BufferMemoryWithUnsupportedExternalHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BufferMemoryWithNotCompatibleExternalHandleTypes) {
-    TEST_DESCRIPTION("Bind buffer memory with not compatible external memory handle types.");
+TEST_F(VkLayerTest, BufferMemoryWithIncompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Bind buffer memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -12479,12 +12479,12 @@ TEST_F(VkLayerTest, BufferMemoryWithNotCompatibleExternalHandleTypes) {
     const auto buffer_info =
         vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
     const auto exportable_types =
-        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(*this, buffer_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), buffer_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -12520,7 +12520,7 @@ TEST_F(VkLayerTest, ImageMemoryWithUnsupportedExternalHandleType) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     // This test does not support the AHB handle type, which does not
     // allow to query memory requirements before memory is bound
     exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -12543,8 +12543,8 @@ TEST_F(VkLayerTest, ImageMemoryWithUnsupportedExternalHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
-    TEST_DESCRIPTION("Bind image memory with not compatible external memory handle types.");
+TEST_F(VkLayerTest, ImageMemoryWithIncompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Bind image memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -12565,7 +12565,7 @@ TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
     image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     // This test does not support the AHB handle type, which does not
     // allow to query memory requirements before memory is bound
     exportable_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -12573,7 +12573,7 @@ TEST_F(VkLayerTest, ImageMemoryWithNotCompatibleExternalHandleTypes) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(*this, image_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), image_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -12603,7 +12603,7 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_info.size = 4096;
 
-    auto exportable_types = FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    auto exportable_types = FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (GetBitSetCount(exportable_types) < 2) {
         GTEST_SKIP() << "Cannot find two distinct exportable handle types, skipping test";
     }

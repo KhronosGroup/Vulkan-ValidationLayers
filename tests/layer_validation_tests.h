@@ -910,11 +910,11 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci);
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kU32Max);
 
-VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
                                                                        const VkBufferCreateInfo &buffer_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features);
 
-VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
                                                                        const VkImageCreateInfo &image_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features);
 
@@ -922,10 +922,10 @@ VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const
                                                                            const VkImageCreateInfo &image_create_info,
                                                                            VkExternalMemoryFeatureFlagsNV requested_features);
 
-VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkBufferCreateInfo &buffer_create_info,
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type);
 
-VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkImageCreateInfo &image_create_info,
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type);
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
