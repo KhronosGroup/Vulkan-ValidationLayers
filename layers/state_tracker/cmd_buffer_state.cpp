@@ -986,6 +986,9 @@ void CMD_BUFFER_STATE::ExecuteCommands(vvl::span<const VkCommandBuffer> secondar
         for (auto &function : sub_cb_state->eventUpdates) {
             eventUpdates.push_back(function);
         }
+        for (auto &event : sub_cb_state->events) {
+            events.push_back(event);
+        }
         for (auto &function : sub_cb_state->queue_submit_functions) {
             queue_submit_functions.push_back(function);
         }
