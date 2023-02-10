@@ -19,57 +19,8 @@
  * limitations under the License.
  */
 
-
 #include "lvt_function_pointers.h"
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-
-#ifdef _WIN32
-// Dynamic Loading:
-typedef HMODULE dl_handle;
-static dl_handle open_library(const char *lib_path) {
-    // Try loading the library the original way first.
-    dl_handle lib_handle = LoadLibrary(lib_path);
-    if (lib_handle == NULL && GetLastError() == ERROR_MOD_NOT_FOUND) {
-        // If that failed, then try loading it with broader search folders.
-        lib_handle = LoadLibraryEx(lib_path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
-    }
-    return lib_handle;
-}
-static char *open_library_error(const char *libPath) {
-    static char errorMsg[164];
-    (void)snprintf(errorMsg, 163, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
-    return errorMsg;
-}
-static void *get_proc_address(dl_handle library, const char *name) {
-    assert(library);
-    assert(name);
-    return (void *)GetProcAddress(library, name);
-}
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-
-#include <dlfcn.h>
-
-typedef void *dl_handle;
-static inline dl_handle open_library(const char *libPath) {
-    // When loading the library, we use RTLD_LAZY so that not all symbols have to be
-    // resolved at this time (which improves performance). Note that if not all symbols
-    // can be resolved, this could cause crashes later. Use the LD_BIND_NOW environment
-    // variable to force all symbols to be resolved here.
-    return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
-}
-static inline const char *open_library_error(const char *libPath) { return dlerror(); }
-static inline void *get_proc_address(dl_handle library, const char *name) {
-    assert(library);
-    assert(name);
-    return dlsym(library, name);
-}
-#else
-#error Dynamic library functions must be defined for this OS.
-#endif
-
-
+#include "vulkan/vulkan.hpp"
 namespace vk {
 
 PFN_vkCreateInstance CreateInstance;
@@ -339,295 +290,276 @@ PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR GetPhysicalDeviceWin32Present
 PFN_vkCreateMacOSSurfaceMVK CreateMacOSSurfaceMVK;
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
-
 void InitDispatchTable() {
-
-#if(WIN32)
-    const char filename[] = "vulkan-1.dll";
-    auto lib_handle = open_library(filename);
-#elif(__APPLE__)
-    const char filename[] = "libvulkan.dylib";
-    auto lib_handle = open_library(filename);
-#else
-    const char *filename = "libvulkan.so";
-    auto lib_handle = open_library(filename);
-    if (!lib_handle) {
-        filename = "libvulkan.so.1";
-        lib_handle = open_library(filename);
+    static DynamicLoader loader;
+    if (!loader.success()) {
+        std::exit(EXIT_FAILURE);
     }
-#endif
-
-    if (lib_handle == nullptr) {
-        printf("%s\n", open_library_error(filename));
-        exit(1);
-    }
-
-    CreateInstance = reinterpret_cast<PFN_vkCreateInstance>(get_proc_address(lib_handle, "vkCreateInstance"));
-    DestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(get_proc_address(lib_handle, "vkDestroyInstance"));
-    EnumeratePhysicalDevices = reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(get_proc_address(lib_handle, "vkEnumeratePhysicalDevices"));
-    GetPhysicalDeviceFeatures = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures>(get_proc_address(lib_handle, "vkGetPhysicalDeviceFeatures"));
-    GetPhysicalDeviceFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceFormatProperties"));
-    GetPhysicalDeviceImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceImageFormatProperties"));
-    GetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceProperties"));
-    GetPhysicalDeviceQueueFamilyProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceQueueFamilyProperties"));
-    GetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceMemoryProperties"));
-    GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(get_proc_address(lib_handle, "vkGetInstanceProcAddr"));
-    GetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(get_proc_address(lib_handle, "vkGetDeviceProcAddr"));
-    CreateDevice = reinterpret_cast<PFN_vkCreateDevice>(get_proc_address(lib_handle, "vkCreateDevice"));
-    DestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(get_proc_address(lib_handle, "vkDestroyDevice"));
-    EnumerateInstanceExtensionProperties = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(get_proc_address(lib_handle, "vkEnumerateInstanceExtensionProperties"));
-    EnumerateDeviceExtensionProperties = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(get_proc_address(lib_handle, "vkEnumerateDeviceExtensionProperties"));
-    EnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(get_proc_address(lib_handle, "vkEnumerateInstanceLayerProperties"));
-    EnumerateDeviceLayerProperties = reinterpret_cast<PFN_vkEnumerateDeviceLayerProperties>(get_proc_address(lib_handle, "vkEnumerateDeviceLayerProperties"));
-    GetDeviceQueue = reinterpret_cast<PFN_vkGetDeviceQueue>(get_proc_address(lib_handle, "vkGetDeviceQueue"));
-    QueueSubmit = reinterpret_cast<PFN_vkQueueSubmit>(get_proc_address(lib_handle, "vkQueueSubmit"));
-    QueueWaitIdle = reinterpret_cast<PFN_vkQueueWaitIdle>(get_proc_address(lib_handle, "vkQueueWaitIdle"));
-    DeviceWaitIdle = reinterpret_cast<PFN_vkDeviceWaitIdle>(get_proc_address(lib_handle, "vkDeviceWaitIdle"));
-    AllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(get_proc_address(lib_handle, "vkAllocateMemory"));
-    FreeMemory = reinterpret_cast<PFN_vkFreeMemory>(get_proc_address(lib_handle, "vkFreeMemory"));
-    MapMemory = reinterpret_cast<PFN_vkMapMemory>(get_proc_address(lib_handle, "vkMapMemory"));
-    UnmapMemory = reinterpret_cast<PFN_vkUnmapMemory>(get_proc_address(lib_handle, "vkUnmapMemory"));
-    FlushMappedMemoryRanges = reinterpret_cast<PFN_vkFlushMappedMemoryRanges>(get_proc_address(lib_handle, "vkFlushMappedMemoryRanges"));
-    InvalidateMappedMemoryRanges = reinterpret_cast<PFN_vkInvalidateMappedMemoryRanges>(get_proc_address(lib_handle, "vkInvalidateMappedMemoryRanges"));
-    GetDeviceMemoryCommitment = reinterpret_cast<PFN_vkGetDeviceMemoryCommitment>(get_proc_address(lib_handle, "vkGetDeviceMemoryCommitment"));
-    BindBufferMemory = reinterpret_cast<PFN_vkBindBufferMemory>(get_proc_address(lib_handle, "vkBindBufferMemory"));
-    BindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(get_proc_address(lib_handle, "vkBindImageMemory"));
-    GetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(get_proc_address(lib_handle, "vkGetBufferMemoryRequirements"));
-    GetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(get_proc_address(lib_handle, "vkGetImageMemoryRequirements"));
-    GetImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements>(get_proc_address(lib_handle, "vkGetImageSparseMemoryRequirements"));
-    GetPhysicalDeviceSparseImageFormatProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSparseImageFormatProperties"));
-    QueueBindSparse = reinterpret_cast<PFN_vkQueueBindSparse>(get_proc_address(lib_handle, "vkQueueBindSparse"));
-    CreateFence = reinterpret_cast<PFN_vkCreateFence>(get_proc_address(lib_handle, "vkCreateFence"));
-    DestroyFence = reinterpret_cast<PFN_vkDestroyFence>(get_proc_address(lib_handle, "vkDestroyFence"));
-    ResetFences = reinterpret_cast<PFN_vkResetFences>(get_proc_address(lib_handle, "vkResetFences"));
-    GetFenceStatus = reinterpret_cast<PFN_vkGetFenceStatus>(get_proc_address(lib_handle, "vkGetFenceStatus"));
-    WaitForFences = reinterpret_cast<PFN_vkWaitForFences>(get_proc_address(lib_handle, "vkWaitForFences"));
-    CreateSemaphore = reinterpret_cast<PFN_vkCreateSemaphore>(get_proc_address(lib_handle, "vkCreateSemaphore"));
-    DestroySemaphore = reinterpret_cast<PFN_vkDestroySemaphore>(get_proc_address(lib_handle, "vkDestroySemaphore"));
-    CreateEvent = reinterpret_cast<PFN_vkCreateEvent>(get_proc_address(lib_handle, "vkCreateEvent"));
-    DestroyEvent = reinterpret_cast<PFN_vkDestroyEvent>(get_proc_address(lib_handle, "vkDestroyEvent"));
-    GetEventStatus = reinterpret_cast<PFN_vkGetEventStatus>(get_proc_address(lib_handle, "vkGetEventStatus"));
-    SetEvent = reinterpret_cast<PFN_vkSetEvent>(get_proc_address(lib_handle, "vkSetEvent"));
-    ResetEvent = reinterpret_cast<PFN_vkResetEvent>(get_proc_address(lib_handle, "vkResetEvent"));
-    CreateQueryPool = reinterpret_cast<PFN_vkCreateQueryPool>(get_proc_address(lib_handle, "vkCreateQueryPool"));
-    DestroyQueryPool = reinterpret_cast<PFN_vkDestroyQueryPool>(get_proc_address(lib_handle, "vkDestroyQueryPool"));
-    GetQueryPoolResults = reinterpret_cast<PFN_vkGetQueryPoolResults>(get_proc_address(lib_handle, "vkGetQueryPoolResults"));
-    CreateBuffer = reinterpret_cast<PFN_vkCreateBuffer>(get_proc_address(lib_handle, "vkCreateBuffer"));
-    DestroyBuffer = reinterpret_cast<PFN_vkDestroyBuffer>(get_proc_address(lib_handle, "vkDestroyBuffer"));
-    CreateBufferView = reinterpret_cast<PFN_vkCreateBufferView>(get_proc_address(lib_handle, "vkCreateBufferView"));
-    DestroyBufferView = reinterpret_cast<PFN_vkDestroyBufferView>(get_proc_address(lib_handle, "vkDestroyBufferView"));
-    CreateImage = reinterpret_cast<PFN_vkCreateImage>(get_proc_address(lib_handle, "vkCreateImage"));
-    DestroyImage = reinterpret_cast<PFN_vkDestroyImage>(get_proc_address(lib_handle, "vkDestroyImage"));
-    GetImageSubresourceLayout = reinterpret_cast<PFN_vkGetImageSubresourceLayout>(get_proc_address(lib_handle, "vkGetImageSubresourceLayout"));
-    CreateImageView = reinterpret_cast<PFN_vkCreateImageView>(get_proc_address(lib_handle, "vkCreateImageView"));
-    DestroyImageView = reinterpret_cast<PFN_vkDestroyImageView>(get_proc_address(lib_handle, "vkDestroyImageView"));
-    CreateShaderModule = reinterpret_cast<PFN_vkCreateShaderModule>(get_proc_address(lib_handle, "vkCreateShaderModule"));
-    DestroyShaderModule = reinterpret_cast<PFN_vkDestroyShaderModule>(get_proc_address(lib_handle, "vkDestroyShaderModule"));
-    CreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(get_proc_address(lib_handle, "vkCreatePipelineCache"));
-    DestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(get_proc_address(lib_handle, "vkDestroyPipelineCache"));
-    GetPipelineCacheData = reinterpret_cast<PFN_vkGetPipelineCacheData>(get_proc_address(lib_handle, "vkGetPipelineCacheData"));
-    MergePipelineCaches = reinterpret_cast<PFN_vkMergePipelineCaches>(get_proc_address(lib_handle, "vkMergePipelineCaches"));
-    CreateGraphicsPipelines = reinterpret_cast<PFN_vkCreateGraphicsPipelines>(get_proc_address(lib_handle, "vkCreateGraphicsPipelines"));
-    CreateComputePipelines = reinterpret_cast<PFN_vkCreateComputePipelines>(get_proc_address(lib_handle, "vkCreateComputePipelines"));
-    DestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(get_proc_address(lib_handle, "vkDestroyPipeline"));
-    CreatePipelineLayout = reinterpret_cast<PFN_vkCreatePipelineLayout>(get_proc_address(lib_handle, "vkCreatePipelineLayout"));
-    DestroyPipelineLayout = reinterpret_cast<PFN_vkDestroyPipelineLayout>(get_proc_address(lib_handle, "vkDestroyPipelineLayout"));
-    CreateSampler = reinterpret_cast<PFN_vkCreateSampler>(get_proc_address(lib_handle, "vkCreateSampler"));
-    DestroySampler = reinterpret_cast<PFN_vkDestroySampler>(get_proc_address(lib_handle, "vkDestroySampler"));
-    CreateDescriptorSetLayout = reinterpret_cast<PFN_vkCreateDescriptorSetLayout>(get_proc_address(lib_handle, "vkCreateDescriptorSetLayout"));
-    DestroyDescriptorSetLayout = reinterpret_cast<PFN_vkDestroyDescriptorSetLayout>(get_proc_address(lib_handle, "vkDestroyDescriptorSetLayout"));
-    CreateDescriptorPool = reinterpret_cast<PFN_vkCreateDescriptorPool>(get_proc_address(lib_handle, "vkCreateDescriptorPool"));
-    DestroyDescriptorPool = reinterpret_cast<PFN_vkDestroyDescriptorPool>(get_proc_address(lib_handle, "vkDestroyDescriptorPool"));
-    ResetDescriptorPool = reinterpret_cast<PFN_vkResetDescriptorPool>(get_proc_address(lib_handle, "vkResetDescriptorPool"));
-    AllocateDescriptorSets = reinterpret_cast<PFN_vkAllocateDescriptorSets>(get_proc_address(lib_handle, "vkAllocateDescriptorSets"));
-    FreeDescriptorSets = reinterpret_cast<PFN_vkFreeDescriptorSets>(get_proc_address(lib_handle, "vkFreeDescriptorSets"));
-    UpdateDescriptorSets = reinterpret_cast<PFN_vkUpdateDescriptorSets>(get_proc_address(lib_handle, "vkUpdateDescriptorSets"));
-    CreateFramebuffer = reinterpret_cast<PFN_vkCreateFramebuffer>(get_proc_address(lib_handle, "vkCreateFramebuffer"));
-    DestroyFramebuffer = reinterpret_cast<PFN_vkDestroyFramebuffer>(get_proc_address(lib_handle, "vkDestroyFramebuffer"));
-    CreateRenderPass = reinterpret_cast<PFN_vkCreateRenderPass>(get_proc_address(lib_handle, "vkCreateRenderPass"));
-    DestroyRenderPass = reinterpret_cast<PFN_vkDestroyRenderPass>(get_proc_address(lib_handle, "vkDestroyRenderPass"));
-    GetRenderAreaGranularity = reinterpret_cast<PFN_vkGetRenderAreaGranularity>(get_proc_address(lib_handle, "vkGetRenderAreaGranularity"));
-    CreateCommandPool = reinterpret_cast<PFN_vkCreateCommandPool>(get_proc_address(lib_handle, "vkCreateCommandPool"));
-    DestroyCommandPool = reinterpret_cast<PFN_vkDestroyCommandPool>(get_proc_address(lib_handle, "vkDestroyCommandPool"));
-    ResetCommandPool = reinterpret_cast<PFN_vkResetCommandPool>(get_proc_address(lib_handle, "vkResetCommandPool"));
-    AllocateCommandBuffers = reinterpret_cast<PFN_vkAllocateCommandBuffers>(get_proc_address(lib_handle, "vkAllocateCommandBuffers"));
-    FreeCommandBuffers = reinterpret_cast<PFN_vkFreeCommandBuffers>(get_proc_address(lib_handle, "vkFreeCommandBuffers"));
-    BeginCommandBuffer = reinterpret_cast<PFN_vkBeginCommandBuffer>(get_proc_address(lib_handle, "vkBeginCommandBuffer"));
-    EndCommandBuffer = reinterpret_cast<PFN_vkEndCommandBuffer>(get_proc_address(lib_handle, "vkEndCommandBuffer"));
-    ResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(get_proc_address(lib_handle, "vkResetCommandBuffer"));
-    CmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(get_proc_address(lib_handle, "vkCmdBindPipeline"));
-    CmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(get_proc_address(lib_handle, "vkCmdSetViewport"));
-    CmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(get_proc_address(lib_handle, "vkCmdSetScissor"));
-    CmdSetLineWidth = reinterpret_cast<PFN_vkCmdSetLineWidth>(get_proc_address(lib_handle, "vkCmdSetLineWidth"));
-    CmdSetDepthBias = reinterpret_cast<PFN_vkCmdSetDepthBias>(get_proc_address(lib_handle, "vkCmdSetDepthBias"));
-    CmdSetBlendConstants = reinterpret_cast<PFN_vkCmdSetBlendConstants>(get_proc_address(lib_handle, "vkCmdSetBlendConstants"));
-    CmdSetDepthBounds = reinterpret_cast<PFN_vkCmdSetDepthBounds>(get_proc_address(lib_handle, "vkCmdSetDepthBounds"));
-    CmdSetStencilCompareMask = reinterpret_cast<PFN_vkCmdSetStencilCompareMask>(get_proc_address(lib_handle, "vkCmdSetStencilCompareMask"));
-    CmdSetStencilWriteMask = reinterpret_cast<PFN_vkCmdSetStencilWriteMask>(get_proc_address(lib_handle, "vkCmdSetStencilWriteMask"));
-    CmdSetStencilReference = reinterpret_cast<PFN_vkCmdSetStencilReference>(get_proc_address(lib_handle, "vkCmdSetStencilReference"));
-    CmdBindDescriptorSets = reinterpret_cast<PFN_vkCmdBindDescriptorSets>(get_proc_address(lib_handle, "vkCmdBindDescriptorSets"));
-    CmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(get_proc_address(lib_handle, "vkCmdBindIndexBuffer"));
-    CmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(get_proc_address(lib_handle, "vkCmdBindVertexBuffers"));
-    CmdDraw = reinterpret_cast<PFN_vkCmdDraw>(get_proc_address(lib_handle, "vkCmdDraw"));
-    CmdDrawIndexed = reinterpret_cast<PFN_vkCmdDrawIndexed>(get_proc_address(lib_handle, "vkCmdDrawIndexed"));
-    CmdDrawIndirect = reinterpret_cast<PFN_vkCmdDrawIndirect>(get_proc_address(lib_handle, "vkCmdDrawIndirect"));
-    CmdDrawIndexedIndirect = reinterpret_cast<PFN_vkCmdDrawIndexedIndirect>(get_proc_address(lib_handle, "vkCmdDrawIndexedIndirect"));
-    CmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(get_proc_address(lib_handle, "vkCmdDispatch"));
-    CmdDispatchIndirect = reinterpret_cast<PFN_vkCmdDispatchIndirect>(get_proc_address(lib_handle, "vkCmdDispatchIndirect"));
-    CmdCopyBuffer = reinterpret_cast<PFN_vkCmdCopyBuffer>(get_proc_address(lib_handle, "vkCmdCopyBuffer"));
-    CmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(get_proc_address(lib_handle, "vkCmdCopyImage"));
-    CmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(get_proc_address(lib_handle, "vkCmdBlitImage"));
-    CmdCopyBufferToImage = reinterpret_cast<PFN_vkCmdCopyBufferToImage>(get_proc_address(lib_handle, "vkCmdCopyBufferToImage"));
-    CmdCopyImageToBuffer = reinterpret_cast<PFN_vkCmdCopyImageToBuffer>(get_proc_address(lib_handle, "vkCmdCopyImageToBuffer"));
-    CmdUpdateBuffer = reinterpret_cast<PFN_vkCmdUpdateBuffer>(get_proc_address(lib_handle, "vkCmdUpdateBuffer"));
-    CmdFillBuffer = reinterpret_cast<PFN_vkCmdFillBuffer>(get_proc_address(lib_handle, "vkCmdFillBuffer"));
-    CmdClearColorImage = reinterpret_cast<PFN_vkCmdClearColorImage>(get_proc_address(lib_handle, "vkCmdClearColorImage"));
-    CmdClearDepthStencilImage = reinterpret_cast<PFN_vkCmdClearDepthStencilImage>(get_proc_address(lib_handle, "vkCmdClearDepthStencilImage"));
-    CmdClearAttachments = reinterpret_cast<PFN_vkCmdClearAttachments>(get_proc_address(lib_handle, "vkCmdClearAttachments"));
-    CmdResolveImage = reinterpret_cast<PFN_vkCmdResolveImage>(get_proc_address(lib_handle, "vkCmdResolveImage"));
-    CmdSetEvent = reinterpret_cast<PFN_vkCmdSetEvent>(get_proc_address(lib_handle, "vkCmdSetEvent"));
-    CmdResetEvent = reinterpret_cast<PFN_vkCmdResetEvent>(get_proc_address(lib_handle, "vkCmdResetEvent"));
-    CmdWaitEvents = reinterpret_cast<PFN_vkCmdWaitEvents>(get_proc_address(lib_handle, "vkCmdWaitEvents"));
-    CmdPipelineBarrier = reinterpret_cast<PFN_vkCmdPipelineBarrier>(get_proc_address(lib_handle, "vkCmdPipelineBarrier"));
-    CmdBeginQuery = reinterpret_cast<PFN_vkCmdBeginQuery>(get_proc_address(lib_handle, "vkCmdBeginQuery"));
-    CmdEndQuery = reinterpret_cast<PFN_vkCmdEndQuery>(get_proc_address(lib_handle, "vkCmdEndQuery"));
-    CmdResetQueryPool = reinterpret_cast<PFN_vkCmdResetQueryPool>(get_proc_address(lib_handle, "vkCmdResetQueryPool"));
-    CmdWriteTimestamp = reinterpret_cast<PFN_vkCmdWriteTimestamp>(get_proc_address(lib_handle, "vkCmdWriteTimestamp"));
-    CmdCopyQueryPoolResults = reinterpret_cast<PFN_vkCmdCopyQueryPoolResults>(get_proc_address(lib_handle, "vkCmdCopyQueryPoolResults"));
-    CmdPushConstants = reinterpret_cast<PFN_vkCmdPushConstants>(get_proc_address(lib_handle, "vkCmdPushConstants"));
-    CmdBeginRenderPass = reinterpret_cast<PFN_vkCmdBeginRenderPass>(get_proc_address(lib_handle, "vkCmdBeginRenderPass"));
-    CmdNextSubpass = reinterpret_cast<PFN_vkCmdNextSubpass>(get_proc_address(lib_handle, "vkCmdNextSubpass"));
-    CmdEndRenderPass = reinterpret_cast<PFN_vkCmdEndRenderPass>(get_proc_address(lib_handle, "vkCmdEndRenderPass"));
-    CmdExecuteCommands = reinterpret_cast<PFN_vkCmdExecuteCommands>(get_proc_address(lib_handle, "vkCmdExecuteCommands"));
-    EnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(get_proc_address(lib_handle, "vkEnumerateInstanceVersion"));
-    BindBufferMemory2 = reinterpret_cast<PFN_vkBindBufferMemory2>(get_proc_address(lib_handle, "vkBindBufferMemory2"));
-    BindImageMemory2 = reinterpret_cast<PFN_vkBindImageMemory2>(get_proc_address(lib_handle, "vkBindImageMemory2"));
-    GetDeviceGroupPeerMemoryFeatures = reinterpret_cast<PFN_vkGetDeviceGroupPeerMemoryFeatures>(get_proc_address(lib_handle, "vkGetDeviceGroupPeerMemoryFeatures"));
-    CmdSetDeviceMask = reinterpret_cast<PFN_vkCmdSetDeviceMask>(get_proc_address(lib_handle, "vkCmdSetDeviceMask"));
-    CmdDispatchBase = reinterpret_cast<PFN_vkCmdDispatchBase>(get_proc_address(lib_handle, "vkCmdDispatchBase"));
-    EnumeratePhysicalDeviceGroups = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceGroups>(get_proc_address(lib_handle, "vkEnumeratePhysicalDeviceGroups"));
-    GetImageMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageMemoryRequirements2>(get_proc_address(lib_handle, "vkGetImageMemoryRequirements2"));
-    GetBufferMemoryRequirements2 = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2>(get_proc_address(lib_handle, "vkGetBufferMemoryRequirements2"));
-    GetImageSparseMemoryRequirements2 = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements2>(get_proc_address(lib_handle, "vkGetImageSparseMemoryRequirements2"));
-    GetPhysicalDeviceFeatures2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceFeatures2"));
-    GetPhysicalDeviceProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceProperties2"));
-    GetPhysicalDeviceFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceFormatProperties2"));
-    GetPhysicalDeviceImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceImageFormatProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceImageFormatProperties2"));
-    GetPhysicalDeviceQueueFamilyProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceQueueFamilyProperties2"));
-    GetPhysicalDeviceMemoryProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceMemoryProperties2"));
-    GetPhysicalDeviceSparseImageFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSparseImageFormatProperties2"));
-    TrimCommandPool = reinterpret_cast<PFN_vkTrimCommandPool>(get_proc_address(lib_handle, "vkTrimCommandPool"));
-    GetDeviceQueue2 = reinterpret_cast<PFN_vkGetDeviceQueue2>(get_proc_address(lib_handle, "vkGetDeviceQueue2"));
-    CreateSamplerYcbcrConversion = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversion>(get_proc_address(lib_handle, "vkCreateSamplerYcbcrConversion"));
-    DestroySamplerYcbcrConversion = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversion>(get_proc_address(lib_handle, "vkDestroySamplerYcbcrConversion"));
-    CreateDescriptorUpdateTemplate = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkCreateDescriptorUpdateTemplate"));
-    DestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(get_proc_address(lib_handle, "vkDestroyDescriptorUpdateTemplate"));
-    UpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(get_proc_address(lib_handle, "vkUpdateDescriptorSetWithTemplate"));
-    GetPhysicalDeviceExternalBufferProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalBufferProperties"));
-    GetPhysicalDeviceExternalFenceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalFenceProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalFenceProperties"));
-    GetPhysicalDeviceExternalSemaphoreProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceExternalSemaphoreProperties"));
-    GetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(get_proc_address(lib_handle, "vkGetDescriptorSetLayoutSupport"));
-    CmdDrawIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndirectCount"));
-    CmdDrawIndexedIndirectCount = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCount>(get_proc_address(lib_handle, "vkCmdDrawIndexedIndirectCount"));
-    CreateRenderPass2 = reinterpret_cast<PFN_vkCreateRenderPass2>(get_proc_address(lib_handle, "vkCreateRenderPass2"));
-    CmdBeginRenderPass2 = reinterpret_cast<PFN_vkCmdBeginRenderPass2>(get_proc_address(lib_handle, "vkCmdBeginRenderPass2"));
-    CmdNextSubpass2 = reinterpret_cast<PFN_vkCmdNextSubpass2>(get_proc_address(lib_handle, "vkCmdNextSubpass2"));
-    CmdEndRenderPass2 = reinterpret_cast<PFN_vkCmdEndRenderPass2>(get_proc_address(lib_handle, "vkCmdEndRenderPass2"));
-    ResetQueryPool = reinterpret_cast<PFN_vkResetQueryPool>(get_proc_address(lib_handle, "vkResetQueryPool"));
-    GetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValue>(get_proc_address(lib_handle, "vkGetSemaphoreCounterValue"));
-    WaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphores>(get_proc_address(lib_handle, "vkWaitSemaphores"));
-    SignalSemaphore = reinterpret_cast<PFN_vkSignalSemaphore>(get_proc_address(lib_handle, "vkSignalSemaphore"));
-    GetBufferDeviceAddress = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(get_proc_address(lib_handle, "vkGetBufferDeviceAddress"));
-    GetBufferOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddress>(get_proc_address(lib_handle, "vkGetBufferOpaqueCaptureAddress"));
-    GetDeviceMemoryOpaqueCaptureAddress = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>(get_proc_address(lib_handle, "vkGetDeviceMemoryOpaqueCaptureAddress"));
-    GetPhysicalDeviceToolProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceToolProperties>(get_proc_address(lib_handle, "vkGetPhysicalDeviceToolProperties"));
-    CreatePrivateDataSlot = reinterpret_cast<PFN_vkCreatePrivateDataSlot>(get_proc_address(lib_handle, "vkCreatePrivateDataSlot"));
-    DestroyPrivateDataSlot = reinterpret_cast<PFN_vkDestroyPrivateDataSlot>(get_proc_address(lib_handle, "vkDestroyPrivateDataSlot"));
-    SetPrivateData = reinterpret_cast<PFN_vkSetPrivateData>(get_proc_address(lib_handle, "vkSetPrivateData"));
-    GetPrivateData = reinterpret_cast<PFN_vkGetPrivateData>(get_proc_address(lib_handle, "vkGetPrivateData"));
-    CmdSetEvent2 = reinterpret_cast<PFN_vkCmdSetEvent2>(get_proc_address(lib_handle, "vkCmdSetEvent2"));
-    CmdResetEvent2 = reinterpret_cast<PFN_vkCmdResetEvent2>(get_proc_address(lib_handle, "vkCmdResetEvent2"));
-    CmdWaitEvents2 = reinterpret_cast<PFN_vkCmdWaitEvents2>(get_proc_address(lib_handle, "vkCmdWaitEvents2"));
-    CmdPipelineBarrier2 = reinterpret_cast<PFN_vkCmdPipelineBarrier2>(get_proc_address(lib_handle, "vkCmdPipelineBarrier2"));
-    CmdWriteTimestamp2 = reinterpret_cast<PFN_vkCmdWriteTimestamp2>(get_proc_address(lib_handle, "vkCmdWriteTimestamp2"));
-    QueueSubmit2 = reinterpret_cast<PFN_vkQueueSubmit2>(get_proc_address(lib_handle, "vkQueueSubmit2"));
-    CmdCopyBuffer2 = reinterpret_cast<PFN_vkCmdCopyBuffer2>(get_proc_address(lib_handle, "vkCmdCopyBuffer2"));
-    CmdCopyImage2 = reinterpret_cast<PFN_vkCmdCopyImage2>(get_proc_address(lib_handle, "vkCmdCopyImage2"));
-    CmdCopyBufferToImage2 = reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(get_proc_address(lib_handle, "vkCmdCopyBufferToImage2"));
-    CmdCopyImageToBuffer2 = reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(get_proc_address(lib_handle, "vkCmdCopyImageToBuffer2"));
-    CmdBlitImage2 = reinterpret_cast<PFN_vkCmdBlitImage2>(get_proc_address(lib_handle, "vkCmdBlitImage2"));
-    CmdResolveImage2 = reinterpret_cast<PFN_vkCmdResolveImage2>(get_proc_address(lib_handle, "vkCmdResolveImage2"));
-    CmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(get_proc_address(lib_handle, "vkCmdBeginRendering"));
-    CmdEndRendering = reinterpret_cast<PFN_vkCmdEndRendering>(get_proc_address(lib_handle, "vkCmdEndRendering"));
-    CmdSetCullMode = reinterpret_cast<PFN_vkCmdSetCullMode>(get_proc_address(lib_handle, "vkCmdSetCullMode"));
-    CmdSetFrontFace = reinterpret_cast<PFN_vkCmdSetFrontFace>(get_proc_address(lib_handle, "vkCmdSetFrontFace"));
-    CmdSetPrimitiveTopology = reinterpret_cast<PFN_vkCmdSetPrimitiveTopology>(get_proc_address(lib_handle, "vkCmdSetPrimitiveTopology"));
-    CmdSetViewportWithCount = reinterpret_cast<PFN_vkCmdSetViewportWithCount>(get_proc_address(lib_handle, "vkCmdSetViewportWithCount"));
-    CmdSetScissorWithCount = reinterpret_cast<PFN_vkCmdSetScissorWithCount>(get_proc_address(lib_handle, "vkCmdSetScissorWithCount"));
-    CmdBindVertexBuffers2 = reinterpret_cast<PFN_vkCmdBindVertexBuffers2>(get_proc_address(lib_handle, "vkCmdBindVertexBuffers2"));
-    CmdSetDepthTestEnable = reinterpret_cast<PFN_vkCmdSetDepthTestEnable>(get_proc_address(lib_handle, "vkCmdSetDepthTestEnable"));
-    CmdSetDepthWriteEnable = reinterpret_cast<PFN_vkCmdSetDepthWriteEnable>(get_proc_address(lib_handle, "vkCmdSetDepthWriteEnable"));
-    CmdSetDepthCompareOp = reinterpret_cast<PFN_vkCmdSetDepthCompareOp>(get_proc_address(lib_handle, "vkCmdSetDepthCompareOp"));
-    CmdSetDepthBoundsTestEnable = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnable>(get_proc_address(lib_handle, "vkCmdSetDepthBoundsTestEnable"));
-    CmdSetStencilTestEnable = reinterpret_cast<PFN_vkCmdSetStencilTestEnable>(get_proc_address(lib_handle, "vkCmdSetStencilTestEnable"));
-    CmdSetStencilOp = reinterpret_cast<PFN_vkCmdSetStencilOp>(get_proc_address(lib_handle, "vkCmdSetStencilOp"));
-    CmdSetRasterizerDiscardEnable = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnable>(get_proc_address(lib_handle, "vkCmdSetRasterizerDiscardEnable"));
-    CmdSetDepthBiasEnable = reinterpret_cast<PFN_vkCmdSetDepthBiasEnable>(get_proc_address(lib_handle, "vkCmdSetDepthBiasEnable"));
-    CmdSetPrimitiveRestartEnable = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnable>(get_proc_address(lib_handle, "vkCmdSetPrimitiveRestartEnable"));
-    GetDeviceBufferMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceBufferMemoryRequirements"));
-    GetDeviceImageMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageMemoryRequirements"));
-    GetDeviceImageSparseMemoryRequirements = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirements>(get_proc_address(lib_handle, "vkGetDeviceImageSparseMemoryRequirements"));
-    DestroySurfaceKHR = reinterpret_cast<PFN_vkDestroySurfaceKHR>(get_proc_address(lib_handle, "vkDestroySurfaceKHR"));
-    GetPhysicalDeviceSurfaceSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSurfaceSupportKHR"));
-    GetPhysicalDeviceSurfaceCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"));
-    GetPhysicalDeviceSurfaceFormatsKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSurfaceFormatsKHR"));
-    GetPhysicalDeviceSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceSurfacePresentModesKHR"));
-    CreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(get_proc_address(lib_handle, "vkCreateSwapchainKHR"));
-    DestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(get_proc_address(lib_handle, "vkDestroySwapchainKHR"));
-    GetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(get_proc_address(lib_handle, "vkGetSwapchainImagesKHR"));
-    AcquireNextImageKHR = reinterpret_cast<PFN_vkAcquireNextImageKHR>(get_proc_address(lib_handle, "vkAcquireNextImageKHR"));
-    QueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(get_proc_address(lib_handle, "vkQueuePresentKHR"));
-    GetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(get_proc_address(lib_handle, "vkGetDeviceGroupPresentCapabilitiesKHR"));
-    GetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(get_proc_address(lib_handle, "vkGetDeviceGroupSurfacePresentModesKHR"));
-    GetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(get_proc_address(lib_handle, "vkGetPhysicalDevicePresentRectanglesKHR"));
-    AcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(get_proc_address(lib_handle, "vkAcquireNextImage2KHR"));
-    GetPhysicalDeviceDisplayPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceDisplayPropertiesKHR"));
-    GetPhysicalDeviceDisplayPlanePropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"));
-    GetDisplayPlaneSupportedDisplaysKHR = reinterpret_cast<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>(get_proc_address(lib_handle, "vkGetDisplayPlaneSupportedDisplaysKHR"));
-    GetDisplayModePropertiesKHR = reinterpret_cast<PFN_vkGetDisplayModePropertiesKHR>(get_proc_address(lib_handle, "vkGetDisplayModePropertiesKHR"));
-    CreateDisplayModeKHR = reinterpret_cast<PFN_vkCreateDisplayModeKHR>(get_proc_address(lib_handle, "vkCreateDisplayModeKHR"));
-    GetDisplayPlaneCapabilitiesKHR = reinterpret_cast<PFN_vkGetDisplayPlaneCapabilitiesKHR>(get_proc_address(lib_handle, "vkGetDisplayPlaneCapabilitiesKHR"));
-    CreateDisplayPlaneSurfaceKHR = reinterpret_cast<PFN_vkCreateDisplayPlaneSurfaceKHR>(get_proc_address(lib_handle, "vkCreateDisplayPlaneSurfaceKHR"));
+    CreateInstance = loader.getProcAddress<PFN_vkCreateInstance>("vkCreateInstance");
+    DestroyInstance = loader.getProcAddress<PFN_vkDestroyInstance>("vkDestroyInstance");
+    EnumeratePhysicalDevices = loader.getProcAddress<PFN_vkEnumeratePhysicalDevices>("vkEnumeratePhysicalDevices");
+    GetPhysicalDeviceFeatures = loader.getProcAddress<PFN_vkGetPhysicalDeviceFeatures>("vkGetPhysicalDeviceFeatures");
+    GetPhysicalDeviceFormatProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceFormatProperties>("vkGetPhysicalDeviceFormatProperties");
+    GetPhysicalDeviceImageFormatProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceImageFormatProperties>("vkGetPhysicalDeviceImageFormatProperties");
+    GetPhysicalDeviceProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceProperties>("vkGetPhysicalDeviceProperties");
+    GetPhysicalDeviceQueueFamilyProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceQueueFamilyProperties>("vkGetPhysicalDeviceQueueFamilyProperties");
+    GetPhysicalDeviceMemoryProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceMemoryProperties>("vkGetPhysicalDeviceMemoryProperties");
+    GetInstanceProcAddr = loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    GetDeviceProcAddr = loader.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
+    CreateDevice = loader.getProcAddress<PFN_vkCreateDevice>("vkCreateDevice");
+    DestroyDevice = loader.getProcAddress<PFN_vkDestroyDevice>("vkDestroyDevice");
+    EnumerateInstanceExtensionProperties = loader.getProcAddress<PFN_vkEnumerateInstanceExtensionProperties>("vkEnumerateInstanceExtensionProperties");
+    EnumerateDeviceExtensionProperties = loader.getProcAddress<PFN_vkEnumerateDeviceExtensionProperties>("vkEnumerateDeviceExtensionProperties");
+    EnumerateInstanceLayerProperties = loader.getProcAddress<PFN_vkEnumerateInstanceLayerProperties>("vkEnumerateInstanceLayerProperties");
+    EnumerateDeviceLayerProperties = loader.getProcAddress<PFN_vkEnumerateDeviceLayerProperties>("vkEnumerateDeviceLayerProperties");
+    GetDeviceQueue = loader.getProcAddress<PFN_vkGetDeviceQueue>("vkGetDeviceQueue");
+    QueueSubmit = loader.getProcAddress<PFN_vkQueueSubmit>("vkQueueSubmit");
+    QueueWaitIdle = loader.getProcAddress<PFN_vkQueueWaitIdle>("vkQueueWaitIdle");
+    DeviceWaitIdle = loader.getProcAddress<PFN_vkDeviceWaitIdle>("vkDeviceWaitIdle");
+    AllocateMemory = loader.getProcAddress<PFN_vkAllocateMemory>("vkAllocateMemory");
+    FreeMemory = loader.getProcAddress<PFN_vkFreeMemory>("vkFreeMemory");
+    MapMemory = loader.getProcAddress<PFN_vkMapMemory>("vkMapMemory");
+    UnmapMemory = loader.getProcAddress<PFN_vkUnmapMemory>("vkUnmapMemory");
+    FlushMappedMemoryRanges = loader.getProcAddress<PFN_vkFlushMappedMemoryRanges>("vkFlushMappedMemoryRanges");
+    InvalidateMappedMemoryRanges = loader.getProcAddress<PFN_vkInvalidateMappedMemoryRanges>("vkInvalidateMappedMemoryRanges");
+    GetDeviceMemoryCommitment = loader.getProcAddress<PFN_vkGetDeviceMemoryCommitment>("vkGetDeviceMemoryCommitment");
+    BindBufferMemory = loader.getProcAddress<PFN_vkBindBufferMemory>("vkBindBufferMemory");
+    BindImageMemory = loader.getProcAddress<PFN_vkBindImageMemory>("vkBindImageMemory");
+    GetBufferMemoryRequirements = loader.getProcAddress<PFN_vkGetBufferMemoryRequirements>("vkGetBufferMemoryRequirements");
+    GetImageMemoryRequirements = loader.getProcAddress<PFN_vkGetImageMemoryRequirements>("vkGetImageMemoryRequirements");
+    GetImageSparseMemoryRequirements = loader.getProcAddress<PFN_vkGetImageSparseMemoryRequirements>("vkGetImageSparseMemoryRequirements");
+    GetPhysicalDeviceSparseImageFormatProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceSparseImageFormatProperties>("vkGetPhysicalDeviceSparseImageFormatProperties");
+    QueueBindSparse = loader.getProcAddress<PFN_vkQueueBindSparse>("vkQueueBindSparse");
+    CreateFence = loader.getProcAddress<PFN_vkCreateFence>("vkCreateFence");
+    DestroyFence = loader.getProcAddress<PFN_vkDestroyFence>("vkDestroyFence");
+    ResetFences = loader.getProcAddress<PFN_vkResetFences>("vkResetFences");
+    GetFenceStatus = loader.getProcAddress<PFN_vkGetFenceStatus>("vkGetFenceStatus");
+    WaitForFences = loader.getProcAddress<PFN_vkWaitForFences>("vkWaitForFences");
+    CreateSemaphore = loader.getProcAddress<PFN_vkCreateSemaphore>("vkCreateSemaphore");
+    DestroySemaphore = loader.getProcAddress<PFN_vkDestroySemaphore>("vkDestroySemaphore");
+    CreateEvent = loader.getProcAddress<PFN_vkCreateEvent>("vkCreateEvent");
+    DestroyEvent = loader.getProcAddress<PFN_vkDestroyEvent>("vkDestroyEvent");
+    GetEventStatus = loader.getProcAddress<PFN_vkGetEventStatus>("vkGetEventStatus");
+    SetEvent = loader.getProcAddress<PFN_vkSetEvent>("vkSetEvent");
+    ResetEvent = loader.getProcAddress<PFN_vkResetEvent>("vkResetEvent");
+    CreateQueryPool = loader.getProcAddress<PFN_vkCreateQueryPool>("vkCreateQueryPool");
+    DestroyQueryPool = loader.getProcAddress<PFN_vkDestroyQueryPool>("vkDestroyQueryPool");
+    GetQueryPoolResults = loader.getProcAddress<PFN_vkGetQueryPoolResults>("vkGetQueryPoolResults");
+    CreateBuffer = loader.getProcAddress<PFN_vkCreateBuffer>("vkCreateBuffer");
+    DestroyBuffer = loader.getProcAddress<PFN_vkDestroyBuffer>("vkDestroyBuffer");
+    CreateBufferView = loader.getProcAddress<PFN_vkCreateBufferView>("vkCreateBufferView");
+    DestroyBufferView = loader.getProcAddress<PFN_vkDestroyBufferView>("vkDestroyBufferView");
+    CreateImage = loader.getProcAddress<PFN_vkCreateImage>("vkCreateImage");
+    DestroyImage = loader.getProcAddress<PFN_vkDestroyImage>("vkDestroyImage");
+    GetImageSubresourceLayout = loader.getProcAddress<PFN_vkGetImageSubresourceLayout>("vkGetImageSubresourceLayout");
+    CreateImageView = loader.getProcAddress<PFN_vkCreateImageView>("vkCreateImageView");
+    DestroyImageView = loader.getProcAddress<PFN_vkDestroyImageView>("vkDestroyImageView");
+    CreateShaderModule = loader.getProcAddress<PFN_vkCreateShaderModule>("vkCreateShaderModule");
+    DestroyShaderModule = loader.getProcAddress<PFN_vkDestroyShaderModule>("vkDestroyShaderModule");
+    CreatePipelineCache = loader.getProcAddress<PFN_vkCreatePipelineCache>("vkCreatePipelineCache");
+    DestroyPipelineCache = loader.getProcAddress<PFN_vkDestroyPipelineCache>("vkDestroyPipelineCache");
+    GetPipelineCacheData = loader.getProcAddress<PFN_vkGetPipelineCacheData>("vkGetPipelineCacheData");
+    MergePipelineCaches = loader.getProcAddress<PFN_vkMergePipelineCaches>("vkMergePipelineCaches");
+    CreateGraphicsPipelines = loader.getProcAddress<PFN_vkCreateGraphicsPipelines>("vkCreateGraphicsPipelines");
+    CreateComputePipelines = loader.getProcAddress<PFN_vkCreateComputePipelines>("vkCreateComputePipelines");
+    DestroyPipeline = loader.getProcAddress<PFN_vkDestroyPipeline>("vkDestroyPipeline");
+    CreatePipelineLayout = loader.getProcAddress<PFN_vkCreatePipelineLayout>("vkCreatePipelineLayout");
+    DestroyPipelineLayout = loader.getProcAddress<PFN_vkDestroyPipelineLayout>("vkDestroyPipelineLayout");
+    CreateSampler = loader.getProcAddress<PFN_vkCreateSampler>("vkCreateSampler");
+    DestroySampler = loader.getProcAddress<PFN_vkDestroySampler>("vkDestroySampler");
+    CreateDescriptorSetLayout = loader.getProcAddress<PFN_vkCreateDescriptorSetLayout>("vkCreateDescriptorSetLayout");
+    DestroyDescriptorSetLayout = loader.getProcAddress<PFN_vkDestroyDescriptorSetLayout>("vkDestroyDescriptorSetLayout");
+    CreateDescriptorPool = loader.getProcAddress<PFN_vkCreateDescriptorPool>("vkCreateDescriptorPool");
+    DestroyDescriptorPool = loader.getProcAddress<PFN_vkDestroyDescriptorPool>("vkDestroyDescriptorPool");
+    ResetDescriptorPool = loader.getProcAddress<PFN_vkResetDescriptorPool>("vkResetDescriptorPool");
+    AllocateDescriptorSets = loader.getProcAddress<PFN_vkAllocateDescriptorSets>("vkAllocateDescriptorSets");
+    FreeDescriptorSets = loader.getProcAddress<PFN_vkFreeDescriptorSets>("vkFreeDescriptorSets");
+    UpdateDescriptorSets = loader.getProcAddress<PFN_vkUpdateDescriptorSets>("vkUpdateDescriptorSets");
+    CreateFramebuffer = loader.getProcAddress<PFN_vkCreateFramebuffer>("vkCreateFramebuffer");
+    DestroyFramebuffer = loader.getProcAddress<PFN_vkDestroyFramebuffer>("vkDestroyFramebuffer");
+    CreateRenderPass = loader.getProcAddress<PFN_vkCreateRenderPass>("vkCreateRenderPass");
+    DestroyRenderPass = loader.getProcAddress<PFN_vkDestroyRenderPass>("vkDestroyRenderPass");
+    GetRenderAreaGranularity = loader.getProcAddress<PFN_vkGetRenderAreaGranularity>("vkGetRenderAreaGranularity");
+    CreateCommandPool = loader.getProcAddress<PFN_vkCreateCommandPool>("vkCreateCommandPool");
+    DestroyCommandPool = loader.getProcAddress<PFN_vkDestroyCommandPool>("vkDestroyCommandPool");
+    ResetCommandPool = loader.getProcAddress<PFN_vkResetCommandPool>("vkResetCommandPool");
+    AllocateCommandBuffers = loader.getProcAddress<PFN_vkAllocateCommandBuffers>("vkAllocateCommandBuffers");
+    FreeCommandBuffers = loader.getProcAddress<PFN_vkFreeCommandBuffers>("vkFreeCommandBuffers");
+    BeginCommandBuffer = loader.getProcAddress<PFN_vkBeginCommandBuffer>("vkBeginCommandBuffer");
+    EndCommandBuffer = loader.getProcAddress<PFN_vkEndCommandBuffer>("vkEndCommandBuffer");
+    ResetCommandBuffer = loader.getProcAddress<PFN_vkResetCommandBuffer>("vkResetCommandBuffer");
+    CmdBindPipeline = loader.getProcAddress<PFN_vkCmdBindPipeline>("vkCmdBindPipeline");
+    CmdSetViewport = loader.getProcAddress<PFN_vkCmdSetViewport>("vkCmdSetViewport");
+    CmdSetScissor = loader.getProcAddress<PFN_vkCmdSetScissor>("vkCmdSetScissor");
+    CmdSetLineWidth = loader.getProcAddress<PFN_vkCmdSetLineWidth>("vkCmdSetLineWidth");
+    CmdSetDepthBias = loader.getProcAddress<PFN_vkCmdSetDepthBias>("vkCmdSetDepthBias");
+    CmdSetBlendConstants = loader.getProcAddress<PFN_vkCmdSetBlendConstants>("vkCmdSetBlendConstants");
+    CmdSetDepthBounds = loader.getProcAddress<PFN_vkCmdSetDepthBounds>("vkCmdSetDepthBounds");
+    CmdSetStencilCompareMask = loader.getProcAddress<PFN_vkCmdSetStencilCompareMask>("vkCmdSetStencilCompareMask");
+    CmdSetStencilWriteMask = loader.getProcAddress<PFN_vkCmdSetStencilWriteMask>("vkCmdSetStencilWriteMask");
+    CmdSetStencilReference = loader.getProcAddress<PFN_vkCmdSetStencilReference>("vkCmdSetStencilReference");
+    CmdBindDescriptorSets = loader.getProcAddress<PFN_vkCmdBindDescriptorSets>("vkCmdBindDescriptorSets");
+    CmdBindIndexBuffer = loader.getProcAddress<PFN_vkCmdBindIndexBuffer>("vkCmdBindIndexBuffer");
+    CmdBindVertexBuffers = loader.getProcAddress<PFN_vkCmdBindVertexBuffers>("vkCmdBindVertexBuffers");
+    CmdDraw = loader.getProcAddress<PFN_vkCmdDraw>("vkCmdDraw");
+    CmdDrawIndexed = loader.getProcAddress<PFN_vkCmdDrawIndexed>("vkCmdDrawIndexed");
+    CmdDrawIndirect = loader.getProcAddress<PFN_vkCmdDrawIndirect>("vkCmdDrawIndirect");
+    CmdDrawIndexedIndirect = loader.getProcAddress<PFN_vkCmdDrawIndexedIndirect>("vkCmdDrawIndexedIndirect");
+    CmdDispatch = loader.getProcAddress<PFN_vkCmdDispatch>("vkCmdDispatch");
+    CmdDispatchIndirect = loader.getProcAddress<PFN_vkCmdDispatchIndirect>("vkCmdDispatchIndirect");
+    CmdCopyBuffer = loader.getProcAddress<PFN_vkCmdCopyBuffer>("vkCmdCopyBuffer");
+    CmdCopyImage = loader.getProcAddress<PFN_vkCmdCopyImage>("vkCmdCopyImage");
+    CmdBlitImage = loader.getProcAddress<PFN_vkCmdBlitImage>("vkCmdBlitImage");
+    CmdCopyBufferToImage = loader.getProcAddress<PFN_vkCmdCopyBufferToImage>("vkCmdCopyBufferToImage");
+    CmdCopyImageToBuffer = loader.getProcAddress<PFN_vkCmdCopyImageToBuffer>("vkCmdCopyImageToBuffer");
+    CmdUpdateBuffer = loader.getProcAddress<PFN_vkCmdUpdateBuffer>("vkCmdUpdateBuffer");
+    CmdFillBuffer = loader.getProcAddress<PFN_vkCmdFillBuffer>("vkCmdFillBuffer");
+    CmdClearColorImage = loader.getProcAddress<PFN_vkCmdClearColorImage>("vkCmdClearColorImage");
+    CmdClearDepthStencilImage = loader.getProcAddress<PFN_vkCmdClearDepthStencilImage>("vkCmdClearDepthStencilImage");
+    CmdClearAttachments = loader.getProcAddress<PFN_vkCmdClearAttachments>("vkCmdClearAttachments");
+    CmdResolveImage = loader.getProcAddress<PFN_vkCmdResolveImage>("vkCmdResolveImage");
+    CmdSetEvent = loader.getProcAddress<PFN_vkCmdSetEvent>("vkCmdSetEvent");
+    CmdResetEvent = loader.getProcAddress<PFN_vkCmdResetEvent>("vkCmdResetEvent");
+    CmdWaitEvents = loader.getProcAddress<PFN_vkCmdWaitEvents>("vkCmdWaitEvents");
+    CmdPipelineBarrier = loader.getProcAddress<PFN_vkCmdPipelineBarrier>("vkCmdPipelineBarrier");
+    CmdBeginQuery = loader.getProcAddress<PFN_vkCmdBeginQuery>("vkCmdBeginQuery");
+    CmdEndQuery = loader.getProcAddress<PFN_vkCmdEndQuery>("vkCmdEndQuery");
+    CmdResetQueryPool = loader.getProcAddress<PFN_vkCmdResetQueryPool>("vkCmdResetQueryPool");
+    CmdWriteTimestamp = loader.getProcAddress<PFN_vkCmdWriteTimestamp>("vkCmdWriteTimestamp");
+    CmdCopyQueryPoolResults = loader.getProcAddress<PFN_vkCmdCopyQueryPoolResults>("vkCmdCopyQueryPoolResults");
+    CmdPushConstants = loader.getProcAddress<PFN_vkCmdPushConstants>("vkCmdPushConstants");
+    CmdBeginRenderPass = loader.getProcAddress<PFN_vkCmdBeginRenderPass>("vkCmdBeginRenderPass");
+    CmdNextSubpass = loader.getProcAddress<PFN_vkCmdNextSubpass>("vkCmdNextSubpass");
+    CmdEndRenderPass = loader.getProcAddress<PFN_vkCmdEndRenderPass>("vkCmdEndRenderPass");
+    CmdExecuteCommands = loader.getProcAddress<PFN_vkCmdExecuteCommands>("vkCmdExecuteCommands");
+    EnumerateInstanceVersion = loader.getProcAddress<PFN_vkEnumerateInstanceVersion>("vkEnumerateInstanceVersion");
+    BindBufferMemory2 = loader.getProcAddress<PFN_vkBindBufferMemory2>("vkBindBufferMemory2");
+    BindImageMemory2 = loader.getProcAddress<PFN_vkBindImageMemory2>("vkBindImageMemory2");
+    GetDeviceGroupPeerMemoryFeatures = loader.getProcAddress<PFN_vkGetDeviceGroupPeerMemoryFeatures>("vkGetDeviceGroupPeerMemoryFeatures");
+    CmdSetDeviceMask = loader.getProcAddress<PFN_vkCmdSetDeviceMask>("vkCmdSetDeviceMask");
+    CmdDispatchBase = loader.getProcAddress<PFN_vkCmdDispatchBase>("vkCmdDispatchBase");
+    EnumeratePhysicalDeviceGroups = loader.getProcAddress<PFN_vkEnumeratePhysicalDeviceGroups>("vkEnumeratePhysicalDeviceGroups");
+    GetImageMemoryRequirements2 = loader.getProcAddress<PFN_vkGetImageMemoryRequirements2>("vkGetImageMemoryRequirements2");
+    GetBufferMemoryRequirements2 = loader.getProcAddress<PFN_vkGetBufferMemoryRequirements2>("vkGetBufferMemoryRequirements2");
+    GetImageSparseMemoryRequirements2 = loader.getProcAddress<PFN_vkGetImageSparseMemoryRequirements2>("vkGetImageSparseMemoryRequirements2");
+    GetPhysicalDeviceFeatures2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceFeatures2>("vkGetPhysicalDeviceFeatures2");
+    GetPhysicalDeviceProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceProperties2>("vkGetPhysicalDeviceProperties2");
+    GetPhysicalDeviceFormatProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceFormatProperties2>("vkGetPhysicalDeviceFormatProperties2");
+    GetPhysicalDeviceImageFormatProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceImageFormatProperties2>("vkGetPhysicalDeviceImageFormatProperties2");
+    GetPhysicalDeviceQueueFamilyProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceQueueFamilyProperties2>("vkGetPhysicalDeviceQueueFamilyProperties2");
+    GetPhysicalDeviceMemoryProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceMemoryProperties2>("vkGetPhysicalDeviceMemoryProperties2");
+    GetPhysicalDeviceSparseImageFormatProperties2 = loader.getProcAddress<PFN_vkGetPhysicalDeviceSparseImageFormatProperties2>("vkGetPhysicalDeviceSparseImageFormatProperties2");
+    TrimCommandPool = loader.getProcAddress<PFN_vkTrimCommandPool>("vkTrimCommandPool");
+    GetDeviceQueue2 = loader.getProcAddress<PFN_vkGetDeviceQueue2>("vkGetDeviceQueue2");
+    CreateSamplerYcbcrConversion = loader.getProcAddress<PFN_vkCreateSamplerYcbcrConversion>("vkCreateSamplerYcbcrConversion");
+    DestroySamplerYcbcrConversion = loader.getProcAddress<PFN_vkDestroySamplerYcbcrConversion>("vkDestroySamplerYcbcrConversion");
+    CreateDescriptorUpdateTemplate = loader.getProcAddress<PFN_vkCreateDescriptorUpdateTemplate>("vkCreateDescriptorUpdateTemplate");
+    DestroyDescriptorUpdateTemplate = loader.getProcAddress<PFN_vkDestroyDescriptorUpdateTemplate>("vkDestroyDescriptorUpdateTemplate");
+    UpdateDescriptorSetWithTemplate = loader.getProcAddress<PFN_vkUpdateDescriptorSetWithTemplate>("vkUpdateDescriptorSetWithTemplate");
+    GetPhysicalDeviceExternalBufferProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceExternalBufferProperties>("vkGetPhysicalDeviceExternalBufferProperties");
+    GetPhysicalDeviceExternalFenceProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceExternalFenceProperties>("vkGetPhysicalDeviceExternalFenceProperties");
+    GetPhysicalDeviceExternalSemaphoreProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceExternalSemaphoreProperties>("vkGetPhysicalDeviceExternalSemaphoreProperties");
+    GetDescriptorSetLayoutSupport = loader.getProcAddress<PFN_vkGetDescriptorSetLayoutSupport>("vkGetDescriptorSetLayoutSupport");
+    CmdDrawIndirectCount = loader.getProcAddress<PFN_vkCmdDrawIndirectCount>("vkCmdDrawIndirectCount");
+    CmdDrawIndexedIndirectCount = loader.getProcAddress<PFN_vkCmdDrawIndexedIndirectCount>("vkCmdDrawIndexedIndirectCount");
+    CreateRenderPass2 = loader.getProcAddress<PFN_vkCreateRenderPass2>("vkCreateRenderPass2");
+    CmdBeginRenderPass2 = loader.getProcAddress<PFN_vkCmdBeginRenderPass2>("vkCmdBeginRenderPass2");
+    CmdNextSubpass2 = loader.getProcAddress<PFN_vkCmdNextSubpass2>("vkCmdNextSubpass2");
+    CmdEndRenderPass2 = loader.getProcAddress<PFN_vkCmdEndRenderPass2>("vkCmdEndRenderPass2");
+    ResetQueryPool = loader.getProcAddress<PFN_vkResetQueryPool>("vkResetQueryPool");
+    GetSemaphoreCounterValue = loader.getProcAddress<PFN_vkGetSemaphoreCounterValue>("vkGetSemaphoreCounterValue");
+    WaitSemaphores = loader.getProcAddress<PFN_vkWaitSemaphores>("vkWaitSemaphores");
+    SignalSemaphore = loader.getProcAddress<PFN_vkSignalSemaphore>("vkSignalSemaphore");
+    GetBufferDeviceAddress = loader.getProcAddress<PFN_vkGetBufferDeviceAddress>("vkGetBufferDeviceAddress");
+    GetBufferOpaqueCaptureAddress = loader.getProcAddress<PFN_vkGetBufferOpaqueCaptureAddress>("vkGetBufferOpaqueCaptureAddress");
+    GetDeviceMemoryOpaqueCaptureAddress = loader.getProcAddress<PFN_vkGetDeviceMemoryOpaqueCaptureAddress>("vkGetDeviceMemoryOpaqueCaptureAddress");
+    GetPhysicalDeviceToolProperties = loader.getProcAddress<PFN_vkGetPhysicalDeviceToolProperties>("vkGetPhysicalDeviceToolProperties");
+    CreatePrivateDataSlot = loader.getProcAddress<PFN_vkCreatePrivateDataSlot>("vkCreatePrivateDataSlot");
+    DestroyPrivateDataSlot = loader.getProcAddress<PFN_vkDestroyPrivateDataSlot>("vkDestroyPrivateDataSlot");
+    SetPrivateData = loader.getProcAddress<PFN_vkSetPrivateData>("vkSetPrivateData");
+    GetPrivateData = loader.getProcAddress<PFN_vkGetPrivateData>("vkGetPrivateData");
+    CmdSetEvent2 = loader.getProcAddress<PFN_vkCmdSetEvent2>("vkCmdSetEvent2");
+    CmdResetEvent2 = loader.getProcAddress<PFN_vkCmdResetEvent2>("vkCmdResetEvent2");
+    CmdWaitEvents2 = loader.getProcAddress<PFN_vkCmdWaitEvents2>("vkCmdWaitEvents2");
+    CmdPipelineBarrier2 = loader.getProcAddress<PFN_vkCmdPipelineBarrier2>("vkCmdPipelineBarrier2");
+    CmdWriteTimestamp2 = loader.getProcAddress<PFN_vkCmdWriteTimestamp2>("vkCmdWriteTimestamp2");
+    QueueSubmit2 = loader.getProcAddress<PFN_vkQueueSubmit2>("vkQueueSubmit2");
+    CmdCopyBuffer2 = loader.getProcAddress<PFN_vkCmdCopyBuffer2>("vkCmdCopyBuffer2");
+    CmdCopyImage2 = loader.getProcAddress<PFN_vkCmdCopyImage2>("vkCmdCopyImage2");
+    CmdCopyBufferToImage2 = loader.getProcAddress<PFN_vkCmdCopyBufferToImage2>("vkCmdCopyBufferToImage2");
+    CmdCopyImageToBuffer2 = loader.getProcAddress<PFN_vkCmdCopyImageToBuffer2>("vkCmdCopyImageToBuffer2");
+    CmdBlitImage2 = loader.getProcAddress<PFN_vkCmdBlitImage2>("vkCmdBlitImage2");
+    CmdResolveImage2 = loader.getProcAddress<PFN_vkCmdResolveImage2>("vkCmdResolveImage2");
+    CmdBeginRendering = loader.getProcAddress<PFN_vkCmdBeginRendering>("vkCmdBeginRendering");
+    CmdEndRendering = loader.getProcAddress<PFN_vkCmdEndRendering>("vkCmdEndRendering");
+    CmdSetCullMode = loader.getProcAddress<PFN_vkCmdSetCullMode>("vkCmdSetCullMode");
+    CmdSetFrontFace = loader.getProcAddress<PFN_vkCmdSetFrontFace>("vkCmdSetFrontFace");
+    CmdSetPrimitiveTopology = loader.getProcAddress<PFN_vkCmdSetPrimitiveTopology>("vkCmdSetPrimitiveTopology");
+    CmdSetViewportWithCount = loader.getProcAddress<PFN_vkCmdSetViewportWithCount>("vkCmdSetViewportWithCount");
+    CmdSetScissorWithCount = loader.getProcAddress<PFN_vkCmdSetScissorWithCount>("vkCmdSetScissorWithCount");
+    CmdBindVertexBuffers2 = loader.getProcAddress<PFN_vkCmdBindVertexBuffers2>("vkCmdBindVertexBuffers2");
+    CmdSetDepthTestEnable = loader.getProcAddress<PFN_vkCmdSetDepthTestEnable>("vkCmdSetDepthTestEnable");
+    CmdSetDepthWriteEnable = loader.getProcAddress<PFN_vkCmdSetDepthWriteEnable>("vkCmdSetDepthWriteEnable");
+    CmdSetDepthCompareOp = loader.getProcAddress<PFN_vkCmdSetDepthCompareOp>("vkCmdSetDepthCompareOp");
+    CmdSetDepthBoundsTestEnable = loader.getProcAddress<PFN_vkCmdSetDepthBoundsTestEnable>("vkCmdSetDepthBoundsTestEnable");
+    CmdSetStencilTestEnable = loader.getProcAddress<PFN_vkCmdSetStencilTestEnable>("vkCmdSetStencilTestEnable");
+    CmdSetStencilOp = loader.getProcAddress<PFN_vkCmdSetStencilOp>("vkCmdSetStencilOp");
+    CmdSetRasterizerDiscardEnable = loader.getProcAddress<PFN_vkCmdSetRasterizerDiscardEnable>("vkCmdSetRasterizerDiscardEnable");
+    CmdSetDepthBiasEnable = loader.getProcAddress<PFN_vkCmdSetDepthBiasEnable>("vkCmdSetDepthBiasEnable");
+    CmdSetPrimitiveRestartEnable = loader.getProcAddress<PFN_vkCmdSetPrimitiveRestartEnable>("vkCmdSetPrimitiveRestartEnable");
+    GetDeviceBufferMemoryRequirements = loader.getProcAddress<PFN_vkGetDeviceBufferMemoryRequirements>("vkGetDeviceBufferMemoryRequirements");
+    GetDeviceImageMemoryRequirements = loader.getProcAddress<PFN_vkGetDeviceImageMemoryRequirements>("vkGetDeviceImageMemoryRequirements");
+    GetDeviceImageSparseMemoryRequirements = loader.getProcAddress<PFN_vkGetDeviceImageSparseMemoryRequirements>("vkGetDeviceImageSparseMemoryRequirements");
+    DestroySurfaceKHR = loader.getProcAddress<PFN_vkDestroySurfaceKHR>("vkDestroySurfaceKHR");
+    GetPhysicalDeviceSurfaceSupportKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>("vkGetPhysicalDeviceSurfaceSupportKHR");
+    GetPhysicalDeviceSurfaceCapabilitiesKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>("vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+    GetPhysicalDeviceSurfaceFormatsKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceSurfaceFormatsKHR>("vkGetPhysicalDeviceSurfaceFormatsKHR");
+    GetPhysicalDeviceSurfacePresentModesKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceSurfacePresentModesKHR>("vkGetPhysicalDeviceSurfacePresentModesKHR");
+    CreateSwapchainKHR = loader.getProcAddress<PFN_vkCreateSwapchainKHR>("vkCreateSwapchainKHR");
+    DestroySwapchainKHR = loader.getProcAddress<PFN_vkDestroySwapchainKHR>("vkDestroySwapchainKHR");
+    GetSwapchainImagesKHR = loader.getProcAddress<PFN_vkGetSwapchainImagesKHR>("vkGetSwapchainImagesKHR");
+    AcquireNextImageKHR = loader.getProcAddress<PFN_vkAcquireNextImageKHR>("vkAcquireNextImageKHR");
+    QueuePresentKHR = loader.getProcAddress<PFN_vkQueuePresentKHR>("vkQueuePresentKHR");
+    GetDeviceGroupPresentCapabilitiesKHR = loader.getProcAddress<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>("vkGetDeviceGroupPresentCapabilitiesKHR");
+    GetDeviceGroupSurfacePresentModesKHR = loader.getProcAddress<PFN_vkGetDeviceGroupSurfacePresentModesKHR>("vkGetDeviceGroupSurfacePresentModesKHR");
+    GetPhysicalDevicePresentRectanglesKHR = loader.getProcAddress<PFN_vkGetPhysicalDevicePresentRectanglesKHR>("vkGetPhysicalDevicePresentRectanglesKHR");
+    AcquireNextImage2KHR = loader.getProcAddress<PFN_vkAcquireNextImage2KHR>("vkAcquireNextImage2KHR");
+    GetPhysicalDeviceDisplayPropertiesKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceDisplayPropertiesKHR>("vkGetPhysicalDeviceDisplayPropertiesKHR");
+    GetPhysicalDeviceDisplayPlanePropertiesKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR>("vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
+    GetDisplayPlaneSupportedDisplaysKHR = loader.getProcAddress<PFN_vkGetDisplayPlaneSupportedDisplaysKHR>("vkGetDisplayPlaneSupportedDisplaysKHR");
+    GetDisplayModePropertiesKHR = loader.getProcAddress<PFN_vkGetDisplayModePropertiesKHR>("vkGetDisplayModePropertiesKHR");
+    CreateDisplayModeKHR = loader.getProcAddress<PFN_vkCreateDisplayModeKHR>("vkCreateDisplayModeKHR");
+    GetDisplayPlaneCapabilitiesKHR = loader.getProcAddress<PFN_vkGetDisplayPlaneCapabilitiesKHR>("vkGetDisplayPlaneCapabilitiesKHR");
+    CreateDisplayPlaneSurfaceKHR = loader.getProcAddress<PFN_vkCreateDisplayPlaneSurfaceKHR>("vkCreateDisplayPlaneSurfaceKHR");
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    CreateXlibSurfaceKHR = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(get_proc_address(lib_handle, "vkCreateXlibSurfaceKHR"));
+    CreateXlibSurfaceKHR = loader.getProcAddress<PFN_vkCreateXlibSurfaceKHR>("vkCreateXlibSurfaceKHR");
 #endif // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    GetPhysicalDeviceXlibPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceXlibPresentationSupportKHR"));
+    GetPhysicalDeviceXlibPresentationSupportKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR>("vkGetPhysicalDeviceXlibPresentationSupportKHR");
 #endif // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    CreateXcbSurfaceKHR = reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(get_proc_address(lib_handle, "vkCreateXcbSurfaceKHR"));
+    CreateXcbSurfaceKHR = loader.getProcAddress<PFN_vkCreateXcbSurfaceKHR>("vkCreateXcbSurfaceKHR");
 #endif // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    GetPhysicalDeviceXcbPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceXcbPresentationSupportKHR"));
+    GetPhysicalDeviceXcbPresentationSupportKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR>("vkGetPhysicalDeviceXcbPresentationSupportKHR");
 #endif // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    CreateWaylandSurfaceKHR = reinterpret_cast<PFN_vkCreateWaylandSurfaceKHR>(get_proc_address(lib_handle, "vkCreateWaylandSurfaceKHR"));
+    CreateWaylandSurfaceKHR = loader.getProcAddress<PFN_vkCreateWaylandSurfaceKHR>("vkCreateWaylandSurfaceKHR");
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    GetPhysicalDeviceWaylandPresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceWaylandPresentationSupportKHR"));
+    GetPhysicalDeviceWaylandPresentationSupportKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR>("vkGetPhysicalDeviceWaylandPresentationSupportKHR");
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    CreateAndroidSurfaceKHR = reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(get_proc_address(lib_handle, "vkCreateAndroidSurfaceKHR"));
+    CreateAndroidSurfaceKHR = loader.getProcAddress<PFN_vkCreateAndroidSurfaceKHR>("vkCreateAndroidSurfaceKHR");
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    CreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(get_proc_address(lib_handle, "vkCreateWin32SurfaceKHR"));
+    CreateWin32SurfaceKHR = loader.getProcAddress<PFN_vkCreateWin32SurfaceKHR>("vkCreateWin32SurfaceKHR");
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    GetPhysicalDeviceWin32PresentationSupportKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>(get_proc_address(lib_handle, "vkGetPhysicalDeviceWin32PresentationSupportKHR"));
+    GetPhysicalDeviceWin32PresentationSupportKHR = loader.getProcAddress<PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR>("vkGetPhysicalDeviceWin32PresentationSupportKHR");
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_MACOS_MVK
-    CreateMacOSSurfaceMVK = reinterpret_cast<PFN_vkCreateMacOSSurfaceMVK>(get_proc_address(lib_handle, "vkCreateMacOSSurfaceMVK"));
+    CreateMacOSSurfaceMVK = loader.getProcAddress<PFN_vkCreateMacOSSurfaceMVK>("vkCreateMacOSSurfaceMVK");
 #endif // VK_USE_PLATFORM_MACOS_MVK
 }
-
 } // namespace vk

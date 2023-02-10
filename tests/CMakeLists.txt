@@ -95,6 +95,10 @@ target_include_directories(vk_layer_validation_tests PRIVATE
     .
 )
 
+target_compile_definitions(vk_layer_validation_tests PRIVATE
+    VULKAN_HPP_NO_EXCEPTIONS
+)
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE
         -Wno-sign-compare

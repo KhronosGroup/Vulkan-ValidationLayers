@@ -9,8 +9,13 @@ if (CMAKE_CURRENT_SOURCE_DIR MATCHES "sources/third_party/vulkan/src")
     set(BUILD_IN_NDK ON)
 endif()
 
-# Enable beta Vulkan extensions
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DXXH_NO_LONG_LONG -DVK_PROTOTYPES)
+add_definitions(
+    -DVK_ENABLE_BETA_EXTENSIONS
+    -DVK_USE_PLATFORM_ANDROID_KHR
+    -DXXH_NO_LONG_LONG
+    -DVK_PROTOTYPES
+    -DVULKAN_HPP_NO_EXCEPTIONS
+)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Werror \
         -Wno-unused-function -Wno-unused-const-variable \
@@ -41,8 +46,7 @@ endif()
 set(COMMON_DIR "${SRC_DIR}/build-android/generated")
 
 set(CMAKE_CXX_clone "${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
-        -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
 include_directories(${SRC_DIR}/include
                     ${COMMON_DIR}/include
                     ${SRC_DIR}/layers)
@@ -60,8 +64,7 @@ add_library(SPIRV-Tools-prebuilt STATIC IMPORTED)
 set_target_properties(SPIRV-Tools-prebuilt PROPERTIES IMPORTED_LOCATION
     ${SPIRV_LIB})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
-                     -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
 add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/android_validation.cpp
         ${SRC_DIR}/layers/state_tracker/state_tracker.cpp

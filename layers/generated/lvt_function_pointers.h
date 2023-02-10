@@ -20,7 +20,6 @@
  * limitations under the License.
  */
 
-
 #include <vulkan/vulkan.h>
 
 #ifdef _WIN32
