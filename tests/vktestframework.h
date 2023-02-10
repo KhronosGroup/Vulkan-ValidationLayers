@@ -15,9 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef VKTESTFRAMEWORK_H
-#define VKTESTFRAMEWORK_H
+#pragma once
 
 #include "glslang/SPIRV/GLSL.std.450.h"
 #include "spirv-tools/libspirv.h"
@@ -86,5 +84,3 @@ class TestEnvironment : public ::testing::Environment {
 
     void TearDown();
 };
-
-#endif  // VKTESTFRAMEWORK_H

@@ -16,9 +16,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#ifndef VKTESTFRAMEWORKANDROID_H
-#define VKTESTFRAMEWORKANDROID_H
+#pragma once
 
 #include "spirv-tools/libspirv.h"
 #include "test_common.h"
@@ -52,5 +50,3 @@ class TestEnvironment : public ::testing::Environment {
 
     void TearDown();
 };
-
-#endif
