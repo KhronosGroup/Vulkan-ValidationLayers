@@ -38,8 +38,6 @@
 // Can be used by tests to record additional details / description of test
 #define TEST_DESCRIPTION(desc) RecordProperty("description", desc)
 
-using namespace std;
-
 class VkImageObj;
 
 class VkTestFramework : public ::testing::Test {
@@ -70,7 +68,7 @@ class VkTestFramework : public ::testing::Test {
     EShLanguage FindLanguage(const VkShaderStageFlagBits shader_type);
     std::string ConfigFile;
     bool SetConfigFile(const std::string &name);
-    string m_testName;
+    std::string m_testName;
 
     static inline int m_width = 0;
     static inline int m_height = 0;
