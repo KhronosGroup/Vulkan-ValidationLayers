@@ -920,12 +920,33 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if (!(reqs & image_view_state->descriptor_format_bits)) {
                 // bad component type
                 auto set = context.descriptor_set.GetSet();
-                return LogError(set, context.vuids.image_view_numeric_format,
+                const LogObjectList objlist(set, image_view);
+                return LogError(objlist, context.vuids.image_view_numeric_format,
                                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
-                                " requires %s component type, but bound descriptor format is %s (%s).",
+                                " requires %s component type, but bound descriptor format is %s.",
                                 context.caller, report_data->FormatHandle(set).c_str(), binding, index,
-                                StringDescriptorReqComponentType(reqs), string_VkFormat(image_view_ci.format),
-                                report_data->FormatHandle(image_view).c_str());
+                                StringDescriptorReqComponentType(reqs), string_VkFormat(image_view_ci.format));
+            }
+
+            const bool image_format_width_64 = FormatHasComponentSize(image_view_ci.format, 64);
+            if (image_format_width_64 && binding_info.second.image_sampled_type_width != 64) {
+                auto set = context.descriptor_set.GetSet();
+                const LogObjectList objlist(set, image_view);
+                return LogError(
+                    objlist, context.vuids.image_view_access_64,
+                    "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                    " has a 64-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
+                    context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
+                    binding_info.second.image_sampled_type_width);
+            } else if (!image_format_width_64 && binding_info.second.image_sampled_type_width != 32) {
+                auto set = context.descriptor_set.GetSet();
+                const LogObjectList objlist(set, image_view);
+                return LogError(
+                    objlist, context.vuids.image_view_access_32,
+                    "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                    " has a 32-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
+                    context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
+                    binding_info.second.image_sampled_type_width);
             }
         }
 
@@ -1437,6 +1458,27 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             "binding #%" PRIu32 " index %" PRIu32 " requires %s component type, but bound descriptor format is %s.",
                             report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                             StringDescriptorReqComponentType(reqs), string_VkFormat(buffer_view_format));
+        }
+
+        const bool buffer_format_width_64 = FormatHasComponentSize(buffer_view_format, 64);
+        if (buffer_format_width_64 && binding_info.second.image_sampled_type_width != 64) {
+            auto set = context.descriptor_set.GetSet();
+            const LogObjectList objlist(set, buffer_view);
+            return LogError(
+                objlist, context.vuids.buffer_view_access_64,
+                "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                " has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
+                context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
+                binding_info.second.image_sampled_type_width);
+        } else if (!buffer_format_width_64 && binding_info.second.image_sampled_type_width != 32) {
+            auto set = context.descriptor_set.GetSet();
+            const LogObjectList objlist(set, buffer_view);
+            return LogError(
+                objlist, context.vuids.buffer_view_access_32,
+                "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                " has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
+                context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
+                binding_info.second.image_sampled_type_width);
         }
 
         const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;

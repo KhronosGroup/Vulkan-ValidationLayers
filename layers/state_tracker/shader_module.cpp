@@ -1242,6 +1242,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     const auto& static_data_ = module_state.static_data_;
     switch (type->Opcode()) {
         case spv::OpTypeImage: {
+            image_sampled_type_width = module_state.GetTypeBitsSize(type);
             auto dim = type->Word(3);
             if (dim != spv::DimSubpassData) {
                 // Sampled == 2 indicates used without a sampler (a storage image)
@@ -1643,6 +1644,12 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
     } else if (opcode == spv::OpVariable) {
         const Instruction* type = FindDef(insn->Word(1));
         bit_size = GetTypeBitsSize(type);
+    } else if (opcode == spv::OpTypeImage) {
+        const Instruction* type = FindDef(insn->Word(2));
+        bit_size = GetTypeBitsSize(type);
+    } else if (opcode == spv::OpTypeVoid) {
+        // Sampled Type of OpTypeImage can be a void
+        bit_size = 0;
     } else {
         bit_size = insn->GetBitWidth();
     }

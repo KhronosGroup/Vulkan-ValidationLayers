@@ -1452,16 +1452,6 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
     VkSampler sampler;
     vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
 
-    uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
-    buffer_create_info.size = 1024;
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &qfi;
-
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_create_info);
-
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 

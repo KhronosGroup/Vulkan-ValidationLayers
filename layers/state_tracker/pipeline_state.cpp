@@ -189,6 +189,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
                 }
             }
             entry.write_without_formats_component_count_list = variable.write_without_formats_component_count_list;
+            entry.image_sampled_type_width = variable.image_sampled_type_width;
         }
     }
     return active_slots;

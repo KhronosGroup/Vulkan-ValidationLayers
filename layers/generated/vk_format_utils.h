@@ -196,6 +196,7 @@ uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_I
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
 // Components
+bool FormatHasComponentSize(VkFormat format, uint32_t size);
 bool FormatHasRed(VkFormat format);
 bool FormatHasGreen(VkFormat format);
 bool FormatHasBlue(VkFormat format);
