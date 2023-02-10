@@ -193,10 +193,6 @@ void TestEnvironment::SetUp() {
 
 void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
 
-VkTestFramework::VkTestFramework() : m_compile_options(0), m_num_shader_strings(0) {}
-
-VkTestFramework::~VkTestFramework() {}
-
 bool VkTestFramework::optionMatch(const char *option, char *optionLine) {
     if (strncmp(option, optionLine, strlen(option)) == 0)
         return true;

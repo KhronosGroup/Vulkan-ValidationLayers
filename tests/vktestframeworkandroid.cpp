@@ -22,9 +22,6 @@
 #include "shaderc/shaderc.hpp"
 #include <android/log.h>
 
-VkTestFramework::VkTestFramework() {}
-VkTestFramework::~VkTestFramework() {}
-
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {}
 void VkTestFramework::Finish() {}
 

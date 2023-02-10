@@ -60,13 +60,9 @@ class VkTestFramework : public ::testing::Test {
     static inline bool m_do_everything_spv = false;
     static inline int m_phys_device_index = -1;
 
-  protected:
-    VkTestFramework();
-    virtual ~VkTestFramework() = 0;
-
   private:
-    int m_compile_options;
-    int m_num_shader_strings;
+    int m_compile_options = 0;
+    int m_num_shader_strings = 0;
     TBuiltInResource Resources;
     void SetMessageOptions(EShMessages &messages);
     void ProcessConfigFile(VkPhysicalDeviceLimits const *const device_limits);
