@@ -397,10 +397,43 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence) const {
+    bool skip = false;
+    auto fence_export_info = LvlFindInChain<VkExportFenceCreateInfo>(pCreateInfo->pNext);
+    if (fence_export_info && fence_export_info->handleTypes != 0) {
+        auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+        bool export_supported = true;
+        // Check export support
+        auto check_export_support = [&](VkExternalFenceHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            external_info.handleType = flag;
+            DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &external_info, &external_properties);
+            if ((external_properties.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) == 0) {
+                export_supported = false;
+                skip |= LogError(device, "VUID-VkExportFenceCreateInfo-handleTypes-01446",
+                                 "vkCreateFence(): VkFenceCreateInfo pNext chain contains VkExportFenceCreateInfo with the %s flag "
+                                 "set, which does not support VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT.",
+                                 string_VkExternalFenceHandleTypeFlagBits(flag));
+            }
+        };
+        IterateFlags<VkExternalFenceHandleTypeFlagBits>(fence_export_info->handleTypes, check_export_support);
+        // Check handle types compatibility
+        if (export_supported &&
+            (fence_export_info->handleTypes & external_properties.compatibleHandleTypes) != fence_export_info->handleTypes) {
+            skip |= LogError(device, "VUID-VkExportFenceCreateInfo-handleTypes-01446",
+                             "vkCreateFence(): VkFenceCreateInfo pNext chain contains VkExportFenceCreateInfo with handleTypes "
+                             "flags (%s) that are not reported as compatible by vkGetPhysicalDeviceExternalFenceProperties.",
+                             string_VkExternalFenceHandleTypeFlags(fence_export_info->handleTypes).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) const {
     bool skip = false;
-    auto *sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
+    auto sem_type_create_info = LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext);
 
     if (sem_type_create_info) {
         if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_TIMELINE && !enabled_features.core12.timelineSemaphore) {
@@ -411,6 +444,35 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
         if (sem_type_create_info->semaphoreType == VK_SEMAPHORE_TYPE_BINARY && sem_type_create_info->initialValue != 0) {
             skip |= LogError(device, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279",
                              "vkCreateSemaphore: if semaphoreType is VK_SEMAPHORE_TYPE_BINARY, initialValue must be zero");
+        }
+    }
+
+    auto sem_export_info = LvlFindInChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
+    if (sem_export_info && sem_export_info->handleTypes != 0) {
+        auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+        bool export_supported = true;
+        // Check export support
+        auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            external_info.handleType = flag;
+            DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &external_info, &external_properties);
+            if ((external_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) == 0) {
+                export_supported = false;
+                skip |= LogError(device, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124",
+                                 "vkCreateSemaphore(): VkSemaphoreCreateInfo pNext chain contains VkExportSemaphoreCreateInfo with "
+                                 "the %s flag set, which does not support VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT.",
+                                 string_VkExternalSemaphoreHandleTypeFlagBits(flag));
+            }
+        };
+        IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(sem_export_info->handleTypes, check_export_support);
+        // Check handle types compatibility
+        if (export_supported &&
+            (sem_export_info->handleTypes & external_properties.compatibleHandleTypes) != sem_export_info->handleTypes) {
+            skip |= LogError(
+                device, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124",
+                "vkCreateSemaphore(): VkSemaphoreCreateInfo pNext chain contains VkExportSemaphoreCreateInfo with "
+                "handleTypes flags (%s) that are not reported as compatible by vkGetPhysicalDeviceExternalSemaphoreProperties.",
+                string_VkExternalSemaphoreHandleTypeFlags(sem_export_info->handleTypes).c_str());
         }
     }
 
