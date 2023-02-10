@@ -202,6 +202,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         std::bitset<32> discard_rectangles;
         // VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT
         VkSampleCountFlagBits rasterization_samples;
+        // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT
+        VkLineRasterizationModeEXT line_rasterization_mode;
+        // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
+        bool stippled_line_enable;
 
         // maxColorAttachments is at max 8 on all known implementations currently
         std::bitset<32> color_blend_enable_attachments;    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT

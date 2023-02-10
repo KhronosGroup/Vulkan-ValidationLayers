@@ -3617,6 +3617,61 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                      report_data->FormatHandle(cb_state.activeRenderPass->renderPass()).c_str(),
                                      string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
                 }
+
+                const bool dynamic_line_raster_mode = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+                const bool dynamic_line_stipple_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+                if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
+                    const auto raster_line_state =
+                        LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(raster_state->pNext);
+
+                    const VkLineRasterizationModeEXT line_rasterization_mode =
+                        (dynamic_line_raster_mode) ? cb_state.dynamic_state_value.line_rasterization_mode
+                                                   : raster_line_state->lineRasterizationMode;
+                    const bool stippled_line_enable = (dynamic_line_stipple_enable)
+                                                          ? cb_state.dynamic_state_value.stippled_line_enable
+                                                          : raster_line_state->stippledLineEnable;
+
+                    if (stippled_line_enable) {
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                            (!enabled_features.line_rasterization_features.stippledRectangularLines)) {
+                            skip |=
+                                LogError(device, vuid.stippled_rectangular_lines,
+                                         "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
+                                         "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
+                                         caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                         dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                        }
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                            (!enabled_features.line_rasterization_features.stippledBresenhamLines)) {
+                            skip |= LogError(device, vuid.stippled_bresenham_lines,
+                                             "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
+                                             "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
+                                             caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                             dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                        }
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                            (!enabled_features.line_rasterization_features.stippledSmoothLines)) {
+                            skip |= LogError(
+                                device, vuid.stippled_smooth_lines,
+                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
+                                "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
+                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
+                        }
+                        if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                            (!enabled_features.line_rasterization_features.stippledRectangularLines ||
+                             !phys_dev_props.limits.strictLines)) {
+                            skip |= LogError(
+                                device, vuid.stippled_default_strict,
+                                "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
+                                "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
+                                caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
+                                dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
+                                enabled_features.line_rasterization_features.stippledRectangularLines ? "enabled" : "not enabled",
+                                phys_dev_props.limits.strictLines ? "VK_TRUE" : "VK_FALSE");
+                        }
+                    }
+                }
             }
         } else {
             skip |= LogError(pipeline.pipeline(), kVUID_Core_DrawState_NoActiveRenderpass,
