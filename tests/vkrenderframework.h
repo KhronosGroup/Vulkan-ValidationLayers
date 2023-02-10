@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-#ifndef VKRENDERFRAMEWORK_H
-#define VKRENDERFRAMEWORK_H
+#pragma once
 
 #include "lvt_function_pointers.h"
 #include "vkerrormonitor.h"
@@ -798,5 +797,3 @@ class VkPipelineObj : public vk_testing::Pipeline {
     std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
     std::vector<VkPipelineColorBlendAttachmentState> m_colorAttachments;
 };
-
-#endif  // VKRENDERFRAMEWORK_H
