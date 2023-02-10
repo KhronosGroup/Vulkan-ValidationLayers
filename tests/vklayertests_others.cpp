@@ -14,6 +14,7 @@
 
 #include "cast_utils.h"
 #include "core_validation_error_enums.h"
+#include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
 #include "vk_layer_utils.h"
 #include "generated/vk_validation_error_messages.h"
@@ -8487,6 +8488,122 @@ TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoExtension) {
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreTypeCreateInfo-semaphoreType-03279");
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, FenceExportWithUnsupportedHandleType) {
+    TEST_DESCRIPTION("Create fence with unsupported external handle type in VkExportFenceCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (exportable_types == AllVkExternalFenceHandleTypeFlagBits) {
+        GTEST_SKIP() << "This test requires at least one unsupported handle type, but all handle types are supported";
+    }
+    // Fence export with unsupported handle type
+    const auto unsupported_type = LeastSignificantFlag<VkExternalFenceHandleTypeFlagBits>(~exportable_types);
+    auto export_info = LvlInitStruct<VkExportFenceCreateInfo>();
+    export_info.handleTypes = unsupported_type;
+
+    const auto create_info = LvlInitStruct<VkFenceCreateInfo>(&export_info);
+    VkFence fence = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportFenceCreateInfo-handleTypes-01446");
+    vk::CreateFence(m_device->device(), &create_info, nullptr, &fence);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, FenceExportWithIncompatibleHandleType) {
+    TEST_DESCRIPTION("Create fence with incompatible external handle types in VkExportFenceCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalFenceHandleTypeFlagBits>(exportable_types);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
+    if ((exportable_types & compatible_types) == exportable_types) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+
+    // Fence export with incompatible handle types
+    auto export_info = LvlInitStruct<VkExportFenceCreateInfo>();
+    export_info.handleTypes = exportable_types;
+
+    const auto create_info = LvlInitStruct<VkFenceCreateInfo>(&export_info);
+    VkFence fence = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportFenceCreateInfo-handleTypes-01446");
+    vk::CreateFence(m_device->device(), &create_info, nullptr, &fence);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SemaphoreExportWithUnsupportedHandleType) {
+    TEST_DESCRIPTION("Create semaphore with unsupported external handle type in VkExportSemaphoreCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (exportable_types == AllVkExternalSemaphoreHandleTypeFlagBits) {
+        GTEST_SKIP() << "This test requires at least one unsupported handle type, but all handle types are supported";
+    }
+    // Semaphore export with unsupported handle type
+    const auto unsupported_type = LeastSignificantFlag<VkExternalSemaphoreHandleTypeFlagBits>(~exportable_types);
+    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    export_info.handleTypes = unsupported_type;
+
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
+    vk::CreateSemaphore(m_device->device(), &create_info, nullptr, &semaphore);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SemaphoreExportWithIncompatibleHandleType) {
+    TEST_DESCRIPTION("Create semaphore with incompatible external handle types in VkExportSemaphoreCreateInfo");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalSemaphoreHandleTypeFlagBits>(exportable_types);
+    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
+    if ((exportable_types & compatible_types) == exportable_types) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+
+    // Semaphore export with incompatible handle types
+    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    export_info.handleTypes = exportable_types;
+
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportSemaphoreCreateInfo-handleTypes-01124");
+    vk::CreateSemaphore(m_device->device(), &create_info, nullptr, &semaphore);
     m_errorMonitor->VerifyFound();
 }
 

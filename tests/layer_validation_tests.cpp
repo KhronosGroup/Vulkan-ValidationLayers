@@ -559,6 +559,38 @@ VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const
     return supported_types;
 }
 
+VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalDevice gpu,
+                                                                     VkExternalFenceFeatureFlags requested_features) {
+    VkExternalFenceHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalFenceHandleTypeFlagBits>(
+        AllVkExternalFenceHandleTypeFlagBits, [&](VkExternalFenceHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+            vk::GetPhysicalDeviceExternalFenceProperties(gpu, &external_info, &external_properties);
+            if ((external_properties.externalFenceFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
+
+VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
+                                                                             VkExternalSemaphoreFeatureFlags requested_features) {
+    VkExternalSemaphoreHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(
+        AllVkExternalSemaphoreHandleTypeFlagBits, [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+            vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &external_info, &external_properties);
+            if ((external_properties.externalSemaphoreFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
+
 VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type) {
     auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
@@ -584,6 +616,23 @@ VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, c
     auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
     if (vk::GetPhysicalDeviceImageFormatProperties2(gpu, &image_info, &image_properties) != VK_SUCCESS) return 0;
     return external_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalFenceHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, VkExternalFenceHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu, &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
+}
+
+VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu,
+                                                            VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
 }
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
