@@ -197,14 +197,6 @@ VkTestFramework::VkTestFramework() : m_compile_options(0), m_num_shader_strings(
 
 VkTestFramework::~VkTestFramework() {}
 
-// Define all the static elements
-bool VkTestFramework::m_canonicalize_spv = false;
-bool VkTestFramework::m_strip_spv = false;
-bool VkTestFramework::m_do_everything_spv = false;
-int VkTestFramework::m_width = 0;
-int VkTestFramework::m_height = 0;
-int VkTestFramework::m_phys_device_index = -1;
-
 bool VkTestFramework::optionMatch(const char *option, char *optionLine) {
     if (strncmp(option, optionLine, strlen(option)) == 0)
         return true;

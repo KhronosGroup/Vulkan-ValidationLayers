@@ -51,13 +51,14 @@ class VkTestFramework : public ::testing::Test {
     bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type, const char *pshader,
                    std::vector<uint32_t> &spv, bool debug = false, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<uint32_t> &spv);
-    static bool m_canonicalize_spv;
-    static bool m_strip_spv;
-    static bool m_do_everything_spv;
-    static int m_phys_device_index;
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);
+
+    static inline bool m_canonicalize_spv = false;
+    static inline bool m_strip_spv = false;
+    static inline bool m_do_everything_spv = false;
+    static inline int m_phys_device_index = -1;
 
   protected:
     VkTestFramework();
@@ -73,9 +74,10 @@ class VkTestFramework : public ::testing::Test {
     EShLanguage FindLanguage(const VkShaderStageFlagBits shader_type);
     std::string ConfigFile;
     bool SetConfigFile(const std::string &name);
-    static int m_width;
-    static int m_height;
     string m_testName;
+
+    static inline int m_width = 0;
+    static inline int m_height = 0;
 };
 
 class TestEnvironment : public ::testing::Environment {
