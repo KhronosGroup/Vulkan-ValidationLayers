@@ -11508,6 +11508,125 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     }
 }
 
+TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime64) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 64 bit image view.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt64 feature not supported";
+    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
+        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+
+    std::string cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+        #extension GL_EXT_shader_image_int64 : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0, r64ui) uniform u64image2D z;
+        void main() {
+            uint64_t y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1));
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_R32_UINT);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-SampledType-04471");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime32) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt64 feature not supported";
+    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
+        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+
+    std::string cs_source = R"glsl(
+        #version 450
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0, r32ui) uniform uimage2D z;
+        void main() {
+            uint y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1));
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    // "64-bit integer atomic support is guaranteed for optimally tiled images with the VK_FORMAT_R64_UINT"
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_R64_UINT);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-SampledType-04470");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ShaderAtomicFloat) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
