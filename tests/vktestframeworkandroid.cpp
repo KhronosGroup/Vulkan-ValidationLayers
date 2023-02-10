@@ -25,10 +25,6 @@
 VkTestFramework::VkTestFramework() {}
 VkTestFramework::~VkTestFramework() {}
 
-// Define static elements
-int VkTestFramework::m_phys_device_index = -1;
-ANativeWindow *VkTestFramework::window = nullptr;
-
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {}
 void VkTestFramework::Finish() {}
 
