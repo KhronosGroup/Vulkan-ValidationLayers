@@ -82,6 +82,8 @@ struct DescriptorRequirement {
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
+    // OpTypeImage the variable points to, null if doesn't use the image
+    uint32_t image_sampled_type_width = 0;
     DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 

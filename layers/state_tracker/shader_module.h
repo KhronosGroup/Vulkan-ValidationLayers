@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * The Shader Module file is in charge of all things around creating and parsing an internal representation of a shader module
  */
 #ifndef VULKAN_SHADER_MODULE_H
@@ -104,6 +104,9 @@ struct ResourceInterfaceVariable {
 
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
+
+    // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
+    uint32_t image_sampled_type_width = 0;
 
     bool is_readable{false};
     bool is_writable{false};

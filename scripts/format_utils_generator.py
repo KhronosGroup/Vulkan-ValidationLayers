@@ -700,6 +700,7 @@ uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_I
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
 // Components
+bool FormatHasComponentSize(VkFormat format, uint32_t size);
 bool FormatHasRed(VkFormat format);
 bool FormatHasGreen(VkFormat format);
 bool FormatHasBlue(VkFormat format);
@@ -773,7 +774,17 @@ double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask) {
     return texel_size;
 }
 
-static bool FormatHasComponent(VkFormat format, COMPONENT_TYPE component) {
+bool FormatHasComponentSize(VkFormat format, uint32_t size) {
+    auto item = kVkFormatTable.find(format);
+    if (item == kVkFormatTable.end()) {
+        return false;
+    }
+    const COMPONENT_INFO* begin = item->second.components;
+    const COMPONENT_INFO* end = item->second.components + FORMAT_MAX_COMPONENTS;
+    return std::find_if(begin, end, [size](const COMPONENT_INFO& info) { return info.size == size; }) != end;
+}
+
+static bool FormatHasComponentType(VkFormat format, COMPONENT_TYPE component) {
     auto item = kVkFormatTable.find(format);
     if (item == kVkFormatTable.end()) {
         return false;
@@ -784,19 +795,19 @@ static bool FormatHasComponent(VkFormat format, COMPONENT_TYPE component) {
 }
 
 bool FormatHasRed(VkFormat format) {
-    return FormatHasComponent(format, COMPONENT_TYPE::R);
+    return FormatHasComponentType(format, COMPONENT_TYPE::R);
 }
 
 bool FormatHasGreen(VkFormat format) {
-    return FormatHasComponent(format, COMPONENT_TYPE::G);
+    return FormatHasComponentType(format, COMPONENT_TYPE::G);
 }
 
 bool FormatHasBlue(VkFormat format) {
-    return FormatHasComponent(format, COMPONENT_TYPE::B);
+    return FormatHasComponentType(format, COMPONENT_TYPE::B);
 }
 
 bool FormatHasAlpha(VkFormat format) {
-    return FormatHasComponent(format, COMPONENT_TYPE::A);
+    return FormatHasComponentType(format, COMPONENT_TYPE::A);
 }'''
         return output;
 
