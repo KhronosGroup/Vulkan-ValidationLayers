@@ -865,7 +865,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
                 LvlInitStruct<VkPipelineRasterizationLineStateCreateInfoEXT>();
             line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
             line_state.stippledLineEnable = VK_TRUE;
-            line_state.lineStippleFactor = 0;
+            line_state.lineStippleFactor = 1;
             line_state.lineStipplePattern = 0;
             pipelineobj.SetLineState(&line_state);
             break;

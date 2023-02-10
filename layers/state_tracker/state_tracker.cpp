@@ -5463,11 +5463,13 @@ void ValidationStateTracker::PostCallRecordCmdSetLineRasterizationModeEXT(VkComm
                                                                           VkLineRasterizationModeEXT lineRasterizationMode) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETLINERASTERIZATIONMODEEXT, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET);
+    cb_state->dynamic_state_value.line_rasterization_mode = lineRasterizationMode;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETLINESTIPPLEENABLEEXT, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET);
+    cb_state->dynamic_state_value.stippled_line_enable = stippledLineEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer,

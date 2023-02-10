@@ -173,6 +173,10 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_set_offset_missing = kVUIDUndefined;
     const char* image_view_dim = kVUIDUndefined;
     const char* image_view_numeric_format = kVUIDUndefined;
+    const char* stippled_rectangular_lines = kVUIDUndefined;
+    const char* stippled_bresenham_lines = kVUIDUndefined;
+    const char* stippled_smooth_lines = kVUIDUndefined;
+    const char* stippled_default_strict = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
