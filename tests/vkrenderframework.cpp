@@ -583,6 +583,23 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
 
 void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
 
+VkFormat VkRenderFramework::GetRenderTargetFormat() {
+    VkFormatProperties format_props = {};
+    vk::GetPhysicalDeviceFormatProperties(gpu_, VK_FORMAT_B8G8R8A8_UNORM, &format_props);
+    if (format_props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT ||
+        format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
+        return VK_FORMAT_B8G8R8A8_UNORM;
+    }
+    vk::GetPhysicalDeviceFormatProperties(gpu_, VK_FORMAT_R8G8B8A8_UNORM, &format_props);
+    if (format_props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT ||
+        format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    }
+    // According to VulkanCapsViewer rgba8/bgra8 support with optimal tiling + color_attachment is 99.45% across all platforms
+    assert(false);
+    return VK_FORMAT_UNDEFINED;
+}
+
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
     const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
@@ -602,7 +619,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_depthStencil = new VkDepthStencilObj(m_device);
 
-    m_render_target_fmt = VkTestFramework::GetFormat(instance_, m_device);
+    m_render_target_fmt = GetRenderTargetFormat();
 
     m_lineWidth = 1.0f;
 
