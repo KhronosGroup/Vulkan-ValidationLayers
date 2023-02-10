@@ -1228,3 +1228,33 @@ TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
 
     vk::DestroyEvent(m_device->device(), event, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, EventsInSecondaryCommandBuffers) {
+    TEST_DESCRIPTION("Test setting and waiting for an event in a secondary command buffer");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
+    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
+    vk_testing::Event ev;
+    ev.init(*m_device, event_create_info);
+    VkEvent ev_handle = ev.handle();
+    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBuffer scb = secondary_cb.handle();
+    secondary_cb.begin();
+    vk::CmdSetEvent(scb, ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    vk::CmdWaitEvents(scb, 1, &ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0,
+                      nullptr, 0, nullptr);
+    secondary_cb.end();
+    m_commandBuffer->begin();
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &scb);
+    m_commandBuffer->end();
+    VkCommandBuffer cmdBuffer = m_commandBuffer->handle();
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmdBuffer;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+}
