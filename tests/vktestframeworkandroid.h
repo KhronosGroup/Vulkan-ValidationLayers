@@ -28,9 +28,6 @@
 
 class VkTestFramework : public ::testing::Test {
   public:
-    VkTestFramework();
-    ~VkTestFramework();
-
     static void InitArgs(int *argc, char *argv[]);
     static void Finish();
 
