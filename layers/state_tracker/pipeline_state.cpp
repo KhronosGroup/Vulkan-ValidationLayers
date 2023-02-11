@@ -47,7 +47,7 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       stage_flag(stage->stage),
       entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
       writes_to_gl_layer(module_state->WritesToGlLayer()),
-      has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {
+      has_input_attachment_capability(module_state->HasCapability(spv::CapabilityInputAttachment)) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
         if (descriptor_variables) {
