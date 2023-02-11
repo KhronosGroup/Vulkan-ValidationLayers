@@ -397,9 +397,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                            [](const Instruction *insn) { return insn->GetBuiltIn() == spv::BuiltInLayer; });
     }
 
-    bool HasInputAttachmentCapability() const {
+    bool HasCapability(spv::Capability find_capability) const {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
-                           [](const spv::Capability &capability) { return capability == spv::CapabilityInputAttachment; });
+                           [find_capability](const spv::Capability &capability) { return capability == find_capability; });
     }
 
     // Used to set push constants values at shader module initialization time
