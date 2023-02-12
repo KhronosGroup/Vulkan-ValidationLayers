@@ -246,6 +246,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    skip |= ValidateGraphicsPipelineLibrary(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, pipe_index);
@@ -332,6 +333,61 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+    const auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
+    if (attachment_sample_count_info) {
+        const uint32_t bits = GetBitSetCount(attachment_sample_count_info->depthStencilAttachmentSamples);
+        if (pipeline.fragment_output_state && attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
+            ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits > 1)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples (%" PRIx32 ").",
+                             pipe_index, attachment_sample_count_info->depthStencilAttachmentSamples);
+        }
+    }
+
+    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) &&
+        !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
+        if (pipeline.fragment_output_state && pipeline.MultisampleState() == nullptr) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
+                             pipe_index);
+        }
+    }
+
+    if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
+        if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            for (const auto &stage : pipeline.stage_state) {
+                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && stage.has_input_attachment_capability) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
+                                     "shader includes InputAttachment capability.",
+                                     pipe_index);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE &&
+        pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState == nullptr &&
+        IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
+        IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631",
+            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+            "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but pMultisampleState is NULL.",
+            pipe_index);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline, const uint32_t pipe_index) const {
+    bool skip = false;
+
     // If VK_EXT_graphics_pipeline_library is not enabled, a complete set of state must be defined at this point
     std::string full_pipeline_state_msg;
     if (!pipeline.vertex_input_state) {
@@ -346,10 +402,9 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     if (!pipeline.fragment_output_state) {
         full_pipeline_state_msg += "<fragment output> ";
     }
-    const bool has_full_pipeline_state = full_pipeline_state_msg.empty();
 
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        if (!has_full_pipeline_state) {
+        if (!pipeline.HasFullState()) {
             skip |=
                 LogError(device, "VUID-VkGraphicsPipelineCreateInfo-None-06573",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -382,7 +437,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                  pipe_index, string_VkPipelineCreateFlags(pipeline.GetPipelineCreateFlags()).c_str());
             }
 
-            if (!has_full_pipeline_state) {
+            if (!pipeline.HasFullState()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] does not contain a complete set of state and "
@@ -392,7 +447,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
-        if (has_full_pipeline_state && is_library) {
+        if (pipeline.HasFullState() && is_library) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06608",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] defines a complete set of state, but pCreateInfos[%" PRIu32
@@ -724,6 +779,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
+        const auto &rp_state = pipeline.RenderPassState();
         if ((!rp_state || !rp_state->renderPass()) && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
             if (!pipeline.DepthStencilState() ||
                 (pipeline.DepthStencilState()->sType != VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO)) {
@@ -735,55 +791,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     pipe_index);
             }
         }
-    }
-
-    // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-    const auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
-    if (attachment_sample_count_info) {
-        const uint32_t bits = GetBitSetCount(attachment_sample_count_info->depthStencilAttachmentSamples);
-        if (pipeline.fragment_output_state && attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
-            ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits > 1)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples (%" PRIx32 ").",
-                             pipe_index, attachment_sample_count_info->depthStencilAttachmentSamples);
-        }
-    }
-
-    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) &&
-        !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-        if (pipeline.fragment_output_state && pipeline.MultisampleState() == nullptr) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
-                             pipe_index);
-        }
-    }
-
-    if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
-        if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            for (const auto &stage : pipeline.stage_state) {
-                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && stage.has_input_attachment_capability) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
-                                     "shader includes InputAttachment capability.",
-                                     pipe_index);
-                    break;
-                }
-            }
-        }
-    }
-
-    if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE &&
-        pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState == nullptr &&
-        IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
-        IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        skip |= LogError(
-            device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631",
-            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-            "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but pMultisampleState is NULL.",
-            pipe_index);
     }
 
     return skip;
