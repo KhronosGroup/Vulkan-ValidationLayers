@@ -2325,11 +2325,7 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
-    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
-
-    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required, skipping test.";
@@ -2339,11 +2335,13 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(image_compression_control);
     if (!image_compression_control.imageCompressionControl) {
         GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_compression_control));
 
     // Query possible image format with vkGetPhysicalDeviceImageFormatProperties2KHR
     auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();

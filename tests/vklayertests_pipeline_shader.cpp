@@ -412,14 +412,15 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
     TEST_DESCRIPTION("Test VK_EXT_primitive_topology_list_restart");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     auto ptl_restart_features = LvlInitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ptl_restart_features);
-    m_device_extension_names.push_back(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features, skipping test";
-    }
+    GetPhysicalDeviceFeatures2(ptl_restart_features);
+
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
@@ -428,7 +429,7 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
     }
     ptl_restart_features.primitiveTopologyListRestart = false;
     ptl_restart_features.primitiveTopologyPatchListRestart = false;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ptl_restart_features));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -14637,21 +14638,20 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWith
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-
-    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&rasterization_order_features);
-
-    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    GetPhysicalDeviceFeatures2(rasterization_order_features);
+
     rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
     rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
     rasterization_order_features.rasterizationOrderStencilAttachmentAccess = 0;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
 
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     VkPipelineColorBlendAttachmentState cb_as = {};
@@ -14738,15 +14738,14 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-
-    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&rasterization_order_features);
-
-    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    auto rasterization_order_features = LvlInitStruct<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>();
+    GetPhysicalDeviceFeatures2(rasterization_order_features);
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
         !rasterization_order_features.rasterizationOrderDepthAttachmentAccess &&
@@ -14754,7 +14753,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
         GTEST_SKIP() << "Test requires (unsupported) rasterizationOrder*AttachmentAccess";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &rasterization_order_features));
 
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     VkPipelineColorBlendAttachmentState cb_as = {};

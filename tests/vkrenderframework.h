@@ -187,7 +187,6 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
-    bool InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2KHR &features2);
 
     static bool IgnoreDisableChecks();
     bool IsPlatform(PlatformType platform);

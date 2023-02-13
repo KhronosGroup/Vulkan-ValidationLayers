@@ -11629,14 +11629,7 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-
-    auto ms_render_to_single_sampled_features =
-        LvlInitStruct<VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT>(&dynamic_rendering_features);
-    auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&ms_render_to_single_sampled_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&imageless_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -11645,6 +11638,12 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto ms_render_to_single_sampled_features =
+        LvlInitStruct<VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT>(&dynamic_rendering_features);
+    auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(&ms_render_to_single_sampled_features);
+    GetPhysicalDeviceFeatures2(imageless_features);
+
     bool imageless_fb_supported = IsExtensionsEnabled(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
     auto vulkan_12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Properties>();
@@ -11652,7 +11651,7 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     GetPhysicalDeviceProperties2(prop2);
 
     ms_render_to_single_sampled_features.multisampledRenderToSingleSampled = true;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto attachmentRef = LvlInitStruct<VkAttachmentReference2>();
@@ -12109,12 +12108,7 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto mutable_descriptor_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(&descriptor_buffer_features);
-    auto inline_uniform_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&mutable_descriptor_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&inline_uniform_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -12124,7 +12118,12 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto mutable_descriptor_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>(&descriptor_buffer_features);
+    auto inline_uniform_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&mutable_descriptor_features);
+    GetPhysicalDeviceFeatures2(inline_uniform_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &inline_uniform_features));
 
     vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -12273,19 +12272,18 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
-    auto acceleration_structure_features =
-        LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_device_address_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acceleration_structure_features);
-
-    InitFrameworkAndRetrieveFeatures(features2);
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+    auto acceleration_structure_features =
+        LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_device_address_features);
+    GetPhysicalDeviceFeatures2(acceleration_structure_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acceleration_structure_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -12671,11 +12669,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -12685,7 +12679,11 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -12916,11 +12914,7 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -12930,7 +12924,11 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto vkCmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(
         vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBuffersEXT"));
@@ -12996,11 +12994,7 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentSet) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -13010,7 +13004,11 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentSet) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
@@ -13068,11 +13066,7 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -13082,7 +13076,11 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
@@ -13145,11 +13143,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -13162,7 +13156,11 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto vkGetDescriptorEXT =
     reinterpret_cast<PFN_vkGetDescriptorEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorEXT"));
@@ -13366,10 +13364,7 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
     AddOptionalExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-
-    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&descriptor_buffer_features);
-    InitFrameworkAndRetrieveFeatures(features2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -13381,7 +13376,10 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
 
     const bool nv_ray_tracing = IsExtensionsEnabled(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(descriptor_buffer_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_buffer_features));
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
