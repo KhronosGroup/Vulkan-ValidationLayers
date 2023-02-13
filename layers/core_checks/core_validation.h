@@ -1267,8 +1267,6 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                             const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) override;
 
-    bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
-                                                  VkSubresourceLayout* pLayout) const override;
     bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
@@ -2190,6 +2188,10 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                            size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                            VkResult result) override;
+    bool ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_STATE& image_state, const VkImageSubresource& subresource,
+                                           VkSubresourceLayout& layout, bool is_ext) const;
+    bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
+                                                  VkSubresourceLayout* pLayout) const override;
     bool PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource,
                                                       VkSubresourceLayout2EXT* pLayout) const override;
 

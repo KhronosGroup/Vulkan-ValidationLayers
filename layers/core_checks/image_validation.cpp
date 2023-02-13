@@ -2123,128 +2123,117 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
     }
     return skip;
 }
-
-bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
-                                                          VkSubresourceLayout *pLayout) const {
+bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_STATE &image_state,
+                                                   const VkImageSubresource &subresource, VkSubresourceLayout &layout,
+                                                   bool is_ext) const {
     bool skip = false;
-    const VkImageAspectFlags sub_aspect = pSubresource->aspectMask;
+    const char *caller = is_ext ? "vkGetImageSubresourceLayout2EXT()" : "vkGetImageSubresourceLayout()";
+    const VkImageAspectFlags aspect_mask = subresource.aspectMask;
 
     // The aspectMask member of pSubresource must only have a single bit set
-    if (GetBitSetCount(sub_aspect) != 1) {
-        skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-aspectMask-00997",
-                         "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must have exactly 1 bit set (currently %s).",
-                         string_VkImageAspectFlags(sub_aspect).c_str());
-    }
-
-    auto image_entry = Get<IMAGE_STATE>(image);
-    if (!image_entry) {
-        return skip;
-    }
-
-    // Image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR
-    if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
-        if ((image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
-            (image_entry->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07790",
-                             "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR or "
-                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
-        }
-    } else {
-        if (image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07789",
-                             "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR.");
-        }
+    if (GetBitSetCount(aspect_mask) != 1) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-aspectMask-00997" : "VUID-vkGetImageSubresourceLayout-aspectMask-00997";
+        skip |= LogError(image_state.image(), vuid, "%s: VkImageSubresource.aspectMask must have exactly 1 bit set (currently %s).",
+                         caller, string_VkImageAspectFlags(aspect_mask).c_str());
     }
 
     // mipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
-    if (pSubresource->mipLevel >= image_entry->createInfo.mipLevels) {
-        skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-mipLevel-01716",
-                         "vkGetImageSubresourceLayout(): pSubresource.mipLevel (%d) must be less than %d.", pSubresource->mipLevel,
-                         image_entry->createInfo.mipLevels);
+    if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-mipLevel-01716" : "VUID-vkGetImageSubresourceLayout-mipLevel-01716";
+        skip |= LogError(image_state.image(), vuid, "%s: pSubresource.mipLevel (%d) must be less than %d.", caller,
+                         subresource.mipLevel, image_state.createInfo.mipLevels);
     }
 
     // arrayLayer must be less than the arrayLayers specified in VkImageCreateInfo when the image was created
-    if (pSubresource->arrayLayer >= image_entry->createInfo.arrayLayers) {
-        skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-arrayLayer-01717",
-                         "vkGetImageSubresourceLayout(): pSubresource.arrayLayer (%d) must be less than %d.",
-                         pSubresource->arrayLayer, image_entry->createInfo.arrayLayers);
+    if (subresource.arrayLayer >= image_state.createInfo.arrayLayers) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-arrayLayer-01717" : "VUID-vkGetImageSubresourceLayout-arrayLayer-01717";
+        skip |= LogError(image_state.image(), vuid, "%s: pSubresource.arrayLayer (%d) must be less than %d.", caller,
+                         subresource.arrayLayer, image_state.createInfo.arrayLayers);
+    }
+
+    const VkFormat image_format = image_state.createInfo.format;
+    if (FormatIsColor(image_format) && aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-04461" : "VUID-vkGetImageSubresourceLayout-format-04461";
+        skip |= LogError(image_state.image(), vuid,
+                         "%s: format of image is %s which is a color format but VkImageSubresource.aspectMask is %s", caller,
+                         string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
+    }
+
+    if (FormatHasDepth(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0)) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-04462" : "VUID-vkGetImageSubresourceLayout-format-04462";
+        skip |= LogError(image_state.image(), vuid,
+                         "%s: format of image is %s which has depth component "
+                         "but VkImageSubresource.aspectMask is %s",
+                         caller, string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
+    }
+
+    if (FormatHasStencil(image_format) && ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0)) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-04463" : "VUID-vkGetImageSubresourceLayout-format-04463";
+        skip |= LogError(image_state.image(), vuid,
+                         "%s: format of image is %s which which has stencil "
+                         "component but VkImageSubresource.aspectMask is %s",
+                         caller, string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
+    }
+
+    if (!FormatHasDepth(image_format) && !FormatHasStencil(image_format)) {
+        if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+            const char *vuid =
+                is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-04464" : "VUID-vkGetImageSubresourceLayout-format-04464";
+            skip |= LogError(image_state.image(), vuid,
+                             "%s: format of image is %s which which does not have depth or stencil"
+                             "component but VkImageSubresource.aspectMask is %s",
+                             caller, string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
+        }
     }
 
     // subresource's aspect must be compatible with image's format.
-    const VkFormat img_format = image_entry->createInfo.format;
-    if (image_entry->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
-        if (FormatIsMultiplane(img_format)) {
-            VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            const char *vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
-            if (FormatPlaneCount(img_format) > 2u) {
-                allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-                vuid = "VUID-vkGetImageSubresourceLayout-format-01582";  // 3-plane version
-            }
-            if (sub_aspect != (sub_aspect & allowed_flags)) {
-                skip |= LogError(image, vuid,
-                                 "vkGetImageSubresourceLayout(): For multi-planar images, VkImageSubresource.aspectMask (0x%" PRIx32
-                                 ") must be a single-plane specifier flag.",
-                                 sub_aspect);
-            }
-        } else if (FormatIsColor(img_format)) {
-            if (sub_aspect != VK_IMAGE_ASPECT_COLOR_BIT) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04461",
-                                 "vkGetImageSubresourceLayout(): For color formats, VkImageSubresource.aspectMask must be "
-                                 "VK_IMAGE_ASPECT_COLOR.");
-            }
-        } else if (FormatIsDepthOrStencil(img_format)) {
-            if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
+    if (image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+        if (FormatPlaneCount(image_format) == 2) {
+            if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                const char *vuid =
+                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-01581" : "VUID-vkGetImageSubresourceLayout-format-01581";
+                skip |= LogError(image_state.image(), vuid,
+                                 "%s: plane count of image format (%s) is 2 but VkImageSubresource.aspectMask is %s", caller,
+                                 string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
             }
         }
-        if (!FormatIsDepthAndStencil(img_format) && !FormatIsDepthOnly(img_format)) {
-            if (sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
-                                 "vkGetImageSubresourceLayout(): Image format (%s) does not contain a depth component, "
-                                 "but VkImageSubresource.aspectMask contains VK_IMAGE_ASPECT_DEPTH_BIT.",
-                                 string_VkFormat(img_format));
-            }
-        } else {
-            if ((sub_aspect & VK_IMAGE_ASPECT_DEPTH_BIT) == 0) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04462",
-                                 "vkGetImageSubresourceLayout(): Image format (%s) contains a depth component, "
-                                 "but VkImageSubresource.aspectMask does not contain VK_IMAGE_ASPECT_DEPTH_BIT.",
-                                 string_VkFormat(img_format));
+
+        if (FormatPlaneCount(image_format) == 3) {
+            if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                (aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                const char *vuid =
+                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-01582" : "VUID-vkGetImageSubresourceLayout-format-01582";
+                skip |= LogError(image_state.image(), vuid,
+                                 "%s: plane count of image format (%s) is 3 but VkImageSubresource.aspectMask is %s", caller,
+                                 string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
             }
         }
-        if (!FormatIsDepthAndStencil(img_format) && !FormatIsStencilOnly(img_format)) {
-            if (sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04464",
-                                 "vkGetImageSubresourceLayout(): Image format (%s) does not contain a stencil component, "
-                                 "but VkImageSubresource.aspectMask contains VK_IMAGE_ASPECT_STENCIL_BIT.",
-                                 string_VkFormat(img_format));
-            }
-        } else {
-            if ((sub_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-format-04463",
-                                 "vkGetImageSubresourceLayout(): Image format (%s) contains a stencil component, "
-                                 "but VkImageSubresource.aspectMask does not contain VK_IMAGE_ASPECT_STENCIL_BIT.",
-                                 string_VkFormat(img_format));
-            }
-        }
-    } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        if ((sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
-            (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-            skip |= LogError(
-                image, "VUID-vkGetImageSubresourceLayout-tiling-02271",
-                "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask (%s) must be VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.",
-                string_VkImageAspectFlags(sub_aspect).c_str());
+    } else if (image_state.createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        if ((aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
+            (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+            const char *vuid =
+                is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-02271" : "VUID-vkGetImageSubresourceLayout-tiling-02271";
+            skip |= LogError(image_state.image(), vuid,
+                             "%s: VkImageSubresource.aspectMask (%s) must be VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.", caller,
+                             string_VkImageAspectFlags(aspect_mask).c_str());
         } else {
             // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
             assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
             VkImageDrmFormatModifierPropertiesEXT drm_format_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
-            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_properties);
+            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.image(), &drm_format_properties);
 
             auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
             auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_entry->createInfo.format, &fmt_props_2);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_state.createInfo.format, &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_entry->createInfo.format, &fmt_props_2);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_state.createInfo.format, &fmt_props_2);
 
             uint32_t max_plane_count = 0u;
 
@@ -2262,32 +2251,61 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
             bool is_valid = false;
 
             for (uint32_t i = 0u; i < max_plane_count; ++i) {
-                if (sub_aspect == allowed_plane_indices[i]) {
+                if (aspect_mask == allowed_plane_indices[i]) {
                     is_valid = true;
                     break;
                 }
             }
 
             if (!is_valid) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-tiling-02271",
-                                 "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask (%s) must be "
+                const char *vuid =
+                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-02271" : "VUID-vkGetImageSubresourceLayout-tiling-02271";
+                skip |= LogError(image_state.image(), vuid,
+                                 "%s: VkImageSubresource.aspectMask (%s) must be "
                                  "VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT, with i being less than the "
                                  "VkDrmFormatModifierPropertiesEXT::drmFormatModifierPlaneCount (%" PRIu32
                                  ") associated with the image's format (%s) and "
                                  "VkImageDrmFormatModifierPropertiesEXT::drmFormatModifier (%" PRIu64 ").",
-                                 string_VkImageAspectFlags(sub_aspect).c_str(), max_plane_count,
-                                 string_VkFormat(image_entry->createInfo.format), drm_format_properties.drmFormatModifier);
+                                 caller, string_VkImageAspectFlags(aspect_mask).c_str(), max_plane_count,
+                                 string_VkFormat(image_state.createInfo.format), drm_format_properties.drmFormatModifier);
             }
         }
     }
 
-    if (image_entry->IsExternalAHB() && (0 == image_entry->GetBoundMemoryStates().size())) {
-        skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-01895",
+    if (image_state.IsExternalAHB() && image_state.GetBoundMemoryStates().empty()) {
+        const char *vuid =
+            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-image-01895" : "VUID-vkGetImageSubresourceLayout-image-01895";
+        skip |= LogError(image_state.image(), vuid,
                          "vkGetImageSubresourceLayout(): Attempt to query layout from an image created with "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType which has not yet been "
                          "bound to memory.");
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
+                                                          VkSubresourceLayout *pLayout) const {
+    bool skip = false;
+    auto image_state = Get<IMAGE_STATE>(image);
+    if (pSubresource && pLayout && image_state) {
+        skip = ValidateGetImageSubresourceLayout(device, *image_state, *pSubresource, *pLayout, false);
+
+        // Image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR
+        if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
+            if ((image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
+                (image_state->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07790",
+                                 "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR or "
+                                 "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
+            }
+        } else {
+            if (image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07789",
+                                 "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR.");
+            }
+        }
+    }
     return skip;
 }
 
@@ -2297,94 +2315,11 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
 
 {
     bool skip = false;
-    const auto imageState = Get<IMAGE_STATE>(image);
-
-    if (imageState) {
-        const VkImageAspectFlags aspectMask = pSubresource->imageSubresource.aspectMask;
-        const VkFormat imageFormat = imageState->createInfo.format;
-        const uint32_t imageMipLevels = imageState->createInfo.mipLevels;
-        const uint32_t imageArrayLayers = imageState->createInfo.arrayLayers;
-
-        if (aspectMask == 0 || (aspectMask & (aspectMask - 1))) {  // 0 or Multiple bit set
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-aspectMask-00997",
-                             "vkGetImageSubresourceLayout2EXT: aspect mask should set a bit but "
-                             "pSubresource->imageSubresource.aspectMask is 0x%x",
-                             pSubresource->imageSubresource.aspectMask);
-        }
-
-        if (pSubresource->imageSubresource.mipLevel >= imageMipLevels) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-mipLevel-01716",
-                             "vkGetImageSubresourceLayout2EXT: subresource mipLevel should be less then image mipLevels but image "
-                             "mipLevels %" PRIu32 " but subresource miplevel is %" PRIu32,
-                             imageMipLevels, pSubresource->imageSubresource.mipLevel);
-        }
-
-        if (pSubresource->imageSubresource.arrayLayer >= imageArrayLayers) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-arrayLayer-01717",
-                             "vkGetImageSubresourceLayout2EXT: subresource array layer should be less then image array layers but "
-                             "image array layers are %" PRIu32 " but subresource array layer is %" PRIu32,
-                             imageArrayLayers, pSubresource->imageSubresource.arrayLayer);
-        }
-
-        if (FormatIsColor(imageFormat)) {  // single plane color format
-            if (aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-                skip |=
-                    LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-04461",
-                             "vkGetImageSubresourceLayout2EXT: format of image is %s which is a color format but aspectMask is %s",
-                             string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-            }
-        }
-
-        if (FormatHasDepth(imageFormat)) {
-            if ((aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) == 0) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-04462",
-                                 "vkGetImageSubresourceLayout2EXT: format of image is %s which has depth component "
-                                 "but aspectMask is %s",
-                                 string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-            }
-        }
-
-        if (FormatHasStencil(imageFormat)) {
-            if ((aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) == 0) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-04463",
-                                 "vkGetImageSubresourceLayout2EXT: format of image is %s which which has stencil "
-                                 "component but aspectMask is %s",
-                                 string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-            }
-        }
-
-        if (!FormatHasDepth(imageFormat) && !FormatHasStencil(imageFormat)) {
-            if ((aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-04464",
-                                 "vkGetImageSubresourceLayout2EXT: format of image is %s which which does not have depth or stencil"
-                                 "component but aspectMask is %s",
-                                 string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-            }
-        }
-
-        if (FormatPlaneCount(imageFormat) == 2) {
-            if ((aspectMask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspectMask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-01581",
-                                 "vkGetImageSubresourceLayout2EXT: plane count of image format(%s) is 2 but aspectMask is %s",
-                                 string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-            }
-        }
-
-        if (FormatPlaneCount(imageFormat) == 3) {
-            if ((aspectMask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspectMask != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                (aspectMask != VK_IMAGE_ASPECT_PLANE_2_BIT))
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-format-01582",
-                                 "vkGetImageSubresourceLayout2EXT: plane count of image format(%s) is 3 but aspectMask is %s",
-                                 string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
-        }
-
-        if ((imageState->IsExternalAHB()) && (0 == imageState->GetBoundMemoryStates().size())) {
-            skip |=
-                LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-image-01895",
-                         "vkGetImageSubresourceLayout2EXT: image type is android hardware buffer but bound memory is not valid");
-        }
+    auto image_state = Get<IMAGE_STATE>(image);
+    if (pSubresource && pLayout && image_state) {
+        skip = ValidateGetImageSubresourceLayout(device, *image_state, pSubresource->imageSubresource, pLayout->subresourceLayout,
+                                                 true);
     }
-
     return skip;
 }
 
