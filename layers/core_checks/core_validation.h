@@ -2235,6 +2235,12 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescriptorAddressInfoEXT* address_info) const;
     bool PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
                                          void* pDescriptor) const override;
+
+    // Debug label APIs
+    void PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo) override;
+    bool PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) const override;
+    void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) override;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) const override;
 #endif  // VK_USE_PLATFORM_METAL_EXT

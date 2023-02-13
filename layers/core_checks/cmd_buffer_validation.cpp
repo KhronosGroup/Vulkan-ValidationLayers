@@ -1677,3 +1677,28 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
     return skip;
 }
+
+void CoreChecks::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    cb_state->BeginLabel();
+}
+
+bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) const {
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+    if (cb_state->LabelStackDepth() < 1) {
+        const auto vuid = cb_state->IsPrimary() ? "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912"
+                                                : "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913";
+        skip |= LogError(commandBuffer, vuid,
+                         "vkCmdEndDebugUtilsLabelEXT() called without a corresponding vkCmdBeginDebugUtilsLabelEXT first");
+    }
+    return skip;
+}
+
+void CoreChecks::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    cb_state->EndLabel();
+}
