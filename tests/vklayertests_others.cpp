@@ -10794,3 +10794,48 @@ TEST_F(VkLayerTest, InvalidExtEnum) {
     vk_testing::Sampler sampler(*m_device, sampler_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, EndDebugLabelWithNoBegin) {
+    TEST_DESCRIPTION("Call vkCmdEndDebugUtilsLabelEXT without matching vkCmdBeginDebugUtilsLabelEXT");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginDebugUtilsLabelEXT"));
+    ASSERT_NE(vkCmdBeginDebugUtilsLabelEXT, nullptr);
+    auto vkCmdEndDebugUtilsLabelEXT =
+        reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndDebugUtilsLabelEXT"));
+    ASSERT_NE(vkCmdEndDebugUtilsLabelEXT, nullptr);
+
+    m_commandBuffer->begin();
+    // First verify there is no error in the valid case
+    auto label = LvlInitStruct<VkDebugUtilsLabelEXT>(nullptr, "Test");
+    vkCmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vkCmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    // Now call vkCmdEndDebugUtilsLabelEXT without a corresponding begin
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
+    vkCmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    // Now test the same scenario for secondary buffers
+    auto cb_info =
+        LvlInitStruct<VkCommandBufferAllocateInfo>(nullptr, m_commandPool->handle(), VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1u);
+    vk_testing::CommandBuffer cb(*m_device, cb_info);
+    cb.begin();
+    vkCmdBeginDebugUtilsLabelEXT(cb, &label);
+    vkCmdEndDebugUtilsLabelEXT(cb);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
+    vkCmdEndDebugUtilsLabelEXT(cb);
+    m_errorMonitor->VerifyFound();
+
+    cb.end();
+}
