@@ -586,8 +586,16 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         pipeline_bound = true;
     }
 
+    bool IsPrimary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
+    void BeginLabel() { ++label_stack_depth_; }
+    void EndLabel() { --label_stack_depth_; }
+    int LabelStackDepth() const { return label_stack_depth_; }
+
   private:
     void ResetCBState();
+
+    // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT
+    int label_stack_depth_ = 0;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
