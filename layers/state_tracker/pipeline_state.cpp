@@ -522,11 +522,12 @@ std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkS
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
+                               uint32_t create_index, std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
       create_info(pCreateInfo, rpstate),
+      create_index(create_index),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
       vertex_input_state(CreateVertexInputState(*this, *state_data, create_info.graphics)),
       pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
@@ -603,9 +604,11 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                               CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      create_index(create_index),
       stage_state(GetStageStates(*state_data, *this, csm_states)),
       active_slots(GetActiveSlots(stage_state)),
       active_shaders(GetActiveShaders(stage_state)),
@@ -618,9 +621,11 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                               CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      create_index(create_index),
       stage_state(GetStageStates(*state_data, *this, csm_states)),
       active_slots(GetActiveSlots(stage_state)),
       active_shaders(GetActiveShaders(stage_state)),
@@ -635,9 +640,11 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                               std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
+                               uint32_t create_index, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                               CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
+      create_index(create_index),
       stage_state(GetStageStates(*state_data, *this, csm_states)),
       active_slots(GetActiveSlots(stage_state)),
       active_shaders(GetActiveShaders(stage_state)),
