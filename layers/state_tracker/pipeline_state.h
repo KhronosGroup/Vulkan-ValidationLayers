@@ -261,6 +261,22 @@ class PIPELINE_STATE : public BASE_NODE {
         }
     }
 
+    inline const char *GetCreateFunctionName() const {
+        switch (create_info.graphics.sType) {
+            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
+                return "vkCreateGraphicsPipelines";
+            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
+                return "vkCreateComputePipelines";
+            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
+                return "vkCreateRayTracingPipelinesNV";
+            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
+                return "vkCreateRayTracingPipelinesKHR";
+            default:
+                assert(false);
+                return "";
+        }
+    }
+
     bool IsGraphicsLibrary() const { return !HasFullState(); }
     bool HasFullState() const { return vertex_input_state && pre_raster_state && fragment_shader_state && fragment_output_state; }
 
