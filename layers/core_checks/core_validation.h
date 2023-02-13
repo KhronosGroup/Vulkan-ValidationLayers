@@ -811,20 +811,20 @@ class CoreChecks : public ValidationStateTracker {
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline) const;
-    bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline, const uint32_t pipe_index) const;
+    bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pipeline) const;
-    bool ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE& pipeline, const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                 const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                    const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
-                                                  const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline, const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline, const uint32_t pipe_index) const;
-    bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline, const uint32_t pipe_index) const;
+    bool ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE& pipeline,
+                                                 const safe_VkSubpassDescription2* subpass_desc) const;
+    bool ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE& pipeline,
+                                                    const safe_VkSubpassDescription2* subpass_desc) const;
+    bool ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE& pipeline,
+                                                  const safe_VkSubpassDescription2* subpass_desc) const;
+    bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const PIPELINE_STATE& pipeline, uint32_t group, uint32_t stage) const;
