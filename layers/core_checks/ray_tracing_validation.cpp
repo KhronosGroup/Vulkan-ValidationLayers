@@ -321,7 +321,7 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
     const auto buffer_states = GetBuffersByAddress(info.scratchData.deviceAddress);
     if (buffer_states.empty()) {
         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
-                         "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
+                         "vkCmdBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
                          "].scratchData.deviceAddress %" PRIx64 " is not a valid device address.",
                          info_index, info.scratchData.deviceAddress);
     } else {
