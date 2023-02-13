@@ -375,7 +375,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
                                       const VkPipelineRenderingCreateInfo* rendering_struct, uint32_t pipe_index, int lib_index,
                                       const char* vuid) const;
-    bool ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, int pipe_index) const;
+    bool ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, uint32_t pipe_index) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices) const;
     bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,
@@ -868,7 +868,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE& pipeline) const;
-    bool ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreateInfo const* vi, const SHADER_MODULE_STATE& module_state,
+    bool ValidateViAgainstVsInputs(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    const Instruction& entrypoint) const;
     bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                             const PIPELINE_STATE& pipeline, uint32_t subpass_index) const;
@@ -878,22 +878,24 @@ class CoreChecks : public ValidationStateTracker {
                                        const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* pStage, const std::string& vuid) const;
-    bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint) const;
+    bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+                               const PIPELINE_STATE& pipeline) const;
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
                                                         const SHADER_MODULE_STATE::StructInfo& push_constant_used_in_shader,
                                                         uint32_t& out_issue_index) const;
-    bool ValidateSpecializations(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* info) const;
+    bool ValidateSpecializations(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* info,
+                                 const PIPELINE_STATE& pipeline) const;
     bool RequirePropertyFlag(const SHADER_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
                              const char* vuid) const;
     bool RequireFeature(const SHADER_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name,
                         const char* vuid) const;
     bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, const Instruction& producer_entrypoint,
                                         shader_stage_attributes const* producer_stage, const SHADER_MODULE_STATE& consumer,
-                                        const Instruction& consumer_entrypoint,
-                                        shader_stage_attributes const* consumer_stage) const;
-    bool ValidateDecorations(const SHADER_MODULE_STATE& module_state) const;
+                                        const Instruction& consumer_entrypoint, shader_stage_attributes const* consumer_stage,
+                                        uint32_t pipe_index) const;
+    bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
-    bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state) const;
+    bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const SHADER_MODULE_STATE& module_state, const PipelineStageState& stage_state,
                                 const safe_VkPipelineShaderStageCreateInfo* pStage, const VkPipelineCreateFlags flags) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
