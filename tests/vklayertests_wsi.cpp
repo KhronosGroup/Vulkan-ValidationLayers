@@ -1756,24 +1756,24 @@ TEST_F(VkLayerTest, LeakASwapchain) {
 TEST_F(VkLayerTest, PresentIdWait) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
-    auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&present_wait_features);
     AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     AddSurfaceExtension();
-    const bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features, skipping test.";
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
+
+    auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
+    auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);
+    GetPhysicalDeviceFeatures2(present_wait_features);
+
     if (!present_id_features.presentId || !present_wait_features.presentWait) {
         GTEST_SKIP() << "presentWait feature is not available, skipping test.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
-    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &present_wait_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
@@ -1869,14 +1869,8 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
@@ -3058,19 +3052,19 @@ TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
 
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
-
-    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(image_compression_control);
+
     if (image_compression_control.imageCompressionControl) {
         // disable imageCompressionControl feature;
         image_compression_control.imageCompressionControl = VK_FALSE;
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_compression_control));
     } else {
         ASSERT_NO_FATAL_FAILURE(InitState());
     }

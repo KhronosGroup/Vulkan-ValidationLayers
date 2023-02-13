@@ -4880,25 +4880,26 @@ TEST_F(VkPositiveLayerTest, TexelBufferAlignmentIn12) {
 
 TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
     TEST_DESCRIPTION("Test VK_EXT_texel_buffer_alignment.");
+    AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
     auto texel_buffer_alignment_features = LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&texel_buffer_alignment_features);
-    m_device_extension_names.push_back(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    GetPhysicalDeviceFeatures2(texel_buffer_alignment_features);
+    if (texel_buffer_alignment_features.texelBufferAlignment != VK_TRUE) {
+        GTEST_SKIP() << "texelBufferAlignment feature not supported";
     }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    texel_buffer_alignment_features.texelBufferAlignment = VK_TRUE;
 
-    VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props =
-        LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&align_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto align_props = LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT>();
+    GetPhysicalDeviceProperties2(align_props);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &texel_buffer_alignment_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
@@ -10320,18 +10321,21 @@ TEST_F(VkLayerTest, DedicatedAllocationBinding) {
 }
 
 TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
-    auto aliasing_features = LvlInitStruct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&aliasing_features);
-    m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    aliasing_features.dedicatedAllocationImageAliasing = VK_TRUE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto aliasing_features = LvlInitStruct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
+    GetPhysicalDeviceFeatures2(aliasing_features);
+    if (aliasing_features.dedicatedAllocationImageAliasing != VK_TRUE) {
+        GTEST_SKIP() << "dedicatedAllocationImageAliasing feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &aliasing_features));
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
@@ -10401,15 +10405,19 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
 
 TEST_F(VkLayerTest, CornerSampledImageNV) {
     TEST_DESCRIPTION("Test VK_NV_corner_sampled_image.");
-    m_device_extension_names.push_back(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
-    auto corner_sampled_image_features = LvlInitStruct<VkPhysicalDeviceCornerSampledImageFeaturesNV>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&corner_sampled_image_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    auto corner_sampled_image_features = LvlInitStruct<VkPhysicalDeviceCornerSampledImageFeaturesNV>();
+    GetPhysicalDeviceFeatures2(corner_sampled_image_features);
+    if (corner_sampled_image_features.cornerSampledImage != VK_TRUE) {
+        GTEST_SKIP() << "cornerSampledImage feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &corner_sampled_image_features));
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
@@ -10599,26 +10607,22 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    GetPhysicalDeviceFeatures2(ycbcr_features);
+    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
+        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
+    }
+
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
     }
-
-    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -10912,21 +10916,24 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
-    m_device_extension_names.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+    if (buffer_device_address_features.bufferDeviceAddressCaptureReplay != VK_TRUE) {
+        GTEST_SKIP() << "bufferDeviceAddressCaptureReplay feature not supported";
     }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
@@ -10973,22 +10980,21 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
-    m_device_extension_names.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
@@ -11016,21 +11022,25 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
 TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(buffer_device_address_features);
+    if (buffer_device_address_features.bufferDeviceAddress != VK_TRUE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
+    }
+
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
@@ -11125,23 +11135,21 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
 TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
@@ -11592,25 +11600,22 @@ TEST_F(VkLayerTest, AllocationBeyondHeapSize) {
 
 TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     // Attempts to allocate device coherent memory without enabling the extension/feature
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
-    auto coherent_memory_features_amd = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&coherent_memory_features_amd);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
-    }
-    if (!coherent_memory_features_amd.deviceCoherentMemory) {
-        GTEST_SKIP() << "device coherent memory amd not supported";
-    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
+
+    auto coherent_memory_features_amd = LvlInitStruct<VkPhysicalDeviceCoherentMemoryFeaturesAMD>();
+    coherent_memory_features_amd.deviceCoherentMemory = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &coherent_memory_features_amd));
 
     // Find a memory type that includes the device coherent memory property
     VkPhysicalDeviceMemoryProperties memory_info;
@@ -12156,17 +12161,18 @@ TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
 
 TEST_F(VkLayerTest, AstcDecodeMode) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_astc_decode_mode");
-    VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features = LvlInitStruct<VkPhysicalDeviceASTCDecodeFeaturesEXT>();
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&astc_decode_features);
-    m_device_extension_names.push_back(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto astc_decode_features = LvlInitStruct<VkPhysicalDeviceASTCDecodeFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(astc_decode_features);
     if (!features2.features.textureCompressionASTC_LDR) {
         GTEST_SKIP() << "textureCompressionASTC_LDR feature not supported";
     }
+
     // Disable feature
     astc_decode_features.decodeModeSharedExponent = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -12216,22 +12222,23 @@ TEST_F(VkLayerTest, AstcDecodeMode) {
 
 TEST_F(VkLayerTest, CustomBorderColor) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_custom_border_color");
-    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features =
-        LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&border_color_features);
-    m_device_extension_names.push_back(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (!border_color_features.customBorderColors) {
-        GTEST_SKIP() << "Custom border color feature not supported";
+    auto border_color_features = LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(border_color_features);
+    if (border_color_features.customBorderColors != VK_TRUE) {
+        GTEST_SKIP() << "customBorderColors feature not supported";
     }
+
     // Disable without format
     border_color_features.customBorderColorWithoutFormat = 0;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &border_color_features));
 
     VkSampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -12293,20 +12300,20 @@ TEST_F(VkLayerTest, CustomBorderColor) {
 
 TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     TEST_DESCRIPTION("Tests for VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015");
-    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features =
-        LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&border_color_features);
-    m_device_extension_names.push_back(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto border_color_features = LvlInitStruct<VkPhysicalDeviceCustomBorderColorFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(border_color_features);
     if (!border_color_features.customBorderColors || !border_color_features.customBorderColorWithoutFormat) {
         GTEST_SKIP() << "Custom border color feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &border_color_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkSampler sampler;
@@ -12407,7 +12414,7 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     const auto handle_type2 = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
     assert(handle_type != handle_type2);
 
-    // Create an image with one of the handle types 
+    // Create an image with one of the handle types
     external_image_info.handleTypes = handle_type;
     vk_testing::Image image(*m_device, image_info, vk_testing::NoMemT{});
 
@@ -12612,7 +12619,7 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
     const auto handle_type2 = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
     assert(handle_type != handle_type2);
 
-    // Create a buffer with one of the handle types 
+    // Create a buffer with one of the handle types
     external_info.handleTypes = handle_type;
     vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::NoMemT{});
 
@@ -13134,25 +13141,24 @@ TEST_F(VkLayerTest, CreateImageViewMissingYcbcrConversion) {
 
 TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     TEST_DESCRIPTION("Specify invalid usage of the fragment shading rate image view usage.");
-    VkPhysicalDeviceImagelessFramebufferFeatures if_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeatures>();
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features =
-        LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(&if_features);
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&fsr_features);
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
-    if (!retval) {
-        GTEST_SKIP() << "Error initializing extensions or retrieving features";
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
         GTEST_SKIP() << "requires attachmentFragmentShadingRate feature";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &fsr_features));
 
     const VkFormat format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
@@ -16360,11 +16366,8 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&image_compression_control);
-
-    ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
     const bool multi_plane_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -16375,6 +16378,8 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(image_compression_control);
     if (!image_compression_control.imageCompressionControl) {
         GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping.";
     }
@@ -16384,7 +16389,7 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
     ASSERT_TRUE(vkGetImageSubresourceLayout2EXT != nullptr);
 
     // A bit set flag bit
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_compression_control));
     {
         auto compression_control = LvlInitStruct<VkImageCompressionControlEXT>();  // specify the desired compression settings
         compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT | VK_IMAGE_COMPRESSION_DISABLED_EXT;
