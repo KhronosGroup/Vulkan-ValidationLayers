@@ -28,10 +28,7 @@
 
 class VideoConfig {
   public:
-    VideoConfig()
-        : profile_(), caps_(), session_create_info_(), session_params_create_info_(), picture_format_props_(), dpb_format_props_() {
-        session_create_info_.queueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    }
+    VideoConfig() { session_create_info_.queueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; }
 
     operator bool() const { return profile_.videoCodecOperation != VK_VIDEO_CODEC_OPERATION_NONE_KHR; }
 
@@ -98,13 +95,13 @@ class VideoConfig {
     }
 
   private:
-    bool is_decode_;
-    safe_VkVideoProfileInfoKHR profile_;
-    safe_VkVideoCapabilitiesKHR caps_;
-    safe_VkVideoSessionCreateInfoKHR session_create_info_;
-    safe_VkVideoSessionParametersCreateInfoKHR session_params_create_info_;
-    std::vector<VkVideoFormatPropertiesKHR> picture_format_props_;
-    std::vector<VkVideoFormatPropertiesKHR> dpb_format_props_;
+    bool is_decode_{};
+    safe_VkVideoProfileInfoKHR profile_{};
+    safe_VkVideoCapabilitiesKHR caps_{};
+    safe_VkVideoSessionCreateInfoKHR session_create_info_{};
+    safe_VkVideoSessionParametersCreateInfoKHR session_params_create_info_{};
+    std::vector<VkVideoFormatPropertiesKHR> picture_format_props_{};
+    std::vector<VkVideoFormatPropertiesKHR> dpb_format_props_{};
 };
 
 class BitstreamBuffer {
@@ -166,10 +163,10 @@ class BitstreamBuffer {
         vk::FreeMemory(device_->device(), memory_, nullptr);
     }
 
-    VkDeviceObj* device_;
-    VkDeviceSize size_;
-    VkDeviceMemory memory_;
-    VkBuffer buffer_;
+    VkDeviceObj* device_{};
+    VkDeviceSize size_{};
+    VkDeviceMemory memory_{};
+    VkBuffer buffer_{};
 };
 
 class VideoPictureResource {
@@ -270,12 +267,12 @@ class VideoPictureResource {
     }
 
   private:
-    VkDeviceObj* device_;
-    VkDeviceMemory memory_;
-    VkImage image_;
-    VkImageView image_view_;
-    VkDependencyInfo dep_info_;
-    VkImageMemoryBarrier2 barrier_;
+    VkDeviceObj* device_{};
+    VkDeviceMemory memory_{};
+    VkImage image_{};
+    VkImageView image_view_{};
+    VkDependencyInfo dep_info_{};
+    VkImageMemoryBarrier2 barrier_{};
 };
 
 class VideoDecodeOutput : public VideoPictureResource {
@@ -297,7 +294,7 @@ class VideoDecodeOutput : public VideoPictureResource {
     const VkVideoPictureResourceInfoKHR& Picture() const { return picture_; }
 
   private:
-    VkVideoPictureResourceInfoKHR picture_;
+    VkVideoPictureResourceInfoKHR picture_{};
 };
 
 class VideoDPB : public VideoPictureResource {
@@ -323,7 +320,7 @@ class VideoDPB : public VideoPictureResource {
     const VkVideoPictureResourceInfoKHR& Picture(int32_t index) const { return reference_pictures_[index]; }
 
   private:
-    std::vector<VkVideoPictureResourceInfoKHR> reference_pictures_;
+    std::vector<VkVideoPictureResourceInfoKHR> reference_pictures_{};
 };
 
 class VideoBeginCodingInfo {
@@ -380,9 +377,9 @@ class VideoBeginCodingInfo {
         info_.pReferenceSlots = slot_resources_.data();
     }
 
-    VideoDPB* dpb_;
-    VkVideoBeginCodingInfoKHR info_;
-    std::vector<VkVideoReferenceSlotInfoKHR> slot_resources_;
+    VideoDPB* dpb_{};
+    VkVideoBeginCodingInfoKHR info_{};
+    std::vector<VkVideoReferenceSlotInfoKHR> slot_resources_{};
 };
 
 class VideoCodingControlInfo {
@@ -398,7 +395,7 @@ class VideoCodingControlInfo {
     VkVideoCodingControlInfoKHR* operator->() { return &info_; }
 
   private:
-    VkVideoCodingControlInfoKHR info_;
+    VkVideoCodingControlInfoKHR info_{};
 };
 
 class VideoEndCodingInfo {
@@ -409,7 +406,7 @@ class VideoEndCodingInfo {
     VkVideoEndCodingInfoKHR* operator->() { return &info_; }
 
   private:
-    VkVideoEndCodingInfoKHR info_;
+    VkVideoEndCodingInfoKHR info_{};
 };
 
 class VideoDecodeInfo {
@@ -831,32 +828,32 @@ class VideoDecodeInfo {
         return *this;
     }
 
-    bool output_distinct_;
-    VkVideoCodecOperationFlagBitsKHR codec_op_;
-    VideoDPB* dpb_;
-    VkVideoDecodeInfoKHR info_;
-    VkVideoReferenceSlotInfoKHR reconstructed_;
-    std::vector<VkVideoReferenceSlotInfoKHR> references_;
+    bool output_distinct_{};
+    VkVideoCodecOperationFlagBitsKHR codec_op_{};
+    VideoDPB* dpb_{};
+    VkVideoDecodeInfoKHR info_{};
+    VkVideoReferenceSlotInfoKHR reconstructed_{};
+    std::vector<VkVideoReferenceSlotInfoKHR> references_{};
     struct {
         struct {
-            VkVideoDecodeH264PictureInfoKHR picture_info;
-            StdVideoDecodeH264PictureInfo std_picture_info;
-            std::vector<uint32_t> slice_offsets;
-            VkVideoDecodeH264DpbSlotInfoKHR setup_slot_info;
-            StdVideoDecodeH264ReferenceInfo std_setup_reference_info;
-            std::vector<VkVideoDecodeH264DpbSlotInfoKHR> dpb_slot_info;
-            std::vector<StdVideoDecodeH264ReferenceInfo> std_reference_info;
-        } decode_h264;
+            VkVideoDecodeH264PictureInfoKHR picture_info{};
+            StdVideoDecodeH264PictureInfo std_picture_info{};
+            std::vector<uint32_t> slice_offsets{};
+            VkVideoDecodeH264DpbSlotInfoKHR setup_slot_info{};
+            StdVideoDecodeH264ReferenceInfo std_setup_reference_info{};
+            std::vector<VkVideoDecodeH264DpbSlotInfoKHR> dpb_slot_info{};
+            std::vector<StdVideoDecodeH264ReferenceInfo> std_reference_info{};
+        } decode_h264{};
         struct {
-            VkVideoDecodeH265PictureInfoKHR picture_info;
-            StdVideoDecodeH265PictureInfo std_picture_info;
-            std::vector<uint32_t> slice_segment_offsets;
-            VkVideoDecodeH265DpbSlotInfoKHR setup_slot_info;
-            StdVideoDecodeH265ReferenceInfo std_setup_reference_info;
-            std::vector<VkVideoDecodeH265DpbSlotInfoKHR> dpb_slot_info;
-            std::vector<StdVideoDecodeH265ReferenceInfo> std_reference_info;
-        } decode_h265;
-    } codec_info_;
+            VkVideoDecodeH265PictureInfoKHR picture_info{};
+            StdVideoDecodeH265PictureInfo std_picture_info{};
+            std::vector<uint32_t> slice_segment_offsets{};
+            VkVideoDecodeH265DpbSlotInfoKHR setup_slot_info{};
+            StdVideoDecodeH265ReferenceInfo std_setup_reference_info{};
+            std::vector<VkVideoDecodeH265DpbSlotInfoKHR> dpb_slot_info{};
+            std::vector<StdVideoDecodeH265ReferenceInfo> std_reference_info{};
+        } decode_h265{};
+    } codec_info_{};
 };
 
 class VideoContext {
@@ -869,7 +866,7 @@ class VideoContext {
         PFN_vkCreateVideoSessionParametersKHR CreateVideoSessionParametersKHR;
         PFN_vkUpdateVideoSessionParametersKHR UpdateVideoSessionParametersKHR;
         PFN_vkDestroyVideoSessionParametersKHR DestroyVideoSessionParametersKHR;
-    } vk;
+    } vk{};
 
     explicit VideoContext(VkDeviceObj* device, const VideoConfig& config, bool protected_content = false)
         : vk(),
@@ -1033,22 +1030,22 @@ class VideoContext {
         }
     }
 
-    const VideoConfig config_;
+    const VideoConfig config_{};
 
-    VkDeviceObj* device_;
+    VkDeviceObj* device_{};
     VkQueueObj queue_;
-    VkCommandPoolObj cmd_pool_;
-    VkCommandBufferObj cmd_buffer_;
+    VkCommandPoolObj cmd_pool_{};
+    VkCommandBufferObj cmd_buffer_{};
 
-    VkVideoSessionKHR session_;
-    std::vector<VkDeviceMemory> session_memory_;
-    VkVideoSessionParametersKHR session_params_;
+    VkVideoSessionKHR session_{};
+    std::vector<VkDeviceMemory> session_memory_{};
+    VkVideoSessionParametersKHR session_params_{};
 
-    VkQueryPool status_query_pool_;
+    VkQueryPool status_query_pool_{};
 
-    std::unique_ptr<BitstreamBuffer> bitstream_;
-    std::unique_ptr<VideoDPB> dpb_;
-    std::unique_ptr<VideoDecodeOutput> decode_output_;
+    std::unique_ptr<BitstreamBuffer> bitstream_{};
+    std::unique_ptr<VideoDPB> dpb_{};
+    std::unique_ptr<VideoDecodeOutput> decode_output_{};
 };
 
 class VkVideoLayerTest : public VkLayerTest {
@@ -1056,7 +1053,7 @@ class VkVideoLayerTest : public VkLayerTest {
     struct {
         PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
         PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
-    } vk;
+    } vk{};
 
     void Init(bool enable_protected_memory = false) {
         SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1484,18 +1481,18 @@ class VkVideoLayerTest : public VkLayerTest {
 
     void* instance_pnext_ = nullptr;
 
-    std::vector<VkQueueFamilyProperties2> queue_family_props_;
-    std::vector<VkQueueFamilyVideoPropertiesKHR> queue_family_video_props_;
-    std::vector<VkQueueFamilyQueryResultStatusPropertiesKHR> queue_family_query_result_status_props_;
-    bool protected_memory_enabled_;
-    bool protected_no_fault_supported_;
+    std::vector<VkQueueFamilyProperties2> queue_family_props_{};
+    std::vector<VkQueueFamilyVideoPropertiesKHR> queue_family_video_props_{};
+    std::vector<VkQueueFamilyQueryResultStatusPropertiesKHR> queue_family_query_result_status_props_{};
+    bool protected_memory_enabled_{};
+    bool protected_no_fault_supported_{};
 
-    VideoConfig default_config_;
-    std::vector<VideoConfig> configs_;
-    std::vector<VideoConfig> configs_decode_;
-    std::vector<VideoConfig> configs_decode_h264_;
-    std::vector<VideoConfig> configs_decode_h264_interlaced_;
-    std::vector<VideoConfig> configs_decode_h265_;
+    VideoConfig default_config_{};
+    std::vector<VideoConfig> configs_{};
+    std::vector<VideoConfig> configs_decode_{};
+    std::vector<VideoConfig> configs_decode_h264_{};
+    std::vector<VideoConfig> configs_decode_h264_interlaced_{};
+    std::vector<VideoConfig> configs_decode_h265_{};
 };
 
 class VkVideoBestPracticesLayerTest : public VkVideoLayerTest {
