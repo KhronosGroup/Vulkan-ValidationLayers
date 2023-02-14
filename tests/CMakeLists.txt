@@ -99,7 +99,16 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE
         -Wno-sign-compare
         -Wno-shorten-64-to-32
+        -Wno-unused-parameter
+        -Wno-missing-field-initializers
     )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(vk_layer_validation_tests PRIVATE 
+            -Wno-sign-conversion
+            -Wno-implicit-int-conversion
+            -Wno-enum-enum-conversion
+        )
+    endif()
 elseif(MSVC)
     # Disable some signed/unsigned mismatch warnings.
     target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
