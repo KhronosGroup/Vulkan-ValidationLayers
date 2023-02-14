@@ -97,23 +97,19 @@ if (VVL_CLANG_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}")
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    add_compile_options(-Wconversion
-                        -Wimplicit-fallthrough
-
-                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
-                        #      Leave off until further investigation.
-                        -Wno-sign-conversion
-                        -Wno-implicit-int-conversion
-                        -Wno-enum-enum-conversion
-                        -Wstring-conversion)
-
-endif()
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    add_compile_options(-Wall
-                        -Wextra
-                        -Wno-unused-parameter
-                        -Wno-missing-field-initializers)
+    add_compile_options(
+        -Wall
+        -Wextra
+        -Wpointer-arith
+    )
+    if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+        add_compile_options(
+            -Wconversion
+            -Wimplicit-fallthrough
+            -Wstring-conversion
+        )
+    endif()
 elseif(MSVC)
     # TODO: Update to /W4
     add_compile_options("/W3")

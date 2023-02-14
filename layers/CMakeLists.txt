@@ -89,18 +89,25 @@ if(BUILD_LAYER_SUPPORT_FILES)
     install(TARGETS VkLayer_utils)
 endif()
 
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
+    target_compile_options(VkLayer_utils PRIVATE
+        -Wno-unused-parameter
+        -Wno-missing-field-initializers
+    )
+    if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+        target_compile_options(VkLayer_utils PRIVATE
+            -Wno-sign-conversion
+            -Wno-implicit-int-conversion
+            -Wno-enum-enum-conversion
+        )
+    endif()
+endif()
+
 if(MSVC)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     add_compile_options("/bigobj")
     add_compile_options("/we4189")
     add_compile_options("/we5038")
-else()
-    add_compile_options(-Wpointer-arith -Wno-unused-function -Wno-sign-compare)
-endif()
-
-# Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set_source_files_properties(generated/parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
 # NOTE: LunarG/VulkanTools disables BUILD_LAYERS and BUILD_TESTS to minimize dependencies.
@@ -281,6 +288,20 @@ elseif(ANDROID)
     message(DEBUG "Functions are exported via VVL_EXPORT")
 else()
     target_link_options(VkLayer_khronos_validation PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL)
+endif()
+
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
+    target_compile_options(VkLayer_khronos_validation PRIVATE
+        -Wno-unused-parameter
+        -Wno-missing-field-initializers
+    )
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(VkLayer_khronos_validation PRIVATE
+            -Wno-sign-conversion
+            -Wno-implicit-int-conversion
+            -Wno-enum-enum-conversion
+        )
+    endif()
 endif()
 
 # Khronos validation additional dependencies
