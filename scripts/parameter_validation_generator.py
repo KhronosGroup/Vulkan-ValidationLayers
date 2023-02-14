@@ -564,7 +564,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
-            with open(self.categoryFilePath, mode='w', encoding='utf-8', newline='\n') as fd:
+            with open(os.path.join(self.genOpts.directory, self.categoryFilePath), mode='w', encoding='utf-8', newline='\n') as fd:
                 preamble = f'''{self.GenerateCopyright(None)}
 #include "chassis.h"
 #include "hash_vk_types.h"
@@ -675,7 +675,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write('\n'.join(self.declarations), file=self.outFile)
 
             # Specializations need to appear outside of the class definition
-            with open(self.specFilePath, mode='w', encoding='utf-8', newline='\n') as fd:
+            with open(os.path.join(self.genOpts.directory, self.specFilePath), mode='w', encoding='utf-8', newline='\n') as fd:
                 write(self.GenerateCopyright(None), file=fd)
                 write('\n'.join(self.specializations), file=fd)
         # Finish processing in superclass
