@@ -237,17 +237,17 @@ struct InstanceExtensions {
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
 
-        constexpr std::array<const char *, 5> V_1_1_promoted_instance_apis = {{
+        constexpr std::array<const char*, 5> V_1_1_promoted_instance_apis = {
             VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
             VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-        }};
-        constexpr std::array<const char *, 0> V_1_2_promoted_instance_apis = {{
-        }};
-        constexpr std::array<const char *, 0> V_1_3_promoted_instance_apis = {{
-        }};
+        };
+        constexpr std::array<const char*, 0> V_1_2_promoted_instance_apis = {
+        };
+        constexpr std::array<const char*, 0> V_1_3_promoted_instance_apis = {
+        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
@@ -1267,7 +1267,7 @@ struct DeviceExtensions : public InstanceExtensions {
         *this = DeviceExtensions(*instance_extensions);
 
 
-        constexpr std::array<const char *, 18> V_1_1_promoted_device_apis = {{
+        constexpr std::array<const char*, 18> V_1_1_promoted_device_apis = {
             VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
             VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
             VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
@@ -1286,8 +1286,14 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
             VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
             VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
-        }};
-        constexpr std::array<const char *, 24> V_1_2_promoted_device_apis = {{
+        };
+        constexpr std::array<const char*, 24> V_1_2_promoted_device_apis = {
+            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+            VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+            VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
+            VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
+            VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
+            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
             VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
             VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
@@ -1306,23 +1312,9 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
             VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,
             VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME,
-            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-            VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
-            VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
-            VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
-            VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
-            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-        }};
-        constexpr std::array<const char *, 21> V_1_3_promoted_device_apis = {{
-            VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
-            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-            VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
-            VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
-            VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
-            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-            VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
-            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-            VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
+        };
+        constexpr std::array<const char*, 23> V_1_3_promoted_device_apis = {
+            VK_EXT_4444_FORMATS_EXTENSION_NAME,
             VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
             VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
             VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME,
@@ -1335,7 +1327,17 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
             VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
             VK_EXT_TOOLING_INFO_EXTENSION_NAME,
-        }};
+            VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME,
+            VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+            VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
+            VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+            VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME,
+            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+            VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME,
+            VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+            VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME,
+        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
