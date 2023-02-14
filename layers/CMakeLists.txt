@@ -268,8 +268,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     vk_layer_settings_ext.h
 )
 
-target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
-
 if(MSVC)
     target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
 elseif(MINGW)
