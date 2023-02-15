@@ -249,8 +249,7 @@ static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMes
     return 0;
 }
 
-static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, bool default_flag_is_spec,
-                                                VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
+static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;
     *da_type = 0;
@@ -302,14 +301,14 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
 
 VKAPI_ATTR VkResult LayerCreateMessengerCallback(debug_report_data *debug_data, bool default_callback,
                                                  const VkDebugUtilsMessengerCreateInfoEXT *create_info,
-                                                 const VkAllocationCallbacks *allocator, VkDebugUtilsMessengerEXT *messenger);
+                                                 VkDebugUtilsMessengerEXT *messenger);
 
 VKAPI_ATTR VkResult LayerCreateReportCallback(debug_report_data *debug_data, bool default_callback,
                                               const VkDebugReportCallbackCreateInfoEXT *create_info,
-                                              const VkAllocationCallbacks *allocator, VkDebugReportCallbackEXT *callback);
+                                              VkDebugReportCallbackEXT *callback);
 
 template <typename T>
-static inline void LayerDestroyCallback(debug_report_data *debug_data, T callback, const VkAllocationCallbacks *allocator) {
+static inline void LayerDestroyCallback(debug_report_data *debug_data, T callback) {
     std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
     RemoveDebugUtilsCallback(debug_data, debug_data->debug_callback_list, CastToUint64(callback));
 }
@@ -324,18 +323,6 @@ VKAPI_ATTR void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::vec
                                          uint64_t callback);
 
 VKAPI_ATTR void LayerDebugUtilsDestroyInstance(debug_report_data *debug_data);
-
-VKAPI_ATTR VkBool32 VKAPI_CALL ReportLogCallback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type, uint64_t src_object,
-                                                 size_t location, int32_t msg_code, const char *layer_prefix, const char *message,
-                                                 void *user_data);
-
-VKAPI_ATTR VkBool32 VKAPI_CALL ReportWin32DebugOutputMsg(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
-                                                         uint64_t src_object, size_t location, int32_t msg_code,
-                                                         const char *layer_prefix, const char *message, void *user_data);
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugBreakCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT obj_type, uint64_t src_object,
-                                                  size_t location, int32_t msg_code, const char *layer_prefix, const char *message,
-                                                  void *user_data);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                       VkDebugUtilsMessageTypeFlagsEXT message_type,

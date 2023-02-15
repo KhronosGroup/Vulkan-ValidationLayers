@@ -396,11 +396,7 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
-                                                const char *layer_identifier);
-
-void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
-                                                   const char *layer_identifier);
+void layer_debug_messenger_actions(debug_report_data *report_data, const char *layer_identifier);
 
 VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 bool white_list(const char *item, const std::set<std::string> &whitelist);

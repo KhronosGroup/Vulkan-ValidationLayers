@@ -37,7 +37,7 @@ VKAPI_ATTR void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> 
         } else {
             VkFlags severities = 0;
             VkFlags types = 0;
-            DebugReportFlagsToAnnotFlags(item.debug_report_msg_flags, true, &severities, &types);
+            DebugReportFlagsToAnnotFlags(item.debug_report_msg_flags, &severities, &types);
             debug_data->active_severities |= severities;
             debug_data->active_types |= types;
         }
@@ -85,7 +85,7 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
     // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageTypeFlagsEXT types;
     VkDebugUtilsMessageSeverityFlagsEXT severity;
-    DebugReportFlagsToAnnotFlags(msg_flags, true, &severity, &types);
+    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &types);
 
     std::vector<std::string> object_labels;
     // Ensures that push_back will not reallocate, thereby providing pointer
@@ -217,8 +217,7 @@ VKAPI_ATTR void LayerDebugUtilsDestroyInstance(debug_report_data *debug_data) { 
 
 template <typename TCreateInfo, typename TCallback>
 static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, debug_report_data *debug_data,
-                                       const TCreateInfo *create_info, const VkAllocationCallbacks *allocator,
-                                       TCallback *callback) {
+                                const TCreateInfo *create_info, TCallback *callback) {
     std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
 
     debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
@@ -263,16 +262,16 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, debug_
 
 VKAPI_ATTR VkResult LayerCreateMessengerCallback(debug_report_data *debug_data, bool default_callback,
                                                  const VkDebugUtilsMessengerCreateInfoEXT *create_info,
-                                                 const VkAllocationCallbacks *allocator, VkDebugUtilsMessengerEXT *messenger) {
+                                                 VkDebugUtilsMessengerEXT *messenger) {
     LayerCreateCallback((DEBUG_CALLBACK_UTILS | (default_callback ? DEBUG_CALLBACK_DEFAULT : 0)), debug_data, create_info,
-                        allocator, messenger);
+                        messenger);
     return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult LayerCreateReportCallback(debug_report_data *debug_data, bool default_callback,
                                               const VkDebugReportCallbackCreateInfoEXT *create_info,
-                                              const VkAllocationCallbacks *allocator, VkDebugReportCallbackEXT *callback) {
-    LayerCreateCallback((default_callback ? DEBUG_CALLBACK_DEFAULT : 0), debug_data, create_info, allocator, callback);
+                                              VkDebugReportCallbackEXT *callback) {
+    LayerCreateCallback((default_callback ? DEBUG_CALLBACK_DEFAULT : 0), debug_data, create_info, callback);
     return VK_SUCCESS;
 }
 
@@ -283,14 +282,14 @@ VKAPI_ATTR void ActivateInstanceDebugCallbacks(debug_report_data *debug_data) {
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugUtilsMessengerEXT utils_callback{};
-        LayerCreateCallback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, nullptr, &utils_callback);
+        LayerCreateCallback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, &utils_callback);
     }
     for (;;) {
         auto create_info = LvlFindInChain<VkDebugReportCallbackCreateInfoEXT>(current);
         if (!create_info) break;
         current = create_info->pNext;
         VkDebugReportCallbackEXT report_callback{};
-        LayerCreateCallback(DEBUG_CALLBACK_INSTANCE, debug_data, create_info, nullptr, &report_callback);
+        LayerCreateCallback(DEBUG_CALLBACK_INSTANCE, debug_data, create_info, &report_callback);
     }
 }
 
@@ -310,10 +309,10 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) 
         }
     }
     for (const auto &item : instance_utils_callback_handles) {
-        LayerDestroyCallback(debug_data, item, nullptr);
+        LayerDestroyCallback(debug_data, item);
     }
     for (const auto &item : instance_report_callback_handles) {
-        LayerDestroyCallback(debug_data, item, nullptr);
+        LayerDestroyCallback(debug_data, item);
     }
 }
 
@@ -341,7 +340,7 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
     VkDebugUtilsMessageSeverityFlagsEXT severity;
     VkDebugUtilsMessageTypeFlagsEXT type;
 
-    DebugReportFlagsToAnnotFlags(msg_flags, false, &severity, &type);
+    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &type);
     std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
     // Avoid logging cost if msg is to be ignored
     if (!LogMsgEnabled(debug_data, vuid_text, severity, type)) {
@@ -436,60 +435,10 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
     return debug_log_msg(debug_data, msg_flags, objects, "Validation", str_plus_spec_text.c_str(), vuid_text.c_str());
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL ReportLogCallback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type, uint64_t src_object,
-                                                 size_t location, int32_t msg_code, const char *layer_prefix, const char *message,
-                                                 void *user_data) {
-    std::ostringstream msg_buffer;
-    char msg_flag_string[30];
-
-    PrintMessageFlags(msg_flags, msg_flag_string);
-
-    msg_buffer << layer_prefix << "(" << msg_flag_string << "): msg_code: " << msg_code << ": " << message << "\n";
-    const std::string tmp = msg_buffer.str();
-    const char *cstr = tmp.c_str();
-
-    fprintf((FILE *)user_data, "%s", cstr);
-    fflush((FILE *)user_data);
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    LOGCONSOLE("%s", cstr);
-#endif
-
-    return false;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL ReportWin32DebugOutputMsg(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
-                                                         uint64_t src_object, size_t location, int32_t msg_code,
-                                                         const char *layer_prefix, const char *message, void *user_data) {
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    char msg_flag_string[30];
-    char buf[2048];
-
-    PrintMessageFlags(msg_flags, msg_flag_string);
-    _snprintf(buf, sizeof(buf) - 1, "%s (%s): msg_code: %d: %s\n", layer_prefix, msg_flag_string, msg_code, message);
-
-    OutputDebugString(buf);
-#endif
-
-    return false;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugBreakCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT obj_type,
-                                                                uint64_t src_object, size_t location, int32_t msg_code,
-                                                                const char *layer_prefix, const char *message, void *user_data) {
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    DebugBreak();
-#else
-    raise(SIGTRAP);
-#endif
-
-    return false;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                                    VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                                    void *user_data) {
+VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                      [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                                      [[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                                      [[maybe_unused]] void *user_data) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     DebugBreak();
 #else
@@ -534,8 +483,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                             const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                            void *user_data) {
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+                                                            [[maybe_unused]] void *user_data) {
     std::ostringstream msg_buffer;
     char msg_severity[30];
     char msg_type[30];
@@ -555,7 +503,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
                    << "\n";
     }
     const std::string tmp = msg_buffer.str();
-    const char *cstr = tmp.c_str();
+    [[maybe_unused]] const char *cstr = tmp.c_str();
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     OutputDebugString(cstr);
 #endif
 

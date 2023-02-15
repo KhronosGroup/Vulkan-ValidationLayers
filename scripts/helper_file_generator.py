@@ -1939,10 +1939,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                 destruct_txt += '        FreePnextChain(pNext);\n'
 
             if (self.structOrUnion[item.name] == 'union'):
-                # Unions don't allow multiple members in the initialization list, so just call initialize
-                safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), construct_txt))
                 if (item.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'
+                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), construct_txt))
+                else:
+                    # Unions don't allow multiple members in the initialization list, so just call initialize
+                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n    initialize(in_struct);\n}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, '')))
             else:
                 safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
             if '' != default_init_list:
