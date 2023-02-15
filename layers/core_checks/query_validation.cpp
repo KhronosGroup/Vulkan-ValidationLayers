@@ -350,7 +350,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
                              cmd_name);
         }
 
-        if (query_pool_state->has_perf_scope_command_buffer && cb_state.commandCount > 0) {
+        if (query_pool_state->has_perf_scope_command_buffer && cb_state.command_count > 0) {
             skip |= LogError(cb_state.commandBuffer(), vuids->vuid_scope_not_first,
                              "%s: Query pool %s was created with a counter of scope "
                              "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but %s is not the first recorded "
@@ -676,9 +676,9 @@ void CoreChecks::EnqueueVerifyEndQuery(CMD_BUFFER_STATE &cb_state, const QueryOb
         bool skip = false;
         auto device_data = cb_state_arg.dev_data;
         auto query_pool_state = device_data->Get<QUERY_POOL_STATE>(query_obj.pool);
-        if (query_pool_state->has_perf_scope_command_buffer && (cb_state_arg.commandCount - 1) != query_obj.endCommandIndex) {
+        if (query_pool_state->has_perf_scope_command_buffer && (cb_state_arg.command_count - 1) != query_obj.end_command_index) {
             skip |= device_data->LogError(cb_state_arg.Handle(), "VUID-vkCmdEndQuery-queryPool-03227",
-                                          "vkCmdEndQuery: Query pool %s was created with a counter of scope"
+                                          "vkCmdEndQuery: Query pool %s was created with a counter of scope "
                                           "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
                                           "command in the command buffer %s.",
                                           device_data->report_data->FormatHandle(query_obj.pool).c_str(),
@@ -749,7 +749,7 @@ void CoreChecks::PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuery
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query_obj = {queryPool, slot};
-    query_obj.endCommandIndex = cb_state->commandCount - 1;
+    query_obj.end_command_index = cb_state->command_count - 1;
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
 
@@ -1161,7 +1161,7 @@ void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffe
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query_obj = {queryPool, query, index};
-    query_obj.endCommandIndex = cb_state->commandCount - 1;
+    query_obj.end_command_index = cb_state->command_count - 1;
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
 

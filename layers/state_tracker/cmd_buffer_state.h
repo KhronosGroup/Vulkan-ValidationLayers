@@ -167,7 +167,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool has_build_as_cmd;
 
     CB_STATE state;               // Track cmd buffer update state
-    uint64_t commandCount;        // Number of commands recorded. Currently only used with VK_KHR_performance_query
+    uint64_t command_count;       // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submitCount;         // Number of times CB has been submitted
     bool pipeline_bound = false;  // True if CmdBindPipeline has been called on this command buffer, false otherwise
     typedef uint64_t ImageLayoutUpdateCount;

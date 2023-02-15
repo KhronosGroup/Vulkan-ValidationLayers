@@ -129,7 +129,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     suspendsRenderPassInstance = false;
     resumesRenderPassInstance = false;
     state = CB_NEW;
-    commandCount = 0;
+    command_count = 0;
     submitCount = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
     status.reset();
@@ -1365,7 +1365,7 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
     }
 }
 
-void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
+void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { command_count++; }
 
 void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicStatus state) {
     CBDynamicFlags state_bits;

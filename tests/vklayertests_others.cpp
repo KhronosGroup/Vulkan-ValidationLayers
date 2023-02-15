@@ -4800,6 +4800,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         m_commandBuffer->begin();
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-03224");
@@ -5220,6 +5221,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
         }
+        if (counterIndices.empty()) continue;  // might not be a scope command
 
         VkQueryPoolPerformanceCreateInfoKHR create_info = LvlInitStruct<VkQueryPoolPerformanceCreateInfoKHR>();
         create_info.queueFamilyIndex = idx;
