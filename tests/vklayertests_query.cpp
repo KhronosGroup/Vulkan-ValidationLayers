@@ -244,7 +244,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
         vk::FreeMemory(device(), mem, NULL);
     }
 
-    // First command: success.
+    // Not last command.
     {
         VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -268,9 +268,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
 
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
 
-        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
-
         vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
 
         m_commandBuffer->end();
 
@@ -282,8 +282,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
         submit_info.pCommandBuffers = &m_commandBuffer->handle();
         submit_info.signalSemaphoreCount = 0;
         submit_info.pSignalSemaphores = NULL;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-queryPool-03227");
         vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(queue);
+        m_errorMonitor->VerifyFound();
 
         vk::DestroyBuffer(device(), buffer, nullptr);
         vk::FreeMemory(device(), mem, NULL);
