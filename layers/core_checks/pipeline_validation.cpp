@@ -427,15 +427,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                              pipeline.create_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         }
     } else {
-        const bool is_library = (pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
+        const VkPipelineCreateFlags pipeline_flags = pipeline.GetPipelineCreateFlags();
+        const bool is_library = (pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
 
         if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
-            if ((pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+            if ((pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "].flags (%s) contains VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
                                  "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not enabled.",
-                                 pipeline.create_index, string_VkPipelineCreateFlags(pipeline.GetPipelineCreateFlags()).c_str());
+                                 pipeline.create_index, string_VkPipelineCreateFlags(pipeline_flags).c_str());
             }
 
             if (!pipeline.HasFullState()) {
@@ -453,8 +454,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] defines a complete set of state, but pCreateInfos[%" PRIu32
                              "].flags (%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
-                             pipeline.create_index, pipeline.create_index,
-                             string_VkPipelineCreateFlags(pipeline.GetPipelineCreateFlags()).c_str());
+                             pipeline.create_index, pipeline.create_index, string_VkPipelineCreateFlags(pipeline_flags).c_str());
         }
 
         enum GPLInitInfo : uint8_t {
@@ -500,16 +500,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
 
         const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(pipeline.PNext());
         if (link_info) {
-            const bool has_link_time_opt =
-                (pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
+            const bool has_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
             const bool has_retain_link_time_opt =
-                (pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
+                (pipeline_flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
 
             unsigned int descriptor_buffer_library_count = 0;
 
             for (decltype(link_info->libraryCount) i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
+                    const VkPipelineCreateFlags lib_pipeline_flags = lib->GetPipelineCreateFlags();
                     if (lib->PipelineLayoutState()) {
                         if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
                             pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
@@ -521,16 +521,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                     }
 
                     const bool lib_has_retain_link_time_opt =
-                        (lib->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
+                        (lib_pipeline_flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
                     if (has_link_time_opt && !lib_has_retain_link_time_opt) {
                         const LogObjectList objlist(device, lib->Handle());
                         skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-flags-06609",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] has VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT set, but "
                                          "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
-                                         "library included in VkPipelineLibraryCreateInfoKHR.",
+                                         "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32 "].",
                                          pipeline.create_index,
-                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
                     }
 
                     if (has_retain_link_time_opt && !lib_has_retain_link_time_opt) {
@@ -539,21 +539,22 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] has VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT set, but "
                                          "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
-                                         "library included in VkPipelineLibraryCreateInfoKHR.",
+                                         "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32 "].",
                                          pipeline.create_index,
-                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
                     }
                     if ((lib->uses_shader_module_id) &&
-                        !(pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
+                        !(pipeline_flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
                         const LogObjectList objlist(device);
                         skip |= LogError(objlist, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] does not have the VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT set, but "
                                          "the %s "
-                                         "library included in VkPipelineLibraryCreateInfoKHR was created with a shader stage with "
+                                         "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32
+                                         "] was created with a shader stage with "
                                          "VkPipelineShaderStageModuleIdentifierCreateInfoEXT and identifierSize not equal to 0",
                                          pipeline.create_index,
-                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
                     }
                     struct check_struct {
                         VkPipelineCreateFlagBits bit;
@@ -566,24 +567,24 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                          {VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
                           "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407"}}};
                     for (const auto &check_info : check_infos) {
-                        if ((pipeline.GetPipelineCreateFlags() & check_info.bit)) {
-                            if (!(lib->GetPipelineCreateFlags() & check_info.bit)) {
+                        if ((pipeline_flags & check_info.bit)) {
+                            if (!(lib_pipeline_flags & check_info.bit)) {
                                 const LogObjectList objlist(device, lib->Handle());
                                 skip |= LogError(objlist, check_info.first_vuid.c_str(),
                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                                  "] has the %s bit set, but "
-                                                 "the pLibraries[%" PRIu32
-                                                 "] library included in VkPipelineLibraryCreateInfoKHR was created without it",
+                                                 "the library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32
+                                                 "] was created without it",
                                                  pipeline.create_index, string_VkPipelineCreateFlagBits(check_info.bit), i);
                             }
                         } else {
-                            if ((lib->GetPipelineCreateFlags() & check_info.bit)) {
+                            if ((lib_pipeline_flags & check_info.bit)) {
                                 const LogObjectList objlist(device, lib->Handle());
                                 skip |= LogError(objlist, check_info.second_vuid.c_str(),
                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                                  "] does not have the %s bit set, but "
-                                                 "the pLibraries[%" PRIu32
-                                                 "] library included in VkPipelineLibraryCreateInfoKHR was created with it set",
+                                                 "the library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32
+                                                 "] was created with it set",
                                                  pipeline.create_index, string_VkPipelineCreateFlagBits(check_info.bit), i);
                             }
                         }
