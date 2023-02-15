@@ -66,6 +66,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     vklayertests_others.cpp
     vklayertests_pipeline_shader.cpp
     vklayertests_portability_subset.cpp
+    vklayertests_query.cpp
     vklayertests_ray_tracing.cpp
     vklayertests_ray_tracing_gpu.cpp
     vklayertests_ray_tracing_pipeline.cpp
@@ -95,7 +96,7 @@ target_include_directories(vk_layer_validation_tests PRIVATE
 )
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    target_compile_options(vk_layer_validation_tests PRIVATE 
+    target_compile_options(vk_layer_validation_tests PRIVATE
         -Wno-sign-compare
         -Wno-shorten-64-to-32
     )
