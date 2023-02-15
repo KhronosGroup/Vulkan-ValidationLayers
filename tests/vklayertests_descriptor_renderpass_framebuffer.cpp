@@ -12002,7 +12002,6 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
         m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
 
-        ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
         attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
         subpass.pDepthStencilAttachment = nullptr;
         rpci.attachmentCount = 1;

@@ -335,6 +335,12 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
+    constexpr uint32_t test_extent_value = 10;
+    if (m_surface_capabilities.minImageExtent.width < test_extent_value ||
+        m_surface_capabilities.minImageExtent.height < test_extent_value) {
+        GTEST_SKIP() << "minImageExtent is not large enough";
+    }
+
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = m_surface_formats[0].format;
@@ -396,7 +402,7 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     copy_region.dstSubresource.layerCount = 1;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent = {10, 10, 1};
+    copy_region.extent = {test_extent_value, test_extent_value, 1};
     vk::CmdCopyImage(m_commandBuffer->handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 

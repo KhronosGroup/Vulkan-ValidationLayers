@@ -1494,8 +1494,8 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires Vulkan version 1.0";
     }
 
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
@@ -1514,7 +1514,7 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_R8G8_UNORM;
     attach.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attach.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1550,7 +1550,8 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4);
+    VkImageView imageView =
+        image.targetView(VK_FORMAT_R8G8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = renderPass;
@@ -1564,4 +1565,6 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02744");
     vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
+
+    vk::DestroyRenderPass(device(), renderPass, nullptr);
 }
