@@ -33,7 +33,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
-LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden 
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 include $(BUILD_STATIC_LIBRARY)
 
@@ -121,6 +121,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
                    $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
                    $(SRC_DIR)/tests/vklayertests_others.cpp \
+                   $(SRC_DIR)/tests/vklayertests_query.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
@@ -177,6 +178,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
                    $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
                    $(SRC_DIR)/tests/vklayertests_others.cpp \
+                   $(SRC_DIR)/tests/vklayertests_query.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_command.cpp \
                    $(SRC_DIR)/tests/vklayertests_gpu.cpp \
