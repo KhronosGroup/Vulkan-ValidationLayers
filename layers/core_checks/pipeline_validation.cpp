@@ -431,7 +431,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
         const bool is_library = (pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
 
         if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
-            if ((pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+            if (is_library) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "].flags (%s) contains VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
@@ -503,10 +503,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             const bool has_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
             const bool has_retain_link_time_opt =
                 (pipeline_flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
-
+            const bool has_capture_internal = (pipeline_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR) != 0;
             unsigned int descriptor_buffer_library_count = 0;
+            bool lib_all_has_capture_internal = false;
 
-            for (decltype(link_info->libraryCount) i = 0; i < link_info->libraryCount; ++i) {
+            for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
                     const VkPipelineCreateFlags lib_pipeline_flags = lib->GetPipelineCreateFlags();
@@ -543,6 +544,44 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                                          pipeline.create_index,
                                          string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
                     }
+
+                    const bool lib_has_capture_internal =
+                        (lib_pipeline_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR) != 0;
+                    const bool non_zero_gpl = gpl_info && gpl_info->flags != 0;
+                    if (lib_has_capture_internal) {
+                        lib_all_has_capture_internal = true;
+                        if (!has_capture_internal && non_zero_gpl) {
+                            const LogObjectList objlist(device, lib->Handle());
+                            skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06647",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] has VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR not set, but "
+                                             "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR is set for the %s "
+                                             "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32 "].",
+                                             pipeline.create_index,
+                                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
+                        }
+                    } else {
+                        if (lib_all_has_capture_internal) {
+                            const LogObjectList objlist(device, lib->Handle());
+                            skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR is not set for the %s "
+                                             "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32
+                                             "] but needs to be set for all libraries.",
+                                             pipeline.create_index,
+                                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
+                        } else if (has_capture_internal && non_zero_gpl) {
+                            const LogObjectList objlist(device, lib->Handle());
+                            skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-flags-06645",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] has VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR set, but "
+                                             "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR is not set for the %s "
+                                             "library included in VkPipelineLibraryCreateInfoKHR::pLibraries[%" PRIu32 "].",
+                                             pipeline.create_index,
+                                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), i);
+                        }
+                    }
+
                     if ((lib->uses_shader_module_id) &&
                         !(pipeline_flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
                         const LogObjectList objlist(device);
