@@ -4034,9 +4034,10 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
             skip |= LogError(device, "VUID-VkDescriptorGetInfoEXT-type-08018",
                              "vkGetDescriptorEXT(): type must not be VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or "
-                             "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.");
+                             "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.");
             break;
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             if (Get<SAMPLER_STATE>(pDescriptorInfo->data.pCombinedImageSampler->sampler).get() == nullptr) {
