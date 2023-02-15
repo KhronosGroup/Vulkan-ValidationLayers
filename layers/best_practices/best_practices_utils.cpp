@@ -1345,13 +1345,15 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
             auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
-            for (const Instruction* inst : module_state->GetBuiltinDecorationList()) {
-                if (inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
-                    skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
-                                       "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
-                                       "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
-                                       "extension exposes a new LocalSizeId execution mode that should be used instead.",
-                                       i);
+            if (module_state) {  // No module if creating from module identifier
+                for (const Instruction* inst : module_state->GetBuiltinDecorationList()) {
+                    if (inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
+                        skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
+                                           "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
+                                           "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
+                                           "extension exposes a new LocalSizeId execution mode that should be used instead.",
+                                           i);
+                    }
                 }
             }
         }
@@ -1363,6 +1365,9 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const {
     bool skip = false;
     auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    if (!module_state) {  // No module if creating from module identifier
+        return false;
+    }
     // Generate warnings about work group sizes based on active resources.
     auto entrypoint_optional = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
     if (!entrypoint_optional) return false;
