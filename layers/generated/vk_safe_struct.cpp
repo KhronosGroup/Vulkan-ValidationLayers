@@ -42333,7 +42333,7 @@ void safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::initialize(const
 
 safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerformanceValueDataINTEL* in_struct)
 {
-    valueString = SafeStringCopy(in_struct->valueString);
+    initialize(in_struct);
 }
 
 safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL() :
@@ -50664,6 +50664,7 @@ void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const s
 
 safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct)
 {
+    initialize(in_struct);
 }
 
 safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR() :
@@ -55367,6 +55368,7 @@ void safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::initialize(const safe_VkPh
 
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
+    initialize(in_struct);
 }
 
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR() :
