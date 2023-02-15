@@ -100,7 +100,7 @@ struct QueryObject {
     // Command index in the command buffer where the end of the query was
     // recorded (equal to the number of commands in the command buffer before
     // the end of the query).
-    uint64_t endCommandIndex;
+    uint64_t end_command_index;
 
     QueryObject(VkQueryPool pool_, uint32_t query_)
         : pool(pool_),
@@ -110,7 +110,7 @@ struct QueryObject {
           last_activatable_query_index(query_),
           index(0),
           indexed(false),
-          endCommandIndex(0) {}
+          end_command_index(0) {}
     QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_, uint32_t count_ = 1)
         : pool(pool_),
           query(query_),
@@ -119,7 +119,7 @@ struct QueryObject {
           last_activatable_query_index(query_ + count_ - 1),
           index(index_),
           indexed(true),
-          endCommandIndex(0) {}
+          end_command_index(0) {}
     QueryObject(const QueryObject &obj)
         : pool(obj.pool),
           query(obj.query),
@@ -128,7 +128,7 @@ struct QueryObject {
           last_activatable_query_index(obj.last_activatable_query_index),
           index(obj.index),
           indexed(obj.indexed),
-          endCommandIndex(obj.endCommandIndex) {}
+          end_command_index(obj.end_command_index) {}
     QueryObject(const QueryObject &obj, uint32_t perf_pass_)
         : pool(obj.pool),
           query(obj.query),
@@ -137,7 +137,7 @@ struct QueryObject {
           last_activatable_query_index(obj.last_activatable_query_index),
           index(obj.index),
           indexed(obj.indexed),
-          endCommandIndex(obj.endCommandIndex) {}
+          end_command_index(obj.end_command_index) {}
     bool operator<(const QueryObject &rhs) const {
         return (pool == rhs.pool) ? ((query == rhs.query) ? (perf_pass < rhs.perf_pass) : (query < rhs.query)) : pool < rhs.pool;
     }
