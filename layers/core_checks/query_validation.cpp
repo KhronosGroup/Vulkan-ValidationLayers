@@ -749,7 +749,7 @@ void CoreChecks::PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuery
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query_obj = {queryPool, slot};
-    query_obj.end_command_index = cb_state->command_count - 1;
+    query_obj.end_command_index = cb_state->command_count;  // off by one because cb_state hasn't recorded this yet
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
 
@@ -1161,7 +1161,7 @@ void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffe
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     QueryObject query_obj = {queryPool, query, index};
-    query_obj.end_command_index = cb_state->command_count - 1;
+    query_obj.end_command_index = cb_state->command_count;  // off by one because cb_state hasn't recorded this yet
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
 
