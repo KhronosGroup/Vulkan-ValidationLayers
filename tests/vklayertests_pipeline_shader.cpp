@@ -16258,8 +16258,10 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
 
     // Create device without protected access features
     VkDeviceObj test_device(0, gpu());
+    VkShaderObj vs2(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    vs2.InitFromGLSLTry(false, &test_device);
     VkPipelineObj featureless_pipe(&test_device);
-    featureless_pipe.AddShader(&vs);
+    featureless_pipe.AddShader(&vs2);
     featureless_pipe.AddDefaultColorAttachment();
     featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
     gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
