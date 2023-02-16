@@ -5308,6 +5308,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     device_create_info.enabledExtensionCount = 0;
 
     // Protect feature not set
+    m_errorMonitor->SetUnexpectedError("VUID-VkDeviceQueueCreateInfo-flags-06449");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-flags-02861");
     vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
