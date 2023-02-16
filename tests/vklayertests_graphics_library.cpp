@@ -1744,6 +1744,98 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
     }
 }
 
+TEST_F(VkGraphicsLibraryLayerTest, PipelineExecutableProperties) {
+    TEST_DESCRIPTION("VK_KHR_pipeline_executable_properties with GPL");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    auto executable_features = LvlInitStruct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&executable_features);
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    if (!executable_features.pipelineExecutableInfo) {
+        GTEST_SKIP() << "pipelineExecutableInfo not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        CreatePipelineHelper vertex_input_lib(*this);
+        vertex_input_lib.InitVertexInputLibInfo();
+        vertex_input_lib.InitState();
+        vertex_input_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+
+        CreatePipelineHelper frag_out_lib(*this);
+        frag_out_lib.InitFragmentOutputLibInfo();
+        ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+
+        VkPipeline libraries[2] = {
+            vertex_input_lib.pipeline_,
+            frag_out_lib.pipeline_,
+        };
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size(libraries);
+        link_info.pLibraries = libraries;
+
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06646");
+        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper vertex_input_lib(*this);
+        vertex_input_lib.InitVertexInputLibInfo();
+        vertex_input_lib.InitState();
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = 1;
+        link_info.pLibraries = &vertex_input_lib.pipeline_;
+
+        CreatePipelineHelper frag_out_lib(*this);
+        frag_out_lib.InitFragmentOutputLibInfo(&link_info);
+        frag_out_lib.gp_ci_.flags =
+            VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06645");
+        frag_out_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper vertex_input_lib(*this);
+        vertex_input_lib.InitVertexInputLibInfo();
+        vertex_input_lib.InitState();
+        vertex_input_lib.gp_ci_.flags =
+            VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR;
+        ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = 1;
+        link_info.pLibraries = &vertex_input_lib.pipeline_;
+
+        CreatePipelineHelper frag_out_lib(*this);
+        frag_out_lib.InitFragmentOutputLibInfo(&link_info);
+        frag_out_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06647");
+        frag_out_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkGraphicsLibraryLayerTest, BindEmptyDS) {
     TEST_DESCRIPTION("Bind an empty descriptor set");
 
