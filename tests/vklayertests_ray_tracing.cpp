@@ -320,6 +320,10 @@ TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test does not work correctly on MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
@@ -617,6 +621,10 @@ TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test does not work correctly on MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     const auto vkCopyMemoryToAccelerationStructureKHR =
@@ -1706,7 +1714,7 @@ TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
 
 TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
-    
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1722,6 +1730,9 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test does not work correctly on MockICD";
     }
 
     GetPhysicalDeviceFeatures2(features2);
@@ -1810,7 +1821,7 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
 
 TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
-    
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1829,6 +1840,9 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test does not work correctly on MockICD";
     }
 
     GetPhysicalDeviceFeatures2(features2);
