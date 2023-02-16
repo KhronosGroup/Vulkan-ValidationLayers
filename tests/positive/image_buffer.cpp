@@ -2621,7 +2621,7 @@ TEST_F(VkPositiveLayerTest, TexelBufferAlignmentIn13) {
 
     auto props_1_3 = LvlInitStruct<VkPhysicalDeviceVulkan13Properties>();
     GetPhysicalDeviceProperties2(props_1_3);
-    if (props_1_3.uniformTexelBufferOffsetAlignmentBytes > 4 || !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
+    if (props_1_3.uniformTexelBufferOffsetAlignmentBytes < 4 || !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
         GTEST_SKIP() << "need uniformTexelBufferOffsetAlignmentBytes to be more than 4 with "
                         "uniformTexelBufferOffsetSingleTexelAlignment support";
     }
