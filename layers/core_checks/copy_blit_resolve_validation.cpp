@@ -2762,24 +2762,23 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             const VkImageType src_image_type = src_image_state->createInfo.imageType;
             const VkImageType dst_image_type = dst_image_state->createInfo.imageType;
 
-            if ((VK_IMAGE_TYPE_3D == src_image_type) || (VK_IMAGE_TYPE_3D == dst_image_type)) {
-                if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount)) {
+            if (VK_IMAGE_TYPE_3D == dst_image_type) {
+                if (src_subresource.layerCount != 1) {
                     const LogObjectList objlist(cb_state.Handle(), src_image_state->Handle());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04446" : "VUID-vkCmdResolveImage-srcImage-04446";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32
-                                     "] baseArrayLayer must be 0 and layerCount must be 1 for all "
-                                     "subresources if the src or dst image is 3D.",
-                                     func_name, i);
+                    skip |=
+                        LogError(objlist, vuid,
+                                 "%s: pRegions[%" PRIu32 "] layerCount must be 1 for all srcSubresource if the dst image is 3D.",
+                                 func_name, i);
                 }
-                if ((0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
+                if ((dst_subresource.baseArrayLayer != 0) || (dst_subresource.layerCount != 1)) {
                     const LogObjectList objlist(cb_state.Handle(), dst_image_state->Handle());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04447" : "VUID-vkCmdResolveImage-srcImage-04447";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32
-                                     "] baseArrayLayer must be 0 and layerCount must be 1 for all "
-                                     "subresources if the src or dst image is 3D.",
-                                     func_name, i);
+                    skip |= LogError(
+                        objlist, vuid,
+                        "%s: pRegions[%" PRIu32
+                        "] baseArrayLayer must be 0 and layerCount must be 1 for all dstSubresource if the dst image is 3D.",
+                        func_name, i);
                 }
             }
 

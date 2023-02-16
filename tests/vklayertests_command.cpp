@@ -4548,13 +4548,14 @@ TEST_F(VkLayerTest, ResolveImageImageType) {
     resolveRegion.extent.height = 1;
     resolveRegion.extent.depth = 1;
 
-    // non-zero value baseArrayLayer
-    resolveRegion.srcSubresource.baseArrayLayer = 2;
+    // layerCount is not 1
+    resolveRegion.srcSubresource.layerCount = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-layerCount-00267");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-04446");
     m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                   &resolveRegion);
     m_errorMonitor->VerifyFound();
-    resolveRegion.srcSubresource.baseArrayLayer = 0;
+    resolveRegion.srcSubresource.layerCount = 1;
 
     // Set height with 1D dstImage
     resolveRegion.extent.height = 2;
