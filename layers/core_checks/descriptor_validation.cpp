@@ -4336,7 +4336,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     }
 
     if (checkDataSize && size != dataSize) {
-        if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer_density)) {
+        if (!IsExtEnabled(device_extensions.vk_ext_fragment_density_map)) {
             skip |= LogError(device, "VUID-vkGetDescriptorEXT-dataSize-08120",
                              "vkGetDescriptorEXT(): dataSize (%zu) must equal the size of a descriptor (%zu) of type "
                              "VkDescriptorGetInfoEXT::type "
