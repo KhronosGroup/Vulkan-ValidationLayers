@@ -108,6 +108,10 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test --config release
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
+      - name: Test Vulkan-ValidationLayers - Max Profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
   linux-cpp20:
     runs-on: ubuntu-20.04
@@ -162,6 +166,10 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
+      - name: Test Vulkan-ValidationLayers - Max Profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
   gn:
     runs-on: ubuntu-22.04
