@@ -104,7 +104,6 @@ struct PipelineStageState {
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
     bool writes_to_gl_layer;
-    bool has_input_attachment_capability;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
@@ -170,6 +169,8 @@ class PIPELINE_STATE : public BASE_NODE {
 
   public:
     const uint32_t create_index;  // which index in pCreateInfos, used for error messages
+    const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
+    const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
     VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
     // State split up based on library types
     const std::shared_ptr<VertexInputState> vertex_input_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
@@ -178,13 +179,13 @@ class PIPELINE_STATE : public BASE_NODE {
     const std::shared_ptr<FragmentOutputState>
         fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
 
-    const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
-
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_state;
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
+    // Shaders being linked in, don't need to be re-validated
+    const uint32_t linking_shaders = 0;
 
     const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
