@@ -138,7 +138,7 @@ export VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation:VK_LAYER_KHRONOS_profiles
 #    These are generated from https://github.com/KhronosGroup/Vulkan-Profiles
 #    Also can found on https://vulkan.gpuinfo.org/ and downloaded from any device
 # A set of profiles for CI are in the tests/device_profiles folder
-export VK_KHRONOS_PROFILES_PROFILE_FILE=$VVL/tests/device_profiles/profile.json
+export VK_KHRONOS_PROFILES_PROFILE_FILE=$VVL/tests/device_profiles/max_profile.json
 
 # Expose all the parts of the profile layer
 export VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES=SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT
@@ -153,3 +153,11 @@ export VK_KHRONOS_PROFILES_DEBUG_REPORTS=DEBUG_REPORT_ERROR_BIT
 # Running tests just as normal
 $VVL/build/tests/vk_layer_validation_tests --gtest_filter=TestName
 ```
+
+### Max Profile
+
+`tests/device_profiles/max_profile.json` is a custom file designed to allow as much testing as possible.
+
+It would be ideal to generate this similarly to the layer generated in [the Profile Layer repo](https://github.com/KhronosGroup/Vulkan-Profiles/blob/main/scripts/gen_profiles_layer.py), but the goal is to make sure as many tests are running in CI as possible.
+
+This file will **never** fully cover all tests because some require certain properties/extension to be **both** enabled and disabled. The goal is to get as close to 100% coverage as possible.
