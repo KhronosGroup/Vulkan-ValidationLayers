@@ -14,7 +14,7 @@
 
 1. CMake >= 3.17.2
 2. C++ >= c++17 compiler. See platform-specific sections below for supported compiler versions.
-3. Python >= 3.7 (3.6 may work, 3.5 and earlier is not supported)
+3. Python >= 3.8
 
 NOTE: Python is needed for working on generated code, and helping grab dependencies.
 While it's not technically required, it's practically required for most users.
