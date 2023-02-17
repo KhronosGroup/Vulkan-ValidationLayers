@@ -442,13 +442,13 @@ class VideoDecodeInfo {
                 codec_info_.decode_h264.setup_slot_info = LvlInitStruct<VkVideoDecodeH264DpbSlotInfoKHR>();
                 codec_info_.decode_h264.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h264.std_setup_reference_info;
 
-                codec_info_.decode_h264.dpb_slot_info.resize(references_.size());
-                codec_info_.decode_h264.std_reference_info.resize(references_.size());
+                codec_info_.decode_h264.std_setup_reference_info = {};
+
+                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(), LvlInitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
+                codec_info_.decode_h264.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
                     references_[i].pNext = &codec_info_.decode_h264.dpb_slot_info[i];
-
-                    codec_info_.decode_h264.dpb_slot_info[i] = LvlInitStruct<VkVideoDecodeH264DpbSlotInfoKHR>();
                     codec_info_.decode_h264.dpb_slot_info[i].pStdReferenceInfo = &codec_info_.decode_h264.std_reference_info[i];
                 }
                 break;
@@ -471,13 +471,13 @@ class VideoDecodeInfo {
                 codec_info_.decode_h265.setup_slot_info = LvlInitStruct<VkVideoDecodeH265DpbSlotInfoKHR>();
                 codec_info_.decode_h265.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h265.std_setup_reference_info;
 
-                codec_info_.decode_h265.dpb_slot_info.resize(references_.size());
-                codec_info_.decode_h265.std_reference_info.resize(references_.size());
+                codec_info_.decode_h265.std_setup_reference_info = {};
+
+                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(), LvlInitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
+                codec_info_.decode_h265.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
                     references_[i].pNext = &codec_info_.decode_h265.dpb_slot_info[i];
-
-                    codec_info_.decode_h265.dpb_slot_info[i] = LvlInitStruct<VkVideoDecodeH265DpbSlotInfoKHR>();
                     codec_info_.decode_h265.dpb_slot_info[i].pStdReferenceInfo = &codec_info_.decode_h265.std_reference_info[i];
                 }
                 break;
@@ -770,12 +770,13 @@ class VideoDecodeInfo {
                 codec_info_.decode_h264.setup_slot_info = other.codec_info_.decode_h264.setup_slot_info;
                 codec_info_.decode_h264.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h264.std_setup_reference_info;
 
+                codec_info_.decode_h264.std_setup_reference_info = other.codec_info_.decode_h264.std_setup_reference_info;
+
                 codec_info_.decode_h264.dpb_slot_info = other.codec_info_.decode_h264.dpb_slot_info;
                 codec_info_.decode_h264.std_reference_info = other.codec_info_.decode_h264.std_reference_info;
 
                 for (size_t i = 0; i < references_.size(); ++i) {
                     references_[i].pNext = &codec_info_.decode_h264.dpb_slot_info[i];
-
                     codec_info_.decode_h264.dpb_slot_info[i].pStdReferenceInfo = &codec_info_.decode_h264.std_reference_info[i];
                 }
                 break;
@@ -798,12 +799,13 @@ class VideoDecodeInfo {
                 codec_info_.decode_h265.setup_slot_info = other.codec_info_.decode_h265.setup_slot_info;
                 codec_info_.decode_h265.setup_slot_info.pStdReferenceInfo = &codec_info_.decode_h265.std_setup_reference_info;
 
+                codec_info_.decode_h264.std_setup_reference_info = other.codec_info_.decode_h264.std_setup_reference_info;
+
                 codec_info_.decode_h265.dpb_slot_info = other.codec_info_.decode_h265.dpb_slot_info;
                 codec_info_.decode_h265.std_reference_info = other.codec_info_.decode_h265.std_reference_info;
 
                 for (size_t i = 0; i < references_.size(); ++i) {
                     references_[i].pNext = &codec_info_.decode_h265.dpb_slot_info[i];
-
                     codec_info_.decode_h265.dpb_slot_info[i].pStdReferenceInfo = &codec_info_.decode_h265.std_reference_info[i];
                 }
                 break;
@@ -892,7 +894,7 @@ class VideoContext {
     void CreateAndBindSessionMemory() {
         ASSERT_TRUE(session_ != VK_NULL_HANDLE);
 
-        uint32_t mem_req_count;
+        uint32_t mem_req_count = 0;
         ASSERT_VK_SUCCESS(vk.GetVideoSessionMemoryRequirementsKHR(device_->device(), session_, &mem_req_count, nullptr));
         if (mem_req_count == 0) return;
 
@@ -1084,6 +1086,10 @@ class VkVideoLayerTest : public VkLayerTest {
         auto features = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
         vk::GetPhysicalDeviceFeatures2(gpu(), &features);
 
+        if (!enable_protected_memory) {
+            prot_mem_features.protectedMemory = VK_FALSE;
+        }
+
         if (sync2_features.synchronization2 != VK_TRUE) {
             GTEST_SKIP() << "Test requires synchronization2.";
         }
@@ -1158,6 +1164,15 @@ class VkVideoLayerTest : public VkLayerTest {
     const VideoConfig& GetConfigWithParams(const std::vector<VideoConfig>& configs) const {
         for (const auto& config : configs) {
             if (config.NeedsSessionParams()) {
+                return config;
+            }
+        }
+        return default_config_;
+    }
+
+    const VideoConfig& GetConfigWithoutProtectedContent(const std::vector<VideoConfig>& configs) const {
+        for (const auto& config : configs) {
+            if ((config.Caps()->flags & VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR) == 0) {
                 return config;
             }
         }
@@ -1253,7 +1268,7 @@ class VkVideoLayerTest : public VkLayerTest {
 
         auto info = LvlInitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
         info.pNext = &video_profiles;
-        uint32_t count;
+        uint32_t count = 0;
 
         VkImageUsageFlags allowed_usages = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -1376,8 +1391,8 @@ class VkVideoLayerTest : public VkLayerTest {
             decode_caps->pNext = decode_caps_h264;
             config.SetCodecCapsChain(decode_caps);
 
-            auto sps = new StdVideoH264SequenceParameterSet();
-            auto pps = new StdVideoH264PictureParameterSet();
+            auto sps = new StdVideoH264SequenceParameterSet[1]();
+            auto pps = new StdVideoH264PictureParameterSet[1]();
 
             auto add_info = new safe_VkVideoDecodeH264SessionParametersAddInfoKHR();
             add_info->stdSPSCount = 1;
@@ -1426,9 +1441,9 @@ class VkVideoLayerTest : public VkLayerTest {
         decode_caps->pNext = decode_caps_h265;
         config.SetCodecCapsChain(decode_caps);
 
-        auto vps = new StdVideoH265VideoParameterSet();
-        auto sps = new StdVideoH265SequenceParameterSet();
-        auto pps = new StdVideoH265PictureParameterSet();
+        auto vps = new StdVideoH265VideoParameterSet[1]();
+        auto sps = new StdVideoH265SequenceParameterSet[1]();
+        auto pps = new StdVideoH265PictureParameterSet[1]();
 
         auto add_info = new safe_VkVideoDecodeH265SessionParametersAddInfoKHR();
         add_info->stdVPSCount = 1;

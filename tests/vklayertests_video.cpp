@@ -286,9 +286,9 @@ TEST_F(VkVideoLayerTest, CreateSessionProtectedContentUnsupported) {
         GTEST_SKIP() << "Test requires protectedMemory support";
     }
 
-    VideoConfig config = GetConfigWithProtectedContent(GetConfigs());
+    VideoConfig config = GetConfigWithoutProtectedContent(GetConfigs());
     if (!config) {
-        GTEST_SKIP() << "Test requires a video profile with protected content support";
+        GTEST_SKIP() << "Test requires a video profile with no protected content support";
     }
 
     VideoContext context(DeviceObj(), config);
