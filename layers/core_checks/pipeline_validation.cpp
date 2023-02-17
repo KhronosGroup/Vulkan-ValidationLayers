@@ -357,21 +357,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
-        if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            for (const auto &stage : pipeline.stage_state) {
-                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && stage.has_input_attachment_capability) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
-                                     "shader includes InputAttachment capability.",
-                                     pipeline.create_index);
-                    break;
-                }
-            }
-        }
-    }
-
     if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE &&
         pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState == nullptr &&
         IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
@@ -498,8 +483,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             }
         }
 
-        const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(pipeline.PNext());
-        if (link_info) {
+        if (pipeline.library_create_info) {
             const bool has_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
             const bool has_retain_link_time_opt =
                 (pipeline_flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
@@ -507,8 +491,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             unsigned int descriptor_buffer_library_count = 0;
             bool lib_all_has_capture_internal = false;
 
-            for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-                const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+            for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
+                const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                 if (lib) {
                     const VkPipelineCreateFlags lib_pipeline_flags = lib->GetPipelineCreateFlags();
                     if (lib->PipelineLayoutState()) {
@@ -634,7 +618,8 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                 }
             }
 
-            if ((descriptor_buffer_library_count != 0) && (link_info->libraryCount != descriptor_buffer_library_count)) {
+            if ((descriptor_buffer_library_count != 0) &&
+                (pipeline.library_create_info->libraryCount != descriptor_buffer_library_count)) {
                 skip |= LogError(device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096",
                                  "vkCreateGraphicsPipelines(): All or none of the elements of pCreateInfo[%" PRIu32
                                  "].pLibraryInfo->pLibraries must be created "
@@ -643,19 +628,19 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             }
         }
 
-        if (link_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+        if (pipeline.library_create_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
             if (gpl_info) {
-                skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *link_info, rendering_struct, pipeline.create_index, -1,
-                                                     "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+                skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *pipeline.library_create_info, rendering_struct,
+                                                     pipeline.create_index, -1, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
 
                 const uint32_t flags_count =
                     GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                                                       VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
                                                       VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
                 if (flags_count >= 1 && flags_count <= 2) {
-                    for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-                        const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+                    for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
+                        const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                         const auto lib_gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->PNext());
                         if (!lib_gpl_info) {
                             continue;
@@ -672,12 +657,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                     }
                 }
             }
-            for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-                const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+            for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
+                const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                 const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
                 skip |=
-                    ValidatePipelineLibraryFlags(lib->graphics_lib_type, *link_info, lib_rendering_struct, pipeline.create_index, i,
-                                                 "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
+                    ValidatePipelineLibraryFlags(lib->graphics_lib_type, *pipeline.library_create_info, lib_rendering_struct,
+                                                 pipeline.create_index, i, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
             }
         }
 

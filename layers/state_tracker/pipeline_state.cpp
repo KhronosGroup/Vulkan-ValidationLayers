@@ -46,8 +46,7 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       create_info(stage),
       stage_flag(stage->stage),
       entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
-      writes_to_gl_layer(module_state->WritesToGlLayer()),
-      has_input_attachment_capability(module_state->HasCapability(spv::CapabilityInputAttachment)) {
+      writes_to_gl_layer(module_state->WritesToGlLayer()) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
         if (descriptor_variables) {
@@ -211,6 +210,19 @@ static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stages) {
     return result;
 }
 
+static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR *link_info, const ValidationStateTracker &state_data) {
+    uint32_t result = 0;
+    if (link_info) {
+        for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
+            const auto &state = state_data.Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+            if (state) {
+                result |= state->active_shaders;
+            }
+        }
+    }
+    return result;
+}
+
 static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE::StageStateVec &stages) {
     bool result = false;
     const auto robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
@@ -285,9 +297,8 @@ std::shared_ptr<VertexInputState> PIPELINE_STATE::CreateVertexInputState(const P
         return std::make_shared<VertexInputState>(p, create_info);
     }
 
-    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-    if (link_info) {
-        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *link_info);
+    if (p.library_create_info) {
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT>(state, *p.library_create_info);
         if (ss) {
             return ss;
         }
@@ -310,9 +321,8 @@ std::shared_ptr<PreRasterState> PIPELINE_STATE::CreatePreRasterState(const PIPEL
         return std::make_shared<PreRasterState>(p, state, create_info, rp);
     }
 
-    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-    if (link_info) {
-        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *link_info);
+    if (p.library_create_info) {
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(state, *p.library_create_info);
         if (ss) {
             return ss;
         }
@@ -335,9 +345,8 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         return std::make_shared<FragmentShaderState>(p, state, create_info, rp);
     }
 
-    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-    if (link_info) {
-        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *link_info);
+    if (p.library_create_info) {
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *p.library_create_info);
         if (ss) {
             return ss;
         }
@@ -362,9 +371,8 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
         return std::make_shared<FragmentOutputState>(p, create_info, rp);
     }
 
-    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
-    if (link_info) {
-        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *link_info);
+    if (p.library_create_info) {
+        auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *p.library_create_info);
         if (ss) {
             return ss;
         }
@@ -529,14 +537,16 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       rp_state(rpstate),
       create_info(pCreateInfo, rpstate),
       create_index(create_index),
+      rendering_create_info(LvlFindInChain<VkPipelineRenderingCreateInfo>(PNext())),
+      library_create_info(LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
       graphics_lib_type(GetGraphicsLibType(create_info.graphics)),
       vertex_input_state(CreateVertexInputState(*this, *state_data, create_info.graphics)),
       pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
       fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
-      rendering_create_info(LvlFindInChain<VkPipelineRenderingCreateInfo>(PNext())),
       stage_state(GetStageStates(*state_data, *this, csm_states)),
       active_shaders(GetActiveShaders(stage_state)),
+      linking_shaders(GetLinkingShaders(library_create_info, *state_data)),
       fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
       active_slots(GetActiveSlots(stage_state)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
@@ -545,8 +555,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
       csm_states(csm_states) {
-    const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext());
-    if (link_info) {
+    if (library_create_info) {
         // accumulate dynamic state
         // TODO is this correct?
         auto *dyn_state_ci = const_cast<safe_VkPipelineDynamicStateCreateInfo *>(create_info.graphics.pDynamicState);
@@ -595,8 +604,8 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
 
         // TODO Could store the graphics_lib_type in the sub-state rather than searching for it again here.
         //      Or, could store a pointer back to the owning PIPELINE_STATE.
-        for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-            const auto &state = state_data->Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+        for (uint32_t i = 0; i < library_create_info->libraryCount; ++i) {
+            const auto &state = state_data->Get<PIPELINE_STATE>(library_create_info->pLibraries[i]);
             if (state) {
                 graphics_lib_type |= state->graphics_lib_type;
             }

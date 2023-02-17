@@ -3187,6 +3187,17 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     if (IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
         skip |= ValidateShaderSubgroupSizeControl(module_state, pStage);
     }
+    if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
+        if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
+            pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE &&
+            module_state.HasCapability(spv::CapabilityInputAttachment)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
+                             "shader includes InputAttachment capability.",
+                             pipeline.create_index);
+        }
+    }
 
     // "layout must be consistent with the layout of the * shader"
     // 'consistent' -> #descriptorsets-pipelinelayout-consistency
@@ -3429,7 +3440,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
     for (auto &stage : pipeline.stage_state) {
-        skip |= ValidatePipelineShaderStage(pipeline, stage);
+        // Only validate the shader state once when added, not again when linked
+        if ((stage.stage_flag & pipeline.linking_shaders) == 0) {
+            skip |= ValidatePipelineShaderStage(pipeline, stage);
+        }
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage;
         }
