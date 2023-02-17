@@ -183,14 +183,8 @@ class PIPELINE_STATE : public BASE_NODE {
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_state;
-    bool HasShaderStage(VkShaderStageFlagBits stage_flag) const {
-        for (const auto &state : stage_state) {
-            if (state.stage_flag == stage_flag) {
-                return true;
-            }
-        }
-        return false;
-    }
+    // Flag of which shader stages are active for this pipeline
+    const uint32_t active_shaders = 0;
 
     const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
@@ -202,8 +196,6 @@ class PIPELINE_STATE : public BASE_NODE {
     const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
-    // Flag of which shader stages are active for this pipeline
-    const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool uses_shader_module_id;
     const bool descriptor_buffer_mode = false;

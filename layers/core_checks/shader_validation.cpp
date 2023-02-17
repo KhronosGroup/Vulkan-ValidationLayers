@@ -890,8 +890,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         }
     }
 
-    if (is_xfb_execution_mode &&
-        (pipeline.HasShaderStage(VK_SHADER_STAGE_MESH_BIT_EXT) || pipeline.HasShaderStage(VK_SHADER_STAGE_TASK_BIT_EXT))) {
+    if (is_xfb_execution_mode && ((pipeline.active_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) != 0)) {
         skip |= LogError(pipeline.pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                          "] If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
@@ -2278,8 +2277,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
                          "written to in the Geometry shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).",
                          pipeline.create_index);
         }
-    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT && !pipeline.HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
-               point_mode) {
+    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
+               ((pipeline.active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0) && point_mode) {
         if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -2294,8 +2293,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
                 "in the Tessellation Evaluation shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).",
                 pipeline.create_index);
         }
-    } else if (stage == VK_SHADER_STAGE_VERTEX_BIT && !pipeline.HasShaderStage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
-               !pipeline.HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
+    } else if (stage == VK_SHADER_STAGE_VERTEX_BIT &&
+               ((pipeline.active_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
                pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         if (!pointsize_written) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722",
