@@ -184,6 +184,21 @@ void UpdateDescriptor(ThreadTestData *data) {
 
 #endif  // GTEST_IS_THREADSAFE
 
+bool ThreadTimeoutHelper::WaitForThreads(int timeout_in_seconds) {
+    std::unique_lock lock(mutex_);
+    return cv_.wait_for(lock, std::chrono::seconds{timeout_in_seconds}, [this] { return active_threads_ == 0; });
+}
+
+void ThreadTimeoutHelper::OnThreadDone() {
+    bool last_worker = false;
+    {
+        std::lock_guard lock(mutex_);
+        active_threads_--;
+        if (!active_threads_) last_worker = true;
+    }
+    if (last_worker) cv_.notify_one();
+}
+
 void ReleaseNullFence(ThreadTestData *data) {
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
