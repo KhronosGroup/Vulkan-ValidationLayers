@@ -871,6 +871,43 @@ void AddToCommandBuffer(ThreadTestData *);
 void UpdateDescriptor(ThreadTestData *);
 #endif  // GTEST_IS_THREADSAFE
 
+// Helper class that fails the tests with a stuck worker thread.
+// Its purpose is similar to an assert. We assume the code is correct.
+// Then, in case of a bug or regression, the CI will continue to operate.
+// Usage Example:
+//  TEST_F(VkLayerTest, MyTrickyTestWithThreads) {
+//      // The constructor parameter is the number of the worker threads
+//      ThreadTimeoutHelper timeout_helper(2);
+//      auto worker = [&]() {
+//          auto timeout_guard = timeout_helper.ThreadGuard();
+//          // Some code here
+//      };
+//      std::thread t0(worker);
+//      std::thread t1(worker);
+//      if (!timeout_helper.WaitForThreads(60)) ADD_FAILURE() << "It's time to move on";
+//      t0.join();
+//      t1.join();
+//  }
+class ThreadTimeoutHelper {
+  public:
+    explicit ThreadTimeoutHelper(int thread_count = 1) : active_threads_(thread_count) {}
+    bool WaitForThreads(int timeout_in_seconds);
+
+    struct Guard {
+        Guard(ThreadTimeoutHelper &timeout_helper) : timeout_helper_(timeout_helper) {}
+        ~Guard() { timeout_helper_.OnThreadDone(); }
+        ThreadTimeoutHelper &timeout_helper_;
+    };
+    Guard ThreadGuard() { return Guard(*this); }
+
+  private:
+    void OnThreadDone();
+
+    int active_threads_;
+    std::condition_variable cv_;
+    std::mutex mutex_;
+};
+
 void ReleaseNullFence(ThreadTestData *);
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,

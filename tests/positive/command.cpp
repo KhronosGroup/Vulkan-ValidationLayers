@@ -1258,3 +1258,51 @@ TEST_F(VkPositiveLayerTest, EventsInSecondaryCommandBuffers) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(VkPositiveLayerTest, ThreadedCommandBuffersWithLabels) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto vkCmdInsertDebugUtilsLabelEXT = GetInstanceProcAddr<PFN_vkCmdInsertDebugUtilsLabelEXT>("vkCmdInsertDebugUtilsLabelEXT");
+
+    constexpr int worker_count = 8;
+    ThreadTimeoutHelper timeout_helper(worker_count);
+
+    auto worker_thread = [&](int worker_index) {
+        auto timeout_guard = timeout_helper.ThreadGuard();
+        // Command pool per worker thread
+        VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+
+        constexpr int command_buffers_per_pool = 4;
+        auto commands_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+        commands_allocate_info.commandPool = pool.handle();
+        commands_allocate_info.commandBufferCount = command_buffers_per_pool;
+        commands_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        const auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+
+        auto label = LvlInitStruct<VkDebugUtilsLabelEXT>();
+        label.pLabelName = "Test label";
+
+        constexpr int iteration_count = 1000;
+        for (int frame = 0; frame < iteration_count; frame++) {
+            std::array<VkCommandBuffer, command_buffers_per_pool> command_buffers;
+            ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &commands_allocate_info, command_buffers.data()));
+            for (int i = 0; i < command_buffers_per_pool; i++) {
+                ASSERT_VK_SUCCESS(vk::BeginCommandBuffer(command_buffers[i], &begin_info));
+                // Record debug label. It's a required step to reproduce the original issue
+                vkCmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
+                ASSERT_VK_SUCCESS(vk::EndCommandBuffer(command_buffers[i]));
+            }
+            vk::FreeCommandBuffers(m_device->device(), pool.handle(), command_buffers_per_pool, command_buffers.data());
+        }
+    };
+    std::vector<std::thread> workers;
+    for (int i = 0; i < worker_count; i++) workers.emplace_back(worker_thread, i);
+    constexpr int wait_time = 60;
+    if (!timeout_helper.WaitForThreads(wait_time))
+        ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
+    for (auto &worker : workers) worker.join();
+}
