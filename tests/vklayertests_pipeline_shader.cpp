@@ -7156,10 +7156,6 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD, doesn't support Vulkan 1.1+";
-    }
-
     VkPhysicalDeviceFeatures features{};
     vk::GetPhysicalDeviceFeatures(gpu(), &features);
     if (features.vertexPipelineStoresAndAtomics == VK_FALSE) {
@@ -7414,10 +7410,6 @@ TEST_F(VkLayerTest, SubgroupRequired) {
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD, profiles doesn't support Vulkan 1.1+";
     }
 
     VkPhysicalDeviceSubgroupProperties subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
@@ -8145,7 +8137,20 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
 
 TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto cond_rendering_feature = LvlInitStruct<VkPhysicalDeviceConditionalRenderingFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(cond_rendering_feature);
+    if (cond_rendering_feature.conditionalRendering == VK_FALSE) {
+        GTEST_SKIP() << "conditionalRendering feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cond_rendering_feature));
+
     uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
 
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
@@ -8163,43 +8168,13 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
         GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
     }
 
-    // A renderpass with a single subpass that declared a self-dependency
-    VkAttachmentDescription attach[] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-    };
-    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
-    };
-
-    VkSubpassDependency dependency = {0,
-                                      0,
-                                      VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-                                      VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-                                      VK_ACCESS_SHADER_WRITE_BIT,
-                                      VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT,
-                                      (VkDependencyFlags)0};
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dependency};
-    VkRenderPass rp;
-
-    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
-
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    VkFramebuffer fb;
-    vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
 
     VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
     VkCommandBufferObj commandBuffer(m_device, &commandPool);
 
     commandBuffer.begin();
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
-    vk::CmdBeginRenderPass(commandBuffer.handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
     VkImageMemoryBarrier imb = LvlInitStruct<VkImageMemoryBarrier>();
     imb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -8221,10 +8196,7 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
                            VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRenderPass(commandBuffer.handle());
     commandBuffer.end();
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
 
 TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
@@ -11371,10 +11343,6 @@ TEST_F(VkLayerTest, InvalidPipelineDiscardRectangle) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    // TODO - Currently not working on MockICD with Profiles
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -12373,12 +12341,21 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkSubpassDescription subpasses[2] = {subpass, subpass};
+    VkSubpassDependency subpass_dependency = {0,
+                                              1,
+                                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                              VK_DEPENDENCY_BY_REGION_BIT};
 
     VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 2;
     rpci.pSubpasses = subpasses;
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &subpass_dependency;
 
     vk_testing::RenderPass render_pass(*m_device, rpci);
     ASSERT_TRUE(render_pass.initialized());
@@ -12420,10 +12397,15 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     sample_locations_state.sampleLocationsEnable = VK_TRUE;
     sample_locations_state.sampleLocationsInfo = sample_locations_info;
 
+    auto multi_sample_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>(&sample_locations_state);
+    multi_sample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multi_sample_state.sampleShadingEnable = VK_FALSE;
+    multi_sample_state.minSampleShading = 1.0;
+
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
-    pipe.gp_ci_.pNext = &sample_locations_state;
+    pipe.gp_ci_.pMultisampleState = &multi_sample_state;
     pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -12479,6 +12461,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-variableSampleLocations-01525");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->VerifyFound();
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 
     m_commandBuffer->end();
@@ -15127,11 +15110,15 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateOps) {
 
     // Pass an invalid value for op 0
     fsr_ci.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_ENUM_KHR;
+    // if fragmentShadingRateNonTrivialCombinerOps is not supported
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506");
     CreatePipelineHelper::OneshotTest(*this, set_fsr_ci, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567");
     fsr_ci.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 
     // Pass an invalid value for op 1
     fsr_ci.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_ENUM_KHR;
+    // if fragmentShadingRateNonTrivialCombinerOps is not supported
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506");
     CreatePipelineHelper::OneshotTest(*this, set_fsr_ci, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568");
 }
 
@@ -16284,10 +16271,6 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // Create a device that enables mesh_shader

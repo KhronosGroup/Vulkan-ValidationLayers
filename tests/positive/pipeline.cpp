@@ -3930,12 +3930,6 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
 TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     TEST_DESCRIPTION("Pass duplicate structs to whose vk.xml definition contains allowduplicate=true");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     VkInstance instance;
 
     VkInstanceCreateInfo ici = LvlInitStruct<VkInstanceCreateInfo>();
@@ -3960,10 +3954,6 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // Create a device that enables mesh_shader

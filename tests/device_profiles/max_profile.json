@@ -995,12 +995,13 @@
                     "maxMultiviewInstanceIndex": 4294967000
                 },
                 "VkPhysicalDeviceDiscardRectanglePropertiesEXT": {
-                    "maxDiscardRectangles": 4294967000
+                    "maxDiscardRectangles": 4
                 },
                 "VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX": {
                     "perViewPositionAllComponents": true
                 },
                 "VkPhysicalDeviceSubgroupProperties": {
+                    "subgroupSize": 32,
                     "supportedStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT",
@@ -1040,7 +1041,7 @@
                     "filterMinmaxImageComponentMapping": true
                 },
                 "VkPhysicalDeviceSampleLocationsPropertiesEXT": {
-                    "variableSampleLocations": true,
+                    "variableSampleLocations": false,
                     "sampleLocationSampleCounts": [
                         "VK_SAMPLE_COUNT_1_BIT",
                         "VK_SAMPLE_COUNT_2_BIT",
@@ -1053,7 +1054,7 @@
                     "advancedBlendNonPremultipliedSrcColor": true,
                     "advancedBlendNonPremultipliedDstColor": true,
                     "advancedBlendCorrelatedOverlap": true,
-                    "advancedBlendAllOperations": true
+                    "advancedBlendAllOperations": false
                 },
                 "VkPhysicalDeviceInlineUniformBlockProperties": {
                     "maxInlineUniformBlockSize": 2048,
@@ -1168,8 +1169,8 @@
                     "maxDecompressionIndirectCount": 4294967000
                 },
                 "VkPhysicalDeviceShadingRateImagePropertiesNV": {
-                    "shadingRatePaletteSize": 4294967000,
-                    "shadingRateMaxCoarseSamples": 4294967000
+                    "shadingRatePaletteSize": 32,
+                    "shadingRateMaxCoarseSamples": 32
                 },
                 "VkPhysicalDeviceMeshShaderPropertiesNV": {
                     "maxDrawMeshTasksCount": 4294967000,
@@ -1423,12 +1424,12 @@
                         "VK_SHADER_STAGE_MESH_BIT_EXT",
                         "VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI"
                     ],
-                    "maxInlineUniformBlockSize": 4294967000,
-                    "maxPerStageDescriptorInlineUniformBlocks": 4294967000,
-                    "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks": 4294967000,
-                    "maxDescriptorSetInlineUniformBlocks": 4294967000,
-                    "maxDescriptorSetUpdateAfterBindInlineUniformBlocks": 4294967000,
-                    "maxInlineUniformTotalSize": 4294967000,
+                    "maxInlineUniformBlockSize": 2048,
+                    "maxPerStageDescriptorInlineUniformBlocks": 2048,
+                    "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks": 2048,
+                    "maxDescriptorSetInlineUniformBlocks": 2048,
+                    "maxDescriptorSetUpdateAfterBindInlineUniformBlocks": 2048,
+                    "maxInlineUniformTotalSize": 2048,
                     "integerDotProduct8BitUnsignedAccelerated": true,
                     "integerDotProduct8BitSignedAccelerated": true,
                     "integerDotProduct8BitMixedSignednessAccelerated": true,
@@ -1483,9 +1484,9 @@
                         "height": 16
                     },
                     "maxFragmentShadingRateAttachmentTexelSizeAspectRatio": 1,
-                    "primitiveFragmentShadingRateWithMultipleViewports": true,
+                    "primitiveFragmentShadingRateWithMultipleViewports": false,
                     "layeredShadingRateAttachments": true,
-                    "fragmentShadingRateNonTrivialCombinerOps": true,
+                    "fragmentShadingRateNonTrivialCombinerOps": false,
                     "maxFragmentSize": {
                         "width": 16,
                         "height": 16
@@ -1503,7 +1504,7 @@
                 },
                 "VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV": {},
                 "VkPhysicalDeviceProvokingVertexPropertiesEXT": {
-                    "provokingVertexModePerPipeline": true,
+                    "provokingVertexModePerPipeline": false,
                     "transformFeedbackPreservesTriangleFanProvokingVertex": true
                 },
                 "VkPhysicalDeviceDescriptorBufferPropertiesEXT": {
@@ -2147,7 +2148,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
@@ -2170,7 +2170,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
@@ -2193,7 +2192,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
-                            "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
@@ -2653,9 +2651,6 @@
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -2676,9 +2671,6 @@
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -2699,9 +2691,6 @@
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
-                            "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -3051,12 +3040,12 @@
                             "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
                         ],
@@ -5495,7 +5484,9 @@
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
-                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT"
+                            "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -7258,6 +7249,50 @@
                         "videoCodecOperations": [
                             "VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT",
                             "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT"
+                        ]
+                    }
+                },
+                {
+                    "VkQueueFamilyProperties": {
+                        "minImageTransferGranularity": {
+                            "width": 1,
+                            "height": 1,
+                            "depth": 1
+                        },
+                        "queueCount": 1,
+                        "queueFlags": [
+                            "VK_QUEUE_COMPUTE_BIT"
+                        ],
+                        "timestampValidBits": 64
+                    },
+                    "VkQueueFamilyQueryResultStatusProperties2KHR": {
+                        "supported": false
+                    },
+                    "VkVideoQueueFamilyProperties2KHR": {
+                        "videoCodecOperations": [
+
+                        ]
+                    }
+                },
+                {
+                    "VkQueueFamilyProperties": {
+                        "minImageTransferGranularity": {
+                            "width": 4,
+                            "height": 4,
+                            "depth": 4
+                        },
+                        "queueCount": 2,
+                        "queueFlags": [
+                            "VK_QUEUE_TRANSFER_BIT"
+                        ],
+                        "timestampValidBits": 64
+                    },
+                    "VkQueueFamilyQueryResultStatusProperties2KHR": {
+                        "supported": false
+                    },
+                    "VkVideoQueueFamilyProperties2KHR": {
+                        "videoCodecOperations": [
+
                         ]
                     }
                 }

@@ -4892,10 +4892,6 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
         GTEST_SKIP() << "texelBufferAlignment feature not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     auto align_props = LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT>();
     GetPhysicalDeviceProperties2(align_props);
 
@@ -14776,10 +14772,6 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    // TODO - Currently not working on MockICD with Profiles
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
