@@ -206,7 +206,7 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
     }
 
     if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "VK_GOOGLE_surfaceless_query not supported on desktop";
     }
 
     // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and

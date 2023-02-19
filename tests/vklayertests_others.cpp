@@ -233,10 +233,6 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     // feature not enabled
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -3556,10 +3552,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     // Create a device that enables shading_rate_image but disables multiViewport
     auto shading_rate_image_features = LvlInitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
     auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
@@ -6819,10 +6811,6 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD, doesn't support Vulkan 1.1+";
-    }
 
     const char *vertex_source = R"spirv(
                OpCapability Shader

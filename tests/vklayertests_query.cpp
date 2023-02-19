@@ -602,6 +602,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
     if (!host_query_reset_features.hostQueryReset) {
         GTEST_SKIP() << "Missing host query reset.";
     }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR doens't match up with profile queues";
+    }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features, pool_flags));
