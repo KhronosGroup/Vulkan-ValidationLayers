@@ -434,12 +434,22 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             }
         }
 
-        if (pipeline.HasFullState() && is_library) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06608",
+        if (pipeline.HasFullState()) {
+            if (is_library) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06608",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] defines a complete set of state, but pCreateInfos[%" PRIu32
                              "].flags (%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                              pipeline.create_index, pipeline.create_index, string_VkPipelineCreateFlags(pipeline_flags).c_str());
+            }
+            if (!pipeline.PipelineLayoutState()) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-None-07826",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "] defines a complete set of state, but pCreateInfos[%" PRIu32
+                                 "].layout is not a valid VkPipelineLayout.",
+                                 pipeline.create_index, pipeline.create_index);
+            }
         }
 
         enum GPLInitInfo : uint8_t {
