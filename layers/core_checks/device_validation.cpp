@@ -15,7 +15,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * This file deals with anything related to Phyiscal Devices, Logical Devices, or Device Queues Families, Device Masks, etc
  */
 
@@ -195,7 +195,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
     vvl::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
 
     for (uint32_t i = 0; i < info_count; ++i) {
-        const auto requested_queue_family = infos[i].queueFamilyIndex;
+        const uint32_t requested_queue_family = infos[i].queueFamilyIndex;
         const bool protected_create_bit = (infos[i].flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0;
 
         std::string queue_family_var_name = "pCreateInfo->pQueueCreateInfos[" + std::to_string(i) + "].queueFamilyIndex";
@@ -276,11 +276,11 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
 
         // if using protected flag, make sure queue supports it
         if (protected_create_bit && ((requested_queue_family_props.queueFlags & VK_QUEUE_PROTECTED_BIT) == 0)) {
-            skip |= LogError(
-                pd_state->Handle(), "VUID-VkDeviceQueueCreateInfo-flags-06449",
-                "CreateDevice(): %s (=%" PRIu32
-                ") does not have VK_QUEUE_PROTECTED_BIT supported, but VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT is being used.",
-                queue_family_var_name.c_str(), requested_queue_family);
+            skip |= LogError(pd_state->Handle(), "VUID-VkDeviceQueueCreateInfo-flags-06449",
+                             "CreateDevice(): %s (=%" PRIu32
+                             ") does not have VK_QUEUE_PROTECTED_BIT supported, but pQueueCreateInfos[%" PRIu32
+                             "].flags has VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT.",
+                             queue_family_var_name.c_str(), requested_queue_family, i);
         }
 
         // Verify that requested queue count of queue family is known to be valid at this point in time
@@ -306,13 +306,6 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_
                     "].queueFamilyIndex} (=%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
                     i, requested_queue_count, i, requested_queue_family, conditional_ext_cmd, count_note.c_str());
             }
-        }
-
-        const VkQueueFlags queue_flags = pd_state->queue_family_properties[requested_queue_family].queueFlags;
-        if ((infos[i].flags == VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) && ((queue_flags & VK_QUEUE_PROTECTED_BIT) == VK_FALSE)) {
-            skip |= LogError(pd_state->Handle(), "VUID-VkDeviceQueueCreateInfo-flags-06449",
-                             "vkCreateDevice: pCreateInfo->flags set to VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT on a queue that "
-                             "doesn't include VK_QUEUE_PROTECTED_BIT capability");
         }
     }
 
