@@ -3161,7 +3161,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             }
 
             if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
-                const auto *sample_locations = LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(pipeline_state.PNext());
+                const auto *multisample_state = pipeline_state.MultisampleState();
+                const auto *sample_locations =
+                    LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
                 if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
                     !pipeline_state.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                     const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
