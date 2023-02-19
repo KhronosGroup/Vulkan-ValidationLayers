@@ -408,6 +408,21 @@
                         "VK_SHADER_STAGE_ALL"
                     ]
                 },
+                "VkPhysicalDeviceSubgroupProperties": {
+                    "subgroupSize": 64,
+                    "supportedStages": [
+                        "VK_SHADER_STAGE_COMPUTE_BIT"
+                    ],
+                    "supportedOperations": [
+                        "VK_SUBGROUP_FEATURE_BASIC_BIT",
+                        "VK_SUBGROUP_FEATURE_VOTE_BIT",
+                        "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT",
+                        "VK_SUBGROUP_FEATURE_BALLOT_BIT",
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_BIT",
+                        "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT"
+                    ],
+                    "quadOperationsInAllStages": false
+                },
                 "VkPhysicalDeviceMaintenance3PropertiesKHR": {
                     "maxMemoryAllocationSize": 1073741824,
                     "maxPerSetDescriptors": 4294967295
