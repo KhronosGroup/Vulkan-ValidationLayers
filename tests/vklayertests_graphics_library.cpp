@@ -599,6 +599,19 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     }
 
     {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.gp_ci_.layout = VK_NULL_HANDLE;
+        pipe.gp_ci_.stageCount = pipe.shader_stages_.size();
+        pipe.gp_ci_.pStages = pipe.shader_stages_.data();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
+        pipe.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
         // Test creating a pipeline with incomplete state, but feature is not enabled
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
         auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
