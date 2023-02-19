@@ -13,7 +13,9 @@
 
 #include "../layer_validation_tests.h"
 
-TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
+class VkPositiveRayTracingPipelineLayerTest : public VkLayerTest {};
+
+TEST_F(VkPositiveRayTracingPipelineLayerTest, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -124,7 +126,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     vkDestroyPipeline(m_device->handle(), library, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
+TEST_F(VkPositiveRayTracingPipelineLayerTest, CacheControl) {
     TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -193,7 +195,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
     vk::DestroyPipeline(device(), library, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, NVRayTracingPipeline) {
+TEST_F(VkPositiveRayTracingPipelineLayerTest, BasicNV) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {

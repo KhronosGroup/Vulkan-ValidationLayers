@@ -17,6 +17,7 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+class VkLayerDynamicRenderingTest : public VkLayerTest {};
 class DynamicRenderingCommandBufferInheritanceRenderingInfoTest : public VkLayerTest {
   public:
     void Test(bool const useLinearColorAttachmen);
@@ -123,7 +124,7 @@ TEST_F(DynamicRenderingCommandBufferInheritanceRenderingInfoTest, LinearColorAtt
     Test(true);
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
+TEST_F(VkLayerDynamicRenderingTest, CommandDraw) {
     TEST_DESCRIPTION("vkCmdDraw* Dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -221,7 +222,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCmdClearAttachmentTests) {
+TEST_F(VkLayerDynamicRenderingTest, CmdClearAttachmentTests) {
     TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments with Dynamic Rendering");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -297,7 +298,7 @@ TEST_F(VkLayerTest, DynamicRenderingCmdClearAttachmentTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
+TEST_F(VkLayerDynamicRenderingTest, ClearAttachments) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid aspect masks.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -714,7 +715,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     vk::DestroyRenderPass(m_device->handle(), renderpass, nullptr);
 }
 
-TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
+TEST_F(VkLayerDynamicRenderingTest, GraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -825,7 +826,7 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMismatchingViewMask) {
+TEST_F(VkLayerDynamicRenderingTest, WithMismatchingViewMask) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering and a mismatching viewMask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -912,7 +913,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingViewMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
+TEST_F(VkLayerDynamicRenderingTest, WithMistmatchingAttachments) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color attachment counts and depth/stencil formats");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1104,7 +1105,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
+TEST_F(VkLayerDynamicRenderingTest, WithMistmatchingAttachmentSamples) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching color/depth/stencil sample counts");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1272,7 +1273,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
+TEST_F(VkLayerDynamicRenderingTest, WithMismatchingMixedAttachmentSamples) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching mixed color/depth/stencil sample counts");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1455,7 +1456,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
+TEST_F(VkLayerDynamicRenderingTest, AttachmentInfo) {
     TEST_DESCRIPTION("AttachmentInfo Dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1576,7 +1577,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBufferBeginInfoLegacy) {
+TEST_F(VkLayerDynamicRenderingTest, BufferBeginInfoLegacy) {
     TEST_DESCRIPTION("VkCommandBufferBeginInfo Dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1638,7 +1639,7 @@ TEST_F(VkLayerTest, DynamicRenderingBufferBeginInfoLegacy) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBuffer) {
+TEST_F(VkLayerDynamicRenderingTest, SecondaryCommandBuffer) {
     TEST_DESCRIPTION("VkCommandBufferBeginInfo Dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1688,7 +1689,7 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
+TEST_F(VkLayerDynamicRenderingTest, PipelineMissingFlags) {
     TEST_DESCRIPTION("Test dynamic rendering with pipeline missing flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1854,7 +1855,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
     }
 }
 
-TEST_F(VkLayerTest, DynamicRenderingLayerCount) {
+TEST_F(VkLayerDynamicRenderingTest, LayerCount) {
     TEST_DESCRIPTION("Test dynamic rendering with viewMask 0 and invalid layer count.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1887,7 +1888,7 @@ TEST_F(VkLayerTest, DynamicRenderingLayerCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInfoMismatchedSamples) {
+TEST_F(VkLayerDynamicRenderingTest, InfoMismatchedSamples) {
     TEST_DESCRIPTION("Test beginning rendering with mismatched sample counts.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1976,7 +1977,7 @@ TEST_F(VkLayerTest, DynamicRenderingInfoMismatchedSamples) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRate) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingFragmentShadingRate) {
     TEST_DESCRIPTION("Test BeginRenderingInfo with FragmentShadingRateAttachment.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2074,7 +2075,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRate) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingDeviceGroupRenderPassBeginInfo) {
+TEST_F(VkLayerDynamicRenderingTest, DeviceGroupRenderPassBeginInfo) {
     TEST_DESCRIPTION("Test render area of DeviceGroupRenderPassBeginInfo.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2137,7 +2138,7 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupRenderPassBeginInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidFragmentShadingRateImage) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingInvalidFragmentShadingRateImage) {
     TEST_DESCRIPTION("Test BeginRendering with FragmentShadingRateAttachmentInfo with missing image usage bit.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2248,7 +2249,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidFragmentShadingRateImag
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidDepthAttachmentFormat) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingInvalidDepthAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a depth attachment that has an invalid format");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -2294,7 +2295,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidDepthAttachmentFormat) 
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
+TEST_F(VkLayerDynamicRenderingTest, TestFragmentDensityMapRenderArea) {
     TEST_DESCRIPTION("Validate VkRenderingFragmentDensityMapAttachmentInfo attachment image view extent.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2398,7 +2399,7 @@ TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
+TEST_F(VkLayerDynamicRenderingTest, FragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
     TEST_DESCRIPTION("Validate VkRenderingFragmentDensityMapAttachmentInfo attachment image view extent.");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -2457,7 +2458,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapRenderAreaWithoutDeviceGro
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
+TEST_F(VkLayerDynamicRenderingTest, WithBarrier) {
     TEST_DESCRIPTION("Test setting buffer memory barrier when dynamic rendering is active.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -2523,7 +2524,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidStencilAttachmentFormat) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingInvalidStencilAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a stencil attachment that has an invalid format");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -2566,7 +2567,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidStencilAttachmentFormat
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInheritanceRenderingInfoStencilAttachmentFormat) {
+TEST_F(VkLayerDynamicRenderingTest, InheritanceRenderingInfoStencilAttachmentFormat) {
     TEST_DESCRIPTION("Test begin rendering with a stencil attachment that has an invalid format");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -2622,7 +2623,7 @@ TEST_F(VkLayerTest, DynamicRenderingInheritanceRenderingInfoStencilAttachmentFor
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
+TEST_F(VkLayerDynamicRenderingTest, CreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2667,7 +2668,7 @@ TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipelineWithInvalidAttachmentS
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCreatePipelineWithoutFeature) {
+TEST_F(VkLayerDynamicRenderingTest, CreatePipelineWithoutFeature) {
     TEST_DESCRIPTION("Create graphcis pipeline that uses dynamic rendering, but feature is not enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -2696,7 +2697,7 @@ TEST_F(VkLayerTest, DynamicRenderingCreatePipelineWithoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
+TEST_F(VkLayerDynamicRenderingTest, AreaGreaterThanAttachmentExtent) {
     TEST_DESCRIPTION("Begin dynamic rendering with render area greater than extent of attachments");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -2800,7 +2801,7 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) {
+TEST_F(VkLayerDynamicRenderingTest, DeviceGroupAreaGreaterThanAttachmentExtent) {
     TEST_DESCRIPTION("Begin dynamic rendering with device group with render area greater than extent of attachments");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2899,7 +2900,7 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleRenderPass) {
+TEST_F(VkLayerDynamicRenderingTest, SecondaryCommandBufferIncompatibleRenderPass) {
     TEST_DESCRIPTION("Execute secondary command buffers within render pass instance with incompatible render pass");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2944,7 +2945,7 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleRenderPass
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleSubpass) {
+TEST_F(VkLayerDynamicRenderingTest, SecondaryCommandBufferIncompatibleSubpass) {
     TEST_DESCRIPTION("Execute secondary command buffers with different subpass");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3004,7 +3005,7 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleSubpass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferInvalidContents) {
+TEST_F(VkLayerDynamicRenderingTest, SecondaryCommandBufferInvalidContents) {
     TEST_DESCRIPTION("Execute secondary command buffers within active render pass that was not begun with VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3041,7 +3042,7 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferInvalidContents) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithInvalidShaderLayerBuiltIn) {
+TEST_F(VkLayerDynamicRenderingTest, WithInvalidShaderLayerBuiltIn) {
     TEST_DESCRIPTION("Create invalid pipeline that writes to Layer built-in");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3104,7 +3105,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithInvalidShaderLayerBuiltIn) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithInputAttachmentCapability) {
+TEST_F(VkLayerDynamicRenderingTest, WithInputAttachmentCapability) {
     TEST_DESCRIPTION("Create invalid pipeline that uses InputAttachment capability");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3169,7 +3170,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithInputAttachmentCapability) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingInfoColorAttachmentFormat) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidRenderingInfoColorAttachmentFormat) {
     TEST_DESCRIPTION("Create pipeline with invalid color attachment format");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3209,7 +3210,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingInfoColorAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryViewMask) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidLibraryViewMask) {
     TEST_DESCRIPTION("Create pipeline with invalid view mask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3280,7 +3281,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidAttachmentSampleCount) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidAttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with invalid color attachment samples");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3320,7 +3321,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidAttachmentSampleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidLibrariesViewMask) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidLibrariesViewMask) {
     TEST_DESCRIPTION("Create pipeline with libaries that have incompatible view mask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3404,7 +3405,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibrariesViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryRenderPass) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidLibraryRenderPass) {
     TEST_DESCRIPTION("Create pipeline with invalid library render pass");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3472,7 +3473,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPipelineMissingMultisampleState) {
+TEST_F(VkLayerDynamicRenderingTest, PipelineMissingMultisampleState) {
     TEST_DESCRIPTION("Create pipeline with missing multisample state");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3505,7 +3506,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingMultisampleState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachment) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidRenderingFragmentDensityMapAttachment) {
     TEST_DESCRIPTION("Use invalid VkRenderingFragmentDensityMapAttachmentInfoEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3574,7 +3575,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachment
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachmentUsage) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidRenderingFragmentDensityMapAttachmentUsage) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid imageLayout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3615,7 +3616,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachment
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentCreateFlags) {
+TEST_F(VkLayerDynamicRenderingTest, FragmentDensityMapAttachmentCreateFlags) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid image create flags");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3667,7 +3668,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentCreateFlags) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentLayerCount) {
+TEST_F(VkLayerDynamicRenderingTest, FragmentDensityMapAttachmentLayerCount) {
     TEST_DESCRIPTION("Use VkRenderingFragmentDensityMapAttachmentInfoEXT with invalid layer count");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3724,7 +3725,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentLayerCount) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPNextImageView) {
+TEST_F(VkLayerDynamicRenderingTest, PNextImageView) {
     TEST_DESCRIPTION(
         "Use different image views in VkRenderingFragmentShadingRateAttachmentInfoKHR and "
         "VkRenderingFragmentDensityMapAttachmentInfoEXT");
@@ -3784,7 +3785,7 @@ TEST_F(VkLayerTest, DynamicRenderingPNextImageView) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingRenderArea) {
+TEST_F(VkLayerDynamicRenderingTest, RenderArea) {
     TEST_DESCRIPTION("Use negative offset in RenderingInfo render area");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -3867,7 +3868,7 @@ TEST_F(VkLayerTest, DynamicRenderingRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInfoViewMask) {
+TEST_F(VkLayerDynamicRenderingTest, InfoViewMask) {
     TEST_DESCRIPTION("Use negative offset in RenderingInfo render area");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3917,7 +3918,7 @@ TEST_F(VkLayerTest, DynamicRenderingInfoViewMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingColorAttachmentFormat) {
+TEST_F(VkLayerDynamicRenderingTest, ColorAttachmentFormat) {
     TEST_DESCRIPTION("Use format with missing potential format features in rendering color attachment");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3957,7 +3958,7 @@ TEST_F(VkLayerTest, DynamicRenderingColorAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveModeWithNonIntegerColorFormat) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveModeWithNonIntegerColorFormat) {
     TEST_DESCRIPTION("Use invalid resolve mode with non integer color format");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4019,7 +4020,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveModeWithNonIntegerColorFormat) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveModeWithIntegerColorFormat) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveModeWithIntegerColorFormat) {
     TEST_DESCRIPTION("Use invalid resolve mode with integer color format");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4082,7 +4083,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveModeWithIntegerColorFormat) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveModeSamples) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveModeSamples) {
     TEST_DESCRIPTION("Use invalid sample count with resolve mode that is not none");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4130,7 +4131,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveModeSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewSamples) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewSamples) {
     TEST_DESCRIPTION("Use resolve image view with invalid sample count");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4197,7 +4198,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFormatMatch) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewFormatMatch) {
     TEST_DESCRIPTION("Use resolve image view with different format from image view");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4259,7 +4260,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFormatMatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewLayout) {
+TEST_F(VkLayerDynamicRenderingTest, AttachmentImageViewLayout) {
     TEST_DESCRIPTION("Use rendering attachment image view with invalid layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4304,7 +4305,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayout) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4366,7 +4367,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayoutSeparateDepthStencil) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewLayoutSeparateDepthStencil) {
     TEST_DESCRIPTION("Use resolve image view with invalid layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4429,7 +4430,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayoutSeparateDepthStencil) 
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewShadingRateLayout) {
+TEST_F(VkLayerDynamicRenderingTest, AttachmentImageViewShadingRateLayout) {
     TEST_DESCRIPTION("Use image view with invalid layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4485,7 +4486,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewShadingRateLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewShadingRateLayout) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewShadingRateLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid shading ratelayout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4558,7 +4559,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewShadingRateLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewFragmentDensityLayout) {
+TEST_F(VkLayerDynamicRenderingTest, AttachmentImageViewFragmentDensityLayout) {
     TEST_DESCRIPTION("Use image view with invalid layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4604,7 +4605,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentImageViewFragmentDensityLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFragmentDensityLayout) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewFragmentDensityLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid fragment density layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4667,7 +4668,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFragmentDensityLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingResolveImageViewReadOnlyOptimalLayout) {
+TEST_F(VkLayerDynamicRenderingTest, ResolveImageViewReadOnlyOptimalLayout) {
     TEST_DESCRIPTION("Use resolve image view with invalid read only optimal layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4730,7 +4731,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewReadOnlyOptimalLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRateImageView) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingFragmentShadingRateImageView) {
     TEST_DESCRIPTION("Test BeginRenderingInfo image view with FragmentShadingRateAttachment.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4793,7 +4794,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRateImageView) 
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingRenderingInfoColorAttachment) {
+TEST_F(VkLayerDynamicRenderingTest, RenderingInfoColorAttachment) {
     TEST_DESCRIPTION("Test RenderingInfo color attachment.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4913,7 +4914,7 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoColorAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingRenderingInfoDepthAttachment) {
+TEST_F(VkLayerDynamicRenderingTest, RenderingInfoDepthAttachment) {
     TEST_DESCRIPTION("Test RenderingInfo depth attachment.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5139,7 +5140,7 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoDepthAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingRenderAreaWithDeviceGroupExt) {
+TEST_F(VkLayerDynamicRenderingTest, RenderAreaWithDeviceGroupExt) {
     TEST_DESCRIPTION("Use negative offset in RenderingInfo render area");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5184,7 +5185,7 @@ TEST_F(VkLayerTest, DynamicRenderingRenderAreaWithDeviceGroupExt) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPipeline) {
+TEST_F(VkLayerDynamicRenderingTest, Pipeline) {
     TEST_DESCRIPTION("Use pipeline created with render pass in dynamic render pass.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5230,7 +5231,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRateAttachmentSize) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingFragmentShadingRateAttachmentSize) {
     TEST_DESCRIPTION("Test FragmentShadingRateAttachment size.");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -5302,7 +5303,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRateAttachmentS
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentSizeWithDeviceGroupExt) {
+TEST_F(VkLayerDynamicRenderingTest, FragmentShadingRateAttachmentSizeWithDeviceGroupExt) {
     TEST_DESCRIPTION("Test FragmentShadingRateAttachment size with device group extension.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5419,7 +5420,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentSizeWithDeviceG
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstance) {
+TEST_F(VkLayerDynamicRenderingTest, SuspendingRenderPassInstance) {
     TEST_DESCRIPTION("Test suspending render pass instance.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5513,7 +5514,7 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstance) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
+TEST_F(VkLayerDynamicRenderingTest, SuspendingRenderPassInstanceQueueSubmit2) {
     TEST_DESCRIPTION("Test suspending render pass instance with QueueSubmit2.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5622,7 +5623,7 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingNullDepthStencilExecuteCommands) {
+TEST_F(VkLayerDynamicRenderingTest, NullDepthStencilExecuteCommands) {
     TEST_DESCRIPTION(
         "Test for NULL depth stencil attachments in dynamic rendering with secondary command buffer with depth stencil format "
         "inheritance info");
@@ -5723,7 +5724,7 @@ TEST_F(VkLayerTest, DynamicRenderingNullDepthStencilExecuteCommands) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingWithSecondaryContents) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingWithSecondaryContents) {
     TEST_DESCRIPTION("Test that an error is produced when a secondary command buffer calls BeginRendering with secondary contents");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5768,7 +5769,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingWithSecondaryContents) {
     secondary.end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBadRenderPassContentsWhenCallingCmdExecuteCommands) {
+TEST_F(VkLayerDynamicRenderingTest, BadRenderPassContentsWhenCallingCmdExecuteCommands) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR");
@@ -5840,7 +5841,7 @@ TEST_F(VkLayerTest, DynamicRenderingBadRenderPassContentsWhenCallingCmdExecuteCo
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithNonNullRenderPass) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that hasn't set "
         "renderPass to VK_NULL_HANDLE in pInheritanceInfo");
@@ -5931,7 +5932,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingFlags) {
     TEST_DESCRIPTION("Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching flags");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6003,7 +6004,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttachmentCount) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingColorAttachmentCount) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching colorAttachmentCount");
 
@@ -6075,7 +6076,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttach
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageViewFormat) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingColorImageViewFormat) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching color image view format");
 
@@ -6152,7 +6153,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageV
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStencilImageViewFormat) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingDepthStencilImageViewFormat) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching depth/stencil image view "
         "format");
@@ -6232,7 +6233,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingViewMask) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching viewMask format");
 
@@ -6306,7 +6307,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRasterizationSamples) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingImageViewRasterizationSamples) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching rasterization samples");
 
@@ -6426,7 +6427,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRa
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAttachmentSamples) {
+TEST_F(VkLayerDynamicRenderingTest, AndExecuteCommandsWithMismatchingImageViewAttachmentSamples) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRendering that has mismatching that has mismatching "
         "attachment samples");
@@ -6562,7 +6563,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAt
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInSecondaryCommandBuffers) {
+TEST_F(VkLayerDynamicRenderingTest, InSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Test drawing in secondary command buffers with dynamic rendering");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6620,7 +6621,7 @@ TEST_F(VkLayerTest, DynamicRenderingInSecondaryCommandBuffers) {
     secondary.end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceWithInvalidDepthFormat) {
+TEST_F(VkLayerDynamicRenderingTest, CommandBufferInheritanceWithInvalidDepthFormat) {
     TEST_DESCRIPTION(
         "Test VkCommandBufferInheritanceRenderingInfoKHR with depthAttachmentFormat that does not include depth aspect");
 
@@ -6669,7 +6670,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceWithInvalidDepthForm
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingInvalidDeviceGroupRenderArea) {
+TEST_F(VkLayerDynamicRenderingTest, InvalidDeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin rendering with invaid device group render area.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -6733,7 +6734,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidDeviceGroupRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingEndRenderingWithIncorrectlyStartedRenderpassInstance) {
+TEST_F(VkLayerDynamicRenderingTest, EndRenderingWithIncorrectlyStartedRenderpassInstance) {
     TEST_DESCRIPTION(
         "Test EndRendering without starting the instance with BeginRendering, in the same command buffer or in a different once");
 
@@ -6817,7 +6818,7 @@ TEST_F(VkLayerTest, DynamicRenderingEndRenderingWithIncorrectlyStartedRenderpass
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingEndRenderpassWithBeginRenderingRenderpassInstance) {
+TEST_F(VkLayerDynamicRenderingTest, EndRenderpassWithBeginRenderingRenderpassInstance) {
     TEST_DESCRIPTION("Test EndRenderpass(2) starting the renderpass instance with BeginRendering");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6878,7 +6879,7 @@ TEST_F(VkLayerTest, DynamicRenderingEndRenderpassWithBeginRenderingRenderpassIns
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingBeginRenderingDisabled) {
+TEST_F(VkLayerDynamicRenderingTest, BeginRenderingDisabled) {
     TEST_DESCRIPTION("Validate VK_KHR_dynamic_rendering VUs when disabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -6921,7 +6922,7 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingDisabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPipelineRenderingParameters) {
+TEST_F(VkLayerDynamicRenderingTest, PipelineRenderingParameters) {
     TEST_DESCRIPTION("Test pipeline rendering formats and viewmask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -7043,7 +7044,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineRenderingParameters) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingPipelineRenderingViewMaskParameter) {
+TEST_F(VkLayerDynamicRenderingTest, PipelineRenderingViewMaskParameter) {
     TEST_DESCRIPTION("Test pipeline rendering viewmask maximum index");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -7117,7 +7118,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineRenderingViewMaskParameter) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipeline) {
+TEST_F(VkLayerDynamicRenderingTest, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -7172,7 +7173,7 @@ TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipeline) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipelineNoInfo) {
+TEST_F(VkLayerDynamicRenderingTest, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -7222,7 +7223,7 @@ TEST_F(VkLayerTest, DynamicRenderingCreateGraphicsPipelineNoInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingDynamicColorBlendAttchment) {
+TEST_F(VkLayerDynamicRenderingTest, DynamicColorBlendAttchment) {
     TEST_DESCRIPTION("Test all color blend attachments are dynamically set at draw time with Dynamic Rendering.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

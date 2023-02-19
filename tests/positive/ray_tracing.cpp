@@ -14,7 +14,9 @@
 #include "../layer_validation_tests.h"
 #include "vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes) {
+class VkPositiveRayTracingLayerTest : public VkLayerTest {};
+
+TEST_F(VkPositiveRayTracingLayerTest, ValidateGetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -58,7 +60,7 @@ TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes
                                             &max_primitives_count, &build_sizes_info);
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
+TEST_F(VkPositiveRayTracingLayerTest, AccelerationStructureReference) {
     TEST_DESCRIPTION("Test host side accelerationStructureReference");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

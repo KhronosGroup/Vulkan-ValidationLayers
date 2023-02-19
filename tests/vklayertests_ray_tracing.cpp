@@ -15,7 +15,9 @@
 #include "layer_validation_tests.h"
 #include "ray_tracing_objects.h"
 
-TEST_F(VkLayerTest, RayTracingTestBarrierAccessAccelerationStructure) {
+class VkLayerRayTracingTest : public VkLayerTest {};
+
+TEST_F(VkLayerRayTracingTest, TestBarrierAccessAccelerationStructure) {
     TEST_DESCRIPTION("Test barrier with access ACCELERATION_STRUCTURE bit.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -67,7 +69,7 @@ TEST_F(VkLayerTest, RayTracingTestBarrierAccessAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -107,7 +109,7 @@ TEST_F(VkLayerTest, RayTracingValidateDescriptorBindingUpdateAfterBindWithAccele
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
+TEST_F(VkLayerRayTracingTest, AccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR than allowed");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -159,7 +161,7 @@ TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingValidateBeginQueryQueryPoolType) {
+TEST_F(VkLayerRayTracingTest, ValidateBeginQueryQueryPoolType) {
     TEST_DESCRIPTION("Test CmdBeginQuery with invalid queryPool queryType");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -241,7 +243,7 @@ TEST_F(VkLayerTest, RayTracingValidateBeginQueryQueryPoolType) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingCopyUnboundAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, CopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyQueryPoolResults with unsupported query type");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -305,7 +307,7 @@ TEST_F(VkLayerTest, RayTracingCopyUnboundAccelerationStructure) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, CmdCopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffers not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -392,7 +394,7 @@ TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingTestCmdCopyMemoryToAccelerationStructureKHR) {
+TEST_F(VkLayerRayTracingTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate CmdCopyMemoryToAccelerationStructureKHR with dst buffer not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -440,7 +442,7 @@ TEST_F(VkLayerTest, RayTracingTestCmdCopyMemoryToAccelerationStructureKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingBuildAccelerationStructureKHR) {
+TEST_F(VkLayerRayTracingTest, BuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate buffers used in vkBuildAccelerationStructureKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -522,7 +524,7 @@ TEST_F(VkLayerTest, RayTracingBuildAccelerationStructureKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingTestWriteAccelerationStructureMemory) {
+TEST_F(VkLayerRayTracingTest, TestWriteAccelerationStructureMemory) {
     TEST_DESCRIPTION("Test memory in vkWriteAccelerationStructuresPropertiesKHR is host visible");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -604,7 +606,7 @@ TEST_F(VkLayerTest, RayTracingTestWriteAccelerationStructureMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
+TEST_F(VkLayerRayTracingTest, TestCopyMemoryToAsBuffer) {
     TEST_DESCRIPTION("Test invalid buffer used in vkCopyMemoryToAccelerationStructureKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -655,7 +657,7 @@ TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingValidationArrayOOBRayTracingShaders) {
+TEST_F(VkLayerRayTracingTest, ValidationArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "Core validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders.");
@@ -663,7 +665,7 @@ TEST_F(VkLayerTest, RayTracingValidationArrayOOBRayTracingShaders) {
     OOBRayTracingShadersTestBody(false);
 }
 
-TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHR) {
+TEST_F(VkLayerRayTracingTest, ValidateCreateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -761,7 +763,7 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHR) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHRReplayFeature) {
+TEST_F(VkLayerRayTracingTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
     TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -804,7 +806,7 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHRReplayFeatur
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
+TEST_F(VkLayerRayTracingTest, ValidateCmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1016,7 +1018,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
 
-TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
+TEST_F(VkLayerRayTracingTest, ValidateCmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirectKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1114,7 +1116,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
     vk::FreeMemory(device(), mem, nullptr);
 }
 
-TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
+TEST_F(VkLayerRayTracingTest, ValidateVkAccelerationStructureVersionInfoKHR) {
     TEST_DESCRIPTION("Validate VkAccelerationStructureVersionInfoKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1154,7 +1156,7 @@ TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
+TEST_F(VkLayerRayTracingTest, ValidateCmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
     AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
@@ -1463,7 +1465,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RayTracingObjInUseCmdBuildAccelerationStructureKHR) {
+TEST_F(VkLayerRayTracingTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1507,7 +1509,7 @@ TEST_F(VkLayerTest, RayTracingObjInUseCmdBuildAccelerationStructureKHR) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, RayTracingCmdCopyAccelerationStructureToMemoryKHR) {
+TEST_F(VkLayerRayTracingTest, CmdCopyAccelerationStructureToMemoryKHR) {
     TEST_DESCRIPTION("Validate CmdCopyAccelerationStructureToMemoryKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1571,7 +1573,7 @@ TEST_F(VkLayerTest, RayTracingCmdCopyAccelerationStructureToMemoryKHR) {
     vkDestroyAccelerationStructureKHR(device(), as, nullptr);
 }
 
-TEST_F(VkLayerTest, RayTracingUpdateAccelerationStructureKHR) {
+TEST_F(VkLayerRayTracingTest, UpdateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Test for updating an acceleration structure without a srcAccelerationStructure");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1607,7 +1609,7 @@ TEST_F(VkLayerTest, RayTracingUpdateAccelerationStructureKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
+TEST_F(VkLayerRayTracingTest, BuffersAndBufferDeviceAddressesMapping) {
     TEST_DESCRIPTION(
         "Test that buffers and buffer device addresses mapping is correctly handled."
         "Bound multiple buffers to the same memory so that they have the same buffer device address."
@@ -1712,7 +1714,7 @@ TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
     }
 }
 
-TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
+TEST_F(VkLayerRayTracingTest, WriteAccelerationStructuresProperties) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1819,7 +1821,7 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
     }
 }
 
-TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
+TEST_F(VkLayerRayTracingTest, WriteAccelerationStructuresPropertiesMaintenance1) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1919,7 +1921,7 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingAccelerationStructureBindings) {
+TEST_F(VkLayerRayTracingTest, AccelerationStructureBindingsNV) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1970,7 +1972,7 @@ TEST_F(VkLayerTest, NVRayTracingAccelerationStructureBindings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateGeometry) {
+TEST_F(VkLayerRayTracingTest, ValidateGeometryNV) {
     TEST_DESCRIPTION("Validate acceleration structure geometries.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2227,7 +2229,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateGeometry) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateCreateAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateCreateAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2339,7 +2341,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateCreateAccelerationStructure) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateBindAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateBindAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2492,7 +2494,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateBindAccelerationStructure) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateWriteDescriptorSetAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateWriteDescriptorSetAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2526,7 +2528,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateWriteDescriptorSetAccelerationStructure)
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateCmdBuildAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateCmdBuildAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2652,7 +2654,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateCmdBuildAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NVRayTracingObjInUseCmdBuildAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ObjInUseCmdBuildAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2710,7 +2712,7 @@ TEST_F(VkLayerTest, NVRayTracingObjInUseCmdBuildAccelerationStructure) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
+TEST_F(VkLayerRayTracingTest, ValidateGetAccelerationStructureHandleNV) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -2754,7 +2756,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidateCmdCopyAccelerationStructure) {
+TEST_F(VkLayerRayTracingTest, ValidateCmdCopyAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
