@@ -50,8 +50,8 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
         if (descriptor_variables) {
-            has_writable_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
-                                                  [](const auto &variable) { return variable.is_writable; });
+            has_descriptor_written_to = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
+                                                    [](const auto &variable) { return variable.is_written_to; });
 
             has_atomic_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
                                                 [](const auto &variable) { return variable.is_atomic_operation; });
@@ -163,7 +163,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
         for (const auto &variable : *stage.descriptor_variables) {
             // While validating shaders capture which slots are used by the pipeline
             auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
-            entry.is_writable |= variable.is_writable;
+            entry.is_written_to |= variable.is_written_to;
 
             auto &reqs = entry.reqs;
             reqs |= stage.module_state->DescriptorTypeToReqs(variable.type_id);

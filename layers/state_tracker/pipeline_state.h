@@ -77,14 +77,14 @@ extern DescriptorReqFlags DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 
 struct DescriptorRequirement {
     DescriptorReqFlags reqs;
-    bool is_writable;
+    bool is_written_to;
     // Copy from StageState.ResourceInterfaceVariable. It combines from plural shader stages. The index of array is index of image.
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
     // OpTypeImage the variable points to, null if doesn't use the image
     uint32_t image_sampled_type_width = 0;
-    DescriptorRequirement() : reqs(0), is_writable(false) {}
+    DescriptorRequirement() : reqs(0), is_written_to(false) {}
 };
 
 inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs == b.reqs; }
@@ -100,7 +100,7 @@ struct PipelineStageState {
     VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
     const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
-    bool has_writable_descriptor;
+    bool has_descriptor_written_to;
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
     bool writes_to_gl_layer;

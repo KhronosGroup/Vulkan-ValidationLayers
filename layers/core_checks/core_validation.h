@@ -848,7 +848,7 @@ class CoreChecks : public ValidationStateTracker {
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
     bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                                       bool has_writable_descriptor, bool has_atomic_descriptor) const;
+                                                       bool has_descriptor_written_to, bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
                                               safe_VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE& pipeline,
                                               const Instruction& entrypoint) const;

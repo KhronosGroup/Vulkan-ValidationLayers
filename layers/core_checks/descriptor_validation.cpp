@@ -852,7 +852,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second.is_writable &&
+            if (binding_info.second.is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_node, context.caller, context.vuids.protected_command_buffer,
                                           "Buffer is in a descriptorSet")) {
                 return true;
@@ -1082,8 +1082,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     continue;
                 }
 
-                bool descriptor_readable = false;
-                bool descriptor_writable = false;
+                bool descriptor_read_from = false;
+                bool descriptor_written_to = false;
                 uint32_t set_index = std::numeric_limits<uint32_t>::max();
                 for (uint32_t i = 0; i < context.cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set.size(); ++i) {
                     const auto &set = context.cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set[i];
@@ -1100,8 +1100,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     }
                     for (const auto &variable : *stage.descriptor_variables) {
                         if (variable.decorations.set == set_index && variable.decorations.binding == binding) {
-                            descriptor_writable |= variable.is_writable;
-                            descriptor_readable |= variable.is_readable | variable.is_sampler_implicitLod_dref_proj;
+                            descriptor_written_to |= variable.is_written_to;
+                            descriptor_read_from |= variable.is_read_from | variable.is_sampler_implicitLod_dref_proj;
                             break;
                         }
                     }
@@ -1111,7 +1111,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 bool write_attachment =
                     (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0 &&
                     !layout_read_only;
-                if (write_attachment && descriptor_readable) {
+                if (write_attachment && descriptor_read_from) {
                     if (same_view) {
                         auto set = context.descriptor_set.GetSet();
                         const LogObjectList objlist(set, image_view, context.framebuffer);
@@ -1134,7 +1134,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     }
                 }
                 const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
-                if (read_attachment && descriptor_writable) {
+                if (read_attachment && descriptor_written_to) {
                     if (same_view) {
                         auto set = context.descriptor_set.GetSet();
                         const LogObjectList objlist(set, image_view, context.framebuffer);
@@ -1157,7 +1157,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     }
                 }
 
-                if (descriptor_writable && !layout_read_only) {
+                if (descriptor_written_to && !layout_read_only) {
                     if (same_view) {
                         auto set = context.descriptor_set.GetSet();
                         const LogObjectList objlist(set, image_view, context.framebuffer);
@@ -1185,7 +1185,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                            context.vuids.unprotected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
                 }
-                if (binding_info.second.is_writable &&
+                if (binding_info.second.is_written_to &&
                     ValidateUnprotectedImage(context.cb_state, *image_view_state->image_state, context.caller,
                                              context.vuids.protected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
@@ -1539,7 +1539,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         context.vuids.unprotected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second.is_writable &&
+            if (binding_info.second.is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_view_state->buffer_state, context.caller,
                                           context.vuids.protected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;

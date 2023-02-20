@@ -235,7 +235,7 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
                     if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
                         const uint32_t num_locations = module_state.GetLocationsConsumedByType(def->Word(1), false);
                         for (uint32_t offset = 0; offset < num_locations; offset++) {
-                            attachment_indexes.insert(attachment_index + offset);
+                            input_attachment_indexes.insert(attachment_index + offset);
                         }
                     }
                 }
@@ -1251,7 +1251,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 const uint32_t image_write_load_id = CheckObjectIDFromOpLoad(
                     id, static_data_.image_write_load_ids, static_data_.load_members, static_data_.accesschain_members);
                 if (image_write_load_id != 0) {
-                    is_writable = true;
+                    is_written_to = true;
                     if (is_image_without_format) {
                         is_write_without_format = true;
                         for (const auto& entry : static_data_.image_write_load_id_map) {
@@ -1264,7 +1264,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 }
                 if (CheckObjectIDFromOpLoad(id, static_data_.image_read_load_ids, static_data_.load_members,
                                             static_data_.accesschain_members) != 0) {
-                    is_readable = true;
+                    is_read_from = true;
                     if (is_image_without_format) {
                         is_read_without_format = true;
                     }
@@ -1375,7 +1375,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             if (is_storage_buffer && nonwritable_members.size() != type->Length() - 2) {
                 for (auto oid : static_data_.store_pointer_ids) {
                     if (id == oid) {
-                        is_writable = true;
+                        is_written_to = true;
                         return;
                     }
                     auto accesschain_it = static_data_.accesschain_members.find(oid);
@@ -1383,13 +1383,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                         continue;
                     }
                     if (accesschain_it->second.first == id) {
-                        is_writable = true;
+                        is_written_to = true;
                         return;
                     }
                 }
                 if (CheckObjectIDFromOpLoad(id, static_data_.atomic_store_pointer_ids, static_data_.image_texel_pointer_members,
                                             static_data_.accesschain_members) != 0) {
-                    is_writable = true;
+                    is_written_to = true;
                     return;
                 }
             }

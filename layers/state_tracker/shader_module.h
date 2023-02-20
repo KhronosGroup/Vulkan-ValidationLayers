@@ -108,8 +108,8 @@ struct ResourceInterfaceVariable {
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     uint32_t image_sampled_type_width = 0;
 
-    bool is_readable{false};
-    bool is_writable{false};
+    bool is_read_from{false};
+    bool is_written_to{false};
     bool is_atomic_operation{false};
     bool is_sampler_sampled{false};
     bool is_sampler_implicitLod_dref_proj{false};
@@ -202,7 +202,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         std::vector<UserDefinedInterfaceVariable> user_defined_interface_variables;
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
-        vvl::unordered_set<uint32_t> attachment_indexes;
+        vvl::unordered_set<uint32_t> input_attachment_indexes;
 
         StructInfo push_constant_used_in_shader;
 
@@ -314,7 +314,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const vvl::unordered_set<uint32_t> *GetAttachmentIndexes(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
-                return &entry_point.attachment_indexes;
+                return &entry_point.input_attachment_indexes;
             }
         }
         return nullptr;
