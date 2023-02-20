@@ -53,9 +53,6 @@ struct DecorationSet {
     uint32_t location = kInvalidValue;
     uint32_t component = 0;
 
-    // For input attachments
-    uint32_t input_attachment_index = 0;
-
     // For descriptors
     uint32_t set = 0;
     uint32_t binding = 0;
