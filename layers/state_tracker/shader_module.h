@@ -263,6 +263,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         vvl::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
         vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
         vvl::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
+
+        uint32_t FindIDFromLoad(uint32_t object_id, const std::vector<uint32_t> &operator_members) const;
+        uint32_t FindIDFromAtomic(uint32_t object_id, const std::vector<uint32_t> &operator_members) const;
     };
 
     // This is the SPIR-V module data content

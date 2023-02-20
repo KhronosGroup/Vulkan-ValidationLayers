@@ -1192,14 +1192,35 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
 }
 
 // Returns the id from load_members that matched the object_id, otherwise returns zero
-static uint32_t CheckObjectIDFromOpLoad(
-    uint32_t object_id, const std::vector<uint32_t>& operator_members,
-    const vvl::unordered_map<uint32_t, uint32_t>& load_members,
-    const vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>>& accesschain_members) {
+uint32_t SHADER_MODULE_STATE::StaticData::FindIDFromLoad(uint32_t object_id, const std::vector<uint32_t>& operator_members) const {
     for (auto load_id : operator_members) {
         if (object_id == load_id) return load_id;
         auto load_it = load_members.find(load_id);
         if (load_it == load_members.end()) {
+            continue;
+        }
+        if (load_it->second == object_id) {
+            return load_it->first;
+        }
+
+        auto accesschain_it = accesschain_members.find(load_it->second);
+        if (accesschain_it == accesschain_members.end()) {
+            continue;
+        }
+        if (accesschain_it->second.first == object_id) {
+            return accesschain_it->first;
+        }
+    }
+    return 0;
+}
+
+// Returns the id from Atomic access that matched the object_id, otherwise returns zero
+uint32_t SHADER_MODULE_STATE::StaticData::FindIDFromAtomic(uint32_t object_id,
+                                                           const std::vector<uint32_t>& operator_members) const {
+    for (auto load_id : operator_members) {
+        if (object_id == load_id) return load_id;
+        auto load_it = image_texel_pointer_members.find(load_id);
+        if (load_it == image_texel_pointer_members.end()) {
             continue;
         }
         if (load_it->second == object_id) {
@@ -1246,8 +1267,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             // Sampled == 2 indicates used without a sampler (a storage image)
             const bool is_image_without_format = ((type->Word(7) == 2) && (type->Word(8) == spv::ImageFormatUnknown));
 
-            const uint32_t image_write_load_id = CheckObjectIDFromOpLoad(
-                id, static_data_.image_write_load_ids, static_data_.load_members, static_data_.accesschain_members);
+            const uint32_t image_write_load_id = static_data_.FindIDFromLoad(id, static_data_.image_write_load_ids);
             if (image_write_load_id != 0) {
                 is_written_to = true;
                 if (is_image_without_format) {
@@ -1260,31 +1280,25 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     }
                 }
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.image_read_load_ids, static_data_.load_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromLoad(id, static_data_.image_read_load_ids) != 0) {
                 is_read_from = true;
                 if (is_image_without_format) {
                     is_read_without_format = true;
                 }
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_load_ids, static_data_.load_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromLoad(id, static_data_.sampler_load_ids) != 0) {
                 is_sampler_sampled = true;
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_implicitLod_dref_proj_load_ids, static_data_.load_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromLoad(id, static_data_.sampler_implicitLod_dref_proj_load_ids) != 0) {
                 is_sampler_implicitLod_dref_proj = true;
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromLoad(id, static_data_.sampler_bias_offset_load_ids) != 0) {
                 is_sampler_bias_offset = true;
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.atomic_pointer_ids, static_data_.image_texel_pointer_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromAtomic(id, static_data_.atomic_pointer_ids) != 0) {
                 is_atomic_operation = true;
             }
-            if (CheckObjectIDFromOpLoad(id, static_data_.image_dref_load_ids, static_data_.load_members,
-                                        static_data_.accesschain_members) != 0) {
+            if (static_data_.FindIDFromLoad(id, static_data_.image_dref_load_ids) != 0) {
                 is_dref_operation = true;
             }
 
@@ -1337,16 +1351,13 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     }
 
                     // Need to check again for these properties in case not using a combined image sampler
-                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_load_ids, static_data_.load_members,
-                                                static_data_.accesschain_members) != 0) {
+                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_load_ids) != 0) {
                         is_sampler_sampled = true;
                     }
-                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids,
-                                                static_data_.load_members, static_data_.accesschain_members) != 0) {
+                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids) != 0) {
                         is_sampler_implicitLod_dref_proj = true;
                     }
-                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
-                                                static_data_.accesschain_members) != 0) {
+                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_bias_offset_load_ids) != 0) {
                         is_sampler_bias_offset = true;
                     }
 
@@ -1384,8 +1395,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                         return;
                     }
                 }
-                if (CheckObjectIDFromOpLoad(id, static_data_.atomic_store_pointer_ids, static_data_.image_texel_pointer_members,
-                                            static_data_.accesschain_members) != 0) {
+                if (static_data_.FindIDFromAtomic(id, static_data_.atomic_store_pointer_ids) != 0) {
                     is_written_to = true;
                     return;
                 }
