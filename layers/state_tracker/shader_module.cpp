@@ -1243,118 +1243,115 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     switch (type->Opcode()) {
         case spv::OpTypeImage: {
             image_sampled_type_width = module_state.GetTypeBitsSize(type);
-            auto dim = type->Word(3);
-            if (dim != spv::DimSubpassData) {
-                // Sampled == 2 indicates used without a sampler (a storage image)
-                const bool is_image_without_format = ((type->Word(7) == 2) && (type->Word(8) == spv::ImageFormatUnknown));
+            // Sampled == 2 indicates used without a sampler (a storage image)
+            const bool is_image_without_format = ((type->Word(7) == 2) && (type->Word(8) == spv::ImageFormatUnknown));
 
-                const uint32_t image_write_load_id = CheckObjectIDFromOpLoad(
-                    id, static_data_.image_write_load_ids, static_data_.load_members, static_data_.accesschain_members);
-                if (image_write_load_id != 0) {
-                    is_written_to = true;
-                    if (is_image_without_format) {
-                        is_write_without_format = true;
-                        for (const auto& entry : static_data_.image_write_load_id_map) {
-                            if (image_write_load_id == entry.second) {
-                                const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
-                                write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
-                            }
+            const uint32_t image_write_load_id = CheckObjectIDFromOpLoad(
+                id, static_data_.image_write_load_ids, static_data_.load_members, static_data_.accesschain_members);
+            if (image_write_load_id != 0) {
+                is_written_to = true;
+                if (is_image_without_format) {
+                    is_write_without_format = true;
+                    for (const auto& entry : static_data_.image_write_load_id_map) {
+                        if (image_write_load_id == entry.second) {
+                            const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
+                            write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
                         }
                     }
                 }
-                if (CheckObjectIDFromOpLoad(id, static_data_.image_read_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_read_from = true;
-                    if (is_image_without_format) {
-                        is_read_without_format = true;
-                    }
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.image_read_load_ids, static_data_.load_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_read_from = true;
+                if (is_image_without_format) {
+                    is_read_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, static_data_.sampler_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_sampler_sampled = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, static_data_.sampler_implicitLod_dref_proj_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_sampler_implicitLod_dref_proj = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_sampler_bias_offset = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, static_data_.atomic_pointer_ids, static_data_.image_texel_pointer_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_atomic_operation = true;
-                }
-                if (CheckObjectIDFromOpLoad(id, static_data_.image_dref_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members) != 0) {
-                    is_dref_operation = true;
-                }
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_load_ids, static_data_.load_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_sampler_sampled = true;
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_implicitLod_dref_proj_load_ids, static_data_.load_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_sampler_implicitLod_dref_proj = true;
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_sampler_bias_offset = true;
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.atomic_pointer_ids, static_data_.image_texel_pointer_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_atomic_operation = true;
+            }
+            if (CheckObjectIDFromOpLoad(id, static_data_.image_dref_load_ids, static_data_.load_members,
+                                        static_data_.accesschain_members) != 0) {
+                is_dref_operation = true;
+            }
 
-                for (auto& itp_id : static_data_.sampled_image_load_ids) {
-                    // Find if image id match.
-                    uint32_t image_index = 0;
-                    auto load_it = static_data_.load_members.find(itp_id.first);
-                    if (load_it == static_data_.load_members.end()) {
-                        continue;
-                    } else {
-                        if (load_it->second != id) {
-                            auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
-                            if (accesschain_it == static_data_.accesschain_members.end()) {
-                                continue;
-                            } else {
-                                if (accesschain_it->second.first != id) {
-                                    continue;
-                                }
-
-                                const Instruction* const_def = module_state.GetConstantDef(accesschain_it->second.second);
-                                if (!const_def) {
-                                    // access chain index not a constant, skip.
-                                    break;
-                                }
-                                image_index = const_def->GetConstantValue();
-                            }
-                        }
-                    }
-                    // Find sampler's set binding.
-                    load_it = static_data_.load_members.find(itp_id.second);
-                    if (load_it == static_data_.load_members.end()) {
-                        continue;
-                    } else {
-                        uint32_t sampler_id = load_it->second;
-                        uint32_t sampler_index = 0;
+            for (auto& itp_id : static_data_.sampled_image_load_ids) {
+                // Find if image id match.
+                uint32_t image_index = 0;
+                auto load_it = static_data_.load_members.find(itp_id.first);
+                if (load_it == static_data_.load_members.end()) {
+                    continue;
+                } else {
+                    if (load_it->second != id) {
                         auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
+                        if (accesschain_it == static_data_.accesschain_members.end()) {
+                            continue;
+                        } else {
+                            if (accesschain_it->second.first != id) {
+                                continue;
+                            }
 
-                        if (accesschain_it != static_data_.accesschain_members.end()) {
                             const Instruction* const_def = module_state.GetConstantDef(accesschain_it->second.second);
                             if (!const_def) {
-                                // access chain index representing sampler index is not a constant, skip.
+                                // access chain index not a constant, skip.
                                 break;
                             }
-                            sampler_id = const_def->Word(const_def->ResultId());
-                            sampler_index = const_def->GetConstantValue();
+                            image_index = const_def->GetConstantValue();
                         }
-                        auto sampler_dec = module_state.GetDecorationSet(sampler_id);
-                        if (image_index >= samplers_used_by_image.size()) {
-                            samplers_used_by_image.resize(image_index + 1);
-                        }
-
-                        // Need to check again for these properties in case not using a combined image sampler
-                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_load_ids, static_data_.load_members,
-                                                    static_data_.accesschain_members) != 0) {
-                            is_sampler_sampled = true;
-                        }
-                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids,
-                                                    static_data_.load_members, static_data_.accesschain_members) != 0) {
-                            is_sampler_implicitLod_dref_proj = true;
-                        }
-                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_bias_offset_load_ids,
-                                                    static_data_.load_members, static_data_.accesschain_members) != 0) {
-                            is_sampler_bias_offset = true;
-                        }
-
-                        samplers_used_by_image[image_index].emplace(
-                            SamplerUsedByImage{DescriptorSlot{sampler_dec.set, sampler_dec.binding}, sampler_index});
                     }
+                }
+                // Find sampler's set binding.
+                load_it = static_data_.load_members.find(itp_id.second);
+                if (load_it == static_data_.load_members.end()) {
+                    continue;
+                } else {
+                    uint32_t sampler_id = load_it->second;
+                    uint32_t sampler_index = 0;
+                    auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
+
+                    if (accesschain_it != static_data_.accesschain_members.end()) {
+                        const Instruction* const_def = module_state.GetConstantDef(accesschain_it->second.second);
+                        if (!const_def) {
+                            // access chain index representing sampler index is not a constant, skip.
+                            break;
+                        }
+                        sampler_id = const_def->Word(const_def->ResultId());
+                        sampler_index = const_def->GetConstantValue();
+                    }
+                    auto sampler_dec = module_state.GetDecorationSet(sampler_id);
+                    if (image_index >= samplers_used_by_image.size()) {
+                        samplers_used_by_image.resize(image_index + 1);
+                    }
+
+                    // Need to check again for these properties in case not using a combined image sampler
+                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_load_ids, static_data_.load_members,
+                                                static_data_.accesschain_members) != 0) {
+                        is_sampler_sampled = true;
+                    }
+                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids,
+                                                static_data_.load_members, static_data_.accesschain_members) != 0) {
+                        is_sampler_implicitLod_dref_proj = true;
+                    }
+                    if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
+                                                static_data_.accesschain_members) != 0) {
+                        is_sampler_bias_offset = true;
+                    }
+
+                    samplers_used_by_image[image_index].emplace(
+                        SamplerUsedByImage{DescriptorSlot{sampler_dec.set, sampler_dec.binding}, sampler_index});
                 }
             }
             return;
