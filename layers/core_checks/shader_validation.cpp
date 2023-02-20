@@ -241,6 +241,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     return skip;
 }
 
+// Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
                                                const PIPELINE_STATE &pipeline) const {
     bool skip = false;
@@ -3271,7 +3272,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         }
     }
 
-    // Validate use of input attachments against subpass structure
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);
     } else if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {

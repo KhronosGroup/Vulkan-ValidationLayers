@@ -41,9 +41,6 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationComponent:
             component = value;
             break;
-        case spv::DecorationInputAttachmentIndex:
-            input_attachment_index = value;
-            break;
         case spv::DecorationDescriptorSet:
             set = value;
             break;
