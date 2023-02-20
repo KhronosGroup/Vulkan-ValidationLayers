@@ -439,6 +439,7 @@ static inline void ResetCmdDebugUtilsLabel(debug_report_data *report_data, VkCom
 }
 
 static inline void EraseCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     report_data->debugUtilsCmdBufLabels.erase(command_buffer);
 }
 
