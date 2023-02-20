@@ -249,11 +249,11 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     if (rp_state && !rp_state->UsesDynamicRendering()) {
         auto rpci = rp_state->createInfo.ptr();
         const uint32_t subpass = pipeline.Subpass();
-        auto attachment_indexes = module_state.GetAttachmentIndexes(entrypoint);
-        if (!attachment_indexes) {
+        auto input_attachment_indexes = module_state.GetAttachmentIndexes(entrypoint);
+        if (!input_attachment_indexes) {
             return skip;
         }
-        for (const uint32_t index : *attachment_indexes) {
+        for (const uint32_t index : *input_attachment_indexes) {
             auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
 
             // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
@@ -695,10 +695,10 @@ bool CoreChecks::RequireFeature(const SHADER_MODULE_STATE &module_state, VkBool3
 }
 
 bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                               bool has_writable_descriptor, bool has_atomic_descriptor) const {
+                                                               bool has_descriptor_written_to, bool has_atomic_descriptor) const {
     bool skip = false;
 
-    if (has_writable_descriptor || has_atomic_descriptor) {
+    if (has_descriptor_written_to || has_atomic_descriptor) {
         switch (stage) {
             case VK_SHADER_STAGE_FRAGMENT_BIT:
                 skip |= RequireFeature(module_state, enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
@@ -3164,7 +3164,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     }
 
     skip |= ValidateTransformFeedback(module_state, pipeline);
-    skip |= ValidateShaderStageWritableOrAtomicDescriptor(module_state, pStage->stage, stage_state.has_writable_descriptor,
+    skip |= ValidateShaderStageWritableOrAtomicDescriptor(module_state, pStage->stage, stage_state.has_descriptor_written_to,
                                                           stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module_state, pStage, pipeline, entrypoint);
     skip |= ValidateShaderStageMaxResources(module_state, pStage->stage, pipeline);
