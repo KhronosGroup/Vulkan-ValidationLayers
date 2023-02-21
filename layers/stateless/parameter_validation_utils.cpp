@@ -272,6 +272,13 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
             instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
             for (uint32_t j = 0; j < ext_count; j++) {
                 dev_exts_enumerated.insert(ext_props[j].extensionName);
+
+                std::string_view extension_name = ext_props[j].extensionName;
+                if (extension_name == "VK_EXT_discard_rectangles") {
+                    discard_rectangles_extension_version = ext_props[j].specVersion;
+                } else if (extension_name == "VK_NV_scissor_exclusive") {
+                    scissor_exclusive_extension_version = ext_props[j].specVersion;
+                }
             }
             device_extensions_enumerated[phys_device] = std::move(dev_exts_enumerated);
         }
@@ -2490,6 +2497,31 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     "both listed in pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32
                     "] and pDynamicStates[%" PRIu32 "] respectfully.",
                     i, dynamic_state_map[VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT], dynamic_state_map[VK_DYNAMIC_STATE_SCISSOR]);
+            }
+
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT) &&
+                discard_rectangles_extension_version < 2) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07855",
+                    "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT is listed in pCreateInfos[%" PRIu32
+                    "].pDynamicState->pDynamicStates[%" PRIu32 "] without support for version 2 of VK_EXT_discard_rectangles.",
+                    i, dynamic_state_map[VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT]);
+            }
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT) &&
+                discard_rectangles_extension_version < 2) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07856",
+                    "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT is listed in pCreateInfos[%" PRIu32
+                    "].pDynamicState->pDynamicStates[%" PRIu32 "] without support for version 2 of VK_EXT_discard_rectangles.",
+                    i, dynamic_state_map[VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT]);
+            }
+            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV) &&
+                scissor_exclusive_extension_version < 2) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07854",
+                    "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV is listed in pCreateInfos[%" PRIu32
+                    "].pDynamicState->pDynamicStates[%" PRIu32 "] without support for version 2 of VK_NV_scissor_exclusive.",
+                    i, dynamic_state_map[VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV]);
             }
 
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
@@ -9828,6 +9860,38 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
         skip |= LogError(physicalDevice, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06521",
                          "vkGetPhysicalDeviceSurfaceFormats2KHR: pSurfaceInfo->surface is VK_NULL_HANDLE and "
                          "VK_GOOGLE_surfaceless_query is not enabled.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer,
+                                                                                VkBool32 discardRectangleEnable) const {
+    bool skip = false;
+    if (discard_rectangles_extension_version < 2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDiscardRectangleEnableEXT-specVersion-07851",
+                         "vkCmdSetDiscardRectangleEnableEXT: Requires support for version 2 of VK_EXT_discard_rectangles.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleModeEXT(
+    VkCommandBuffer commandBuffer, VkDiscardRectangleModeEXT discardRectangleMode) const {
+    bool skip = false;
+    if (discard_rectangles_extension_version < 2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetDiscardRectangleModeEXT-specVersion-07852",
+                         "vkCmdSetDiscardRectangleModeEXT: Requires support for version 2 of VK_EXT_discard_rectangles.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer,
+                                                                               uint32_t firstExclusiveScissor,
+                                                                               uint32_t exclusiveScissorCount,
+                                                                               const VkBool32 *pExclusiveScissorEnables) const {
+    bool skip = false;
+    if (scissor_exclusive_extension_version < 2) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetExclusiveScissorEnableNV-exclusiveScissor-07853",
+                         "vkCmdSetExclusiveScissorEnableNV: Requires support for version 2 of VK_NV_scissor_exclusive.");
     }
     return skip;
 }

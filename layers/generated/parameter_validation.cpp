@@ -15640,6 +15640,7 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEnableEXT(
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdSetDiscardRectangleEnableEXT", "VK_KHR_get_physical_device_properties2");
     if (!IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) skip |= OutputExtensionError("vkCmdSetDiscardRectangleEnableEXT", "VK_EXT_discard_rectangles");
     skip |= ValidateBool32("vkCmdSetDiscardRectangleEnableEXT", "discardRectangleEnable", discardRectangleEnable);
+    if (!skip) skip |= manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable);
     return skip;
 }
 
@@ -15650,6 +15651,7 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleModeEXT(
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdSetDiscardRectangleModeEXT", "VK_KHR_get_physical_device_properties2");
     if (!IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) skip |= OutputExtensionError("vkCmdSetDiscardRectangleModeEXT", "VK_EXT_discard_rectangles");
     skip |= ValidateRangedEnum("vkCmdSetDiscardRectangleModeEXT", "discardRectangleMode", "VkDiscardRectangleModeEXT", discardRectangleMode, "VUID-vkCmdSetDiscardRectangleModeEXT-discardRectangleMode-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdSetDiscardRectangleModeEXT(commandBuffer, discardRectangleMode);
     return skip;
 }
 
@@ -16886,6 +16888,7 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorEnableNV(
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdSetExclusiveScissorEnableNV", "VK_KHR_get_physical_device_properties2");
     if (!IsExtEnabled(device_extensions.vk_nv_scissor_exclusive)) skip |= OutputExtensionError("vkCmdSetExclusiveScissorEnableNV", "VK_NV_scissor_exclusive");
     skip |= ValidateBool32Array("vkCmdSetExclusiveScissorEnableNV", "exclusiveScissorCount", "pExclusiveScissorEnables", exclusiveScissorCount, pExclusiveScissorEnables, true, true);
+    if (!skip) skip |= manual_PreCallValidateCmdSetExclusiveScissorEnableNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissorEnables);
     return skip;
 }
 
