@@ -1298,7 +1298,7 @@ bool AccessContext::ValidateLayoutTransitions(const CommandExecutionContext &exe
     std::unique_ptr<AccessContext> proxy_for_prev;
     TrackBack proxy_track_back;
 
-    const auto &transitions = rp_state.subpass_transitions[subpass];
+    const auto &transitions = rp_state.subpasses_transitions[subpass];
     for (const auto &transition : transitions) {
         const bool prev_needs_proxy = transition.prev_pass != VK_SUBPASS_EXTERNAL && (transition.prev_pass + 1 == subpass);
 
@@ -2088,7 +2088,7 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
 
 void AccessContext::RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
                                             const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag) {
-    const auto &transitions = rp_state.subpass_transitions[subpass];
+    const auto &transitions = rp_state.subpasses_transitions[subpass];
     const ResourceAccessState empty_infill;
     for (const auto &transition : transitions) {
         const auto prev_pass = transition.prev_pass;
@@ -2905,7 +2905,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
 
     // Validate the "finalLayout" transitions to external
     // Get them from where there we're hidding in the extra entry.
-    const auto &final_transitions = rp_state_->subpass_transitions.back();
+    const auto &final_transitions = rp_state_->subpasses_transitions.back();
     for (const auto &transition : final_transitions) {
         const auto &view_gen = attachment_views_[transition.attachment];
         const auto &trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
@@ -3055,7 +3055,7 @@ void RenderPassAccessContext::RecordEndRenderPass(AccessContext *external_contex
     // Not that since *final* always comes from *one* subpass per view, we don't have to accumulate the barriers
     // TODO Aliasing we may need to reconsider barrier accumulation... though I don't know that it would be valid for aliasing
     //      that had mulitple final layout transistions from mulitple final subpasses.
-    const auto &final_transitions = rp_state_->subpass_transitions.back();
+    const auto &final_transitions = rp_state_->subpasses_transitions.back();
     for (const auto &transition : final_transitions) {
         const AttachmentViewGen &view_gen = attachment_views_[transition.attachment];
         const auto &last_trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();

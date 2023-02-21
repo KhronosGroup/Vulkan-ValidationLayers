@@ -140,33 +140,63 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     RENDER_PASS_STATE::SubpassVec &first;
     RENDER_PASS_STATE::FirstIsTransitionVec &first_is_transition;
     RENDER_PASS_STATE::SubpassVec &last;
-    RENDER_PASS_STATE::TransitionVec &subpass_transitions;
+    RENDER_PASS_STATE::TransitionVec &subpasses_transitions;
     RENDER_PASS_STATE::FirstReadMap &first_read;
     const uint32_t attachment_count;
-    std::vector<VkImageLayout> attachment_layout;
-    std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
+    std::vector<VkImageLayout> attachment_layouts;
+    std::vector<std::vector<VkImageLayout>> subpasses_attachment_layouts;
     explicit AttachmentTracker(RENDER_PASS_STATE *render_pass)
         : rp(render_pass),
           first(const_cast<RENDER_PASS_STATE::SubpassVec &>(rp->attachment_first_subpass)),
           first_is_transition(const_cast<RENDER_PASS_STATE::FirstIsTransitionVec &>(rp->attachment_first_is_transition)),
           last(const_cast<RENDER_PASS_STATE::SubpassVec &>(rp->attachment_last_subpass)),
-          subpass_transitions(const_cast<RENDER_PASS_STATE::TransitionVec &>(rp->subpass_transitions)),
+          subpasses_transitions(const_cast<RENDER_PASS_STATE::TransitionVec &>(rp->subpasses_transitions)),
           first_read(const_cast<RENDER_PASS_STATE::FirstReadMap &>(rp->attachment_first_read)),
           attachment_count(rp->createInfo.attachmentCount),
-          attachment_layout(),
-          subpass_attachment_layout() {
+          attachment_layouts(),
+          subpasses_attachment_layouts() {
         first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
         first_is_transition.resize(attachment_count, false);
         last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-        subpass_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
-        attachment_layout.reserve(attachment_count);
-        subpass_attachment_layout.resize(rp->createInfo.subpassCount);
-        for (auto &subpass_layouts : subpass_attachment_layout) {
-            subpass_layouts.resize(attachment_count, kInvalidLayout);
+        subpasses_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
+        attachment_layouts.reserve(attachment_count);
+        subpasses_attachment_layouts.resize(rp->createInfo.subpassCount);
+
+        // For each subpass, record the layouts of the attachment it uses
+        for (uint32_t subpassIndex = 0; subpassIndex < rp->createInfo.subpassCount; ++subpassIndex) {
+            auto &subpass_attachment_layouts = subpasses_attachment_layouts[subpassIndex];
+
+            subpass_attachment_layouts.resize(attachment_count, kInvalidLayout);
+
+            auto init_subpass_attachment_layouts = [](uint32_t attachment_ref_count, safe_VkAttachmentReference2 *attachment_refs,
+                                                      std::vector<VkImageLayout> &subpass_attachment_layouts) {
+                if (!attachment_refs) return;
+                for (uint32_t i = 0; i < attachment_ref_count; ++i) {
+                    safe_VkAttachmentReference2 &attachment_ref = attachment_refs[i];
+                    if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                        subpass_attachment_layouts[attachment_ref.attachment] = attachment_ref.layout;
+                    }
+                }
+            };
+
+            // Color
+            init_subpass_attachment_layouts(rp->createInfo.pSubpasses[subpassIndex].colorAttachmentCount,
+                                            rp->createInfo.pSubpasses[subpassIndex].pColorAttachments, subpass_attachment_layouts);
+            // Resolve
+            init_subpass_attachment_layouts(rp->createInfo.pSubpasses[subpassIndex].colorAttachmentCount,
+                                            rp->createInfo.pSubpasses[subpassIndex].pResolveAttachments,
+                                            subpass_attachment_layouts);
+            // Depth
+            init_subpass_attachment_layouts(1, rp->createInfo.pSubpasses[subpassIndex].pDepthStencilAttachment,
+                                            subpass_attachment_layouts);
+            // Input
+            init_subpass_attachment_layouts(rp->createInfo.pSubpasses[subpassIndex].inputAttachmentCount,
+                                            rp->createInfo.pSubpasses[subpassIndex].pInputAttachments, subpass_attachment_layouts);
         }
 
+        // Record attachments initial layout
         for (uint32_t j = 0; j < attachment_count; j++) {
-            attachment_layout.push_back(rp->createInfo.pAttachments[j].initialLayout);
+            attachment_layouts.push_back(rp->createInfo.pAttachments[j].initialLayout);
         }
     }
 
@@ -182,7 +212,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                     first[attachment] = subpass;
                     const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
                     if (initial_layout != layout) {
-                        subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
+                        subpasses_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
                         first_is_transition[attachment] = true;
                     }
                 }
@@ -190,23 +220,23 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 
                 for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
                     const auto prev_pass = prev.first->pass;
-                    const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
+                    const auto prev_layout = subpasses_attachment_layouts[prev_pass][attachment];
                     if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
-                        subpass_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
+                        subpasses_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
                     }
                 }
-                attachment_layout[attachment] = layout;
+                attachment_layouts[attachment] = layout;
             }
         }
     }
     void FinalTransitions() {
-        auto &final_transitions = subpass_transitions[rp->createInfo.subpassCount];
+        auto &final_transitions = subpasses_transitions[rp->createInfo.subpassCount];
 
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
             const auto final_layout = rp->createInfo.pAttachments[attachment].finalLayout;
             // Add final transitions for attachments that were used and change layout.
-            if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
-                final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
+            if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layouts[attachment]) {
+                final_transitions.emplace_back(last[attachment], attachment, attachment_layouts[attachment], final_layout);
             }
         }
     }

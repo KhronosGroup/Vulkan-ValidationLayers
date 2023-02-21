@@ -101,7 +101,7 @@ class RENDER_PASS_STATE : public BASE_NODE {
     using SubpassGraphVec = std::vector<SubpassDependencyGraphNode>;
     const SubpassGraphVec subpass_dependencies;
     using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
-    const TransitionVec subpass_transitions;
+    const TransitionVec subpasses_transitions;
 
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo);
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
