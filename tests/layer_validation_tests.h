@@ -994,7 +994,7 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
 
 bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
-                                    VkValidationFeaturesEXT *enabled_features = nullptr, bool mockicd_valid = false);
+                                    VkValidationFeaturesEXT *enabled_features = nullptr);
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
                                                     VkGeometryNV *geometry, VkDeviceSize offset = 0, bool buffer_device_address = false);

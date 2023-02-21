@@ -2605,7 +2605,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
 };
 
 bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, VkPhysicalDeviceFeatures2KHR *features2,
-                                    VkValidationFeaturesEXT *enabled_features, bool mockicd_valid) {
+                                    VkValidationFeaturesEXT *enabled_features) {
     framework->AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     framework->AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (is_khr) {
@@ -2624,11 +2624,6 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, V
     framework->InitFramework(&framework->Monitor(), enabled_features);
     if (!framework->AreRequiredExtensionsEnabled()) {
         printf("%s device extension not supported, skipping test\n", framework->RequiredExtensionsNotSupported().c_str());
-        return false;
-    }
-
-    if (!mockicd_valid && (framework->IsPlatform(kMockICD))) {
-        printf("Test not supported by MockICD, skipping tests\n");
         return false;
     }
 
@@ -2736,8 +2731,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (gpu_assisted && IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "GPU-AV can't run on MockICD";
     }
 
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();

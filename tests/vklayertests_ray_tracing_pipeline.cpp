@@ -916,7 +916,9 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
+    }
     // Needed for Ray Tracing
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -1215,7 +1217,7 @@ TEST_F(VkLayerTest, RayTracingPipelineLibraryGroupHandlesEXT) {
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto pipeline_library_group_handles_features =
         LvlInitStruct<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(&ray_tracing_features);
-    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
+    GetPhysicalDeviceFeatures2(pipeline_library_group_handles_features);
 
     if (!ray_tracing_features.rayTracingPipeline) {
         GTEST_SKIP() << "Feature rayTracing is not supported.";
@@ -1227,7 +1229,7 @@ TEST_F(VkLayerTest, RayTracingPipelineLibraryGroupHandlesEXT) {
         GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
     }
     pipeline_library_group_handles_features.pipelineLibraryGroupHandles = false;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_library_group_handles_features));
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
     VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);

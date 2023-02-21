@@ -138,7 +138,7 @@ TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
     dslb.descriptorCount = 1;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    for (uint32_t i = 0; i < maxBlocks; ++i) {
+    for (uint32_t i = 0; i < maxBlocks + 1; ++i) {
         dslb.binding = i;
         dslb_vec.push_back(dslb);
     }
@@ -320,11 +320,8 @@ TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test does not work correctly on MockICD";
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
@@ -340,7 +337,16 @@ TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
     buffer_no_mem.init_no_mem(*m_device, buffer_ci);
 
     VkBufferObj buffer;
-    buffer.init(*m_device, buffer_ci);
+    buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkMemoryRequirements memory_requirements = buffer.memory_requirements();
+    VkMemoryAllocateInfo memory_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_alloc.allocationSize = memory_requirements.size;
+    ASSERT_TRUE(
+        m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    ASSERT_TRUE(device_memory.initialized());
+    vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
     VkBufferObj host_visible_buffer;
     host_visible_buffer.init(*m_device, buffer_ci.size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, buffer_ci.usage);
@@ -406,6 +412,10 @@ TEST_F(VkLayerTest, RayTracingTestCmdCopyMemoryToAccelerationStructureKHR) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     const auto vkCmdCopyMemoryToAccelerationStructureKHR =
@@ -453,6 +463,10 @@ TEST_F(VkLayerTest, RayTracingBuildAccelerationStructureKHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_tracing_features);
     auto features2 = GetPhysicalDeviceFeatures2(acc_structure_features);
@@ -466,15 +480,19 @@ TEST_F(VkLayerTest, RayTracingBuildAccelerationStructureKHR) {
         GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-    {
-        const VkPhysicalDeviceMemoryProperties dev_mem_props = m_device->phy().memory_properties();
-        const uint32_t buffer_memory_type_index = buffer.memory().get_memory_allocate_info().memoryTypeIndex;
-        assert(buffer_memory_type_index < dev_mem_props.memoryTypeCount);
-        if (dev_mem_props.memoryTypes[buffer_memory_type_index].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-            GTEST_SKIP() << "Device local memory is also host visible, skipping test.";
-        }
-    }
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkMemoryRequirements memory_requirements = buffer.memory_requirements();
+    VkMemoryAllocateInfo memory_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_alloc.allocationSize = memory_requirements.size;
+    ASSERT_TRUE(
+        m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    ASSERT_TRUE(device_memory.initialized());
+    vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
     VkBufferObj host_buffer;
     host_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
@@ -554,15 +572,19 @@ TEST_F(VkLayerTest, RayTracingTestWriteAccelerationStructureMemory) {
         GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-    {
-        const VkPhysicalDeviceMemoryProperties dev_mem_props = m_device->phy().memory_properties();
-        const uint32_t buffer_memory_type_index = buffer.memory().get_memory_allocate_info().memoryTypeIndex;
-        assert(buffer_memory_type_index < dev_mem_props.memoryTypeCount);
-        if (dev_mem_props.memoryTypes[buffer_memory_type_index].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-            GTEST_SKIP() << "Device local memory is also host visible, skipping test.";
-        }
-    }
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkMemoryRequirements memory_requirements = buffer.memory_requirements();
+    VkMemoryAllocateInfo memory_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_alloc.allocationSize = memory_requirements.size;
+    ASSERT_TRUE(
+        m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    ASSERT_TRUE(device_memory.initialized());
+    vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     as_create_info.buffer = buffer.handle();
@@ -621,9 +643,6 @@ TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature is not supported";
     }
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test does not work correctly on MockICD";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -631,7 +650,20 @@ TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
         GetDeviceProcAddr<PFN_vkCopyMemoryToAccelerationStructureKHR>("vkCopyMemoryToAccelerationStructureKHR");
 
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+    buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkMemoryRequirements memory_requirements = buffer.memory_requirements();
+    VkMemoryAllocateInfo memory_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_alloc.allocationSize = memory_requirements.size;
+    ASSERT_TRUE(
+        m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vk_testing::DeviceMemory device_memory(*m_device, memory_alloc);
+    ASSERT_TRUE(device_memory.initialized());
+    vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
+
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
@@ -816,7 +848,9 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
     // Needed for Ray Tracing
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -1597,8 +1631,8 @@ TEST_F(VkLayerTest, RayTracingUpdateAccelerationStructureKHR) {
     rt::as::BuildGeometryInfoKHR build_geometry_info =
         rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
     build_geometry_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-    // computed scratch buffer size is empty, so scratch buffer address is 0 and invalid
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
+    // computed scratch buffer size is empty, so scratch buffer address can be 0 and invalid
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802");
     // Update acceleration structure, with .srcAccelerationStructure == VK_NULL_HANDLE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630");
     build_geometry_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
@@ -1719,7 +1753,7 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
-
+    AddOptionalExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
@@ -1730,9 +1764,6 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test does not work correctly on MockICD";
     }
 
     GetPhysicalDeviceFeatures2(features2);
@@ -1746,6 +1777,7 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
         GTEST_SKIP() << "rayQuery not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    const bool rt_maintenance_1 = IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 
     auto vkWriteAccelerationStructuresPropertiesKHR =
         GetDeviceProcAddr<PFN_vkWriteAccelerationStructuresPropertiesKHR>("vkWriteAccelerationStructuresPropertiesKHR");
@@ -1774,24 +1806,29 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
         constexpr size_t data_size = sizeof(uint32_t) * stride;
         uint8_t data[data_size];
         // Incorrect query type
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03432");
+        const char *vuid = (rt_maintenance_1) ? "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742"
+                                              : "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03432";
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
         vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
                                                    VK_QUERY_TYPE_OCCLUSION, data_size, data, stride);
         m_errorMonitor->VerifyFound();
 
-        // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, but stride is not a multiple of the size of VkDeviceSize
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
-        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
-                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, data_size, data, stride);
-        m_errorMonitor->VerifyFound();
+        // query types not known without extension
+        if (rt_maintenance_1) {
+            // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, but stride is not a multiple of the size of VkDeviceSize
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
+            vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                       VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, data_size, data, stride);
+            m_errorMonitor->VerifyFound();
 
-        // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, but stride is not a multiple
-        // of the size of VkDeviceSize
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
-        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
-                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
-                                                   data_size, data, stride);
-        m_errorMonitor->VerifyFound();
+            // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, but stride is not a
+            // multiple of the size of VkDeviceSize
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
+            vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+                                                       VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
+                                                       data_size, data, stride);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     // On device query with invalid query type
@@ -1811,7 +1848,9 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresProperties) {
 
         as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
         // Incorrect query type
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-03432");
+        const char *vuid = (rt_maintenance_1) ? "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-06742"
+                                              : "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-03432";
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
         vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &as_build_info.GetDstAS()->handle(),
                                                       VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
         m_errorMonitor->VerifyFound();
@@ -1840,9 +1879,6 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test does not work correctly on MockICD";
     }
 
     GetPhysicalDeviceFeatures2(features2);
