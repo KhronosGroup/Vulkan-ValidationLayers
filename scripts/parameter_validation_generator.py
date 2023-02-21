@@ -301,6 +301,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceSurfacePresentModes2EXT',
             'vkExportMetalObjectsEXT',
+            'vkCmdSetDiscardRectangleEnableEXT',
+            'vkCmdSetDiscardRectangleModeEXT',
+            'vkCmdSetExclusiveScissorEnableNV',
             ]
 
         # Commands to ignore

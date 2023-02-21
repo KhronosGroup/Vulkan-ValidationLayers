@@ -88,6 +88,10 @@ struct DrawDispatchVuid {
     const char* vertex_input = kVUIDUndefined;
     const char* blend_enable = kVUIDUndefined;
     const char* dynamic_discard_rectangle = kVUIDUndefined;
+    const char* dynamic_discard_rectangle_enable_07880 = kVUIDUndefined;
+    const char* dynamic_discard_rectangle_mode_07881 = kVUIDUndefined;
+    const char* dynamic_exclusive_scissor_07878 = kVUIDUndefined;
+    const char* dynamic_exclusive_scissor_enable_07879 = kVUIDUndefined;
     const char* dynamic_color_write_enable = kVUIDUndefined;
     const char* dynamic_color_write_enable_count = kVUIDUndefined;
     const char* dynamic_rendering_view_mask = kVUIDUndefined;

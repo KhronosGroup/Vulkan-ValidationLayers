@@ -53,6 +53,11 @@ class StatelessValidation : public ValidationObject {
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<std::string>> device_extensions_enumerated{};
 
+    // This was a special case where it was decided to use the extension version for validation
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
+    uint32_t discard_rectangles_extension_version = 0;
+    uint32_t scissor_exclusive_extension_version = 0;
+
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
     ReadLockGuard ReadLock() const override;
@@ -1558,6 +1563,15 @@ class StatelessValidation : public ValidationObject {
                                                                    const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                    uint32_t *pSurfaceFormatCount,
                                                                    VkSurfaceFormat2KHR *pSurfaceFormats) const;
+
+    bool manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer,
+                                                               VkBool32 discardRectangleEnable) const;
+    bool manual_PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
+                                                             VkDiscardRectangleModeEXT discardRectangleMode) const;
+    bool manual_PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                                              uint32_t exclusiveScissorCount,
+                                                              const VkBool32 *pExclusiveScissorEnables) const;
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,

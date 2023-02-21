@@ -3075,7 +3075,8 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
                              "Graphics pipeline incompatible with viewport/scissor inheritance.");
         }
         const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
-        if (discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) {
+        if ((discard_rectangle_state && discard_rectangle_state->discardRectangleCount != 0) ||
+            (pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
             if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
                 skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04809",
                                  "vkCmdBindPipeline(): commandBuffer is a secondary command buffer with "
