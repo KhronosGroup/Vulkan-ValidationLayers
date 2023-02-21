@@ -10928,9 +10928,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
         GTEST_SKIP() << "bufferDeviceAddressCaptureReplay feature not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
@@ -10986,10 +10983,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
@@ -11026,10 +11019,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
@@ -11139,10 +11128,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();

@@ -12276,10 +12276,6 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD)) {
-        // TODO - Issue https://github.com/KhronosGroup/Vulkan-Tools/issues/743
-        GTEST_SKIP() << "MockICD missing VK_KHR_buffer_device_address";
-    }
 
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
     auto acceleration_structure_features =
@@ -12682,11 +12678,6 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    if (IsPlatform(kMockICD)) {
-        // TODO - Issue https://github.com/KhronosGroup/Vulkan-Tools/issues/743
-        GTEST_SKIP() << "MockICD missing VK_KHR_buffer_device_address";
-    }
-
     auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
@@ -12932,11 +12923,6 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    if (IsPlatform(kMockICD)) {
-        // TODO - Issue https://github.com/KhronosGroup/Vulkan-Tools/issues/743
-        GTEST_SKIP() << "MockICD missing VK_KHR_buffer_device_address";
-    }
-
     auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
@@ -13161,11 +13147,6 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (IsPlatform(kMockICD)) {
-        // TODO - Issue https://github.com/KhronosGroup/Vulkan-Tools/issues/743
-        GTEST_SKIP() << "MockICD missing VK_KHR_buffer_device_address";
     }
 
     const bool acceleration_structure = IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
