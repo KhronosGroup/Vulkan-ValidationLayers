@@ -22,6 +22,7 @@
 #include <thread>
 
 #include "cast_utils.h"
+#include "vk_layer_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS
@@ -2670,4 +2671,130 @@ TEST_F(VkPositiveLayerTest, Create3DImageView) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vk_testing::ImageView image_view(*m_device, ivci);
+}
+
+TEST_F(VkPositiveLayerTest, SlicedCreateInfo) {
+    TEST_DESCRIPTION("Test VkImageViewSlicedCreateInfoEXT");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    {
+        auto slice_feature = LvlInitStruct<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>();
+        GetPhysicalDeviceFeatures2(slice_feature);
+        if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
+            GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
+        }
+        InitState(nullptr, &slice_feature);
+    }
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto sliced_info = LvlInitStruct<VkImageViewSlicedCreateInfoEXT>();
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>(&sliced_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = ci.format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.layerCount = 1;
+
+    auto get_effective_depth = [&]() -> uint32_t { return GetEffectiveExtent(ci, ivci.subresourceRange).depth; };
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+        sliced_info.sliceOffset = 1;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = 8;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = 4;
+        sliced_info.sliceOffset = 4;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = 4;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.baseMipLevel = 1;
+        ASSERT_TRUE(get_effective_depth() == 4);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = 2;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.baseMipLevel = 2;
+        ASSERT_TRUE(get_effective_depth() == 2);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        ivci.subresourceRange.baseMipLevel = 5;
+        ASSERT_TRUE(get_effective_depth() == 1);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.levelCount = 1;
+        ivci.subresourceRange.baseMipLevel = 5;
+        ASSERT_TRUE(get_effective_depth() == 1);
+
+        vk_testing::ImageView image_view(*m_device, ivci);
+    }
 }
