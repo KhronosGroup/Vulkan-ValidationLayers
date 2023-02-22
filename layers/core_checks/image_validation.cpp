@@ -1661,6 +1661,57 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         image_usage = chained_ivuci_struct->usage;
     }
 
+    if (const auto sliced_create_info_ext = LvlFindInChain<VkImageViewSlicedCreateInfoEXT>(pCreateInfo->pNext);
+        sliced_create_info_ext) {
+        const bool feature_disabled = (enabled_features.sliced_3d_features.imageSlicedViewOf3D == VK_FALSE);
+        if (feature_disabled) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-None-07871",
+                             "vkCreateImageView(): imageSlicedViewOf3D not enabled.");
+        }
+
+        if (image_type != VK_IMAGE_TYPE_3D) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-image-07869",
+                             "vkCreateImageView(): Invalid imageType (%s).", string_VkImageType(image_type));
+        }
+
+        if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
+            skip |= LogError(pCreateInfo->image, "UNASSIGNED-VkImageViewSlicedCreateInfoEXT-image-type",
+                             "vkCreateImageView(): Invalid viewType (%s).", string_VkImageViewType(view_type));
+        }
+
+        const uint32_t effective_mip_levels = ResolveRemainingLevels(image_state->createInfo, pCreateInfo->subresourceRange);
+        if (effective_mip_levels != 1) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-None-07870",
+                             "vkCreateImageView(): Image view references %" PRIu32 " mip levels.", effective_mip_levels);
+        }
+
+        const uint32_t effective_view_depth = GetEffectiveExtent(image_state->createInfo, pCreateInfo->subresourceRange).depth;
+
+        const uint32_t slice_offset = sliced_create_info_ext->sliceOffset;
+        const uint32_t slice_count = sliced_create_info_ext->sliceCount;
+
+        if (slice_offset >= effective_view_depth) {
+            skip |=
+                LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-sliceOffset-07867",
+                         "vkCreateImageView(): sliceOffset (%" PRIu32 ") must be less than the effective view depth (%" PRIu32 ").",
+                         slice_offset, effective_view_depth);
+        }
+
+        if (slice_count != VK_REMAINING_3D_SLICES_EXT) {
+            if (slice_count == 0) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868",
+                                 "vkCreateImageView(): sliceCount is equal to 0.");
+            }
+
+            if ((slice_offset + slice_count) > effective_view_depth) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868",
+                                 "vkCreateImageView(): sliceOffset (%" PRIu32 ") + sliceCount (%" PRIu32
+                                 ") greater than effective view depth (%" PRIu32 ").",
+                                 slice_offset, slice_count, effective_view_depth);
+            }
+        }
+    }
+
     // If image used VkImageFormatListCreateInfo need to make sure a format from list is used
     if (const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(image_state->createInfo.pNext);
         format_list_info && (format_list_info->viewFormatCount > 0)) {

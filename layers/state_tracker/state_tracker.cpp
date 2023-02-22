@@ -1364,6 +1364,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (pipeline_library_group_handles_features) {
             enabled_features.pipeline_library_group_handles_features = *pipeline_library_group_handles_features;
         }
+
+        if (const auto slice_feature = LvlFindInChain<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>(pCreateInfo->pNext);
+            slice_feature) {
+            enabled_features.sliced_3d_features = *slice_feature;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

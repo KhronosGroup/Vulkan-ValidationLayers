@@ -21,6 +21,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/state_tracker.h"
+#include "vk_layer_utils.h"
 #include <limits>
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
@@ -43,29 +44,11 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-static uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
-    // Return correct number of mip levels taking into account VK_REMAINING_MIP_LEVELS
-    uint32_t mip_level_count = range->levelCount;
-    if (range->levelCount == VK_REMAINING_MIP_LEVELS) {
-        mip_level_count = mip_levels - range->baseMipLevel;
-    }
-    return mip_level_count;
-}
-
-static uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
-    // Return correct number of layers taking into account VK_REMAINING_ARRAY_LAYERS
-    uint32_t array_layer_count = range->layerCount;
-    if (range->layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        array_layer_count = layers - range->baseArrayLayer;
-    }
-    return array_layer_count;
-}
-
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
                                                   const VkImageSubresourceRange &range) {
     VkImageSubresourceRange norm = range;
-    norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
-    norm.layerCount = ResolveRemainingLayers(&range, image_create_info.arrayLayers);
+    norm.levelCount = ResolveRemainingLevels(image_create_info, range);
+    norm.layerCount = ResolveRemainingLayers(image_create_info, range);
 
     // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
     if (FormatIsMultiplane(image_create_info.format)) {
