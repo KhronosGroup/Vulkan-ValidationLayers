@@ -384,6 +384,26 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
     return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
 }
 
+// Calculates the effective extent (width/height/depth) for a VkImageView.
+constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+    const uint32_t min_value = 1 + (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV);
+    VkExtent3D effective_extent = {};
+    effective_extent.depth = std::max(min_value, ci.extent.depth >> range.baseMipLevel);
+    effective_extent.width = std::max(min_value, ci.extent.width >> range.baseMipLevel);
+    effective_extent.height = std::max(min_value, ci.extent.height >> range.baseMipLevel);
+    return effective_extent;
+}
+
+// Calculates the number of mip levels a VkImageView references.
+constexpr uint32_t ResolveRemainingLevels(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+    return (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (ci.mipLevels - range.baseMipLevel) : range.levelCount;
+}
+
+// Calculates the number of mip layers a VkImageView references.
+constexpr uint32_t ResolveRemainingLayers(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+    return (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (ci.arrayLayers - range.baseArrayLayer) : range.layerCount;
+}
+
 extern "C" {
 #endif
 
