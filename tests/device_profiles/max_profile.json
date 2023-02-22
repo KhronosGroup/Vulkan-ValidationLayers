@@ -750,6 +750,9 @@
                 },
                 "VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT": {
                     "pipelineLibraryGroupHandles": true
+                },
+                "VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT": {
+                    "imageSlicedViewOf3D": true
                 }
             },
             "properties": {
@@ -1924,7 +1927,8 @@
                 "VK_QNX_screen_surface": 1,
                 "VK_SEC_amigo_profiling": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
-                "VK_VALVE_mutable_descriptor_type": 1
+                "VK_VALVE_mutable_descriptor_type": 1,
+                "VK_EXT_image_sliced_view_of_3d": 1
             },
             "formats": {
                 "VK_FORMAT_R4G4_UNORM_PACK8": {

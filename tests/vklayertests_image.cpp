@@ -6233,3 +6233,312 @@ TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     vk::CreateRenderPass2(m_device->device(), &rpci2, NULL, &rp);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, SlicedCreateInfoDeviceFeature) {
+    TEST_DESCRIPTION("Test SlicedCreateInfo feature support validation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // NOTE: We are NOT enabling the VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT::imageSlicedViewOf3D feature!
+    InitState();
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto sliced_info = LvlInitStruct<VkImageViewSlicedCreateInfoEXT>();
+    sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+    sliced_info.sliceOffset = 0;
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>(&sliced_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = ci.format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-None-07871");
+    vk_testing::ImageView image_view(*m_device, ivci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SlicedCreateInfoInvalidImageType) {
+    TEST_DESCRIPTION("Test SlicedCreateInfo ImageType validation");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    {
+        auto slice_feature = LvlInitStruct<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>();
+        GetPhysicalDeviceFeatures2(slice_feature);
+        if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
+            GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
+        }
+        InitState(nullptr, &slice_feature);
+    }
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_2D;  // imageType should be VK_IMAGE_TYPE_3D
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 1};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto sliced_info = LvlInitStruct<VkImageViewSlicedCreateInfoEXT>();
+    sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+    sliced_info.sliceOffset = 0;
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>(&sliced_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;  // viewType should be VK_IMAGE_VIEW_TYPE_3D
+    ivci.format = ci.format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-image-07869");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkImageViewSlicedCreateInfoEXT-image-type");
+    vk_testing::ImageView image_view(*m_device, ivci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SlicedCreateInfoInvalidMipLevel) {
+    TEST_DESCRIPTION("When using VkImageViewSlicedCreateInfoEXT the image view must reference exactly 1 mip level");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    {
+        auto slice_feature = LvlInitStruct<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>();
+        GetPhysicalDeviceFeatures2(slice_feature);
+        if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
+            GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
+        }
+        InitState(nullptr, &slice_feature);
+    }
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto sliced_info = LvlInitStruct<VkImageViewSlicedCreateInfoEXT>();
+    sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+    sliced_info.sliceOffset = 0;
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>(&sliced_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = ci.format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.layerCount = 1;
+
+    auto get_effective_mip_levels = [&]() -> uint32_t { return ResolveRemainingLevels(ci, ivci.subresourceRange); };
+
+    {
+        ivci.subresourceRange.baseMipLevel = 0;
+        ivci.subresourceRange.levelCount = 4;
+        ASSERT_TRUE(get_effective_mip_levels() == 4);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        ivci.subresourceRange.baseMipLevel = 0;
+        ivci.subresourceRange.levelCount = 2;
+        ASSERT_TRUE(get_effective_mip_levels() == 2);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        ivci.subresourceRange.baseMipLevel = 1;
+        ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        ASSERT_TRUE(get_effective_mip_levels() == 5);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        ivci.subresourceRange.baseMipLevel = 3;
+        ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        ASSERT_TRUE(get_effective_mip_levels() == 3);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-None-07870");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, SlicedCreateInfoInvalidUsage) {
+    TEST_DESCRIPTION("Test invalid sliceCount/sliceOffset of VkImageViewSlicedCreateInfoEXT");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    {
+        auto slice_feature = LvlInitStruct<VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT>();
+        GetPhysicalDeviceFeatures2(slice_feature);
+        if (slice_feature.imageSlicedViewOf3D == VK_FALSE) {
+            GTEST_SKIP() << "Test requires (unsupported) imageSlicedViewOf3D";
+        }
+        InitState(nullptr, &slice_feature);
+    }
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto sliced_info = LvlInitStruct<VkImageViewSlicedCreateInfoEXT>();
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>(&sliced_info);
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = ci.format;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.levelCount = 1;
+
+    auto get_effective_depth = [&]() -> uint32_t { return GetEffectiveExtent(ci, ivci.subresourceRange).depth; };
+
+    {
+        sliced_info.sliceCount = VK_REMAINING_3D_SLICES_EXT;
+        sliced_info.sliceOffset = 9;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-sliceOffset-07867");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        sliced_info.sliceCount = 0;
+        sliced_info.sliceOffset = 0;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        sliced_info.sliceCount = 8;
+        sliced_info.sliceOffset = 1;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ASSERT_TRUE(get_effective_depth() == 8);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        sliced_info.sliceCount = 4;
+        sliced_info.sliceOffset = 1;
+        ivci.subresourceRange.baseMipLevel = 1;
+        ASSERT_TRUE(get_effective_depth() == 4);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        sliced_info.sliceCount = 2;
+        sliced_info.sliceOffset = 1;
+        ivci.subresourceRange.baseMipLevel = 2;
+        ASSERT_TRUE(get_effective_depth() == 2);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-sliceCount-07868");
+        vk_testing::ImageView image_view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+    }
+}
