@@ -1,6 +1,6 @@
 # Copyright (c) 2021-2023 Valve Corporation
 # Copyright (c) 2021-2023 LunarG, Inc.
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Linux (formatting, build, test)
+name: VVL (Build/Tests)
 
 # https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
@@ -27,20 +27,6 @@ on:
             - main
 
 jobs:
-  code-format:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: '0'
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-      - name: Execute Source Code Format Checking Script
-        run: python3 scripts/check_code_format.py --fetch-main --target-refspec=FETCH_HEAD
-
   linux:
     runs-on: ubuntu-20.04
     strategy:
@@ -212,3 +198,148 @@ jobs:
                                   libxcb-randr0-dev
       - name: Build Vulkan-ValidationLayers Using Ninja
         run: python3 scripts/github_ci_gn.py
+
+  windows:
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ x64, Win32 ]
+        config: [ debug, release ]
+        os: [ windows-latest ]
+        exclude:
+          - arch: Win32
+            config: release
+          - arch: x64
+            config: debug
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - name: Install build dependencies
+        run: |
+          python3 -m pip install jsonschema pyparsing
+      - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-windows
+        with:
+          path: |
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$env:GITHUB_WORKSPACE\\external\\${{ matrix.config }}\\Vulkan-Headers\\registry;$env:PYTHONPATH" >> $env:GITHUB_ENV
+      - name: Build and Test Vulkan-ValidationLayers
+        run: |
+          echo "PYTHONPATH = $env:PYTHONPATH"
+          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
+
+  android:
+      runs-on: ubuntu-20.04
+      strategy:
+        fail-fast: false
+        matrix:
+          abi: [ arm64-v8a, armeabi-v7a ]
+
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions/setup-python@v4
+          with:
+            python-version: '3.8'
+        - name: Build ValidationLayers
+          run: python3 scripts/github_ci_android.py --abi ${{ matrix.abi }}
+
+  macos-12:
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: lukka/get-cmake@latest
+      - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-macos-12-xcode
+        with:
+          path: |
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Generate build files and dependencies
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
+        env:
+          # Ensure we can build against 10.15: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
+          MACOSX_DEPLOYMENT_TARGET: 10.15
+      - name: Build Vulkan-ValidationLayers
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
+      - name: Install Vulkan-ValidationLayers
+        run: cmake --install build --prefix build/install --config ${{matrix.config}}
+
+  macos-11:
+    runs-on: macos-11
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: lukka/get-cmake@latest
+      - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-macos-11-ninja
+        with:
+          path: |
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Generate build files and dependencies
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
+      - name: Build Vulkan-ValidationLayers
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
+      - name: Install Vulkan-ValidationLayers
+        run: cmake --install build --prefix build/install --config ${{matrix.config}}
