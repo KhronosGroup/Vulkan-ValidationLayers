@@ -286,6 +286,55 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     return skip;
 }
 
+bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
+                                                   const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+
+    // only new to validate if property is not enabled
+    if (phys_dev_ext_props.conservative_rasterization_props.conservativeRasterizationPostDepthCoverage) {
+        return skip;
+    }
+
+    bool post_depth_coverage = false;
+    const uint32_t entrypoint_id = entrypoint.Word(2);
+    const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
+    auto it = execution_mode_inst.find(entrypoint_id);
+    if (it != execution_mode_inst.end()) {
+        for (const Instruction *insn : it->second) {
+            if (insn->Word(2) == spv::ExecutionModePostDepthCoverage) {
+                post_depth_coverage = true;
+                break;
+            }
+        }
+    }
+
+    // skipped here, don't need to check later
+    if (!post_depth_coverage) {
+        return skip;
+    }
+
+    bool fully_covered = false;
+    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
+        const Instruction *insn = module_state.FindDef(id);
+        const DecorationSet decorations = module_state.GetDecorationSet(insn->Word(2));
+        if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInFullyCoveredEXT)) {
+            fully_covered = true;
+            break;
+        }
+    }
+
+    if (fully_covered) {
+        const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+        skip |= LogError(objlist, "VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] has a fragment shader with a\nOpExecutionMode EarlyFragmentTests\nOpDecorate BuiltIn "
+                         "FullyCoveredEXT\nbut conservativeRasterizationPostDepthCoverage is not enabled",
+                         pipeline.create_index);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
                                                     const PIPELINE_STATE &pipeline, uint32_t subpass_index) const {
     bool skip = false;
@@ -3274,6 +3323,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);
+        skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
     } else if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
         skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
