@@ -880,6 +880,8 @@ class CoreChecks : public ValidationStateTracker {
                                                             const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderInputAttachment(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                        const PIPELINE_STATE& pipeline) const;
+    bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+                                           const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* pStage, const std::string& vuid) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
