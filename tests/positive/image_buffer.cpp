@@ -2640,3 +2640,34 @@ TEST_F(VkPositiveLayerTest, TexelBufferAlignmentIn13) {
     buff_view_ci.offset = minTexelBufferOffsetAlignment + block_size;
     CreateBufferViewTest(*this, &buff_view_ci, {});
 }
+
+TEST_F(VkPositiveLayerTest, Create3DImageView) {
+    TEST_DESCRIPTION("Create a 3D image view");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageObj image(m_device);
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent = {32, 32, 8};
+    ci.mipLevels = 6;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.init(&ci);
+    ASSERT_TRUE(image.initialized());
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_testing::ImageView image_view(*m_device, ivci);
+}
