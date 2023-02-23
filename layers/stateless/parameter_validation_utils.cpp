@@ -3092,7 +3092,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 const bool is_frag_out_graphics_lib =
                     graphics_lib_info &&
                     ((graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0);
-                if (is_frag_out_graphics_lib && (create_info.pMultisampleState == nullptr)) {
+                if (!is_frag_out_graphics_lib && (create_info.pMultisampleState == nullptr)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751",
                                      "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
                                      "].pRasterizationState->rasterizerDiscardEnable "
