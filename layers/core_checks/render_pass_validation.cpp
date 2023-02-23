@@ -189,6 +189,28 @@ bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const
     const auto &primary_dep = rp1_state.createInfo.pDependencies[dependency];
     const auto &secondary_dep = rp2_state.createInfo.pDependencies[dependency];
 
+    VkPipelineStageFlags2 primary_src_stage_mask = primary_dep.srcStageMask;
+    VkPipelineStageFlags2 primary_dst_stage_mask = primary_dep.dstStageMask;
+    VkAccessFlags2 primary_src_access_mask = primary_dep.srcAccessMask;
+    VkAccessFlags2 primary_dst_access_mask = primary_dep.dstAccessMask;
+    VkPipelineStageFlags2 secondary_src_stage_mask = secondary_dep.srcStageMask;
+    VkPipelineStageFlags2 secondary_dst_stage_mask = secondary_dep.dstStageMask;
+    VkAccessFlags2 secondary_src_access_mask = secondary_dep.srcAccessMask;
+    VkAccessFlags2 secondary_dst_access_mask = secondary_dep.dstAccessMask;
+
+    if (const auto primary_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(rp1_state.createInfo.pNext); primary_barrier) {
+        primary_src_stage_mask = primary_barrier->srcStageMask;
+        primary_dst_stage_mask = primary_barrier->dstStageMask;
+        primary_src_access_mask = primary_barrier->srcAccessMask;
+        primary_dst_access_mask = primary_barrier->dstAccessMask;
+    }
+    if (const auto secondary_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(rp2_state.createInfo.pNext); secondary_barrier) {
+        secondary_src_stage_mask = secondary_barrier->srcStageMask;
+        secondary_dst_stage_mask = secondary_barrier->dstStageMask;
+        secondary_src_access_mask = secondary_barrier->srcAccessMask;
+        secondary_dst_access_mask = secondary_barrier->dstAccessMask;
+    }
+
     if (primary_dep.srcSubpass != secondary_dep.srcSubpass) {
         std::stringstream ss;
         ss << "First srcSubpass is " << primary_dep.srcSubpass << ", but second srcSubpass is " << secondary_dep.srcSubpass << ".";
@@ -199,28 +221,28 @@ bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const
         ss << "First dstSubpass is " << primary_dep.dstSubpass << ", but second dstSubpass is " << secondary_dep.dstSubpass << ".";
         skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
     }
-    if (primary_dep.srcStageMask != secondary_dep.srcStageMask) {
+    if (primary_src_stage_mask != secondary_src_stage_mask) {
         std::stringstream ss;
-        ss << "First srcStageMask is " << string_VkPipelineStageFlags(primary_dep.srcStageMask) << ", but second srcStageMask is "
-           << string_VkPipelineStageFlags(secondary_dep.srcStageMask) << ".";
+        ss << "First srcStageMask is " << string_VkPipelineStageFlags2(primary_src_stage_mask) << ", but second srcStageMask is "
+           << string_VkPipelineStageFlags2(secondary_src_stage_mask) << ".";
         skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
     }
-    if (primary_dep.dstStageMask != secondary_dep.dstStageMask) {
+    if (primary_dst_stage_mask != secondary_dst_stage_mask) {
         std::stringstream ss;
-        ss << "First dstStageMask is " << string_VkPipelineStageFlags(primary_dep.dstStageMask) << ", but second dstStageMask is "
-           << string_VkPipelineStageFlags(secondary_dep.dstStageMask) << ".";
+        ss << "First dstStageMask is " << string_VkPipelineStageFlags2(primary_dst_stage_mask) << ", but second dstStageMask is "
+           << string_VkPipelineStageFlags2(secondary_dst_stage_mask) << ".";
         skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
     }
-    if (primary_dep.srcAccessMask != secondary_dep.srcAccessMask) {
+    if (primary_src_access_mask != secondary_src_access_mask) {
         std::stringstream ss;
-        ss << "First srcAccessMask is " << string_VkAccessFlags(primary_dep.srcAccessMask) << ", but second srcAccessMask is "
-           << string_VkAccessFlags(secondary_dep.srcAccessMask) << ".";
+        ss << "First srcAccessMask is " << string_VkAccessFlags2(primary_src_access_mask) << ", but second srcAccessMask is "
+           << string_VkAccessFlags2(secondary_src_access_mask) << ".";
         skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
     }
-    if (primary_dep.dstAccessMask != secondary_dep.dstAccessMask) {
+    if (primary_dst_access_mask != secondary_dst_access_mask) {
         std::stringstream ss;
-        ss << "First dstAccessMask is " << string_VkAccessFlags(primary_dep.dstAccessMask) << ", but second dstAccessMask is "
-           << string_VkAccessFlags(secondary_dep.dstAccessMask) << ".";
+        ss << "First dstAccessMask is " << string_VkAccessFlags2(primary_dst_access_mask) << ", but second dstAccessMask is "
+           << string_VkAccessFlags2(secondary_dst_access_mask) << ".";
         skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
     }
     if (primary_dep.dependencyFlags != secondary_dep.dependencyFlags) {

@@ -928,10 +928,9 @@ class StatelessValidation : public ValidationObject {
 
     enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
-    template <typename RenderPassCreateInfoGeneric>
-    bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
-                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags2KHR stages,
-                                      const char *vuid, const char *target, const char *func_name) const {
+    bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
+                                      const char *target, const char *func_name) const {
         bool skip = false;
         // make sure we consider all of the expanded and un-expanded graphics bits to be valid
         const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
@@ -963,10 +962,9 @@ class StatelessValidation : public ValidationObject {
         return skip;
     }
 
-    template <typename RenderPassCreateInfoGeneric>
-    bool CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,
-                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                 RenderPassCreateVersion rp_version) const;
+    bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                  RenderPassCreateVersion rp_version) const;
 
     template <typename T>
     void RecordRenderPass(VkRenderPass renderPass, const T *pCreateInfo) {

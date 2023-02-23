@@ -24,6 +24,7 @@
 #include "core_validation_error_enums.h"
 #include "enum_flag_bits.h"
 #include "vk_layer_data.h"
+#include "convert_to_renderpass2.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 
@@ -4590,10 +4591,9 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
     return ValidateWriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
 }
 
-template <typename RenderPassCreateInfoGeneric>
-bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                  RenderPassCreateVersion rp_version) const {
+bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                   RenderPassCreateVersion rp_version) const {
     bool skip = false;
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -5016,14 +5016,21 @@ bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderP
                              func_name, i, dependency.dstSubpass, pCreateInfo->subpassCount);
         }
 
+        VkPipelineStageFlags2 srcStageMask = dependency.srcStageMask;
+        VkPipelineStageFlags2 dstStageMask = dependency.dstStageMask;
+        if (const auto barrier = LvlFindInChain<VkMemoryBarrier2KHR>(pCreateInfo->pDependencies[i].pNext); barrier) {
+            srcStageMask = barrier->srcStageMask;
+            dstStageMask = barrier->dstStageMask;
+        }
+
         // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
-        skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
-                                             "src", func_name);
+        skip |=
+            ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, srcStageMask, vuid, "src", func_name);
 
         vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
-        skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dependency.dstStageMask, vuid,
-                                             "dst", func_name);
+        skip |=
+            ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dstStageMask, vuid, "dst", func_name);
     }
 
     return skip;
@@ -5032,19 +5039,23 @@ bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderP
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  VkRenderPass *pRenderPass) const {
-    return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
+    safe_VkRenderPassCreateInfo2 create_info_2;
+    ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkRenderPass *pRenderPass) const {
-    return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
+    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkRenderPass *pRenderPass) const {
-    return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
+    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
 bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,

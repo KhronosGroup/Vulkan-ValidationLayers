@@ -1428,35 +1428,10 @@ bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const L
     VkMemoryBarrier2KHR converted_barrier;
     const auto *mem_barrier = LvlFindInChain<VkMemoryBarrier2KHR>(dependency.pNext);
 
-    if (mem_barrier && enabled_features.core13.synchronization2) {
-        if (dependency.srcAccessMask != 0) {
-            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcAccessMask",
-                             "%s is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                             loc.dot(Field::srcAccessMask).Message().c_str());
-        }
-        if (dependency.dstAccessMask != 0) {
-            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstAccessMask",
-                             "%s dstAccessMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                             loc.dot(Field::dstAccessMask).Message().c_str());
-        }
-        if (dependency.srcStageMask != 0) {
-            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-srcStageMask",
-                             "%s srcStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                             loc.dot(Field::srcStageMask).Message().c_str());
-        }
-        if (dependency.dstStageMask != 0) {
-            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-dstStageMask",
-                             "%s dstStageMask is non-zero when a VkMemoryBarrier2KHR is present in pNext.",
-                             loc.dot(Field::dstStageMask).Message().c_str());
-        }
+    if (mem_barrier) {
         loc = in_loc.dot(Field::pNext);
         converted_barrier = *mem_barrier;
     } else {
-        if (mem_barrier) {
-            skip |= LogError(objects, "UNASSIGNED-CoreChecks-VkSubpassDependency2-pNext",
-                             "%s a VkMemoryBarrier2KHR is present in pNext but synchronization2 is not enabled.",
-                             loc.Message().c_str());
-        }
         // use the subpass dependency flags, upconverted into wider synchronization2 fields.
         converted_barrier.srcStageMask = dependency.srcStageMask;
         converted_barrier.dstStageMask = dependency.dstStageMask;

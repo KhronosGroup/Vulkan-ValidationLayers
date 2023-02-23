@@ -321,7 +321,19 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Structure fields to ignore
         self.structMemberBlacklist = { 'VkWriteDescriptorSet' : ['dstSet'], 'VkAccelerationStructureGeometryKHR' :['geometry'], 'VkDescriptorDataEXT' :['pSampler'] }
         # Validation conditions for some special case struct members that are conditionally validated
-        self.structMemberValidationConditions = { 'VkPipelineColorBlendStateCreateInfo' : { 'logicOp' : '{}logicOpEnable == VK_TRUE' } }
+        self.structMemberValidationConditions = [
+            {
+                'struct' : 'VkSubpassDependency2',
+                'field' :  'VkPipelineStageFlagBits',
+                'condition' : '!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
+            },
+            {
+                'struct' : 'VkSubpassDependency2',
+                'field' :  'VkAccessFlagBits',
+                'condition' : '!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext)'
+            }
+        ]
+
         # FlagBits that should also be array
         self.flagBitsAsArray = ['VkShaderStageFlags']
         # Header version
@@ -360,7 +372,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Named tuples to store struct and command data
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
                                                         'isconst', 'isoptional', 'iscount', 'noautovalidity',
-                                                        'len', 'extstructs', 'condition', 'cdecl'])
+                                                        'len', 'extstructs', 'cdecl'])
         self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result', 'promotion_info'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
         self.extension_number_map = dict()                # Mapping from extnumber -> extension element
@@ -816,7 +828,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # alias has already been recorded in genType, above
         OutputGenerator.genStruct(self, typeinfo, typeName, alias)
 
-        conditions = self.structMemberValidationConditions[typeName] if typeName in self.structMemberValidationConditions else None
         members = typeinfo.elem.findall('.//member')
         if self.featureExtraProtect is not None:
             self.struct_feature_protect[typeName] = self.featureExtraProtect
@@ -883,7 +894,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                                 noautovalidity=noautovalidity,
                                                 len=self.getLen(member),
                                                 extstructs=self.registry.validextensionstructs[typeName] if name == 'pNext' else None,
-                                                condition=conditions[name] if conditions and name in conditions else None,
                                                 cdecl=cdecl))
         # If this struct extends another, keep its name in list for further processing
         if typeinfo.elem.attrib.get('structextends') is not None:
@@ -1046,7 +1056,6 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
                                                         noautovalidity=True if param.attrib.get('noautovalidity') is not None else False,
                                                         len=self.getLen(param),
                                                         extstructs=None,
-                                                        condition=None,
                                                         cdecl=cdecl))
                 # Save return value information, if any
                 result_type = ''
@@ -1204,8 +1213,7 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
     def genConditionalCall(self, prefix, condition, exprs):
         checkedExpr = []
         localIndent = ''
-        formattedCondition = condition.format(prefix)
-        checkedExpr.append(localIndent + 'if ({})\n'.format(formattedCondition))
+        checkedExpr.append(localIndent + 'if ({})\n'.format(condition))
         checkedExpr.append(localIndent + '{\n')
         localIndent = self.incIndent(localIndent)
         for expr in exprs:
@@ -1506,6 +1514,7 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
         for value in values:
             usedLines = []
             lenParam = None
+            condition = None
             #
             # Prefix and suffix for post processing of parameter names for struct members.  Arrays of structures need special processing to include the array index in the full parameter name.
             postProcSpec = {}
@@ -1655,10 +1664,8 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
                             invalidVuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
                             zeroVuid = invalidVuid
                         allFlagsName = 'All' + flagBitsName
-
-                        invalid_vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
-                        allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if value.isoptional else ', ' + zeroVuid
+                        condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
                         usedLines.append('skip |= ValidateFlags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, {}{});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsType, invalidVuid, zeroVuidArg, pf=valuePrefix, **postProcSpec))
                     elif value.isbool:
                         usedLines.append('skip |= ValidateBool32("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
@@ -1675,8 +1682,8 @@ std::vector<{groupName}> ValidationObject::ValidParamValues() const {{
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks
-                if value.condition:
-                    usedLines = self.genConditionalCall(valuePrefix, value.condition, usedLines)
+                if condition:
+                    usedLines = self.genConditionalCall(valuePrefix, condition[0]['condition'], usedLines)
                 lines += usedLines
             elif not value.iscount:
                 # If no expression was generated for this value, it is unreferenced by the validation function, unless

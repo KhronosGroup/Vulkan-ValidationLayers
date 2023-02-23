@@ -9350,13 +9350,25 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
 
                 skip |= ValidateStructPnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2", pCreateInfo->pDependencies[dependencyIndex].pNext, allowed_structs_VkSubpassDependency2.size(), allowed_structs_VkSubpassDependency2.data(), GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
+                }
 
                 skip |= ValidateFlags("vkCreateRenderPass2", ParameterName("pCreateInfo->pDependencies[%i].dependencyFlags", ParameterName::IndexVector{ dependencyIndex }), "VkDependencyFlagBits", AllVkDependencyFlagBits, pCreateInfo->pDependencies[dependencyIndex].dependencyFlags, kOptionalFlags, "VUID-VkSubpassDependency2-dependencyFlags-parameter");
             }
@@ -12675,13 +12687,25 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
 
                 skip |= ValidateStructPnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].pNext", ParameterName::IndexVector{ dependencyIndex }), "VkMemoryBarrier2", pCreateInfo->pDependencies[dependencyIndex].pNext, allowed_structs_VkSubpassDependency2.size(), allowed_structs_VkSubpassDependency2.data(), GeneratedVulkanHeaderVersion, "VUID-VkSubpassDependency2-pNext-pNext", "VUID-VkSubpassDependency2-sType-unique", false, true);
 
-                skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcStageMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dstStageMask", ParameterName::IndexVector{ dependencyIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstStageMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstStageMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].srcAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-srcAccessMask-parameter");
+                }
 
-                skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
+                if (!LvlFindInChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[dependencyIndex].pNext))
+                {
+                    skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dstAccessMask", ParameterName::IndexVector{ dependencyIndex }), "VkAccessFlagBits", AllVkAccessFlagBits, pCreateInfo->pDependencies[dependencyIndex].dstAccessMask, kOptionalFlags, "VUID-VkSubpassDependency2-dstAccessMask-parameter");
+                }
 
                 skip |= ValidateFlags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pDependencies[%i].dependencyFlags", ParameterName::IndexVector{ dependencyIndex }), "VkDependencyFlagBits", AllVkDependencyFlagBits, pCreateInfo->pDependencies[dependencyIndex].dependencyFlags, kOptionalFlags, "VUID-VkSubpassDependency2-dependencyFlags-parameter");
             }
