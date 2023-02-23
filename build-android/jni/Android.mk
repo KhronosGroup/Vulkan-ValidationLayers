@@ -119,7 +119,15 @@ LOCAL_MODULE := VkLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_instanceless.cpp \
                    $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
-                   $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
+                   $(SRC_DIR)/tests/vklayertests_buffer.cpp \
+                   $(SRC_DIR)/tests/vklayertests_external_memory_sync.cpp \
+                   $(SRC_DIR)/tests/vklayertests_image.cpp \
+                   $(SRC_DIR)/tests/vklayertests_memory.cpp \
+                   $(SRC_DIR)/tests/vklayertests_object_lifetime.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sampler.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sparse.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sync.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ycbcr.cpp \
                    $(SRC_DIR)/tests/vklayertests_others.cpp \
                    $(SRC_DIR)/tests/vklayertests_query.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
@@ -177,7 +185,15 @@ LOCAL_MODULE := VulkanLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_instanceless.cpp \
                    $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
-                   $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
+                   $(SRC_DIR)/tests/vklayertests_buffer.cpp \
+                   $(SRC_DIR)/tests/vklayertests_external_memory_sync.cpp \
+                   $(SRC_DIR)/tests/vklayertests_image.cpp \
+                   $(SRC_DIR)/tests/vklayertests_memory.cpp \
+                   $(SRC_DIR)/tests/vklayertests_object_lifetime.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sampler.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sparse.cpp \
+                   $(SRC_DIR)/tests/vklayertests_sync.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ycbcr.cpp \
                    $(SRC_DIR)/tests/vklayertests_others.cpp \
                    $(SRC_DIR)/tests/vklayertests_query.cpp \
                    $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
