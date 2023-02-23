@@ -53,16 +53,20 @@ target_sources(vk_layer_validation_tests PRIVATE
     vklayertests_android_hardware_buffer.cpp
     vklayertests_arm_best_practices.cpp
     vklayertests_best_practices.cpp
-    vklayertests_buffer_image_memory_sampler.cpp
+    vklayertests_buffer.cpp
     vklayertests_command.cpp
     vklayertests_debug_printf.cpp
     vklayertests_descriptor_renderpass_framebuffer.cpp
     vklayertests_dynamic_rendering.cpp
+	vklayertests_external_memory_sync.cpp
     vklayertests_gpu.cpp
     vklayertests_graphics_library.cpp
+	vklayertests_image.cpp
     vklayertests_imageless_framebuffer.cpp
     vklayertests_instanceless.cpp
+	vklayertests_memory.cpp
     vklayertests_nvidia_best_practices.cpp
+	vklayertests_object_lifetime.cpp
     vklayertests_others.cpp
     vklayertests_pipeline_shader.cpp
     vklayertests_portability_subset.cpp
@@ -70,16 +74,20 @@ target_sources(vk_layer_validation_tests PRIVATE
     vklayertests_ray_tracing.cpp
     vklayertests_ray_tracing_gpu.cpp
     vklayertests_ray_tracing_pipeline.cpp
+	vklayertests_sampler.cpp
+	vklayertests_sparse.cpp
+	vklayertests_sync.cpp
     vklayertests_video.cpp
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
+	vklayertests_ycbcr.cpp
     vkrenderframework.cpp
     vkrenderframework.h
     vksyncvaltests.cpp
     vktestbinding.cpp
     vktestframework.cpp
     ray_tracing_objects.h
-    ray_tracing_objects.cpp    
+    ray_tracing_objects.cpp
 )
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
@@ -103,7 +111,7 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         -Wno-missing-field-initializers
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(vk_layer_validation_tests PRIVATE 
+        target_compile_options(vk_layer_validation_tests PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
             -Wno-enum-enum-conversion
