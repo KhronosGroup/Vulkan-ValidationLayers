@@ -5008,18 +5008,18 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
-    VkCommandBuffer secondary_command_buffer;
-    ASSERT_VK_SUCCESS(vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
-    VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    vk_testing::CommandBuffer secondary_command_buffer(*m_device, command_buffer_allocate_info);
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = LvlInitStruct<VkCommandBufferInheritanceInfo>();
     command_buffer_inheritance_info.renderPass = m_renderPass;
     command_buffer_inheritance_info.framebuffer = m_framebuffer;
 
+    VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     command_buffer_begin_info.flags =
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     command_buffer_begin_info.pInheritanceInfo = &command_buffer_inheritance_info;
 
-    vk::BeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
+    secondary_command_buffer.begin(&command_buffer_begin_info);
+
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     color_attachment.clearValue.color.float32[0] = 0;
@@ -5029,13 +5029,13 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     color_attachment.colorAttachment = 0;
     // x extent of 257 exceeds render area of 256
     VkClearRect clear_rect = {{{0, 0}, {257, 32}}, 0, 1};
-    vk::CmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
-    vk::EndCommandBuffer(secondary_command_buffer);
+    vk::CmdClearAttachments(secondary_command_buffer.handle(), 1, &color_attachment, 1, &clear_rect);
+    secondary_command_buffer.end();
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00016");
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer.handle());
     m_errorMonitor->VerifyFound();
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
@@ -8517,11 +8517,13 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-baseArrayLayer-00018");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     clear_rect.layerCount = 2;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-baseArrayLayer-00018");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     clear_rect.baseArrayLayer = 1;
     clear_rect.layerCount = 1;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);

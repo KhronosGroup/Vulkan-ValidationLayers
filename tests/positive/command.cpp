@@ -1121,7 +1121,7 @@ TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
         fbci.pAttachments = &image_view;
         fbci.width = image_ci.extent.width;
         fbci.height = image_ci.extent.height;
-        fbci.layers = 1;
+        fbci.layers = image_ci.extent.depth;
 
         vk_testing::Framebuffer framebuffer;
         framebuffer.init(*m_device, fbci);
