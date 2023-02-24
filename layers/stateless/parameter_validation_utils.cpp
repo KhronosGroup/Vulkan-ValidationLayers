@@ -3090,152 +3090,138 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                const bool is_frag_out_graphics_lib =
-                    graphics_lib_info &&
-                    ((graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0);
-                if (is_frag_out_graphics_lib && (create_info.pMultisampleState == nullptr)) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751",
-                                     "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
-                                     "].pRasterizationState->rasterizerDiscardEnable "
-                                     "is VK_FALSE, pCreateInfos[%" PRIu32 "].pMultisampleState must not be NULL.",
-                                     i, i);
-                } else {
-                    // It is possible for pCreateInfos[i].pMultisampleState to be null when creating a graphics library
-                    if (create_info.pMultisampleState) {
-                        skip |= ValidatePipelineMultisampleStateCreateInfo(*create_info.pMultisampleState, i);
+                // It is possible for pCreateInfos[i].pMultisampleState to be null when creating a graphics library
+                if (create_info.pMultisampleState) {
+                    skip |= ValidatePipelineMultisampleStateCreateInfo(*create_info.pMultisampleState, i);
 
-                        if (create_info.pMultisampleState->sampleShadingEnable == VK_TRUE) {
-                            if (!physical_device_features.sampleRateShading) {
-                                skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784",
-                                                 "vkCreateGraphicsPipelines(): parameter "
-                                                 "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable.",
-                                                 i);
-                            }
-                            // TODO Add documentation issue about when minSampleShading must be in range and when it is ignored
-                            // For now a "least noise" test *only* when sampleShadingEnable is VK_TRUE.
-                            if (!in_inclusive_range(create_info.pMultisampleState->minSampleShading, 0.F, 1.0F)) {
-                                skip |= LogError(device,
+                    if (create_info.pMultisampleState->sampleShadingEnable == VK_TRUE) {
+                        if (!physical_device_features.sampleRateShading) {
+                            skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784",
+                                             "vkCreateGraphicsPipelines(): parameter "
+                                             "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable.",
+                                             i);
+                        }
+                        // TODO Add documentation issue about when minSampleShading must be in range and when it is ignored
+                        // For now a "least noise" test *only* when sampleShadingEnable is VK_TRUE.
+                        if (!in_inclusive_range(create_info.pMultisampleState->minSampleShading, 0.F, 1.0F)) {
+                            skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-minSampleShading-00786",
+                                             "vkCreateGraphicsPipelines(): parameter pCreateInfos[%" PRIu32
+                                             "].pMultisampleState->minSampleShading.",
+                                             i);
+                        }
+                    }
+                }
 
-                                                 "VUID-VkPipelineMultisampleStateCreateInfo-minSampleShading-00786",
-                                                 "vkCreateGraphicsPipelines(): parameter pCreateInfos[%" PRIu32
-                                                 "].pMultisampleState->minSampleShading.",
-                                                 i);
-                            }
+                const auto *line_state =
+                    LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
+                const bool dynamic_line_raster_mode =
+                    vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+                const bool dynamic_line_stipple_enable = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+                if (line_state) {
+                    if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
+                        if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] lineStippleFactor = %" PRIu32
+                                             " must be in the range [1,256].",
+                                             i, line_state->lineStippleFactor);
                         }
                     }
 
-                    const auto *line_state =
-                        LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(create_info.pRasterizationState->pNext);
-                    const bool dynamic_line_raster_mode =
-                        vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
-                    const bool dynamic_line_stipple_enable =
-                        vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
-                    if (line_state) {
-                        if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
-                            if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
-                                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                 "] lineStippleFactor = %" PRIu32 " must be in the range [1,256].",
-                                                 i, line_state->lineStippleFactor);
+                    if (!dynamic_line_raster_mode) {
+                        if ((line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT ||
+                             line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT)) {
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToCoverageEnable) {
+                                skip |=
+                                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                             "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                             "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToCoverageEnable == VK_TRUE.",
+                                             i);
+                            }
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToOneEnable) {
+                                skip |=
+                                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                             "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                             "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToOneEnable == VK_TRUE.",
+                                             i);
+                            }
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->sampleShadingEnable) {
+                                skip |=
+                                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                             "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                             "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable == VK_TRUE.",
+                                             i);
                             }
                         }
 
-                        if (!dynamic_line_raster_mode) {
-                            if ((line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT ||
-                                 line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT)) {
-                                if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToCoverageEnable) {
-                                    skip |= LogError(
-                                        device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                        "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
-                                        "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToCoverageEnable == VK_TRUE.",
-                                        i);
-                                }
-                                if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToOneEnable) {
-                                    skip |= LogError(
-                                        device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                        "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
-                                        "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToOneEnable == VK_TRUE.",
-                                        i);
-                                }
-                                if (create_info.pMultisampleState && create_info.pMultisampleState->sampleShadingEnable) {
-                                    skip |= LogError(
-                                        device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                        "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
-                                        "pCreateInfos[%" PRIu32 "].pMultisampleState->sampleShadingEnable == VK_TRUE.",
-                                        i);
-                                }
-                            }
-
-                            const auto *line_features =
-                                LvlFindInChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
+                        const auto *line_features =
+                            LvlFindInChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                            (!line_features || !line_features->rectangularLines)) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
+                                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                "] lineRasterizationMode = "
+                                "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT but the rectangularLines feature is not enabled.",
+                                i);
+                        }
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                            (!line_features || !line_features->bresenhamLines)) {
+                            skip |=
+                                LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] lineRasterizationMode = "
+                                         "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT but the bresenhamLines feature is not enabled.",
+                                         i);
+                        }
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                            (!line_features || !line_features->smoothLines)) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
+                                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                "] lineRasterizationMode = "
+                                "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature is not enabled.",
+                                i);
+                        }
+                        if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
                             if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
-                                (!line_features || !line_features->rectangularLines)) {
-                                skip |= LogError(
-                                    device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
-                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                    "] lineRasterizationMode = "
-                                    "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT but the rectangularLines feature is not enabled.",
-                                    i);
+                                (!line_features || !line_features->stippledRectangularLines)) {
+                                skip |=
+                                    LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] lineRasterizationMode = "
+                                             "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT and stippledLineEnable is "
+                                             "VK_TRUE, but the stippledRectangularLines feature is not enabled.",
+                                             i);
                             }
                             if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
-                                (!line_features || !line_features->bresenhamLines)) {
-                                skip |= LogError(
-                                    device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
-                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                    "] lineRasterizationMode = "
-                                    "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT but the bresenhamLines feature is not enabled.",
-                                    i);
+                                (!line_features || !line_features->stippledBresenhamLines)) {
+                                skip |=
+                                    LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] lineRasterizationMode = "
+                                             "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT and stippledLineEnable is VK_TRUE, "
+                                             "but the stippledBresenhamLines feature is not enabled.",
+                                             i);
                             }
                             if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
-                                (!line_features || !line_features->smoothLines)) {
-                                skip |= LogError(
-                                    device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
-                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                    "] lineRasterizationMode = "
-                                    "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature is not enabled.",
-                                    i);
+                                (!line_features || !line_features->stippledSmoothLines)) {
+                                skip |=
+                                    LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] lineRasterizationMode = "
+                                             "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT and stippledLineEnable is "
+                                             "VK_TRUE, but the stippledSmoothLines feature is not enabled.",
+                                             i);
                             }
-                            if (line_state->stippledLineEnable && !dynamic_line_stipple_enable) {
-                                if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
-                                    (!line_features || !line_features->stippledRectangularLines)) {
-                                    skip |= LogError(device,
-                                                     "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771",
-                                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                     "] lineRasterizationMode = "
-                                                     "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT and stippledLineEnable is "
-                                                     "VK_TRUE, but the stippledRectangularLines feature is not enabled.",
-                                                     i);
-                                }
-                                if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
-                                    (!line_features || !line_features->stippledBresenhamLines)) {
-                                    skip |= LogError(device,
-                                                     "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772",
-                                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                     "] lineRasterizationMode = "
-                                                     "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT and stippledLineEnable is VK_TRUE, "
-                                                     "but the stippledBresenhamLines feature is not enabled.",
-                                                     i);
-                                }
-                                if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
-                                    (!line_features || !line_features->stippledSmoothLines)) {
-                                    skip |= LogError(device,
-                                                     "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773",
-                                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                     "] lineRasterizationMode = "
-                                                     "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT and stippledLineEnable is "
-                                                     "VK_TRUE, but the stippledSmoothLines feature is not enabled.",
-                                                     i);
-                                }
-                                if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
-                                    (!line_features || !line_features->stippledRectangularLines || !device_limits.strictLines)) {
-                                    skip |= LogError(
-                                        device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774",
-                                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                        "] lineRasterizationMode = "
-                                        "VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT and stippledLineEnable is VK_TRUE, "
-                                        "but the stippledRectangularLines feature is not enabled or strictLines is VK_FALSE.",
-                                        i);
-                                }
+                            if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                                (!line_features || !line_features->stippledRectangularLines || !device_limits.strictLines)) {
+                                skip |=
+                                    LogError(device, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774",
+                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                             "] lineRasterizationMode = "
+                                             "VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT and stippledLineEnable is VK_TRUE, "
+                                             "but the stippledRectangularLines feature is not enabled or strictLines is VK_FALSE.",
+                                             i);
                             }
                         }
                     }

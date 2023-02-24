@@ -247,7 +247,25 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     bool IsGraphicsLibrary() const { return !HasFullState(); }
-    bool HasFullState() const { return vertex_input_state && pre_raster_state && fragment_shader_state && fragment_output_state; }
+    bool HasFullState() const {
+        // If Pre-raster state does contain a vertex shader, vertex input state is not required
+        const bool vi_satisfied = [this]() -> bool {
+            if (pre_raster_state && pre_raster_state->vertex_shader) {
+                // Vertex shader present, so vertex input state is necessary for complete state
+                return static_cast<bool>(vertex_input_state);
+            } else {
+                // there is no vertex shader, so no vertex input state is required
+                return true;
+            }
+        }();
+
+        // Fragment output/shader state is not required if rasterization is disabled.
+        const bool rasterization_disabled = RasterizationDisabled();
+        const bool frag_shader_satisfied = rasterization_disabled ? true : static_cast<bool>(fragment_shader_state);
+        const bool frag_out_satisfied = rasterization_disabled ? true : static_cast<bool>(fragment_output_state);
+
+        return vi_satisfied && pre_raster_state && frag_shader_satisfied && frag_out_satisfied;
+    }
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     struct SubStateTraits {};

@@ -427,12 +427,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) &&
                 !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
                 pre_raster_flags.first =
-                    (pipeline.pre_raster_state->pipeline_layout) ? pipeline.pre_raster_state->pipeline_layout->CreateFlags() : 0;
+                    (pipeline.PreRasterPipelineLayoutState()) ? pipeline.PreRasterPipelineLayoutState()->CreateFlags() : 0;
                 pre_raster_flags.second = {GPLInitInfo::from_gpl_info, pipeline.PreRasterPipelineLayoutState().get()};
             } else if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) &&
                        !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
-                fs_flags.first = (pipeline.fragment_shader_state->pipeline_layout)
-                                     ? pipeline.fragment_shader_state->pipeline_layout->CreateFlags()
+                fs_flags.first = (pipeline.FragmentShaderPipelineLayoutState())
+                                     ? pipeline.FragmentShaderPipelineLayoutState()->CreateFlags()
                                      : 0;
                 fs_flags.second = {GPLInitInfo::from_gpl_info, pipeline.FragmentShaderPipelineLayoutState().get()};
             }
@@ -452,11 +452,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                     const VkPipelineCreateFlags lib_pipeline_flags = lib->create_flags;
                     if (lib->PipelineLayoutState()) {
                         if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                            pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
-                            pre_raster_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
+                            pre_raster_flags.first = lib->PreRasterPipelineLayoutState()->CreateFlags();
+                            pre_raster_flags.second = {GPLInitInfo::from_link_info, lib->PreRasterPipelineLayoutState().get()};
                         } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                            fs_flags.first = lib->PipelineLayoutState()->CreateFlags();
-                            fs_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
+                            fs_flags.first = lib->FragmentShaderPipelineLayoutState()->CreateFlags();
+                            fs_flags.second = {GPLInitInfo::from_link_info, lib->FragmentShaderPipelineLayoutState().get()};
                         }
                     }
 
@@ -2319,6 +2319,14 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
             }
         }
     }
+
+    if (!multisample_state && pipeline.fragment_output_state) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] is being created without multisample state (VkGraphicsPipelineCreateInfo::pMultisampleState == null).",
+                         pipeline.create_index);
+    }
+
     return skip;
 }
 
@@ -3169,8 +3177,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
             if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
                 const auto *multisample_state = pipeline_state.MultisampleState();
-                const auto *sample_locations =
-                    LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
+                const auto *sample_locations = LvlFindInChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
                 if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
                     !pipeline_state.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
                     const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info =
@@ -3843,7 +3850,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    if (pipeline.fragment_output_state->dual_source_blending && cb_state.activeRenderPass) {
+    if (pipeline.fragment_output_state && pipeline.fragment_output_state->dual_source_blending && cb_state.activeRenderPass) {
         uint32_t count = cb_state.activeRenderPass->UsesDynamicRendering()
                              ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
                              : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.activeSubpass].colorAttachmentCount;
