@@ -867,22 +867,23 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "the vkBeginCommandBuffer() was called.",
                                      report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                      report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
-                } else if (!cb_state->activeRenderPass->UsesDynamicRendering() &&
-                           (sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-                    // Make sure render pass is compatible with parent command buffer pass if has continue
-                    if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
-                        skip |= ValidateRenderPassCompatibility(
-                            "primary command buffer", *cb_state->activeRenderPass.get(), "secondary command buffer",
-                            *secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-                    }
-                    //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
-                    skip |= ValidateInheritanceInfoFramebuffer(commandBuffer, *cb_state, pCommandBuffers[i], *sub_cb_state,
-                                                               "vkCmdExecuteCommands()");
-                    if (!sub_cb_state->cmd_execute_commands_functions.empty()) {
-                        //  Inherit primary's activeFramebuffer and while running validate functions
-                        for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
-                            skip |= function(*sub_cb_state, cb_state.get(), cb_state->activeFramebuffer.get());
+                } else if (sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+                    if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
+                        // Make sure render pass is compatible with parent command buffer pass if secondary command buffer has
+                        // "render pass continue" usage flag
+                        if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
+                            skip |= ValidateRenderPassCompatibility(
+                                "primary command buffer", *cb_state->activeRenderPass.get(), "secondary command buffer",
+                                *secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
                         }
+                        //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
+                        skip |= ValidateInheritanceInfoFramebuffer(commandBuffer, *cb_state, pCommandBuffers[i], *sub_cb_state,
+                                                                   "vkCmdExecuteCommands()");
+                    }
+                    // Inherit primary's activeFramebuffer, or null if using dynamic rendering,
+                    // and while running validate functions
+                    for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
+                        skip |= function(*sub_cb_state, cb_state.get(), cb_state->activeFramebuffer.get());
                     }
                 }
 

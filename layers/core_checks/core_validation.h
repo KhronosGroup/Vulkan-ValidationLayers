@@ -947,9 +947,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                                  const char* param_name) const;
 
-    bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, uint32_t attachment_index,
-                                       const IMAGE_VIEW_STATE* image_view_state, const VkRect2D& render_area, uint32_t rect_count,
-                                       const VkClearRect* clear_rects) const;
+    bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, const VkRect2D& render_area,
+                                       uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
 
     template <typename RegionType>
     bool ValidateImageCopyData(const uint32_t regionCount, const RegionType* pRegions, const IMAGE_STATE* src_state,
