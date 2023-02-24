@@ -615,7 +615,7 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhy
                                                                            VkQueueFamilyProperties *pQueueFamilyProperties) {}
 
 void ObjectLifetimes::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                                   VkInstance *pInstance, VkResult result) {
+                                                   VkInstance *pInstance, VkResult& result) {
     if (result != VK_SUCCESS) return;
     CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator);
 }

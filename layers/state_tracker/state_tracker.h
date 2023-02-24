@@ -492,7 +492,7 @@ class ValidationStateTracker : public ValidationObject {
     // Gets/Enumerations
     virtual std::shared_ptr<PHYSICAL_DEVICE_STATE> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                      VkInstance* pInstance, VkResult result) override;
+                                      VkInstance* pInstance, VkResult& result) override;
     void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
         VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
         VkPerformanceCounterDescriptionKHR* pCounterDescriptions, VkResult result) override;

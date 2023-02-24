@@ -1060,7 +1060,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 if post_call_record:
                     post_cr_func_decl = 'void PostCallRecord' + func_decl_template + decl_terminator
                     if result_type.text == 'VkResult':
-                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
+                        if 'CreateInstance' in func_decl_template:
+                            post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult&                                    result)')
+                        else:
+                            post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
                     elif result_type.text == 'VkDeviceAddress':
                         post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkDeviceAddress                             result)')
                     self.appendSection('command', post_cr_func_decl)
@@ -1090,7 +1093,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     self.appendSection('command', '')
 
                     if result_type.text == 'VkResult':
-                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
+                        if 'CreateInstance' in func_decl_template:
+                            post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult&                                    result)')
+                        else:
+                            post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
                         failure_condition = 'result != VK_SUCCESS'
                         # VK_INCOMPLETE is considered a success
                         if 'EnumeratePhysicalDeviceGroups' in cmdname:

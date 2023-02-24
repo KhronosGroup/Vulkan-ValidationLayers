@@ -869,7 +869,7 @@ void ThreadSafety::PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkInstance*                                 pInstance,
-    VkResult                                    result) {
+    VkResult&                                    result) {
     if (result == VK_SUCCESS) {
         CreateObjectParentInstance(*pInstance);
     }

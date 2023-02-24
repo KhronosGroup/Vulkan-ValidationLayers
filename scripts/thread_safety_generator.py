@@ -1846,7 +1846,10 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
             # PostCallRecord
             post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
             if result_type.text == 'VkResult':
-                post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
+                if 'CreateInstance' in pre_decl:
+                    post_decl = post_decl.replace(')', ',\n    VkResult&                                    result)')
+                else:
+                    post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
             elif result_type.text == 'VkDeviceAddress':
                 post_decl = post_decl.replace(')', ',\n    VkDeviceAddress                             result)')
             self.appendSection('command', '')
@@ -1869,7 +1872,10 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
             # PostCallRecord
             post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
             if result_type.text == 'VkResult':
-                post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
+                if 'CreateInstance' in pre_decl:
+                    post_decl = post_decl.replace(')', ',\n    VkResult&                                    result)')
+                else:
+                    post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
             elif result_type.text == 'VkDeviceAddress':
                 post_decl = post_decl.replace(')', ',\n    VkDeviceAddress                             result)')
             self.appendSection('command', '')

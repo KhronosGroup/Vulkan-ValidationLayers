@@ -4007,41 +4007,6 @@ class ValidationObject {
             return WriteLockGuard(validation_object_mutex);
         }
 
-        void RegisterValidationObject(bool vo_enabled, uint32_t instance_api_version,
-            debug_report_data* instance_report_data, std::vector<ValidationObject*> &dispatch_list) {
-            if (vo_enabled) {
-                api_version = instance_api_version;
-                report_data = instance_report_data;
-                dispatch_list.emplace_back(this);
-            }
-        }
-
-        void FinalizeInstanceValidationObject(ValidationObject *framework, VkInstance inst) {
-            instance_dispatch_table = framework->instance_dispatch_table;
-            enabled = framework->enabled;
-            disabled = framework->disabled;
-            fine_grained_locking = framework->fine_grained_locking;
-            instance = inst;
-        }
-
-        virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
-            if (add_obj) {
-                dev_obj->object_dispatch.emplace_back(this);
-                device = dev_obj->device;
-                physical_device = dev_obj->physical_device;
-                instance = inst_obj->instance;
-                report_data = inst_obj->report_data;
-                device_dispatch_table = dev_obj->device_dispatch_table;
-                api_version = dev_obj->api_version;
-                disabled = inst_obj->disabled;
-                enabled = inst_obj->enabled;
-                fine_grained_locking = inst_obj->fine_grained_locking;
-                instance_dispatch_table = inst_obj->instance_dispatch_table;
-                instance_extensions = inst_obj->instance_extensions;
-                device_extensions = dev_obj->device_extensions;
-            }
-        }
-
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
@@ -4145,7 +4110,7 @@ class ValidationObject {
         // Pre/post hook point declarations
         virtual bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) const { return false; };
         virtual void PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {};
-        virtual void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance, VkResult result) {};
+        virtual void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance, VkResult& result) {};
         virtual bool PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) const { return false; };
         virtual void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {};
         virtual void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator) {};

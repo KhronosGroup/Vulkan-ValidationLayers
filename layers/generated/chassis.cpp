@@ -278,29 +278,43 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     std::vector<ValidationObject*> local_object_dispatch;
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
-    auto thread_checker_obj = new ThreadSafety(nullptr);
-    thread_checker_obj->RegisterValidationObject(!local_disables[thread_safety], api_version, report_data, local_object_dispatch);
+    if (!local_disables[thread_safety]) {
+        local_object_dispatch.emplace_back(new ThreadSafety(nullptr));
+    }
 
-    auto parameter_validation_obj = new StatelessValidation;
-    parameter_validation_obj->RegisterValidationObject(!local_disables[stateless_checks], api_version, report_data, local_object_dispatch);
+    if (!local_disables[stateless_checks]) {
+        local_object_dispatch.emplace_back(new StatelessValidation);
+    }
 
-    auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->RegisterValidationObject(!local_disables[object_tracking], api_version, report_data, local_object_dispatch);
+    if (!local_disables[object_tracking]) {
+        local_object_dispatch.emplace_back(new ObjectLifetimes);
+    }
 
-    auto core_checks_obj = new CoreChecks;
-    core_checks_obj->RegisterValidationObject(!local_disables[core_checks], api_version, report_data, local_object_dispatch);
+    if (!local_disables[core_checks]) {
+        local_object_dispatch.emplace_back(new CoreChecks);
+    }
 
-    auto best_practices_obj = new BestPractices;
-    best_practices_obj->RegisterValidationObject(local_enables[best_practices], api_version, report_data, local_object_dispatch);
+    if (local_enables[best_practices]) {
+        local_object_dispatch.emplace_back(new BestPractices);
+    }
 
-    auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->RegisterValidationObject(local_enables[gpu_validation], api_version, report_data, local_object_dispatch);
+    if (local_enables[gpu_validation]) {
+        local_object_dispatch.emplace_back(new GpuAssisted);
+    }
 
-    auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->RegisterValidationObject(local_enables[debug_printf], api_version, report_data, local_object_dispatch);
+    if (local_enables[debug_printf]) {
+        local_object_dispatch.emplace_back(new DebugPrintf);
+    }
 
-    auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->RegisterValidationObject(local_enables[sync_validation], api_version, report_data, local_object_dispatch);
+    if (local_enables[sync_validation]) {
+        local_object_dispatch.emplace_back(new SyncValidator);
+    }
+
+    // Initialize the validation objects
+    for (ValidationObject* intercept : local_object_dispatch) {
+        intercept->api_version = api_version;
+        intercept->report_data = report_data;
+    }
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables[handle_wrapping]) {
@@ -312,7 +326,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     for (const ValidationObject* intercept : local_object_dispatch) {
         auto lock = intercept->ReadLock();
         skip |= intercept->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        if (skip) {
+            for (ValidationObject* object : local_object_dispatch) {
+                delete object;
+            }
+            DeactivateInstanceDebugCallbacks(report_data);
+            FreePnextChain(report_data->instance_pnext_chain);
+            LayerDebugUtilsDestroyInstance(report_data);
+            return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
     }
     for (ValidationObject* intercept : local_object_dispatch) {
         auto lock = intercept->WriteLock();
@@ -320,8 +342,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
-    if (result != VK_SUCCESS) return result;
-
+    if (result != VK_SUCCESS) {
+        // Destroy all of the created validation objects if there is an error
+        DeactivateInstanceDebugCallbacks(report_data);
+        FreePnextChain(report_data->instance_pnext_chain);
+        LayerDebugUtilsDestroyInstance(report_data);
+        for (ValidationObject* object : local_object_dispatch) {
+            delete object;
+        }
+        return result;
+    }
     auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
     framework->object_dispatch = local_object_dispatch;
@@ -342,29 +372,27 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     OutputLayerStatusInfo(framework);
 
-    thread_checker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    object_tracker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    parameter_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    core_checks_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    best_practices_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    gpu_assisted_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    debug_printf_obj->FinalizeInstanceValidationObject(framework, *pInstance);
-    sync_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+    for (ValidationObject* intercept : framework->object_dispatch) {
+        intercept->instance_dispatch_table = framework->instance_dispatch_table;
+        intercept->enabled = framework->enabled;
+        intercept->disabled = framework->disabled;
+        intercept->fine_grained_locking = framework->fine_grained_locking;
+        intercept->instance = *pInstance;
+    }
 
     for (ValidationObject* intercept : framework->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
-    }
-
-    // Delete unused validation objects to avoid memory leak.
-    std::vector<ValidationObject*> local_objs = {
-        thread_checker_obj, object_tracker_obj, parameter_validation_obj,
-        core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
-        sync_validation_obj,
-    };
-    for (auto obj : local_objs) {
-        if (std::find(local_object_dispatch.begin(), local_object_dispatch.end(), obj) == local_object_dispatch.end()) {
-            delete obj;
+        // If an error occured then we need to clean up any allocated memory.
+        if (result != VK_SUCCESS) {
+            DeactivateInstanceDebugCallbacks(report_data);
+            FreePnextChain(report_data->instance_pnext_chain);
+            LayerDebugUtilsDestroyInstance(report_data);
+            for (ValidationObject* object : local_object_dispatch) {
+                delete object;
+            }
+            FreeLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
+            return result;
         }
     }
 
@@ -399,8 +427,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     LayerDebugUtilsDestroyInstance(layer_data->report_data);
 
-    for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
-        delete *item;
+    for (ValidationObject* object : layer_data->object_dispatch) {
+        delete object;
     }
     FreeLayerDataPtr(key, layer_data_map);
 }
@@ -470,41 +498,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto disables = instance_interceptor->disabled;
     auto enables = instance_interceptor->enabled;
 
-    auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
-    thread_safety_obj->InitDeviceValidationObject(!disables[thread_safety], instance_interceptor, device_interceptor);
+    if (!disables[thread_safety]) {
+        device_interceptor->object_dispatch.emplace_back(new ThreadSafety(reinterpret_cast<ThreadSafety *>(
+            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading))));
+    }
 
-    auto stateless_validation_obj = new StatelessValidation;
-    stateless_validation_obj->InitDeviceValidationObject(!disables[stateless_checks], instance_interceptor, device_interceptor);
+    if (!disables[stateless_checks]) {
+        device_interceptor->object_dispatch.emplace_back(new StatelessValidation);
+    }
 
-    auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->InitDeviceValidationObject(!disables[object_tracking], instance_interceptor, device_interceptor);
+    if (!disables[object_tracking]) {
+        device_interceptor->object_dispatch.emplace_back(new ObjectLifetimes);
+    }
 
-    auto core_checks_obj = new CoreChecks;
-    core_checks_obj->InitDeviceValidationObject(!disables[core_checks], instance_interceptor, device_interceptor);
+    if (!disables[core_checks]) {
+        device_interceptor->object_dispatch.emplace_back(new CoreChecks);
+    }
 
-    auto best_practices_obj = new BestPractices;
-    best_practices_obj->InitDeviceValidationObject(enables[best_practices], instance_interceptor, device_interceptor);
+    if (enables[best_practices]) {
+        device_interceptor->object_dispatch.emplace_back(new BestPractices);
+    }
 
-    auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->InitDeviceValidationObject(enables[gpu_validation], instance_interceptor, device_interceptor);
+    if (enables[gpu_validation]) {
+        device_interceptor->object_dispatch.emplace_back(new GpuAssisted);
+    }
 
-    auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->InitDeviceValidationObject(enables[debug_printf], instance_interceptor, device_interceptor);
+    if (enables[debug_printf]) {
+        device_interceptor->object_dispatch.emplace_back(new DebugPrintf);
+    }
 
-    auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->InitDeviceValidationObject(enables[sync_validation], instance_interceptor, device_interceptor);
+    if (enables[sync_validation]) {
+        device_interceptor->object_dispatch.emplace_back(new SyncValidator);
+    }
 
-    // Delete unused validation objects to avoid memory leak.
-    std::vector<ValidationObject *> local_objs = {
-        thread_safety_obj, stateless_validation_obj, object_tracker_obj,
-        core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
-        sync_validation_obj,
-    };
-    for (auto obj : local_objs) {
-        if (std::find(device_interceptor->object_dispatch.begin(), device_interceptor->object_dispatch.end(), obj) ==
-            device_interceptor->object_dispatch.end()) {
-            delete obj;
-        }
+    // Initialize all of the objects with the appropriate data
+    for(ValidationObject* object : device_interceptor->object_dispatch) {
+        object->device = device_interceptor->device;
+        object->physical_device = device_interceptor->physical_device;
+        object->instance = instance_interceptor->instance;
+        object->report_data = instance_interceptor->report_data;
+        object->device_dispatch_table = device_interceptor->device_dispatch_table;
+        object->api_version = device_interceptor->api_version;
+        object->disabled = instance_interceptor->disabled;
+        object->enabled = instance_interceptor->enabled;
+        object->fine_grained_locking = instance_interceptor->fine_grained_locking;
+        object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
+        object->instance_extensions = instance_interceptor->instance_extensions;
+        object->device_extensions = device_interceptor->device_extensions;
     }
 
     for (ValidationObject* intercept : instance_interceptor->object_dispatch) {
@@ -543,8 +583,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         intercept->PostCallRecordDestroyDevice(device, pAllocator);
     }
 
-    for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
-        delete *item;
+    for (ValidationObject* object : layer_data->object_dispatch) {
+        delete object;
     }
     FreeLayerDataPtr(key, layer_data_map);
 }

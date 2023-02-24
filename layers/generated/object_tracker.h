@@ -30,7 +30,7 @@ void PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkInstance*                                 pInstance,
-    VkResult                                    result) override;
+    VkResult&                                    result) override;
 bool PreCallValidateDestroyInstance(
     VkInstance                                  instance,
     const VkAllocationCallbacks*                pAllocator) const override;

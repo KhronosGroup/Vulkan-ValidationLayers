@@ -246,7 +246,7 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
 
 void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
-                                                       VkResult result) {
+                                                       VkResult& result) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
     // Copy extension data into local object
     if (result != VK_SUCCESS) return;

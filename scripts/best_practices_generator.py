@@ -261,7 +261,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
         typedef = typedef.split(')',1)[1]
         pre_decl = decls[0][:-1]
         pre_decl = pre_decl.split("VKAPI_CALL ")[1]
-        pre_decl = pre_decl.replace(')', ',\n    VkResult                                    result)')
+        if cmdname == 'vkCreateInstance':
+            pre_decl = pre_decl.replace(')', ',\n    VkResult&                                    result)')
+        else:
+            pre_decl = pre_decl.replace(')', ',\n    VkResult                                    result)')
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')

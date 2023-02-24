@@ -4030,7 +4030,7 @@ std::shared_ptr<PHYSICAL_DEVICE_STATE> ValidationStateTracker::CreatePhysicalDev
 
 void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
-                                                          VkResult result) {
+                                                          VkResult& result) {
     if (result != VK_SUCCESS) {
         return;
     }
