@@ -584,6 +584,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
     VkPipelineObj robust_pipe(m_device);
     robust_pipe.AddShader(&vs);
     robust_pipe.AddDefaultColorAttachment();
+    robust_pipe.DisableRasterization();
     VkGraphicsPipelineCreateInfo gp_ci;
     robust_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
     gp_ci.pNext = &pipeline_robustness_ci;
@@ -717,6 +718,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
@@ -1112,6 +1114,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         VkPipelineObj pipe(m_device);
         pipe.AddShader(&vs);
         pipe.AddDefaultColorAttachment();
+        pipe.DisableRasterization();
         err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
 
@@ -1180,6 +1183,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         VkPipelineObj pipe(m_device);
         pipe.AddShader(&vs);
         pipe.AddDefaultColorAttachment();
+        pipe.DisableRasterization();
         auto subcase_err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(subcase_err);
 
@@ -1260,6 +1264,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         VkPipelineObj mesh_pipe(m_device);
         mesh_pipe.AddShader(&ms);
         mesh_pipe.AddDefaultColorAttachment();
+        mesh_pipe.DisableRasterization();
         err = mesh_pipe.CreateVKPipeline(mesh_pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
         m_commandBuffer->begin(&begin_info);
@@ -1350,6 +1355,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass()));
 
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
@@ -1375,6 +1381,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         VkPipelineObj dr_pipe(m_device);
         dr_pipe.AddShader(&vs);
         dr_pipe.AddDefaultColorAttachment();
+        dr_pipe.DisableRasterization();
         ASSERT_VK_SUCCESS(dr_pipe.CreateVKPipeline(pipeline_layout.handle(), VK_NULL_HANDLE));
 
         m_commandBuffer->begin();
@@ -1458,6 +1465,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass()));
 
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
@@ -1533,6 +1541,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
     ASSERT_VK_SUCCESS(err);
 
@@ -1689,6 +1698,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
     ASSERT_VK_SUCCESS(err);
 
@@ -1980,6 +1990,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     {
         const VkPipelineLayoutObj doomed_pipeline_layout(m_device);
         pipe.CreateVKPipeline(doomed_pipeline_layout.handle(), m_renderPass);

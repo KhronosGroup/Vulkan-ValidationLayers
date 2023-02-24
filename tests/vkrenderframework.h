@@ -787,6 +787,7 @@ class VkPipelineObj : public vk_testing::Pipeline {
     void SetViewport(const std::vector<VkViewport> &viewports);
     void SetScissor(const std::vector<VkRect2D> &scissors);
     void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
+    void DisableRasterization() { m_rs_state.rasterizerDiscardEnable = VK_TRUE; }
 
     void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);
 

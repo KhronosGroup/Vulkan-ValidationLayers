@@ -15782,6 +15782,7 @@ TEST_F(VkLayerTest, ShaderModuleIdentifierFeatures) {
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06846");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-parameter");
@@ -16390,6 +16391,9 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
     VkPipelineObj featureless_pipe(&test_device);
     featureless_pipe.AddShader(&vs2);
     featureless_pipe.AddDefaultColorAttachment();
+    auto ms_state = *gp_ci.pRasterizationState;
+    ms_state.rasterizerDiscardEnable = VK_TRUE;
+    featureless_pipe.SetRasterization(&ms_state);
     featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
     gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
     const VkPipelineLayoutObj test_pipeline_layout(&test_device);

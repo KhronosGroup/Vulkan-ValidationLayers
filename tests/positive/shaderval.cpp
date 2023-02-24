@@ -2725,6 +2725,7 @@ TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) {
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }

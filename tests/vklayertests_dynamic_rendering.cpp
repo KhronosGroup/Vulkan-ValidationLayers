@@ -3555,21 +3555,41 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingMultisampleState) {
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(gpl_features);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
+    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.gp_ci_.pMultisampleState = nullptr;
-    pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.gp_ci_.pMultisampleState = nullptr;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+        pipe.gp_ci_.pMultisampleState = nullptr;
+        pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+        pipe.InitState();
+        // No fragment shader implies no fragment shader state and rasterizerDiscardEnable == true implies no fragment
+        // output state, so there should be no error with pMultisampleState == nullptr here
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachment) {

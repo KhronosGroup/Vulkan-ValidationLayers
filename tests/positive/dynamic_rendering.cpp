@@ -277,10 +277,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
-    rs_ci.rasterizerDiscardEnable = VK_TRUE;
-    rs_ci.lineWidth = 1.0f;
-
     VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthWriteEnable = VK_TRUE;
@@ -290,7 +286,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
     pipe.SetDepthStencil(&ds_ci);
-    pipe.SetRasterization(&rs_ci);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
