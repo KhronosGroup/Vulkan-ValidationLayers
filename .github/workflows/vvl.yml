@@ -17,7 +17,9 @@ name: VVL (Build/Tests)
 
 # https://docs.github.com/en/actions/using-jobs/using-concurrency
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # github.head_ref is only defined on pull_request
+  # Fallback to the run ID, which is guaranteed to be both unique and defined for the run.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id  }}
   cancel-in-progress: true
 
 on:
