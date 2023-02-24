@@ -320,8 +320,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
-    if (result != VK_SUCCESS) return result;
-
+    if (result != VK_SUCCESS) {
+        // Delete unused validation objects to avoid memory leak.
+        std::vector<ValidationObject*> local_objs = {
+            thread_checker_obj, object_tracker_obj, parameter_validation_obj,
+            core_checks_obj, best_practices_obj, gpu_assisted_obj, debug_printf_obj,
+            sync_validation_obj,
+        };
+        for (auto obj : local_objs) {
+            delete obj;
+        }
+        return result;
+    }
     auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
     framework->object_dispatch = local_object_dispatch;
