@@ -157,6 +157,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
@@ -286,6 +287,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         VkPipelineObj pipe2(m_device);
         pipe2.AddShader(&vs_int64);
         pipe2.AddDefaultColorAttachment();
+        pipe2.DisableRasterization();
         err = pipe2.CreateVKPipeline(pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
 
@@ -392,6 +394,7 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     pipe.AddShader(&ts);
     pipe.AddShader(&ms);
     pipe.AddDefaultColorAttachment();
+    pipe.DisableRasterization();
     VkViewport viewport{};
     viewport.width = static_cast<float>(m_width);
     viewport.height = static_cast<float>(m_height);
@@ -543,6 +546,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pre_raster.InitState();
     pre_raster.gp_ci_.layout = pipeline_layout.handle();
     pre_raster.CreateGraphicsPipeline(true, false);
@@ -555,6 +559,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
     fragment.gp_ci_.layout = pipeline_layout.handle();
     fragment.gp_ci_.renderPass = render_pass;
     fragment.gp_ci_.subpass = subpass;
+    fragment.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     fragment.CreateGraphicsPipeline(true, false);
 
     CreatePipelineHelper frag_out(*this);
