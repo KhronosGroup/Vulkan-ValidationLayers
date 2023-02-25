@@ -5039,8 +5039,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  VkRenderPass *pRenderPass) const {
-    safe_VkRenderPassCreateInfo2 create_info_2;
-    ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
+    safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
 }
 
