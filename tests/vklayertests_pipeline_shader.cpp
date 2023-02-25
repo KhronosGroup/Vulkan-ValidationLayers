@@ -16834,3 +16834,52 @@ TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
     CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit,
                                       vector<std::string>({"VUID-RuntimeSpirv-MeshNV-07113", "VUID-RuntimeSpirv-MeshNV-07114"}));
 }
+
+TEST_F(VkLayerTest, ConservativeRasterizationPostDepthCoverage) {
+    TEST_DESCRIPTION("Make sure conservativeRasterizationPostDepthCoverage is set if needed.");
+
+    AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto conservative_rasterization_props = LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
+    if (conservative_rasterization_props.conservativeRasterizationPostDepthCoverage) {
+        GTEST_SKIP() << "need conservativeRasterizationPostDepthCoverage to not be supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::string const source{R"(
+               OpCapability Shader
+               OpCapability SampleMaskPostDepthCoverage
+               OpCapability FragmentFullyCoveredEXT
+               OpExtension "SPV_EXT_fragment_fully_covered"
+               OpExtension "SPV_KHR_post_depth_coverage"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %4 "main" %12
+               OpExecutionMode %4 OriginUpperLeft
+               OpExecutionMode %4 EarlyFragmentTests
+               OpExecutionMode %4 PostDepthCoverage
+               OpDecorate %12 BuiltIn FullyCoveredEXT
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %bool = OpTypeBool
+%_ptr_Input_bool = OpTypePointer Input %bool
+         %12 = OpVariable %_ptr_Input_bool Input
+          %4 = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd)"};
+
+    VkShaderObj fs(this, source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    auto set_info = [&](CreatePipelineHelper &info) {
+        info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235");
+}

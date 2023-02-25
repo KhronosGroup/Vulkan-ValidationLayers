@@ -1097,7 +1097,7 @@
                     "degenerateTrianglesRasterized": true,
                     "degenerateLinesRasterized": true,
                     "fullyCoveredFragmentShaderInputVariable": true,
-                    "conservativeRasterizationPostDepthCoverage": true
+                    "conservativeRasterizationPostDepthCoverage": false
                 },
                 "VkPhysicalDeviceShaderCorePropertiesAMD": {
                     "wavefrontSize": 4294967000,
