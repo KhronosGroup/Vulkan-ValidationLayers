@@ -228,8 +228,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 
     if (rp2_supported && nullptr != rp2_vuid) {
-        safe_VkRenderPassCreateInfo2 create_info2;
-        ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
+        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(*create_info);
 
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
@@ -263,8 +262,7 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     if (rp2_supported) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-        safe_VkRenderPassCreateInfo2 create_info2;
-        ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
+        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(*create_info);
 
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
         if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);

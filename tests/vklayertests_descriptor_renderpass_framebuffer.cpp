@@ -90,8 +90,7 @@ TEST_F(VkLayerTest, BadSubpassIndices) {
     if (rp2_supported) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-        safe_VkRenderPassCreateInfo2 create_info2;
-        ConvertVkRenderPassCreateInfoToV2KHR(rpci, &create_info2);
+        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
@@ -492,8 +491,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             auto attachment_description_stencil_layout = LvlInitStruct<VkAttachmentDescriptionStencilLayoutKHR>();
             attachment_description_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_GENERAL;
             attachment_description_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
-            safe_VkRenderPassCreateInfo2 rpci2;
-            ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
+            safe_VkRenderPassCreateInfo2 rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
             rpci2.pAttachments[0].pNext = &attachment_description_stencil_layout;
 
             VkImageLayout forbidden_layouts[] = {
@@ -839,8 +837,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                              "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
 
         if (rp2Supported) {
-            safe_VkRenderPassCreateInfo2 create_info2;
-            ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+            safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci_same);
             m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
             TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
                                      "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
@@ -854,8 +851,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                              "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
 
         if (rp2Supported) {
-            safe_VkRenderPassCreateInfo2 create_info2;
-            ConvertVkRenderPassCreateInfoToV2KHR(rpci_same, &create_info2);
+            safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci_same);
             m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pColorAttachments-02898");
             TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), create_info2.ptr(),
                                      "VUID-VkSubpassDescription2-pDepthStencilAttachment-04440");
@@ -999,8 +995,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
                          "VUID-VkAttachmentReference2-layout-03077");
 
     if (rp2Supported) {
-        safe_VkRenderPassCreateInfo2 rpci2;
-        ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
+        safe_VkRenderPassCreateInfo2 rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
         // set valid values to start
         rpci2.pSubpasses[0].pColorAttachments[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1188,8 +1183,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
         viewMasks[0] = 0;
         correlationMasks[0] = 0;
         correlationMasks[1] = 0;
-        safe_VkRenderPassCreateInfo2 safe_rpci2;
-        ConvertVkRenderPassCreateInfoToV2KHR(rpci, &safe_rpci2);
+        safe_VkRenderPassCreateInfo2 safe_rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
         TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), safe_rpci2.ptr(),
                                  "VUID-VkRenderPassCreateInfo2-viewMask-03057");
@@ -8142,8 +8136,7 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
         if (rp2Supported) {
             PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
                 (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device(), "vkCreateRenderPass2KHR");
-            safe_VkRenderPassCreateInfo2 create_info2;
-            ConvertVkRenderPassCreateInfoToV2KHR(rpci, &create_info2);
+            safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
             if (useLinearColorAttachment) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-linearColorAttachment-06501");
@@ -14090,4 +14083,84 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidExtensionCombination) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-None-08095");
     vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, IgnoreSubpassDependencyMasksSync2) {
+    // Testing from the spec:
+    // If a VkMemoryBarrier2 is included in the pNext chain,
+    // srcStageMask, dstStageMask, srcAccessMask, and dstAccessMask parameters are ignored.
+    // The synchronization and access scopes instead are defined by the parameters of VkMemoryBarrier2.
+    SetTargetApiVersion(VK_API_VERSION_1_2);  // VK_KHR_create_renderpass2
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(sync2_features);
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "synchronization2 feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto attach_ref = LvlInitStruct<VkAttachmentReference2>();
+    attach_ref.attachment = 0;
+    attach_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    auto subpass = LvlInitStruct<VkSubpassDescription2>();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attach_ref;
+    subpass.viewMask = 0;
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
+    mem_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    auto dependency = LvlInitStruct<VkSubpassDependency2>();
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = 0X8000000;  // not real value, VK_PIPELINE_STAGE_VIDEO_ENCODE_BIT_KHR doesn't exist
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependency.viewOffset = 0;
+
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDependency2-srcStageMask-parameter");
+        vk_testing::RenderPass render_pass(*m_device, rpci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    dependency.pNext = &mem_barrier;  // srcStageMask should be ignored now
+    { vk_testing::RenderPass render_pass(*m_device, rpci); }
+
+    mem_barrier.srcStageMask = 0x8000000000000000ULL;  // not real value
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcStageMask-parameter");
+        vk_testing::RenderPass render_pass(*m_device, rpci);
+        m_errorMonitor->VerifyFound();
+    }
 }
