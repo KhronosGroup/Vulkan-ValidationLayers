@@ -323,7 +323,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Validation conditions for some special case struct members that are conditionally validated
         self.structMemberValidationConditions = { 'VkPipelineColorBlendStateCreateInfo' : { 'logicOp' : '{}logicOpEnable == VK_TRUE' } }
         # FlagBits that should also be array
-        self.flagBitsAsArray = ['VkShaderStageFlags']
+        self.flagBitsAsArray = ['VkShaderStageFlags', 'VkQueueFlags']
         # Header version
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
