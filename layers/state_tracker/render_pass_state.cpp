@@ -244,8 +244,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 co
 }
 
 static safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCreateInfo &create_info) {
-    safe_VkRenderPassCreateInfo2 create_info_2;
-    ConvertVkRenderPassCreateInfoToV2KHR(create_info, &create_info_2);
+    safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
     return create_info_2;
 }
 

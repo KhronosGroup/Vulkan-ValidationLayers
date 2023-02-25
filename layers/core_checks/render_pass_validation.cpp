@@ -2388,8 +2388,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     }
 
     if (!skip) {
-        safe_VkRenderPassCreateInfo2 create_info_2;
-        ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
+        safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
         skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr(), "vkCreateRenderPass()");
     }
 

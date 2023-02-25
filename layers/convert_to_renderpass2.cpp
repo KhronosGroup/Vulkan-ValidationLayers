@@ -117,56 +117,56 @@ static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, i
     return v2;
 }
 
-void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struct, safe_VkRenderPassCreateInfo2* out_struct) {
+safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
     using std::vector;
-    const auto multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(in_struct.pNext);
-    const auto* input_attachment_aspect_info = LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(in_struct.pNext);
-    const auto fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(in_struct.pNext);
+    safe_VkRenderPassCreateInfo2 out_struct;
+    const auto multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
+    const auto* input_attachment_aspect_info = LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
+    const auto fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(create_info.pNext);
 
-    out_struct->~safe_VkRenderPassCreateInfo2();
-    out_struct->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+    out_struct.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
 
     // Fixup RPCI2 pNext chain.  Only FDM2 is valid on both chains.
     if (fragment_density_map_info) {
-        out_struct->pNext = SafePnextCopy(fragment_density_map_info);
-        auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct->pNext);
+        out_struct.pNext = SafePnextCopy(fragment_density_map_info);
+        auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct.pNext);
         const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
     } else {
-        out_struct->pNext = nullptr;
+        out_struct.pNext = nullptr;
     }
 
-    out_struct->flags = in_struct.flags;
-    out_struct->attachmentCount = in_struct.attachmentCount;
-    out_struct->pAttachments = nullptr;  // to be filled
-    out_struct->subpassCount = in_struct.subpassCount;
-    out_struct->pSubpasses = nullptr;  // to be filled
-    out_struct->dependencyCount = in_struct.dependencyCount;
-    out_struct->pDependencies = nullptr;  // to be filled
-    out_struct->correlatedViewMaskCount = multiview_info ? multiview_info->correlationMaskCount : 0;
-    out_struct->pCorrelatedViewMasks = nullptr;  // to be filled
+    out_struct.flags = create_info.flags;
+    out_struct.attachmentCount = create_info.attachmentCount;
+    out_struct.pAttachments = nullptr;  // to be filled
+    out_struct.subpassCount = create_info.subpassCount;
+    out_struct.pSubpasses = nullptr;  // to be filled
+    out_struct.dependencyCount = create_info.dependencyCount;
+    out_struct.pDependencies = nullptr;  // to be filled
+    out_struct.correlatedViewMaskCount = multiview_info ? multiview_info->correlationMaskCount : 0;
+    out_struct.pCorrelatedViewMasks = nullptr;  // to be filled
 
     // TODO: This should support VkRenderPassFragmentDensityMapCreateInfoEXT somehow
     // see https://github.com/KhronosGroup/Vulkan-Docs/issues/1027
 
-    if (out_struct->attachmentCount && in_struct.pAttachments) {
-        out_struct->pAttachments = new safe_VkAttachmentDescription2[out_struct->attachmentCount];
-        for (uint32_t i = 0; i < out_struct->attachmentCount; ++i) {
-            out_struct->pAttachments[i] = ToV2KHR(in_struct.pAttachments[i]);
+    if (out_struct.attachmentCount && create_info.pAttachments) {
+        out_struct.pAttachments = new safe_VkAttachmentDescription2[out_struct.attachmentCount];
+        for (uint32_t i = 0; i < out_struct.attachmentCount; ++i) {
+            out_struct.pAttachments[i] = ToV2KHR(create_info.pAttachments[i]);
         }
     }
 
     // translate VkRenderPassInputAttachmentAspectCreateInfo into vector
-    vector<vector<VkImageAspectFlags>> input_attachment_aspect_masks(out_struct->subpassCount);
+    vector<vector<VkImageAspectFlags>> input_attachment_aspect_masks(out_struct.subpassCount);
     // set defaults
-    for (uint32_t si = 0; si < out_struct->subpassCount; ++si) {
-        if (in_struct.pSubpasses) {
-            input_attachment_aspect_masks[si].resize(in_struct.pSubpasses[si].inputAttachmentCount, 0);
+    for (uint32_t si = 0; si < out_struct.subpassCount; ++si) {
+        if (create_info.pSubpasses) {
+            input_attachment_aspect_masks[si].resize(create_info.pSubpasses[si].inputAttachmentCount, 0);
 
-            for (uint32_t iai = 0; iai < in_struct.pSubpasses[si].inputAttachmentCount; ++iai) {
-                if (out_struct->pAttachments && in_struct.pSubpasses[si].pInputAttachments) {
-                    const auto& input_attachment = in_struct.pSubpasses[si].pInputAttachments[iai];
+            for (uint32_t iai = 0; iai < create_info.pSubpasses[si].inputAttachmentCount; ++iai) {
+                if (out_struct.pAttachments && create_info.pSubpasses[si].pInputAttachments) {
+                    const auto& input_attachment = create_info.pSubpasses[si].pInputAttachments[iai];
                     if (input_attachment.attachment != VK_ATTACHMENT_UNUSED) {
-                        const auto format = out_struct->pAttachments[input_attachment.attachment].format;
+                        const auto format = out_struct.pAttachments[input_attachment.attachment].format;
 
                         if (FormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
                         if (FormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -196,28 +196,29 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
     }
 
     const bool has_view_mask = multiview_info && multiview_info->subpassCount && multiview_info->pViewMasks;
-    if (out_struct->subpassCount && in_struct.pSubpasses) {
-        out_struct->pSubpasses = new safe_VkSubpassDescription2[out_struct->subpassCount];
-        for (uint32_t i = 0; i < out_struct->subpassCount; ++i) {
+    if (out_struct.subpassCount && create_info.pSubpasses) {
+        out_struct.pSubpasses = new safe_VkSubpassDescription2[out_struct.subpassCount];
+        for (uint32_t i = 0; i < out_struct.subpassCount; ++i) {
             const uint32_t view_mask = has_view_mask ? multiview_info->pViewMasks[i] : 0;
-            out_struct->pSubpasses[i] = ToV2KHR(in_struct.pSubpasses[i], view_mask, input_attachment_aspect_masks[i].data());
+            out_struct.pSubpasses[i] = ToV2KHR(create_info.pSubpasses[i], view_mask, input_attachment_aspect_masks[i].data());
         }
     }
 
     const bool has_view_offset = multiview_info && multiview_info->dependencyCount && multiview_info->pViewOffsets;
-    if (out_struct->dependencyCount && in_struct.pDependencies) {
-        out_struct->pDependencies = new safe_VkSubpassDependency2[out_struct->dependencyCount];
-        for (uint32_t i = 0; i < out_struct->dependencyCount; ++i) {
+    if (out_struct.dependencyCount && create_info.pDependencies) {
+        out_struct.pDependencies = new safe_VkSubpassDependency2[out_struct.dependencyCount];
+        for (uint32_t i = 0; i < out_struct.dependencyCount; ++i) {
             const int32_t view_offset = has_view_offset ? multiview_info->pViewOffsets[i] : 0;
-            out_struct->pDependencies[i] = ToV2KHR(in_struct.pDependencies[i], view_offset);
+            out_struct.pDependencies[i] = ToV2KHR(create_info.pDependencies[i], view_offset);
         }
     }
 
-    if (out_struct->correlatedViewMaskCount && multiview_info->pCorrelationMasks) {
-        auto correlated_view_masks = new uint32_t[out_struct->correlatedViewMaskCount];
-        for (uint32_t i = 0; i < out_struct->correlatedViewMaskCount; ++i) {
+    if (out_struct.correlatedViewMaskCount && multiview_info->pCorrelationMasks) {
+        auto correlated_view_masks = new uint32_t[out_struct.correlatedViewMaskCount];
+        for (uint32_t i = 0; i < out_struct.correlatedViewMaskCount; ++i) {
             correlated_view_masks[i] = multiview_info->pCorrelationMasks[i];
         }
-        out_struct->pCorrelatedViewMasks = correlated_view_masks;
+        out_struct.pCorrelatedViewMasks = correlated_view_masks;
     }
+    return out_struct;
 }
