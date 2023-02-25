@@ -2814,7 +2814,11 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR"
                         ],
                         "optimalTilingFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2837,7 +2841,11 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2887,7 +2895,11 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR"
                         ],
                         "optimalTilingFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2910,7 +2922,11 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -7241,7 +7257,8 @@
                             "VK_QUEUE_COMPUTE_BIT",
                             "VK_QUEUE_TRANSFER_BIT",
                             "VK_QUEUE_SPARSE_BINDING_BIT",
-                            "VK_QUEUE_PROTECTED_BIT"
+                            "VK_QUEUE_PROTECTED_BIT",
+                            "VK_QUEUE_VIDEO_DECODE_BIT_KHR"
                         ],
                         "queueCount": 16,
                         "timestampValidBits": 16,
@@ -7256,9 +7273,10 @@
                     },
                     "VkVideoQueueFamilyProperties2KHR": {
                         "videoCodecOperations": [
-                            "VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT",
-                            "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT"
-                        ]
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR",
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR"
+                        ],
+                        "queryResultStatusSupport": true
                     }
                 },
                 {
