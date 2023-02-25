@@ -23,6 +23,7 @@
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
 #include "core_checks/core_validation.h"
+#include "enum_flag_bits.h"
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
                                                  const VkAllocationCallbacks *pAllocator) const {
@@ -279,8 +280,7 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const c
         const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
         if (!(required_flags & queue_flags)) {
             std::string required_flags_string;
-            for (auto flag : {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_SPARSE_BINDING_BIT,
-                              VK_QUEUE_PROTECTED_BIT}) {
+            for (const auto &flag : AllVkQueueFlags) {
                 if (flag & required_flags) {
                     if (required_flags_string.size()) {
                         required_flags_string += " or ";

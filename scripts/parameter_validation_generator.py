@@ -335,7 +335,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         ]
 
         # FlagBits that should also be array
-        self.flagBitsAsArray = ['VkShaderStageFlags']
+        self.flagBitsAsArray = ['VkShaderStageFlags', 'VkQueueFlags']
         # Header version
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
