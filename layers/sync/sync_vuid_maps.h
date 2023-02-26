@@ -67,6 +67,8 @@ enum class ImageError {
     kConflictingLayout,
     kBadLayout,
     kBadAttFeedbackLoopLayout,
+    kBadSync2OldLayout,
+    kBadSync2NewLayout,
     kNotColorAspect,
     kNotColorAspectYcbcr,
     kBadMultiplanarAspect,
