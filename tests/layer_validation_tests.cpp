@@ -796,33 +796,6 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFor
     return SafeSaneImageViewCreateInfo(image.handle(), format, aspect_mask);
 }
 
-bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework) {
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
-                                                                     "vkGetPhysicalDeviceFeatures2KHR");
-    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
-    vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), &features2);
-    if (!timeline_semaphore_features.timelineSemaphore) {
-        return false;
-    }
-
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
-                                                                       "vkGetPhysicalDeviceProperties2KHR");
-    VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props =
-        LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&timeline_semaphore_props);
-    vkGetPhysicalDeviceProperties2KHR(renderFramework->gpu(), &pd_props2);
-    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD the value might be zero'ed and cause false errors
-        return false;
-    }
-
-    renderFramework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    return true;
-}
-
 bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2");

@@ -216,9 +216,6 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(VkImage image, VkFormat format
 
 VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFormat format, VkImageAspectFlags aspect_mask);
 
-// Helper for checking timeline semaphore support and initializing
-bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework);
-
 bool CheckSynchronization2SupportAndInitState(VkRenderFramework *renderFramework);
 
 // Dependent "false" type for the static assert, as GCC will evaluate

@@ -874,9 +874,12 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore not supported.";
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
@@ -1461,17 +1464,19 @@ TEST_F(VkPositiveLayerTest, ExternalTimelineSemaphore) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore not supported, skipping test";
-    }
-
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     // Check for external semaphore import and export capability
     auto tci = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -1822,9 +1827,13 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore not supported";
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
     auto fpWaitSemaphores =
         reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR"));
     auto fpSignalSemaphore =
@@ -2062,9 +2071,12 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
     auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_ci);
@@ -2322,9 +2334,12 @@ TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     WaitTimelineSemThreadData data(*m_device);
 
     data.Run(*m_commandPool, *m_errorMonitor);
