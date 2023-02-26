@@ -2282,14 +2282,31 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     bool skip = false;
 
     skip |= ValidateQFOTransferBarrierUniqueness(loc, cb_state, mem_barrier, cb_state->qfo_transfer_image_barriers);
+    const VkImageLayout old_layout = mem_barrier.oldLayout;
+    const VkImageLayout new_layout = mem_barrier.newLayout;
 
     bool is_ilt = true;
     if (enabled_features.core13.synchronization2) {
-        is_ilt = mem_barrier.oldLayout != mem_barrier.newLayout;
+        is_ilt = old_layout != new_layout;
+    } else {
+        if (old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || old_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
+            auto layout_loc = loc.dot(Field::oldLayout);
+            const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadSync2OldLayout);
+            skip |= LogError(cb_state->commandBuffer(), vuid,
+                             "%s Image Layout cannot be transitioned from %s if the synchronization2 feature is not enabled",
+                             layout_loc.Message().c_str(), string_VkImageLayout(old_layout));
+        }
+        if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || new_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
+            auto layout_loc = loc.dot(Field::newLayout);
+            const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadSync2NewLayout);
+            skip |= LogError(cb_state->commandBuffer(), vuid,
+                             "%s Image Layout cannot be transitioned to %s if the synchronization2 feature is not enabled",
+                             layout_loc.Message().c_str(), string_VkImageLayout(new_layout));
+        }
     }
 
     if (is_ilt) {
-        if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier.newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+        if (new_layout == VK_IMAGE_LAYOUT_UNDEFINED || new_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             auto layout_loc = loc.dot(Field::newLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadLayout);
             skip |=
@@ -2298,7 +2315,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         }
     }
 
-    if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+    if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
         if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
             auto layout_loc = loc.dot(Field::newLayout);
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadAttFeedbackLoopLayout);
