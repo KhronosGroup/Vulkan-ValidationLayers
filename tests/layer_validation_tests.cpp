@@ -2116,31 +2116,6 @@ CreateNVRayTracingPipelineHelper::~CreateNVRayTracingPipelineHelper() {
     vk::DestroyPipeline(device, pipeline_, nullptr);
 }
 
-bool CreateNVRayTracingPipelineHelper::InitInstanceExtensions(VkLayerTest &test,
-                                                              std::vector<const char *> &instance_extension_names) {
-    if (test.InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("Did not find required instance extension %s; skipped.\n", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return false;
-    }
-    return true;
-}
-
-bool CreateNVRayTracingPipelineHelper::InitDeviceExtensions(VkLayerTest &test, std::vector<const char *> &device_extension_names) {
-    std::array<const char *, 2> required_device_extensions = {
-        {VK_NV_RAY_TRACING_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (test.DeviceExtensionSupported(test.gpu(), nullptr, device_extension)) {
-            device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s Extension not supported, skipping tests\n", device_extension);
-            return false;
-        }
-    }
-    return true;
-}
-
 void CreateNVRayTracingPipelineHelper::InitShaderGroups() {
     {
         VkRayTracingShaderGroupCreateInfoNV group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoNV>();
@@ -2418,10 +2393,6 @@ VkResult CreateNVRayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool impl
     err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
     return err;
 }
-
-namespace chain_util {
-const void *ExtensionChain::Head() const { return head_; }
-}  // namespace chain_util
 
 BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
     delete command_buffer2;

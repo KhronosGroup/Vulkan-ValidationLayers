@@ -1674,9 +1674,6 @@ TEST_F(VkLayerTest, InvalidPipeline) {
 TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
 
-    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-    }
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2871,35 +2868,17 @@ TEST_F(VkLayerTest, InvalidPipelineDepthClipControlFeatureDisable) {
 
 TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
     // Enable sample shading in pipeline when the feature is disabled.
-    // Check for VK_KHR_get_physical_device_properties2
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    // Set up the extension structs
-    auto sampleLocations = chain_util::Init<VkPipelineSampleLocationsStateCreateInfoEXT>();
-    sampleLocations.sampleLocationsInfo.sType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
-    auto coverageToColor = chain_util::Init<VkPipelineCoverageToColorStateCreateInfoNV>();
-    auto coverageModulation = chain_util::Init<VkPipelineCoverageModulationStateCreateInfoNV>();
-    auto discriminatrix = [this](const char *name) { return DeviceExtensionSupported(gpu(), nullptr, name); };
-    chain_util::ExtensionChain chain(discriminatrix, &m_device_extension_names);
-    chain.Add(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME, sampleLocations);
-    chain.Add(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME, coverageToColor);
-    chain.Add(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME, coverageModulation);
-    const void *extension_head = chain.Head();
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (extension_head) {
-        auto good_chain = [extension_head](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = extension_head; };
-        CreatePipelineHelper::OneshotTest(*this, good_chain, (kErrorBit | kWarningBit));
-    } else {
-        printf("Required extension not present -- skipping positive checks.\n");
-    }
+    auto sample_locations = LvlInitStruct<VkPipelineSampleLocationsStateCreateInfoEXT>();
+    sample_locations.sampleLocationsInfo = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    auto good_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &sample_locations; };
+    CreatePipelineHelper::OneshotTest(*this, good_chain, (kErrorBit | kWarningBit));
 
-    auto instance_ci = chain_util::Init<VkInstanceCreateInfo>();
+    auto instance_ci = LvlInitStruct<VkInstanceCreateInfo>();
     auto bad_chain = [&instance_ci](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_.pNext = &instance_ci; };
     CreatePipelineHelper::OneshotTest(*this, bad_chain, (kErrorBit | kWarningBit),
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");

@@ -684,8 +684,6 @@ struct CreateNVRayTracingPipelineHelper {
     CreateNVRayTracingPipelineHelper(VkLayerTest &test);
     ~CreateNVRayTracingPipelineHelper();
 
-    static bool InitInstanceExtensions(VkLayerTest &test, std::vector<const char *> &instance_extension_names);
-    static bool InitDeviceExtensions(VkLayerTest &test, std::vector<const char *> &device_extension_names);
     void InitShaderGroups();
     void InitShaderGroupsKHR();
     void InitDescriptorSetInfo();
@@ -734,41 +732,6 @@ struct CreateNVRayTracingPipelineHelper {
         ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
     }
 };
-
-namespace chain_util {
-template <typename T>
-T Init(const void *pnext_in = nullptr) {
-    T pnext_obj = {};
-    pnext_obj.sType = LvlTypeMap<T>::kSType;
-    pnext_obj.pNext = pnext_in;
-    return pnext_obj;
-}
-
-class ExtensionChain {
-    const void *head_ = nullptr;
-    typedef std::function<bool(const char *)> AddIfFunction;
-    AddIfFunction add_if_;
-    typedef std::vector<const char *> List;
-    List *list_;
-
-  public:
-    template <typename F>
-    ExtensionChain(F &add_if, List *list) : add_if_(add_if), list_(list) {}
-
-    template <typename T>
-    void Add(const char *name, T &obj) {
-        if (add_if_(name)) {
-            if (list_) {
-                list_->push_back(name);
-            }
-            obj.pNext = head_;
-            head_ = &obj;
-        }
-    }
-
-    const void *Head() const;
-};
-}  // namespace chain_util
 
 class BarrierQueueFamilyBase {
   public:
