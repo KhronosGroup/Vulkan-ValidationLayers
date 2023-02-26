@@ -1937,3 +1937,41 @@ TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, Sync2LayoutFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto features_13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    features_13.synchronization2 = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features_13));
+
+    VkImageCreateInfo info = vk_testing::Image::create_info();
+    info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageObj image{m_device};
+    image.init(&info);
+
+    m_commandBuffer->begin();
+    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier2>();
+    img_barrier.image = image.handle();
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &img_barrier;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-synchronization2-03848");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-synchronization2-07793");  // oldLayout
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-synchronization2-07794");  // newLayout
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dep_info);
+    m_errorMonitor->VerifyFound();
+}
