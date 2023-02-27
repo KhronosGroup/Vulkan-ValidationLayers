@@ -709,9 +709,9 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SHADER_MODULE_STATE &mod
     }
 }
 
-static std::string string_descriptorTypes(const std::set<uint32_t> &descriptor_types) {
+static std::string string_descriptorTypeSet(const std::set<uint32_t> &descriptor_type_set) {
     std::stringstream ss;
-    for (auto it = descriptor_types.begin(); it != descriptor_types.end(); ++it) {
+    for (auto it = descriptor_type_set.begin(); it != descriptor_type_set.end(); ++it) {
         if (ss.tellp()) ss << ", ";
         ss << string_VkDescriptorType(VkDescriptorType(*it));
     }
@@ -739,32 +739,6 @@ bool CoreChecks::RequireFeature(const SHADER_MODULE_STATE &module_state, VkBool3
     }
 
     return false;
-}
-
-bool CoreChecks::ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                               bool has_descriptor_written_to, bool has_atomic_descriptor) const {
-    bool skip = false;
-
-    if (has_descriptor_written_to || has_atomic_descriptor) {
-        switch (stage) {
-            case VK_SHADER_STAGE_FRAGMENT_BIT:
-                skip |= RequireFeature(module_state, enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
-                                       "VUID-RuntimeSpirv-NonWritable-06340");
-                break;
-            case VK_SHADER_STAGE_VERTEX_BIT:
-            case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            case VK_SHADER_STAGE_GEOMETRY_BIT:
-                skip |= RequireFeature(module_state, enabled_features.core.vertexPipelineStoresAndAtomics,
-                                       "vertexPipelineStoresAndAtomics", "VUID-RuntimeSpirv-NonWritable-06341");
-                break;
-            default:
-                // No feature requirements for writes and atomics for other stages
-                break;
-        }
-    }
-
-    return skip;
 }
 
 bool CoreChecks::ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
@@ -2758,6 +2732,80 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
     return skip;
 }
 
+bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+                                                  const PIPELINE_STATE &pipeline,
+                                                  const std::vector<ResourceInterfaceVariable> &descriptor_variables,
+                                                  const std::string &vuid_layout_mismatch) const {
+    bool skip = false;
+    for (const auto &variable : descriptor_variables) {
+        // Verify given pipelineLayout has requested setLayout with requested binding
+        // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
+        // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
+        const auto &binding =
+            GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
+        uint32_t required_descriptor_count;
+        const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        const auto descriptor_type_set = TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, is_khr);
+
+        if (!binding) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |= LogError(objlist, vuid_layout_mismatch,
+                             "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
+                             " in shader (%s) uses descriptor slot (expected `%s`) but not declared in pipeline layout",
+                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
+                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                             string_descriptorTypeSet(descriptor_type_set).c_str());
+        } else if (~binding->stageFlags & stage) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |= LogError(objlist, vuid_layout_mismatch,
+                             "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
+                             " in shader (%s) uses descriptor slot but descriptor not accessible from stage %s",
+                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
+                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                             string_VkShaderStageFlagBits(stage));
+        } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
+                   (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |=
+                LogError(objlist, vuid_layout_mismatch,
+                         "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
+                         " type mismatch on descriptor slot in shader (%s), uses type %s but expected %s",
+                         pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
+                         variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                         string_VkDescriptorType(binding->descriptorType), string_descriptorTypeSet(descriptor_type_set).c_str());
+        } else if (binding->descriptorCount < required_descriptor_count) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |= LogError(objlist, vuid_layout_mismatch,
+                             "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
+                             " in shader (%s) expects at least %" PRIu32 " descriptors, but only %" PRIu32 " provided",
+                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
+                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage), required_descriptor_count,
+                             binding->descriptorCount);
+        }
+
+        if ((variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer) &&
+            !variable.decorations.Has(DecorationSet::nonwritable_bit)) {
+            switch (variable.stage) {
+                case VK_SHADER_STAGE_FRAGMENT_BIT:
+                    skip |= RequireFeature(module_state, enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics",
+                                           "VUID-RuntimeSpirv-NonWritable-06340");
+                    break;
+                case VK_SHADER_STAGE_VERTEX_BIT:
+                case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+                case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+                case VK_SHADER_STAGE_GEOMETRY_BIT:
+                    skip |= RequireFeature(module_state, enabled_features.core.vertexPipelineStoresAndAtomics,
+                                           "vertexPipelineStoresAndAtomics", "VUID-RuntimeSpirv-NonWritable-06341");
+                    break;
+                default:
+                    // No feature requirements for writes and atomics for other stages
+                    break;
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -3205,8 +3253,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     }
 
     skip |= ValidateTransformFeedback(module_state, pipeline);
-    skip |= ValidateShaderStageWritableOrAtomicDescriptor(module_state, stage, stage_state.has_descriptor_written_to,
-                                                          stage_state.has_atomic_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module_state, stage, pipeline, entrypoint);
     skip |= ValidateShaderStageMaxResources(module_state, stage, pipeline);
     skip |= ValidateAtomicsTypes(module_state);
@@ -3263,54 +3309,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
     // Validate Push Constants use
     skip |= ValidatePushConstantUsage(pipeline, module_state, pStage, vuid_layout_mismatch);
-
-    // Validate descriptor use (can dereference because entrypoint is validated by here)
-    for (const auto &variable : *stage_state.descriptor_variables) {
-        // Verify given pipelineLayout has requested setLayout with requested binding
-        // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
-        // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
-        const auto &binding =
-            GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
-        unsigned required_descriptor_count;
-        const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        std::set<uint32_t> descriptor_types =
-            TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, is_khr);
-
-        if (!binding) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(
-                objlist, vuid_layout_mismatch,
-                "%s(): pCreateInfos[%" PRIu32
-                "] Set %u Binding %u in shader (%s) uses descriptor slot (expected `%s`) but not declared in pipeline layout",
-                pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set, variable.decorations.binding,
-                string_VkShaderStageFlagBits(variable.stage), string_descriptorTypes(descriptor_types).c_str());
-        } else if (~binding->stageFlags & stage) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
-                             "%s(): pCreateInfos[%" PRIu32
-                             "] Set %u Binding %u in shader (%s) uses descriptor slot but descriptor not accessible from stage %s",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
-                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
-                             string_VkShaderStageFlagBits(stage));
-        } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
-                   (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
-                             "%s(): pCreateInfos[%" PRIu32
-                             "] Set %u Binding %u type mismatch on descriptor slot in shader (%s), uses type %s but expected %s",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
-                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
-                             string_VkDescriptorType(binding->descriptorType), string_descriptorTypes(descriptor_types).c_str());
-        } else if (binding->descriptorCount < required_descriptor_count) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
-                             "%s(): pCreateInfos[%" PRIu32
-                             "] Set %u Binding %u in shader (%s) expects at least %u descriptors, but only %u provided",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
-                             variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage), required_descriptor_count,
-                             binding->descriptorCount);
-        }
-    }
+    // can dereference because entrypoint is validated by here
+    skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, *stage_state.descriptor_variables,
+                                             vuid_layout_mismatch);
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);

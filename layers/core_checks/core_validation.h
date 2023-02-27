@@ -852,10 +852,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
-    bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                                       bool has_descriptor_written_to, bool has_atomic_descriptor) const;
-    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                              const PIPELINE_STATE& pipeline, const Instruction& entrypoint) const;
+    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage, const PIPELINE_STATE& pipeline,
+                                              const Instruction& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE& module_state, const Instruction* insn) const;
     bool ValidateShaderStageMaxResources(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                          const PIPELINE_STATE& pipeline) const;
@@ -900,6 +898,10 @@ class CoreChecks : public ValidationStateTracker {
                                         uint32_t pipe_index) const;
     bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
+    bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+                                          const PIPELINE_STATE& pipeline,
+                                          const std::vector<ResourceInterfaceVariable>& descriptor_variables,
+                                          const std::string& vuid_layout_mismatch) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const SHADER_MODULE_STATE& module_state, const PipelineStageState& stage_state,
                                 const safe_VkPipelineShaderStageCreateInfo* pStage, const VkPipelineCreateFlags flags) const;
