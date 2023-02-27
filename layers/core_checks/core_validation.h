@@ -853,9 +853,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                                        bool has_descriptor_written_to, bool has_atomic_descriptor) const;
-    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
-                                              safe_VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE& pipeline,
-                                              const Instruction& entrypoint) const;
+    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+                                              const PIPELINE_STATE& pipeline, const Instruction& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE& module_state, const Instruction* insn) const;
     bool ValidateShaderStageMaxResources(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                          const PIPELINE_STATE& pipeline) const;
@@ -864,10 +863,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryScope(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
     bool ValidateCooperativeMatrix(const SHADER_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* pStage) const;
-    bool ValidateShaderResolveQCOM(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateShaderResolveQCOM(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const PIPELINE_STATE& pipeline) const;
-    bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state,
-                                           safe_VkPipelineShaderStageCreateInfo const* pStage) const;
+    bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state, VkPipelineShaderStageCreateFlags flags) const;
     bool ValidateComputeSharedMemory(const SHADER_MODULE_STATE& module_state, uint32_t total_shared_size) const;
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint, VkShaderStageFlagBits stage,
@@ -889,7 +887,7 @@ class CoreChecks : public ValidationStateTracker {
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
                                                         const SHADER_MODULE_STATE::StructInfo& push_constant_used_in_shader,
                                                         uint32_t& out_issue_index) const;
-    bool ValidateSpecializations(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* info,
+    bool ValidateSpecializations(const SHADER_MODULE_STATE& module_state, const safe_VkSpecializationInfo* spec,
                                  const PIPELINE_STATE& pipeline) const;
     bool RequirePropertyFlag(const SHADER_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
                              const char* vuid) const;

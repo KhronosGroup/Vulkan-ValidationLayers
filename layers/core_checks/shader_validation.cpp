@@ -476,8 +476,9 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
         return skip;
     }
 
+    const VkShaderStageFlagBits stage = pStage->stage;
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    const auto *push_constants = module_state.FindEntrypointPushConstant(pStage->pName, pStage->stage);
+    const auto *push_constants = module_state.FindEntrypointPushConstant(pStage->pName, stage);
     if (!push_constants || !push_constants->IsUsed()) {
         return skip;
     }
@@ -486,7 +487,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
 
     bool found_stage = false;
     for (auto const &range : *push_constant_ranges) {
-        if (range.stageFlags & pStage->stage) {
+        if (range.stageFlags & stage) {
             found_stage = true;
             std::string location_desc;
             std::vector<uint8_t> push_constant_bytes_set;
@@ -503,7 +504,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
                 skip |= LogError(
                     objlist, vuid, "%s(): pCreateInfos[%" PRIu32 "] Push constant buffer:%s in %s is out of range in %s.",
                     pipeline.GetCreateFunctionName(), pipeline.create_index, loc_descr.c_str(),
-                    string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(pipeline_layout->layout()).c_str());
+                    string_VkShaderStageFlags(stage).c_str(), report_data->FormatHandle(pipeline_layout->layout()).c_str());
                 break;
             }
         }
@@ -512,10 +513,9 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     if (!found_stage) {
         const LogObjectList objlist(module_state.vk_shader_module(), pipeline_layout->layout());
         skip |= LogError(objlist, vuid, "%s(): pCreateInfos[%" PRIu32 "] Push constant is used in %s of %s. But %s doesn't set %s.",
-                         pipeline.GetCreateFunctionName(), pipeline.create_index, string_VkShaderStageFlags(pStage->stage).c_str(),
+                         pipeline.GetCreateFunctionName(), pipeline.create_index, string_VkShaderStageFlags(stage).c_str(),
                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                         report_data->FormatHandle(pipeline_layout->layout()).c_str(),
-                         string_VkShaderStageFlags(pStage->stage).c_str());
+                         report_data->FormatHandle(pipeline_layout->layout()).c_str(), string_VkShaderStageFlags(stage).c_str());
     }
     return skip;
 }
@@ -562,12 +562,9 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state, safe_VkPipelineShaderStageCreateInfo const *info,
+bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                                          const PIPELINE_STATE &pipeline) const {
     bool skip = false;
-
-    const auto *spec = info->pSpecializationInfo;
-
     if (spec) {
         for (auto i = 0u; i < spec->mapEntryCount; i++) {
             if (spec->pMapEntries[i].offset >= spec->dataSize) {
@@ -855,11 +852,9 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state,
-                                                      safe_VkPipelineShaderStageCreateInfo const *pStage,
+bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                       const PIPELINE_STATE &pipeline, const Instruction &entrypoint) const {
-    if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
-        pStage->stage == VK_SHADER_STAGE_ALL) {
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
 
@@ -948,11 +943,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                          pipeline.create_index);
     }
 
-    bool strip_output_array_level =
-        (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStage->stage == VK_SHADER_STAGE_MESH_BIT_NV);
-    bool strip_input_array_level =
-        (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
-         pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT);
+    bool strip_output_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_MESH_BIT_NV);
+    bool strip_input_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                                    stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT);
 
     uint32_t num_comp_in = 0;
     uint32_t num_comp_out = 0;
@@ -1009,7 +1002,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         }
     }
 
-    switch (pStage->stage) {
+    switch (stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
             if (num_comp_out > limits.maxVertexOutputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
@@ -1357,10 +1350,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &modu
 }
 
 // copy the specialization constant value into buf, if it is present
-template <typename StageCreateInfo>
-void GetSpecConstantValue(StageCreateInfo const *pStage, uint32_t spec_id, void *buf) {
-    const auto *spec = pStage->pSpecializationInfo;
-
+void GetSpecConstantValue(const safe_VkSpecializationInfo *spec, uint32_t spec_id, void *buf) {
     if (spec && spec_id < spec->mapEntryCount) {
         memcpy(buf, (uint8_t *)spec->pData + spec->pMapEntries[spec_id].offset, spec->pMapEntries[spec_id].size);
     }
@@ -1369,8 +1359,8 @@ void GetSpecConstantValue(StageCreateInfo const *pStage, uint32_t spec_id, void 
 // Fill in value with the constant or specialization constant value, if available.
 // Returns true if the value has been accurately filled out.
 static bool GetIntConstantValue(const Instruction *insn, const SHADER_MODULE_STATE &module_state,
-                                safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id, uint32_t *value) {
+                                const safe_VkSpecializationInfo *spec, const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id,
+                                uint32_t *value) {
     const Instruction *type_id = module_state.FindDef(insn->Word(1));
     if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
         return false;
@@ -1378,7 +1368,7 @@ static bool GetIntConstantValue(const Instruction *insn, const SHADER_MODULE_STA
     switch (insn->Opcode()) {
         case spv::OpSpecConstant:
             *value = insn->Word(3);
-            GetSpecConstantValue(pStage, id_to_spec_id.at(insn->Word(2)), value);
+            GetSpecConstantValue(spec, id_to_spec_id.at(insn->Word(2)), value);
             return true;
         case spv::OpConstant:
             *value = insn->Word(3);
@@ -1430,6 +1420,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
     vvl::unordered_map<uint32_t, uint32_t> id_to_spec_id;
     // Map SPIR-V result ID to the ID of its type.
     vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
+    const safe_VkSpecializationInfo *spec = pStage->pSpecializationInfo;
 
     struct CoopMatType {
         uint32_t scope, rows, cols;
@@ -1438,7 +1429,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
 
         CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_NV), all_constant(false) {}
 
-        void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, safe_VkPipelineShaderStageCreateInfo const *pStage,
+        void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                   const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {
             const Instruction *insn = module_state.FindDef(id);
             uint32_t component_type_id = insn->Word(2);
@@ -1451,13 +1442,13 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
             const Instruction *cols_insn = module_state.FindDef(cols_id);
 
             all_constant = true;
-            if (!GetIntConstantValue(scope_insn, module_state, pStage, id_to_spec_id, &scope)) {
+            if (!GetIntConstantValue(scope_insn, module_state, spec, id_to_spec_id, &scope)) {
                 all_constant = false;
             }
-            if (!GetIntConstantValue(rows_insn, module_state, pStage, id_to_spec_id, &rows)) {
+            if (!GetIntConstantValue(rows_insn, module_state, spec, id_to_spec_id, &rows)) {
                 all_constant = false;
             }
-            if (!GetIntConstantValue(cols_insn, module_state, pStage, id_to_spec_id, &cols)) {
+            if (!GetIntConstantValue(cols_insn, module_state, spec, id_to_spec_id, &cols)) {
                 all_constant = false;
             }
             component_type = GetComponentType(component_type_insn);
@@ -1498,7 +1489,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
                 break;
             case spv::OpTypeCooperativeMatrixNV: {
                 CoopMatType m;
-                m.Init(insn.Word(1), module_state, pStage, id_to_spec_id);
+                m.Init(insn.Word(1), module_state, spec, id_to_spec_id);
 
                 if (m.all_constant) {
                     // Validate that the type parameters are all supported for one of the
@@ -1548,10 +1539,10 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
                     assert(false);
                     break;
                 }
-                d.Init(id_to_type_id[insn.Word(2)], module_state, pStage, id_to_spec_id);
-                a.Init(id_to_type_id[insn.Word(3)], module_state, pStage, id_to_spec_id);
-                b.Init(id_to_type_id[insn.Word(4)], module_state, pStage, id_to_spec_id);
-                c.Init(id_to_type_id[insn.Word(5)], module_state, pStage, id_to_spec_id);
+                d.Init(id_to_type_id[insn.Word(2)], module_state, spec, id_to_spec_id);
+                a.Init(id_to_type_id[insn.Word(3)], module_state, spec, id_to_spec_id);
+                b.Init(id_to_type_id[insn.Word(4)], module_state, spec, id_to_spec_id);
+                c.Init(id_to_type_id[insn.Word(5)], module_state, spec, id_to_spec_id);
 
                 if (a.all_constant && b.all_constant && c.all_constant && d.all_constant) {
                     // Validate that the type parameters are all supported for the same
@@ -1594,14 +1585,13 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_state,
-                                           safe_VkPipelineShaderStageCreateInfo const *pStage,
+bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                            const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
     // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // then the fragment shader must not enable the SPIRV SampleRateShading capability.
-    if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         for (const Instruction &insn : module_state.GetInstructions()) {
             switch (insn.Opcode()) {
                 case spv::OpCapability:
@@ -1628,10 +1618,10 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
 }
 
 bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &module_state,
-                                                   safe_VkPipelineShaderStageCreateInfo const *pStage) const {
+                                                   VkPipelineShaderStageCreateFlags flags) const {
     bool skip = false;
 
-    if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
+    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
         !enabled_features.core13.subgroupSizeControl) {
         skip |= LogError(
             module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02784",
@@ -1639,7 +1629,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &mo
             "but the VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::subgroupSizeControl feature is not enabled.");
     }
 
-    if ((pStage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
+    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
         !enabled_features.core13.computeFullSubgroups) {
         skip |= LogError(
             module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
@@ -2961,6 +2951,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     auto entrypoint_optional = stage_state.entrypoint;
     const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_state.create_info);
+    const VkShaderStageFlagBits stage = pStage->stage;
 
     skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline.GetPipelineCreateFlags());
 
@@ -3208,37 +3199,37 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
         skip |= ValidateShaderClock(module_state, insn);
-        skip |= ValidateShaderStageGroupNonUniform(module_state, pStage->stage, insn);
+        skip |= ValidateShaderStageGroupNonUniform(module_state, stage, insn);
         skip |= ValidateMemoryScope(module_state, insn);
         skip |= ValidateImageWrite(module_state, insn);
     }
 
     skip |= ValidateTransformFeedback(module_state, pipeline);
-    skip |= ValidateShaderStageWritableOrAtomicDescriptor(module_state, pStage->stage, stage_state.has_descriptor_written_to,
+    skip |= ValidateShaderStageWritableOrAtomicDescriptor(module_state, stage, stage_state.has_descriptor_written_to,
                                                           stage_state.has_atomic_descriptor);
-    skip |= ValidateShaderStageInputOutputLimits(module_state, pStage, pipeline, entrypoint);
-    skip |= ValidateShaderStageMaxResources(module_state, pStage->stage, pipeline);
+    skip |= ValidateShaderStageInputOutputLimits(module_state, stage, pipeline, entrypoint);
+    skip |= ValidateShaderStageMaxResources(module_state, stage, pipeline);
     skip |= ValidateAtomicsTypes(module_state);
-    skip |= ValidateExecutionModes(module_state, entrypoint, pStage->stage, pipeline);
-    skip |= ValidateSpecializations(module_state, pStage, pipeline);
+    skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
+    skip |= ValidateSpecializations(module_state, pStage->pSpecializationInfo, pipeline);
     skip |= ValidateDecorations(module_state, pipeline);
     skip |= ValidateVariables(module_state);
-    skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, pStage->stage);
+    skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, stage);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, pStage);
     }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
-        skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, pStage->stage);
+        skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, stage);
     }
     if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
-        skip |= ValidateShaderResolveQCOM(module_state, pStage, pipeline);
+        skip |= ValidateShaderResolveQCOM(module_state, stage, pipeline);
     }
     if (IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
-        skip |= ValidateShaderSubgroupSizeControl(module_state, pStage);
+        skip |= ValidateShaderSubgroupSizeControl(module_state, pStage->flags);
     }
     if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
-        if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
             pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE &&
             module_state.HasCapability(spv::CapabilityInputAttachment)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06061",
@@ -3293,14 +3284,14 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                 "] Set %u Binding %u in shader (%s) uses descriptor slot (expected `%s`) but not declared in pipeline layout",
                 pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set, variable.decorations.binding,
                 string_VkShaderStageFlagBits(variable.stage), string_descriptorTypes(descriptor_types).c_str());
-        } else if (~binding->stageFlags & pStage->stage) {
+        } else if (~binding->stageFlags & stage) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "%s(): pCreateInfos[%" PRIu32
                              "] Set %u Binding %u in shader (%s) uses descriptor slot but descriptor not accessible from stage %s",
                              pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
                              variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
-                             string_VkShaderStageFlagBits(pStage->stage));
+                             string_VkShaderStageFlagBits(stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
@@ -3321,13 +3312,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         }
     }
 
-    if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);
         skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
-    } else if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+    } else if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
         skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
-    } else if (pStage->stage == VK_SHADER_STAGE_TASK_BIT_EXT || pStage->stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+    } else if (stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
         skip |= ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
     }
 
