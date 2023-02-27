@@ -5231,6 +5231,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREAT
     typedef VkDeviceDiagnosticsConfigCreateInfoNV Type;
 };
 
+// Map type VkQueryLowLatencySupportNV to id VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV
+template <> struct LvlTypeMap<VkQueryLowLatencySupportNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV> {
+    typedef VkQueryLowLatencySupportNV Type;
+};
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalObjectCreateInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkExportMetalObjectCreateInfoEXT> {

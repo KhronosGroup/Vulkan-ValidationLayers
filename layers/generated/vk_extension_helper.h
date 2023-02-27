@@ -615,6 +615,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_nv_inherited_viewport_scissor{kNotEnabled};
     ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
+    ExtEnabled vk_nv_low_latency{kNotEnabled};
     ExtEnabled vk_nv_memory_decompression{kNotEnabled};
     ExtEnabled vk_nv_mesh_shader{kNotEnabled};
     ExtEnabled vk_nv_optical_flow{kNotEnabled};
@@ -1209,6 +1210,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_NV_LOW_LATENCY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_low_latency, {})},
             {VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_memory_decompression, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
@@ -1698,6 +1700,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
     VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
     VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME,
+    VK_NV_LOW_LATENCY_EXTENSION_NAME,
     VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME,
     VK_NV_MESH_SHADER_EXTENSION_NAME,
     VK_NV_OPTICAL_FLOW_EXTENSION_NAME,
