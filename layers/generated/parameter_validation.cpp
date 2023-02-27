@@ -4283,6 +4283,14 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             }
         } break;
 
+        // Validation code for VkQueryLowLatencySupportNV structure members
+        case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV: { // Covers VUID-VkQueryLowLatencySupportNV-sType-sType
+            if (is_const_param) {
+                VkQueryLowLatencySupportNV *structure = (VkQueryLowLatencySupportNV *) header;
+                skip |= ValidateRequiredPointer("VkQueryLowLatencySupportNV", "pQueriedLowLatencyData", structure->pQueriedLowLatencyData, "VUID-VkQueryLowLatencySupportNV-pQueriedLowLatencyData-parameter");
+            }
+        } break;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
         // Validation code for VkExportMetalObjectCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT: { // Covers VUID-VkExportMetalObjectCreateInfoEXT-sType-sType
@@ -6181,9 +6189,9 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(
     skip |= ValidateStructType("vkCreateSemaphore", "pCreateInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, true, "VUID-vkCreateSemaphore-pCreateInfo-parameter", "VUID-VkSemaphoreCreateInfo-sType-sType");
     if (pCreateInfo != nullptr)
     {
-        constexpr std::array allowed_structs_VkSemaphoreCreateInfo = { VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO, VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT, VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
+        constexpr std::array allowed_structs_VkSemaphoreCreateInfo = { VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO, VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT, VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV, VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
 
-        skip |= ValidateStructPnext("vkCreateSemaphore", "pCreateInfo->pNext", "VkExportMetalObjectCreateInfoEXT, VkExportSemaphoreCreateInfo, VkExportSemaphoreWin32HandleInfoKHR, VkImportMetalSharedEventInfoEXT, VkSemaphoreTypeCreateInfo", pCreateInfo->pNext, allowed_structs_VkSemaphoreCreateInfo.size(), allowed_structs_VkSemaphoreCreateInfo.data(), GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreCreateInfo-pNext-pNext", "VUID-VkSemaphoreCreateInfo-sType-unique", false, true);
+        skip |= ValidateStructPnext("vkCreateSemaphore", "pCreateInfo->pNext", "VkExportMetalObjectCreateInfoEXT, VkExportSemaphoreCreateInfo, VkExportSemaphoreWin32HandleInfoKHR, VkImportMetalSharedEventInfoEXT, VkQueryLowLatencySupportNV, VkSemaphoreTypeCreateInfo", pCreateInfo->pNext, allowed_structs_VkSemaphoreCreateInfo.size(), allowed_structs_VkSemaphoreCreateInfo.data(), GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreCreateInfo-pNext-pNext", "VUID-VkSemaphoreCreateInfo-sType-unique", false, true);
 
         skip |= ValidateReservedFlags("vkCreateSemaphore", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkSemaphoreCreateInfo-flags-zerobitmask");
     }
@@ -17938,6 +17946,8 @@ bool StatelessValidation::PreCallValidateGetPrivateDataEXT(
     skip |= ValidateRequiredPointer("vkGetPrivateDataEXT", "pData", pData, "VUID-vkGetPrivateData-pData-parameter");
     return skip;
 }
+
+
 
 
 

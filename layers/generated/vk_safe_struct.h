@@ -10298,6 +10298,21 @@ struct safe_VkDeviceDiagnosticsConfigCreateInfoNV {
     VkDeviceDiagnosticsConfigCreateInfoNV const *ptr() const { return reinterpret_cast<VkDeviceDiagnosticsConfigCreateInfoNV const *>(this); }
 };
 
+struct safe_VkQueryLowLatencySupportNV {
+    VkStructureType sType;
+    const void* pNext{};
+    void* pQueriedLowLatencyData{};
+    safe_VkQueryLowLatencySupportNV(const VkQueryLowLatencySupportNV* in_struct);
+    safe_VkQueryLowLatencySupportNV(const safe_VkQueryLowLatencySupportNV& copy_src);
+    safe_VkQueryLowLatencySupportNV& operator=(const safe_VkQueryLowLatencySupportNV& copy_src);
+    safe_VkQueryLowLatencySupportNV();
+    ~safe_VkQueryLowLatencySupportNV();
+    void initialize(const VkQueryLowLatencySupportNV* in_struct);
+    void initialize(const safe_VkQueryLowLatencySupportNV* copy_src);
+    VkQueryLowLatencySupportNV *ptr() { return reinterpret_cast<VkQueryLowLatencySupportNV *>(this); }
+    VkQueryLowLatencySupportNV const *ptr() const { return reinterpret_cast<VkQueryLowLatencySupportNV const *>(this); }
+};
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 struct safe_VkExportMetalObjectCreateInfoEXT {
     VkStructureType sType;

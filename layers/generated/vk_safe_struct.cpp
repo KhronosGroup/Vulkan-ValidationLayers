@@ -48232,6 +48232,62 @@ void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const safe_VkDeviceD
     flags = copy_src->flags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV(const VkQueryLowLatencySupportNV* in_struct) :
+    sType(in_struct->sType),
+    pQueriedLowLatencyData(in_struct->pQueriedLowLatencyData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV() :
+    sType(VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV),
+    pNext(nullptr),
+    pQueriedLowLatencyData(nullptr)
+{}
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV(const safe_VkQueryLowLatencySupportNV& copy_src)
+{
+    sType = copy_src.sType;
+    pQueriedLowLatencyData = copy_src.pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueryLowLatencySupportNV& safe_VkQueryLowLatencySupportNV::operator=(const safe_VkQueryLowLatencySupportNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pQueriedLowLatencyData = copy_src.pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueryLowLatencySupportNV::~safe_VkQueryLowLatencySupportNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueryLowLatencySupportNV::initialize(const VkQueryLowLatencySupportNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pQueriedLowLatencyData = in_struct->pQueriedLowLatencyData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueryLowLatencySupportNV::initialize(const safe_VkQueryLowLatencySupportNV* copy_src)
+{
+    sType = copy_src->sType;
+    pQueriedLowLatencyData = copy_src->pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
 
@@ -63578,6 +63634,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             safe_pNext = new safe_VkDeviceDiagnosticsConfigCreateInfoNV(reinterpret_cast<const VkDeviceDiagnosticsConfigCreateInfoNV *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV:
+            safe_pNext = new safe_VkQueryLowLatencySupportNV(reinterpret_cast<const VkQueryLowLatencySupportNV *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceDescriptorBufferPropertiesEXT *>(pNext));
             break;
@@ -65034,6 +65093,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV:
             delete reinterpret_cast<const safe_VkDeviceDiagnosticsConfigCreateInfoNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV:
+            delete reinterpret_cast<const safe_VkQueryLowLatencySupportNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT *>(header);
