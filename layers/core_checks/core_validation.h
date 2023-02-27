@@ -58,6 +58,7 @@ struct DrawDispatchVuid {
     const char* dynamic_primitive_topology = kVUIDUndefined;
     const char* corner_sampled_address_mode = kVUIDUndefined;
     const char* imageview_atomic = kVUIDUndefined;
+    const char* bufferview_atomic_07888 = kVUIDUndefined;
     const char* push_constants_set = kVUIDUndefined;
     const char* image_subresources_render_pass_write = kVUIDUndefined;
     const char* image_subresources_subpass_read = kVUIDUndefined;
