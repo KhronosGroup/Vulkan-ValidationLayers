@@ -100,8 +100,6 @@ struct PipelineStageState {
     VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
     const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
-    bool has_descriptor_written_to;
-    bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
     bool writes_to_gl_layer;
 

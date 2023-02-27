@@ -49,13 +49,6 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       writes_to_gl_layer(module_state->WritesToGlLayer()) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
-        if (descriptor_variables) {
-            has_descriptor_written_to = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
-                                                    [](const auto &variable) { return variable.is_written_to; });
-
-            has_atomic_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
-                                                [](const auto &variable) { return variable.is_atomic_operation; });
-        }
         wrote_primitive_shading_rate = WrotePrimitiveShadingRate(stage_flag, *entrypoint, module_state.get());
     }
 }

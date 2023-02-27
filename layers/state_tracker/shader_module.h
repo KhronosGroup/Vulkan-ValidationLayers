@@ -105,8 +105,15 @@ struct ResourceInterfaceVariable {
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     uint32_t image_sampled_type_width = 0;
 
-    bool is_read_from{false};
-    bool is_written_to{false};
+    bool is_read_from{false};   // has operation to reads from the variable
+    bool is_written_to{false};  // has operation to writes to the variable
+
+    // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
+    bool is_storage_image{false};
+    bool is_storage_texel_buffer{false};
+    bool is_storage_buffer{false};
+    bool is_input_attachment{false};
+
     bool is_atomic_operation{false};
     bool is_sampler_sampled{false};
     bool is_sampler_implicitLod_dref_proj{false};

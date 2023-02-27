@@ -1257,12 +1257,36 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
         }
     }
 
+    // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
+    {
+        const bool physical_storage_buffer = storage_class == spv::StorageClassPhysicalStorageBuffer;
+        const bool storage_buffer = storage_class == spv::StorageClassStorageBuffer;
+        const bool uniform = storage_class == spv::StorageClassUniform;
+        const bool buffer_block = decorations.Has(DecorationSet::buffer_block_bit);
+        const bool block = decorations.Has(DecorationSet::block_bit);
+        if ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block)) {
+            is_storage_buffer = true;
+        }
+    }
+
     const auto& static_data_ = module_state.static_data_;
     switch (type->Opcode()) {
         case spv::OpTypeImage: {
             image_sampled_type_width = module_state.GetTypeBitsSize(type);
-            // Sampled == 2 indicates used without a sampler (a storage image)
-            const bool is_image_without_format = ((type->Word(7) == 2) && (type->Word(8) == spv::ImageFormatUnknown));
+
+            const bool is_sampled_without_sampler = type->Word(7) == 2;  // Word(7) == Sampled
+            const spv::Dim image_dim = spv::Dim(type->Word(3));
+            if (is_sampled_without_sampler) {
+                if (image_dim == spv::DimSubpassData) {
+                    is_input_attachment = true;
+                } else if (image_dim == spv::DimBuffer) {
+                    is_storage_texel_buffer = true;
+                } else {
+                    is_storage_image = true;
+                }
+            }
+
+            const bool is_image_without_format = ((is_sampled_without_sampler) && (type->Word(8) == spv::ImageFormatUnknown));
 
             const uint32_t image_write_load_id = static_data_.FindIDFromLoad(id, static_data_.image_write_load_ids);
             if (image_write_load_id != 0) {
@@ -1367,8 +1391,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
         case spv::OpTypeStruct: {
             vvl::unordered_set<uint32_t> nonwritable_members;
-            const bool is_storage_buffer = (storage_class == spv::StorageClassStorageBuffer) ||
-                                           (module_state.GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit));
             for (const Instruction* insn : static_data_.member_decoration_inst) {
                 if (insn->Word(1) == type->Word(1) && insn->Word(3) == spv::DecorationNonWritable) {
                     nonwritable_members.insert(insn->Word(2));
