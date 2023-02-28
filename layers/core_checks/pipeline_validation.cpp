@@ -3296,7 +3296,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), rp_state->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_06198,
+                skip |= LogError(objlist, vuid.dynamic_rendering_06198_06198,
                                  "%s: Currently bound pipeline %s must have been created with a "
                                  "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -3306,7 +3306,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
             if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_view_mask,
+                skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
                                  "%s: Currently bound pipeline %s viewMask ([%" PRIu32
                                  ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
@@ -3317,7 +3317,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_color_count,
+                skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
                                  "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
                                  ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
@@ -3333,7 +3333,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
+                    skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_06180,
                                      "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
                                      "].imageView format (%s) must match corresponding format in "
                                      "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
@@ -3347,7 +3347,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_format,
+                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_format_06181,
                                      "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
                                      "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
                                      caller, string_VkFormat(view_state->create_info.format),
@@ -3360,7 +3360,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format,
+                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_06182,
                                      "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
                                      "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
                                      caller, string_VkFormat(view_state->create_info.format),
@@ -3375,7 +3375,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_fsr,
+                    skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
                                      caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -3389,7 +3389,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_fdm,
+                    skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
                                      caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -3410,7 +3410,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
                 if (p_attachment_sample_count_info &&
                     (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
-                    skip |= LogError(cb_state.commandBuffer(), vuid.dynamic_rendering_color_sample,
+                    skip |= LogError(cb_state.commandBuffer(), vuid.dynamic_rendering_color_sample_06185,
                                      "%s: Color attachment (%" PRIu32
                                      ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
                                      "sample count (%s)",
@@ -3426,7 +3426,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (p_attachment_sample_count_info) {
                     if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                         skip |= LogError(
-                            cb_state.commandBuffer(), vuid.dynamic_rendering_depth_sample,
+                            cb_state.commandBuffer(), vuid.dynamic_rendering_depth_sample_06186,
                             "%s: Depth attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample "
                             "count (%s)",
                             caller, string_VkSampleCountFlagBits(depth_image_samples),
@@ -3442,7 +3442,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (p_attachment_sample_count_info) {
                     if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                         skip |= LogError(
-                            cb_state.commandBuffer(), vuid.dynamic_rendering_stencil_sample,
+                            cb_state.commandBuffer(), vuid.dynamic_rendering_stencil_sample_06187,
                             "%s: Stencil attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
                             "sample count (%s)",
                             caller, string_VkSampleCountFlagBits(stencil_image_samples),
@@ -3461,8 +3461,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
                 if (samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07285
-                                                  : vuid.dynamic_rendering_multi_sample;
+                                                  ? vuid.dynamic_rendering_07285_07285
+                                                  : vuid.dynamic_rendering_multi_sample_06188;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Color attachment (%" PRIu32
                                      ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
@@ -3477,8 +3477,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
                 if (depth_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07286
-                                                  : vuid.dynamic_rendering_06189;
+                                                  ? vuid.dynamic_rendering_07286_07286
+                                                  : vuid.dynamic_rendering_06189_06189;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Depth attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
@@ -3493,8 +3493,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
                 if (stencil_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07287
-                                                  : vuid.dynamic_rendering_06190;
+                                                  ? vuid.dynamic_rendering_07287_07287
+                                                  : vuid.dynamic_rendering_06190_06190;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Stencil attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
@@ -3523,7 +3523,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (primitives_generated_query) {
                 if (!primitives_generated_query_with_rasterizer_discard && rp_state &&
                     rp_state->rasterizerDiscardEnable == VK_TRUE) {
-                    skip |= LogError(cb_state.commandBuffer(), vuid.primitives_generated,
+                    skip |= LogError(cb_state.commandBuffer(), vuid.primitives_generated_06708,
                                      "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
                                      "VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable set to VK_TRUE, but  "
                                      "primitivesGeneratedQueryWithRasterizerDiscard feature is not enabled.",
@@ -3534,7 +3534,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         LvlFindInChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(rp_state->pNext);
                     if (rasterization_state_stream_ci && rasterization_state_stream_ci->rasterizationStream != 0) {
                         skip |=
-                            LogError(cb_state.commandBuffer(), vuid.primitives_generated_streams,
+                            LogError(cb_state.commandBuffer(), vuid.primitives_generated_streams_06709,
                                      "%s: a VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT query is active and pipeline was created with "
                                      "VkPipelineRasterizationStateStreamCreateInfoEXT::rasterizationStream set to %" PRIu32
                                      ", but  "
@@ -3551,13 +3551,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     if (enabled_features.core11.protectedMemory == VK_TRUE) {
         for (const auto &buffer_binding : current_vtx_bfr_binding_info) {
             if (buffer_binding.buffer_state && !buffer_binding.buffer_state->Destroyed()) {
-                skip |= ValidateProtectedBuffer(cb_state, *buffer_binding.buffer_state, caller, vuid.unprotected_command_buffer,
-                                                "Buffer is vertex buffer");
+                skip |= ValidateProtectedBuffer(cb_state, *buffer_binding.buffer_state, caller,
+                                                vuid.unprotected_command_buffer_02707, "Buffer is vertex buffer");
             }
         }
         if (cb_state.index_buffer_binding.bound()) {
             skip |= ValidateProtectedBuffer(cb_state, *cb_state.index_buffer_binding.buffer_state, caller,
-                                            vuid.unprotected_command_buffer, "Buffer is index buffer");
+                                            vuid.unprotected_command_buffer_02707, "Buffer is index buffer");
         }
     }
 
@@ -3566,14 +3566,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         for (size_t i = 0; i < pipeline.vertex_input_state->binding_descriptions.size(); i++) {
             const auto vertex_binding = pipeline.vertex_input_state->binding_descriptions[i].binding;
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
-                skip |= LogError(cb_state.commandBuffer(), vuid.vertex_binding,
+                skip |= LogError(cb_state.commandBuffer(), vuid.vertex_binding_04007,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(), vertex_binding, i,
                                  vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
-                skip |= LogError(cb_state.commandBuffer(), vuid.vertex_binding_null,
+                skip |= LogError(cb_state.commandBuffer(), vuid.vertex_binding_null_04008,
                                  "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
@@ -3616,7 +3616,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     const LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer(),
                                                 state.pipeline_state->pipeline());
-                    skip |= LogError(objlist, vuid.vertex_binding_attribute,
+                    skip |= LogError(objlist, vuid.vertex_binding_attribute_02721,
                                      "%s: Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
                                      ") is not aligned in pVertexAttributeDescriptions[%zu]"
                                      "(binding=%u location=%u) where attribAddress = vertex buffer offset (%" PRIu64
@@ -3627,7 +3627,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             } else {
                 const LogObjectList objlist(cb_state.commandBuffer(), state.pipeline_state->pipeline());
-                skip |= LogError(objlist, vuid.vertex_binding_attribute,
+                skip |= LogError(objlist, vuid.vertex_binding_attribute_02721,
                                  "%s: binding #%" PRIu32
                                  " in pVertexAttributeDescriptions[%zu]"
                                  " of %s is an invalid value for command buffer %s.",
@@ -3663,7 +3663,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                             if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0 &&
                                 color_blend_state->pAttachments[i].blendEnable != VK_FALSE) {
                                 skip |=
-                                    LogError(pipeline.pipeline(), vuid.blend_enable,
+                                    LogError(pipeline.pipeline(), vuid.blend_enable_04727,
                                              "%s: Image view's format features of the color attachment (%" PRIu32
                                              ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
                                              "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
@@ -3686,8 +3686,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
                     const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.msrtss_rasterization_samples
-                                                  : vuid.rasterization_samples;
+                                                  ? vuid.msrtss_rasterization_samples_07284
+                                                  : vuid.rasterization_samples_04740;
                     skip |= LogError(objlist, vuid_string,
                                      "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
                                      caller, report_data->FormatHandle(pipeline.pipeline()).c_str(),
@@ -3713,7 +3713,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
                             (!enabled_features.line_rasterization_features.stippledRectangularLines)) {
                             skip |=
-                                LogError(device, vuid.stippled_rectangular_lines,
+                                LogError(device, vuid.stippled_rectangular_lines_07495,
                                          "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT (set %s) with "
                                          "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
                                          caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -3721,7 +3721,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         }
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
                             (!enabled_features.line_rasterization_features.stippledBresenhamLines)) {
-                            skip |= LogError(device, vuid.stippled_bresenham_lines,
+                            skip |= LogError(device, vuid.stippled_bresenham_lines_07496,
                                              "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT (set %s) with "
                                              "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
                                              caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -3730,7 +3730,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
                             (!enabled_features.line_rasterization_features.stippledSmoothLines)) {
                             skip |= LogError(
-                                device, vuid.stippled_smooth_lines,
+                                device, vuid.stippled_smooth_lines_07497,
                                 "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT (set %s) with "
                                 "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
                                 caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -3740,7 +3740,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                             (!enabled_features.line_rasterization_features.stippledRectangularLines ||
                              !phys_dev_props.limits.strictLines)) {
                             skip |= LogError(
-                                device, vuid.stippled_default_strict,
+                                device, vuid.stippled_default_strict_07498,
                                 "%s(): lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT (set %s) with "
                                 "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
                                 caller, dynamic_line_raster_mode ? "dynamically" : "in pipeline",
@@ -3764,13 +3764,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         if (cb_state.activeRenderPass->renderPass() != rp_state->renderPass()) {
             // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
             skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
-                                                    *rp_state.get(), caller, vuid.render_pass_compatible);
+                                                    *rp_state.get(), caller, vuid.render_pass_compatible_02684);
         }
         const auto subpass = pipeline.Subpass();
         if (subpass != cb_state.activeSubpass) {
             skip |=
-                LogError(pipeline.pipeline(), vuid.subpass_index, "%s: Pipeline was built for subpass %u but used in subpass %u.",
-                         caller, subpass, cb_state.activeSubpass);
+                LogError(pipeline.pipeline(), vuid.subpass_index_02685,
+                         "%s: Pipeline was built for subpass %u but used in subpass %u.", caller, subpass, cb_state.activeSubpass);
         }
         const safe_VkAttachmentReference2 *ds_attachment =
             cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.activeSubpass].pDepthStencilAttachment;
@@ -3784,7 +3784,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         const auto *image_state = imageview_state->image_state.get();
                         if (image_state != nullptr) {
                             if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
-                                skip |= LogError(pipeline.pipeline(), vuid.sample_location,
+                                skip |= LogError(pipeline.pipeline(), vuid.sample_location_02689,
                                                  "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
                                                  "stencil attachment's VkImage was not created with "
                                                  "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
@@ -3819,7 +3819,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (depth_write_enable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
                     const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
                                                 cb_state.commandBuffer());
-                    skip |= LogError(objlist, vuid.depth_read_only,
+                    skip |= LogError(objlist, vuid.depth_read_only_06886,
                                      "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
                                      "the depth aspect of the depth/stencil attachment in the render pass is read only.",
                                      caller, string_VkImageLayout(ds_attachment->layout));
@@ -3834,7 +3834,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 if (IsImageLayoutStencilReadOnly(ds_attachment->layout) && !all_keep_op && write_mask_enabled) {
                     const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
                                                 cb_state.commandBuffer());
-                    skip |= LogError(objlist, vuid.stencil_read_only,
+                    skip |= LogError(objlist, vuid.stencil_read_only_06887,
                                      "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
                                      "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
                                      "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"

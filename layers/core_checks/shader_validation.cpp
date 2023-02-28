@@ -3547,7 +3547,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
                 if (stage.wrote_primitive_shading_rate) {
                     skip |=
-                        LogError(stage.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate,
+                        LogError(stage.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
                                  "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
                                  "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
                                  "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
