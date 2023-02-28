@@ -1053,7 +1053,7 @@ void DescriptorSet::destroy() noexcept {
     // Only call vk::Free* on sets allocated from pool with usage *_DYNAMIC
     if (containing_pool_->getDynamicUsage()) {
         VkDescriptorSet sets[1] = {handle()};
-        EXPECT(vk::FreeDescriptorSets(device(), containing_pool_->GetObj(), 1, sets) == VK_SUCCESS);
+        EXPECT(vk::FreeDescriptorSets(device(), containing_pool_->handle(), 1, sets) == VK_SUCCESS);
     }
     handle_ = VK_NULL_HANDLE;
 }
