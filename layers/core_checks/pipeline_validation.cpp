@@ -1475,14 +1475,14 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
         }
         if (IsExtEnabled(device_extensions.vk_nv_mesh_shader) || IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
             // VS or mesh is required
-            if (!(active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
+            if (!(active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT))) {
                 skip |=
                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-02096",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Vertex Shader or Mesh Shader required.",
                              pipeline.create_index);
             }
             // Can't mix mesh and VTG
-            if ((active_shaders & (VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV)) &&
+            if ((active_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) &&
                 (active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
                                    VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02095",

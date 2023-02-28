@@ -94,7 +94,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // GpuAssistedBase::CreateDevice will set up bindings
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
-                                                VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV |
+                                                VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT |
                                                 kShaderStageAllRayTracing,
                                             NULL};
     bindings_.push_back(binding);

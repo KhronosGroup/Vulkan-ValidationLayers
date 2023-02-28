@@ -2600,11 +2600,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (create_info.pInputAssemblyState != nullptr)) {
+            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && (create_info.pInputAssemblyState != nullptr)) {
                 skip |= ValidatePipelineInputAssemblyStateCreateInfo(*create_info.pInputAssemblyState, i);
             }
 
-            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (create_info.pVertexInputState != nullptr)) {
+            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && (create_info.pVertexInputState != nullptr)) {
                 auto const &vertex_input_state = create_info.pVertexInputState;
 
                 skip |= ValidatePipelineVertexInputStateCreateInfo(*vertex_input_state, i);

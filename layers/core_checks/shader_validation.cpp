@@ -943,7 +943,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                          pipeline.create_index);
     }
 
-    bool strip_output_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_MESH_BIT_NV);
+    bool strip_output_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT);
     bool strip_input_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                                     stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT);
 
@@ -1180,10 +1180,10 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         case VK_SHADER_STAGE_MISS_BIT_KHR:
         case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
         case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
-        case VK_SHADER_STAGE_TASK_BIT_NV:
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
             break;
 
-        case VK_SHADER_STAGE_MESH_BIT_NV:
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
             if (entrypoint.Word(1) == spv::ExecutionModelMeshNV) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
@@ -3541,7 +3541,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 
     for (auto &stage : pipeline.stage_state) {
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-            stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
+            stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
                 if (stage.wrote_primitive_shading_rate) {
