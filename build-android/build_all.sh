@@ -40,7 +40,7 @@ function findtool() {
 # Check for dependencies
 findtool aapt
 findtool zipalign
-findtool jarsigner
+findtool apksigner
 
 set -ev
 
@@ -51,9 +51,10 @@ echo DEMO_BUILD_DIR="${DEMO_BUILD_DIR}"
 
 function create_APK() {
     aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
-    # update this logic to detect if key is already there.  If so, use it, otherwise create it.
-    jarsigner -verbose -keystore ~/.android/debug.keystore -storepass android -keypass android  bin/$1-unaligned.apk androiddebugkey
+    # If zipalign was run after signing, it won't be a valid signature
     zipalign -f 4 bin/$1-unaligned.apk bin/$1.apk
+    # jarsigner used to be used until it was removed from the Android SDK
+    apksigner sign --verbose --ks ~/.android/debug.keystore --ks-pass pass:android bin/$1.apk
 }
 
 #

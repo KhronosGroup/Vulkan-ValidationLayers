@@ -347,11 +347,12 @@ export PATH=$ANDROID_NDK_HOME:$PATH
 export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
 ```
 
-Note: If `jarsigner` is missing from your platform, you can find it in the
-Android Studio install or in your Java installation. If you do not have Java,
-you can get it with something like the following:
+Note: If `apksigner` gives a `java: not found` error you do not have Java in your path.
+A common way to install on the system:
 
-  sudo apt-get install openjdk-8-jdk
+```bash
+  sudo apt install default-jre
+```
 
 #### Additional OSX System Requirements
 
