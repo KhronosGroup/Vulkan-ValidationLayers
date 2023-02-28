@@ -779,11 +779,11 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
         case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
             return EShLangCallable;
 
-        case VK_SHADER_STAGE_TASK_BIT_NV:
-            return EShLangTaskNV;
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return EShLangTask;
 
-        case VK_SHADER_STAGE_MESH_BIT_NV:
-            return EShLangMeshNV;
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return EShLangMesh;
 
         default:
             return EShLangVertex;

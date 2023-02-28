@@ -27,7 +27,7 @@ static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const In
                                       const SHADER_MODULE_STATE *module_state) {
     bool primitive_rate_written = false;
     if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-        stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
+        stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT) {
         for (const Instruction *inst : module_state->GetBuiltinDecorationList()) {
             if (inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) {
                 primitive_rate_written = module_state->IsBuiltInWritten(inst, entrypoint);

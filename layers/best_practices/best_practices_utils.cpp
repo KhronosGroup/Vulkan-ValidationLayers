@@ -1183,7 +1183,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const auto& create_info = pCreateInfos[i];
 
-        if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && create_info.pVertexInputState) {
+        if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
             const auto& vertex_input = *create_info.pVertexInputState;
             uint32_t count = 0;
             for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
@@ -1979,7 +1979,7 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
 
         // Track pipeline switches with tessellation, geometry, and/or mesh shaders enabled, and disabled
         auto tgm_stages = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-                          VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_NV | VK_SHADER_STAGE_MESH_BIT_NV;
+                          VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
         auto new_tgm_state =
             (pipeline_info->active_shaders & tgm_stages) != 0 ? TessGeometryMeshState::Enabled : TessGeometryMeshState::Disabled;
         if (tgm.state != new_tgm_state && tgm.state != TessGeometryMeshState::Unknown) {
