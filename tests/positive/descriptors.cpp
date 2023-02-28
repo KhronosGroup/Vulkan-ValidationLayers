@@ -1420,3 +1420,132 @@ TEST_F(VkPositiveLayerTest, DrawingWithUnboundUnusedSetWithInputAttachments) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, UpdateDescritorSetsNoLongerInUse) {
+    TEST_DESCRIPTION("Use descriptor in the draw call and then update descriptor when it is no longer in use");
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferObj cb0(m_device, m_commandPool);
+    VkCommandBufferObj cb1(m_device, m_commandPool);
+
+    for (int mode = 0; mode < 2; mode++) {
+        const bool use_single_command_buffer = (mode == 0);
+        //
+        // Create resources.
+        //
+        const VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2};
+        auto descriptor_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+        descriptor_pool_ci.flags = 0;
+        descriptor_pool_ci.maxSets = 2;
+        descriptor_pool_ci.poolSizeCount = 1;
+        descriptor_pool_ci.pPoolSizes = &pool_size;
+        vk_testing::DescriptorPool pool(*m_device, descriptor_pool_ci);
+
+        const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                      nullptr};
+        auto set_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+        set_layout_ci.flags = 0;
+        set_layout_ci.bindingCount = 1;
+        set_layout_ci.pBindings = &binding;
+        vk_testing::DescriptorSetLayout set_layout(*m_device, set_layout_ci);
+
+        VkDescriptorSet set_A = VK_NULL_HANDLE;
+        VkDescriptorSet set_B = VK_NULL_HANDLE;
+        {
+            const VkDescriptorSetLayout set_layouts[2] = {set_layout, set_layout};
+            auto set_alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+            set_alloc_info.descriptorPool = pool;
+            set_alloc_info.descriptorSetCount = 2;
+            set_alloc_info.pSetLayouts = set_layouts;
+            VkDescriptorSet sets[2] = {};
+            ASSERT_VK_SUCCESS(vk::AllocateDescriptorSets(device(), &set_alloc_info, sets));
+            set_A = sets[0];
+            set_B = sets[1];
+        }
+
+        auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+        buffer_ci.size = 1024;
+        buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        pipeline_layout_ci.setLayoutCount = 1;
+        pipeline_layout_ci.pSetLayouts = &set_layout.handle();
+        vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+        VkPipelineObj pipe(m_device);
+        pipe.SetViewport(m_viewports);
+        pipe.SetScissor(m_scissors);
+        pipe.AddDefaultColorAttachment();
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+
+        auto update_set = [this](VkDescriptorSet set, VkBuffer buffer) {
+            VkDescriptorBufferInfo buffer_info = {};
+            buffer_info.buffer = buffer;
+            buffer_info.offset = 0;
+            buffer_info.range = VK_WHOLE_SIZE;
+
+            auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+            descriptor_write.dstSet = set;
+            descriptor_write.descriptorCount = 1;
+            descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_write.pBufferInfo = &buffer_info;
+            vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+        };
+
+        //
+        // Test scenario.
+        //
+        update_set(set_A, buffer);
+        update_set(set_B, buffer);
+
+        // Bind set A to a command buffer and submit the command buffer;
+        {
+            auto &cb = use_single_command_buffer ? *m_commandBuffer : cb0;
+            cb.begin();
+            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_A, 0, nullptr);
+            vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            cb.BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdDraw(cb, 0, 0, 0, 0);
+            vk::CmdEndRenderPass(cb);
+            cb.end();
+            auto submit_info = LvlInitStruct<VkSubmitInfo>();
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &cb.handle();
+            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        }
+
+        // Wait for the queue. After this set A should be no longer in use.
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+
+        // Bind set B to a command buffer and submit the command buffer;
+        {
+            auto &cb = use_single_command_buffer ? *m_commandBuffer : cb1;
+            cb.begin();
+            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_B, 0, nullptr);
+            vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            cb.BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdDraw(cb, 0, 0, 0, 0);
+            vk::CmdEndRenderPass(cb);
+            cb.end();
+            auto submit_info = LvlInitStruct<VkSubmitInfo>();
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &cb.handle();
+            ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        }
+
+        // Update set A. It should not cause VU 03047 error.
+        vk_testing::Buffer buffer2(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        update_set(set_A, buffer2);
+
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    }
+}

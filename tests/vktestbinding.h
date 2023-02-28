@@ -866,10 +866,6 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
     ~DescriptorPool() noexcept;
     void destroy() noexcept;
 
-    // Descriptor sets allocated from this pool will need access to the original
-    // object
-    VkDescriptorPool GetObj() { return pool_; }
-
     // vkCreateDescriptorPool()
     void init(const Device &dev, const VkDescriptorPoolCreateInfo &info);
 
@@ -890,8 +886,6 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
                                                   const PoolSizes &pool_sizes);
 
   private:
-    VkDescriptorPool pool_;
-
     // Track whether this pool's usage is VK_DESCRIPTOR_POOL_USAGE_DYNAMIC
     bool dynamic_usage_;
 };
