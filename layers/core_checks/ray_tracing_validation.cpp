@@ -940,7 +940,7 @@ bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, CMD_
     }
 
     if (cb_state.unprotected == false && ray_query_shader) {
-        skip |= LogError(cb_state.commandBuffer(), vuid.ray_query_protected_cb,
+        skip |= LogError(cb_state.commandBuffer(), vuid.ray_query_protected_cb_03635,
                          "%s(): can't use in protected command buffers for RayQuery operations.", CommandTypeString(cmd_type));
     }
 
