@@ -66,6 +66,10 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationAliased:
             flags |= aliased_bit;
             break;
+        case spv::DecorationInputAttachmentIndex:
+            flags |= input_attachment_bit;
+            input_attachment_index = value;
+            break;
     }
 }
 
@@ -222,23 +226,6 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         }
 
         // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
-        for (const Instruction* insn : module_state.GetDecorationInstructions()) {
-            if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
-                const uint32_t attachment_index = insn->Word(3);
-                const uint32_t id = insn->Word(1);
-
-                if (accessible_ids.count(id)) {
-                    const Instruction* def = module_state.FindDef(id);
-                    if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
-                        const uint32_t num_locations = module_state.GetLocationsConsumedByType(def->Word(1), false);
-                        for (uint32_t offset = 0; offset < num_locations; offset++) {
-                            input_attachment_indexes.insert(attachment_index + offset);
-                        }
-                    }
-                }
-            }
-        }
-
         for (const auto& id : accessible_ids) {
             const Instruction* insn = module_state.FindDef(id);
             if (insn->Opcode() != spv::OpVariable) {

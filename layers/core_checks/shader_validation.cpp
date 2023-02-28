@@ -242,44 +242,41 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
 }
 
 // Validate use of input attachments against subpass structure
-bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
-                                               const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline,
+                                               const ResourceInterfaceVariable &variable) const {
     bool skip = false;
+    assert(variable.is_input_attachment);
 
     const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && !rp_state->UsesDynamicRendering()) {
-        auto rpci = rp_state->createInfo.ptr();
+        const auto rpci = rp_state->createInfo.ptr();
         const uint32_t subpass = pipeline.Subpass();
-        auto input_attachment_indexes = module_state.GetAttachmentIndexes(entrypoint);
-        if (!input_attachment_indexes) {
-            return skip;
-        }
-        for (const uint32_t index : *input_attachment_indexes) {
-            auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
+        const auto subpass_description = rpci->pSubpasses[subpass];
+        const auto input_attachments = subpass_description.pInputAttachments;
+        const uint32_t input_attachment_index = variable.decorations.input_attachment_index;
 
-            // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
-            if (!input_attachments) {
-                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Shader consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
-                                 "].pInputAttachments is null",
-                                 pipeline.create_index, index, subpass);
-            } else if (index >= rpci->pSubpasses[subpass].inputAttachmentCount) {
-                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Shader consumes input attachment index %" PRIu32
-                                 " but that is greater than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ")",
-                                 pipeline.create_index, index, subpass, rpci->pSubpasses[subpass].inputAttachmentCount);
-            } else if (input_attachments[index].attachment == VK_ATTACHMENT_UNUSED) {
-                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] Shader consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
-                                 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED",
-                                 pipeline.create_index, index, subpass, index);
-            }
+        // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+        if (!input_attachments) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |=
+                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
+                         " but pSubpasses[%" PRIu32 "].pInputAttachments is null",
+                         pipeline.create_index, input_attachment_index, subpass);
+        } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |=
+                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
+                         " but that is greater than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ")",
+                         pipeline.create_index, input_attachment_index, subpass, subpass_description.inputAttachmentCount);
+        } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+            skip |=
+                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
+                         " but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED",
+                         pipeline.create_index, input_attachment_index, subpass, input_attachment_index);
         }
     }
 
@@ -2802,6 +2799,10 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                     break;
             }
         }
+
+        if (variable.decorations.Has(DecorationSet::input_attachment_bit)) {
+            skip |= ValidateShaderInputAttachment(module_state, pipeline, variable);
+        }
     }
     return skip;
 }
@@ -3314,7 +3315,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                                              vuid_layout_mismatch);
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);
         skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
     } else if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);

@@ -43,6 +43,7 @@ struct DecorationSet {
         per_vertex_bit = 1 << 6,
         passthrough_bit = 1 << 7,
         aliased_bit = 1 << 8,
+        input_attachment_bit = 1 << 9,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
@@ -58,6 +59,7 @@ struct DecorationSet {
     uint32_t binding = 0;
 
     uint32_t builtin = kInvalidValue;
+    uint32_t input_attachment_index = kInvalidValue;
 
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -206,7 +208,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         std::vector<UserDefinedInterfaceVariable> user_defined_interface_variables;
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
-        vvl::unordered_set<uint32_t> input_attachment_indexes;
 
         StructInfo push_constant_used_in_shader;
 
@@ -314,14 +315,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
                 return &entry_point.accessible_ids;
-            }
-        }
-        return nullptr;
-    }
-    const vvl::unordered_set<uint32_t> *GetAttachmentIndexes(const Instruction &entrypoint) const {
-        for (const auto &entry_point : static_data_.entry_points) {
-            if (entry_point.entrypoint_insn == entrypoint) {
-                return &entry_point.input_attachment_indexes;
             }
         }
         return nullptr;
