@@ -248,36 +248,37 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     assert(variable.is_input_attachment);
 
     const auto &rp_state = pipeline.RenderPassState();
-    if (rp_state && !rp_state->UsesDynamicRendering()) {
-        const auto rpci = rp_state->createInfo.ptr();
-        const uint32_t subpass = pipeline.Subpass();
-        const auto subpass_description = rpci->pSubpasses[subpass];
-        const auto input_attachments = subpass_description.pInputAttachments;
-        const uint32_t input_attachment_index = variable.decorations.input_attachment_index;
+    // Dynamic Rendering guards this with VUID 06061
+    // If the attachment is not read from, nothing to validate
+    if (!rp_state || rp_state->UsesDynamicRendering() || !variable.is_read_from) {
+        return skip;
+    }
 
-        // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
-        if (!input_attachments) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |=
-                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+    const auto rpci = rp_state->createInfo.ptr();
+    const uint32_t subpass = pipeline.Subpass();
+    const auto subpass_description = rpci->pSubpasses[subpass];
+    const auto input_attachments = subpass_description.pInputAttachments;
+    const uint32_t input_attachment_index = variable.decorations.input_attachment_index;
+
+    // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+    if (!input_attachments) {
+        const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
+        skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
                          " but pSubpasses[%" PRIu32 "].pInputAttachments is null",
                          pipeline.create_index, input_attachment_index, subpass);
-        } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |=
-                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+    } else if (input_attachment_index >= subpass_description.inputAttachmentCount) {
+        const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
+        skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
                          " but that is greater than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ")",
                          pipeline.create_index, input_attachment_index, subpass, subpass_description.inputAttachmentCount);
-        } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
-            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |=
-                LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+    } else if (input_attachments[input_attachment_index].attachment == VK_ATTACHMENT_UNUSED) {
+        const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
+        skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Shader consumes input attachment index %" PRIu32
                          " but pSubpasses[%" PRIu32 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED",
                          pipeline.create_index, input_attachment_index, subpass, input_attachment_index);
-        }
     }
 
     return skip;
