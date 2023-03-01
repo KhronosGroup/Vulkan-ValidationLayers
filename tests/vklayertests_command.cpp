@@ -900,21 +900,22 @@ TEST_F(VkLayerTest, ClearAttachmentsImplicitCheck) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearColorAttachmentsDepthStencil) {
-    TEST_DESCRIPTION("Call CmdClearAttachments with invalid depth/stencil aspect masks.");
+TEST_F(VkLayerTest, ClearAttachmentsDepth) {
+    TEST_DESCRIPTION("Call CmdClearAttachments with invalid depth aspect masks.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    // Creates a color attachment
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_depth_stencil_fmt = FindSupportedStencilOnlyFormat(gpu());
+    if (m_depth_stencil_fmt == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
+    }
+
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
 
     VkClearAttachment attachment;
-    attachment.clearValue.color.float32[0] = 0;
-    attachment.clearValue.color.float32[1] = 0;
-    attachment.clearValue.color.float32[2] = 0;
-    attachment.clearValue.color.float32[3] = 0;
     attachment.colorAttachment = 0;
     VkClearRect clear_rect = {};
     clear_rect.rect.offset = {0, 0};
@@ -925,12 +926,37 @@ TEST_F(VkLayerTest, ClearColorAttachmentsDepthStencil) {
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
+    attachment.clearValue.depthStencil.depth = 0.0f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07886");
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
+}
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
+TEST_F(VkLayerTest, ClearAttachmentsStencil) {
+    TEST_DESCRIPTION("Call CmdClearAttachments with invalid stencil aspect masks.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(gpu());
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment attachment;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+
+    attachment.clearValue.depthStencil.depth = 0.0f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07887");
     attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
