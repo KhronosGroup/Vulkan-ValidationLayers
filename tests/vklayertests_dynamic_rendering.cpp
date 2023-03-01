@@ -468,8 +468,9 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
         m_commandBuffer->begin();
 
         // Try to clear stencil, but image view does not have stencil aspect
+        // This is a valid clear because the ImageView aspect are ignored
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5733#note_398961
         {
-            // setup incorrect image views and begin rendering
             if (use_dynamic_rendering) {
                 depth_attachment_info.imageView = depth_image_view.handle();
                 stencil_attachment_info.imageView = depth_image_view.handle();
@@ -484,16 +485,13 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 m_commandBuffer->BeginRenderPass(renderpass_bi);
             }
 
-            // issue clear cmd
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
             VkClearAttachment clear_stencil_attachment;
             clear_stencil_attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            clear_stencil_attachment.clearValue.depthStencil.depth = 1.0f;
             clear_stencil_attachment.clearValue.depthStencil.stencil = 0;
             VkClearRect clear_rect{rect, 0, 1};
             vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_stencil_attachment, 1, &clear_rect);
-            m_errorMonitor->VerifyFound();
 
-            // end rendering and setup default, correct, image views
             if (use_dynamic_rendering) {
                 m_commandBuffer->EndRendering();
 
@@ -507,9 +505,8 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
             }
         }
 
-        // Try to clear depth, but image view does not have depth aspect
+        // Try to clear depth, but image view does not have depth aspect (valid, see stencil above)
         {
-            // setup incorrect image views and begin rendering
             if (use_dynamic_rendering) {
                 depth_attachment_info.imageView = stencil_image_view.handle();
                 stencil_attachment_info.imageView = stencil_image_view.handle();
@@ -524,16 +521,12 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 m_commandBuffer->BeginRenderPass(renderpass_bi);
             }
 
-            // issue clear cmd
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
             VkClearAttachment clear_depth_attachment;
             clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             clear_depth_attachment.clearValue.depthStencil.depth = 1.0f;
             VkClearRect clear_rect{rect, 0, 1};
             vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_depth_attachment, 1, &clear_rect);
-            m_errorMonitor->VerifyFound();
 
-            // end rendering and setup default, correct, image views
             if (use_dynamic_rendering) {
                 m_commandBuffer->EndRendering();
 

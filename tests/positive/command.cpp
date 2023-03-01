@@ -1306,3 +1306,35 @@ TEST_F(VkPositiveLayerTest, ThreadedCommandBuffersWithLabels) {
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
     for (auto &worker : workers) worker.join();
 }
+
+TEST_F(VkPositiveLayerTest, ClearAttachmentsDepthStencil) {
+    TEST_DESCRIPTION("Call CmdClearAttachments with no depth/stencil attachment.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on this device";
+    }
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+
+    VkClearAttachment attachment;
+    attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {};
+    clear_rect.rect.offset = {0, 0};
+    clear_rect.rect.extent = {1, 1};
+    clear_rect.baseArrayLayer = 0;
+    clear_rect.layerCount = 1;
+
+    attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+
+    attachment.clearValue.depthStencil.depth = 0.0f;
+    // Aspect Mask can be non-color because pDepthStencilAttachment is null
+    attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+    attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
+}
