@@ -512,7 +512,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
 
     vvl::unordered_set<int> active_types;
 
-    if (Settings::Get().core.check_query) {
+    if (Settings::Get().area.core.check_query.Get()) {
         for (const auto &query_object : cb_state.activeQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
             if (query_pool_state) {

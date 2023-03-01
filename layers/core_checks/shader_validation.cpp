@@ -3576,7 +3576,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
 
-    if (!Settings::Get().core.check_shaders) {
+    if (!Settings::Get().area.core.check_shaders.Get()) {
         return false;
     }
 

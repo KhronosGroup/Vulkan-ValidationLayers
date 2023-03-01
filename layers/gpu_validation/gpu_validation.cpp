@@ -107,12 +107,12 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     const Settings &settings = Settings::Get();
 
-    buffer_oob_enabled = settings.shader_based.gpu_assisted.check_buffer_oob;
-    bool validate_descriptor_indexing = settings.shader_based.gpu_assisted.check_descriptor_indexing;
-    validate_draw_indirect = settings.shader_based.gpu_assisted.check_draw_indirect;
-    validate_dispatch_indirect = settings.shader_based.gpu_assisted.check_dispatch_indirect;
-    warn_on_robust_oob = settings.shader_based.gpu_assisted.warn_on_robust_oob;
-    const bool use_linear_output_pool = settings.shader_based.gpu_assisted.vma_mode == Settings::VMA_LINEAR;
+    buffer_oob_enabled = settings.area.shader_based.shader_based_gpu_assisted.check_buffer_oob.Get();
+    bool validate_descriptor_indexing = settings.area.shader_based.shader_based_gpu_assisted.check_descriptor_indexing.Get();
+    validate_draw_indirect = settings.area.shader_based.shader_based_gpu_assisted.check_draw_indirect.Get();
+    validate_dispatch_indirect = settings.area.shader_based.shader_based_gpu_assisted.check_dispatch_indirect.Get();
+    warn_on_robust_oob = settings.area.shader_based.shader_based_gpu_assisted.check_buffer_oob.warn_on_robust_oob.Get();
+    const bool use_linear_output_pool = settings.area.shader_based.shader_based_gpu_assisted.vma_mode.Get() == Settings::GPUAV_VMA_LINEAR;
     validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
 
     //buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
@@ -875,7 +875,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
     const Settings &settings = Settings::Get();
     
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (settings.shader_based.gpu_assisted.reserve_binding_slot && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
+    if (settings.area.shader_based.shader_based_gpu_assisted.reserve_binding_slot.Get() && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
     //if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
@@ -893,7 +893,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice ph
 
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     //if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
-    if (settings.shader_based.gpu_assisted.reserve_binding_slot &&
+    if (settings.area.shader_based.shader_based_gpu_assisted.reserve_binding_slot.Get() &&
         pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets -= 1;

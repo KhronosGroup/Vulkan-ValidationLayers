@@ -323,6 +323,22 @@ uint32_t TokenToUint(std::string &token) {
     return int_id;
 }
 
+void CreateFilterMessageIdList(std::vector<std::string> raw_id_list, std::vector<uint32_t> &filter_list) {
+    for (std::size_t i = 0, n = raw_id_list.size(); i < n; ++i) {
+        std::string token = raw_id_list[i];
+        uint32_t int_id = TokenToUint(token);
+        if (int_id == 0) {
+            const uint32_t id_hash = vvl_vuid_hash(token);
+            if (id_hash != 0) {
+                int_id = id_hash;
+            }
+        }
+        if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
+            filter_list.push_back(int_id);
+        }
+    }
+}
+
 void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::vector<uint32_t> &filter_list) {
     size_t pos = 0;
     std::string token;

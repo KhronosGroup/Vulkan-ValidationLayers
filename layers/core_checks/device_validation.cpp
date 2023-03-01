@@ -445,10 +445,8 @@ void CoreChecks::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 
-    const Settings& settings = Settings::Get();
-
     // Allocate shader validation cache
-    if (settings.core.check_shaders_caching && settings.core.check_shaders && !core_validation_cache) {
+    if (Settings::Get().area.core.check_shaders.check_shaders_caching.Get() && !core_validation_cache) {
         auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
         if (!tmp_path.size()) {
             auto cachepath = GetEnvironment("HOME") + "/.cache";
@@ -767,7 +765,7 @@ bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool 
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
 bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const char *caller_name, const char *error_code) const {
-    if (!Settings::Get().core.check_object_in_use) return false;
+    if (!Settings::Get().area.core.check_object_in_use.Get()) return false;
     auto obj_struct = obj_node->Handle();
     bool skip = false;
     if (obj_node->InUse()) {

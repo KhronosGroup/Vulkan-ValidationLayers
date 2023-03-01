@@ -468,7 +468,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
 bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const char *call_source, int current_submit_count,
                                             const char *vu_id) const {
     bool skip = false;
-    if (!Settings::Get().core.check_command_buffer) return skip;
+    if (!Settings::Get().area.core.check_command_buffer.Get()) return skip;
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
     if ((cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) &&
         (cb_state.submitCount + current_submit_count > 1)) {

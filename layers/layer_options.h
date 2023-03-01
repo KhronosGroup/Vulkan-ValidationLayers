@@ -16,12 +16,20 @@
  * limitations under the License.
  */
 
-#ifndef LAYER_OPTIONS_H
-#define LAYER_OPTIONS_H
+#pragma once
 
 #include "chassis.h"
+#include "vk_layer_settings.h"
+
+#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
 class Settings {
+  private:
+    typedef std::vector<std::string> Strings;
+    typedef std::vector<std::pair<std::string, int>> List;
+    typedef void *(*LAYER_SETTING_LOG_CALLBACK)(const char *layer_key, const char *setting_key, const char *message);
+
+    /*
   public:
     enum DebugAction {
         DEBUG_ACTION_LOG_MSG_BIT = (1 << 0),
@@ -43,20 +51,377 @@ class Settings {
     enum ShaderBased { SHADER_BASED_NONE = 0, SHADER_BASED_DEBUG_PRINTF, SHADER_BASED_GPU_ASSISTED };
 
     enum VMAMode { VMA_LINEAR = 0, VMA_BEST };
-
-    enum BestPracticesVendor {
-        BEST_ARM_BIT = (1 << 0),  // validate_best_practices_arm
-        BEST_AMD_BIT = (1 << 1),  // validate_best_practices_amd
-        BEST_IMG_BIT = (1 << 2),  // validate_best_practices_img
-        BEST_NV_BIT = (1 << 3)    // validate_best_practices_nv
-    };
-
+*/
   private:
     Settings();
 
   public:
-    static const Settings& Get();
+    static const Settings &Get();
 
+    enum LOCKING_ENUM { LOCKING_FINE_GRAIN = 0, LOCKING_GLOBAL };
+    enum SHADER_BASED_ENUM {
+        SHADER_BASED_NONE = 0,
+        SHADER_BASED_DEBUG_PRINTF,
+        SHADER_BASED_GPU_ASSISTED,
+    };
+    enum BEST_VENDOR_ENUM {
+        BEST_ARM_BIT = (1 << 0),
+        BEST_AMD_BIT = (1 << 1),
+        BEST_IMG_BIT = (1 << 2),
+        BEST_NV_BIT = (1 << 3)
+    };
+    enum VMA_MODE_ENUM {
+        GPUAV_VMA_LINEAR = 0,
+        GPUAV_VMA_BEST
+    };
+
+    struct {
+        struct Core {
+          private:
+            bool value;
+
+          public:
+            Core::Core() : value(true){};
+            bool Get() const { return this->value; }
+
+            struct Locking {
+              private:
+                LOCKING_ENUM value;
+
+              public:
+                Locking::Locking() : value(LOCKING_FINE_GRAIN) {}
+
+                LOCKING_ENUM Get() const { return this->value; }
+            } locking;
+
+            struct Check_Image_Layout {
+              private:
+                bool value;
+
+              public:
+                Check_Image_Layout() : value(true) {}
+
+                bool Get() const { return this->value; }
+            } check_image_layout;
+
+            struct Check_Command_Buffer {
+              private:
+                bool value;
+
+              public:
+                Check_Command_Buffer() : value(true) {}
+
+                bool Get() const { return this->value; }
+            } check_command_buffer;
+
+            struct Check_Object_In_Use {
+              private:
+                bool value;
+
+              public:
+                Check_Object_In_Use() : value(true) {}
+                bool Get() const { return this->value; }
+            } check_object_in_use;
+
+            struct Check_Query {
+              private:
+                bool value;
+
+              public:
+                Check_Query() : value(true) {}
+                bool Get() const { return this->value; }
+            } check_query;
+
+            struct Check_Shaders {
+              private:
+                bool value;
+
+              public:
+                Check_Shaders() : value(true) {}
+                bool Get() const { return this->value; }
+
+                struct Check_Shaders_Caching {
+                  private:
+                    bool value;
+
+                  public:
+                    Check_Shaders_Caching() : value(true) {}
+                    bool Get() const { return this->value; }
+                } check_shaders_caching;
+            } check_shaders;
+        } core;
+
+        struct Unique_Handles {
+          private:
+            bool value;
+
+          public:
+            Unique_Handles() : value(true) {}
+            bool Get() const { return this->value; }
+        } unique_handles;
+
+        struct Object_Lifetime {
+          private:
+            bool value;
+
+          public:
+            Object_Lifetime() : value(true) {}
+            bool Get() const { return this->value; }
+        } object_lifetime;
+
+        struct Stateless_Param {
+          private:
+            bool value;
+
+          public:
+            Stateless_Param() : value(true) {}
+            bool Get() const { return this->value; }
+        } stateless_param;
+
+        struct Thread_Safety {
+          private:
+            bool value;
+
+          public:
+            Thread_Safety() : value(true) {}
+            bool Get() const { return this->value; }
+        } thread_safety;
+
+        struct Sync {
+          private:
+            bool value;
+
+          public:
+            Sync() : value(false) {}
+            bool Get() const { return this->value; }
+
+            struct Sync_Queue_Submit {
+              private:
+                bool value;
+
+              public:
+                Sync_Queue_Submit() : value(false) {}
+                bool Get() const { return this->value; }
+            } validate_sync_queue_submit;
+        } sync;
+
+        struct ShaderBased {
+          private:
+            SHADER_BASED_ENUM value;
+
+          public:
+            ShaderBased() : value(SHADER_BASED_NONE) {}
+            SHADER_BASED_ENUM Get() const { return this->value; }
+
+            struct Shader_Based_Debug_Printf {
+                struct Debug_Printf_To_Stdout {
+                  private:
+                    bool value;
+
+                    public:
+                    bool Get() const { return this->value; }
+                } debug_printf_to_stdout;
+
+                struct Debug_Printf_Verbose {
+                  private:
+                    bool value;
+
+                    public:
+                    bool Get() const { return this->value; }
+                } debug_printf_verbose;
+
+                struct Debug_Printf_Buffer_Size {
+                  private:
+                    int value;
+
+                    public:
+                    int Get() const { return this->value; }
+                } debug_printf_buffer_size;
+            } shader_based_debug_printf;
+
+            struct Shader_Based_Gpu_Assisted {
+                struct Reserve_Binding_Slot {
+                  private:
+                    bool value;
+
+                  public:
+                    Reserve_Binding_Slot() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "reserve_binding_slot")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "reserve_binding_slot");
+                        }
+                    }
+                    bool Get() const { return this->value; }
+                } reserve_binding_slot;
+
+                struct Vma_Mode {
+                  private:
+                    VMA_MODE_ENUM value;
+
+                  public:
+                    Vma_Mode() : value(GPUAV_VMA_LINEAR) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "vma_mode")) {
+                            this->value =
+                                static_cast<VMA_MODE_ENUM>(vku::GetLayerSettingInt(OBJECT_LAYER_NAME, "vma_mode"));
+                        }
+                    }
+                    VMA_MODE_ENUM Get() const { return this->value; }
+                } vma_mode;
+
+                struct Check_Descriptor_Indexing {
+                  private:
+                    bool value;
+
+                  public:
+                    Check_Descriptor_Indexing() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_descriptor_indexing")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_descriptor_indexing");
+                        }
+                    }
+                    bool Get() const { return this->value; }
+                } check_descriptor_indexing;
+
+                struct Check_Buffer_Oob {
+                  private:
+                    bool value;
+
+                  public:
+                    Check_Buffer_Oob() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_buffer_oob")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_buffer_oob");
+                        }
+                    }
+                    bool Get() const { return this->value; }
+
+                    struct Warn_On_Bobust_Oob {
+                      private:
+                        bool value;
+
+                      public:
+                        Warn_On_Bobust_Oob() : value(true) {
+                            if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "warn_on_robust_oob")) {
+                                this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "warn_on_robust_oob");
+                            }
+                        }
+
+                        bool Get() const {
+                            return this->value &&
+                                   Settings::Get().area.shader_based.shader_based_gpu_assisted.check_buffer_oob.Get();
+                        }
+                    } warn_on_robust_oob;
+                } check_buffer_oob;
+
+                struct Check_Draw_Indirect {
+                  private:
+                    bool value;
+
+                  public:
+                    Check_Draw_Indirect() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_draw_indirect")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_draw_indirect");
+                        }
+                    }
+
+                    bool Get() const { 
+                        return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED;
+                    }
+                } check_draw_indirect;
+
+                struct Check_Dispatch_Indirect {
+                  private:
+                    bool value;
+
+                  public:
+                    Check_Dispatch_Indirect() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_dispatch_indirect")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_dispatch_indirect");
+                        }
+                    }
+
+                    bool Get() const {
+                        return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED;
+                    }
+                } check_dispatch_indirect;
+            } shader_based_gpu_assisted;
+        } shader_based;
+
+        struct Best {
+          private:
+            bool value;
+
+          public:
+            Best() : value(false) {}
+            bool Get() const { return this->value; }
+
+            struct Best_Vendor {
+              private:
+                int value;
+
+              public:
+                Best_Vendor() : value(0) {}
+                int Get() const { return Settings::Get().area.best.Get() ? this->value : 0; }
+            } best_vendor;
+        } best;
+    } area;
+
+    struct Debug_Action {
+      private:
+        enum Debug_Action_Enum {
+            VK_DBG_LAYER_ACTION_LOG_MSG = 1 << 0,
+            VK_DBG_LAYER_ACTION_CALLBACK = 1 << 1,
+            VK_DBG_LAYER_ACTION_DEBUG_OUTPUT = 1 << 2,
+            VK_DBG_LAYER_ACTION_BREAK = 1 << 3
+        } value;
+
+      public:
+        Debug_Action() : value(VK_DBG_LAYER_ACTION_LOG_MSG) {}
+        int Get() const { return this->value; }
+
+        struct Log_Filename {
+          private:
+            std::string value;
+
+          public:
+            Log_Filename() : value("stdout") {}
+            const char *Get() const { return value.c_str(); }
+        } log_filename;
+    } debug_action;
+
+    struct Report_Flags {
+      private:
+        enum Report_Flags_Enum { info = 1 << 0, warn = 1 << 1, perf = 1 << 2, error = 1 << 3, debug = 1 << 4 } value;
+
+      public:
+        Report_Flags() : value(error) {}
+        int Get() const { return this->value; }
+    } report_flags;
+
+    struct Enable_Message_Limit {
+      private:
+        bool value;
+
+      public:
+        Enable_Message_Limit() : value(true) {}
+        bool Get() const { return this->value; }
+
+        struct Duplicate_Message_Limit {
+          private:
+            int value;
+
+          public:
+            Duplicate_Message_Limit() : value(10) {}
+            bool Get() const { return this->value; }
+        } duplicate_message_limit;
+    } enable_message_limit;
+
+    struct Message_Id_Filter {
+      private:
+        std::vector<std::string> values;
+
+      public:
+        Message_Id_Filter() {}
+        std::vector<std::string> Get() const { return this->values; }
+    } message_id_filter;
+    /*
     struct {
         DebugAction debug_action;                       // debug_action
         std::string log_filename;                       // log_filename
@@ -111,6 +476,7 @@ class Settings {
             bool warn_on_robust_oob;         // gpuav_warn_on_robust_oob
         } gpu_assisted;
     } shader_based;
+*/
 };
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
@@ -140,5 +506,3 @@ extern const std::vector<std::string> EnableFlagNameHelper;
 
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
 */
-
-#endif//LAYER_OPTIONS_H

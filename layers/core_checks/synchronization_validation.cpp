@@ -27,7 +27,7 @@
 #include "sync/sync_utils.h"
 
 ReadLockGuard CoreChecks::ReadLock() const {
-    if (Settings::Get().core.locking == Settings::FINE_GRAIN) {
+    if (Settings::Get().area.core.locking.Get() == Settings::LOCKING_FINE_GRAIN) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -35,7 +35,7 @@ ReadLockGuard CoreChecks::ReadLock() const {
 }
 
 WriteLockGuard CoreChecks::WriteLock() {
-    if (Settings::Get().core.locking == Settings::FINE_GRAIN) {
+    if (Settings::Get().area.core.locking.Get() == Settings::LOCKING_FINE_GRAIN) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

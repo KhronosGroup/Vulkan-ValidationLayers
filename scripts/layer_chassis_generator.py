@@ -588,6 +588,8 @@ bool wrap_handles = true;
 // This header file must be included after the above validation object class definitions
 #include "chassis_dispatch_helper.h"
 
+void CreateFilterMessageIdList(std::vector<std::string> raw_id_list, std::vector<uint32_t> &filter_list);
+
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 """
@@ -708,7 +710,7 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Debug_Warning,
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
-    if (Settings::Get().core.locking == Settings::GLOBAL) {
+    if (Settings::Get().area.core.locking.Get() == Settings::LOCKING_GLOBAL) {
         context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Locking_Warning,
                                        "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
@@ -803,10 +805,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     const Settings& settings = Settings::Get();
 
-    const bool lock_setting = settings.core.locking == Settings::FINE_GRAIN;
+    const bool lock_setting = settings.area.core.locking.Get() == Settings::GPUAV_VMA_LINEAR;
 
-    report_data->duplicate_message_limit = settings.log.duplicate_message_limit;
-    report_data->filter_message_ids = settings.log.message_id_filter;
+    report_data->duplicate_message_limit = settings.enable_message_limit.duplicate_message_limit.Get();
+    CreateFilterMessageIdList(settings.message_id_filter.Get(), report_data->filter_message_ids);
 
     //bool lock_setting;
     //ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
@@ -819,31 +821,31 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
     auto thread_checker_obj = new ThreadSafety(nullptr);
-    thread_checker_obj->RegisterValidationObject(settings.validate_thread_safety, api_version, report_data, local_object_dispatch);
+    thread_checker_obj->RegisterValidationObject(settings.area.thread_safety.Get(), api_version, report_data, local_object_dispatch);
 
     auto parameter_validation_obj = new StatelessValidation;
-    parameter_validation_obj->RegisterValidationObject(settings.validate_stateless_param, api_version, report_data, local_object_dispatch);
+    parameter_validation_obj->RegisterValidationObject(settings.area.stateless_param.Get(), api_version, report_data, local_object_dispatch);
 
     auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->RegisterValidationObject(settings.validate_object_lifetime, api_version, report_data, local_object_dispatch);
+    object_tracker_obj->RegisterValidationObject(settings.area.object_lifetime.Get(), api_version, report_data, local_object_dispatch);
 
     auto core_checks_obj = new CoreChecks;
-    core_checks_obj->RegisterValidationObject(settings.core.enabled, api_version, report_data, local_object_dispatch);
+    core_checks_obj->RegisterValidationObject(settings.area.core.Get(), api_version, report_data, local_object_dispatch);
 
     auto best_practices_obj = new BestPractices;
-    best_practices_obj->RegisterValidationObject(settings.best.enabled, api_version, report_data, local_object_dispatch);
+    best_practices_obj->RegisterValidationObject(settings.area.best.Get(), api_version, report_data, local_object_dispatch);
 
     auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->RegisterValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_GPU_ASSISTED, api_version, report_data, local_object_dispatch);
+    gpu_assisted_obj->RegisterValidationObject(settings.area.shader_based.Get() == Settings::SHADER_BASED_GPU_ASSISTED, api_version, report_data, local_object_dispatch);
 
     auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->RegisterValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_DEBUG_PRINTF, api_version, report_data, local_object_dispatch);
+    debug_printf_obj->RegisterValidationObject(settings.area.shader_based.Get() == Settings::SHADER_BASED_DEBUG_PRINTF, api_version, report_data, local_object_dispatch);
 
     auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->RegisterValidationObject(settings.sync.enabled, api_version, report_data, local_object_dispatch);
+    sync_validation_obj->RegisterValidationObject(settings.area.sync.Get(), api_version, report_data, local_object_dispatch);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
-    if (!settings.validate_unique_handles) {
+    if (!settings.area.unique_handles.Get()) {
         wrap_handles = false;
     }
 
@@ -1010,28 +1012,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     const Settings& settings = Settings::Get();
 
     auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
-    thread_safety_obj->InitDeviceValidationObject(settings.validate_thread_safety, instance_interceptor, device_interceptor);
+    thread_safety_obj->InitDeviceValidationObject(settings.area.thread_safety.Get(), instance_interceptor, device_interceptor);
 
     auto stateless_validation_obj = new StatelessValidation;
-    stateless_validation_obj->InitDeviceValidationObject(settings.validate_stateless_param, instance_interceptor, device_interceptor);
+    stateless_validation_obj->InitDeviceValidationObject(settings.area.stateless_param.Get(), instance_interceptor, device_interceptor);
 
     auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->InitDeviceValidationObject(settings.validate_object_lifetime, instance_interceptor, device_interceptor);
+    object_tracker_obj->InitDeviceValidationObject(settings.area.object_lifetime.Get(), instance_interceptor, device_interceptor);
 
     auto core_checks_obj = new CoreChecks;
-    core_checks_obj->InitDeviceValidationObject(settings.core.enabled, instance_interceptor, device_interceptor);
+    core_checks_obj->InitDeviceValidationObject(settings.area.core.Get(), instance_interceptor, device_interceptor);
 
     auto best_practices_obj = new BestPractices;
-    best_practices_obj->InitDeviceValidationObject(settings.best.enabled, instance_interceptor, device_interceptor);
+    best_practices_obj->InitDeviceValidationObject(settings.area.best.Get(), instance_interceptor, device_interceptor);
 
     auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->InitDeviceValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_GPU_ASSISTED, instance_interceptor, device_interceptor);
+    gpu_assisted_obj->InitDeviceValidationObject(settings.area.shader_based.Get() == Settings::SHADER_BASED_GPU_ASSISTED, instance_interceptor, device_interceptor);
 
     auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->InitDeviceValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_DEBUG_PRINTF, instance_interceptor, device_interceptor);
+    debug_printf_obj->InitDeviceValidationObject(settings.area.shader_based.Get() == Settings::SHADER_BASED_DEBUG_PRINTF, instance_interceptor, device_interceptor);
 
     auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->InitDeviceValidationObject(settings.sync.enabled, instance_interceptor, device_interceptor);
+    sync_validation_obj->InitDeviceValidationObject(settings.area.sync.Get(), instance_interceptor, device_interceptor);
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject *> local_objs = {

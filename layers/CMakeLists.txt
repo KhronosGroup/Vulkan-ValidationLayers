@@ -260,6 +260,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_error_location.h
     core_validation_error_enums.h
     layer_options.cpp
+    vk_layer_settings.cpp
+    vk_layer_settings.h
     object_lifetime_validation.h
     object_tracker_utils.cpp
     range_vector.h

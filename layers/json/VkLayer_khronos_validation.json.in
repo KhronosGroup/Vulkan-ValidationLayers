@@ -521,21 +521,21 @@
             ],
             "settings": [
                 {
-                    "key": "validation_control",
+                    "key": "areas",
                     "label": "Validation Control",
                     "description": "Control of the Validation layer validation",
                     "type": "GROUP",
                     "expanded": true,
                     "settings": [
                         {
-                            "key": "validate_core",
+                            "key": "core",
                             "label": "Core",
                             "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors.",
                             "type": "BOOL",
                             "default": true,
                             "settings": [
                                 {
-                                    "key": "core_locking",
+                                    "key": "locking",
                                     "label": "Multi-threading Locking Mode",
                                     "description": "Control the execution of core validation when running with multithreaded Vulkan applications.",
                                     "status": "STABLE",
@@ -582,7 +582,7 @@
                                     }
                                 },
                                 {
-                                    "key": "core_check_image_layout",
+                                    "key": "check_image_layout",
                                     "label": "Image Layout",
                                     "description": "Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.",
                                     "type": "BOOL",
@@ -598,7 +598,7 @@
                                     }
                                 },
                                 {
-                                    "key": "core_check_command_buffer",
+                                    "key": "check_command_buffer",
                                     "label": "Command Buffer State",
                                     "description": "Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.",
                                     "type": "BOOL",
@@ -614,7 +614,7 @@
                                     }
                                 },
                                 {
-                                    "key": "core_check_object_in_use",
+                                    "key": "check_object_in_use",
                                     "label": "Object in Use",
                                     "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
                                     "type": "BOOL",
@@ -630,7 +630,7 @@
                                     }
                                 },
                                 {
-                                    "key": "core_check_query",
+                                    "key": "check_query",
                                     "label": "Query",
                                     "description": "Checks for commands that use VkQueryPool objects.",
                                     "type": "BOOL",
@@ -646,7 +646,7 @@
                                     }
                                 },
                                 {
-                                    "key": "core_check_shaders",
+                                    "key": "check_shaders",
                                     "label": "Shader",
                                     "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
                                     "type": "BOOL",
@@ -663,7 +663,7 @@
                                     },
                                     "settings": [
                                         {
-                                            "key": "core_check_shaders_caching",
+                                            "key": "check_shaders_caching",
                                             "label": "Caching",
                                             "description": "Enable caching of shader validation results.",
                                             "type": "BOOL",
@@ -676,7 +676,7 @@
                                                         "value": true
                                                     },
                                                     {
-                                                        "key": "core_check_shaders",
+                                                        "key": "check_shaders",
                                                         "value": true
                                                     }
                                                 ]
@@ -687,7 +687,7 @@
                             ]
                         },
                         {
-                            "key": "validate_unique_handles",
+                            "key": "unique_handles",
                             "label": "Handle Wrapping",
                             "description": "Handle wrapping checks. Disable this feature if you are exerience crashes when creating new extensions or developing new Vulkan objects/structures.",
                             "type": "BOOL",
@@ -701,7 +701,7 @@
                             ]
                         },
                         {
-                            "key": "validate_object_lifetime",
+                            "key": "object_lifetime",
                             "label": "Object Lifetime",
                             "description": "Object tracking checks. This may not always be necessary late in a development cycle.",
                             "type": "BOOL",
@@ -715,7 +715,7 @@
                             ]
                         },
                         {
-                            "key": "validate_stateless_param",
+                            "key": "stateless_param",
                             "label": "Stateless Parameter",
                             "description": "Stateless parameter checks. This may not always be necessary late in a development cycle.",
                             "type": "BOOL",
@@ -729,7 +729,7 @@
                             ]
                         },
                         {
-                            "key": "validate_thread_safety",
+                            "key": "thread_safety",
                             "label": "Thread Safety",
                             "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors.",
                             "type": "BOOL",
@@ -743,7 +743,7 @@
                             ]
                         },
                         {
-                            "key": "validate_sync",
+                            "key": "sync",
                             "label": "Synchronization",
                             "description": "Enable synchronization validation during command buffers recording. This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
@@ -778,7 +778,7 @@
                             ]
                         },
                         {
-                            "key": "validate_shader_based",
+                            "key": "shader_based",
                             "label": "Shader-Based",
                             "description": "Setting an option here will enable specialized areas of validation",
                             "type": "ENUM",
@@ -820,7 +820,7 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_DEBUG_PRINTF"
                                                     }
                                                 ]
@@ -840,7 +840,7 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_DEBUG_PRINTF"
                                                     }
                                                 ]
@@ -865,7 +865,7 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_DEBUG_PRINTF"
                                                     }
                                                 ]
@@ -884,7 +884,7 @@
                                     ],
                                     "settings": [
                                         {
-                                            "key": "gpuav_reserve_binding_slot",
+                                            "key": "reserve_binding_slot",
                                             "label": "Reserve Descriptor Set Binding Slot",
                                             "type": "BOOL",
                                             "default": true,
@@ -897,14 +897,14 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
                                             }
                                         },
                                         {
-                                            "key": "gpuav_vma_mode",
+                                            "key": "vma_mode",
                                             "label": "Memory Allocation Mode",
                                             "description": "GPU-AV output buffer memory mode",
                                             "type": "ENUM",
@@ -930,14 +930,14 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
                                             }
                                         },
                                         {
-                                            "key": "gpuav_check_descriptor_indexing",
+                                            "key": "check_descriptor_indexing",
                                             "label": "Check descriptor indexing accesses",
                                             "description": "Enable descriptor indexing access checking",
                                             "type": "BOOL",
@@ -950,14 +950,14 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
                                             }
                                         },
                                         {
-                                            "key": "gpuav_check_buffer_oob",
+                                            "key": "check_buffer_oob",
                                             "label": "Check Out of Bounds ",
                                             "description": "Enable buffer out of bounds checking",
                                             "type": "BOOL",
@@ -970,14 +970,14 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
                                             },
                                             "settings": [
                                                 {
-                                                    "key": "gpuav_warn_on_robust_oob",
+                                                    "key": "warn_on_robust_oob",
                                                     "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
                                                     "description": "Warn on out of bounds accesses even if robustness is enabled",
                                                     "type": "BOOL",
@@ -999,7 +999,7 @@
                                             ]
                                         },
                                         {
-                                            "key": "gpuav_check_draw_indirect",
+                                            "key": "check_draw_indirect",
                                             "label": "Check Draw Indirect Count Buffers and firstInstance values",
                                             "description": "Enable draw indirect checking",
                                             "type": "BOOL",
@@ -1012,14 +1012,14 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
                                             }
                                         },
                                         {
-                                            "key": "gpuav_check_dispatch_indirect",
+                                            "key": "check_dispatch_indirect",
                                             "label": "Check Dispatch Indirect group count values",
                                             "description": "Enable dispatch indirect checking",
                                             "type": "BOOL",
@@ -1032,7 +1032,7 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_shader_based",
+                                                        "key": "shader_based",
                                                         "value": "SHADER_BASED_GPU_ASSISTED"
                                                     }
                                                 ]
@@ -1043,7 +1043,7 @@
                             ]
                         },
                         {
-                            "key": "validate_best_practices",
+                            "key": "best",
                             "label": "Best Practices",
                             "description": "Activating best practices output warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
                             "url": "${LUNARG_SDK}/best_practices.html",

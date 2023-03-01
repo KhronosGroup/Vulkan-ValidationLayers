@@ -586,7 +586,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
-    if (!Settings::Get().core.check_image_layout) {
+    if (!Settings::Get().area.core.check_image_layout.Get()) {
         return;
     }
 

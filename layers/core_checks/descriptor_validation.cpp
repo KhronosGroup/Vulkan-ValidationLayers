@@ -953,7 +953,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         // NOTE: Submit time validation of UPDATE_AFTER_BIND image layout is not possible with the
         // image layout tracking as currently implemented, so only record_time_validation is done
-        if (Settings::Get().core.check_image_layout && context.record_time_validate) {
+        if (Settings::Get().area.core.check_image_layout.Get() && context.record_time_validate) {
             VkImageLayout image_layout = image_descriptor.GetImageLayout();
             // Verify Image Layout
             // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
@@ -4361,7 +4361,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     VkDescriptorPoolResetFlags flags) const {
     // Make sure sets being destroyed are not currently in-use
-    if (!Settings::Get().core.check_object_in_use) return false;
+    if (!Settings::Get().area.core.check_object_in_use.Get()) return false;
     bool skip = false;
     auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
     if (pool && pool->InUse()) {
@@ -4400,7 +4400,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
 bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) const {
-    if (!Settings::Get().core.check_object_in_use) return false;
+    if (!Settings::Get().area.core.check_object_in_use.Get()) return false;
     bool skip = false;
     auto set_node = Get<cvdescriptorset::DescriptorSet>(set);
     if (set_node) {
