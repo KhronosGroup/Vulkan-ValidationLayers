@@ -196,7 +196,14 @@ void* VKAPI_PTR DummyAlloc(void*, size_t size, size_t alignment, VkSystemAllocat
     return std::align(alignment, size, mem_ptr, space);
 }
 void VKAPI_PTR DummyFree(void*, void* pMemory) {
-    // just leak it
+// The test which uses DummyFree plays foul of the nature of memory allocation on Windows. Because it doesn't use
+// a VkAllocationCallback during vkCreateInstance then passes one in during vkDestroyInstance, the memory that is
+// allocated during vkCreateInstance lives in a different 'heap'. Trying to free it from the application with the
+// DummyFree callbacks will crash the application. The goal of this change is to enable Leak Sanitizer to run on
+// CI runs in linux, so leaking memory in the windows tests is okay.
+#if !defined(WIN32)
+    std::free(pMemory);
+#endif
 }
 void* VKAPI_PTR DummyRealloc(void* pUserData, void* pOriginal, size_t size, size_t alignment,
                              VkSystemAllocationScope allocationScope) {
