@@ -9187,7 +9187,8 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
         ici.enabledExtensionCount++;
         ici.ppEnabledExtensionNames = enabled_extensions.data();
 
-        vk::CreateInstance(&ici, nullptr, &local_instance);
+        ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+        vk::DestroyInstance(local_instance, nullptr);
     }
 }
 
