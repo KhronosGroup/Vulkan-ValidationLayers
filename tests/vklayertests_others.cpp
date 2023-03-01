@@ -774,8 +774,9 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
 
     uint32_t queue_node_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_node_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props;
+    queue_props.resize(queue_node_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, queue_props.data());
     float priorities[] = {1.0f};
     VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info.flags = 0;
@@ -1812,16 +1813,17 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     // with SHARING_MODE_CONCURRENT that uses a non-device PDEV queue family.
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props;
+    queue_props.resize(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
 
     if (queue_count < 3) {
         GTEST_SKIP() << "Multiple queue families are required to run this test.";
     }
-    std::vector<float> priorities(queue_props->queueCount, 1.0f);
+    std::vector<float> priorities(queue_props.at(0).queueCount, 1.0f);
     VkDeviceQueueCreateInfo queue_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_info.queueFamilyIndex = 0;
-    queue_info.queueCount = queue_props->queueCount;
+    queue_info.queueCount = queue_props.at(0).queueCount;
     queue_info.pQueuePriorities = priorities.data();
     VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
     dev_info.queueCreateInfoCount = 1;
