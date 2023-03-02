@@ -314,7 +314,7 @@ target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS VkLayer_
 # - The respective json file, VkLayer_khronos_validation.json
 # This code generates the appropriate json for both local testing and the installation.
 # NOTE: For WIN32 the JSON and dll MUST be placed in the same location, due to Win32 using a relative path for installation.
-set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json.in")
+set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.json.in")
 set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/validation.json")
 set(OUTPUT_FILE_FINAL_NAME "VkLayer_khronos_validation.json")
 set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})

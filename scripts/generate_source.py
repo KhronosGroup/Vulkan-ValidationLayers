@@ -92,7 +92,7 @@ def main(argv):
     # Update the api_version in the respective json files
     if args.generated_version:
         json_files = []
-        json_files.append(common_codegen.repo_relative('layers/json/VkLayer_khronos_validation.json.in'))
+        json_files.append(common_codegen.repo_relative('layers/VkLayer_khronos_validation.json.in'))
         json_files.append(common_codegen.repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
         for json_file in json_files:
             with open(json_file) as f:
