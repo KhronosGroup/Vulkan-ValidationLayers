@@ -73,7 +73,7 @@ class Settings {
             bool value;
 
           public:
-            Core::Core() : value(true){};
+            Core() : value(true){};
             bool Get() const { return this->value; }
 
             struct Locking {
@@ -81,7 +81,7 @@ class Settings {
                 LOCKING_ENUM value;
 
               public:
-                Locking::Locking() : value(LOCKING_FINE_GRAIN) {}
+                Locking() : value(LOCKING_FINE_GRAIN) {}
 
                 LOCKING_ENUM Get() const { return Settings::Get().area.core.Get() ? this->value : LOCKING_FINE_GRAIN; }
             } locking;
