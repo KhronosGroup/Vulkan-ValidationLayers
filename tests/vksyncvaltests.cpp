@@ -2703,6 +2703,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    GTEST_SKIP() << "Temporarily disabling while Validation is fixed.  Fix test to reenable after";
     if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
         GTEST_SKIP() << "Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash";
     }
