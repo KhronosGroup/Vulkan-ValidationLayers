@@ -64,16 +64,8 @@ class Settings {
         SHADER_BASED_DEBUG_PRINTF,
         SHADER_BASED_GPU_ASSISTED,
     };
-    enum BEST_VENDOR_ENUM {
-        BEST_ARM_BIT = (1 << 0),
-        BEST_AMD_BIT = (1 << 1),
-        BEST_IMG_BIT = (1 << 2),
-        BEST_NV_BIT = (1 << 3)
-    };
-    enum VMA_MODE_ENUM {
-        GPUAV_VMA_LINEAR = 0,
-        GPUAV_VMA_BEST
-    };
+    enum BEST_VENDOR_ENUM { BEST_ARM_BIT = (1 << 0), BEST_AMD_BIT = (1 << 1), BEST_IMG_BIT = (1 << 2), BEST_NV_BIT = (1 << 3) };
+    enum VMA_MODE_ENUM { GPUAV_VMA_LINEAR = 0, GPUAV_VMA_BEST };
 
     struct {
         struct Core {
@@ -91,7 +83,7 @@ class Settings {
               public:
                 Locking::Locking() : value(LOCKING_FINE_GRAIN) {}
 
-                LOCKING_ENUM Get() const { return this->value; }
+                LOCKING_ENUM Get() const { return Settings::Get().area.core.Get() ? this->value : LOCKING_FINE_GRAIN; }
             } locking;
 
             struct Check_Image_Layout {
@@ -101,7 +93,7 @@ class Settings {
               public:
                 Check_Image_Layout() : value(true) {}
 
-                bool Get() const { return this->value; }
+                bool Get() const { return this->value && Settings::Get().area.core.Get(); }
             } check_image_layout;
 
             struct Check_Command_Buffer {
@@ -111,7 +103,7 @@ class Settings {
               public:
                 Check_Command_Buffer() : value(true) {}
 
-                bool Get() const { return this->value; }
+                bool Get() const { return this->value && Settings::Get().area.core.Get(); }
             } check_command_buffer;
 
             struct Check_Object_In_Use {
@@ -120,7 +112,7 @@ class Settings {
 
               public:
                 Check_Object_In_Use() : value(true) {}
-                bool Get() const { return this->value; }
+                bool Get() const { return this->value && Settings::Get().area.core.Get(); }
             } check_object_in_use;
 
             struct Check_Query {
@@ -129,7 +121,7 @@ class Settings {
 
               public:
                 Check_Query() : value(true) {}
-                bool Get() const { return this->value; }
+                bool Get() const { return this->value && Settings::Get().area.core.Get(); }
             } check_query;
 
             struct Check_Shaders {
@@ -137,16 +129,27 @@ class Settings {
                 bool value;
 
               public:
-                Check_Shaders() : value(true) {}
-                bool Get() const { return this->value; }
+                Check_Shaders() : value(true) {
+                    if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_shaders")) {
+                        this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_shaders");
+                    }
+                }
+                bool Get() const { return this->value && Settings::Get().area.core.Get(); }
 
                 struct Check_Shaders_Caching {
                   private:
                     bool value;
 
                   public:
-                    Check_Shaders_Caching() : value(true) {}
-                    bool Get() const { return this->value; }
+                    Check_Shaders_Caching() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "check_shaders_caching")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_shaders_caching");
+                        }
+                    }
+                    bool Get() const {
+                        return this->value && Settings::Get().area.core.Get() && 
+                               Settings::Get().area.core.check_shaders.check_shaders_caching.Get();
+                    }
                 } check_shaders_caching;
             } check_shaders;
         } core;
@@ -156,7 +159,11 @@ class Settings {
             bool value;
 
           public:
-            Unique_Handles() : value(true) {}
+            Unique_Handles() : value(true) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "unique_handles")) {
+                    this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "unique_handles");
+                }
+            }
             bool Get() const { return this->value; }
         } unique_handles;
 
@@ -165,7 +172,11 @@ class Settings {
             bool value;
 
           public:
-            Object_Lifetime() : value(true) {}
+            Object_Lifetime() : value(true) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "object_lifetime")) {
+                    this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "object_lifetime");
+                }
+            }
             bool Get() const { return this->value; }
         } object_lifetime;
 
@@ -174,7 +185,11 @@ class Settings {
             bool value;
 
           public:
-            Stateless_Param() : value(true) {}
+            Stateless_Param() : value(true) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "stateless_param")) {
+                    this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "stateless_param");
+                }
+            }
             bool Get() const { return this->value; }
         } stateless_param;
 
@@ -183,7 +198,11 @@ class Settings {
             bool value;
 
           public:
-            Thread_Safety() : value(true) {}
+            Thread_Safety() : value(true) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "thread_safety")) {
+                    this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "thread_safety");
+                }
+            }
             bool Get() const { return this->value; }
         } thread_safety;
 
@@ -192,7 +211,12 @@ class Settings {
             bool value;
 
           public:
-            Sync() : value(false) {}
+            Sync() : value(false) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "sync")) {
+                    this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "sync");
+                }
+            }
+
             bool Get() const { return this->value; }
 
             struct Sync_Queue_Submit {
@@ -200,8 +224,12 @@ class Settings {
                 bool value;
 
               public:
-                Sync_Queue_Submit() : value(false) {}
-                bool Get() const { return this->value; }
+                Sync_Queue_Submit() : value(false) {
+                    if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "sync_queue_submit")) {
+                        this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "sync_queue_submit");
+                    }
+                }
+                bool Get() const { return this->value && Settings::Get().area.sync.Get(); }
             } validate_sync_queue_submit;
         } sync;
 
@@ -210,7 +238,11 @@ class Settings {
             SHADER_BASED_ENUM value;
 
           public:
-            ShaderBased() : value(SHADER_BASED_NONE) {}
+            ShaderBased() : value(SHADER_BASED_NONE) {
+                if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "shader_based")) {
+                    this->value = static_cast<SHADER_BASED_ENUM>(vku::GetLayerSettingInt(OBJECT_LAYER_NAME, "shader_based"));
+                }
+            }
             SHADER_BASED_ENUM Get() const { return this->value; }
 
             struct Shader_Based_Debug_Printf {
@@ -218,24 +250,39 @@ class Settings {
                   private:
                     bool value;
 
-                    public:
-                    bool Get() const { return this->value; }
+                  public:
+                    Debug_Printf_To_Stdout() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "debug_printf_to_stdout")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "debug_printf_to_stdout");
+                        }
+                    }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_DEBUG_PRINTF; }
                 } debug_printf_to_stdout;
 
                 struct Debug_Printf_Verbose {
                   private:
                     bool value;
 
-                    public:
-                    bool Get() const { return this->value; }
+                  public:
+                    Debug_Printf_Verbose() : value(true) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "debug_printf_verbose")) {
+                            this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "debug_printf_verbose");
+                        }
+                    }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_DEBUG_PRINTF; }
                 } debug_printf_verbose;
 
                 struct Debug_Printf_Buffer_Size {
                   private:
                     int value;
 
-                    public:
-                    int Get() const { return this->value; }
+                  public:
+                    Debug_Printf_Buffer_Size() : value(1024) {
+                        if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "debug_printf_buffer_size")) {
+                            this->value = vku::GetLayerSettingInt(OBJECT_LAYER_NAME, "debug_printf_buffer_size");
+                        }
+                    }
+                    int Get() const { return Settings::Get().area.shader_based.Get() == SHADER_BASED_DEBUG_PRINTF ? this->value : 1024; }
                 } debug_printf_buffer_size;
             } shader_based_debug_printf;
 
@@ -250,7 +297,7 @@ class Settings {
                             this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "reserve_binding_slot");
                         }
                     }
-                    bool Get() const { return this->value; }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED; }
                 } reserve_binding_slot;
 
                 struct Vma_Mode {
@@ -260,8 +307,7 @@ class Settings {
                   public:
                     Vma_Mode() : value(GPUAV_VMA_LINEAR) {
                         if (vku::IsLayerSetting(OBJECT_LAYER_NAME, "vma_mode")) {
-                            this->value =
-                                static_cast<VMA_MODE_ENUM>(vku::GetLayerSettingInt(OBJECT_LAYER_NAME, "vma_mode"));
+                            this->value = static_cast<VMA_MODE_ENUM>(vku::GetLayerSettingInt(OBJECT_LAYER_NAME, "vma_mode"));
                         }
                     }
                     VMA_MODE_ENUM Get() const { return this->value; }
@@ -277,7 +323,7 @@ class Settings {
                             this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_descriptor_indexing");
                         }
                     }
-                    bool Get() const { return this->value; }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED; }
                 } check_descriptor_indexing;
 
                 struct Check_Buffer_Oob {
@@ -290,7 +336,7 @@ class Settings {
                             this->value = vku::GetLayerSettingBool(OBJECT_LAYER_NAME, "check_buffer_oob");
                         }
                     }
-                    bool Get() const { return this->value; }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED; }
 
                     struct Warn_On_Bobust_Oob {
                       private:
@@ -321,9 +367,7 @@ class Settings {
                         }
                     }
 
-                    bool Get() const { 
-                        return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED;
-                    }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED; }
                 } check_draw_indirect;
 
                 struct Check_Dispatch_Indirect {
@@ -337,9 +381,7 @@ class Settings {
                         }
                     }
 
-                    bool Get() const {
-                        return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED;
-                    }
+                    bool Get() const { return this->value && Settings::Get().area.shader_based.Get() == SHADER_BASED_GPU_ASSISTED; }
                 } check_dispatch_indirect;
             } shader_based_gpu_assisted;
         } shader_based;

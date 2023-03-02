@@ -759,7 +759,7 @@
                             ],
                             "settings": [
                                 {
-                                    "key": "validate_sync_queue_submit",
+                                    "key": "sync_queue_submit",
                                     "label": "QueueSubmit Synchronization Validation",
                                     "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled. This option will increase the synchronization performance cost.",
                                     "type": "BOOL",
