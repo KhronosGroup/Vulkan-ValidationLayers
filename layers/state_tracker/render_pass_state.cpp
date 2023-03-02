@@ -170,6 +170,25 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         }
     }
 
+    void Update(uint32_t subpass, const uint32_t *preserved, uint32_t count) {
+        // for preserved attachment, preserve the layout from the most recent (max subpass) dependency
+        // or initial, if none
+        for (const auto attachment : vvl::make_span(preserved, count)) {
+            uint32_t max_prev = VK_SUBPASS_EXTERNAL;
+            for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
+                const auto prev_pass = prev.first->pass;
+                max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_pass : std::max(prev_pass, max_prev);
+            }
+
+            if (max_prev == VK_SUBPASS_EXTERNAL) {
+                subpass_attachment_layout[subpass][attachment] = rp->createInfo.pAttachments[attachment].initialLayout;
+
+            } else {
+                subpass_attachment_layout[subpass][attachment] = subpass_attachment_layout[max_prev][attachment];
+            }
+        }
+    }
+
     void Update(uint32_t subpass, const VkAttachmentReference2 *attach_ref, uint32_t count, bool is_read) {
         if (nullptr == attach_ref) return;
         for (uint32_t j = 0; j < count; ++j) {
@@ -178,12 +197,14 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                 const auto layout = attach_ref[j].layout;
                 // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
                 first_read.emplace(attachment, is_read);
+                const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
+                bool no_external_transition = true;
                 if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                     first[attachment] = subpass;
-                    const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
                     if (initial_layout != layout) {
                         subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
                         first_is_transition[attachment] = true;
+                        no_external_transition = false;
                     }
                 }
                 last[attachment] = subpass;
@@ -195,7 +216,17 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                         subpass_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
                     }
                 }
+
+                if (no_external_transition && (rp->subpass_dependencies[subpass].prev.size() == 0)) {
+                    // This will insert a layout transition when dependencies are missing between first and subsequent use
+                    // but is consistent with the idea of an implicit external dependency
+                    if (initial_layout != layout) {
+                        subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
+                    }
+                }
+
                 attachment_layout[attachment] = layout;
+                subpass_attachment_layout[subpass][attachment] = layout;
             }
         }
     }
@@ -225,6 +256,7 @@ static void InitRenderPassState(RENDER_PASS_STATE *render_pass) {
         attachment_tracker.Update(subpass_index, subpass.pResolveAttachments, subpass.colorAttachmentCount, false);
         attachment_tracker.Update(subpass_index, subpass.pDepthStencilAttachment, 1, false);
         attachment_tracker.Update(subpass_index, subpass.pInputAttachments, subpass.inputAttachmentCount, true);
+        attachment_tracker.Update(subpass_index, subpass.pPreserveAttachments, subpass.preserveAttachmentCount);
 
         // From the spec
         // If the VkSubpassDescription2::viewMask member of any element of pSubpasses is not zero, multiview functionality is
