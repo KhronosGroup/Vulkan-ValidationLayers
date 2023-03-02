@@ -7451,6 +7451,12 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
+    // If the VkSubmitInfo::pNext chain does not include this structure, the batch is unprotected.
+    submit_info.pNext = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pNext-04120");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
     vk::DestroyBuffer(device(), buffer_protected, nullptr);
     vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
     vk::FreeMemory(device(), memory_protected, nullptr);
