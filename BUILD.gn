@@ -275,7 +275,7 @@ if (!is_android) {
       deps += [ ":vulkan_clean_old_validation_layer_objects" ]
     }
 
-    sources = [ "layers/json/VkLayer_khronos_validation.json.in" ]
+    sources = [ "layers/VkLayer_khronos_validation.json.in" ]
     outputs = [ "$vulkan_data_dir/VkLayer_khronos_validation.json" ]
 
     if (is_linux) {
@@ -293,7 +293,7 @@ if (!is_android) {
     args = [
              "--platform",
              _platform,
-             rebase_path("layers/json", root_build_dir),
+             rebase_path("layers/", root_build_dir),
              rebase_path(vulkan_data_dir, root_build_dir),
            ] + rebase_path(sources, root_build_dir)
     if (is_fuchsia) {
