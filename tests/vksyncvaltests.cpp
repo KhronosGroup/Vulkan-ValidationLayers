@@ -2703,7 +2703,6 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    GTEST_SKIP() << "Temporarily disabling while Validation is fixed.  Fix test to reenable after";
     if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
         GTEST_SKIP() << "Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash";
     }
@@ -2907,21 +2906,16 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
+            // we're racing the writes from subpass 0 with our layout transitions... (from initial)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
-            vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
-
-            // we're racing the writes from subpass 0 with our shader reads
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-RACING-WRITE");
-            vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
-        // we should get an error from async checking in both subpasses 2 & 3
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+        // No sync error here, as all of the NextSubpass calls *failed*
         vk::CmdEndRenderPass(m_commandBuffer->handle());
-        m_errorMonitor->VerifyFound();
+        // m_errorMonitor->VerifyFound();
 
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     }
@@ -2995,32 +2989,37 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
+            if (i > 1) {
+                // We've fixed the dependency with 0, but 2 and 3 still fight with 1
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+            }
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            if (i > 1) {
+                m_errorMonitor->VerifyFound();
+            }
+
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
 
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
-        // the store could happen during a shader read from another subpass
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
+        // There is no race, because the NextSubpass calls failed above
         vk::CmdEndRenderPass(m_commandBuffer->handle());
-        m_errorMonitor->VerifyFound();
 
         vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     }
 
-    // try again with correct dependencies to make subpass 3 depend on 1 & 2
-    for (uint32_t i = 1; i < (subpasses.size() - 1); i++) {
-        VkSubpassDependency dep{i,
-                                static_cast<uint32_t>(subpasses.size() - 1),
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-                                0};
-        subpass_dependencies.push_back(dep);
-    }
+    // try again with correct dependencies to make subpasses:
+    //   2 depend on 1 (avoid ILT hazard)
+    subpass_dependencies.emplace_back(
+        VkSubpassDependency{1, 2, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, 0});
+    //   3 depend on 2 (avoid store hazard)
+    subpass_dependencies.emplace_back(
+        VkSubpassDependency{2, 3, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                            VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0});
+
     renderpass_info.dependencyCount = subpass_dependencies.size();
     renderpass_info.pDependencies = subpass_dependencies.data();
     {
