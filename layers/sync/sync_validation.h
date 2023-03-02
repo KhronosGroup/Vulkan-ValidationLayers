@@ -1065,7 +1065,6 @@ class AccessContext {
 
     void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
                                  const AttachmentViewGenVector &attachment_views, ResourceUsageTag tag);
-    void RecordRenderpassAsyncContextTags();
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
@@ -1173,6 +1172,8 @@ class AccessContext {
                                    uint32_t subpass) const;
 
     void SetStartTag(ResourceUsageTag tag) { start_tag_ = tag; }
+    ResourceUsageTag StartTag() const { return start_tag_; }
+
     template <typename Action>
     void ForAll(Action &&action);
     template <typename Action>
@@ -1185,12 +1186,20 @@ class AccessContext {
     // For use during queue submit to avoid stale pointers;
     void ClearAsyncContext(const AccessContext *context) { async_.clear(); }
 
-    struct AsyncReference {
-        const AccessContext *context;
+    class AsyncReference {
+      public:
+        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag)
+            : context_(&async_context), tag_(async_tag) {}
+        // AsyncReference(const AsyncReference &) = default;
+        // AsyncReference &operator =(const AsyncReference &) = default;
+        const AccessContext &Context() const { return *context_; }
         // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
         // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
-        ResourceUsageTag tag;  // Start of open ended asynchronous range
-        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag) : context(&async_context), tag(async_tag) {}
+        ResourceUsageTag StartTag() const;
+
+      protected:
+        const AccessContext *context_;
+        ResourceUsageTag tag_;  // Start of open ended asynchronous range
     };
 
   private:
@@ -1208,6 +1217,7 @@ class AccessContext {
     MapArray access_state_maps_;
     std::vector<TrackBack> prev_;
     std::vector<TrackBack *> prev_by_subpass_;
+    // These contexts *must* have the same lifespan as this context, or be cleared, before the referenced contexts can expire
     std::vector<AsyncReference> async_;
     TrackBack *src_external_;
     TrackBack dst_external_;

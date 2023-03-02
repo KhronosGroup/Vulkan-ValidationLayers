@@ -868,13 +868,6 @@ void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
 
 void AccessContext::DeleteAccess(const AddressRange &address) { GetAccessStateMap(address.type).erase_range(address.range); }
 
-void AccessContext::RecordRenderpassAsyncContextTags() {
-    // The tags are unknown at Access Context creation
-    for (auto &async_ref : async_) {
-        async_ref.tag = async_ref.context->start_tag_;
-    }
-}
-
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
@@ -987,7 +980,7 @@ HazardResult AccessContext::DetectHazard(AccessAddressType type, Detector &detec
         // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
         // so we'll check these first
         for (const auto &async_ref : async_) {
-            hazard = async_ref.context->DetectAsyncHazard(type, detector, range, async_ref.tag);
+            hazard = async_ref.Context().DetectAsyncHazard(type, detector, range, async_ref.StartTag());
             if (hazard.hazard) return hazard;
         }
     }
@@ -2080,7 +2073,8 @@ HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track
     HazardResult hazard = track_back.source_subpass->DetectImageBarrierHazard(attach_view, merged_barrier, kDetectPrevious);
     if (!hazard.hazard) {
         // The Async hazard check is against the current context's async set.
-        hazard = DetectImageBarrierHazard(attach_view, merged_barrier, kDetectAsync);
+        SyncBarrier null_barrier = {};
+        hazard = DetectImageBarrierHazard(attach_view, null_barrier, kDetectAsync);
     }
 
     return hazard;
@@ -3015,7 +3009,6 @@ void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barri
     assert(0 == current_subpass_);
     AccessContext &current_context = subpass_contexts_[current_subpass_];
     current_context.SetStartTag(barrier_tag);
-    current_context.RecordRenderpassAsyncContextTags();
 
     RecordLayoutTransitions(barrier_tag);
     RecordLoadOperations(load_tag);
@@ -3035,7 +3028,6 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag
     current_subpass_++;
     AccessContext &current_context = subpass_contexts_[current_subpass_];
     current_context.SetStartTag(barrier_tag);
-    current_context.RecordRenderpassAsyncContextTags();
 
     RecordLayoutTransitions(barrier_tag);
     RecordLoadOperations(load_tag);
@@ -8806,3 +8798,8 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_,
     : fence(fence_), tag(tag_), queue_id(queue_id_) {}
 FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, const PresentedImage &image, ResourceUsageTag tag_)
     : fence(fence_), tag(tag_), queue_id(QueueSyncState::kQueueIdInvalid), acquired(image, tag) {}
+
+// For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
+// unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
+
+ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
