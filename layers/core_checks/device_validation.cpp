@@ -625,6 +625,9 @@ VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) 
 
     if (has_format_feature2) {
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
+        fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
+        fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
+        fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;
     } else {
         VkFormatProperties format_properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);

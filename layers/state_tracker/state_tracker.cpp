@@ -129,6 +129,10 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
 
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
 
+        fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
+        fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
+        fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;
+
         if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             VkImageDrmFormatModifierPropertiesEXT drm_format_props = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
 
@@ -404,7 +408,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
         auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
         auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, pCreateInfo->format, &fmt_props_2);
-        buffer_features = fmt_props_3.bufferFeatures;
+        buffer_features = fmt_props_3.bufferFeatures | fmt_props_2.formatProperties.bufferFeatures;
     } else {
         VkFormatProperties format_properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
@@ -609,6 +613,9 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
             auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
             DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
+
+            format_features |= fmt_props_2.formatProperties.linearTilingFeatures;
+            format_features |= fmt_props_2.formatProperties.optimalTilingFeatures;
 
             format_features |= fmt_props_3.linearTilingFeatures;
             format_features |= fmt_props_3.optimalTilingFeatures;
