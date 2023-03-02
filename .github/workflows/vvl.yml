@@ -53,6 +53,10 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.cc }}-${{ matrix.cxx }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
@@ -60,26 +64,10 @@ jobs:
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
                                 libxcb-randr0-dev
-      - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-linux
-        with:
-          path: |
-            external/${{ matrix.config }}/glslang/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Tools/build/install
-            external/${{ matrix.config }}/robin-hood-hashing/build/install
-            external/${{ matrix.config }}/googletest/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/registry
-            external/${{ matrix.config }}/SPIRV-Headers/include
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
+      # PATH changes need to be done in an action before any action that needs it
+      - name: Add ccache to PATH
+        run: echo "/usr/lib/ccache" >> $GITHUB_PATH
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/${{ matrix.config }}/Vulkan-Headers/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
@@ -122,26 +110,14 @@ jobs:
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
                                 libxcb-randr0-dev cmake
-      - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-linux-cpp20
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
-          path: |
-            external/release/glslang/build/install
-            external/release/Vulkan-Headers/build/install
-            external/release/SPIRV-Headers/build/install
-            external/release/SPIRV-Tools/build/install
-            external/release/robin-hood-hashing/build/install
-            external/release/googletest/build/install
-            external/release/Vulkan-Headers/registry
-            external/release/SPIRV-Headers/include
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
+          key: ${{ runner.os }}-release-cpp20
+      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
+      # PATH changes need to be done in an action before any action that needs it
+      - name: Add ccache to PATH
+        run: echo "/usr/lib/ccache" >> $GITHUB_PATH
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/release/Vulkan-Headers/build/install/share/vulkan/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
@@ -248,7 +224,7 @@ jobs:
       - name: Build and Test Vulkan-ValidationLayers
         run: |
           echo "PYTHONPATH = $env:PYTHONPATH"
-          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
+          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
   android:
       runs-on: ubuntu-20.04
@@ -319,28 +295,16 @@ jobs:
         with:
           python-version: '3.8'
       - uses: lukka/get-cmake@latest
-      - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-macos-11-ninja
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
-          path: |
-            external/${{ matrix.config }}/glslang/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Tools/build/install
-            external/${{ matrix.config }}/robin-hood-hashing/build/install
-            external/${{ matrix.config }}/googletest/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/registry
-            external/${{ matrix.config }}/SPIRV-Headers/include
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+          key: ${{ runner.os }}-macOS11-${{ matrix.config }}
+      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
+      # PATH changes need to be done in an action before any action that needs it
+      - name: Add ccache to PATH
+        run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
       - name: Generate build files and dependencies
-        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja"
       - name: Build Vulkan-ValidationLayers
         run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
       - name: Install Vulkan-ValidationLayers
