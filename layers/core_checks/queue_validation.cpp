@@ -192,36 +192,39 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             }
         }
 
+        bool protected_submit = false;
+
         auto protected_submit_info = LvlFindInChain<VkProtectedSubmitInfo>(submit.pNext);
         if (protected_submit_info) {
-            const bool protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
+            protected_submit = protected_submit_info->protectedSubmit == VK_TRUE;
             if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) == 0)) {
                 skip |= LogError(queue, "VUID-vkQueueSubmit-queue-06448",
                                  "vkQueueSubmit(): pSubmits[%u] contains a protected submission to %s which was not created with "
                                  "VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT",
                                  submit_idx, report_data->FormatHandle(queue).c_str());
             }
+        }
 
-            // Make sure command buffers are all protected or unprotected
-            for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
-                auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
-                if (cb_state) {
-                    if ((cb_state->unprotected == true) && (protected_submit == true)) {
-                        const LogObjectList objlist(cb_state->commandBuffer(), queue);
-                        skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04148",
-                                         "vkQueueSubmit(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
-                                         "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
-                                         report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                                         report_data->FormatHandle(queue).c_str(), submit_idx);
-                    }
-                    if ((cb_state->unprotected == false) && (protected_submit == false)) {
-                        const LogObjectList objlist(cb_state->commandBuffer(), queue);
-                        skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04120",
-                                         "vkQueueSubmit(): command buffer %s is protected while queue %s pSubmits[%u] has "
-                                         "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE",
-                                         report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
-                                         report_data->FormatHandle(queue).c_str(), submit_idx);
-                    }
+        // Make sure command buffers are all protected or unprotected
+        for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
+            auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
+            if (cb_state) {
+                if ((cb_state->unprotected == true) && (protected_submit == true)) {
+                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04148",
+                                     "vkQueueSubmit(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
+                                     "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
+                                     report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                     report_data->FormatHandle(queue).c_str(), submit_idx);
+                }
+                if ((cb_state->unprotected == false) && (protected_submit == false)) {
+                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
+                    skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04120",
+                                     "vkQueueSubmit(): command buffer %s is protected while queue %s pSubmits[%u] has %s",
+                                     report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                                     report_data->FormatHandle(queue).c_str(), submit_idx,
+                                     protected_submit_info ? "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE"
+                                                           : "no VkProtectedSubmitInfo in the pNext chain");
                 }
             }
         }
