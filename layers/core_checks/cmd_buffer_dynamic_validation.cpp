@@ -115,13 +115,12 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations_06666);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology_07842);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_ENABLE_EXT_SET, cmd_type,
-                                    vuid.dynamic_discard_rectangle_enable_07880_07880);
+                                    vuid.dynamic_discard_rectangle_enable_07880);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_MODE_EXT_SET, cmd_type,
-                                    vuid.dynamic_discard_rectangle_mode_07881_07881);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_NV_SET, cmd_type,
-                                    vuid.dynamic_exclusive_scissor_07878_07878);
+                                    vuid.dynamic_discard_rectangle_mode_07881);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_NV_SET, cmd_type, vuid.dynamic_exclusive_scissor_07878);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_exclusive_scissor_enable_07879_07879);
+                                    vuid.dynamic_exclusive_scissor_enable_07879);
 
     const auto rp_state = pipeline.RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
