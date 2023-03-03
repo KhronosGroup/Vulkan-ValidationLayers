@@ -90,6 +90,8 @@ static bool TypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &
     const Instruction *a_base_insn = GetBaseTypeInstruction(a, a_type);
     const Instruction *b_base_insn = GetBaseTypeInstruction(b, b_type);
 
+    if (nullptr == a_base_insn && nullptr == b_base_insn) return true;
+
     return BaseTypesMatch(a, b, a_base_insn, b_base_insn);
 }
 
