@@ -3296,7 +3296,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), rp_state->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_06198_06198,
+                skip |= LogError(objlist, vuid.dynamic_rendering_06198,
                                  "%s: Currently bound pipeline %s must have been created with a "
                                  "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -3461,7 +3461,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
                 if (samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07285_07285
+                                                  ? vuid.dynamic_rendering_07285
                                                   : vuid.dynamic_rendering_multi_sample_06188;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Color attachment (%" PRIu32
@@ -3477,8 +3477,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
                 if (depth_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07286_07286
-                                                  : vuid.dynamic_rendering_06189_06189;
+                                                  ? vuid.dynamic_rendering_07286
+                                                  : vuid.dynamic_rendering_06189;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Depth attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
@@ -3493,8 +3493,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
                 if (stencil_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07287_07287
-                                                  : vuid.dynamic_rendering_06190_06190;
+                                                  ? vuid.dynamic_rendering_07287
+                                                  : vuid.dynamic_rendering_06190;
                     skip |= LogError(cb_state.commandBuffer(), vuid_string,
                                      "%s: Stencil attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",

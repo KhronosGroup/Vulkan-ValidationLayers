@@ -1497,7 +1497,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             !(buf_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
-            return LogError(objlist, context.vuids.bufferview_atomic_07888_07888,
+            return LogError(objlist, context.vuids.bufferview_atomic_07888,
                             "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                             "in binding #%" PRIu32 " index %" PRIu32
                             ", %s, format %s, doesn't "
