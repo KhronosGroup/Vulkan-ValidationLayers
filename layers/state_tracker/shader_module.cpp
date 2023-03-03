@@ -68,7 +68,7 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
             break;
         case spv::DecorationInputAttachmentIndex:
             flags |= input_attachment_bit;
-            input_attachment_index = value;
+            input_attachment_index_start = value;
             break;
     }
 }
@@ -1181,51 +1181,64 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
     return found_write;
 }
 
-// Returns the id from load_members that matched the object_id, otherwise returns zero
-uint32_t SHADER_MODULE_STATE::StaticData::FindIDFromLoad(uint32_t object_id, const std::vector<uint32_t>& operator_members) const {
-    for (auto load_id : operator_members) {
-        if (object_id == load_id) return load_id;
-        auto load_it = load_members.find(load_id);
-        if (load_it == load_members.end()) {
-            continue;
-        }
-        if (load_it->second == object_id) {
-            return load_it->first;
+// Takes a OpVariable ID and searches all ways it can be accessed from the access id lists
+// Example:
+//    %a = OpVariable
+//    %b = OpLoad %a
+//    %c = OpSampledImage %b
+//
+// %a == variable_id
+// %c == access_ids
+// %b == return value
+const std::vector<const Instruction*> SHADER_MODULE_STATE::FindVariableAccesses(uint32_t variable_id,
+                                                                                const std::vector<uint32_t>& access_ids,
+                                                                                bool atomic) const {
+    std::vector<const Instruction*> accessed_instructions;
+    for (auto access_id : access_ids) {
+        // The only time a direct access to a OpVariable is possible is in a Workgroup storage class
+        // But this is checking resource variables which are not Workgroup
+        assert(variable_id != access_id);
+
+        // Atomic are accessed by OpImageTexelPointer instead of OpLoad
+        // Currently for Atomics, just need to know if it was accessed or not
+        uint32_t access_chain_load = 0;
+        if (atomic) {
+            // non image atomic operations (ex. OpAtomicIAdd) go straight to an OpAccessChain
+            auto access_chain_it = static_data_.accesschain_members.find(access_id);
+            if ((access_chain_it != static_data_.accesschain_members.end()) && (access_chain_it->second.first == variable_id)) {
+                accessed_instructions.emplace_back(FindDef(access_chain_it->first));
+                continue;
+            }
+            auto pointer_it = static_data_.image_texel_pointer_members.find(access_id);
+            if (pointer_it == static_data_.image_texel_pointer_members.end()) {
+                continue;  // if not here, won't be in AccessChain neither
+            }
+            if (pointer_it->second == variable_id) {
+                accessed_instructions.emplace_back(FindDef(pointer_it->first));
+                continue;
+            } else {
+                access_chain_load = pointer_it->second;
+            }
+        } else {
+            auto load_it = static_data_.load_members.find(access_id);
+            if (load_it == static_data_.load_members.end()) {
+                continue;  // if not here, won't be in AccessChain neither
+            }
+            if (load_it->second == variable_id) {
+                accessed_instructions.emplace_back(FindDef(load_it->first));
+                continue;
+            } else {
+                access_chain_load = load_it->second;
+            }
         }
 
-        auto accesschain_it = accesschain_members.find(load_it->second);
-        if (accesschain_it == accesschain_members.end()) {
+        auto access_chain_it = static_data_.accesschain_members.find(access_chain_load);
+        if ((access_chain_it != static_data_.accesschain_members.end()) && (access_chain_it->second.first == variable_id)) {
+            accessed_instructions.emplace_back(FindDef(access_chain_it->first));
             continue;
-        }
-        if (accesschain_it->second.first == object_id) {
-            return accesschain_it->first;
         }
     }
-    return 0;
-}
-
-// Returns the id from Atomic access that matched the object_id, otherwise returns zero
-uint32_t SHADER_MODULE_STATE::StaticData::FindIDFromAtomic(uint32_t object_id,
-                                                           const std::vector<uint32_t>& operator_members) const {
-    for (auto load_id : operator_members) {
-        if (object_id == load_id) return load_id;
-        auto load_it = image_texel_pointer_members.find(load_id);
-        if (load_it == image_texel_pointer_members.end()) {
-            continue;
-        }
-        if (load_it->second == object_id) {
-            return load_it->first;
-        }
-
-        auto accesschain_it = accesschain_members.find(load_it->second);
-        if (accesschain_it == accesschain_members.end()) {
-            continue;
-        }
-        if (accesschain_it->second.first == object_id) {
-            return accesschain_it->first;
-        }
-    }
-    return 0;
+    return accessed_instructions;
 }
 
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction* insn,
@@ -1244,11 +1257,20 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
            type->Opcode() == spv::OpTypeRuntimeArray || type->Opcode() == spv::OpTypeSampledImage) {
         if (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypeRuntimeArray ||
             type->Opcode() == spv::OpTypeSampledImage) {
+            // currently just tracks 1D arrays
+            if (type->Opcode() == spv::OpTypeArray && array_length == 0) {
+                array_length = module_state.GetConstantValueById(type->Word(3));
+            }
+            if (type->Opcode() == spv::OpTypeRuntimeArray) {
+                runtime_array = true;
+            }
+
             type = module_state.FindDef(type->Word(2));  // Element type
         } else {
             type = module_state.FindDef(type->Word(3));  // Pointer type
         }
     }
+    base_type = spv::Op(type->Opcode());
 
     // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
     {
@@ -1263,7 +1285,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     }
 
     const auto& static_data_ = module_state.static_data_;
-    switch (type->Opcode()) {
+    // Handle anything specific to the base type
+    switch (base_type) {
         case spv::OpTypeImage: {
             image_sampled_type_width = module_state.GetTypeBitsSize(type);
 
@@ -1272,6 +1295,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             if (is_sampled_without_sampler) {
                 if (image_dim == spv::DimSubpassData) {
                     is_input_attachment = true;
+                    input_attachment_index_read.resize(array_length);  // is zero if runtime array
                 } else if (image_dim == spv::DimBuffer) {
                     is_storage_texel_buffer = true;
                 } else {
@@ -1281,68 +1305,80 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
             const bool is_image_without_format = ((is_sampled_without_sampler) && (type->Word(8) == spv::ImageFormatUnknown));
 
-            const uint32_t image_write_load_id = static_data_.FindIDFromLoad(id, static_data_.image_write_load_ids);
-            if (image_write_load_id != 0) {
+            auto image_write_loads = module_state.FindVariableAccesses(id, static_data_.image_write_load_ids, false);
+            if (!image_write_loads.empty()) {
                 is_written_to = true;
-                if (is_image_without_format) {
+                if (is_written_to && is_image_without_format) {
                     is_write_without_format = true;
                     for (const auto& entry : static_data_.image_write_load_id_map) {
-                        if (image_write_load_id == entry.second) {
-                            const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
-                            write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
+                        for (const Instruction* insn : image_write_loads) {
+                            if (insn->Word(insn->ResultId()) == entry.second) {
+                                const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
+                                write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
+                            }
                         }
                     }
                 }
             }
-            if (static_data_.FindIDFromLoad(id, static_data_.image_read_load_ids) != 0) {
+
+            auto image_read_loads = module_state.FindVariableAccesses(id, static_data_.image_read_load_ids, false);
+            if (!image_read_loads.empty()) {
                 is_read_from = true;
                 if (is_image_without_format) {
                     is_read_without_format = true;
                 }
-            }
-            if (static_data_.FindIDFromLoad(id, static_data_.sampler_load_ids) != 0) {
-                is_sampler_sampled = true;
-            }
-            if (static_data_.FindIDFromLoad(id, static_data_.sampler_implicitLod_dref_proj_load_ids) != 0) {
-                is_sampler_implicitLod_dref_proj = true;
-            }
-            if (static_data_.FindIDFromLoad(id, static_data_.sampler_bias_offset_load_ids) != 0) {
-                is_sampler_bias_offset = true;
-            }
-            if (static_data_.FindIDFromAtomic(id, static_data_.atomic_pointer_ids) != 0) {
-                is_atomic_operation = true;
-            }
-            if (static_data_.FindIDFromLoad(id, static_data_.image_dref_load_ids) != 0) {
-                is_dref_operation = true;
-            }
 
-            for (auto& itp_id : static_data_.sampled_image_load_ids) {
-                // Find if image id match.
-                uint32_t image_index = 0;
-                auto load_it = static_data_.load_members.find(itp_id.first);
-                if (load_it == static_data_.load_members.end()) {
-                    continue;
-                } else {
-                    if (load_it->second != id) {
-                        auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
-                        if (accesschain_it == static_data_.accesschain_members.end()) {
-                            continue;
-                        } else {
-                            if (accesschain_it->second.first != id) {
-                                continue;
-                            }
-
-                            const Instruction* const_def = module_state.GetConstantDef(accesschain_it->second.second);
-                            if (!const_def) {
-                                // access chain index not a constant, skip.
-                                break;
-                            }
-                            image_index = const_def->GetConstantValue();
+                // If accessed in an array, track which indexes were read, if not runtime array
+                if (is_input_attachment && !runtime_array) {
+                    for (const Instruction* insn : image_read_loads) {
+                        if (insn->Opcode() == spv::OpAccessChain) {
+                            const uint32_t access_index = module_state.GetConstantValueById(insn->Word(4));
+                            const uint32_t index = access_index + decorations.input_attachment_index_start;
+                            input_attachment_index_read.at(index) = true;
+                        } else if (insn->Opcode() == spv::OpLoad) {
+                            // if InputAttachment is accessed from load, just a single, non-array, index
+                            input_attachment_index_read.resize(1);
+                            input_attachment_index_read[0] = true;
                         }
                     }
                 }
+            }
+            if (!module_state.FindVariableAccesses(id, static_data_.sampler_load_ids, false).empty()) {
+                is_sampler_sampled = true;
+            }
+            if (!module_state.FindVariableAccesses(id, static_data_.sampler_implicitLod_dref_proj_load_ids, false).empty()) {
+                is_sampler_implicitLod_dref_proj = true;
+            }
+            if (!module_state.FindVariableAccesses(id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
+                is_sampler_bias_offset = true;
+            }
+            if (!module_state.FindVariableAccesses(id, static_data_.image_dref_load_ids, false).empty()) {
+                is_dref_operation = true;
+            }
+
+            // Search all <image, sampler> combos (if not CombinedImageSampler)
+            for (auto& sampled_image_load_id : static_data_.sampled_image_load_ids) {
+                std::vector<uint32_t> image_load_ids = {sampled_image_load_id.first};
+                auto image_loads = module_state.FindVariableAccesses(id, image_load_ids, false);
+                if (image_loads.empty()) {
+                    continue;
+                }
+
+                uint32_t image_index = 0;
+                // If Image is an array, need to get the index
+                // Currently just need to care about the first image_loads because the above loop will have combos to
+                // image-to-samplers for us
+                if (image_loads[0]->Opcode() == spv::OpAccessChain) {
+                    // TODO - Can this just be GetConstantValueById() - is a spec const possible here?
+                    const Instruction* const_def = module_state.GetConstantDef(image_loads[0]->Word(4));
+                    if (!const_def) {
+                        continue;  // access chain index not a constant
+                    }
+                    image_index = const_def->GetConstantValue();
+                }
+
                 // Find sampler's set binding.
-                load_it = static_data_.load_members.find(itp_id.second);
+                auto load_it = static_data_.load_members.find(sampled_image_load_id.second);
                 if (load_it == static_data_.load_members.end()) {
                     continue;
                 } else {
@@ -1365,13 +1401,14 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     }
 
                     // Need to check again for these properties in case not using a combined image sampler
-                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_load_ids) != 0) {
+                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_load_ids, false).empty()) {
                         is_sampler_sampled = true;
                     }
-                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids) != 0) {
+                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids, false)
+                             .empty()) {
                         is_sampler_implicitLod_dref_proj = true;
                     }
-                    if (static_data_.FindIDFromLoad(sampler_id, static_data_.sampler_bias_offset_load_ids) != 0) {
+                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
                         is_sampler_bias_offset = true;
                     }
 
@@ -1379,7 +1416,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                         SamplerUsedByImage{DescriptorSlot{sampler_dec.set, sampler_dec.binding}, sampler_index});
                 }
             }
-            return;
+            break;
         }
 
         case spv::OpTypeStruct: {
@@ -1393,26 +1430,24 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
             // as nonwritable.
             if (is_storage_buffer && nonwritable_members.size() != type->Length() - 2) {
-                for (auto oid : static_data_.store_pointer_ids) {
-                    if (id == oid) {
-                        is_written_to = true;
-                        return;
-                    }
-                    auto accesschain_it = static_data_.accesschain_members.find(oid);
-                    if (accesschain_it == static_data_.accesschain_members.end()) {
-                        continue;
-                    }
-                    if (accesschain_it->second.first == id) {
-                        is_written_to = true;
-                        return;
-                    }
-                }
-                if (static_data_.FindIDFromAtomic(id, static_data_.atomic_store_pointer_ids) != 0) {
+                if (!module_state.FindVariableAccesses(id, static_data_.store_pointer_ids, false).empty()) {
                     is_written_to = true;
-                    return;
+                    break;
+                }
+                if (!module_state.FindVariableAccesses(id, static_data_.atomic_store_pointer_ids, true).empty()) {
+                    is_written_to = true;
+                    break;
                 }
             }
+            break;
         }
+        default:
+            break;
+    }
+
+    // Type independent checks
+    if (!module_state.FindVariableAccesses(id, static_data_.atomic_pointer_ids, true).empty()) {
+        is_atomic_operation = true;
     }
 }
 
