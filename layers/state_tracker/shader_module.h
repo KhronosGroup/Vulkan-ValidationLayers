@@ -59,7 +59,9 @@ struct DecorationSet {
     uint32_t binding = 0;
 
     uint32_t builtin = kInvalidValue;
-    uint32_t input_attachment_index = kInvalidValue;
+
+    // Value of InputAttachmentIndex the variable starts
+    uint32_t input_attachment_index_start = kInvalidValue;
 
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
@@ -98,14 +100,26 @@ struct ResourceInterfaceVariable {
     VkShaderStageFlagBits stage;
     DecorationSet decorations;
 
+    // If the type is a OpTypeArray save the length
+    uint32_t array_length = 0;
+    bool runtime_array = false;  // OpTypeRuntimeArray - can't validate length until run time
+
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
 
+    // A variable can have an array of indexes, need to track which are written to
+    // can't use bitset because number of indexes isn't known until runtime
+    std::vector<bool> input_attachment_index_read;
+
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     uint32_t image_sampled_type_width = 0;
+
+    // Type once array/pointer are stripped
+    // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
+    spv::Op base_type;
 
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
@@ -268,9 +282,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         vvl::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
         vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
         vvl::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
-
-        uint32_t FindIDFromLoad(uint32_t object_id, const std::vector<uint32_t> &operator_members) const;
-        uint32_t FindIDFromAtomic(uint32_t object_id, const std::vector<uint32_t> &operator_members) const;
     };
 
     // This is the SPIR-V module data content
@@ -327,6 +338,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         }
         return nullptr;
     }
+
+    const std::vector<const Instruction *> FindVariableAccesses(uint32_t variable_id, const std::vector<uint32_t> &access_ids,
+                                                                bool atomic) const;
 
     const vvl::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
