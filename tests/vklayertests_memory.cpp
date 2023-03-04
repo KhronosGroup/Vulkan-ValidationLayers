@@ -175,6 +175,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vk::UnmapMemory(m_device->device(), mem);
     if (!pass) {
         vk::FreeMemory(m_device->device(), mem, NULL);
         vk::DestroyBuffer(m_device->device(), buffer, NULL);
