@@ -1690,7 +1690,7 @@ TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
 
     uint32_t *pData;
     vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
-
+    vk::UnmapMemory(device(), memory);
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
