@@ -88,18 +88,6 @@ VkRenderFramework::VkRenderFramework()
       m_commandBuffer(NULL),
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
-      m_surface(VK_NULL_HANDLE),
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-      m_win32Window(nullptr),
-#endif
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-      m_surface_dpy(nullptr),
-      m_surface_window(None),
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      m_surface_xcb_conn(nullptr),
-#endif
-      m_swapchain(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
       m_width(256.0),   // default window width
       m_height(256.0),  // default window height
@@ -526,10 +514,8 @@ void VkRenderFramework::ShutdownFramework() {
 
     debug_reporter_.Destroy(instance_);
 
-    if (m_surface != VK_NULL_HANDLE) {
-        vk::DestroySurfaceKHR(instance_, m_surface, nullptr);
-        m_surface = VK_NULL_HANDLE;
-    }
+    DestroySurface(m_surface);
+    DestroySurfaceContext(m_surface_context);
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
@@ -645,7 +631,11 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-bool VkRenderFramework::InitSurface() { return InitSurface(m_surface); }
+bool VkRenderFramework::InitSurface() {
+    // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling DestroySurfaceContext.
+    // This is intentional. Each swapchain/surface combo needs a unique HWND.
+    return CreateSurface(m_surface_context, m_surface);
+}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -653,7 +643,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
+bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface) {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HINSTANCE window_instance = GetModuleHandle(nullptr);
     const char class_name[] = "test";
@@ -668,145 +658,200 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
     VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
-    VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
-
-    // NOTE: Currently InitSurface can leak a WIN32 handle if called multiple times.
-    // This is intentional. Each swapchain/surface combo needs a unique HWND.
-    m_win32Window = window;
-    if (err != VK_SUCCESS) return false;
+    return VK_SUCCESS == vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
     surface_create_info.window = VkTestFramework::window;
-    VkResult err = vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
-    if (err != VK_SUCCESS) return false;
+    return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    m_surface_dpy = XOpenDisplay(NULL);
-    if (m_surface_dpy) {
-        int s = DefaultScreen(m_surface_dpy);
-        m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
-                                               BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
+    surface_context.m_surface_dpy = XOpenDisplay(NULL);
+    if (surface_context.m_surface_dpy) {
+        int s = DefaultScreen(surface_context.m_surface_dpy);
+        surface_context.m_surface_window = XCreateSimpleWindow(
+            surface_context.m_surface_dpy, RootWindow(surface_context.m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
+            BlackPixel(surface_context.m_surface_dpy, s), WhitePixel(surface_context.m_surface_dpy, s));
         VkXlibSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
-        surface_create_info.dpy = m_surface_dpy;
-        surface_create_info.window = m_surface_window;
-        VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
-        if (err != VK_SUCCESS) return false;
+        surface_create_info.dpy = surface_context.m_surface_dpy;
+        surface_create_info.window = surface_context.m_surface_window;
+        return VK_SUCCESS == vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (surface == VK_NULL_HANDLE) {
-        m_surface_xcb_conn = xcb_connect(NULL, NULL);
-        if (m_surface_xcb_conn) {
-            xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
-            VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
-            surface_create_info.connection = m_surface_xcb_conn;
-            surface_create_info.window = window;
-            VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
-            if (err != VK_SUCCESS) return false;
-        }
+    surface_context.m_surface_xcb_conn = xcb_connect(NULL, NULL);
+    if (surface_context.m_surface_xcb_conn) {
+        xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
+        VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
+        surface_create_info.connection = surface_context.m_surface_xcb_conn;
+        surface_create_info.window = window;
+        return VK_SUCCESS == vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     }
 #endif
-    return (surface != VK_NULL_HANDLE);
+    return surface != VK_NULL_HANDLE;
 }
 
-// Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will need
+void VkRenderFramework::DestroySurface() {
+    DestroySurface(m_surface);
+    m_surface = VK_NULL_HANDLE;
+    DestroySurfaceContext(m_surface_context);
+    m_surface_context = {};
+}
+
+void VkRenderFramework::DestroySurface(VkSurfaceKHR &surface) {
+    if (surface != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), surface, nullptr);
+    }
+}
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
+#endif
+
+void VkRenderFramework::DestroySurfaceContext(SurfaceContext &surface_context) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (surface_context.m_win32Window != nullptr) {
+        DestroyWindow(surface_context.m_win32Window);
+    }
+#endif
+
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (surface_context.m_surface_dpy != nullptr) {
+        // Ignore BadDrawable errors we seem to get during shutdown.
+        // The default error handler will exit() and end the test suite.
+        XSetErrorHandler(IgnoreXErrors);
+        XDestroyWindow(surface_context.m_surface_dpy, surface_context.m_surface_window);
+        surface_context.m_surface_window = None;
+        XCloseDisplay(surface_context.m_surface_dpy);
+        surface_context.m_surface_dpy = nullptr;
+        XSetErrorHandler(nullptr);
+    }
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    if (surface_context.m_surface_xcb_conn != nullptr) {
+        xcb_disconnect(surface_context.m_surface_xcb_conn);
+        surface_context.m_surface_xcb_conn = nullptr;
+    }
+#endif
+}
+
+// Queries the info needed to create a swapchain and assigns it to the member variables of VkRenderFramework
 void VkRenderFramework::InitSwapchainInfo() {
+    auto info = GetSwapchainInfo(m_surface);
+    m_surface_capabilities = info.surface_capabilities;
+    m_surface_formats = info.surface_formats;
+    m_surface_present_modes = info.surface_present_modes;
+    m_surface_non_shared_present_mode = info.surface_non_shared_present_mode;
+    m_surface_composite_alpha = info.surface_composite_alpha;
+}
+
+// Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will
+// need
+SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surface) {
     const VkPhysicalDevice physicalDevice = gpu();
 
-    assert(m_surface != VK_NULL_HANDLE);
+    assert(surface != VK_NULL_HANDLE);
 
-    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_surface, &m_surface_capabilities);
+    SurfaceInformation info{};
+
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &info.surface_capabilities);
 
     uint32_t format_count;
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &format_count, nullptr);
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, nullptr);
     if (format_count != 0) {
-        m_surface_formats.resize(format_count);
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &format_count, m_surface_formats.data());
+        info.surface_formats.resize(format_count);
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, info.surface_formats.data());
     }
 
     uint32_t present_mode_count;
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &present_mode_count, nullptr);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count, nullptr);
     if (present_mode_count != 0) {
-        m_surface_present_modes.resize(present_mode_count);
-        vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &present_mode_count, m_surface_present_modes.data());
+        info.surface_present_modes.resize(present_mode_count);
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count,
+                                                    info.surface_present_modes.data());
 
         // Shared Present mode has different requirements most tests won't actually want
         // Implementation required to support a non-shared present mode
-        for (size_t i = 0; i < m_surface_present_modes.size(); i++) {
-            const VkPresentModeKHR present_mode = m_surface_present_modes[i];
+        for (size_t i = 0; i < info.surface_present_modes.size(); i++) {
+            const VkPresentModeKHR present_mode = info.surface_present_modes[i];
             if ((present_mode != VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR) &&
                 (present_mode != VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR)) {
-                m_surface_non_shared_present_mode = present_mode;
+                info.surface_non_shared_present_mode = present_mode;
                 break;
             }
         }
     }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    m_surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+    info.surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
 #else
-    m_surface_composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    info.surface_composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 #endif
+
+    return info;
 }
 
 bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
     if (InitSurface()) {
-        return InitSwapchain(m_surface, imageUsage, preTransform);
+        return CreateSwapchain(m_surface, imageUsage, preTransform, m_swapchain);
     }
     return false;
 }
 
-bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
-                                      VkSurfaceTransformFlagBitsKHR preTransform) {
-    return InitSwapchain(surface, imageUsage, preTransform, m_swapchain);
-}
-
-bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
-                                      VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
-                                      VkSwapchainKHR oldSwapchain) {
-
+bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
+                                        VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
+                                        VkSwapchainKHR oldSwapchain) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, surface, &supported);
     if (!supported) {
         // Graphics queue does not support present
         return false;
     }
-    InitSwapchainInfo();
+
+    SurfaceInformation info = GetSwapchainInfo(surface);
+
+    // If this is being called from InitSwapchain, we need to also initialize all the VkRenderFramework
+    // data associated with the swapchain since many tests use those variables. We can do this by checking
+    // if the surface parameters address is the same as VkRenderFramework::m_surface
+    if (&surface == &m_surface) {
+        InitSwapchainInfo();
+    }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_create_info.surface = surface;
-    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
-    swapchain_create_info.imageFormat = m_surface_formats[0].format;
-    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
+                                         info.surface_capabilities.minImageExtent.height};
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = preTransform;
-    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = oldSwapchain;
 
-    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    if (err != VK_SUCCESS) {
-        return false;
-    }
+    VkResult result = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    if (result != VK_SUCCESS) return false;
+    // We must call vkGetSwapchainImagesKHR after creating the swapchain because the Validation Layer variables
+    // for the swapchain image count are set inside that call. Otherwise, various validation fails due to
+    // thinking that the swapchain image count is zero.
+    GetSwapchainImages(swapchain);
+    return true;
+}
+
+std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR swapchain) {
     uint32_t imageCount = 0;
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
     vector<VkImage> swapchainImages;
     swapchainImages.resize(imageCount);
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, swapchainImages.data());
-    return true;
+    return swapchainImages;
 }
-
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
-#endif
 
 void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->device() != VK_NULL_HANDLE) {
@@ -815,36 +860,6 @@ void VkRenderFramework::DestroySwapchain() {
             vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
             m_swapchain = VK_NULL_HANDLE;
         }
-    }
-
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-    if (m_win32Window != nullptr) {
-        DestroyWindow(m_win32Window);
-    }
-#endif
-
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (m_surface_dpy != nullptr) {
-        // Ignore BadDrawable errors we seem to get during shutdown.
-        // The default error handler will exit() and end the test suite.
-        XSetErrorHandler(IgnoreXErrors);
-        XDestroyWindow(m_surface_dpy, m_surface_window);
-        m_surface_window = None;
-        XCloseDisplay(m_surface_dpy);
-        m_surface_dpy = nullptr;
-        XSetErrorHandler(nullptr);
-    }
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (m_surface_xcb_conn != nullptr) {
-        xcb_disconnect(m_surface_xcb_conn);
-        m_surface_xcb_conn = nullptr;
-    }
-#endif
-
-    if (m_surface != VK_NULL_HANDLE) {
-        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
-        m_surface = VK_NULL_HANDLE;
     }
 }
 
@@ -1863,9 +1878,9 @@ bool VkShaderObj::InitFromGLSL(bool debug) {
     return VK_NULL_HANDLE != handle();
 }
 
-// Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module creation
-// due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when tests are found
-// to crash on a CI device
+// Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module
+// creation due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when
+// tests are found to crash on a CI device
 VkResult VkShaderObj::InitFromGLSLTry(bool debug, const VkDeviceObj *custom_device) {
     std::vector<uint32_t> spv;
     // 99% of tests just use the framework's VkDevice, but this allows for tests to use custom device object
