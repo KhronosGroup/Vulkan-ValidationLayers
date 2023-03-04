@@ -151,6 +151,26 @@ const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table
     {kPixel2XL, "Adreno (TM) 540"},
     {kMockICD, "Vulkan Mock Device"},
 };
+struct SurfaceContext {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    HWND m_win32Window{};
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    Display *m_surface_dpy{};
+    Window m_surface_window{};
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    xcb_connection_t *m_surface_xcb_conn{};
+#endif
+};
+
+struct SurfaceInformation {
+    VkSurfaceCapabilitiesKHR surface_capabilities{};
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    std::vector<VkPresentModeKHR> surface_present_modes;
+    VkPresentModeKHR surface_non_shared_present_mode{};
+    VkCompositeAlphaFlagBitsKHR surface_composite_alpha{};
+};
 
 class VkRenderFramework : public VkTestFramework {
   public:
@@ -173,15 +193,21 @@ class VkRenderFramework : public VkTestFramework {
 
     void InitViewport(float width, float height);
     void InitViewport();
+     // Functions to modify the VkRenderFramework surface & swapchain variables
     bool InitSurface();
-    bool InitSurface(VkSurfaceKHR &surface);
+    void DestroySurface();
     void InitSwapchainInfo();
-    bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     bool InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
-    bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain, VkSwapchainKHR oldSwapchain = 0);
     void DestroySwapchain();
+    // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
+    bool CreateSurface(SurfaceContext& surface_context, VkSurfaceKHR& surface);
+    void DestroySurface(VkSurfaceKHR& surface);
+    void DestroySurfaceContext(SurfaceContext& surface_context);
+    SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
+    bool CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain, VkSwapchainKHR oldSwapchain = 0);
+    std::vector<VkImage> GetSwapchainImages(const VkSwapchainKHR swapchain);
+
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(VkImageView *dsBinding);
@@ -264,23 +290,14 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<VkImageView> m_framebuffer_attachments;
 
     // WSI items
-    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-    HWND m_win32Window;
-#endif
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-    Display *m_surface_dpy;
-    Window m_surface_window;
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    xcb_connection_t *m_surface_xcb_conn;
-#endif
-    VkSwapchainKHR m_swapchain;
-    VkSurfaceCapabilitiesKHR m_surface_capabilities;
+    SurfaceContext m_surface_context{};
+    VkSurfaceKHR m_surface{};
+    VkSwapchainKHR m_swapchain{};
+    VkSurfaceCapabilitiesKHR m_surface_capabilities{};
     std::vector<VkSurfaceFormatKHR> m_surface_formats;
     std::vector<VkPresentModeKHR> m_surface_present_modes;
-    VkPresentModeKHR m_surface_non_shared_present_mode;
-    VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha;
+    VkPresentModeKHR m_surface_non_shared_present_mode{};
+    VkCompositeAlphaFlagBitsKHR m_surface_composite_alpha{};
 
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;

@@ -1740,17 +1740,17 @@ TEST_F(VkLayerTest, LeakASwapchain) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    ASSERT_TRUE(InitSwapchain());
-
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    ASSERT_TRUE(InitSurface(surface));
-    ASSERT_TRUE(InitSwapchain(surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain));
+    SurfaceContext surface_context{};
+    VkSurfaceKHR surface{};
+    VkSwapchainKHR swapchain{};
+    ASSERT_TRUE(CreateSurface(surface_context, surface));
+    ASSERT_TRUE(CreateSwapchain(surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain));
 
     // Warn about the surface/swapchain not being destroyed
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00629");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
     ShutdownFramework();  // Destroy Instance/Device
+    DestroySurfaceContext(surface_context);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1780,21 +1780,17 @@ TEST_F(VkLayerTest, PresentIdWait) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
 
+    SurfaceContext surface_context;
     VkSurfaceKHR surface2;
+    ASSERT_TRUE(CreateSurface(surface_context, surface2));
     VkSwapchainKHR swapchain2;
-    InitSurface(surface2);
-    InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
+    ASSERT_TRUE(CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2));
 
     auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
     ASSERT_TRUE(vkWaitForPresentKHR != nullptr);
 
-    uint32_t image_count, image_count2;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
-    vk::GetSwapchainImagesKHR(device(), swapchain2, &image_count2, nullptr);
-    std::vector<VkImage> images(image_count);
-    std::vector<VkImage> images2(image_count2);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
-    vk::GetSwapchainImagesKHR(device(), swapchain2, &image_count2, images2.data());
+    auto images = GetSwapchainImages(m_swapchain);
+    auto images2 = GetSwapchainImages(swapchain2);
 
     uint32_t image_indices[2];
     VkFenceObj fence, fence2;
@@ -1852,7 +1848,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
 
     VkSwapchainKHR swapchain3;
     // Retire swapchain2
-    InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
+    CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
     present_id.swapchainCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-swapchain-04997");
     vkWaitForPresentKHR(device(), swapchain2, 5, kWaitTimeout);
@@ -1860,7 +1856,8 @@ TEST_F(VkLayerTest, PresentIdWait) {
 
     vk::DestroySwapchainKHR(m_device->device(), swapchain2, nullptr);
     vk::DestroySwapchainKHR(m_device->device(), swapchain3, nullptr);
-    vk::DestroySurfaceKHR(instance(), surface2, nullptr);
+    DestroySurface(surface2);
+    DestroySurfaceContext(surface_context);
 }
 
 TEST_F(VkLayerTest, PresentIdWaitFeatures) {
