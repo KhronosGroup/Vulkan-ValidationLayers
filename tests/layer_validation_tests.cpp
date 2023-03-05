@@ -1036,7 +1036,7 @@ VkLayerTest::VkLayerTest() {
     // TODO: not quite sure why most of this is here instead of in super
 
     // Add default instance extensions to the list
-    instance_extensions_.push_back(debug_reporter_.debug_extension_name);
+    m_instance_extension_names.push_back(debug_reporter_.debug_extension_name);
 
     instance_layers_.push_back(kValidationLayerName);
 

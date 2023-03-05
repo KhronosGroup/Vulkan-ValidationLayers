@@ -198,7 +198,6 @@ class VkRenderFramework : public VkTestFramework {
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 
-    bool InstanceExtensionEnabled(const char *name);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
                                   uint32_t spec_version = 0) const {  // deprecated
@@ -243,8 +242,7 @@ class VkRenderFramework : public VkTestFramework {
 
     VkApplicationInfo app_info_;
     std::vector<const char *> instance_layers_;
-    std::vector<const char *> instance_extensions_;
-    std::vector<const char *> &m_instance_extension_names = instance_extensions_;  // compatibility alias name
+    std::vector<const char *> m_instance_extension_names;
     VkInstance instance_;
     VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
