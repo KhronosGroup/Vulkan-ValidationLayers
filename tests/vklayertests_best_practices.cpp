@@ -1079,7 +1079,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     // Vulkan 1.1 required to test vkGetPhysicalDeviceQueueFamilyProperties2
     app_info_.apiVersion = VK_API_VERSION_1_1;
     // VK_KHR_get_physical_device_properties2 required to test vkGetPhysicalDeviceQueueFamilyProperties2KHR
-    instance_extensions_.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    m_instance_extension_names.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     const vk_testing::PhysicalDevice phys_device_obj(gpu_);
 

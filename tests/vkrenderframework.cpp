@@ -171,13 +171,6 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     return std::any_of(available_extensions_.begin(), available_extensions_.end(), IsTheQueriedExtension);
 }
 
-// Return true if instance exists and extension name is in the list
-bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
-    if (!instance_) return false;
-
-    return std::any_of(instance_extensions_.begin(), instance_extensions_.end(),
-                       [ext_name](const char *e) { return 0 == strncmp(ext_name, e, VK_MAX_EXTENSION_NAME_SIZE); });
-}
 // Return true if extension name is found and spec value is >= requested spec value
 bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
     if (!instance_ || !gpu_) {
@@ -228,8 +221,8 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
         &app_info_,
         static_cast<uint32_t>(instance_layers_.size()),
         instance_layers_.data(),
-        static_cast<uint32_t>(instance_extensions_.size()),
-        instance_extensions_.data(),
+        static_cast<uint32_t>(m_instance_extension_names.size()),
+        m_instance_extension_names.data(),
     };
 #else
     return {
@@ -239,8 +232,8 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
         &app_info_,
         static_cast<uint32_t>(instance_layers_.size()),
         instance_layers_.data(),
-        static_cast<uint32_t>(instance_extensions_.size()),
-        instance_extensions_.data(),
+        static_cast<uint32_t>(m_instance_extension_names.size()),
+        m_instance_extension_names.data(),
     };
 #endif
 }
@@ -308,7 +301,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
     if (print_driver_info && !driver_printed &&
         InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        instance_extensions_.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -318,7 +311,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 #endif
 
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
-    RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
+    RemoveIf(m_instance_extension_names, ExtensionNotSupportedWithReporting);
 
     auto ici = GetInstanceCreateInfo();
 
