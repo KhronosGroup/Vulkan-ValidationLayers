@@ -1109,7 +1109,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
-        skip |= ValidatePipelineShaderStage(pipeline, pipeline.stage_state[stage_index]);
+        skip |= ValidatePipelineShaderStage(pipeline, pipeline.stage_states[stage_index]);
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -2958,7 +2958,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
             }
 
             if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
-                for (const auto &stage : pipeline.stage_state) {
+                for (const auto &stage : pipeline.stage_states) {
                     if (stage.writes_to_gl_layer) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32

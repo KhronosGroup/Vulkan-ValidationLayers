@@ -3470,7 +3470,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     }
 
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
-    for (auto &stage : pipeline.stage_state) {
+    for (auto &stage : pipeline.stage_states) {
         // Only validate the shader state once when added, not again when linked
         if ((stage.stage_flag & pipeline.linking_shaders) == 0) {
             skip |= ValidatePipelineShaderStage(pipeline, stage);
@@ -3491,9 +3491,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
     }
 
-    for (size_t i = 1; i < pipeline.stage_state.size(); i++) {
-        const auto &producer = pipeline.stage_state[i - 1];
-        const auto &consumer = pipeline.stage_state[i];
+    for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
+        const auto &producer = pipeline.stage_states[i - 1];
+        const auto &consumer = pipeline.stage_states[i];
         assert(producer.module_state);
         if (&producer == fragment_stage) {
             break;
@@ -3526,7 +3526,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    for (auto &stage : pipeline.stage_state) {
+    for (auto &stage : pipeline.stage_states) {
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
@@ -3547,7 +3547,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline) const {
-    return ValidatePipelineShaderStage(pipeline, pipeline.stage_state[0]);
+    return ValidatePipelineShaderStage(pipeline, pipeline.stage_states[0]);
 }
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {

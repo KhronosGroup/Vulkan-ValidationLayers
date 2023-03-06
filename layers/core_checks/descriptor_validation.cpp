@@ -1099,7 +1099,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
                 assert(set_index != std::numeric_limits<uint32_t>::max());
                 const auto pipeline = context.cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                for (const auto &stage : pipeline->stage_state) {
+                for (const auto &stage : pipeline->stage_states) {
                     if (!stage.descriptor_variables) {
                         continue;
                     }

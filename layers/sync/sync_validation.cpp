@@ -2124,7 +2124,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pipe->stage_state) {
+    for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
             continue;
@@ -2261,7 +2261,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
-    for (const auto &stage_state : pipe->stage_state) {
+    for (const auto &stage_state : pipe->stage_states) {
         const auto raster_state = pipe->RasterizationState();
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
             continue;

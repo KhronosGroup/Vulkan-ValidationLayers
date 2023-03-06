@@ -195,9 +195,9 @@ static uint32_t GetMaxActiveSlot(const PIPELINE_STATE::ActiveSlotMap &active_slo
     return max_active_slot;
 }
 
-static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stages) {
+static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stage_states) {
     uint32_t result = 0;
-    for (const auto &stage : stages) {
+    for (const auto &stage : stage_states) {
         result |= stage.stage_flag;
     }
     return result;
@@ -216,7 +216,7 @@ static uint32_t GetLinkingShaders(const VkPipelineLibraryCreateInfoKHR *link_inf
     return result;
 }
 
-static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE::StageStateVec &stages) {
+static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE::StageStateVec &stage_states) {
     bool result = false;
     const auto robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
     if (!robustness_info) {
@@ -227,7 +227,7 @@ static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE::Stag
     result |= (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
               (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
     if (!result) {
-        for (const auto &stage : stages) {
+        for (const auto &stage : stage_states) {
             const auto stage_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(stage.create_info->pNext);
             if (stage_robustness_info) {
                 result |=
@@ -242,9 +242,9 @@ static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE::Stag
     return result;
 }
 
-static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stages) {
+static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stage_states) {
     bool result = false;
-    for (const auto &stage : stages) {
+    for (const auto &stage : stage_states) {
         const auto module_id_info = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage.create_info->pNext);
         if (module_id_info) result |= (module_id_info->identifierSize > 0);
     }
@@ -269,7 +269,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE &pipelin
     auto result = (pipeline.vertex_input_state && pipeline.vertex_input_state->input_assembly_state)
                       ? pipeline.vertex_input_state->input_assembly_state->topology
                       : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-    for (const auto &stage : pipeline.stage_state) {
+    for (const auto &stage : pipeline.stage_states) {
         if (!stage.entrypoint) {
             continue;
         }
@@ -537,16 +537,16 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
       fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
-      stage_state(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_state)),
+      stage_states(GetStageStates(*state_data, *this, csm_states)),
+      active_shaders(GetActiveShaders(stage_states)),
       linking_shaders(GetLinkingShaders(library_create_info, *state_data)),
-      fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
-      active_slots(GetActiveSlots(stage_state)),
+      fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_states)),
+      active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
-      uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      uses_shader_module_id(UsesShaderModuleId(stage_states)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
-      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
+      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_states)),
       csm_states(csm_states) {
     if (library_create_info) {
         // accumulate dynamic state
@@ -612,12 +612,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       create_index(create_index),
-      stage_state(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_state)),
-      active_slots(GetActiveSlots(stage_state)),
-      uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      stage_states(GetStageStates(*state_data, *this, csm_states)),
+      active_shaders(GetActiveShaders(stage_states)),
+      active_slots(GetActiveSlots(stage_states)),
+      uses_shader_module_id(UsesShaderModuleId(stage_states)),
       descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
-      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
+      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_states)),
       csm_states(csm_states),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
@@ -629,12 +629,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       create_index(create_index),
-      stage_state(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_state)),
-      active_slots(GetActiveSlots(stage_state)),
-      uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      stage_states(GetStageStates(*state_data, *this, csm_states)),
+      active_shaders(GetActiveShaders(stage_states)),
+      active_slots(GetActiveSlots(stage_states)),
+      uses_shader_module_id(UsesShaderModuleId(stage_states)),
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
-      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
+      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_states)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &
@@ -648,12 +648,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       create_info(pCreateInfo),
       create_index(create_index),
-      stage_state(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_state)),
-      active_slots(GetActiveSlots(stage_state)),
-      uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      stage_states(GetStageStates(*state_data, *this, csm_states)),
+      active_shaders(GetActiveShaders(stage_states)),
+      active_slots(GetActiveSlots(stage_states)),
+      uses_shader_module_id(UsesShaderModuleId(stage_states)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
-      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
+      uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_states)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &

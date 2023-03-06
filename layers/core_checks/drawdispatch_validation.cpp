@@ -2945,7 +2945,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     //       "life times" of push constants are correct.
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (!cb_state.push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges)) {
-        for (const auto &stage : pipeline.stage_state) {
+        for (const auto &stage : pipeline.stage_states) {
             const auto *push_constants =
                 stage.module_state->FindEntrypointPushConstant(stage.create_info->pName, stage.create_info->stage);
             if (!push_constants || !push_constants->IsUsed()) {
