@@ -861,7 +861,7 @@ class CoreChecks : public ValidationStateTracker {
                                             const Instruction& insn) const;
     bool ValidateMemoryScope(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
     bool ValidateCooperativeMatrix(const SHADER_MODULE_STATE& module_state,
-                                   safe_VkPipelineShaderStageCreateInfo const* pStage) const;
+                                   safe_VkPipelineShaderStageCreateInfo const* create_info) const;
     bool ValidateShaderResolveQCOM(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state, VkPipelineShaderStageCreateFlags flags) const;
@@ -880,7 +880,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                            const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                   safe_VkPipelineShaderStageCreateInfo const* pStage, const std::string& vuid) const;
+                                   safe_VkPipelineShaderStageCreateInfo const* create_info, const std::string& vuid) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                const PIPELINE_STATE& pipeline) const;
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
@@ -904,7 +904,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const std::string& vuid_layout_mismatch) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const SHADER_MODULE_STATE& module_state, const PipelineStageState& stage_state,
-                                const safe_VkPipelineShaderStageCreateInfo* pStage, const VkPipelineCreateFlags flags) const;
+                                const safe_VkPipelineShaderStageCreateInfo* create_info, const VkPipelineCreateFlags flags) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
     bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
 
