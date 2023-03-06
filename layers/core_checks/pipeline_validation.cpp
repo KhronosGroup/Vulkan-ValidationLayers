@@ -261,13 +261,13 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     const uint32_t active_shaders = pipeline.active_shaders;
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
         vvl::unordered_set<VkShaderStageFlags> unique_stage_set;
-        const auto stages = pipeline.GetShaderStages();
-        for (const auto &stage : stages) {
-            if (!unique_stage_set.insert(stage.stage).second) {
+        const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
+        for (const auto &stage_ci : stages_ci) {
+            if (!unique_stage_set.insert(stage_ci.stage).second) {
                 skip |=
                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-06897",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Multiple shaders provided for stage %s",
-                             pipeline.create_index, string_VkShaderStageFlagBits(stage.stage));
+                             pipeline.create_index, string_VkShaderStageFlagBits(stage_ci.stage));
             }
         }
     }

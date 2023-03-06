@@ -59,23 +59,23 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                                                              CreateShaderModuleStates *csm_states) {
     PIPELINE_STATE::StageStateVec stage_states;
     // shader stages need to be recorded in pipeline order
-    const auto stages = pipe_state.GetShaderStages();
+    const auto stages_ci = pipe_state.GetShaderStagesCreateInfo();
 
     // stages such as VK_SHADER_STAGE_ALL are find as this code is only looking for exact matches, not bool logic
     for (const auto &stage : AllVkShaderStageFlags) {
         bool stage_found = false;
-        for (const auto &shader_stage : stages) {
-            if (shader_stage.stage == stage) {
-                auto module = state_data.Get<SHADER_MODULE_STATE>(shader_stage.module);
+        for (const auto &stage_ci : stages_ci) {
+            if (stage_ci.stage == stage) {
+                auto module = state_data.Get<SHADER_MODULE_STATE>(stage_ci.module);
                 if (!module) {
                     // See if the module is referenced in a library sub state
-                    module = pipe_state.GetSubStateShader(shader_stage.stage);
+                    module = pipe_state.GetSubStateShader(stage_ci.stage);
                 }
 
                 if (!module) {
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
-                    const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(shader_stage.pNext);
+                    const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext);
                     const uint32_t unique_shader_id = (csm_states) ? (*csm_states)[stage].unique_shader_id : 0;
                     if (shader_ci) {
                         module = state_data.CreateShaderModuleState(*shader_ci, unique_shader_id);
@@ -87,7 +87,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                     }
                 }
 
-                stage_states.emplace_back(&shader_stage, module);
+                stage_states.emplace_back(&stage_ci, module);
                 stage_found = true;
             }
         }

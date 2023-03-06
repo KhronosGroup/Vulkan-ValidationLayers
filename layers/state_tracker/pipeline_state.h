@@ -469,7 +469,7 @@ class PIPELINE_STATE : public BASE_NODE {
         return create_info.graphics.pDynamicState;
     }
 
-    vvl::span<const safe_VkPipelineShaderStageCreateInfo> GetShaderStages() const {
+    vvl::span<const safe_VkPipelineShaderStageCreateInfo> GetShaderStagesCreateInfo() const {
         switch (create_info.graphics.sType) {
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
                 return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.graphics.pStages,

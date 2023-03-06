@@ -3552,9 +3552,9 @@ bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeli
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
     uint32_t total = 0;
-    const auto stages = pipeline.GetShaderStages();
-    for (const auto &stage : stages) {
-        if (stage.stage == stageBit) {
+    const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
+    for (const auto &stage_ci : stages_ci) {
+        if (stage_ci.stage == stageBit) {
             total++;
         }
     }
@@ -3575,11 +3575,11 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
         return true;
     }
 
-    const auto stages = pipeline.GetShaderStages();
+    const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
 
-    const auto num_stages = static_cast<uint32_t>(stages.size());
+    const auto num_stages = static_cast<uint32_t>(stages_ci.size());
     if (group < num_stages) {
-        return (stages[group].stage & stage) != 0;
+        return (stages_ci[group].stage & stage) != 0;
     }
     group -= num_stages;
 
@@ -3588,10 +3588,10 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
     if (rt_lib_info) {
         for (uint32_t i = 0; i < rt_lib_info->libraryCount; ++i) {
             auto library_pipeline = Get<PIPELINE_STATE>(rt_lib_info->pLibraries[i]);
-            const auto lib_stages = library_pipeline->GetShaderStages();
-            const uint32_t stage_count = static_cast<uint32_t>(lib_stages.size());
+            const auto lib_stages_ci = library_pipeline->GetShaderStagesCreateInfo();
+            const uint32_t stage_count = static_cast<uint32_t>(lib_stages_ci.size());
             if (group < stage_count) {
-                return (lib_stages[group].stage & stage) != 0;
+                return (lib_stages_ci[group].stage & stage) != 0;
             }
             group -= stage_count;
         }
