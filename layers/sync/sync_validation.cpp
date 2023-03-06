@@ -2153,11 +2153,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const auto *img_view_state = image_descriptor->GetImageViewState();
                         VkImageLayout image_layout = image_descriptor->GetImageLayout();
 
+                        if (img_view_state->IsDepthSliced()) {
+                            // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
+                            // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
+                            // See: VUID 00343
+                            continue;
+                        }
+
                         HazardResult hazard;
-                        // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
-                        // Descriptors, so we do not have to worry about depth slicing here.
-                        // See: VUID 00343
-                        assert(!img_view_state->IsDepthSliced());
                         const IMAGE_STATE *img_state = img_view_state->image_state.get();
                         const auto &subresource_range = img_view_state->normalized_subresource_range;
 
@@ -2284,10 +2287,12 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                             continue;
                         }
                         const auto *img_view_state = image_descriptor->GetImageViewState();
-                        // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
-                        // Descriptors, so we do not have to worry about depth slicing here.
-                        // See: VUID 00343
-                        assert(!img_view_state->IsDepthSliced());
+                        if (img_view_state->IsDepthSliced()) {
+                            // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
+                            // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
+                            // See: VUID 00343
+                            continue;
+                        }
                         const IMAGE_STATE *img_state = img_view_state->image_state.get();
                         if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
                             const VkExtent3D extent = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.extent);
