@@ -30,13 +30,6 @@
 struct DeviceFeatures;
 struct DeviceExtensions;
 
-struct shader_stage_attributes {
-    char const *const name;
-    bool arrayed_input;
-    bool arrayed_output;
-    VkShaderStageFlags stage;
-};
-
 class ValidationCache {
   public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
