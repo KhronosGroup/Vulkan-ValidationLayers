@@ -19,7 +19,6 @@
 #include <csignal>
 #include <cstring>
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-#include <winsock2.h>
 #include <debugapi.h>
 #endif
 

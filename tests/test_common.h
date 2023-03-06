@@ -15,9 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef TEST_COMMON_H
-#define TEST_COMMON_H
+#pragma once
 
 #include <cassert>
 #include <cstdio>
@@ -26,11 +24,6 @@
 #include <thread>
 
 #include "vk_layer_logging.h"
-
-#ifdef _WIN32
-// WinSock2.h must be included *BEFORE* windows.h
-#include <winsock2.h>
-#endif
 
 #include <vulkan/vulkan.h>
 
@@ -145,5 +138,3 @@ static inline void test_error_callback(const char *expr, const char *file, unsig
             }                                                           \
         }                                                               \
     }
-
-#endif  // TEST_COMMON_H
