@@ -6519,6 +6519,66 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
+TEST_F(VkLayerTest, CreatePipelineInputAttachmentSharingVariable) {
+    TEST_DESCRIPTION("Make sure if 2 loads use same variable, both are tracked");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const VkAttachmentDescription inputAttachmentDescription = {0,
+                                                                m_render_target_fmt,
+                                                                VK_SAMPLE_COUNT_1_BIT,
+                                                                VK_ATTACHMENT_LOAD_OP_LOAD,
+                                                                VK_ATTACHMENT_STORE_OP_STORE,
+                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                                VK_IMAGE_LAYOUT_GENERAL,
+                                                                VK_IMAGE_LAYOUT_GENERAL};
+
+    // index 0 is unused
+    // index 1 is is valid (for both color and input)
+    const VkAttachmentReference inputAttachmentReferences[2] = {{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL},
+                                                                {0, VK_IMAGE_LAYOUT_GENERAL}};
+
+    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     2,
+                                                     inputAttachmentReferences,
+                                                     1,
+                                                     &inputAttachmentReferences[1],
+                                                     nullptr,
+                                                     nullptr,
+                                                     0,
+                                                     nullptr};
+
+    auto renderPassInfo = LvlInitStruct<VkRenderPassCreateInfo>();
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &inputAttachmentDescription;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpassDescription;
+
+    vk_testing::RenderPass renderPass(*m_device, renderPassInfo);
+
+    // There are 2 OpLoad/OpAccessChain that point the same OpVariable
+    // Make sure we are not just taking the first load and checking all loads on a variable
+    const char *fs_source = R"(
+        #version 460
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[2];
+        layout(location=0) out vec4 color;
+        void main() {
+            color = subpassLoad(xs[1]); // valid
+            color = subpassLoad(xs[0]); // invalid
+        }
+    )";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        helper.gp_ci_.renderPass = renderPass.handle();
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
+}
+
 TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
