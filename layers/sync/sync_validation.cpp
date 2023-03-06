@@ -4276,19 +4276,15 @@ syncval_state::CommandBuffer::CommandBuffer(SyncValidator *dev, VkCommandBuffer 
                                             const COMMAND_POOL_STATE *pool)
     : CMD_BUFFER_STATE(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
 
-syncval_state::CommandBuffer::~CommandBuffer() { Destroy(); }
-
 void syncval_state::CommandBuffer::Destroy() {
-    ResetCBState();  // must be first to clean up self references correctly.
+    access_context.Destroy();  // must be first to clean up self references correctly.
     CMD_BUFFER_STATE::Destroy();
 }
 
 void syncval_state::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();
-    ResetCBState();
+    access_context.Reset();
 }
-
-void syncval_state::CommandBuffer::ResetCBState() { access_context.Reset(); }
 
 void syncval_state::CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
     for (auto &obj : invalid_nodes) {
