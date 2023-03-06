@@ -1586,15 +1586,12 @@ class CommandBuffer : public CMD_BUFFER_STATE {
 
     CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const COMMAND_POOL_STATE *pool);
-    ~CommandBuffer();
+    ~CommandBuffer() { Destroy(); }
 
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 
     void Destroy() override;
     void Reset() override;
-
-  private:
-    void ResetCBState();
 };
 }  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE);
