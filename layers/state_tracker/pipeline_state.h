@@ -179,7 +179,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
-    const StageStateVec stage_state;
+    const StageStateVec stage_states;
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
     // Shaders being linked in, don't need to be re-validated
@@ -456,7 +456,7 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     std::shared_ptr<const SHADER_MODULE_STATE> GetShaderModuleState(VkShaderStageFlagBits stage) {
-        for (auto &s : stage_state) {
+        for (auto &s : stage_states) {
             if (s.stage_flag == stage) {
                 return s.module_state;
             }

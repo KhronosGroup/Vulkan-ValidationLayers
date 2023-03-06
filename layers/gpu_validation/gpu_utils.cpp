@@ -833,8 +833,8 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
         }
 
         if (replace_shaders) {
-            for (uint32_t i = 0; i < static_cast<uint32_t>(pipe->stage_state.size()); ++i) {
-                const auto &stage = pipe->stage_state[i];
+            for (uint32_t i = 0; i < static_cast<uint32_t>(pipe->stage_states.size()); ++i) {
+                const auto &stage = pipe->stage_states[i];
                 const auto &module_state = stage.module_state;
 
                 VkShaderModule shader_module;
@@ -854,7 +854,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
             // !replace_shaders implies that the instrumented shaders should be used. However, if this is a non-executable pipeline
             // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
             if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
-                for (const auto &stage : pipe->stage_state) {
+                for (const auto &stage : pipe->stage_states) {
                     auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage.module_state);
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
@@ -906,10 +906,10 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
         auto pipeline_state = Get<PIPELINE_STATE>(pPipelines[pipeline]);
         if (!pipeline_state) continue;
 
-        if (!pipeline_state->stage_state.empty() &&
+        if (!pipeline_state->stage_states.empty() &&
             !(pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
             const auto pipeline_layout = pipeline_state->PipelineLayoutState();
-            for (auto &stage : pipeline_state->stage_state) {
+            for (auto &stage : pipeline_state->stage_states) {
                 auto &module_state = stage.module_state;
                 const auto shader_module = module_state->Handle();
 
