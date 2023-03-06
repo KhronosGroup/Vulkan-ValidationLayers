@@ -103,8 +103,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
 endif()
 
 if(MSVC)
-    # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
-    add_compile_options("/bigobj")
     add_compile_options("/we4189")
     add_compile_options("/we5038")
 endif()
@@ -276,8 +274,10 @@ target_sources(VkLayer_khronos_validation PRIVATE
 
 if(MSVC)
     target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
+    target_compile_options(VkLayer_khronos_validation PRIVATE /bigobj)
 elseif(MINGW)
-    message(DEBUG "Functions are exported via VVL_EXPORT")
+    target_sources(VkLayer_khronos_validation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
+    target_compile_options(VkLayer_khronos_validation PRIVATE -Wa,-mbig-obj)
 elseif(APPLE)
     message(DEBUG "Functions are exported via VVL_EXPORT")
     set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
