@@ -1190,8 +1190,6 @@ class AccessContext {
       public:
         AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag)
             : context_(&async_context), tag_(async_tag) {}
-        // AsyncReference(const AsyncReference &) = default;
-        // AsyncReference &operator =(const AsyncReference &) = default;
         const AccessContext &Context() const { return *context_; }
         // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
         // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
