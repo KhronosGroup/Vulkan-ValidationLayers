@@ -43,13 +43,6 @@ static shader_stage_attributes shader_stage_attribs[] = {
     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
 };
 
-static const Instruction *GetBaseTypeInstruction(const SHADER_MODULE_STATE &module_state, uint32_t type) {
-    const Instruction *insn = module_state.FindDef(type);
-    const uint32_t base_insn_id = module_state.GetBaseType(insn);
-    // Will return end() if an invalid/unknown base_insn_id is returned
-    return module_state.FindDef(base_insn_id);
-}
-
 static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, const Instruction *a_base_insn,
                            const Instruction *b_base_insn) {
     if (!a_base_insn || !b_base_insn) {
@@ -73,8 +66,8 @@ static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STA
             }
 
             for (uint32_t i = 2; i < a_base_insn->Length(); i++) {
-                const Instruction *c_base_insn = GetBaseTypeInstruction(a, a_base_insn->Word(i));
-                const Instruction *d_base_insn = GetBaseTypeInstruction(b, b_base_insn->Word(i));
+                const Instruction *c_base_insn = a.GetBaseTypeInstruction(a_base_insn->Word(i));
+                const Instruction *d_base_insn = b.GetBaseTypeInstruction(b_base_insn->Word(i));
                 if (!BaseTypesMatch(a, b, c_base_insn, d_base_insn)) {
                     return false;
                 }
@@ -87,8 +80,8 @@ static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STA
 }
 
 static bool TypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, uint32_t a_type, uint32_t b_type) {
-    const Instruction *a_base_insn = GetBaseTypeInstruction(a, a_type);
-    const Instruction *b_base_insn = GetBaseTypeInstruction(b, b_type);
+    const Instruction *a_base_insn = a.GetBaseTypeInstruction(a_type);
+    const Instruction *b_base_insn = b.GetBaseTypeInstruction(b_type);
 
     if (nullptr == a_base_insn && nullptr == b_base_insn) return true;
 
@@ -2629,7 +2622,7 @@ static void GetVariableInfo(const SHADER_MODULE_STATE &module_state, const Instr
         info.has_16bit |= (bit_width == 16);
     } else if (insn->Opcode() == spv::OpTypeStruct) {
         for (uint32_t i = 2; i < insn->Length(); i++) {
-            const Instruction *base_insn = GetBaseTypeInstruction(module_state, insn->Word(i));
+            const Instruction *base_insn = module_state.GetBaseTypeInstruction(insn->Word(i));
             GetVariableInfo(module_state, base_insn, info);
         }
     }
@@ -3398,9 +3391,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
             if (!TypesMatch(producer, consumer, output_it->second.type_id, input_it->second.type_id)) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on location %" PRIu32
-                                 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'",
-                                 pipe_index, output_first.first, output_first.second, producer_stage->name, consumer_stage->name,
-                                 producer.DescribeType(output_it->second.type_id).c_str(),
+                                 ".%" PRIu32 ", between\n%s stage:\n%s\n%s stage:\n%s",
+                                 pipe_index, output_first.first, output_first.second, producer_stage->name,
+                                 producer.DescribeType(output_it->second.type_id).c_str(), consumer_stage->name,
                                  consumer.DescribeType(input_it->second.type_id).c_str());
                 output_it++;
                 input_it++;
