@@ -3227,7 +3227,7 @@ TEST_F(VkLayerTest, QueuePresentBinarySemaphoreNotSignaled) {
     present.pWaitSemaphores = &semaphore.handle();
 
     // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
-    const bool has_timeline_sem_ext = DeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    const bool has_timeline_sem_ext = IsExtensionsEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     const char *expected_vuid =
         has_timeline_sem_ext ? "VUID-vkQueuePresentKHR-pWaitSemaphores-03268" : "VUID-vkQueuePresentKHR-pWaitSemaphores-01295";
 

@@ -1773,8 +1773,8 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
     copy_region.extent.depth = 1;
 
     std::string vuid;
-    bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
-                  (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    bool ycbcr =
+        (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
 
     m_commandBuffer->begin();
     vuid = ycbcr ? "VUID-vkCmdCopyImage-srcImage-01546" : "VUID-vkCmdCopyImage-srcImage-00127";
@@ -2736,10 +2736,10 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     imgViewInfo.image = mutImage.handle();
 
     // Create mutable format image that is not compatiable
-    bool ycbcr_support = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
-                          (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    bool ycbcr_support =
+        (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
     bool maintenance2_support =
-        (DeviceExtensionEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+        (IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
     const char *error_vuid;
     if ((!maintenance2_support) && (!ycbcr_support)) {
         error_vuid = "VUID-VkImageViewCreateInfo-image-01018";

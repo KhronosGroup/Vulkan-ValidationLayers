@@ -197,21 +197,6 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
     return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
 }
 
-// Return true if device is created and extension name is found in the list
-bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
-    if (NULL == m_device) return false;
-
-    bool ext_found = false;
-    for (auto ext : m_device_extension_names) {
-        if (!strncmp(ext, ext_name, VK_MAX_EXTENSION_NAME_SIZE)) {
-            ext_found = true;
-            break;
-        }
-    }
-    return ext_found;
-}
-
-
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     return {
