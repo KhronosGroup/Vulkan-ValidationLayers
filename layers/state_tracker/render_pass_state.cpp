@@ -173,16 +173,17 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     void Update(uint32_t subpass, const uint32_t *preserved, uint32_t count) {
         // for preserved attachment, preserve the layout from the most recent (max subpass) dependency
         // or initial, if none
-        for (const auto attachment : vvl::make_span(preserved, count)) {
-            uint32_t max_prev = VK_SUBPASS_EXTERNAL;
-            for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
-                const auto prev_pass = prev.first->pass;
-                max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_pass : std::max(prev_pass, max_prev);
-            }
 
+        // max_prev is invariant across attachments
+        uint32_t max_prev = VK_SUBPASS_EXTERNAL;
+        for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
+            const auto prev_pass = prev.first->pass;
+            max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_pass : std::max(prev_pass, max_prev);
+        }
+
+        for (const auto attachment : vvl::make_span(preserved, count)) {
             if (max_prev == VK_SUBPASS_EXTERNAL) {
                 subpass_attachment_layout[subpass][attachment] = rp->createInfo.pAttachments[attachment].initialLayout;
-
             } else {
                 subpass_attachment_layout[subpass][attachment] = subpass_attachment_layout[max_prev][attachment];
             }
