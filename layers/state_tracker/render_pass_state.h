@@ -17,6 +17,8 @@
  * limitations under the License.
  */
 #pragma once
+#include <mutex>
+
 #include "state_tracker/base_node.h"
 #include "vk_safe_struct.h"
 
@@ -119,6 +121,20 @@ class RENDER_PASS_STATE : public BASE_NODE {
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
     uint32_t GetDynamicRenderingViewMask() const;
     uint32_t GetViewMaskBits(uint32_t subpass) const;
+
+    // If there is already a value stored for the subpass, nothing will be updated.
+    void SetSubpassRasterizationSamples(uint32_t subpass, VkSampleCountFlagBits sample_count);
+    // Returns stored rasterization samples count for given subpass if there is one, else std::nullopt
+    std::optional<VkSampleCountFlagBits> GetSubpassRasterizationSamples(uint32_t subpass) const;
+
+  private:
+    // Used to conditionally maps a subpass to the rasterization samples count that was specified in the FIRST pipeline referencing
+    // this subpass in a call to vkCreateGraphicsPipelines.
+    // It is conditional because:
+    // - mapping is NOT maintained if VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE
+    // - pipelines do not necessarily use VkGraphicsPipelineCreateInfo->pMultisampleState
+    std::vector<std::optional<VkSampleCountFlagBits>> subpass_rasterization_samples_{};
+    mutable std::shared_mutex subpass_rasterization_samples_mutex_;
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {

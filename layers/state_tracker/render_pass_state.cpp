@@ -20,6 +20,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "convert_to_renderpass2.h"
 #include "state_tracker/image_state.h"
+#include "vk_layer_utils.h"
 
 static const VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
@@ -325,6 +326,26 @@ uint32_t RENDER_PASS_STATE::GetViewMaskBits(uint32_t subpass) const {
         }
     }
     return 0;
+}
+
+void RENDER_PASS_STATE::SetSubpassRasterizationSamples(uint32_t subpass, VkSampleCountFlagBits sample_count) {
+    WriteLockGuard lock(subpass_rasterization_samples_mutex_);
+
+    if (subpass_rasterization_samples_.size() < (subpass + 1)) {
+        subpass_rasterization_samples_.resize(subpass + 1);
+    }
+    if (!subpass_rasterization_samples_[subpass]) {
+        subpass_rasterization_samples_[subpass] = sample_count;
+    }
+}
+
+std::optional<VkSampleCountFlagBits> RENDER_PASS_STATE::GetSubpassRasterizationSamples(uint32_t subpass) const {
+    ReadLockGuard lock(subpass_rasterization_samples_mutex_);
+
+    if (subpass >= subpass_rasterization_samples_.size()) {
+        return std::nullopt;
+    }
+    return subpass_rasterization_samples_[subpass];
 }
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo)

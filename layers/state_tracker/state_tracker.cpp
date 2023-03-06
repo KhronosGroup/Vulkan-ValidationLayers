@@ -2383,8 +2383,34 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
         auto layout_state = Get<PIPELINE_LAYOUT_STATE>(create_info.layout);
         std::shared_ptr<const RENDER_PASS_STATE> render_pass;
 
-        if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
+        if (create_info.renderPass != VK_NULL_HANDLE) {
             render_pass = Get<RENDER_PASS_STATE>(create_info.renderPass);
+            if (enabled_features.core.variableMultisampleRate == VK_FALSE && create_info.pMultisampleState) {
+                // if render pass uses no attachment, verify that all pipelines referencing the same subpass have the same
+                // pMultisampleState->rasterizationSamples
+                if (!render_pass->UsesColorAttachment(create_info.subpass) &&
+                    !render_pass->UsesDepthStencilAttachment(create_info.subpass)) {
+                    // If execution ends up here, subpass_rasterization_samples can still be empty if this is the first pipeline
+                    // with a pMultisampleState referencing create_info.subpass.
+                    // Rasterization samples count for create_info.subpass will be updated in PostCallRecordCreateGraphicsPipelines,
+                    // iff subpass_rasterization_samples is empty.
+                    if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                            render_pass->GetSubpassRasterizationSamples(create_info.subpass);
+                        subpass_rasterization_samples &&
+                        *subpass_rasterization_samples != create_info.pMultisampleState->rasterizationSamples) {
+                        const LogObjectList objlist(device, create_info.renderPass);
+                        skip |= LogError(
+                            objlist, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758",
+                            "vkCreateGraphicsPipelines(): VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and "
+                            "pCreateInfos[%" PRIu32 "] references subpass %" PRIu32
+                            " with pMultisampleState->rasterizationSamples equal to %s, while a previously created pipeline used "
+                            "pMultisampleState->rasterizationSamples equal to %s.",
+                            i, create_info.subpass,
+                            string_VkSampleCountFlagBits(create_info.pMultisampleState->rasterizationSamples),
+                            string_VkSampleCountFlagBits(*subpass_rasterization_samples));
+                    }
+                }
+            }
         } else if (enabled_features.core13.dynamicRendering) {
             auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
             render_pass = std::make_shared<RENDER_PASS_STATE>(dynamic_rendering);
@@ -2412,6 +2438,18 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (cgpl_state->pipe_state)[i]->SetHandle(pPipelines[i]);
             Add(std::move((cgpl_state->pipe_state)[i]));
+        }
+
+        if (enabled_features.core.variableMultisampleRate == VK_FALSE) {
+            const auto &create_info = pCreateInfos[i];
+            if (create_info.renderPass != VK_NULL_HANDLE && create_info.pMultisampleState) {
+                if (auto render_pass = Get<RENDER_PASS_STATE>(create_info.renderPass);
+                    !render_pass->UsesColorAttachment(create_info.subpass) &&
+                    !render_pass->UsesDepthStencilAttachment(create_info.subpass)) {
+                    render_pass->SetSubpassRasterizationSamples(create_info.subpass,
+                                                                create_info.pMultisampleState->rasterizationSamples);
+                }
+            }
         }
     }
     cgpl_state->pipe_state.clear();
