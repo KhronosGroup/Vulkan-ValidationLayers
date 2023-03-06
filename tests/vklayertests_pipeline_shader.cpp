@@ -4501,7 +4501,8 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "not consumed by fragment shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
+                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
@@ -4964,7 +4965,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not written by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
@@ -4989,7 +4990,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not written by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
@@ -5089,8 +5090,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      "fragment shader consumes input location 0.0 which is not written by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
@@ -5124,8 +5124,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<std::string>{"location 0.1 which is not written by vertex shader"});
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
@@ -5362,9 +5361,7 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
         helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        "is per-vertex in tessellation control shader stage but per-patch in tessellation evaluation shader stage");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
 }
 
 TEST_F(VkLayerTest, CreatePipelineTessErrors) {
@@ -5508,7 +5505,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.cb_attachments_[0].colorWriteMask = 1;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "Attachment 0 not written by fragment shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
@@ -5532,8 +5529,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit,
-                                      "fragment shader writes to output location 1 with no matching attachment");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEnabled) {
@@ -5552,9 +5548,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEna
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.pipe_ms_state_ci_ = ms_state_ci;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnabled) {
@@ -5581,9 +5576,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnab
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.pipe_ms_state_ci_ = ms_state_ci;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
@@ -5607,7 +5601,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "does not match fragment shader output type");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
