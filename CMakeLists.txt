@@ -139,11 +139,6 @@ elseif(MSVC)
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
 
-if(MINGW)
-    add_compile_definitions(_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
-    add_compile_options("-Wa,-mbig-obj")
-endif()
-
 option(BUILD_LAYERS "Build VkLayer_khronos_validation" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Install VkLayer_utils")
 
