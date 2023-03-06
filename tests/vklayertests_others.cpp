@@ -3962,7 +3962,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
 
     auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
-    const bool has_timeline_sem_ext = DeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    const bool has_timeline_sem_ext = IsExtensionsEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     {
         vk_testing::Semaphore semaphore[3];

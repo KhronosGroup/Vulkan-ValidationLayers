@@ -203,7 +203,6 @@ class VkRenderFramework : public VkTestFramework {
                                   uint32_t spec_version = 0) const {  // deprecated
         return DeviceExtensionSupported(name, spec_version);
     }
-    bool DeviceExtensionEnabled(const char *name);
 
     // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
     // Does not return anything as the caller should use AreRequiredExtensionsEnabled or AddOptionalExtensions then

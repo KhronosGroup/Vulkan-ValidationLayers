@@ -2064,10 +2064,10 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     dedicated_allocate_info.buffer = VK_NULL_HANDLE;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const char *image_vuid = DeviceExtensionEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
+    const char *image_vuid = IsExtensionsEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
                                  ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
                                  : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
-    const char *buffer_vuid = DeviceExtensionEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
+    const char *buffer_vuid = IsExtensionsEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
                                   ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
                                   : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
 #else
