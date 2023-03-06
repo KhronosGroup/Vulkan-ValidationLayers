@@ -351,7 +351,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     }
 
     // Used to get human readable strings for error messages
-    void DescribeTypeInner(std::ostringstream &ss, uint32_t type) const;
+    void DescribeTypeInner(std::ostringstream &ss, uint32_t type, uint32_t indent) const;
     std::string DescribeType(uint32_t type) const;
 
     std::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
@@ -389,6 +389,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
     uint32_t GetBaseType(const Instruction *insn) const;
+    const Instruction *GetBaseTypeInstruction(uint32_t type) const;
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
 

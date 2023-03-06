@@ -531,8 +531,11 @@ void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
     }
 }
 
-void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type) const {
+void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
     const Instruction* insn = FindDef(type);
+    for (uint32_t i = 0; i < indent; i++) {
+        ss << "\t";
+    }
 
     switch (insn->Opcode()) {
         case spv::OpTypeBool:
@@ -546,34 +549,37 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t typ
             break;
         case spv::OpTypeVector:
             ss << "vec" << insn->Word(3) << " of ";
-            DescribeTypeInner(ss, insn->Word(2));
+            DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypeMatrix:
             ss << "mat" << insn->Word(3) << " of ";
-            DescribeTypeInner(ss, insn->Word(2));
+            DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypeArray:
-            ss << "arr[" << GetConstantValueById(insn->Word(3)) << "] of ";
-            DescribeTypeInner(ss, insn->Word(2));
+            ss << "array[" << GetConstantValueById(insn->Word(3)) << "] of ";
+            DescribeTypeInner(ss, insn->Word(2), 0);  // if struct, has pointer in between
             break;
         case spv::OpTypeRuntimeArray:
-            ss << "runtime arr[] of ";
-            DescribeTypeInner(ss, insn->Word(2));
+            ss << "runtime array[] of ";
+            DescribeTypeInner(ss, insn->Word(2), 0);  // if struct, has pointer in between
             break;
         case spv::OpTypePointer:
-            ss << "ptr to " << string_SpvStorageClass(insn->Word(2)) << " ";
-            DescribeTypeInner(ss, insn->Word(3));
+            ss << "pointer to " << string_SpvStorageClass(insn->Word(2)) << " ->\n";
+            indent++;
+            DescribeTypeInner(ss, insn->Word(3), indent);
             break;
         case spv::OpTypeStruct: {
-            ss << "struct of (";
+            ss << "struct of {\n";
+            indent++;
             for (uint32_t i = 2; i < insn->Length(); i++) {
-                DescribeTypeInner(ss, insn->Word(i));
-                if (i == insn->Length() - 1) {
-                    ss << ")";
-                } else {
-                    ss << ", ";
-                }
+                DescribeTypeInner(ss, insn->Word(i), indent);
+                ss << "\n";
             }
+            indent--;
+            for (uint32_t i = 0; i < indent; i++) {
+                ss << "\t";
+            }
+            ss << "}";
             break;
         }
         case spv::OpTypeSampler:
@@ -581,7 +587,7 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t typ
             break;
         case spv::OpTypeSampledImage:
             ss << "sampler+";
-            DescribeTypeInner(ss, insn->Word(2));
+            DescribeTypeInner(ss, insn->Word(2), indent);
             break;
         case spv::OpTypeImage:
             ss << "image(dim=" << insn->Word(3) << ", sampled=" << insn->Word(7) << ")";
@@ -597,7 +603,7 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t typ
 
 std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     std::ostringstream ss;
-    DescribeTypeInner(ss, type);
+    DescribeTypeInner(ss, type, 0);
     return ss.str();
 }
 
@@ -1706,6 +1712,13 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const Instruction* insn) const {
     // produce a hard bug to track
     assert(false);
     return 0;
+}
+
+const Instruction* SHADER_MODULE_STATE::GetBaseTypeInstruction(uint32_t type) const {
+    const Instruction* insn = FindDef(type);
+    const uint32_t base_insn_id = GetBaseType(insn);
+    // Will return end() if an invalid/unknown base_insn_id is returned
+    return FindDef(base_insn_id);
 }
 
 // Returns type_id if id has type or zero otherwise
