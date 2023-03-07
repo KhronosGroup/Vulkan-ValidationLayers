@@ -7044,10 +7044,12 @@ T LvlInitStruct(void *p_next, StructFields... fields) {
     T out = {LvlTypeMap<T>::kSType, p_next, fields...};
     return out;
 }
+
 // Init the header of an sType struct
 template <typename T>
 T LvlInitStruct(void *p_next = nullptr) {
-    T out = {LvlTypeMap<T>::kSType, p_next};
+    T out = {};
+    out.sType = LvlTypeMap<T>::kSType;
+    out.pNext = p_next;
     return out;
 }
-
