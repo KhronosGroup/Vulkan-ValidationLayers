@@ -72,19 +72,19 @@ enum BsoFailSelect {
 };
 
 static const char bindStateMinimalShaderText[] = R"glsl(
-    #version 450
+    #version 460
     void main() {}
 )glsl";
 
 static const char bindStateVertShaderText[] = R"glsl(
-    #version 450
+    #version 460
     void main() {
        gl_Position = vec4(1);
     }
 )glsl";
 
 static const char bindStateVertPointSizeShaderText[] = R"glsl(
-    #version 450
+    #version 460
     out gl_PerVertex {
         vec4 gl_Position;
         float gl_PointSize;
@@ -96,7 +96,7 @@ static const char bindStateVertPointSizeShaderText[] = R"glsl(
 )glsl";
 
 static char const bindStateGeomShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(triangles) in;
     layout(triangle_strip, max_vertices=3) out;
     void main() {
@@ -106,7 +106,7 @@ static char const bindStateGeomShaderText[] = R"glsl(
 )glsl";
 
 static char const bindStateGeomPointSizeShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout (points) in;
     layout (points) out;
     layout (max_vertices = 1) out;
@@ -118,7 +118,7 @@ static char const bindStateGeomPointSizeShaderText[] = R"glsl(
 )glsl";
 
 static const char bindStateTscShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(vertices=3) out;
     void main() {
        gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
@@ -127,13 +127,13 @@ static const char bindStateTscShaderText[] = R"glsl(
 )glsl";
 
 static const char bindStateTeshaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(triangles, equal_spacing, cw) in;
     void main() { gl_Position = vec4(1); }
 )glsl";
 
 static const char bindStateFragShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(location = 0) out vec4 uFragColor;
     void main(){
        uFragColor = vec4(0,1,0,1);
@@ -141,7 +141,7 @@ static const char bindStateFragShaderText[] = R"glsl(
 )glsl";
 
 static const char bindStateFragSamplerShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(set=0, binding=0) uniform sampler2D s;
     layout(location=0) out vec4 x;
     void main(){
@@ -150,7 +150,7 @@ static const char bindStateFragSamplerShaderText[] = R"glsl(
 )glsl";
 
 static const char bindStateFragUniformShaderText[] = R"glsl(
-    #version 450
+    #version 460
     layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;
     layout(location=0) out vec4 x;
     void main(){
@@ -159,18 +159,24 @@ static const char bindStateFragUniformShaderText[] = R"glsl(
 )glsl";
 
 static char const bindStateFragSubpassLoadInputText[] = R"glsl(
-        #version 450
-        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
-        void main() {
-           vec4 color = subpassLoad(x);
-        }
-    )glsl";
+    #version 460
+    layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+    void main() {
+        vec4 color = subpassLoad(x);
+    }
+)glsl";
 
 [[maybe_unused]] static const char *bindStateRTShaderText = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : require
-        void main() {}
-    )glsl";
+    #version 460
+    #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+    void main() {}
+)glsl";
+
+[[maybe_unused]] static const char *bindStateRTNVShaderText = R"glsl(
+    #version 460
+    #extension GL_NV_ray_tracing : require
+    void main() {}
+)glsl";
 
 // Static arrays helper
 template <class ElementT, size_t array_size>
