@@ -15,7 +15,7 @@ assignees: ''
 
 **Describe the Issue**
 
-A clear and concise description of what the bug is.
+A [clear and concise description](https://en.wikipedia.org/wiki/Minimal_reproducible_example) of what the bug is.
 
 **Expected behavior**
 
