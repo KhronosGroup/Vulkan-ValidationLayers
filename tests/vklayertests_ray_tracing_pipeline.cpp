@@ -1941,3 +1941,33 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
     CreateNVRayTracingPipelineHelper::OneshotTest(*this, set_feedback,
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
+
+TEST_F(VkLayerTest, NVRayTracingMissingEntrypoint) {
+    TEST_DESCRIPTION("Test NV ray tracing pipeline with missing entrypoint.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    if (!InitFrameworkForRayTracingTest(this, false)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    char const missShaderText[] = R"glsl(
+        #version 460 core
+        #extension GL_EXT_ray_tracing : enable
+        layout(location = 0) rayPayloadInEXT float hitValue;
+        void main() {
+            hitValue = 0.0;
+        }
+    )glsl";
+
+    VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
+                            "foo");
+
+    auto set_info = [&](CreateNVRayTracingPipelineHelper &helper) {
+        helper.shader_stages_ = {helper.rgs_->GetStageCreateInfo(), helper.chs_->GetStageCreateInfo(),
+                                 miss_shader.GetStageCreateInfo()};
+    };
+    CreateNVRayTracingPipelineHelper::OneshotTest(*this, set_info, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+}

@@ -5247,13 +5247,44 @@ TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
-                   "foo");
+    // Graphics
+    {
+        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
+                       "foo");
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    }
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    // Compute
+    {
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                             SPV_SOURCE_GLSL, nullptr, "foo"));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    }
+
+    // Multiple pipeline, middle has missing entrypoint
+    {
+        CreateComputePipelineHelper pipe_0(*this);  // valid
+        pipe_0.InitInfo();
+        pipe_0.InitState();
+        pipe_0.LateBindPipelineInfo();
+        CreateComputePipelineHelper pipe_1(*this);  // invalid
+        pipe_1.InitInfo();
+        pipe_1.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                         SPV_SOURCE_GLSL, nullptr, "foo"));
+        pipe_1.InitState();
+        pipe_1.LateBindPipelineInfo();
+
+        VkComputePipelineCreateInfo create_infos[3] = {pipe_0.cp_ci_, pipe_1.cp_ci_, pipe_0.cp_ci_};
+        VkPipeline pipelines[3];
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+        vk::CreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 3, create_infos, nullptr, pipelines);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
