@@ -2327,7 +2327,7 @@ bool CoreChecks::ValidateBaseGroups(const CMD_BUFFER_STATE &cb_state, uint32_t b
     if (baseGroupX || baseGroupY || baseGroupZ) {
         const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
         const auto *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
-        if (pipeline_state && !(pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DISPATCH_BASE)) {
+        if (pipeline_state && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_DISPATCH_BASE)) {
             skip |= LogError(cb_state.Handle(), "VUID-vkCmdDispatchBase-baseGroupX-00427",
                              "%s(): If any of baseGroupX, baseGroupY, or baseGroupZ are not zero, then the bound compute pipeline "
                              "must have been created with the VK_PIPELINE_CREATE_DISPATCH_BASE flag",
@@ -2545,7 +2545,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer comman
                          "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
     } else {  // bound to valid RT pipeline
         if (pHitShaderBindingTable) {
-            if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
                 if (pHitShaderBindingTable->deviceAddress == 0) {
                     const char *vuid =
                         isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03697" : "VUID-vkCmdTraceRaysKHR-flags-03697";
@@ -2560,7 +2560,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer comman
                                  rt_func_name, pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
                 }
             }
-            if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
                 if (pHitShaderBindingTable->deviceAddress == 0) {
                     const char *vuid =
                         isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03696" : "VUID-vkCmdTraceRaysKHR-flags-03696";
@@ -2575,7 +2575,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer comman
                                  rt_func_name, pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
                 }
             }
-            if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
                 // No vuid to check for pHitShaderBindingTable->deviceAddress == 0 with this flag
 
                 if (pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {

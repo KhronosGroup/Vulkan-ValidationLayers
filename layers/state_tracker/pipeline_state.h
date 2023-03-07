@@ -167,9 +167,16 @@ class PIPELINE_STATE : public BASE_NODE {
 
   public:
     const uint32_t create_index;  // which index in pCreateInfos, used for error messages
+
+    // Create Info values saved for fast access later
     const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
     const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
     VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
+    VkPipelineBindPoint pipeline_type;
+    VkPipelineCreateFlags create_flags;
+    vvl::span<const safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
+    const safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
+
     // State split up based on library types
     const std::shared_ptr<VertexInputState> vertex_input_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
     const std::shared_ptr<PreRasterState> pre_raster_state;      // VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT
@@ -222,37 +229,6 @@ class PIPELINE_STATE : public BASE_NODE {
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
     void SetHandle(VkPipeline p) { handle_.handle = CastToUint64(p); }
-
-    inline VkPipelineBindPoint GetPipelineType() const {
-        switch (create_info.graphics.sType) {
-            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                return VK_PIPELINE_BIND_POINT_GRAPHICS;
-            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                return VK_PIPELINE_BIND_POINT_COMPUTE;
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-                return VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-            default:
-                assert(false);
-                return VK_PIPELINE_BIND_POINT_MAX_ENUM;
-        }
-    }
-
-    inline VkPipelineCreateFlags GetPipelineCreateFlags() const {
-        switch (create_info.graphics.sType) {
-            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                return create_info.graphics.flags;
-            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                return create_info.compute.flags;
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                return create_info.raytracing.flags;
-            default:
-                assert(false);
-                return 0;
-        }
-    }
 
     inline const char *GetCreateFunctionName() const {
         switch (create_info.graphics.sType) {
@@ -469,33 +445,6 @@ class PIPELINE_STATE : public BASE_NODE {
         return create_info.graphics.pDynamicState;
     }
 
-    vvl::span<const safe_VkPipelineShaderStageCreateInfo> GetShaderStagesCreateInfo() const {
-        switch (create_info.graphics.sType) {
-            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.graphics.pStages,
-                                                                                    create_info.graphics.stageCount};
-            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{&create_info.compute.stage, 1};
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
-                                                                                    create_info.raytracing.stageCount};
-            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
-                                                                                    create_info.raytracing.stageCount};
-            default:
-                assert(false);
-                return {};
-        }
-    }
-
-    const safe_VkPipelineLibraryCreateInfoKHR *GetRayTracingLibraryCreateInfo() const {
-        if ((create_info.graphics.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV) ||
-            (create_info.graphics.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR)) {
-            return create_info.raytracing.pLibraryInfo;
-        }
-        return nullptr;
-    }
-
     template <typename CI>
     const typename CreateInfo::Traits<CI>::SafeCreateInfo &GetCreateInfo() const {
         return CreateInfo::Traits<CI>::GetSafeCreateInfo(create_info);
@@ -513,7 +462,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const {
         const auto *dynamic_state = DynamicState();
-        if ((GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && dynamic_state) {
+        if ((pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && dynamic_state) {
             for (uint32_t i = 0; i < dynamic_state->dynamicStateCount; i++) {
                 if (state == dynamic_state->pDynamicStates[i]) return true;
             }

@@ -2326,7 +2326,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
 
     const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-        (pipeline.GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
+        (pipeline.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
             primitive_rate_written) {
             skip |= LogError(module_state.vk_shader_module(),
@@ -2985,7 +2985,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_state.create_info);
     const VkShaderStageFlagBits stage = create_info->stage;
 
-    skip |= ValidateShaderModuleId(module_state, stage_state, create_info, pipeline.GetPipelineCreateFlags());
+    skip |= ValidateShaderModuleId(module_state, stage_state, create_info, pipeline.create_flags);
 
     if (module_identifier && module_state.vk_shader_module() == VK_NULL_HANDLE) {
         return skip;  // No real shader for further validation
@@ -3552,17 +3552,15 @@ bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeli
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
     uint32_t total = 0;
-    const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
-    for (const auto &stage_ci : stages_ci) {
+    for (const auto &stage_ci : pipeline.shader_stages_ci) {
         if (stage_ci.stage == stageBit) {
             total++;
         }
     }
 
-    const auto rt_lib_info = pipeline.GetRayTracingLibraryCreateInfo();
-    if (rt_lib_info) {
-        for (uint32_t i = 0; i < rt_lib_info->libraryCount; ++i) {
-            auto library_pipeline = Get<PIPELINE_STATE>(rt_lib_info->pLibraries[i]);
+    if (pipeline.ray_tracing_library_ci) {
+        for (uint32_t i = 0; i < pipeline.ray_tracing_library_ci->libraryCount; ++i) {
+            auto library_pipeline = Get<PIPELINE_STATE>(pipeline.ray_tracing_library_ci->pLibraries[i]);
             total += CalcShaderStageCount(*library_pipeline, stageBit);
         }
     }
@@ -3575,23 +3573,19 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
         return true;
     }
 
-    const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
-
-    const auto num_stages = static_cast<uint32_t>(stages_ci.size());
+    const auto num_stages = static_cast<uint32_t>(pipeline.shader_stages_ci.size());
     if (group < num_stages) {
-        return (stages_ci[group].stage & stage) != 0;
+        return (pipeline.shader_stages_ci[group].stage & stage) != 0;
     }
     group -= num_stages;
 
     // Search libraries
-    const auto rt_lib_info = pipeline.GetRayTracingLibraryCreateInfo();
-    if (rt_lib_info) {
-        for (uint32_t i = 0; i < rt_lib_info->libraryCount; ++i) {
-            auto library_pipeline = Get<PIPELINE_STATE>(rt_lib_info->pLibraries[i]);
-            const auto lib_stages_ci = library_pipeline->GetShaderStagesCreateInfo();
-            const uint32_t stage_count = static_cast<uint32_t>(lib_stages_ci.size());
+    if (pipeline.ray_tracing_library_ci) {
+        for (uint32_t i = 0; i < pipeline.ray_tracing_library_ci->libraryCount; ++i) {
+            auto library_pipeline = Get<PIPELINE_STATE>(pipeline.ray_tracing_library_ci->pLibraries[i]);
+            const uint32_t stage_count = static_cast<uint32_t>(library_pipeline->shader_stages_ci.size());
             if (group < stage_count) {
-                return (lib_stages_ci[group].stage & stage) != 0;
+                return (library_pipeline->shader_stages_ci[group].stage & stage) != 0;
             }
             group -= stage_count;
         }

@@ -906,8 +906,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
         auto pipeline_state = Get<PIPELINE_STATE>(pPipelines[pipeline]);
         if (!pipeline_state) continue;
 
-        if (!pipeline_state->stage_states.empty() &&
-            !(pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
+        if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
             const auto pipeline_layout = pipeline_state->PipelineLayoutState();
             for (auto &stage : pipeline_state->stage_states) {
                 auto &module_state = stage.module_state;
