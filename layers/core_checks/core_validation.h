@@ -818,6 +818,7 @@ class CoreChecks : public ValidationStateTracker {
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelinePortability(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineLibrary(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;

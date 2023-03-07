@@ -126,57 +126,6 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
-    // Check for portability errors
-    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-        if ((VK_FALSE == enabled_features.portability_subset_features.triangleFans) &&
-            (VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN == pipeline.topology_at_rasterizer)) {
-            skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] (portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported",
-                             pipeline.create_index);
-        }
-
-        // Validate vertex inputs
-        for (const auto &desc : pipeline.vertex_input_state->binding_descriptions) {
-            const auto min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
-            if ((desc.stride < min_alignment) || (min_alignment == 0) || ((desc.stride % min_alignment) != 0)) {
-                skip |=
-                    LogError(device, "VUID-VkVertexInputBindingDescription-stride-04456",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] (portability error): Vertex input stride must be at least as large as and a "
-                             "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment.",
-                             pipeline.create_index);
-            }
-        }
-
-        // Validate vertex attributes
-        if (VK_FALSE == enabled_features.portability_subset_features.vertexAttributeAccessBeyondStride) {
-            for (const auto &attrib : pipeline.vertex_input_state->vertex_attribute_descriptions) {
-                const auto vertex_binding_map_it = pipeline.vertex_input_state->binding_to_index_map.find(attrib.binding);
-                if (vertex_binding_map_it != pipeline.vertex_input_state->binding_to_index_map.cend()) {
-                    const auto &desc = pipeline.vertex_input_state->binding_descriptions[vertex_binding_map_it->second];
-                    if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
-                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] (portability error): (attribute.offset + "
-                                         "sizeof(vertex_description.format)) is larger than the vertex stride",
-                                         pipeline.create_index);
-                    }
-                }
-            }
-        }
-
-        // Validate polygon mode
-        auto raster_state_ci = pipeline.RasterizationState();
-        if ((VK_FALSE == enabled_features.portability_subset_features.pointPolygons) && raster_state_ci &&
-            (VK_FALSE == raster_state_ci->rasterizerDiscardEnable) && (VK_POLYGON_MODE_POINT == raster_state_ci->polygonMode)) {
-            skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] (portability error): point polygons are not supported",
-                             pipeline.create_index);
-        }
-    }
-
     const auto &rp_state = pipeline.RenderPassState();
     if (pipeline.IsRenderPassStateRequired()) {
         if (!rp_state) {
@@ -211,6 +160,13 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
                              "] State: Subpass index %u is out of range for this renderpass (0..%u).",
                              pipeline.create_index, subpass, rp_state->createInfo.subpassCount - 1);
             subpass_desc = nullptr;
+        }
+
+        // Check for portability errors
+        // Issue raised in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3436
+        // The combination of GPL/DynamicRendering and Portability has spec issues that need to be clarified
+        if (IsExtEnabled(device_extensions.vk_khr_portability_subset) && !pipeline.IsGraphicsLibrary()) {
+            skip |= ValidateGraphicsPipelinePortability(pipeline);
         }
     }
 
@@ -314,6 +270,105 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
                              pipeline.create_index, attachment_sample_count_info->depthStencilAttachmentSamples);
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+    if (!enabled_features.portability_subset_features.triangleFans &&
+        (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)) {
+        skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] (portability error): VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN is not supported",
+                         pipeline.create_index);
+    }
+
+    // Validate vertex inputs
+    for (const auto &desc : pipeline.vertex_input_state->binding_descriptions) {
+        const uint32_t min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
+        if ((desc.stride < min_alignment) || (min_alignment == 0) || ((desc.stride % min_alignment) != 0)) {
+            skip |= LogError(device, "VUID-VkVertexInputBindingDescription-stride-04456",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] (portability error): Vertex input stride must be at least as large as and a "
+                             "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment.",
+                             pipeline.create_index);
+        }
+    }
+
+    // Validate vertex attributes
+    if (!enabled_features.portability_subset_features.vertexAttributeAccessBeyondStride) {
+        for (const auto &attrib : pipeline.vertex_input_state->vertex_attribute_descriptions) {
+            const auto vertex_binding_map_it = pipeline.vertex_input_state->binding_to_index_map.find(attrib.binding);
+            if (vertex_binding_map_it != pipeline.vertex_input_state->binding_to_index_map.cend()) {
+                const auto &desc = pipeline.vertex_input_state->binding_descriptions[vertex_binding_map_it->second];
+                if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
+                    skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "] (portability error): (attribute.offset + "
+                                     "sizeof(vertex_description.format)) is larger than the vertex stride",
+                                     pipeline.create_index);
+                }
+            }
+        }
+    }
+
+    auto raster_state_ci = pipeline.RasterizationState();
+    if (raster_state_ci) {
+        // Validate polygon mode
+        if (!enabled_features.portability_subset_features.pointPolygons && !raster_state_ci->rasterizerDiscardEnable &&
+            (raster_state_ci->polygonMode == VK_POLYGON_MODE_POINT)) {
+            skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-pointPolygons-04458",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] (portability error): point polygons are not supported",
+                             pipeline.create_index);
+        }
+
+        // Validate depth-stencil state
+        if (!enabled_features.portability_subset_features.separateStencilMaskRef &&
+            (raster_state_ci->cullMode == VK_CULL_MODE_NONE)) {
+            const auto ds_state = pipeline.DepthStencilState();
+            if (ds_state && ds_state->stencilTestEnable && (ds_state->front.reference != ds_state->back.reference)) {
+                skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] (portability error): VkStencilOpState::reference must be the "
+                                 "same for front and back",
+                                 pipeline.create_index);
+            }
+        }
+
+        // Validate color attachments
+        const uint32_t subpass = pipeline.Subpass();
+        auto render_pass = Get<RENDER_PASS_STATE>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass);
+        const bool ignore_color_blend_state =
+            raster_state_ci->rasterizerDiscardEnable ||
+            (pipeline.rendering_create_info ? (pipeline.rendering_create_info->colorAttachmentCount == 0)
+                                            : (render_pass->createInfo.pSubpasses[subpass].colorAttachmentCount == 0));
+        const auto *color_blend_state = pipeline.ColorBlendState();
+        if (!enabled_features.portability_subset_features.constantAlphaColorBlendFactors && !ignore_color_blend_state &&
+            color_blend_state) {
+            const auto attachments = color_blend_state->pAttachments;
+            for (uint32_t color_attachment_index = 0; color_attachment_index < color_blend_state->attachmentCount;
+                ++color_attachment_index) {
+                if ((attachments[color_attachment_index].srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA) ||
+                    (attachments[color_attachment_index].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454",
+                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                    "] (portability error): srcColorBlendFactor for color attachment %d must "
+                                    "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
+                                    pipeline.create_index, color_attachment_index);
+                }
+                if ((attachments[color_attachment_index].dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA) ||
+                    (attachments[color_attachment_index].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA)) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455",
+                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                    "] (portability error): dstColorBlendFactor for color attachment %d must "
+                                    "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
+                                    pipeline.create_index, color_attachment_index);
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -943,59 +998,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
         skip |= ValidatePipeline(*cgpl_state->pipe_state[i].get());
         skip |= ValidatePipelineDerivatives(cgpl_state->pipe_state, i);
     }
-
-    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-        for (uint32_t i = 0; i < count; ++i) {
-            // Validate depth-stencil state
-            auto raster_state_ci = pCreateInfos[i].pRasterizationState;
-            if ((VK_FALSE == enabled_features.portability_subset_features.separateStencilMaskRef) && raster_state_ci &&
-                (VK_CULL_MODE_NONE == raster_state_ci->cullMode)) {
-                auto depth_stencil_ci = pCreateInfos[i].pDepthStencilState;
-                if (depth_stencil_ci && (VK_TRUE == depth_stencil_ci->stencilTestEnable) &&
-                    (depth_stencil_ci->front.reference != depth_stencil_ci->back.reference)) {
-                    skip |= LogError(device, "VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] (portability error): VkStencilOpState::reference must be the "
-                                     "same for front and back",
-                                     i);
-                }
-            }
-
-            // Validate color attachments
-            uint32_t subpass = pCreateInfos[i].subpass;
-            auto render_pass = Get<RENDER_PASS_STATE>(pCreateInfos[i].renderPass);
-            const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pCreateInfos[i].pNext);
-            bool ignore_color_blend_state =
-                pCreateInfos[i].pRasterizationState->rasterizerDiscardEnable ||
-                (rendering_struct ? (rendering_struct->colorAttachmentCount == 0)
-                                  : (render_pass->createInfo.pSubpasses[subpass].colorAttachmentCount == 0));
-
-            if ((VK_FALSE == enabled_features.portability_subset_features.constantAlphaColorBlendFactors) &&
-                !ignore_color_blend_state) {
-                auto color_blend_state = pCreateInfos[i].pColorBlendState;
-                const auto attachments = color_blend_state->pAttachments;
-                for (uint32_t color_attachment_index = 0; i < color_blend_state->attachmentCount; ++i) {
-                    if ((VK_BLEND_FACTOR_CONSTANT_ALPHA == attachments[color_attachment_index].srcColorBlendFactor) ||
-                        (VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA == attachments[color_attachment_index].srcColorBlendFactor)) {
-                        skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04454",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] (portability error): srcColorBlendFactor for color attachment %d must "
-                                         "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
-                                         i, color_attachment_index);
-                    }
-                    if ((VK_BLEND_FACTOR_CONSTANT_ALPHA == attachments[color_attachment_index].dstColorBlendFactor) ||
-                        (VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA == attachments[color_attachment_index].dstColorBlendFactor)) {
-                        skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-constantAlphaColorBlendFactors-04455",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] (portability error): dstColorBlendFactor for color attachment %d must "
-                                         "not be VK_BLEND_FACTOR_CONSTANT_ALPHA or VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA",
-                                         i, color_attachment_index);
-                    }
-                }
-            }
-        }
-    }
-
     return skip;
 }
 
