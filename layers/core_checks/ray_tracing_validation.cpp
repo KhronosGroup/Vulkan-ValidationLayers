@@ -982,7 +982,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
         return skip;
     }
     const PIPELINE_STATE &pipeline_state = *pPipeline;
-    if (pipeline_state.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         if (!enabled_features.pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
             const char *vuid = IsExtEnabled(device_extensions.vk_ext_pipeline_library_group_handles)
                                    ? "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828"
@@ -1072,11 +1072,11 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
     bool skip = false;
     auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
     if (pipeline_state) {
-        if (pipeline_state->GetPipelineType() != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        if (pipeline_state->pipeline_type != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             skip |=
                 LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622",
                          "vkGetRayTracingShaderGroupStackSizeKHR: Pipeline must be a ray-tracing pipeline, but is a %s pipeline.",
-                         string_VkPipelineBindPoint(pipeline_state->GetPipelineType()));
+                         string_VkPipelineBindPoint(pipeline_state->pipeline_type));
         } else if (group >= pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().groupCount) {
             skip |=
                 LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608",

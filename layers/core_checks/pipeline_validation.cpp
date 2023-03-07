@@ -92,7 +92,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
-    if (pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+    if (pipeline.create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
         std::shared_ptr<const PIPELINE_STATE> base_pipeline;
         const VkPipeline base_handle = pipeline.BasePipeline<VkGraphicsPipelineCreateInfo>();
         const int32_t base_index = pipeline.BasePipelineIndex<VkGraphicsPipelineCreateInfo>();
@@ -116,7 +116,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             base_pipeline = Get<PIPELINE_STATE>(base_handle);
         }
 
-        if (base_pipeline && !(base_pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
             skip |= LogError(base_pipeline->pipeline(), "VUID-vkCreateGraphicsPipelines-flags-00721",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "]: base pipeline does not allow derivatives.",
                              pipeline.create_index);
@@ -261,8 +261,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     const uint32_t active_shaders = pipeline.active_shaders;
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
         vvl::unordered_set<VkShaderStageFlags> unique_stage_set;
-        const auto stages_ci = pipeline.GetShaderStagesCreateInfo();
-        for (const auto &stage_ci : stages_ci) {
+        for (const auto &stage_ci : pipeline.shader_stages_ci) {
             if (!unique_stage_set.insert(stage_ci.stage).second) {
                 skip |=
                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-06897",
@@ -317,9 +316,9 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    skip |= ValidatePipelineCacheControlFlags(pipeline.GetPipelineCreateFlags(), pipeline.create_index, "vkCreateGraphicsPipelines",
+    skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, pipeline.create_index, "vkCreateGraphicsPipelines",
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
-    skip |= ValidatePipelineProtectedAccessFlags(pipeline.GetPipelineCreateFlags(), pipeline.create_index);
+    skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, pipeline.create_index);
 
     const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
     if (discard_rectangle_state) {
@@ -412,7 +411,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                              pipeline.create_index, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
         }
     } else {
-        const VkPipelineCreateFlags pipeline_flags = pipeline.GetPipelineCreateFlags();
+        const VkPipelineCreateFlags pipeline_flags = pipeline.create_flags;
         const bool is_library = (pipeline_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0;
 
         if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
@@ -504,7 +503,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             for (uint32_t i = 0; i < pipeline.library_create_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(pipeline.library_create_info->pLibraries[i]);
                 if (lib) {
-                    const VkPipelineCreateFlags lib_pipeline_flags = lib->GetPipelineCreateFlags();
+                    const VkPipelineCreateFlags lib_pipeline_flags = lib->create_flags;
                     if (lib->PipelineLayoutState()) {
                         if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
                             pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
@@ -1206,7 +1205,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             continue;
         }
         using CIType = vvl::base_type<decltype(pCreateInfos)>;
-        if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+        if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
             const auto bpi = pipeline->BasePipelineIndex<CIType>();
             const auto bph = pipeline->BasePipeline<CIType>();
@@ -1215,7 +1214,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             } else if (bph != VK_NULL_HANDLE) {
                 base_pipeline = Get<PIPELINE_STATE>(bph);
             }
-            if (!base_pipeline || !(base_pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+            if (!base_pipeline || !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |=
                     LogError(device, "VUID-vkCreateRayTracingPipelinesNV-flags-03416",
                              "vkCreateRayTracingPipelinesNV: pCreateInfos[%" PRIu32
@@ -1247,7 +1246,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             continue;
         }
         using CIType = vvl::base_type<decltype(pCreateInfos)>;
-        if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+        if (pipeline->create_flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
             const auto bpi = pipeline->BasePipelineIndex<CIType>();
             const auto bph = pipeline->BasePipeline<CIType>();
@@ -1256,7 +1255,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             } else if (bph != VK_NULL_HANDLE) {
                 base_pipeline = Get<PIPELINE_STATE>(bph);
             }
-            if (!base_pipeline || !(base_pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+            if (!base_pipeline || !(base_pipeline->create_flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |=
                     LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-flags-03416",
                              "vkCreateRayTracingPipelinesKHR: pCreateInfos[%" PRIu32
@@ -1286,7 +1285,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             unsigned int descriptor_buffer_library_count = 0;
             for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
                 const auto lib = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[j]);
-                if ((lib->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
+                if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
                     skip |= LogError(device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381",
                                      "vkCreateRayTracingPipelinesKHR(): pCreateInfo[%" PRIu32 "].pLibraryInfo->pLibraries[%" PRIu32
                                      "] was not created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
@@ -1296,8 +1295,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                     ++descriptor_buffer_library_count;
                 }
                 for (const auto &pair : vuid_map) {
-                    if (pipeline->GetPipelineCreateFlags() & pair.second) {
-                        if ((lib->GetPipelineCreateFlags() & pair.second) == 0) {
+                    if (pipeline->create_flags & pair.second) {
+                        if ((lib->create_flags & pair.second) == 0) {
                             skip |= LogError(device, pair.first,
                                              "vkCreateRayTracingPipelinesKHR(): pCreateInfo[%" PRIu32
                                              "].flags contains %s bit, but pCreateInfo[%" PRIu32
@@ -1368,7 +1367,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
 
     auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
-    if (!(pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
+    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
         skip |= LogError(pExecutableInfo->pipeline, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274",
                          "vkGetPipelineExecutableStatisticsKHR called on a pipeline created without the "
                          "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR flag set");
@@ -1385,7 +1384,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
 
     auto pipeline_state = Get<PIPELINE_STATE>(pExecutableInfo->pipeline);
-    if (!(pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
+    if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
         skip |= LogError(pExecutableInfo->pipeline, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278",
                          "vkGetPipelineExecutableInternalRepresentationsKHR called on a pipeline created without the "
                          "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR flag set");
@@ -3110,21 +3109,19 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     assert(pPipeline);
     const PIPELINE_STATE &pipeline_state = *pPipeline;
 
-    const auto pipeline_state_bind_point = pipeline_state.GetPipelineType();
-
-    if (pipelineBindPoint != pipeline_state_bind_point) {
+    if (pipelineBindPoint != pipeline_state.pipeline_type) {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBindPipeline-pipelineBindPoint-00779",
                              "Cannot bind a pipeline of type %s to the graphics pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state_bind_point));
+                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBindPipeline-pipelineBindPoint-00780",
                              "Cannot bind a pipeline of type %s to the compute pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state_bind_point));
+                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBindPipeline-pipelineBindPoint-02392",
                              "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
-                             string_VkPipelineBindPoint(pipeline_state_bind_point));
+                             string_VkPipelineBindPoint(pipeline_state.pipeline_type));
         }
     } else {
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -3208,7 +3205,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                 }
             }
         }
-        if (pipeline_state.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+        if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             skip |= LogError(
                 pipeline, "VUID-vkCmdBindPipeline-pipeline-03382",
                 "vkCmdBindPipeline(): Cannot bind a pipeline that was created with the VK_PIPELINE_CREATE_LIBRARY_BIT_KHR flag.");
@@ -3234,13 +3231,13 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
         if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
-                if (pipeline_state.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
+                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
                     skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409",
                                      "vkCmdBindPipeline(): Binding pipeline created with "
                                      "VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT in an unprotected command buffer");
                 }
             } else {
-                if (pipeline_state.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) {
+                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) {
                     skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408",
                                      "vkCmdBindPipeline(): Binding pipeline created with "
                                      "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT in a protected command buffer");
@@ -3286,7 +3283,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
-    const auto pipeline_flags = pipeline.GetPipelineCreateFlags();
     const auto &dynamic_state_value = cb_state.dynamic_state_value;
 
     if (cb_state.activeRenderPass && cb_state.activeRenderPass->UsesDynamicRendering()) {
@@ -3372,7 +3368,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
             if (rendering_fragment_shading_rate_attachment_info &&
                 (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-                if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
@@ -3386,7 +3382,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
             if (rendering_fragment_shading_rate_density_map &&
                 (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-                if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
                     const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                                                 cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
