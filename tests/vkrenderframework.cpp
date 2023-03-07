@@ -89,8 +89,8 @@ VkRenderFramework::VkRenderFramework()
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
-      m_width(256.0),   // default window width
-      m_height(256.0),  // default window height
+      m_width(256),   // default window width
+      m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
       m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
       m_clear_via_load_op(true),
@@ -608,19 +608,19 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
 }
 
-void VkRenderFramework::InitViewport(float width, float height) {
+void VkRenderFramework::InitViewport(uint32_t width, uint32_t height) {
     VkViewport viewport;
     VkRect2D scissor;
     viewport.x = 0;
     viewport.y = 0;
-    viewport.width = 1.f * width;
-    viewport.height = 1.f * height;
+    viewport.width = static_cast<float>(width);
+    viewport.height = static_cast<float>(height);
     viewport.minDepth = 0.f;
     viewport.maxDepth = 1.f;
     m_viewports.push_back(viewport);
 
-    scissor.extent.width = (int32_t)width;
-    scissor.extent.height = (int32_t)height;
+    scissor.extent.width = width;
+    scissor.extent.height = height;
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     m_scissors.push_back(scissor);
@@ -909,11 +909,11 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), m_render_target_fmt, &props);
 
         if (props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
-            img->Init((uint32_t)m_width, (uint32_t)m_height, 1, m_render_target_fmt,
+            img->Init(m_width, m_height, 1, m_render_target_fmt,
                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                       VK_IMAGE_TILING_LINEAR);
         } else if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
-            img->Init((uint32_t)m_width, (uint32_t)m_height, 1, m_render_target_fmt,
+            img->Init(m_width, m_height, 1, m_render_target_fmt,
                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                       VK_IMAGE_TILING_OPTIMAL);
         } else {
@@ -1017,16 +1017,16 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     fb_info.renderPass = m_renderPass;
     fb_info.attachmentCount = bindings.size();
     fb_info.pAttachments = bindings.data();
-    fb_info.width = (uint32_t)m_width;
-    fb_info.height = (uint32_t)m_height;
+    fb_info.width = m_width;
+    fb_info.height = m_height;
     fb_info.layers = 1;
 
     vk::CreateFramebuffer(device(), &fb_info, NULL, &m_framebuffer);
 
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = m_framebuffer;
-    m_renderPassBeginInfo.renderArea.extent.width = (int32_t)m_width;
-    m_renderPassBeginInfo.renderArea.extent.height = (int32_t)m_height;
+    m_renderPassBeginInfo.renderArea.extent.width = m_width;
+    m_renderPassBeginInfo.renderArea.extent.height = m_height;
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 }
@@ -2419,7 +2419,7 @@ VkImageView *VkDepthStencilObj::BindInfo() { return &m_attachmentBindInfo; }
 
 VkFormat VkDepthStencilObj::Format() const { return this->m_depth_stencil_fmt; }
 
-void VkDepthStencilObj::Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format, VkImageUsageFlags usage,
+void VkDepthStencilObj::Init(VkDeviceObj *device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
                              VkImageAspectFlags aspect) {
     VkImageViewCreateInfo view_info = LvlInitStruct<VkImageViewCreateInfo>();
 

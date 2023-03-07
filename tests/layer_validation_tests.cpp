@@ -931,7 +931,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     if (failcase_needs_depth) {
         m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
-        m_depthStencil->Init(m_device, static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), m_depth_stencil_fmt,
+        m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         depth_attachment = m_depthStencil->BindInfo();
     }
@@ -971,7 +971,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         VkClearAttachment color_attachment = {};
         color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         color_attachment.colorAttachment = 2000000000;  // Someone who knew what they were doing would use 0 for the index;
-        VkClearRect clear_rect = {{{0, 0}, {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)}}, 0, 1};
+        VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     }

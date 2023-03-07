@@ -635,7 +635,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     }
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
     InitRenderTarget(m_depthStencil->BindInfo());
 
     // set up pipelines
@@ -1513,7 +1513,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         ASSERT_TRUE((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
     }
 
-    auto ds = CreateImage(ds_format, (uint32_t)m_width, (uint32_t)m_height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    auto ds = CreateImage(ds_format, m_width, m_height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     m_clear_via_load_op = true;
     m_depth_stencil_fmt = ds_format;

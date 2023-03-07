@@ -797,7 +797,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
@@ -911,7 +911,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 
         VkViewport viewport = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-        VkRect2D scissor = {{0, 0}, {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)}};
+        VkRect2D scissor = {{0, 0}, {m_width, m_height}};
 
         const VkPipelineViewportStateCreateInfo pipeline_viewport_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -1140,10 +1140,12 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     VkShaderObj tcs(this, tcs_src, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    std::vector<VkViewport> vps = {{0.0f, 0.0f, m_width / 2.0f, m_height}, {m_width / 2.0f, 0.0f, m_width / 2.0f, m_height}};
-    std::vector<VkRect2D> scs = {
-        {{0, 0}, {static_cast<uint32_t>(m_width) / 2, static_cast<uint32_t>(m_height)}},
-        {{static_cast<int32_t>(m_width) / 2, 0}, {static_cast<uint32_t>(m_width) / 2, static_cast<uint32_t>(m_height)}}};
+    const float fp_width = static_cast<float>(m_width);
+    const float fp_height = static_cast<float>(m_height);
+
+    std::vector<VkViewport> vps = {{0.0f, 0.0f, fp_width / 2.0f, fp_height}, {fp_width / 2.0f, 0.0f, fp_width / 2.0f, fp_height}};
+    std::vector<VkRect2D> scs = {{{0, 0}, {m_width / 2, m_height}},
+                                 {{static_cast<int32_t>(m_width) / 2, 0}, {m_width / 2, m_height}}};
 
     enum class TestStage { VERTEX = 0, TESSELLATION_EVAL = 1, GEOMETRY = 2 };
     std::array<TestStage, 3> vertex_stages = {{TestStage::VERTEX, TestStage::TESSELLATION_EVAL, TestStage::GEOMETRY}};
@@ -5940,7 +5942,7 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     ASSERT_NE(vkCmdSetColorWriteEnableEXT, nullptr);
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     CreatePipelineHelper pipe(*this);

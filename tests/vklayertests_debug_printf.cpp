@@ -393,12 +393,12 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     pipe.AddShader(&ms);
     pipe.AddDefaultColorAttachment();
     VkViewport viewport{};
-    viewport.width = m_width;
-    viewport.height = m_height;
+    viewport.width = static_cast<float>(m_width);
+    viewport.height = static_cast<float>(m_height);
     pipe.SetViewport({viewport});
     VkRect2D rect{};
-    rect.extent.width = (uint32_t)m_width;
-    rect.extent.height = (uint32_t)m_height;
+    rect.extent.width = m_width;
+    rect.extent.height = m_height;
     pipe.SetScissor({rect});
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);

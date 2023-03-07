@@ -191,7 +191,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
     void ShutdownFramework();
 
-    void InitViewport(float width, float height);
+    void InitViewport(uint32_t width, uint32_t height);
     void InitViewport();
      // Functions to modify the VkRenderFramework surface & swapchain variables
     bool InitSurface();
@@ -313,7 +313,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
     std::vector<std::unique_ptr<VkImageObj>> m_renderTargets;
-    float m_width, m_height;
+    uint32_t m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
     VkClearColorValue m_clear_color;
@@ -577,7 +577,7 @@ class VkTextureObj : public VkImageObj {
 class VkDepthStencilObj : public VkImageObj {
   public:
     VkDepthStencilObj(VkDeviceObj *device);
-    void Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format,
+    void Init(VkDeviceObj *device, uint32_t width, uint32_t height, VkFormat format,
               VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkImageAspectFlags aspect = 0);
     bool Initialized();
     VkImageView *BindInfo();
