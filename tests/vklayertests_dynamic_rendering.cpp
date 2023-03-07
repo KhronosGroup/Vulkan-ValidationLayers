@@ -305,7 +305,7 @@ TEST_F(VkLayerTest, DynamicRenderingCmdClearAttachmentTests) {
     color_attachment.clearValue.color.float32[2] = 1.0;
     color_attachment.clearValue.color.float32[3] = 1.0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
     auto clear_cmds = [this, &color_attachment](VkCommandBuffer cmd_buffer, VkClearRect clear_rect) {
         // extent too wide
@@ -2557,7 +2557,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
     m_commandBuffer->begin();
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
-    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 

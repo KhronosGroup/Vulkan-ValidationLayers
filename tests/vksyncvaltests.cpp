@@ -1118,8 +1118,6 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
 
     // Render Target Information
-    auto width = static_cast<uint32_t>(m_width);
-    auto height = static_cast<uint32_t>(m_height);
     auto *rt_0 = m_renderTargets[0].get();
     auto *rt_1 = m_renderTargets[1].get();
 
@@ -1127,12 +1125,12 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image_a(m_device), image_b(m_device);
-    const auto image_ci = VkImageObj::ImageCreateInfo2D(width, height, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const auto image_ci = VkImageObj::ImageCreateInfo2D(m_width, m_height, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image_a.Init(image_ci);
     image_b.Init(image_ci);
 
     VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{width, height, 1};  // <-- image type is 2D
+    VkExtent3D full_extent{m_width, m_height, 1};  // <-- image type is 2D
     VkImageSubresourceLayers layer_color{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageCopy region_to_copy = {layer_color, zero_offset, layer_color, zero_offset, full_extent};
 

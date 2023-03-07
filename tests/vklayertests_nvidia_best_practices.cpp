@@ -1163,8 +1163,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
     };
 
     VkImageObj image(m_device);
-    image.Init((uint32_t)m_width, (uint32_t)m_height, 1, VK_FORMAT_B8G8R8A8_UNORM,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
@@ -1183,7 +1182,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
     color_attachment.clearValue = {};
 
     VkRenderingInfo begin_rendering_info = LvlInitStruct<VkRenderingInfo>();
-    begin_rendering_info.renderArea.extent = {(uint32_t)m_width, (uint32_t)m_height};
+    begin_rendering_info.renderArea.extent = {m_width, m_height};
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
@@ -1202,7 +1201,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
         }
     };
 
-    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
     m_commandBuffer->begin();
     vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);

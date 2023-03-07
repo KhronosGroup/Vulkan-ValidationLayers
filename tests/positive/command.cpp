@@ -338,7 +338,7 @@ TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSec
     color_attachment.clearValue.color.float32[2] = 0.0;
     color_attachment.clearValue.color.float32[3] = 0.0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
     vk::CmdClearAttachments(secondary.handle(), 1, &color_attachment, 1, &clear_rect);
     secondary.end();
     // Modify clear rect here to verify that it doesn't cause validation error

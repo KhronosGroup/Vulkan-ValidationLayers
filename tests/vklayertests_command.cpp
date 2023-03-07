@@ -909,7 +909,7 @@ TEST_F(VkLayerTest, ClearAttachmentsDepth) {
         GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     m_commandBuffer->begin();
@@ -938,7 +938,7 @@ TEST_F(VkLayerTest, ClearAttachmentsStencil) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(gpu());
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
     m_commandBuffer->begin();
@@ -9353,8 +9353,8 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = static_cast<uint32_t>(m_width);
-    image_create_info.extent.height = static_cast<uint32_t>(m_height);
+    image_create_info.extent.width = m_width;
+    image_create_info.extent.height = m_height;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = multiview_count;
@@ -9370,8 +9370,8 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
                                              VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     auto framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
-    framebufferCreateInfo.width = static_cast<uint32_t>(m_width);
-    framebufferCreateInfo.height = static_cast<uint32_t>(m_height);
+    framebufferCreateInfo.width = m_width;
+    framebufferCreateInfo.height = m_height;
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = m_renderPass;
     framebufferCreateInfo.attachmentCount = 1;
@@ -9384,8 +9384,8 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     m_renderPassClearValues.emplace_back(clear);
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = m_framebuffer;
-    m_renderPassBeginInfo.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    m_renderPassBeginInfo.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    m_renderPassBeginInfo.renderArea.extent.width = m_width;
+    m_renderPassBeginInfo.renderArea.extent.height = m_height;
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 
@@ -11176,7 +11176,7 @@ TEST_F(VkLayerTest, ClearDepthRangeUnrestricted) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     int depth_attachment_index = 1;
-    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt,
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
