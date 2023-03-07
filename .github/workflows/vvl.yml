@@ -339,9 +339,10 @@ jobs:
       - name: Set up MinGW
         uses: egor-tensin/setup-mingw@v2
       - name: Configure
-        run: cmake -S. -B build -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
+        run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
         env:
           LDFLAGS: "-fuse-ld=lld" # MINGW linking is very slow. Use llvm linker instead.
+          CXXFLAGS: "-Wno-format" # MINGW doesn't recognize %z as a format specifier
       - name: Build
         run: cmake --build build
       - name: Install
