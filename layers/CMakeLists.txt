@@ -102,11 +102,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     endif()
 endif()
 
-if(MSVC)
-    add_compile_options("/we4189")
-    add_compile_options("/we5038")
-endif()
-
 # NOTE: LunarG/VulkanTools disables BUILD_LAYERS and BUILD_TESTS to minimize dependencies.
 if (NOT BUILD_LAYERS)
     return()
