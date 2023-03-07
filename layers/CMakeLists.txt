@@ -89,17 +89,12 @@ if(BUILD_LAYER_SUPPORT_FILES)
     install(TARGETS VkLayer_utils)
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(VkLayer_utils PRIVATE
-        -Wno-missing-field-initializers
+        -Wno-sign-conversion
+        -Wno-implicit-int-conversion
+        -Wno-enum-enum-conversion
     )
-    if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-        target_compile_options(VkLayer_utils PRIVATE
-            -Wno-sign-conversion
-            -Wno-implicit-int-conversion
-            -Wno-enum-enum-conversion
-        )
-    endif()
 endif()
 
 if(MSVC)

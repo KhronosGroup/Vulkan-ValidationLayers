@@ -1962,13 +1962,16 @@ class HelperFileOutputGenerator(OutputGenerator):
             '    T out = {{{type_map}<T>::kSType, p_next, fields...}};',
             '    return out;',
             '}}',
+            '',
             '// Init the header of an sType struct',
             'template <typename T>',
             'T {init_func}(void *p_next = nullptr) {{',
-            '    T out = {{{type_map}<T>::kSType, p_next}};',
+            '    T out = {{}};',
+            '    out.sType = {type_map}<T>::kSType;',
+            '    out.pNext = p_next;',
             '    return out;',
-            '}}',
-            ''))
+            '}}'
+            ))
 
         code = []
 
