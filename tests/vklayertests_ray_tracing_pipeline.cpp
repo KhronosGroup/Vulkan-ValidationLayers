@@ -30,17 +30,12 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-    const char *empty_shader = R"glsl(
-        #version 460
-        #extension GL_NV_ray_tracing : require
-        void main() {}
-    )glsl";
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
-    VkShaderObj ahit_shader(this, empty_shader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
-    VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_KHR);
-    VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
-    VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_KHR);
+    VkShaderObj rgen_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    VkShaderObj ahit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
+    VkShaderObj chit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    VkShaderObj miss_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_MISS_BIT_KHR);
+    VkShaderObj intr_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
+    VkShaderObj call_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CALLABLE_BIT_KHR);
     const auto vkCreateRayTracingPipelinesKHR =
         GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
@@ -931,15 +926,8 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-
-    const char *empty_shader = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : require
-        void main() {}
-    )glsl";
-
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     const auto vkCreateRayTracingPipelinesKHR =
         GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
@@ -1062,11 +1050,11 @@ TEST_F(VkLayerTest, RayTracingPipelineWrongBindPoint) {
 TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -1105,11 +1093,7 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, layout_bindings);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout});
-    const char *empty_shader = R"glsl(
-        #version 460
-        void main() {}
-    )glsl";
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
@@ -1153,11 +1137,7 @@ TEST_F(VkLayerTest, RayTracingInvalidPipelineFlags) {
         GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-    const char *empty_shader = R"glsl(
-        #version 460
-        void main() {}
-    )glsl";
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    VkShaderObj rgen_shader(this, bindStateMinimalShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
@@ -1302,18 +1282,12 @@ TEST_F(VkLayerTest, NVRayTracingValidatePipeline) {
         GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesNV>("vkCreateRayTracingPipelinesNV");
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-    const char *empty_shader = R"glsl(
-        #version 460
-        #extension GL_NV_ray_tracing : require
-        void main() {}
-    )glsl";
-
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    VkShaderObj ahit_shader(this, empty_shader, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_NV);
-    VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    VkShaderObj rgen_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    VkShaderObj ahit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    VkShaderObj chit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    VkShaderObj miss_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
+    VkShaderObj intr_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+    VkShaderObj call_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
@@ -1441,18 +1415,12 @@ TEST_F(VkLayerTest, NVRayTracingPipelineShaderGroups) {
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
 
-    const char *empty_shader = R"glsl(
-        #version 460
-        #extension GL_NV_ray_tracing : require
-        void main() {}
-    )glsl";
-
-    VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    VkShaderObj ahit_shader(this, empty_shader, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_NV);
-    VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    VkShaderObj rgen_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    VkShaderObj ahit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    VkShaderObj chit_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    VkShaderObj miss_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
+    VkShaderObj intr_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+    VkShaderObj call_shader(this, bindStateRTNVShaderText, VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
