@@ -1040,7 +1040,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             continue;
         }
         skip |= ValidateComputePipelineShaderState(*pipeline);
-        skip |= ValidatePipelineCacheControlFlags(pCreateInfos->flags, i, "vkCreateComputePipelines",
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateComputePipelines",
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
     }
     return skip;
