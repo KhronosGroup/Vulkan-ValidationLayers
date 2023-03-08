@@ -47,6 +47,8 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
     bool skip = false;
 
     const VkDeviceSize &range = pCreateInfo->range;
+    const VkFormat format = pCreateInfo->format;
+    const uint32_t format_size = FormatElementSize(format);
     if (range != VK_WHOLE_SIZE) {
         // Range must be greater than 0
         if (range <= 0) {
@@ -56,13 +58,12 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
                              range);
         }
         // Range must be a multiple of the element size of format
-        const uint32_t format_size = FormatElementSize(pCreateInfo->format);
         if (SafeModulo(range, format_size) != 0) {
             skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-range-00929",
                              "vkCreateBufferView(): If VkBufferViewCreateInfo range (%" PRIuLEAST64
-                             ") does not equal VK_WHOLE_SIZE, range must be a multiple of the element size of the format "
-                             "(%" PRIu32 ").",
-                             range, format_size);
+                             ") does not equal VK_WHOLE_SIZE, range must be a multiple of the element size (%" PRIu32
+                             ") of the format %s.",
+                             range, format_size, string_VkFormat(format));
         }
         // Range divided by the element size of format must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements
         if (SafeDivision(range, format_size) > device_limits->maxTexelBufferElements) {
@@ -81,19 +82,19 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
                              range, pCreateInfo->offset, buffer_state->createInfo.size);
         }
     } else {
-        const uint32_t format_size = FormatElementSize(pCreateInfo->format);
-
         // Size of buffer - offset, divided by the element size of format must be less than or equal to
         // VkPhysicalDeviceLimits::maxTexelBufferElements
         if (SafeDivision(buffer_state->createInfo.size - pCreateInfo->offset, format_size) >
             device_limits->maxTexelBufferElements) {
-            skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-range-04059",
-                             "vkCreateBufferView(): If VkBufferViewCreateInfo range (%" PRIuLEAST64
-                             ") equals VK_WHOLE_SIZE, the buffer's size (%" PRIuLEAST64 ") minus the offset (%" PRIuLEAST64
-                             "), divided by the element size of the format (%" PRIu32
-                             ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
-                             range, buffer_state->createInfo.size, pCreateInfo->offset, format_size,
-                             device_limits->maxTexelBufferElements);
+            skip |= LogError(
+                buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-range-04059",
+                "vkCreateBufferView(): If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                ") equals VK_WHOLE_SIZE, the buffer's size (%" PRIuLEAST64 ") minus the offset (%" PRIuLEAST64
+                "), divided by the element size (%" PRIu32
+                ") of the format %s must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32
+                ").",
+                range, buffer_state->createInfo.size, pCreateInfo->offset, format_size, string_VkFormat(format),
+                device_limits->maxTexelBufferElements);
         }
     }
     return skip;
@@ -101,22 +102,26 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
 
 bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo) const {
     bool skip = false;
-    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(pCreateInfo->format);
-    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
+    const VkFormat format = pCreateInfo->format;
+    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(format);
+    const VkBufferUsageFlags usage = buffer_state->createInfo.usage;
+    if ((usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
-        skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00933",
-                         "vkCreateBufferView(): If buffer was created with `usage` containing "
-                         "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format (%s) must "
-                         "be supported for uniform texel buffers",
-                         string_VkFormat(pCreateInfo->format));
+        skip |= LogError(
+            buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00933",
+            "vkCreateBufferView(): buffer was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format "
+            "(%s) must be supported for uniform texel buffers. (supported bufferFeatures: %s)",
+            string_VkBufferUsageFlags(usage).c_str(), string_VkFormat(format),
+            string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
-    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
+    if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
-        skip |= LogError(buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00934",
-                         "vkCreateBufferView(): If buffer was created with `usage` containing "
-                         "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format (%s) must "
-                         "be supported for storage texel buffers",
-                         string_VkFormat(pCreateInfo->format));
+        skip |= LogError(
+            buffer_state->buffer(), "VUID-VkBufferViewCreateInfo-buffer-00934",
+            "vkCreateBufferView(): buffer was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format "
+            "(%s) must be supported for storage texel buffers. (supported bufferFeatures: %s)",
+            string_VkBufferUsageFlags(usage).c_str(), string_VkFormat(format),
+            string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
     return skip;
 }

@@ -879,7 +879,8 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
     bool skip = false;
     if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-            skip |= LogError(image_state->image(), "VUID-vkCmdClearDepthStencilImage-imageLayout-00012",
+            LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+            skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-imageLayout-00012",
                              "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
                              string_VkImageLayout(dest_image_layout));
         }
@@ -888,15 +889,17 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
         assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
         if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-                skip |= LogError(image_state->image(), "VUID-vkCmdClearColorImage-imageLayout-00005",
+                LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+                skip |= LogError(objlist, "VUID-vkCmdClearColorImage-imageLayout-00005",
                                  "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
                                  string_VkImageLayout(dest_image_layout));
             }
         } else {
             if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
                 (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
+                LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
                 skip |= LogError(
-                    image_state->image(), "VUID-vkCmdClearColorImage-imageLayout-01394",
+                    objlist, "VUID-vkCmdClearColorImage-imageLayout-01394",
                     "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
                     func_name, string_VkImageLayout(dest_image_layout));
             }

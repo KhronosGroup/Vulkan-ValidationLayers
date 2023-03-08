@@ -949,8 +949,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) const override;
 
-    bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
-                                 const char* param_name) const;
+    bool ValidateClearImageAttributes(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state,
+                                      const VkImageSubresourceRange& range, const char* param_name) const;
 
     bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, const VkRect2D& render_area,
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects) const;
