@@ -214,47 +214,12 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
         }
     }
 
-    const auto ds_state = pipeline.DepthStencilState();
-    if (ds_state) {
-        if ((((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) !=
-              0) ||
-             ((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) !=
-              0)) &&
-            (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06483",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "].pDepthStencilState[%s] contains "
-                             "VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM or"
-                             " VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM, "
-                             "renderpass must"
-                             "not be VK_NULL_HANDLE.",
-                             pipeline.create_index, string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
-        }
-    }
-
-    if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE &&
-        IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled) &&
-        !pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
-        if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
-            if (msrtss_info->rasterizationSamples != pipeline.MultisampleState()->rasterizationSamples) {
-                skip |= LogError(
-                    rp_state->renderPass(), "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854",
-                    "vkCreateGraphicsPipelines(): A VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain of "
-                    "pCreateInfo[%" PRIu32 "], subpass index %" PRIu32
-                    "'s VkSubpassDescription2 has a rasterizationSamples of (%" PRIu32
-                    ") which is not equal to  pMultisampleState.rasterizationSamples which is (%" PRIu32 ").",
-                    pipeline.create_index, subpass, msrtss_info->rasterizationSamples,
-                    pipeline.MultisampleState()->rasterizationSamples);
-            }
-        }
-    }
-
     skip |= ValidateGraphicsPipelineLibrary(pipeline);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc);
+    skip |= ValidateGraphicsPipelineDepthStencilState(pipeline);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline);
     skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline);
     skip |= ValidateGraphicsPipelineDynamicRendering(pipeline);
@@ -348,28 +313,6 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
                              pipeline.create_index, attachment_sample_count_info->depthStencilAttachmentSamples);
         }
     }
-
-    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) &&
-        !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-        if (pipeline.fragment_output_state && pipeline.MultisampleState() == nullptr) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
-                             pipeline.create_index);
-        }
-    }
-
-    if (pipeline.fragment_shader_state && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE &&
-        pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState == nullptr &&
-        IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
-        IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
-        skip |= LogError(
-            device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631",
-            "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-            "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but pMultisampleState is NULL.",
-            pipeline.create_index);
-    }
-
     return skip;
 }
 
@@ -819,19 +762,6 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                         skip |= LogError(device, vuid_tmp, "%s", msg.str().c_str());
                     }
                 }
-            }
-        }
-
-        const auto &rp_state = pipeline.RenderPassState();
-        if ((!rp_state || !rp_state->renderPass()) && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-            if (!pipeline.DepthStencilState() ||
-                (pipeline.DepthStencilState()->sType != VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO)) {
-                skip |= LogError(
-                    device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "] does contains fragment shader state and no fragment output state, pDepthStencilState does not point to "
-                    "a valid VkPipelineDepthStencilStateCreateInfo struct.",
-                    pipeline.create_index);
             }
         }
     }
@@ -2206,6 +2136,20 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                     }
                 }
             }
+            if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+                const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
+                if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
+                    (msrtss_info->rasterizationSamples != multisample_state->rasterizationSamples)) {
+                    skip |= LogError(
+                        rp_state->renderPass(), "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854",
+                        "vkCreateGraphicsPipelines(): A VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain of "
+                        "pCreateInfo[%" PRIu32 "], subpass index %" PRIu32
+                        "'s VkSubpassDescription2 has a rasterizationSamples of (%" PRIu32
+                        ") which is not equal to  pMultisampleState.rasterizationSamples which is (%" PRIu32 ").",
+                        pipeline.create_index, pipeline.Subpass(), msrtss_info->rasterizationSamples,
+                        multisample_state->rasterizationSamples);
+                }
+            }
         }
 
         if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
@@ -2358,6 +2302,57 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
             }
         }
     }
+
+    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        if (pipeline.fragment_output_state && multisample_state == nullptr) {
+            // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
+            if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
+                                 pipeline.create_index);
+            } else if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06631",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
+                                 pipeline.create_index);
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+    const auto ds_state = pipeline.DepthStencilState();
+    const auto &rp_state = pipeline.RenderPassState();
+    const bool null_rp = (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE);
+    if (ds_state) {
+        if ((((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM) !=
+              0) ||
+             ((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) !=
+              0)) &&
+            null_rp) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06483",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "].pDepthStencilState[%s] contains "
+                             "VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM or"
+                             " VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM, "
+                             "renderpass must"
+                             "not be VK_NULL_HANDLE.",
+                             pipeline.create_index, string_VkPipelineDepthStencilStateCreateFlags(ds_state->flags).c_str());
+        }
+    } else {
+        if (null_rp && pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06590",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] does contains fragment shader state and no fragment output state, pDepthStencilState does not point to "
+                         "a valid VkPipelineDepthStencilStateCreateInfo struct.",
+                         pipeline.create_index);
+        }
+    }
+
     return skip;
 }
 

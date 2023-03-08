@@ -828,6 +828,7 @@ class CoreChecks : public ValidationStateTracker {
                                                     const safe_VkSubpassDescription2* subpass_desc) const;
     bool ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE& pipeline,
                                                   const safe_VkSubpassDescription2* subpass_desc) const;
+    bool ValidateGraphicsPipelineDepthStencilState(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE& pipeline) const;
