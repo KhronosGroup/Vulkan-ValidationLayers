@@ -384,14 +384,50 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
     return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
 }
 
-// Calculates the effective extent (width/height/depth) for a VkImageView.
-constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
-    const uint32_t min_value = 1 + (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV);
-    VkExtent3D effective_extent = {};
-    effective_extent.depth = std::max(min_value, ci.extent.depth >> range.baseMipLevel);
-    effective_extent.width = std::max(min_value, ci.extent.width >> range.baseMipLevel);
-    effective_extent.height = std::max(min_value, ci.extent.height >> range.baseMipLevel);
-    return effective_extent;
+// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
+[[nodiscard]] constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
+                                                      const uint32_t mip_level) {
+    // Return zero extent if mip level doesn't exist
+    if (mip_level >= ci.mipLevels) {
+        return VkExtent3D{0, 0, 0};
+    }
+
+    VkExtent3D extent = ci.extent;
+
+    // If multi-plane, adjust per-plane extent
+    const VkFormat format = ci.format;
+    if (FormatIsMultiplane(format)) {
+        VkExtent2D divisors = FindMultiplaneExtentDivisors(format, aspect_mask);
+        extent.width /= divisors.width;
+        extent.height /= divisors.height;
+    }
+
+    // Mip Maps
+    {
+        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
+        const uint32_t min_size = 1 + corner;
+        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
+        for (uint32_t *dim : dimensions) {
+            // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
+            if (*dim == 0) {
+                continue;
+            }
+            *dim >>= mip_level;
+            *dim = std::max(min_size, *dim);
+        }
+    }
+
+    // Image arrays have an effective z extent that isn't diminished by mip level
+    if (VK_IMAGE_TYPE_3D != ci.imageType) {
+        extent.depth = ci.arrayLayers;
+    }
+
+    return extent;
+}
+
+// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
+[[nodiscard]] constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageSubresourceRange &range) {
+    return GetEffectiveExtent(ci, range.aspectMask, range.baseMipLevel);
 }
 
 // Calculates the number of mip levels a VkImageView references.

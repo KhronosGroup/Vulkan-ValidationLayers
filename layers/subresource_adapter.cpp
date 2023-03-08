@@ -304,7 +304,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;
             subres.mipLevel = mip_index;
-            auto subres_extent = image.GetSubresourceExtent(subres_layers);
+            auto subres_extent = image.GetEffectiveSubresourceExtent(subres_layers);
 
             if (linear_image_) {
                 DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);

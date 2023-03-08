@@ -336,7 +336,7 @@ struct PER_PLANE_COMPATIBILITY {
     VkFormat compatible_format;
 
     // Need default otherwise if app tries to grab a plane that doesn't exist it will crash
-    // if returned the value of 0 in IMAGE_STATE::GetSubresourceExtent()
+    // if returned the value of 0 in IMAGE_STATE::GetEffectiveSubresourceExtent()
     // This is ok, because there are VUs later that will catch the bad app behaviour
     PER_PLANE_COMPATIBILITY() : width_divisor(1), height_divisor(1), compatible_format(VK_FORMAT_UNDEFINED) {}
     PER_PLANE_COMPATIBILITY(uint32_t width_divisor, uint32_t height_divisor, VkFormat compatible_format) :

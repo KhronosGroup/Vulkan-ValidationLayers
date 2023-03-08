@@ -1411,7 +1411,7 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
 
     if (is_3_d_to_2_d_map) {
         const auto layers = LayersFromRange(subresourceRange);
-        const auto extent = image_state->GetSubresourceExtent(layers);
+        const auto extent = image_state->GetEffectiveSubresourceExtent(layers);
         image_layer_count = extent.depth;
     } else {
         image_layer_count = image_state->createInfo.arrayLayers;
@@ -1664,7 +1664,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              "vkCreateImageView(): Image view references %" PRIu32 " mip levels.", effective_mip_levels);
         }
 
-        const uint32_t effective_view_depth = GetEffectiveExtent(image_state->createInfo, pCreateInfo->subresourceRange).depth;
+        const uint32_t effective_view_depth = image_state->GetEffectiveSubresourceExtent(pCreateInfo->subresourceRange).depth;
 
         const uint32_t slice_offset = sliced_create_info_ext->sliceOffset;
         const uint32_t slice_count = sliced_create_info_ext->sliceCount;
