@@ -2990,12 +2990,11 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     const auto *create_info = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     auto entrypoint_optional = stage_state.entrypoint;
-    const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_state.create_info);
     const VkShaderStageFlagBits stage = create_info->stage;
 
     skip |= ValidateShaderModuleId(module_state, stage_state, create_info, pipeline.create_flags);
 
-    if (module_identifier && module_state.vk_shader_module() == VK_NULL_HANDLE) {
+    if (pipeline.uses_shader_module_id && module_state.vk_shader_module() == VK_NULL_HANDLE) {
         return skip;  // No real shader for further validation
     }
 
