@@ -99,8 +99,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
         ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
         skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260",
                          "vkCreateImage(): can't use VK_IMAGE_CREATE_DISJOINT_BIT because %s doesn't support "
-                         "VK_FORMAT_FEATURE_DISJOINT_BIT based on imageCreateFormatFeatures.",
-                         string_VkFormat(pCreateInfo->format));
+                         "VK_FORMAT_FEATURE_DISJOINT_BIT based on imageCreateFormatFeatures (supported features: %s).",
+                         string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
     return skip;
@@ -128,22 +128,27 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
-    VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                                     VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.width > device_limits->maxFramebufferWidth)) {
-        skip |= LogError(device, "VUID-VkImageCreateInfo-usage-00964",
-                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image width (%" PRIu32
+    const VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                                           VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    if (pCreateInfo->usage & attach_flags) {
+        if (pCreateInfo->extent.width > device_limits->maxFramebufferWidth) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-usage-00964",
+                         "vkCreateImage(): Image usage flags (%s) include a frame buffer attachment bit and image width (%" PRIu32
                          ") exceeds "
                          "device maxFramebufferWidth (%" PRIu32 ").",
-                         pCreateInfo->extent.width, device_limits->maxFramebufferWidth);
-    }
-
-    if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.height > device_limits->maxFramebufferHeight)) {
-        skip |= LogError(device, "VUID-VkImageCreateInfo-usage-00965",
-                         "vkCreateImage(): Image usage flags include a frame buffer attachment bit and image height (%" PRIu32
+                         string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.width,
+                         device_limits->maxFramebufferWidth);
+        }
+        if (pCreateInfo->extent.height > device_limits->maxFramebufferHeight) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-usage-00965",
+                         "vkCreateImage(): Image usage flags (%s) include a frame buffer attachment bit and image height (%" PRIu32
                          ") exceeds "
                          "device maxFramebufferHeight (%" PRIu32 ").",
-                         pCreateInfo->extent.height, device_limits->maxFramebufferHeight);
+                         string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.height,
+                         device_limits->maxFramebufferHeight);
+        }
     }
 
     VkImageCreateFlags sparseFlags =
@@ -153,11 +158,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          "vkCreateImage(): images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set");
     }
 
-    if (!enabled_features.fragment_density_map_offset_features.fragmentDensityMapOffset) {
+    if (!enabled_features.fragment_density_map_offset_features.fragmentDensityMapOffset &&
+        (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceilf(
             static_cast<float>(device_limits->maxFramebufferWidth) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width), 1.0f)));
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
+        if (pCreateInfo->extent.width > ceiling_width) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514",
                              "vkCreateImage(): Image usage flags include a fragment density map bit and image width (%" PRIu32
                              ") exceeds the "
@@ -171,7 +177,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         uint32_t ceiling_height = static_cast<uint32_t>(ceilf(
             static_cast<float>(device_limits->maxFramebufferHeight) /
             std::max(static_cast<float>(phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height), 1.0f)));
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
+        if (pCreateInfo->extent.height > ceiling_height) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515",
                              "vkCreateImage(): Image usage flags include a fragment density map bit and image height (%" PRIu32
                              ") exceeds the "
@@ -311,22 +317,22 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (FormatRequiresYcbcrConversionExplicitly(pCreateInfo->format)) {
         if (pCreateInfo->mipLevels != 1) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-format-06410",
-                             "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format, mipLevels must be 1",
-                             pCreateInfo->mipLevels);
+                             "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format (%s), mipLevels must be 1",
+                             pCreateInfo->mipLevels, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError(
-                device, "VUID-VkImageCreateInfo-format-06411",
-                "vkCreateImage(): samples = %s, but when using a YCbCr Conversion format, samples must be VK_SAMPLE_COUNT_1_BIT",
-                string_VkSampleCountFlagBits(pCreateInfo->samples));
+            skip |= LogError(device, "VUID-VkImageCreateInfo-format-06411",
+                             "vkCreateImage(): samples = %s, but when using a YCbCr Conversion format (%s), samples must be "
+                             "VK_SAMPLE_COUNT_1_BIT",
+                             string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError(
-                device, "VUID-VkImageCreateInfo-format-06412",
-                "vkCreateImage(): imageType = %s, but when using a YCbCr Conversion format, imageType must be VK_IMAGE_TYPE_2D ",
-                string_VkImageType(pCreateInfo->imageType));
+            skip |= LogError(device, "VUID-VkImageCreateInfo-format-06412",
+                             "vkCreateImage(): imageType = %s, but when using a YCbCr Conversion format (%s), imageType must be "
+                             "VK_IMAGE_TYPE_2D ",
+                             string_VkImageType(pCreateInfo->imageType), string_VkFormat(pCreateInfo->format));
         }
     }
 
@@ -629,30 +635,34 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
 
-bool CoreChecks::ValidateImageAttributes(const IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
-                                         const char *param_name) const {
+bool CoreChecks::ValidateClearImageAttributes(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE *image_state,
+                                              const VkImageSubresourceRange &range, const char *param_name) const {
     bool skip = false;
     const VkImage image = image_state->image();
     const VkFormat format = image_state->createInfo.format;
 
     if (range.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-        skip |= LogError(image, "VUID-vkCmdClearColorImage-aspectMask-02498",
+        LogObjectList objlist(cb_state.commandBuffer(), image);
+        skip |= LogError(objlist, "VUID-vkCmdClearColorImage-aspectMask-02498",
                          "vkCmdClearColorImage(): %s.aspectMasks must only be set to VK_IMAGE_ASPECT_COLOR_BIT.", param_name);
     }
 
     if (FormatIsDepthOrStencil(format)) {
-        skip |= LogError(image, "VUID-vkCmdClearColorImage-image-00007",
+        LogObjectList objlist(cb_state.commandBuffer(), image);
+        skip |= LogError(objlist, "VUID-vkCmdClearColorImage-image-00007",
                          "vkCmdClearColorImage(): %s called with image %s which has a depth/stencil format (%s).", param_name,
                          report_data->FormatHandle(image).c_str(), string_VkFormat(format));
     } else if (FormatIsCompressed(format)) {
-        skip |= LogError(image, "VUID-vkCmdClearColorImage-image-00007",
+        LogObjectList objlist(cb_state.commandBuffer(), image);
+        skip |= LogError(objlist, "VUID-vkCmdClearColorImage-image-00007",
                          "vkCmdClearColorImage(): %s called with image %s which has a compressed format (%s).", param_name,
                          report_data->FormatHandle(image).c_str(), string_VkFormat(format));
     }
 
     if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        LogObjectList objlist(cb_state.commandBuffer(), image);
         skip |=
-            LogError(image, "VUID-vkCmdClearColorImage-image-00002",
+            LogError(objlist, "VUID-vkCmdClearColorImage-image-00002",
                      "vkCmdClearColorImage() %s called with image %s which was created without VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
                      param_name, report_data->FormatHandle(image).c_str());
     }
@@ -682,12 +692,13 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearColorSubresourceRange(image_state.get(), pRanges[i], param_name.c_str());
-            skip |= ValidateImageAttributes(image_state.get(), pRanges[i], param_name.c_str());
+            skip |= ValidateClearImageAttributes(cb_state, image_state.get(), pRanges[i], param_name.c_str());
             skip |= VerifyClearImageLayout(cb_state, image_state.get(), pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
         // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
         if (FormatRequiresYcbcrConversionExplicitly(image_state->createInfo.format)) {
-            skip |= LogError(device, "VUID-vkCmdClearColorImage-image-01545",
+            LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+            skip |= LogError(objlist, "VUID-vkCmdClearColorImage-image-01545",
                              "vkCmdClearColorImage(): format (%s) must not be one of the formats requiring sampler YCBCR "
                              "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
                              string_VkFormat(image_state->createInfo.format));
@@ -762,7 +773,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             // Image aspect must be depth or stencil or both
             VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
             if (((pRanges[i].aspectMask & valid_aspects) == 0) || ((pRanges[i].aspectMask & ~valid_aspects) != 0)) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-aspectMask-02824",
+                LogObjectList objlist(cb_state.commandBuffer(), image);
+                skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-aspectMask-02824",
                                  "vkCmdClearDepthStencilImage(): pRanges[%" PRIu32
                                  "].aspectMask can only be VK_IMAGE_ASPECT_DEPTH_BIT "
                                  "and/or VK_IMAGE_ASPECT_STENCIL_BIT.",
@@ -771,7 +783,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
                 any_include_aspect_depth_bit = true;
                 if (FormatHasDepth(image_format) == false) {
-                    skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-image-02826",
+                    LogObjectList objlist(cb_state.commandBuffer(), image);
+                    skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-image-02826",
                                      "vkCmdClearDepthStencilImage(): pRanges[%" PRIu32
                                      "].aspectMask has a VK_IMAGE_ASPECT_DEPTH_BIT but %s "
                                      "doesn't have a depth component.",
@@ -781,7 +794,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
                 any_include_aspect_stencil_bit = true;
                 if (FormatHasStencil(image_format) == false) {
-                    skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-image-02825",
+                    LogObjectList objlist(cb_state.commandBuffer(), image);
+                    skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-image-02825",
                                      "vkCmdClearDepthStencilImage(): pRanges[%" PRIu32
                                      "].aspectMask has a VK_IMAGE_ASPECT_STENCIL_BIT but "
                                      "%s doesn't have a stencil component.",
@@ -793,16 +807,18 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             const auto image_stencil_struct = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
             if (image_stencil_struct != nullptr) {
                 if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+                    LogObjectList objlist(cb_state.commandBuffer(), image);
                     skip |=
-                        LogError(device, "VUID-vkCmdClearDepthStencilImage-pRanges-02658",
+                        LogError(objlist, "VUID-vkCmdClearDepthStencilImage-pRanges-02658",
                                  "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT "
                                  "and image was created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must be "
                                  "included in VkImageStencilUsageCreateInfo::stencilUsage used to create image");
                 }
             } else {
                 if ((image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+                    LogObjectList objlist(cb_state.commandBuffer(), image);
                     skip |= LogError(
-                        device, "VUID-vkCmdClearDepthStencilImage-pRanges-02659",
+                        objlist, "VUID-vkCmdClearDepthStencilImage-pRanges-02659",
                         "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT and "
                         "image was not created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included "
                         "in VkImageCreateInfo::usage used to create image");
@@ -810,17 +826,20 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             }
         }
         if (any_include_aspect_depth_bit && (image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-            skip |= LogError(device, "VUID-vkCmdClearDepthStencilImage-pRanges-02660",
+            LogObjectList objlist(cb_state.commandBuffer(), image);
+            skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-pRanges-02660",
                              "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, "
                              "VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included in VkImageCreateInfo::usage used to create image");
         }
         if (image_state && !FormatIsDepthOrStencil(image_format)) {
-            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00014",
+            LogObjectList objlist(cb_state.commandBuffer(), image);
+            skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-image-00014",
                              "vkCmdClearDepthStencilImage(): called with image %s which doesn't have a depth/stencil format (%s).",
                              report_data->FormatHandle(image).c_str(), string_VkFormat(image_format));
         }
         if (VK_IMAGE_USAGE_TRANSFER_DST_BIT != (VK_IMAGE_USAGE_TRANSFER_DST_BIT & image_state->createInfo.usage)) {
-            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00009",
+            LogObjectList objlist(cb_state.commandBuffer(), image);
+            skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-image-00009",
                              "vkCmdClearDepthStencilImage(): called with image %s which was not created with the "
                              "VK_IMAGE_USAGE_TRANSFER_DST_BIT set.",
                              report_data->FormatHandle(image).c_str());
@@ -2026,7 +2045,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         IsExtEnabled(device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
         if ((enabled_features.astc_decode_features.decodeModeSharedExponent == VK_FALSE) &&
             (astc_decode_mode->decodeMode == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {
-            skip |= LogError(device, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231",
                              "vkCreateImageView(): decodeModeSharedExponent is not enabled but "
                              "VkImageViewASTCDecodeModeEXT::decodeMode is VK_FORMAT_E5B9G9R9_UFLOAT_PACK32.");
         }
@@ -2041,7 +2060,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         //       Spec change is at https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4600
         if ((VK_FALSE == enabled_features.portability_subset_features.imageViewFormatSwizzle) &&
             !IsIdentitySwizzle(pCreateInfo->components)) {
-            skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465",
                              "vkCreateImageView (portability error): swizzle is disabled for this device.");
         }
 
@@ -2054,7 +2073,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             ((FormatElementSize(pCreateInfo->format, VK_IMAGE_ASPECT_COLOR_BIT) !=
               FormatElementSize(image_state->createInfo.format, VK_IMAGE_ASPECT_COLOR_BIT)) ||
              (FormatComponentCount(pCreateInfo->format) != FormatComponentCount(image_state->createInfo.format)))) {
-            skip |= LogError(device, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466",
                              "vkCreateImageView (portability error): ImageView format must have"
                              " the same number of components and bits per component as the Image's format");
         }
@@ -2062,7 +2081,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     if (const auto image_view_min_lod = LvlFindInChain<VkImageViewMinLodCreateInfoEXT>(pCreateInfo->pNext); image_view_min_lod) {
         if ((!enabled_features.image_view_min_lod_features.minLod) && (image_view_min_lod->minLod != 0)) {
-            skip |= LogError(device, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455",
                              "vkCreateImageView(): VkImageViewMinLodCreateInfoEXT::minLod = %f, but the minLod feature is not "
                              "enabled.  If the minLod feature is not enabled, minLod must be 0.0",
                              image_view_min_lod->minLod);
@@ -2070,7 +2089,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         const auto max_level =
             static_cast<float>(pCreateInfo->subresourceRange.baseMipLevel + (pCreateInfo->subresourceRange.levelCount - 1));
         if (image_view_min_lod->minLod > max_level) {
-            skip |= LogError(device, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456",
                              "vkCreateImageView(): minLod (%f) must be less or equal to the index of the last mipmap level "
                              "accessible to the view (%f)",
                              image_view_min_lod->minLod, max_level);
@@ -2080,7 +2099,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     if (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT && FormatRequiresYcbcrConversionExplicitly(view_format)) {
         const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if ((!ycbcr_conversion || ycbcr_conversion->conversion == VK_NULL_HANDLE) && (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
-            skip |= LogError(device, "VUID-VkImageViewCreateInfo-format-06415",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-format-06415",
                              "vkCreateImageView(): When using VK_IMAGE_USAGE_SAMPLED_BIT, YCbCr Format %s requires a "
                              "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
                              string_VkFormat(view_format));
@@ -2091,7 +2110,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         VkImageUsageFlags decode_usage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
                                          VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
         if (image_usage & decode_usage) {
-            skip |= LogError(device, "VUID-VkImageViewCreateInfo-image-04817",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
                              "vkCreateImageView(): View type %s is incompatible with decode usage.",
                              string_VkImageViewType(pCreateInfo->viewType));
         }
@@ -2099,7 +2118,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     if ((pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
         !enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay) {
-        skip |= LogError(device, "VUID-VkImageViewCreateInfo-flags-08106",
+        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-08106",
                          "vkCreateImageView(): the descriptorBufferCaptureReplay device feature is disabled: Image views "
                          "cannot be created with "
                          "the VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT.");
@@ -2108,7 +2127,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     if (const auto opaque_capture_descriptor_buffer =
             LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
         opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError(device, "VUID-VkImageViewCreateInfo-pNext-08107",
+        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-08107",
                          "vkCreateImageView(): VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain, but "
                          "VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT is not set.");
     }

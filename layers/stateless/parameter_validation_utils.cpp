@@ -2723,8 +2723,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-format-00623",
                                          "vkCreateGraphicsPipelines: pCreateInfo[%" PRIu32
                                          "].pVertexInputState->vertexAttributeDescriptions[%d].format "
-                                         "(%s) is not a supported vertex buffer format.",
-                                         i, d, string_VkFormat(vertex_attrib_desc.format));
+                                         "(%s) is not a supported vertex buffer format. (supported bufferFeatures: %s)",
+                                         i, d, string_VkFormat(vertex_attrib_desc.format),
+                                         string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
                     }
                 }
             }
@@ -9253,8 +9254,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
             skip |= LogError(device, "VUID-VkVertexInputAttributeDescription2EXT-format-04805",
                              "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%" PRIu32
                              "].format is not a "
-                             "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format",
-                             attribute);
+                             "VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT supported format. (supported bufferFeatures: %s)",
+                             attribute, string_VkFormatFeatureFlags2(properties.bufferFeatures).c_str());
         }
     }
 
