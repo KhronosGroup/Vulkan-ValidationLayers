@@ -475,7 +475,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
 
 // Validate creating an image with an external format
 // This could be wrapped with VK_USE_PLATFORM_ANDROID_KHR instead of AHB_VALIDATION_SUPPORT, but this check is only for AHB
-bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info) const {
     bool skip = false;
 
     const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
@@ -633,9 +633,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
-    return false;
-}
+bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info) const { return false; }
 
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const { return false; }
 

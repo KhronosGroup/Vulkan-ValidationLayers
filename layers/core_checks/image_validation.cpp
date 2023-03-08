@@ -111,7 +111,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     bool skip = false;
 
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateCreateImageANDROID(report_data, pCreateInfo);
+        skip |= ValidateCreateImageANDROID(pCreateInfo);
     } else {  // These checks are omitted or replaced when Android HW Buffer extension is active
         if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
             return LogError(device, "VUID-VkImageCreateInfo-format-00943",
