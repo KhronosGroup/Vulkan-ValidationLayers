@@ -383,8 +383,8 @@ void CoreChecks::UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE *cb_state) {
 // ValidateLayoutVsAttachmentDescription is a general function where we can validate various state associated with the
 // VkAttachmentDescription structs that are used by the sub-passes of a renderpass. Initial check is to make sure that READ_ONLY
 // layout attachments don't have CLEAR as their loadOp.
-bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
-                                                       const VkImageLayout first_layout, const uint32_t attachment,
+bool CoreChecks::ValidateLayoutVsAttachmentDescription(RenderPassCreateVersion rp_version, const VkImageLayout first_layout,
+                                                       const uint32_t attachment,
                                                        const VkAttachmentDescription2 &attachment_description) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);

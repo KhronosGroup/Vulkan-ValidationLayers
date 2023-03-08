@@ -1451,8 +1451,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                     if (attach_first_use[attachment_index]) {
                         skip |=
-                            ValidateLayoutVsAttachmentDescription(report_data, rp_version, subpass.pInputAttachments[j].layout,
-                                                                  attachment_index, pCreateInfo->pAttachments[attachment_index]);
+                            ValidateLayoutVsAttachmentDescription(rp_version, subpass.pInputAttachments[j].layout, attachment_index,
+                                                                  pCreateInfo->pAttachments[attachment_index]);
 
                         const bool used_as_depth = (subpass.pDepthStencilAttachment != NULL &&
                                                     subpass.pDepthStencilAttachment->attachment == attachment_index);
@@ -1621,7 +1621,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              image_layout);
 
                     if (attach_first_use[attachment]) {
-                        skip |= ValidateLayoutVsAttachmentDescription(report_data, rp_version, image_layout, attachment,
+                        skip |= ValidateLayoutVsAttachmentDescription(rp_version, image_layout, attachment,
                                                                       pCreateInfo->pAttachments[attachment]);
                     }
                     attach_first_use[attachment] = false;
@@ -1888,8 +1888,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                     if (attach_first_use[attachment_index]) {
                         skip |=
-                            ValidateLayoutVsAttachmentDescription(report_data, rp_version, subpass.pColorAttachments[j].layout,
-                                                                  attachment_index, pCreateInfo->pAttachments[attachment_index]);
+                            ValidateLayoutVsAttachmentDescription(rp_version, subpass.pColorAttachments[j].layout, attachment_index,
+                                                                  pCreateInfo->pAttachments[attachment_index]);
                     }
                     attach_first_use[attachment_index] = false;
                 }

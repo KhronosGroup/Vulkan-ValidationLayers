@@ -1131,8 +1131,8 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const LocType& location) const;
 
-    bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
-                                               const VkImageLayout first_layout, const uint32_t attachment,
+    bool ValidateLayoutVsAttachmentDescription(RenderPassCreateVersion rp_version, const VkImageLayout first_layout,
+                                               const uint32_t attachment,
                                                const VkAttachmentDescription2& attachment_description) const;
 
     bool ValidateImageUsageFlags(VkCommandBuffer cb, IMAGE_STATE const& image_state, VkImageUsageFlags desired, bool strict,
@@ -1286,7 +1286,7 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                             const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo) override;
 
-    bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info) const;
+    bool ValidateCreateImageANDROID(const VkImageCreateInfo* create_info) const;
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
                                              const char* array_parameter_name, const char* vuid) const;
