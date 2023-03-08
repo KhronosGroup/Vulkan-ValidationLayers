@@ -4895,6 +4895,9 @@ TEST_F(VkSyncValTest, SyncQSRenderPass) {
 
 TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
+#if defined(VVL_ENABLE_ASAN)
+    auto leak_sanitizer_disabler = __lsan::ScopedDisabler();
+#endif
 
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation

@@ -90,6 +90,10 @@ target_sources(vk_layer_validation_tests PRIVATE
     ray_tracing_objects.cpp
 )
 
+if (VVL_ENABLE_ASAN)
+    target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_ENABLE_ASAN=1)
+endif()
+
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
 if (CMAKE_CROSSCOMPILING)
     gtest_add_tests(TARGET vk_layer_validation_tests)

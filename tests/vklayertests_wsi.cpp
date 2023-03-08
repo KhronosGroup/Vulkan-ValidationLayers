@@ -1728,6 +1728,11 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
 
 TEST_F(VkLayerTest, LeakASwapchain) {
     TEST_DESCRIPTION("Leak a VkSwapchainKHR.");
+    // Because this test intentionally leaks swapchains & surfaces, we need to disable leak checking because drivers may leak memory
+    // that cannot be cleaned up from this test.
+#if defined(VVL_ENABLE_ASAN)
+    auto leak_sanitizer_disabler = __lsan::ScopedDisabler();
+#endif
 
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework());
