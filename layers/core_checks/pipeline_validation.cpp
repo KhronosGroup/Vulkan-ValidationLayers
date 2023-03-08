@@ -84,11 +84,10 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
     return skip;
 }
 
-bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipelines, uint32_t pipe_index) const {
+bool CoreChecks::ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipelines,
+                                             uint32_t pipe_index) const {
     bool skip = false;
-    safe_VkSubpassDescription2 *subpass_desc = nullptr;
     const auto &pipeline = *pipelines[pipe_index].get();
-
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
@@ -97,9 +96,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         const VkPipeline base_handle = pipeline.BasePipeline<VkGraphicsPipelineCreateInfo>();
         const int32_t base_index = pipeline.BasePipelineIndex<VkGraphicsPipelineCreateInfo>();
         if (!((base_handle != VK_NULL_HANDLE) ^ (base_index != -1))) {
-            // TODO: This check is a superset of VUID-VkGraphicsPipelineCreateInfo-flags-00724 and
-            // TODO: VUID-VkGraphicsPipelineCreateInfo-flags-00725
-            skip |= LogError(device, kVUID_Core_DrawState_InvalidPipelineCreateState,
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00724",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "]: exactly one of base pipeline index and handle must be specified",
                              pipeline.create_index);
@@ -122,6 +119,12 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              pipeline.create_index);
         }
     }
+    return skip;
+}
+
+bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+    safe_VkSubpassDescription2 *subpass_desc = nullptr;
 
     // Check for portability errors
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
@@ -967,7 +970,8 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipeline(cgpl_state->pipe_state, i);
+        skip |= ValidatePipeline(*cgpl_state->pipe_state[i].get());
+        skip |= ValidatePipelineDerivatives(cgpl_state->pipe_state, i);
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
