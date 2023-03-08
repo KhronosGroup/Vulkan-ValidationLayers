@@ -47,6 +47,14 @@
 using std::string;
 using std::vector;
 
+#if defined(VVL_ENABLE_ASAN)
+#if __has_include(<sanitizer/lsan_interface.h>)
+#include <sanitizer/lsan_interface.h>
+#else
+#error The lsan_interface.h header was not found!
+#endif
+#endif
+
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------

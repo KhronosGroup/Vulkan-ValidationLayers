@@ -125,6 +125,8 @@ def BuildLoader(args):
     make_dirs(LOADER_BUILD_DIR)
     cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
+    # This enables better stack traces from leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
+    if not IsWindows(): cmake_cmd = cmake_cmd + ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
     RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
 
     print("Build Loader")
