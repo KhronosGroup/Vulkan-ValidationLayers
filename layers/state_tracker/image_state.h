@@ -195,8 +195,20 @@ class IMAGE_STATE : public BINDABLE {
 
     void Destroy() override;
 
-    VkExtent3D GetSubresourceExtent(VkImageAspectFlags aspect_mask, uint32_t mip_level) const;
-    VkExtent3D GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const;
+    // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
+        return ::GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+    }
+
+    // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
+        return ::GetEffectiveExtent(createInfo, sub.aspectMask, sub.mipLevel);
+    }
+
+    // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
+        return ::GetEffectiveExtent(createInfo, range);
+    }
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
         return ::NormalizeSubresourceRange(createInfo, range);

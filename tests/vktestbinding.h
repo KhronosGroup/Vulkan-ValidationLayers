@@ -624,7 +624,6 @@ class Image : public internal::NonDispHandle<VkImage> {
     VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
 
     VkExtent3D extent() const { return create_info_.extent; }
-    VkExtent3D extent(uint32_t mip_level) const { return extent(create_info_.extent, mip_level); }
     VkFormat format() const { return create_info_.format; }
     VkImageUsageFlags usage() const { return create_info_.usage; }
     VkSharingMode sharing_mode() const { return create_info_.sharingMode; }
@@ -679,11 +678,9 @@ class Image : public internal::NonDispHandle<VkImage> {
     static VkImageAspectFlags aspect_mask(VkFormat format);
 
     static VkExtent2D extent(int32_t width, int32_t height);
-    static VkExtent2D extent(const VkExtent2D &extent, uint32_t mip_level);
     static VkExtent2D extent(const VkExtent3D &extent);
 
     static VkExtent3D extent(int32_t width, int32_t height, int32_t depth);
-    static VkExtent3D extent(const VkExtent3D &extent, uint32_t mip_level);
 
   private:
     void init_info(const Device &dev, const VkImageCreateInfo &info);
@@ -1134,12 +1131,6 @@ inline VkExtent2D Image::extent(int32_t width, int32_t height) {
     return extent;
 }
 
-inline VkExtent2D Image::extent(const VkExtent2D &extent, uint32_t mip_level) {
-    const int32_t width = (extent.width >> mip_level) ? extent.width >> mip_level : 1;
-    const int32_t height = (extent.height >> mip_level) ? extent.height >> mip_level : 1;
-    return Image::extent(width, height);
-}
-
 inline VkExtent2D Image::extent(const VkExtent3D &extent) { return Image::extent(extent.width, extent.height); }
 
 inline VkExtent3D Image::extent(int32_t width, int32_t height, int32_t depth) {
@@ -1148,13 +1139,6 @@ inline VkExtent3D Image::extent(int32_t width, int32_t height, int32_t depth) {
     extent.height = height;
     extent.depth = depth;
     return extent;
-}
-
-inline VkExtent3D Image::extent(const VkExtent3D &extent, uint32_t mip_level) {
-    const int32_t width = (extent.width >> mip_level) ? extent.width >> mip_level : 1;
-    const int32_t height = (extent.height >> mip_level) ? extent.height >> mip_level : 1;
-    const int32_t depth = (extent.depth >> mip_level) ? extent.depth >> mip_level : 1;
-    return Image::extent(width, height, depth);
 }
 
 inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, const uint32_t *code, VkFlags flags) {

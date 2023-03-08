@@ -394,45 +394,6 @@ VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
     return bind_swapchain->images[swapchain_image_index].fake_base_address;
 }
 
-VkExtent3D IMAGE_STATE::GetSubresourceExtent(VkImageAspectFlags aspect_mask, uint32_t mip_level) const {
-    // Return zero extent if mip level doesn't exist
-    if (mip_level >= createInfo.mipLevels) {
-        return VkExtent3D{0, 0, 0};
-    }
-
-    // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
-    VkExtent3D extent = createInfo.extent;
-
-    // If multi-plane, adjust per-plane extent
-    if (FormatIsMultiplane(createInfo.format)) {
-        VkExtent2D divisors = FindMultiplaneExtentDivisors(createInfo.format, aspect_mask);
-        extent.width /= divisors.width;
-        extent.height /= divisors.height;
-    }
-
-    if (createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
-        extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip_level)));
-        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip_level)));
-        extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip_level)));
-    } else {
-        extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip_level));
-        extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip_level));
-        extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip_level));
-    }
-
-    // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != createInfo.imageType) {
-        extent.depth = createInfo.arrayLayers;
-    }
-
-    return extent;
-}
-
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const {
-    return GetSubresourceExtent(subresource.aspectMask, subresource.mipLevel);
-}
-
 static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
     auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(ci->pNext);
     return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;

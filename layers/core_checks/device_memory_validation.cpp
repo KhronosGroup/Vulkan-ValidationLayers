@@ -1668,8 +1668,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                                  bind_idx, image_idx, bind.offset.z, granularity.depth);
             }
 
-            VkExtent3D const subresource_extent =
-                image_state->GetSubresourceExtent(bind.subresource.aspectMask, bind.subresource.mipLevel);
+            VkExtent3D const subresource_extent = image_state->GetEffectiveSubresourceExtent(bind.subresource);
             if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
                 ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
                 skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01108",

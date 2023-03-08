@@ -552,7 +552,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         }
 
         // Calculate adjusted image extent, accounting for multiplane image factors
-        VkExtent3D adjusted_image_extent = image_state->GetSubresourceExtent(region.imageSubresource);
+        VkExtent3D adjusted_image_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
         // imageOffset.x and (imageExtent.width + imageOffset.x) must both be >= 0 and <= image subresource width
         if ((region.imageOffset.x < 0) || (region.imageOffset.x > static_cast<int32_t>(adjusted_image_extent.width)) ||
             ((region.imageOffset.x + static_cast<int32_t>(region.imageExtent.width)) >
@@ -664,7 +664,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         }
 
         // imageExtent width must be a multiple of block width, or extent+offset width must equal subresource width
-        VkExtent3D mip_extent = image_state->GetSubresourceExtent(region.imageSubresource);
+        VkExtent3D mip_extent = image_state->GetEffectiveSubresourceExtent(region.imageSubresource);
         if ((SafeModulo(region.imageExtent.width, block_size.width) != 0) &&
             (region.imageExtent.width + region.imageOffset.x != mip_extent.width)) {
             const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
@@ -888,7 +888,7 @@ bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const CM
     const LogObjectList objlist(cb_state.Handle(), img.Handle());
     VkExtent3D granularity = GetScaledItg(cb_state, &img);
     skip |= CheckItgOffset(objlist, region->imageOffset, granularity, i, function, "imageOffset", vuid);
-    VkExtent3D subresource_extent = img.GetSubresourceExtent(region->imageSubresource);
+    VkExtent3D subresource_extent = img.GetEffectiveSubresourceExtent(region->imageSubresource);
     skip |= CheckItgExtent(objlist, region->imageExtent, region->imageOffset, granularity, subresource_extent,
                            img.createInfo.imageType, i, function, "imageExtent", vuid);
     return skip;
@@ -910,7 +910,7 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFF
         const VkExtent3D granularity = GetScaledItg(cb_state, src_img);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
         skip |= CheckItgOffset(objlist, region->srcOffset, granularity, i, function, "srcOffset", vuid);
-        const VkExtent3D subresource_extent = src_img->GetSubresourceExtent(region->srcSubresource);
+        const VkExtent3D subresource_extent = src_img->GetEffectiveSubresourceExtent(region->srcSubresource);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
         skip |= CheckItgExtent(objlist, extent, region->srcOffset, granularity, subresource_extent, src_img->createInfo.imageType,
                                i, function, "extent", vuid);
@@ -925,7 +925,7 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFF
         // Adjust dest extent, if necessary
         const VkExtent3D dest_effective_extent =
             GetAdjustedDestImageExtent(src_img->createInfo.format, dst_img->createInfo.format, extent);
-        const VkExtent3D subresource_extent = dst_img->GetSubresourceExtent(region->dstSubresource);
+        const VkExtent3D subresource_extent = dst_img->GetEffectiveSubresourceExtent(region->dstSubresource);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstOffset-01784" : "VUID-vkCmdCopyImage-dstOffset-01784";
         skip |= CheckItgExtent(objlist, dest_effective_extent, region->dstOffset, granularity, subresource_extent,
                                dst_img->createInfo.imageType, i, function, "extent", vuid);
@@ -1025,7 +1025,7 @@ bool CoreChecks::ValidateImageCopyData(VkCommandBuffer cb, const uint32_t region
                                  func_name, i, region.srcOffset.z, block_size.depth);
             }
 
-            const VkExtent3D mip_extent = src_state->GetSubresourceExtent(region.srcSubresource);
+            const VkExtent3D mip_extent = src_state->GetEffectiveSubresourceExtent(region.srcSubresource);
             if ((SafeModulo(src_copy_extent.width, block_size.width) != 0) &&
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
                 const LogObjectList objlist(cb, src_state->image());
@@ -1167,7 +1167,7 @@ bool CoreChecks::ValidateImageCopyData(VkCommandBuffer cb, const uint32_t region
                                  func_name, i, region.dstOffset.z, block_size.depth);
             }
 
-            const VkExtent3D mip_extent = dst_state->GetSubresourceExtent(region.dstSubresource);
+            const VkExtent3D mip_extent = dst_state->GetEffectiveSubresourceExtent(region.dstSubresource);
             if ((SafeModulo(dst_copy_extent.width, block_size.width) != 0) &&
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
                 const LogObjectList objlist(cb, dst_state->image());
@@ -1515,7 +1515,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Each dimension offset + extent limits must fall with image subresource extent
-        VkExtent3D subresource_extent = src_image_state->GetSubresourceExtent(region.srcSubresource);
+        VkExtent3D subresource_extent = src_image_state->GetEffectiveSubresourceExtent(region.srcSubresource);
         if (slice_override) src_copy_extent.depth = depth_slices;
         uint32_t extent_check = ExceedsBounds(&(region.srcOffset), &src_copy_extent, &subresource_extent);
         if (extent_check & kXBit) {
@@ -1548,7 +1548,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         // Adjust dest extent if necessary
-        subresource_extent = dst_image_state->GetSubresourceExtent(region.dstSubresource);
+        subresource_extent = dst_image_state->GetEffectiveSubresourceExtent(region.dstSubresource);
         if (slice_override) dst_copy_extent.depth = depth_slices;
 
         extent_check = ExceedsBounds(&(region.dstOffset), &dst_copy_extent, &subresource_extent);
@@ -1895,7 +1895,7 @@ bool CoreChecks::ValidateImageBounds(VkCommandBuffer cb, const IMAGE_STATE &imag
         VkExtent3D extent = region.imageExtent;
         VkOffset3D offset = region.imageOffset;
 
-        VkExtent3D image_extent = image_state.GetSubresourceExtent(region.imageSubresource);
+        VkExtent3D image_extent = image_state.GetEffectiveSubresourceExtent(region.imageSubresource);
 
         // If we're using a blocked image format, valid extent is rounded up to multiple of block size (per
         // vkspec.html#_common_operation)
@@ -2525,7 +2525,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Validate source image offsets
-            VkExtent3D src_extent = src_image_state->GetSubresourceExtent(region.srcSubresource);
+            VkExtent3D src_extent = src_image_state->GetEffectiveSubresourceExtent(region.srcSubresource);
             if (VK_IMAGE_TYPE_1D == src_type) {
                 if ((0 != region.srcOffsets[0].y) || (1 != region.srcOffsets[1].y)) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00245" : "VUID-vkCmdBlitImage-srcImage-00245";
@@ -2578,7 +2578,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Validate dest image offsets
-            VkExtent3D dst_extent = dst_image_state->GetSubresourceExtent(region.dstSubresource);
+            VkExtent3D dst_extent = dst_image_state->GetEffectiveSubresourceExtent(region.dstSubresource);
             if (VK_IMAGE_TYPE_1D == dst_type) {
                 if ((0 != region.dstOffsets[0].y) || (1 != region.dstOffsets[1].y)) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImage-00250" : "VUID-vkCmdBlitImage-dstImage-00250";
@@ -2910,7 +2910,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
 
             // Each srcImage dimension offset + extent limits must fall with image subresource extent
-            VkExtent3D subresource_extent = src_image_state->GetSubresourceExtent(src_subresource);
+            VkExtent3D subresource_extent = src_image_state->GetEffectiveSubresourceExtent(src_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
             // developer
             if (src_subresource.mipLevel < src_image_state->createInfo.mipLevels) {
@@ -2950,7 +2950,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
 
             // Each dstImage dimension offset + extent limits must fall with image subresource extent
-            subresource_extent = dst_image_state->GetSubresourceExtent(dst_subresource);
+            subresource_extent = dst_image_state->GetEffectiveSubresourceExtent(dst_subresource);
             // MipLevel bound is checked already and adding extra errors with a "subresource extent of zero" is confusing to
             // developer
             if (dst_subresource.mipLevel < dst_image_state->createInfo.mipLevels) {
