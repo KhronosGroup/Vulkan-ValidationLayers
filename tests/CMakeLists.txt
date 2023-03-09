@@ -46,6 +46,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/sync.cpp
     positive/tooling.cpp
     positive/video.cpp
+    positive/wsi.cpp
     layer_validation_tests.cpp
     vkerrormonitor.cpp
     vkerrormonitor.h
