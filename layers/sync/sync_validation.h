@@ -1741,12 +1741,12 @@ class QueueBatchContext : public CommandExecutionContext {
       public:
         using Base_ = AlternateResourceUsage::RecordBase;
         Base_::Record MakeRecord() const override;
-        AcquireResourceRecord(const PresentedImage &presented, ResourceUsageTag tag, const char *func_name)
+        AcquireResourceRecord(const PresentedImageRecord &presented, ResourceUsageTag tag, const char *func_name)
             : presented_(presented), acquire_tag_(tag), func_name_(func_name) {}
         std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
 
       private:
-        PresentedImage presented_;
+        PresentedImageRecord presented_;
         ResourceUsageTag acquire_tag_;
         std::string func_name_;
     };
