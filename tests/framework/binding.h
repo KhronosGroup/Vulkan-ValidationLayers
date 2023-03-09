@@ -733,32 +733,6 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
     uint64_t opaque_handle_;
 };
 
-class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationStructureKHR> {
-  public:
-    explicit AccelerationStructureKHR(){};
-    explicit AccelerationStructureKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info,
-                                      bool init_memory = true) {
-        init(dev, info, init_memory);
-    }
-    ~AccelerationStructureKHR() noexcept;
-    void destroy() noexcept;
-
-    // vkCreateAccelerationStructureNV
-    void init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true);
-    uint64_t opaque_handle() const { return opaque_handle_; }
-
-    const VkAccelerationStructureCreateInfoKHR &info() const { return info_; }
-
-    const VkDevice &dev() const { return device(); }
-
-    [[nodiscard]] vk_testing::Buffer create_scratch_buffer(const Device &device, const VkBufferCreateInfo *pCreateInfo = nullptr,
-                                                           bool buffer_device_address = false) const;
-
-  private:
-    VkAccelerationStructureCreateInfoKHR info_;
-    uint64_t opaque_handle_;
-};
-
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
     ~ShaderModule() noexcept;
