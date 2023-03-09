@@ -295,6 +295,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetDeviceImageSparseMemoryRequirementsKHR',
             'vkCreateWin32SurfaceKHR',
             'vkCreateWaylandSurfaceKHR',
+            'vkCreateXcbSurfaceKHR',
             'vkGetPhysicalDeviceSurfaceFormatsKHR',
             'vkGetPhysicalDeviceSurfacePresentModesKHR',
             'vkGetPhysicalDeviceSurfaceCapabilities2KHR',

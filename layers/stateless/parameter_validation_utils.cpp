@@ -5834,6 +5834,35 @@ bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstan
 
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
+#ifdef VK_USE_PLATFORM_XCB_KHR
+
+bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance,
+                                                                    const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+                                                                    const VkAllocationCallbacks *pAllocator,
+                                                                    VkSurfaceKHR *pSurface) const {
+    bool skip = false;
+
+    const auto connection = pCreateInfo->connection;
+    const auto window = pCreateInfo->window;
+
+    // Beyond checking for nullptr not much we can do.
+    // EX: Calling xcb_generate_id will crash the app.
+    if (connection == nullptr) {
+        skip |=
+            LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-connection-01310", "vkCreateWaylandSurfaceKHR: connection is NULL!");
+    }
+
+    // Beyond checking for 0 not much we can do.
+    // EX: xcb_map_window will crash the app.
+    if (window == 0) {
+        skip |= LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-window-01311", "vkCreateWaylandSurfaceKHR: window is 0!");
+    }
+
+    return skip;
+}
+
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+
 static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
     bool partial_overlap = false;
 
