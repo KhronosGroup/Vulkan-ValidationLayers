@@ -4614,6 +4614,10 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     vk::ResetDescriptorPool(m_device->device(), descriptor_set.pool_, 0);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
+    // Cleanup
+    m_errorMonitor->SetUnexpectedError(
+        "If descriptorPool is not VK_NULL_HANDLE, descriptorPool must be a valid VkDescriptorPool handle");
+    m_errorMonitor->SetUnexpectedError("Unable to remove DescriptorPool obj");
 }
 
 TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
