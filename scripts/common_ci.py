@@ -198,13 +198,12 @@ def RunVVLTests(args):
         loader_dll = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration, 'vulkan-1.dll')
         loader_dll_dst = os.path.join(os.path.dirname(lvt_cmd), 'vulkan-1.dll')
         shutil.copyfile(loader_dll, loader_dll_dst)
-    lvt_env['LD_LIBRARY_PATH'] += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
 
     layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
     if IsWindows(): layer_path = os.path.join(layer_path, args.configuration)
     if not os.path.isdir(layer_path):
         raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
-    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
+    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'layer')
     lvt_env['VK_LAYER_PATH'] = layer_path
 
     vk_driver_files = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
@@ -212,7 +211,6 @@ def RunVVLTests(args):
     vk_driver_files = os.path.join(vk_driver_files, 'VkICD_mock_icd.json')
     if not os.path.isfile(vk_driver_files):
         raise Exception(f'VK_DRIVER_FILES "{vk_driver_files}" does not exist')
-    vk_driver_files + os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
     lvt_env['VK_DRIVER_FILES'] = vk_driver_files
 
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
