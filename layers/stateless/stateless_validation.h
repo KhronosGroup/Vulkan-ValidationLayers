@@ -910,18 +910,23 @@ class StatelessValidation : public ValidationObject {
         }
 
         // Check against the required list in the info
-        std::vector<const char *> missing;
-        for (const auto &req : info.requirements) {
-            if (!(extensions.*(req.enabled))) {
-                missing.push_back(req.name);
+        bool satisfied = true;
+        for (const auto &requirements : info.requirements) {
+            for (const auto &req : requirements) {
+                if (!(extensions.*(req.enabled))) {
+                    satisfied = false;
+                    break;
+                }
+            }
+            if (satisfied) {
+                break;
             }
         }
 
         // Report any missing requirements
-        if (missing.size()) {
-            std::string missing_joined_list = string_join(", ", missing);
-            skip |= LogError(instance, vuid, "Missing extension%s required by the %s extension %s: %s.",
-                             ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
+        if (!satisfied) {
+            skip |= LogError(instance, vuid, "Missing extension(s) required by the %s extension %s: %s.", extension_type,
+                             extension_name, ExtensionState::GetRequirementString(extension_name).c_str());
         }
         return skip;
     }

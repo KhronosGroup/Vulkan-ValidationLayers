@@ -4404,11 +4404,13 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
         // Add all "real" instance extensions
         if (InstanceExtensionSupported(ext.first.c_str())) {
             bool version_required = false;
-            for (const auto &req : ext.second.requirements) {
-                std::string name(req.name);
-                if (name.find("VK_VERSION") != std::string::npos) {
-                    version_required = true;
-                    break;
+            for (const auto &requirements : ext.second.requirements) {
+                for (const auto &req : requirements) {
+                    std::string name(req.name);
+                    if (name.find("VK_VERSION") != std::string::npos) {
+                        version_required = true;
+                        break;
+                    }
                 }
             }
             if (!version_required) {

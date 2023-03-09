@@ -928,3 +928,27 @@ TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
+    TEST_DESCRIPTION("Make sure the OR in 'depends' from XML is observed correctly");
+    // VK_KHR_buffer_device_address requires
+    // (VK_KHR_get_physical_device_properties2 AND VK_KHR_device_group) OR VK_VERSION_1_1
+    // If Vulkan 1.1 is not supported, should still be valid
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    if (!InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME) ||
+        !InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required instance extensions";
+    }
+    m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!DeviceExtensionSupported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) ||
+        !DeviceExtensionSupported(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required device extensions";
+    }
+
+    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+}

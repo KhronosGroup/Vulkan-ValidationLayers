@@ -426,20 +426,24 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     // instance extension
     if (is_instance_ext) {
         const auto &info = InstanceExtensions::get_info(ext_name);
-        for (const auto &req : info.requirements) {
-            if (0 == strncmp(req.name, "VK_VERSION", 10)) {
-                continue;
-            }
-            if (!AddRequestedInstanceExtensions(req.name)) {
-                return false;
+        for (const auto &requirements : info.requirements) {
+            for (const auto &req : requirements) {
+                if (0 == strncmp(req.name, "VK_VERSION", 10)) {
+                    continue;
+                }
+                if (!AddRequestedInstanceExtensions(req.name)) {
+                    return false;
+                }
             }
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
         const auto &info = DeviceExtensions::get_info(ext_name);
-        for (const auto &req : info.requirements) {
-            if (!AddRequestedInstanceExtensions(req.name)) {
-                return false;
+        for (const auto &requirements : info.requirements) {
+            for (const auto &req : requirements) {
+                if (!AddRequestedInstanceExtensions(req.name)) {
+                    return false;
+                }
             }
         }
     }
@@ -471,9 +475,11 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     m_device_extension_names.push_back(dev_ext_name);
 
     const auto &info = DeviceExtensions::get_info(dev_ext_name);
-    for (const auto &req : info.requirements) {
-        if (!AddRequestedDeviceExtensions(req.name)) {
-            return false;
+    for (const auto &requirements : info.requirements) {
+        for (const auto &req : requirements) {
+            if (!AddRequestedDeviceExtensions(req.name)) {
+                return false;
+            }
         }
     }
     return true;

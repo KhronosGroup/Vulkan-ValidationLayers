@@ -100,7 +100,9 @@ struct InstanceExtensions {
         const ExtEnabled InstanceExtensions::* enabled;
         const char *name;
     };
-    typedef std::vector<InstanceReq> InstanceReqVec;
+    // If the requirements are: (A + B),C
+    // Will hold [[A, B], C] == ((A && B) || C)
+    typedef std::vector<std::vector<InstanceReq>> InstanceReqVec;
     struct InstanceInfo {
        InstanceInfo(ExtEnabled InstanceExtensions::* state_, const InstanceReqVec requirements_): state(state_), requirements(requirements_) {}
        ExtEnabled InstanceExtensions::* state;
@@ -222,6 +224,28 @@ struct InstanceExtensions {
             return info->second;
         }
         return empty_info;
+    }
+
+    static std::string GetRequirementString(const char *extension) {
+        std::string result;
+        const auto &ext_map = InstanceExtensions::get_info_map();
+        const auto info = ext_map.find(extension);
+        if (info != ext_map.cend()) {
+            for (const auto& requirements : info->second.requirements) {
+                result.append("(");
+                for (const auto& requirement : requirements) {
+                    result.append(requirement.name);
+                    if (&requirement != &requirements.back()) {
+                        result.append(" and ");
+                    }
+                }
+                result.append(")");
+                if (&requirements != &info->second.requirements.back()) {
+                    result.append(" or ");
+                }
+            }
+        }
+        return result;
     }
 
     uint32_t NormalizeApiVersion(uint32_t specified_version) {
@@ -651,7 +675,9 @@ struct DeviceExtensions : public InstanceExtensions {
         const ExtEnabled DeviceExtensions::* enabled;
         const char *name;
     };
-    typedef std::vector<DeviceReq> DeviceReqVec;
+    // If the requirements are: (A + B),C
+    // Will hold [[A, B], C] == ((A && B) || C)
+    typedef std::vector<std::vector<DeviceReq>> DeviceReqVec;
     struct DeviceInfo {
        DeviceInfo(ExtEnabled DeviceExtensions::* state_, const DeviceReqVec requirements_): state(state_), requirements(requirements_) {}
        ExtEnabled DeviceExtensions::* state;
@@ -982,10 +1008,17 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_deferred_host_operations, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME}}})},
             {VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_bind_memory2, {})},
-            {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address, {{
-                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+            // What this needs to look like
+            {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address, {
+                {
+                    {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME}
+                },
+                {
+                    {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}
+                }
+            }
+            )},
             {VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_copy_commands2, {})},
             {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass2, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME},
@@ -1288,6 +1321,28 @@ struct DeviceExtensions : public InstanceExtensions {
             return info->second;
         }
         return empty_info;
+    }
+
+    static std::string GetRequirementString(const char *extension) {
+        std::string result;
+        const auto &ext_map = DeviceExtensions::get_info_map();
+        const auto info = ext_map.find(extension);
+        if (info != ext_map.cend()) {
+            for (const auto& requirements : info->second.requirements) {
+                result.append("(");
+                for (const auto& requirement : requirements) {
+                    result.append(requirement.name);
+                    if (&requirement != &requirements.back()) {
+                        result.append(" and ");
+                    }
+                }
+                result.append(")");
+                if (&requirements != &info->second.requirements.back()) {
+                    result.append(" or ");
+                }
+            }
+        }
+        return result;
     }
 
     DeviceExtensions() = default;
