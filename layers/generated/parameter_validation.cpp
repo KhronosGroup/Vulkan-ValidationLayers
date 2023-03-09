@@ -11241,6 +11241,7 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateXcbSurfaceKHR", "pSurface", pSurface, "VUID-vkCreateXcbSurfaceKHR-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     return skip;
 }
 
