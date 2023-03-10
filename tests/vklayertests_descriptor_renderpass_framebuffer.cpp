@@ -13691,7 +13691,9 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
         allocate_info.pSetLayouts = layouts;
 
         VkDescriptorSet descriptor_sets[2];
-        vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+        if (vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets) != VK_SUCCESS) {
+            GTEST_SKIP() << "Failed to allocate from vkAllocateDescriptorSets";
+        }
 
         VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
         buffer_ci.size = 32;

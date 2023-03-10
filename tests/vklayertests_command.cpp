@@ -9787,6 +9787,7 @@ TEST_F(VkLayerTest, ResolveInvalidUsage) {
     VkFormat src_format = VK_FORMAT_R8_UNORM;
     VkFormat dst_format = VK_FORMAT_R8_SNORM;
 
+    // Need to turn off transfer feature support
     VkFormatProperties formatProps;
     fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), src_format, &formatProps);
     formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
@@ -9803,7 +9804,7 @@ TEST_F(VkLayerTest, ResolveInvalidUsage) {
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = 0;

@@ -7322,7 +7322,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         commandBuffer.end();
     }
 
-    if (extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+    if (IsExtensionsEnabled(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
         auto vkCmdSetColorBlendEquationEXT =
             (PFN_vkCmdSetColorBlendEquationEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendEquationEXT");
 
