@@ -252,10 +252,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
     } else {
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
-            const char *format_string = string_VkFormat(pCreateInfo->format);
             skip |= LogError(device, "VUID-VkImageCreateInfo-mipLevels-02255",
                              "vkCreateImage(): Image mip levels=%d exceed image format maxMipLevels=%d for format %s.",
-                             pCreateInfo->mipLevels, format_limits.maxMipLevels, format_string);
+                             pCreateInfo->mipLevels, format_limits.maxMipLevels, string_VkFormat(pCreateInfo->format));
         }
 
         uint64_t texel_count = static_cast<uint64_t>(pCreateInfo->extent.width) *
@@ -276,40 +275,45 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             if (total_size > format_limits.maxResourceSize) {
                 skip |= LogWarning(device, kVUID_Core_Image_InvalidFormatLimitsViolation,
                                    "vkCreateImage(): resource size exceeds allowable maximum Image resource size = 0x%" PRIxLEAST64
-                                   ", maximum resource size = 0x%" PRIxLEAST64 " ",
-                                   total_size, format_limits.maxResourceSize);
+                                   ", maximum resource size = 0x%" PRIxLEAST64 " for format %s.",
+                                   total_size, format_limits.maxResourceSize, string_VkFormat(pCreateInfo->format));
             }
         }
 
         if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-arrayLayers-02256",
-                             "vkCreateImage(): arrayLayers=%d exceeds allowable maximum supported by format of %d.",
-                             pCreateInfo->arrayLayers, format_limits.maxArrayLayers);
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-arrayLayers-02256",
+                "vkCreateImage(): arrayLayers=%d exceeds allowable maximum supported by format %s (format maxArrayLayers: %" PRIu32
+                ").",
+                pCreateInfo->arrayLayers, string_VkFormat(pCreateInfo->format), format_limits.maxArrayLayers);
         }
 
         if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02258",
-                             "vkCreateImage(): samples %s is not supported by format 0x%.8X.",
-                             string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
+                             "vkCreateImage(): samples %s is not supported by format %s (format sampleCounts: 0x%.8X).",
+                             string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkFormat(pCreateInfo->format),
+                             format_limits.sampleCounts);
         }
 
         if (pCreateInfo->extent.width > format_limits.maxExtent.width) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02252",
-                             "vkCreateImage(): extent.width %" PRIu32 " exceeds allowable maximum image extent width %" PRIu32 ".",
-                             pCreateInfo->extent.width, format_limits.maxExtent.width);
+                             "vkCreateImage(): extent.width %" PRIu32 " exceeds allowable maximum image extent width %" PRIu32
+                             " for format %s.",
+                             pCreateInfo->extent.width, format_limits.maxExtent.width, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->extent.height > format_limits.maxExtent.height) {
-            skip |=
-                LogError(device, "VUID-VkImageCreateInfo-extent-02253",
-                         "vkCreateImage(): extent.height %" PRIu32 " exceeds allowable maximum image extent height %" PRIu32 ".",
-                         pCreateInfo->extent.height, format_limits.maxExtent.height);
+            skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02253",
+                             "vkCreateImage(): extent.height %" PRIu32 " exceeds allowable maximum image extent height %" PRIu32
+                             " for format %s.",
+                             pCreateInfo->extent.height, format_limits.maxExtent.height, string_VkFormat(pCreateInfo->format));
         }
 
         if (pCreateInfo->extent.depth > format_limits.maxExtent.depth) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-extent-02254",
-                             "vkCreateImage(): extent.depth %" PRIu32 " exceeds allowable maximum image extent depth %" PRIu32 ".",
-                             pCreateInfo->extent.depth, format_limits.maxExtent.depth);
+                             "vkCreateImage(): extent.depth %" PRIu32 " exceeds allowable maximum image extent depth %" PRIu32
+                             " for format %s.",
+                             pCreateInfo->extent.depth, format_limits.maxExtent.depth, string_VkFormat(pCreateInfo->format));
         }
     }
 
@@ -1995,14 +1999,14 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             if (pCreateInfo->subresourceRange.levelCount != 1) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-07072",
                                  "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "and format is not compressed, but subresourcesRange.levelCount (%" PRIu32 ") is not 1.",
-                                 pCreateInfo->subresourceRange.levelCount);
+                                 "and format (%s) is not compressed, but subresourcesRange.levelCount (%" PRIu32 ") is not 1.",
+                                 string_VkFormat(view_format), pCreateInfo->subresourceRange.levelCount);
             }
             if (pCreateInfo->subresourceRange.layerCount != 1) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-07072",
                                  "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "and format is not compressed, but subresourcesRange.layerCount (%" PRIu32 ") is not 1.",
-                                 pCreateInfo->subresourceRange.layerCount);
+                                 "and format (%s) is not compressed, but subresourcesRange.layerCount (%" PRIu32 ") is not 1.",
+                                 string_VkFormat(view_format), pCreateInfo->subresourceRange.layerCount);
             }
         }
 
