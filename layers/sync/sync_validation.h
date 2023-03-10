@@ -1309,6 +1309,12 @@ class RenderPassAccessContext {
     bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer,
                                        CMD_TYPE cmd_type) const;
     void RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd_buffer, ResourceUsageTag tag);
+
+    bool ValidateClearAttachment(const CommandExecutionContext &ex_context, const CMD_BUFFER_STATE &cmd_buffer, CMD_TYPE cmd_type,
+                                 const VkClearAttachment &clear_attachment, const VkClearRect &rect, uint32_t rect_index) const;
+    void RecordClearAttachment(const CMD_BUFFER_STATE &cmd_buffer, ResourceUsageTag tag, const VkClearAttachment &clear_attachment,
+                               const VkClearRect &rect);
+
     bool ValidateNextSubpass(const CommandExecutionContext &ex_context, CMD_TYPE cmd_type) const;
     bool ValidateEndRenderPass(const CommandExecutionContext &ex_context, CMD_TYPE cmd_type) const;
     bool ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &ex_context, CMD_TYPE cmd_type) const;
@@ -1322,9 +1328,18 @@ class RenderPassAccessContext {
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
     const std::vector<AccessContext> &GetContexts() const { return subpass_contexts_; }
+    uint32_t GetCurrentSubpass() const { return current_subpass_; }
     const RENDER_PASS_STATE *GetRenderPassState() const { return rp_state_; }
     AccessContext *CreateStoreResolveProxy() const;
 
+  private:
+    struct ClearAttachmentInfo {
+        uint32_t attachment_index;
+        VkImageAspectFlags aspects_to_clear;
+        VkImageSubresourceRange subresource_range;
+    };
+    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment &clear_attachment,
+                                                              const VkClearRect &rect) const;
   private:
     const RENDER_PASS_STATE *rp_state_;
     const VkRect2D render_area_;
@@ -2204,6 +2219,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                 const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange *pRanges) override;
+
+    bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                            const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                            const VkClearRect *pRects) const override;
+    void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                          const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                          const VkClearRect *pRects) override;
 
     bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                 uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
