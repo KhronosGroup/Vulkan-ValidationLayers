@@ -442,9 +442,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
     bool skip = false;
     // BUG: This helper method also called GetRead<>(), which will deadlock
     skip = ValidateExtendedDynamicState(commandBuffer, CMD_SETSCISSORWITHCOUNT, ...);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(),
-                                           "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           CMD_SETSCISSORWITHCOUNTEXT);
+    skip |= ForbidInheritedViewportScissor(cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", CMD_SETSCISSORWITHCOUNTEXT);
 
     return skip;
 }

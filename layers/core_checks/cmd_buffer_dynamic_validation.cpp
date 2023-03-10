@@ -33,18 +33,6 @@ bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDyn
     return false;
 }
 
-static void ListBits(std::ostream &s, uint32_t bits) {
-    for (int i = 0; i < 32 && bits; i++) {
-        if (bits & (1 << i)) {
-            s << i;
-            bits &= ~(1 << i);
-            if (bits) {
-                s << ",";
-            }
-        }
-    }
-}
-
 bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
                                           CMD_TYPE cmd_type) const {
     bool skip = false;
@@ -239,11 +227,12 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             const auto required_viewports_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportMask & required_viewports_mask;
             if (missing_viewport_mask) {
-                std::stringstream ss;
-                ss << CommandTypeString(cmd_type) << ": Dynamic viewport(s) ";
-                ListBits(ss, missing_viewport_mask);
-                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewport().";
-                skip |= LogError(device, vuid.dynamic_viewport_07831, "%s", ss.str().c_str());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |=
+                    LogError(objlist, vuid.dynamic_viewport_07831,
+                             "%s: Dynamic viewport(s) (0x%x) are used by pipeline state object, but were not provided via calls "
+                             "to vkCmdSetViewport().",
+                             CommandTypeString(cmd_type), missing_viewport_mask);
             }
         }
 
@@ -251,11 +240,11 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             const auto required_scissor_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorMask & required_scissor_mask;
             if (missing_scissor_mask) {
-                std::stringstream ss;
-                ss << CommandTypeString(cmd_type) << ": Dynamic scissor(s) ";
-                ListBits(ss, missing_scissor_mask);
-                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissor().";
-                skip |= LogError(device, vuid.dynamic_scissor_07832, "%s", ss.str().c_str());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.dynamic_scissor_07832,
+                                 "%s: Dynamic scissor(s) (0x%x) are used by pipeline state object, but were not provided via calls "
+                                 "to vkCmdSetScissor().",
+                                 CommandTypeString(cmd_type), missing_scissor_mask);
             }
         }
 
@@ -266,11 +255,11 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
             const auto missing_viewport_mask = ~cb_state.viewportWithCountMask & required_viewport_mask;
             if (missing_viewport_mask) {
-                std::stringstream ss;
-                ss << CommandTypeString(cmd_type) << ": Dynamic viewport with count ";
-                ListBits(ss, missing_viewport_mask);
-                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewportWithCountEXT().";
-                skip |= LogError(device, vuid.viewport_count_03417, "%s", ss.str().c_str());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.viewport_count_03417,
+                                 "%s: Dynamic viewport with count 0x%x are used by pipeline state object, but were not provided "
+                                 "via calls to vkCmdSetViewportWithCountEXT().",
+                                 CommandTypeString(cmd_type), missing_viewport_mask);
             }
         }
 
@@ -278,22 +267,22 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             const auto required_scissor_mask = (1 << viewport_state->viewportCount) - 1;
             const auto missing_scissor_mask = ~cb_state.scissorWithCountMask & required_scissor_mask;
             if (missing_scissor_mask) {
-                std::stringstream ss;
-                ss << CommandTypeString(cmd_type) << ": Dynamic scissor with count ";
-                ListBits(ss, missing_scissor_mask);
-                ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissorWithCountEXT().";
-                skip |= LogError(device, vuid.scissor_count_03418, "%s", ss.str().c_str());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.scissor_count_03418,
+                                 "%s: Dynamic scissor with count 0x%x are used by pipeline state object, but were not provided via "
+                                 "calls to vkCmdSetScissorWithCountEXT().",
+                                 CommandTypeString(cmd_type), missing_scissor_mask);
             }
         }
 
         if (dyn_scissor_count && dyn_viewport_count) {
             if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask) {
-                std::stringstream ss;
-                ss << CommandTypeString(cmd_type) << ": Dynamic viewport and scissor with count ";
-                ListBits(ss, cb_state.viewportWithCountMask ^ cb_state.scissorWithCountMask);
-                ss << " are used by pipeline state object, but were not provided via matching calls to "
-                      "vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT().";
-                skip |= LogError(device, vuid.viewport_scissor_count_03419, "%s", ss.str().c_str());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.viewport_scissor_count_03419,
+                                 "%s: Dynamic viewport and scissor with count 0x%x are used by pipeline state object, but were not "
+                                 "provided via matching calls to "
+                                 "vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT().",
+                                 CommandTypeString(cmd_type), (cb_state.viewportWithCountMask ^ cb_state.scissorWithCountMask));
             }
         }
     }
@@ -303,9 +292,11 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         const uint32_t viewport_count = viewport_state->viewportCount;
         const uint32_t max_inherited = uint32_t(cb_state.inheritedViewportDepths.size());
         if (viewport_count > max_inherited) {
-            skip |= LogError(device, vuid.dynamic_state_inherited_07850,
-                             "Pipeline requires more viewports (%u) than inherited (viewportDepthCount=%u).",
-                             unsigned(viewport_count), unsigned(max_inherited));
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |=
+                LogError(objlist, vuid.dynamic_state_inherited_07850,
+                         "%s: Pipeline requires more viewports (%" PRIu32 ".) than inherited (viewportDepthCount = %" PRIu32 ".).",
+                         CommandTypeString(cmd_type), viewport_count, max_inherited);
         }
     }
 
@@ -314,8 +305,9 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         if (color_blend_state) {
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
             if (cb_state.dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(
-                    cb_state.commandBuffer(), vuid.dynamic_color_write_enable_count_07750,
+                    objlist, vuid.dynamic_color_write_enable_count_07750,
                     "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
                     " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
                     "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",
@@ -389,7 +381,8 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             const char *vuid_error = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
                                          ? vuid.primitive_topology_class_ds3_07500
                                          : vuid.primitive_topology_class_03420;
-            skip |= LogError(pipeline.pipeline(), vuid_error,
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+            skip |= LogError(objlist, vuid_error,
                              "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopology is "
                              "not compatible with the pipeline topology %s.",
                              CommandTypeString(cmd_type), string_VkPrimitiveTopology(dynamic_topology),
@@ -400,12 +393,11 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     return skip;
 }
 
-bool CoreChecks::ForbidInheritedViewportScissor(VkCommandBuffer commandBuffer, const CMD_BUFFER_STATE *cb_state, const char *vuid,
-                                                const CMD_TYPE cmd_type) const {
+bool CoreChecks::ForbidInheritedViewportScissor(const CMD_BUFFER_STATE &cb_state, const char *vuid, const CMD_TYPE cmd_type) const {
     bool skip = false;
-    if (cb_state->inheritedViewportDepths.size() != 0) {
+    if (cb_state.inheritedViewportDepths.size() != 0) {
         skip |=
-            LogError(commandBuffer, vuid,
+            LogError(cb_state.commandBuffer(), vuid,
                      "%s: commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.",
                      CommandTypeString(cmd_type));
     }
@@ -431,8 +423,7 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETVIEWPORT, VK_TRUE, nullptr, nullptr);
-    skip |=
-        ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewport-commandBuffer-04821", CMD_SETVIEWPORT);
+    skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetViewport-commandBuffer-04821", CMD_SETVIEWPORT);
     return skip;
 }
 
@@ -441,8 +432,7 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETSCISSOR, VK_TRUE, nullptr, nullptr);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissor-viewportScissor2D-04789",
-                                           CMD_SETSCISSOR);
+    skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetScissor-viewportScissor2D-04789", CMD_SETSCISSOR);
     return skip;
 }
 
@@ -566,8 +556,8 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     bool skip = false;
     // Minimal validation for command buffer state
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETDISCARDRECTANGLEEXT, VK_TRUE, nullptr, nullptr);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(),
-                                           "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", CMD_SETDISCARDRECTANGLEEXT);
+    skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788",
+                                           CMD_SETDISCARDRECTANGLEEXT);
     for (uint32_t i = 0; i < discardRectangleCount; ++i) {
         if (pDiscardRectangles[i].offset.x < 0) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-x-00587",
@@ -641,8 +631,10 @@ bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer comm
 
     if (patchControlPoints > phys_dev_props.limits.maxTessellationPatchSize) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874",
-                         "vkCmdSetPatchControlPointsEXT: The value of patchControlPoints must be less than "
-                         "VkPhysicalDeviceLimits::maxTessellationPatchSize");
+                         "vkCmdSetPatchControlPointsEXT: The value of patchControlPoints (%" PRIu32
+                         ") must be less than "
+                         "VkPhysicalDeviceLimits::maxTessellationPatchSize (%" PRIu32 ")",
+                         patchControlPoints, phys_dev_props.limits.maxTessellationPatchSize);
     }
     return skip;
 }
@@ -731,7 +723,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
     skip = ValidateExtendedDynamicState(*cb_state, CMD_SETVIEWPORTWITHCOUNTEXT,
                                         enabled_features.extended_dynamic_state_features.extendedDynamicState,
                                         "VUID-vkCmdSetViewportWithCount-None-03393", "extendedDynamicState");
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
+    skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
                                            CMD_SETVIEWPORTWITHCOUNTEXT);
 
     return skip;
@@ -742,8 +734,8 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip = ValidateExtendedDynamicState(*cb_state, CMD_SETVIEWPORTWITHCOUNT, VK_TRUE, nullptr, nullptr);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetViewportWithCount-commandBuffer-04819",
-                                           CMD_SETVIEWPORTWITHCOUNT);
+    skip |=
+        ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetViewportWithCount-commandBuffer-04819", CMD_SETVIEWPORTWITHCOUNT);
 
     return skip;
 }
@@ -755,8 +747,8 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
     skip = ValidateExtendedDynamicState(*cb_state, CMD_SETSCISSORWITHCOUNTEXT,
                                         enabled_features.extended_dynamic_state_features.extendedDynamicState,
                                         "VUID-vkCmdSetScissorWithCount-None-03396", "extendedDynamicState");
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           CMD_SETSCISSORWITHCOUNTEXT);
+    skip |=
+        ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", CMD_SETSCISSORWITHCOUNTEXT);
 
     return skip;
 }
@@ -766,8 +758,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip = ValidateExtendedDynamicState(*cb_state, CMD_SETSCISSORWITHCOUNT, VK_TRUE, nullptr, nullptr);
-    skip |= ForbidInheritedViewportScissor(commandBuffer, cb_state.get(), "VUID-vkCmdSetScissorWithCount-commandBuffer-04820",
-                                           CMD_SETSCISSORWITHCOUNT);
+    skip |= ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetScissorWithCount-commandBuffer-04820", CMD_SETSCISSORWITHCOUNT);
 
     return skip;
 }
