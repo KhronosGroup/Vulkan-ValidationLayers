@@ -792,8 +792,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     bool skip = false;
     const auto &rp_state = cb_state->activeRenderPass;
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-pDependencies-02285",
-                             cb_state->activeSubpass, rp_state->renderPass(), enabled_features,
-                             rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
+                             cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
+                             rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                          "%s Barriers cannot be set during subpass %d of %s with no self-dependency specified.",
@@ -845,8 +845,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         return skip;
     }
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-pDependencies-02285",
-                             cb_state->activeSubpass, rp_state->renderPass(), enabled_features,
-                             rp_state->self_dependencies[cb_state->activeSubpass], rp_state->createInfo.pDependencies);
+                             cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
+                             rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
 
     if (state.self_dependencies.size() == 0) {
         skip |= LogError(state.rp_handle, state.vuid,
@@ -1798,7 +1798,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
     if ((cb_state->activeRenderPass) && (VK_NULL_HANDLE == cb_state->activeFramebuffer) &&
         (VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level)) {
-        const auto active_subpass = cb_state->activeSubpass;
+        const auto active_subpass = cb_state->GetActiveSubpass();
         const auto rp_state = cb_state->activeRenderPass;
         const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
         // Secondary CB case w/o FB specified delay validation

@@ -3197,7 +3197,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                     if (sample_locations_begin_info) {
                         for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
                             if (sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
-                                cb_state->activeSubpass) {
+                                cb_state->GetActiveSubpass()) {
                                 if (MatchSampleLocationsInfo(
                                         &sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
                                         &sample_locations->sampleLocationsInfo)) {
@@ -3218,7 +3218,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                      "VkRenderPassSampleLocationsBeginInfoEXT::pPostSubpassSampleLocations subpassIndex "
                                      "matching the current subpass index and sampleLocationsInfo matching sampleLocationsInfo of "
                                      "VkPipelineSampleLocationsStateCreateInfoEXT the pipeline was created with.",
-                                     cb_state->activeSubpass);
+                                     cb_state->GetActiveSubpass());
                     }
                 }
             }
@@ -3668,7 +3668,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const auto dynamic_rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
             } else {
                 const auto render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
-                const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.activeSubpass];
+                const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
                 uint32_t i;
                 unsigned subpass_num_samples = 0;
 
@@ -3798,13 +3798,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                                     *rp_state.get(), caller, vuid.render_pass_compatible_02684);
         }
         const auto subpass = pipeline.Subpass();
-        if (subpass != cb_state.activeSubpass) {
+        if (subpass != cb_state.GetActiveSubpass()) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
             skip |= LogError(objlist, vuid.subpass_index_02685, "%s: Pipeline was built for subpass %u but used in subpass %u.",
-                             caller, subpass, cb_state.activeSubpass);
+                             caller, subpass, cb_state.GetActiveSubpass());
         }
         const safe_VkAttachmentReference2 *ds_attachment =
-            cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.activeSubpass].pDepthStencilAttachment;
+            cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
         if (ds_attachment != nullptr) {
             // Check if depth stencil attachment was created with sample location compatible bit
             if (pipeline.SampleLocationEnabled() == VK_TRUE) {
@@ -3821,7 +3821,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                                  "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
                                                  "stencil attachment's VkImage was not created with "
                                                  "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
-                                                 caller, cb_state.activeSubpass);
+                                                 caller, cb_state.GetActiveSubpass());
                             }
                         }
                     }
@@ -3884,7 +3884,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     if (pipeline.fragment_output_state && pipeline.fragment_output_state->dual_source_blending && cb_state.activeRenderPass) {
         uint32_t count = cb_state.activeRenderPass->UsesDynamicRendering()
                              ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
-                             : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.activeSubpass].colorAttachmentCount;
+                             : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
         if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
             skip |=

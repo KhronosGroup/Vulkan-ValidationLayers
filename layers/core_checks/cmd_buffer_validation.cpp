@@ -893,7 +893,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     }
                 }
 
-                if (!cb_state->activeRenderPass->UsesDynamicRendering() && (cb_state->activeSubpass != inheritance_subpass)) {
+                if (!cb_state->activeRenderPass->UsesDynamicRendering() && (cb_state->GetActiveSubpass() != inheritance_subpass)) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state->activeRenderPass->renderPass());
                     skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019",
                                      "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
@@ -903,7 +903,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "match the current subpass (%u).",
                                      i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                      report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                     inheritance_subpass, cb_state->activeSubpass);
+                                     inheritance_subpass, cb_state->GetActiveSubpass());
                 } else if (cb_state->activeRenderPass->UsesDynamicRendering()) {
                     if (inheritance_render_pass != VK_NULL_HANDLE) {
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
@@ -1639,11 +1639,11 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
                              "pass instance, but a render pass instance is currently active in the command buffer.");
         }
         if (cb_state->conditional_rendering_inside_render_pass && cb_state->activeRenderPass != nullptr &&
-            cb_state->conditional_rendering_subpass != cb_state->activeSubpass) {
+            cb_state->conditional_rendering_subpass != cb_state->GetActiveSubpass()) {
             skip |= LogError(commandBuffer, "VUID-vkCmdEndConditionalRenderingEXT-None-01987",
                              "vkCmdBeginConditionalRenderingEXT(): Conditional rendering was begun in subpass %" PRIu32
                              ", but the current subpass is %" PRIu32 ".",
-                             cb_state->conditional_rendering_subpass, cb_state->activeSubpass);
+                             cb_state->conditional_rendering_subpass, cb_state->GetActiveSubpass());
         }
     }
 

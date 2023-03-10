@@ -2993,7 +2993,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         IMAGE_VIEW_STATE* depth_image_view = nullptr;
 
-        const auto depth_attachment = rp->createInfo.pSubpasses[cmd_state->activeSubpass].pDepthStencilAttachment;
+        const auto depth_attachment = rp->createInfo.pSubpasses[cmd_state->GetActiveSubpass()].pDepthStencilAttachment;
         if (depth_attachment) {
             const uint32_t attachment_index = depth_attachment->attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
@@ -3682,7 +3682,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
         // TODO: Implement other best practices for dynamic rendering
 
     } else {
-        auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
+        auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->GetActiveSubpass()];
         for (uint32_t i = 0; i < attachmentCount; i++) {
             auto& attachment = pClearAttachments[i];
             uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
@@ -4648,7 +4648,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
             }
 
         } else {
-            const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
+            const auto& subpass = rp->createInfo.pSubpasses[cb_node->GetActiveSubpass()];
 
             if (is_full_clear) {
                 for (uint32_t i = 0; i < attachmentCount; i++) {
