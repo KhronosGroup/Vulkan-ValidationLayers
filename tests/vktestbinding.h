@@ -313,7 +313,10 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     DeviceMemory &operator=(DeviceMemory &&) = default;
 
     // vkAllocateMemory()
+    // Fails the test when allocation is unsuccessful
     void init(const Device &dev, const VkMemoryAllocateInfo &info);
+    // Does not fail the test when allocation is unsuccessful and instead returns error code
+    VkResult try_init(const Device &dev, const VkMemoryAllocateInfo &info);
 
     // vkMapMemory()
     const void *map(VkFlags flags) const;

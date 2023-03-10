@@ -255,8 +255,18 @@ TEST_F(VkLayerTest, BufferMemoryWithUnsupportedExternalHandleType) {
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type | not_supported_type;
 
+    vk_testing::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_info);
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(),
+                                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    VkResult result = buffer.memory().try_init(*m_device, alloc_info);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "vkAllocateMemory failed (probably due to unsupported handle type). Unable to reach vkBindBufferMemory to "
+                        "run valdiation";
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
-    vk_testing::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    buffer.bind_memory(buffer.memory(), 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -332,8 +342,18 @@ TEST_F(VkLayerTest, ImageMemoryWithUnsupportedExternalHandleType) {
     auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_memory_info.handleTypes = handle_type | not_supported_type;
 
+    vk_testing::Image image;
+    image.init_no_mem(*m_device, image_info);
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
+                                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    VkResult result = image.memory().try_init(*m_device, alloc_info);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "vkAllocateMemory failed (probably due to unsupported handle type). Unable to reach vkBindImageMemory to "
+                        "run valdiation";
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
-    vk_testing::Image image(*m_device, image_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    image.bind_memory(image.memory(), 0);
     m_errorMonitor->VerifyFound();
 }
 

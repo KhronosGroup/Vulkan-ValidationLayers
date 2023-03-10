@@ -470,6 +470,16 @@ void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
     memory_allocate_info_ = info;
 }
 
+VkResult DeviceMemory::try_init(const Device &dev, const VkMemoryAllocateInfo &info) {
+    assert(!initialized());
+    VkDeviceMemory handle = VK_NULL_HANDLE;
+    auto result = vk::AllocateMemory(dev.handle(), &info, nullptr, &handle);
+    if (result == VK_SUCCESS) {
+        NonDispHandle::init(dev.handle(), handle);
+    }
+    return result;
+}
+
 const void *DeviceMemory::map(VkFlags flags) const {
     void *data;
     if (!EXPECT(vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data) == VK_SUCCESS)) data = NULL;
