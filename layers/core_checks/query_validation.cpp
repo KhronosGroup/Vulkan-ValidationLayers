@@ -452,7 +452,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
     if (cb_state.activeRenderPass) {
         const auto *render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
         if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
-            const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.activeSubpass];
+            const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
             if (subpass_desc) {
                 uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
                 if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {

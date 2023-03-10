@@ -294,7 +294,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
-    uint32_t activeSubpass;
+    uint32_t GetActiveSubpass() const { return active_subpass_; }
+    void SetActiveSubpass(uint32_t subpass);
     std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
@@ -596,6 +597,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT
     int label_stack_depth_ = 0;
+
+    uint32_t active_subpass_;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

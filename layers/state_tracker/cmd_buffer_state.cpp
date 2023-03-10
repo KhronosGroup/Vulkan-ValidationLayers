@@ -66,6 +66,10 @@ const char *CommandTypeString(CMD_TYPE type) {
     return kGeneratedCommandNameList[type];
 }
 
+void CMD_BUFFER_STATE::SetActiveSubpass(uint32_t subpass) {
+    active_subpass_ = subpass;
+}
+
 CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                    const COMMAND_POOL_STATE *pool)
     : REFCOUNTED_NODE(cb, kVulkanObjectTypeCommandBuffer),
@@ -156,7 +160,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     active_color_attachments_index.clear();
     attachments_view_states.clear();
     activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
-    activeSubpass = 0;
+    SetActiveSubpass(0);
     waitedEvents.clear();
     events.clear();
     writeEventsBeforeWait.clear();
@@ -510,7 +514,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
     activeFramebuffer = dev_data->Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
-    activeSubpass = 0;
+    SetActiveSubpass(0);
     activeSubpassContents = contents;
 
     if (activeRenderPass) {
@@ -538,7 +542,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
     if (activeFramebuffer) {
         // Set cb_state->active_subpasses
         active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
-        const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+        const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
         UpdateSubpassAttachments(subpass, *active_subpasses);
 
         // Set cb_state->active_attachments & cb_state->attachments_view_states
@@ -552,7 +556,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
 
 void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents) {
     RecordCmd(cmd_type);
-    activeSubpass++;
+    SetActiveSubpass(GetActiveSubpass() + 1);
     activeSubpassContents = contents;
 
     // Update cb_state->active_subpasses
@@ -561,8 +565,8 @@ void CMD_BUFFER_STATE::NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents
             active_subpasses = nullptr;
             active_subpasses = std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
 
-            if (activeSubpass < activeRenderPass->createInfo.subpassCount) {
-                const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+            if (GetActiveSubpass() < activeRenderPass->createInfo.subpassCount) {
+                const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
                 UpdateSubpassAttachments(subpass, *active_subpasses);
             }
         }
@@ -580,7 +584,7 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
     active_attachments = nullptr;
     active_subpasses = nullptr;
     active_color_attachments_index.clear();
-    activeSubpass = 0;
+    SetActiveSubpass(0);
     activeFramebuffer = VK_NULL_HANDLE;
 }
 
@@ -874,7 +878,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
             (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
             if (beginInfo.pInheritanceInfo->renderPass) {
                 activeRenderPass = dev_data->Get<RENDER_PASS_STATE>(beginInfo.pInheritanceInfo->renderPass);
-                activeSubpass = beginInfo.pInheritanceInfo->subpass;
+                SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);
 
                 if (beginInfo.pInheritanceInfo->framebuffer) {
                     activeFramebuffer = dev_data->Get<FRAMEBUFFER_STATE>(beginInfo.pInheritanceInfo->framebuffer);
@@ -885,7 +889,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                         // Set active_subpasses
                         active_subpasses =
                             std::make_shared<std::vector<SUBPASS_INFO>>(activeFramebuffer->createInfo.attachmentCount);
-                        const auto &subpass = activeRenderPass->createInfo.pSubpasses[activeSubpass];
+                        const auto &subpass = activeRenderPass->createInfo.pSubpasses[GetActiveSubpass()];
                         UpdateSubpassAttachments(subpass, *active_subpasses);
 
                         // Set active_attachments & attachments_view_states

@@ -954,7 +954,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 view_mask = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask;
             } else {
                 const auto *renderpass_create_info = cb_state.activeRenderPass->createInfo.ptr();
-                const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.activeSubpass];
+                const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
                 const auto *framebuffer = cb_state.activeFramebuffer.get();
 
                 is_valid_color_attachment_index = (clear_desc->colorAttachment == VK_ATTACHMENT_UNUSED);
@@ -988,7 +988,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                             skip |= LogError(objlist, vuid,
                                              "vkCmdClearAttachments() pAttachments[%" PRIu32 "] in pSubpasses[%" PRIu32
                                              "] has VK_IMAGE_ASPECT_DEPTH_BIT and is backed by an image view with format (%s).",
-                                             attachment_index, cb_state.activeSubpass, string_VkFormat(image_view_format));
+                                             attachment_index, cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
                         }
 
                         if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !FormatHasStencil(image_view_format)) {
@@ -1000,7 +1000,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                             skip |= LogError(objlist, vuid,
                                              "vkCmdClearAttachments() pAttachments[%" PRIu32 "] in pSubpasses[%" PRIu32
                                              "] has VK_IMAGE_ASPECT_STENCIL_BIT and is backed by an image view with format (%s).",
-                                             attachment_index, cb_state.activeSubpass, string_VkFormat(image_view_format));
+                                             attachment_index, cb_state.GetActiveSubpass(), string_VkFormat(image_view_format));
                         }
                     }
 
@@ -1130,7 +1130,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
             }
         } else if (cb_state.activeRenderPass->use_dynamic_rendering == false) {
             const VkRenderPassCreateInfo2 *renderpass_create_info = cb_state.activeRenderPass->createInfo.ptr();
-            const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.activeSubpass];
+            const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
 
             for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
                 const auto clear_desc = &pAttachments[attachment_index];
