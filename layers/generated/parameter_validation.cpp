@@ -11186,6 +11186,7 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(
         }
     }
     skip |= ValidateRequiredPointer("vkCreateXlibSurfaceKHR", "pSurface", pSurface, "VUID-vkCreateXlibSurfaceKHR-pSurface-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     return skip;
 }
 

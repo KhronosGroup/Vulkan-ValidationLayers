@@ -122,3 +122,41 @@ TEST_F(VkPositiveWsiTest, CreateXcbSurface) {
     xcb_disconnect(xcb_connection);
 #endif
 }
+
+TEST_F(VkPositiveWsiTest, CreateX11Surface) {
+    TEST_DESCRIPTION("Test creating x11 surface");
+
+#ifndef VK_USE_PLATFORM_XLIB_KHR
+    GTEST_SKIP() << "test not supported on platform";
+#else
+    AddSurfaceExtension(VkLayerTest::WsiPreference::X11);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (std::getenv("DISPLAY") == nullptr) {
+        GTEST_SKIP() << "Test requires working display\n";
+    }
+
+    Display *x11_display = XOpenDisplay(nullptr);
+    ASSERT_TRUE(x11_display != nullptr);
+
+    const int screen = DefaultScreen(x11_display);
+
+    const Window x11_window = XCreateSimpleWindow(x11_display, RootWindow(x11_display, screen), 0, 0, 128, 128, 1,
+                                                  BlackPixel(x11_display, screen), WhitePixel(x11_display, screen));
+
+    VkSurfaceKHR vulkan_surface;
+    auto surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
+    surface_create_info.dpy = x11_display;
+    surface_create_info.window = x11_window;
+    vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
+    vk::DestroySurfaceKHR(instance(), vulkan_surface, nullptr);
+
+    XDestroyWindow(x11_display, x11_window);
+    XCloseDisplay(x11_display);
+#endif
+}
