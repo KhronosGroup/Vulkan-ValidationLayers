@@ -8017,12 +8017,15 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
 
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
     TEST_DESCRIPTION("Specify invalid fragment shading rate values");
-
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
@@ -8083,11 +8086,15 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8113,12 +8120,17 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
     TEST_DESCRIPTION("Specify combiner operations when only pipeline rate is supported");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
@@ -8160,11 +8172,15 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
     TEST_DESCRIPTION("Specify pipeline rate when only attachment or primitive rate are supported");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
@@ -8207,12 +8223,17 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);

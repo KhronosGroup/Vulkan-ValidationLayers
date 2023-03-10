@@ -198,6 +198,8 @@ class HelperFileOutputGenerator(OutputGenerator):
             print("Error in vk.xml file -- extension name is not available")
         requires = interface.get('depends')
         if requires is not None:
+            # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
+            requires = re.sub(r',VK_VERSION_1_\d+', '', requires)
             required_extensions = exprValues(parseExpr(requires))
         else:
             required_extensions = list()
