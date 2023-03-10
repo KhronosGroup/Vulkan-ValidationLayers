@@ -3016,6 +3016,58 @@ TEST_F(VkLayerTest, TestCreatingXcbSurface) {
 #endif
 }
 
+TEST_F(VkLayerTest, TestCreatingX11Surface) {
+    TEST_DESCRIPTION("Test creating invalid x11 surface");
+
+#ifndef VK_USE_PLATFORM_XLIB_KHR
+    GTEST_SKIP() << "test not supported on platform";
+#else
+    AddSurfaceExtension(VkLayerTest::WsiPreference::X11);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (std::getenv("DISPLAY") == nullptr) {
+        GTEST_SKIP() << "Test requires working display\n";
+    }
+
+    Display *x11_display = XOpenDisplay(nullptr);
+    ASSERT_TRUE(x11_display != nullptr);
+
+    const int screen = DefaultScreen(x11_display);
+
+    const Window x11_window = XCreateSimpleWindow(x11_display, RootWindow(x11_display, screen), 0, 0, 128, 128, 1,
+                                                  BlackPixel(x11_display, screen), WhitePixel(x11_display, screen));
+
+    // Invalid display
+    {
+        VkSurfaceKHR vulkan_surface;
+        auto surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
+        surface_create_info.dpy = nullptr;
+        surface_create_info.window = x11_window;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkXlibSurfaceCreateInfoKHR-dpy-01313");
+        vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Invalid window
+    {
+        VkSurfaceKHR vulkan_surface;
+        auto surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
+        surface_create_info.dpy = x11_display;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkXlibSurfaceCreateInfoKHR-window-01314");
+        vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
+        m_errorMonitor->VerifyFound();
+    }
+
+    XDestroyWindow(x11_display, x11_window);
+    XCloseDisplay(x11_display);
+#endif
+}
+
 TEST_F(VkLayerTest, UseSwapchainImageBeforeWait) {
     TEST_DESCRIPTION("Test using a swapchain image that was acquired but not waited on.");
 

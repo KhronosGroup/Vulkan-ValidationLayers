@@ -296,6 +296,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateWin32SurfaceKHR',
             'vkCreateWaylandSurfaceKHR',
             'vkCreateXcbSurfaceKHR',
+            'vkCreateXlibSurfaceKHR',
             'vkGetPhysicalDeviceSurfaceFormatsKHR',
             'vkGetPhysicalDeviceSurfacePresentModesKHR',
             'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
