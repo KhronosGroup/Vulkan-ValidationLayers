@@ -112,6 +112,7 @@ struct ResourceInterfaceVariable {
 
     // A variable can have an array of indexes, need to track which are written to
     // can't use bitset because number of indexes isn't known until runtime
+    // This array will match the OpTypeArray and not consider the InputAttachmentIndex
     std::vector<bool> input_attachment_index_read;
 
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image

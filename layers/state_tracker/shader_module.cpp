@@ -1333,8 +1333,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     for (const Instruction* insn : image_read_loads) {
                         if (insn->Opcode() == spv::OpAccessChain) {
                             const uint32_t access_index = module_state.GetConstantValueById(insn->Word(4));
-                            const uint32_t index = access_index + decorations.input_attachment_index_start;
-                            input_attachment_index_read.at(index) = true;
+                            input_attachment_index_read[access_index] = true;
                         } else if (insn->Opcode() == spv::OpLoad) {
                             // if InputAttachment is accessed from load, just a single, non-array, index
                             input_attachment_index_read.resize(1);

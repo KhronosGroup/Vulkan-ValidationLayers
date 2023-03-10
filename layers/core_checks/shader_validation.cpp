@@ -244,6 +244,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
         const uint32_t subpass = pipeline.Subpass();
         const auto subpass_description = rpci->pSubpasses[subpass];
         const auto input_attachments = subpass_description.pInputAttachments;
+        // offsets by the InputAttachmentIndex decoration
         const uint32_t input_attachment_index = variable.decorations.input_attachment_index_start + i;
 
         // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
