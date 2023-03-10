@@ -32,7 +32,7 @@
 template <typename HandleT>
 bool CoreChecks::ValidateBufferUsageFlags(HandleT handle, BUFFER_STATE const &buffer_state, VkFlags desired, bool strict,
                                           const char *msgCode, char const *func_name, char const *usage_string) const {
-    LogObjectList objlist(handle, buffer_state.Handle());
+    const LogObjectList objlist(handle, buffer_state.Handle());
     return ValidateUsageFlags(buffer_state.createInfo.usage, desired, strict, objlist, buffer_state.Handle(), msgCode, func_name,
                               usage_string);
 }
