@@ -984,8 +984,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_bind_memory2, {})},
             {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+                           {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME}}})},
             {VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_copy_commands2, {})},
             {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass2, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME},
