@@ -482,7 +482,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
             const char *vuid =
                 bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01036" : "VUID-vkBindBufferMemory-memoryOffset-01036";
-            skip |= LogError(buffer, vuid,
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
                              "%s: memoryOffset is 0x%" PRIxLEAST64
                              " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                              ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
@@ -501,7 +502,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01037" : "VUID-vkBindBufferMemory-size-01037";
-                skip |= LogError(buffer, vuid,
+                const LogObjectList objlist(buffer, mem);
+                skip |= LogError(objlist, vuid,
                                  "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                  " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                  ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
@@ -526,7 +528,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             if (enabled_features.core12.bufferDeviceAddress &&
                 (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
                 (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
-                skip |= LogError(buffer, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
+                const LogObjectList objlist(buffer, mem);
+                skip |= LogError(objlist, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
                                  "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT bit set, "
                                  "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
                                  api_name);
@@ -537,8 +540,9 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                 (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
                 const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-descriptorBufferCaptureReplay-08112"
                                                      : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
+                const LogObjectList objlist(buffer, mem);
                 skip |= LogError(
-                    buffer, vuid,
+                    objlist, vuid,
                     "%s: If buffer was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
                     "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
                     api_name);
@@ -656,7 +660,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
                 bind_buffer_memory_device_group_info->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
                 device_group_create_info.physicalDeviceCount > 0) {
-                skip |= LogError(buffer, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606",
+                const LogObjectList objlist(buffer, mem);
+                skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606",
                                  "%s: The number of physical devices in the logical device is %" PRIu32
                                  ", but VkBindBufferMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
                                  api_name, device_group_create_info.physicalDeviceCount,
@@ -664,7 +669,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             } else {
                 for (uint32_t i = 0; i < bind_buffer_memory_device_group_info->deviceIndexCount; ++i) {
                     if (bind_buffer_memory_device_group_info->pDeviceIndices[i] >= device_group_create_info.physicalDeviceCount) {
-                        skip |= LogError(buffer, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607",
+                        const LogObjectList objlist(buffer, mem);
+                        skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607",
                                          "%s: The number of physical devices in the logical device is %" PRIu32
                                          ", but VkBindBufferMemoryDeviceGroupInfo::pDeviceIndices[%" PRIu32 "] is %" PRIu32 ".",
                                          api_name, device_group_create_info.physicalDeviceCount, i,
@@ -986,7 +992,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             auto mem_info = Get<DEVICE_MEMORY_STATE>(bind_info.memory);
 
             if (image_state->disjoint && plane_info == nullptr) {
-                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-image-07736",
+                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                skip |= LogError(objlist, "VUID-VkBindImageMemoryInfo-image-07736",
                                  "%s: In order to bind planes of a disjoint image, add a VkBindImagePlaneMemoryInfo structure to "
                                  "the pNext chain of VkBindImageMemoryInfo.",
                                  error_prefix);
@@ -1011,8 +1018,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         } else {
                             validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
                         }
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |=
-                            LogError(bind_info.image, validation_error,
+                            LogError(objlist, validation_error,
                                      "%s: memoryOffset is 0x%" PRIxLEAST64
                                      " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                                      ", returned from a call to vkGetImageMemoryRequirements with image.",
@@ -1031,7 +1039,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             } else {
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
                             }
-                            skip |= LogError(bind_info.image, validation_error,
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |= LogError(objlist, validation_error,
                                              "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                              " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                              ", returned from a call to vkGetImageMemoryRequirements with image.",
@@ -1060,8 +1069,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         std::array<uint32_t, 3> bound_index = {i, vvl::kU32Max, vvl::kU32Max};
                         resources_bound.emplace(image_state->image(), bound_index);
                     } else {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(
-                            bind_info.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
+                            objlist, "VUID-vkBindImageMemory2-pBindInfos-04006",
                             "%s: The same non-disjoint image resource is being bound twice at pBindInfos[%d] and pBindInfos[%d]",
                             error_prefix, it->second[0], i);
                     }
@@ -1091,8 +1101,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     // Validate memory requirements alignment
                     if (SafeModulo(bind_info.memoryOffset, disjoint_mem_req.alignment) != 0) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(
-                            bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01620",
+                            objlist, "VUID-VkBindImageMemoryInfo-pNext-01620",
                             "%s: memoryOffset is 0x%" PRIxLEAST64
                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                             ", returned from a call to vkGetImageMemoryRequirements2 with disjoint image for aspect plane %s.",
@@ -1104,8 +1115,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                         // Validate memory requirements size
                         if (disjoint_mem_req.size > alloc_info.allocationSize - bind_info.memoryOffset) {
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(
-                                bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01621",
+                                objlist, "VUID-VkBindImageMemoryInfo-pNext-01621",
                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                 ", returned from a call to vkGetImageMemoryRequirements with disjoint image for aspect plane %s.",
@@ -1130,7 +1142,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     if (it->second[plane] == vvl::kU32Max) {
                         it->second[plane] = i;
                     } else {
-                        skip |= LogError(bind_info.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(objlist, "VUID-vkBindImageMemory2-pBindInfos-04006",
                                          "%s: The same disjoint image sub-resource for plane %d is being bound twice at "
                                          "pBindInfos[%d] and pBindInfos[%d]",
                                          error_prefix, plane, it->second[plane], i);
@@ -1195,8 +1208,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
                     const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-descriptorBufferCaptureReplay-08113"
                                                         : "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113";
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(
-                        bind_info.image, vuid,
+                        objlist, vuid,
                         "%s: If image was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
                         "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
                         api_name);
@@ -1338,6 +1352,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             const auto swapchain_info = LvlFindInChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
             if (swapchain_info) {
                 if (bind_info.memory != VK_NULL_HANDLE) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01631", "%s: %s is not VK_NULL_HANDLE.",
                                      error_prefix, report_data->FormatHandle(bind_info.memory).c_str());
                 }
@@ -1354,8 +1369,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
                 auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
                 if (swapchain_state) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     if (swapchain_state->images.size() <= swapchain_info->imageIndex) {
-                        skip |= LogError(bind_info.image, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
+                        skip |= LogError(objlist, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
                                          "%s: imageIndex (%" PRIu32 ") is out of bounds of %s images (size: %zu)", error_prefix,
                                          swapchain_info->imageIndex, report_data->FormatHandle(swapchain_info->swapchain).c_str(),
                                          swapchain_state->images.size());
@@ -1363,8 +1379,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1) &&
                         (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
                         if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(
-                                bind_info.image, "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756",
+                                objlist, "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756",
                                 "%s: The swapchain was created with VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT but "
                                 "imageIndex (%" PRIu32 ") has not been acquired",
                                 error_prefix, swapchain_info->imageIndex);
@@ -1373,12 +1390,14 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
             } else {
                 if (image_state->create_from_swapchain) {
-                    skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-image-01630",
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                    skip |= LogError(objlist, "VUID-VkBindImageMemoryInfo-image-01630",
                                      "%s: pNext of VkBindImageMemoryInfo doesn't include VkBindImageMemorySwapchainInfoKHR.",
                                      error_prefix);
                 }
                 if (!mem_info) {
-                    skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01632", "%s: %s is invalid.", error_prefix,
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                    skip |= LogError(objlist, "VUID-VkBindImageMemoryInfo-pNext-01632", "%s: %s is invalid.", error_prefix,
                                      report_data->FormatHandle(bind_info.memory).c_str());
                 }
             }
@@ -1386,7 +1405,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             const auto bind_image_memory_device_group_info = LvlFindInChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
             if (bind_image_memory_device_group_info && bind_image_memory_device_group_info->splitInstanceBindRegionCount != 0) {
                 if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)) {
-                    skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01627",
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                    skip |= LogError(objlist, "VUID-VkBindImageMemoryInfo-pNext-01627",
                                      "%s: pNext of VkBindImageMemoryInfo contains VkBindImageMemoryDeviceGroupInfo with "
                                      "splitInstanceBindRegionCount (%" PRIi32
                                      ") not equal to 0 and %s is not created with "
@@ -1399,8 +1419,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     phy_dev_square = device_group_create_info.physicalDeviceCount * device_group_create_info.physicalDeviceCount;
                 }
                 if (bind_image_memory_device_group_info->splitInstanceBindRegionCount != phy_dev_square) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(
-                        bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636",
+                        objlist, "VUID-VkBindImageMemoryDeviceGroupInfo-splitInstanceBindRegionCount-01636",
                         "%s: pNext of VkBindImageMemoryInfo contains VkBindImageMemoryDeviceGroupInfo with "
                         "splitInstanceBindRegionCount (%" PRIi32
                         ") which is not 0 and different from the number of physical devices in the logical device squared (%" PRIu32
@@ -1412,8 +1433,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             if (plane_info) {
                 // Checks for disjoint bit in image
                 if (image_state->disjoint == false) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(
-                        bind_info.image, "VUID-VkBindImageMemoryInfo-pNext-01618",
+                        objlist, "VUID-VkBindImageMemoryInfo-pNext-01618",
                         "%s: pNext of VkBindImageMemoryInfo contains VkBindImagePlaneMemoryInfo and %s is not created with "
                         "VK_IMAGE_CREATE_DISJOINT_BIT.",
                         error_prefix, report_data->FormatHandle(image_state->image()).c_str());
@@ -1423,8 +1445,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 uint32_t planes = FormatPlaneCount(image_state->createInfo.format);
                 VkImageAspectFlags aspect = plane_info->planeAspect;
                 if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(
-                        bind_info.image, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
+                        objlist, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
                         "%s: Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
                         "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
                         error_prefix, report_data->FormatHandle(image_state->image()).c_str(),
@@ -1432,8 +1455,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
                 if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                     (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(
-                        bind_info.image, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
+                        objlist, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
                         "%s: Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
                         "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
                         error_prefix, report_data->FormatHandle(image_state->image()).c_str(),
@@ -1446,7 +1470,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
         if (bind_image_memory_device_group) {
             if (bind_image_memory_device_group->deviceIndexCount > 0 &&
                 bind_image_memory_device_group->splitInstanceBindRegionCount > 0) {
-                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633",
+                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                skip |= LogError(objlist, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633",
                                  "%s: VkBindImageMemoryDeviceGroupInfo in pNext of pBindInfos[%" PRIu32
                                  "] has both deviceIndexCount and splitInstanceBindRegionCount greater than 0.",
                                  error_prefix, i);
@@ -1454,7 +1479,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             if (bind_image_memory_device_group->deviceIndexCount != 0 &&
                 bind_image_memory_device_group->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
                 device_group_create_info.physicalDeviceCount > 0) {
-                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634",
+                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                skip |= LogError(objlist, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634",
                                  "%s: The number of physical devices in the logical device is %" PRIu32
                                  ", but VkBindImageMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
                                  api_name, device_group_create_info.physicalDeviceCount,
@@ -1489,10 +1515,10 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
     if (image_state) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
-            skip |=
-                LogError(image, "VUID-vkBindImageMemory-image-01608",
-                         "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkBindImageMemory2).",
-                         report_data->FormatHandle(image).c_str());
+            const LogObjectList objlist(image, mem);
+            skip |= LogError(
+                objlist, "VUID-vkBindImageMemory-image-01608",
+                "vkBindImageMemory(): Image was created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkBindImageMemory2).");
         }
     }
 
