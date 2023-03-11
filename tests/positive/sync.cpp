@@ -49,14 +49,18 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
 
     uint32_t prop_count = 0;
     vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
-    if (prop_count != 0) {
-        VkDisplayPropertiesKHR display_props = {};
-        // Create a VkDisplayKHR object
-        vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, &display_props);
-        // Now use this new object in an API call that thread safety will track
-        prop_count = 0;
-        vkGetDisplayModePropertiesKHR(gpu(), display_props.display, &prop_count, nullptr);
+    if (prop_count == 0) {
+        GTEST_SKIP() << "No VkDisplayKHR properties to query";
     }
+
+    std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
+    // Create a VkDisplayKHR object
+    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    ASSERT_NE(prop_count, 0U);
+
+    // Now use this new object in an API call that thread safety will track
+    prop_count = 0;
+    vkGetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
