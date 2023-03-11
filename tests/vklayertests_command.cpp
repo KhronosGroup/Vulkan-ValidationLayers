@@ -182,8 +182,7 @@ TEST_F(VkLayerTest, DynamicViewportNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic viewport state
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Dynamic viewport(s) 0 are used by pipeline state object, but were not provided");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");
     VKTriangleTest(BsoFailViewport);
     m_errorMonitor->VerifyFound();
 }
@@ -193,8 +192,7 @@ TEST_F(VkLayerTest, DynamicScissorNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic scissor state
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "Dynamic scissor(s) 0 are used by pipeline state object, but were not provided");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");
     VKTriangleTest(BsoFailScissor);
     m_errorMonitor->VerifyFound();
 }

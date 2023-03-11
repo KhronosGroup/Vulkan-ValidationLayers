@@ -1369,8 +1369,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
                 auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
                 if (swapchain_state) {
-                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     if (swapchain_state->images.size() <= swapchain_info->imageIndex) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(objlist, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
                                          "%s: imageIndex (%" PRIu32 ") is out of bounds of %s images (size: %zu)", error_prefix,
                                          swapchain_info->imageIndex, report_data->FormatHandle(swapchain_info->swapchain).c_str(),
