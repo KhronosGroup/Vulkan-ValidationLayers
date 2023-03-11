@@ -3078,7 +3078,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) || pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
         if (!dyn_viewport || !dyn_scissor) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline.pipeline());
-            skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04808",
+            skip |= LogError(objlist, "VUID-vkCmdBindPipeline-commandBuffer-04808",
                              "vkCmdBindPipeline(): Graphics pipeline incompatible with viewport/scissor inheritance.");
         }
         const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
@@ -3086,7 +3086,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             (pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT))) {
             if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline.pipeline());
-                skip |= LogError(device, "VUID-vkCmdBindPipeline-commandBuffer-04809",
+                skip |= LogError(objlist, "VUID-vkCmdBindPipeline-commandBuffer-04809",
                                  "vkCmdBindPipeline(): commandBuffer is a secondary command buffer with "
                                  "VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled, pipelineBindPoint is "
                                  "VK_PIPELINE_BIND_POINT_GRAPHICS and pipeline was created with "
