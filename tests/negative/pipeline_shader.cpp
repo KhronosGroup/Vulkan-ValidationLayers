@@ -15832,7 +15832,6 @@ TEST_F(VkLayerTest, ShaderModuleIdentifier) {
     stage_ci.pNext = nullptr;
     // No shader module ci and no shader module id ci in pNext and invalid module
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06845");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-parameter");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
@@ -15930,7 +15929,6 @@ TEST_F(VkLayerTest, ShaderModuleIdentifierFeatures) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06846");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-parameter");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
