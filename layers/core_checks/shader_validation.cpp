@@ -2993,8 +2993,18 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
     skip |= ValidateShaderModuleId(module_state, stage_state, create_info, pipeline.create_flags);
 
-    if (pipeline.uses_shader_module_id && module_state.vk_shader_module() == VK_NULL_HANDLE) {
-        return skip;  // No real shader for further validation
+    // Check the module
+    if (!module_state.has_valid_spirv && module_state.vk_shader_module() != VK_NULL_HANDLE) {
+        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
+                         "%s(): pCreateInfos[%" PRIu32 "] %s does not contain valid spirv for stage %s.",
+                         pipeline.GetCreateFunctionName(), pipeline.create_index,
+                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                         string_VkShaderStageFlagBits(stage_state.stage_flag));
+    }
+
+    if (skip || (pipeline.uses_shader_module_id && module_state.vk_shader_module() == VK_NULL_HANDLE)) {
+        // No reason in continuing if the spir-v is invalid
+        return skip;
     }
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
@@ -3002,18 +3012,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
     uint32_t total_shared_size = 0;
-
-    // Check the module
-    if (!module_state.has_valid_spirv) {
-        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
-                         "%s(): pCreateInfos[%" PRIu32 "] %s does not contain valid spirv for stage %s.",
-                         pipeline.GetCreateFunctionName(), pipeline.create_index,
-                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                         string_VkShaderStageFlagBits(stage_state.stage_flag));
-
-        // No reason in continuing if the spir-v is invalid
-        return skip;
-    }
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.HasSpecConstants()) {
