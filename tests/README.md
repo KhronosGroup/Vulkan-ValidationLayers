@@ -161,3 +161,22 @@ $VVL/build/tests/vk_layer_validation_tests --gtest_filter=TestName
 It would be ideal to generate this similarly to the layer generated in [the Profile Layer repo](https://github.com/KhronosGroup/Vulkan-Profiles/blob/main/scripts/gen_profiles_layer.py), but the goal is to make sure as many tests are running in CI as possible.
 
 This file will **never** fully cover all tests because some require certain properties/extension to be **both** enabled and disabled. The goal is to get as close to 100% coverage as possible.
+
+### Address Sanitization (ASAN)
+
+As of [38341564f523cdc290a92217d9043c9a6bb428f8](https://github.com/KhronosGroup/Vulkan-ValidationLayers/commit/38341564f523cdc290a92217d9043c9a6bb428f8) ASAN (Address Sanitization) has become a part of our CI process
+to ensure high quality code.
+
+`-D VVL_ENABLE_ASAN=ON` will enable ASAN in the build which is `OFF` by default.
+
+- https://clang.llvm.org/docs/AddressSanitizer.html
+- https://github.com/google/sanitizers/wiki/AddressSanitizer
+
+### Thread Sanitization (TSAN)
+
+WIP (Not yet part of our CI process)
+
+`-D VVL_ENABLE_TSAN=ON` will enable TSAN in the build which is `OFF` by default.
+
+- https://clang.llvm.org/docs/ThreadSanitizer.html
+- https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
