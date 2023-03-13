@@ -6338,7 +6338,7 @@ TEST_F(VkLayerTest, SlicedCreateInfoInvalidImageType) {
     ivci.subresourceRange.baseMipLevel = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-image-07869");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkImageViewSlicedCreateInfoEXT-image-type");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSlicedCreateInfoEXT-viewType-07909");
     vk_testing::ImageView image_view(*m_device, ivci);
     m_errorMonitor->VerifyFound();
 }

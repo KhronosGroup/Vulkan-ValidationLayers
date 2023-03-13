@@ -1658,7 +1658,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
-            skip |= LogError(pCreateInfo->image, "UNASSIGNED-VkImageViewSlicedCreateInfoEXT-image-type",
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSlicedCreateInfoEXT-viewType-07909",
                              "vkCreateImageView(): Invalid viewType (%s).", string_VkImageViewType(view_type));
         }
 
