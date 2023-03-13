@@ -27,7 +27,7 @@ import common_ci
 # Module Entrypoint
 def Build(args):
     try:
-        common_ci.BuildVVL(args, True)
+        common_ci.BuildVVL(args, "ON")
         common_ci.BuildLoader(args)
         common_ci.BuildProfileLayer(args)
         common_ci.BuildMockICD(args)

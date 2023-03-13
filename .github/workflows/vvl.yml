@@ -103,13 +103,14 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+      - uses: lukka/get-cmake@latest
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                libxcb-randr0-dev cmake
+                                libxcb-randr0-dev
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -196,6 +197,9 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
@@ -225,7 +229,7 @@ jobs:
       - name: Build and Test Vulkan-ValidationLayers
         run: |
           echo "PYTHONPATH = $env:PYTHONPATH"
-          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
   android:
       runs-on: ubuntu-20.04

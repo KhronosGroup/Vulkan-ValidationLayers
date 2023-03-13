@@ -27,6 +27,9 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3. Run script with [-h] option for more details.")
     sys_exit(0)
 
+# Use Ninja for all platforms for performance/simplicity
+os.environ['CMAKE_GENERATOR'] = "Ninja"
+
 # Utility for creating a directory if it does not exist. Behaves similarly to 'mkdir -p'
 def make_dirs(path, clean=False):
     if clean and os.path.isdir(path):
@@ -45,8 +48,6 @@ BUILD_DIR_NAME = "build"
 VVL_BUILD_DIR = RepoRelative(BUILD_DIR_NAME)
 CONFIGURATIONS = ['release', 'debug']
 DEFAULT_CONFIGURATION = CONFIGURATIONS[0]
-ARCHS = [ 'x64', 'Win32' ]
-DEFAULT_ARCH = ARCHS[0]
 
 def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), config)
 
@@ -74,29 +75,29 @@ def CheckVVLCodegenConsistency(args):
 
 #
 # Prepare the Validation Layers for testing
-def BuildVVL(args, build_tests=False):
-
+def BuildVVL(args, build_tests="OFF"):
     print("Log CMake version")
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
 
-    make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
-    cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
+    cmake_cmd = f'cmake -S . -B {VVL_BUILD_DIR} -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration}'
     # By default BUILD_WERROR is OFF, CI should always enable it.
-    cmake_cmd = cmake_cmd + ' -DBUILD_WERROR=ON'
-    if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
-    if build_tests: cmake_cmd = cmake_cmd + ' -DBUILD_TESTS=ON'
-    RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
+    cmake_cmd += ' -DBUILD_WERROR=ON'
+    cmake_cmd += f' -DBUILD_TESTS={build_tests}'
+
+    if args.cmake:
+         cmake_cmd += f' {args.cmake}'
+
+    RunShellCmd(cmake_cmd)
 
     print("Build Validation Layers and Tests")
-    build_cmd = f'cmake --build . --config {args.configuration}'
-    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
-    RunShellCmd(build_cmd, VVL_BUILD_DIR)
+    build_cmd = f'cmake --build {VVL_BUILD_DIR}'
+    RunShellCmd(build_cmd)
 
     print("Install Validation Layers")
-    install_cmd = f'cmake --install . --prefix ./install/ --config {args.configuration}'
-    RunShellCmd(install_cmd, VVL_BUILD_DIR)
+    install_cmd = f'cmake --install {VVL_BUILD_DIR} --prefix {VVL_BUILD_DIR}/install/'
+    RunShellCmd(install_cmd)
 
     print('Run vk_validation_stats.py')
     make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration))
@@ -116,23 +117,19 @@ def BuildLoader(args):
         clone_loader_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Loader.git'
         RunShellCmd(clone_loader_cmd, EXTERNAL_DIR_NAME)
 
-    print("Run update_deps.py for Loader Repository")
-    update_cmd = 'python3 scripts/update_deps.py --dir external'
-    RunShellCmd(update_cmd, LOADER_DIR)
-
     print("Run CMake for Loader")
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
-    make_dirs(LOADER_BUILD_DIR)
-    cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
-    if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
+
+    print("Run CMake for Loader")
+    cmake_cmd = f'cmake -S {LOADER_DIR} -B {LOADER_BUILD_DIR} '
+    cmake_cmd += f'-D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE={args.configuration}'
     # This enables better stack traces from leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
     if not IsWindows(): cmake_cmd = cmake_cmd + ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
-    RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
+    RunShellCmd(cmake_cmd)
 
     print("Build Loader")
-    build_cmd = f'cmake --build . --config {args.configuration}'
-    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
-    RunShellCmd(build_cmd, LOADER_BUILD_DIR)
+    build_cmd = f'cmake --build {LOADER_BUILD_DIR}'
+    RunShellCmd(build_cmd)
 
 #
 # Prepare Mock ICD for use with Layer Validation Tests
@@ -146,18 +143,17 @@ def BuildMockICD(args):
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
 
     print("Running update_deps.py for ICD")
-    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration} --arch {args.arch}', VT_DIR)
+    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration}', VT_DIR)
 
     print("Run CMake for ICD")
-    make_dirs(ICD_BUILD_DIR)
-    cmake_cmd = \
-        f'cmake -DCMAKE_BUILD_TYPE={args.configuration} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake {args.cmake} ..'
-    RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
+    cmake_cmd = f'cmake -S {VT_DIR} -B {ICD_BUILD_DIR} -DCMAKE_BUILD_TYPE={args.configuration} '
+    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF ' 
+    cmake_cmd += f'-C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake'
+    RunShellCmd(cmake_cmd)
 
     print("Build Mock ICD")
-    build_cmd = f'cmake --build . --config {args.configuration}'
-    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
-    RunShellCmd(build_cmd, ICD_BUILD_DIR)
+    build_cmd = f'cmake --build {ICD_BUILD_DIR}'
+    RunShellCmd(build_cmd)
 
 #
 # Prepare Profile Layer for use with Layer Validation Tests
@@ -173,16 +169,14 @@ def BuildProfileLayer(args):
     BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
 
     print("Run CMake for Profile Layer")
-    make_dirs(BUILD_DIR)
-    cmake_cmd = f'cmake -D CMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    cmake_cmd = f'cmake -S {VP_DIR} -B {BUILD_DIR} -D CMAKE_BUILD_TYPE={args.configuration.capitalize()}'
     cmake_cmd += ' -D UPDATE_DEPS=ON'
     cmake_cmd += ' -D PROFILES_BUILD_TESTS=OFF'
-    RunShellCmd(cmake_cmd, BUILD_DIR)
+    RunShellCmd(cmake_cmd)
 
     print("Build Profile Layer")
-    build_cmd = f'cmake --build .'
-    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
-    RunShellCmd(build_cmd, BUILD_DIR)
+    build_cmd = f'cmake --build {BUILD_DIR}'
+    RunShellCmd(build_cmd)
 
 #
 # Run the Layer Validation Tests
@@ -234,11 +228,6 @@ def GetArgParser():
         choices=CONFIGURATIONS, default=DEFAULT_CONFIGURATION,
         help='Build target configuration. Can be one of: {0}'.format(
             ', '.join(CONFIGURATIONS)))
-    parser.add_argument(
-        '-a', '--arch', dest='arch',
-        metavar='ARCH', action='store',
-        choices=ARCHS, default=DEFAULT_ARCH,
-        help=f'Target architecture. Can be one of: {ARCHS}')
     parser.add_argument(
         '--cmake', dest='cmake',
         metavar='CMAKE', type=str,
