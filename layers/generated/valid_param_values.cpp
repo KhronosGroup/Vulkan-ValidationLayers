@@ -201,7 +201,7 @@ std::vector<VkQueryType> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_khr_acceleration_structure, { VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR,  } },
         { &DeviceExtensions::vk_nv_ray_tracing, { VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV,  } },
         { &DeviceExtensions::vk_intel_performance_query, { VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL,  } },
-        { &DeviceExtensions::vk_khr_video_encode_queue, { VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR,  } },
+        { &DeviceExtensions::vk_khr_video_encode_queue, { VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR,  } },
         { &DeviceExtensions::vk_ext_mesh_shader, { VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT,  } },
         { &DeviceExtensions::vk_ext_primitives_generated_query, { VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT,  } },
         { &DeviceExtensions::vk_khr_ray_tracing_maintenance1, { VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR,  } },
