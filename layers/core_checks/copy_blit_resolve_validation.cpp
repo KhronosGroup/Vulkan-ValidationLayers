@@ -1278,16 +1278,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         skip |= ValidateImageSubresourceLayers(cb_state, &region.srcSubresource, func_name, "srcSubresource", i);
         skip |= ValidateImageSubresourceLayers(cb_state, &region.dstSubresource, func_name, "dstSubresource", i);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-01696" : "VUID-vkCmdCopyImage-srcSubresource-01696";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-07924" : "VUID-vkCmdCopyImage-pRegions-07924";
         skip |=
             ValidateImageMipLevel(cb_state, *src_image_state, region.srcSubresource.mipLevel, i, func_name, "srcSubresource", vuid);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstSubresource-01697" : "VUID-vkCmdCopyImage-dstSubresource-01697";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-07924" : "VUID-vkCmdCopyImage-pRegions-07924";
         skip |=
             ValidateImageMipLevel(cb_state, *dst_image_state, region.dstSubresource.mipLevel, i, func_name, "dstSubresource", vuid);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-01698" : "VUID-vkCmdCopyImage-srcSubresource-01698";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-imageSubresource-07925" : "VUID-vkCmdCopyImage-imageSubresource-07925";
         skip |= ValidateImageArrayLayerRange(cb_state, *src_image_state, region.srcSubresource.baseArrayLayer,
                                              region.srcSubresource.layerCount, i, func_name, "srcSubresource", vuid);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstSubresource-01699" : "VUID-vkCmdCopyImage-dstSubresource-01699";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-imageSubresource-07925" : "VUID-vkCmdCopyImage-imageSubresource-07925";
         skip |= ValidateImageArrayLayerRange(cb_state, *dst_image_state, region.dstSubresource.baseArrayLayer,
                                              region.dstSubresource.layerCount, i, func_name, "dstSubresource", vuid);
 
@@ -1666,12 +1666,12 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     }
 
     vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
-               ? (is_2 ? "VUID-VkCopyImageInfo2-srcImage-01546" : "VUID-vkCmdCopyImage-srcImage-01546")
-               : (is_2 ? "VUID-VkCopyImageInfo2-srcImage-00127" : "VUID-vkCmdCopyImage-srcImage-00127");
+               ? (is_2 ? "VUID-VkCopyImageInfo2-None-07923" : "VUID-vkCmdCopyImage-None-07923")
+               : (is_2 ? "VUID-VkCopyImageInfo2-None-07922" : "VUID-vkCmdCopyImage-None-07922");
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, *src_image_state, func_name, vuid);
     vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
-               ? (is_2 ? "VUID-VkCopyImageInfo2-dstImage-01547" : "VUID-vkCmdCopyImage-dstImage-01547")
-               : (is_2 ? "VUID-VkCopyImageInfo2-dstImage-00132" : "VUID-vkCmdCopyImage-dstImage-00132");
+               ? (is_2 ? "VUID-VkCopyImageInfo2-None-07923" : "VUID-vkCmdCopyImage-None-07923")
+               : (is_2 ? "VUID-VkCopyImageInfo2-None-07922" : "VUID-vkCmdCopyImage-None-07922");
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, *dst_image_state, func_name, vuid);
 
     // Validate that SRC & DST images have correct usage flags set
@@ -1718,14 +1718,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     // Validation for VK_EXT_fragment_density_map
     if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const LogObjectList objlist(commandBuffer, srcImage);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-02542" : "VUID-vkCmdCopyImage-dstImage-02542";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-flags-07926" : "VUID-vkCmdCopyImage-flags-07926";
         skip |=
             LogError(objlist, vuid,
                      "%s: srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
     }
     if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const LogObjectList objlist(commandBuffer, dstImage);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-02542" : "VUID-vkCmdCopyImage-dstImage-02542";
+        vuid = is_2 ? "VUID-VkCopyImageInfo2-flags-07926" : "VUID-vkCmdCopyImage-flags-07926";
         skip |=
             LogError(objlist, vuid,
                      "%s: dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
@@ -2008,7 +2008,9 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     location.append("() : srcImage");
     skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
 
-    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-00187" : "VUID-vkCmdCopyImageToBuffer-srcImage-00187";
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+               ? (is_2 ? "VUID-vkCmdCopyImageToBuffer-None-07923" : "VUID-vkCmdCopyImageToBuffer-None-07923")
+               : (is_2 ? "VUID-vkCmdCopyImageToBuffer-None-07922" : "VUID-vkCmdCopyImageToBuffer-None-07922");
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, *src_image_state, func_name, vuid);
     vuid = is_2 ? "vkCmdCopyImageToBuffer-dstBuffer2-00192" : "vkCmdCopyImageToBuffer dstBuffer-00192";
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, func_name, vuid);
@@ -2029,7 +2031,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     // Validation for VK_EXT_fragment_density_map
     if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const LogObjectList objlist(commandBuffer, srcImage, dstBuffer);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-02544" : "VUID-vkCmdCopyImageToBuffer-srcImage-02544";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-flags-07926" : "VUID-vkCmdCopyImageToBuffer-flags-07926";
         skip |= LogError(objlist, vuid,
                          "%s: srcImage must not have been created with flags containing "
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
@@ -2058,10 +2060,10 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, func_name, src_invalid_layout_vuid, vuid, &hit_error);
         vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, &region, i, func_name, vuid);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-01703" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-07924" : "VUID-vkCmdCopyImageToBuffer-pRegions-07924";
         skip |= ValidateImageMipLevel(cb_state, *src_image_state, region.imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-01704" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704";
+        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-07925" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07925";
         skip |= ValidateImageArrayLayerRange(cb_state, *src_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
     }
@@ -2166,7 +2168,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateImageSampleCount(commandBuffer, *dst_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-srcBuffer-00176" : "VUID-vkCmdCopyBufferToImage-srcBuffer-00176";
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_buffer_state, func_name, vuid);
-    vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-00178" : "VUID-vkCmdCopyBufferToImage-dstImage-00178";
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+               ? (is_2 ? "VUID-VkCopyBufferToImageInfo2-None-07923" : "VUID-vkCmdCopyBufferToImage-None-07923")
+               : (is_2 ? "VUID-VkCopyBufferToImageInfo2-None-07922" : "VUID-vkCmdCopyBufferToImage-None-07922");
     skip |= ValidateMemoryIsBoundToImage(commandBuffer, *dst_image_state, func_name, vuid);
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-srcBuffer-00174" : "VUID-vkCmdCopyBufferToImage-srcBuffer-00174";
     skip |= ValidateBufferUsageFlags(commandBuffer, *src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, func_name,
@@ -2183,7 +2187,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     // Validation for VK_EXT_fragment_density_map
     if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
         const LogObjectList objlist(commandBuffer, srcBuffer, dstImage);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-02543" : "VUID-vkCmdCopyBufferToImage-dstImage-02543";
+        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-flags-07926" : "VUID-vkCmdCopyBufferToImage-flags-07926";
         skip |= LogError(objlist, vuid,
                          "%s: dstImage must not have been created with flags containing "
                          "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT",
@@ -2210,10 +2214,10 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, func_name, dst_invalid_layout_vuid, vuid, &hit_error);
         vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-imageOffset-07738" : "VUID-vkCmdCopyBufferToImage-imageOffset-07738";
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, &region, i, func_name, vuid);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-01701" : "VUID-vkCmdCopyBufferToImage-imageSubresource-01701";
+        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-pRegions-07924" : "VUID-vkCmdCopyBufferToImage-pRegions-07924";
         skip |= ValidateImageMipLevel(cb_state, *dst_image_state, region.imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-01702" : "VUID-vkCmdCopyBufferToImage-imageSubresource-01702";
+        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-07925" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07925";
         skip |= ValidateImageArrayLayerRange(cb_state, *dst_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, i, func_name, "imageSubresource", vuid);
 

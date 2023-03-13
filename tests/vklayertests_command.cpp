@@ -1978,7 +1978,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
         // Out-of-range mip levels should fail
         region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-pRegions-07924");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-pRegions-06221");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-pRegions-06222");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageOffset-00200");
@@ -1988,7 +1988,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
                                  &region);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-01701");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07924");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06218");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06219");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-imageOffset-00200");
@@ -2003,11 +2003,11 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         // Out-of-range array layers should fail
         region.imageSubresource.baseArrayLayer = image_16k.create_info().arrayLayers;
         region.imageSubresource.layerCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-imageSubresource-07925");
         vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
                                  &region);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-07925");
         vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                  &region);
         m_errorMonitor->VerifyFound();
@@ -2702,7 +2702,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     copy_region.srcSubresource.baseArrayLayer = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-00139");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkCmdCopyImage-srcSubresource-01698");  // also 'too many layers'
+                                         "VUID-vkCmdCopyImage-imageSubresource-07925");     // also 'too many layers'
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07742");  // not same image type
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -2797,7 +2797,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     copy_region.srcSubresource.baseArrayLayer = 4;
     copy_region.srcSubresource.layerCount = 6;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01791");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcSubresource-01698");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-imageSubresource-07925");
     m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2808,7 +2808,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     copy_region.dstSubresource.baseArrayLayer = 1;
     copy_region.dstSubresource.layerCount = 8;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01792");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstSubresource-01699");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-imageSubresource-07925");
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -10175,8 +10175,8 @@ TEST_F(VkLayerTest, CopyImageRemainingLayers) {
     copy_region.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
     // These vuids will trigger a special message stating that VK_REMAINING_ARRAY_LAYERS is unsupported
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcSubresource-01698");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstSubresource-01699");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-imageSubresource-07925");  // src
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-imageSubresource-07925");  // dst
     m_commandBuffer->CopyImage(image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -10198,7 +10198,7 @@ TEST_F(VkLayerTest, CopyImageRemainingLayers) {
     // This error will trigger first stating that the copy is too big for the buffer, because of VK_REMAINING_ARRAY_LAYERS
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-00171");
     // This error will trigger second stating that VK_REMAINING_ARRAY_LAYERS is unsupported here
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-07925");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image_b.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &buffer_copy);
     m_errorMonitor->VerifyFound();
