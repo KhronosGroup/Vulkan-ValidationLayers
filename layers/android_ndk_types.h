@@ -32,8 +32,7 @@
 //     - r20 YCbCr was added
 //     - r23 (current) no differences from r20 being used
 
-#ifndef ANDROID_NDK_TYPES_H_
-#define ANDROID_NDK_TYPES_H_
+#pragma once
 
 // Everyone should be able to include this file and ignore it if not building for Android
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -73,5 +72,3 @@ constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
 #endif  // __ANDROID__
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-
-#endif  // ANDROID_NDK_TYPES_H_

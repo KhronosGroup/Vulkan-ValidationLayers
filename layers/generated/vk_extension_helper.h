@@ -22,9 +22,8 @@
  * limitations under the License.
  ****************************************************************************/
 
+#pragma once
 
-#ifndef VK_EXTENSION_HELPER_H_
-#define VK_EXTENSION_HELPER_H_
 #include <string>
 #include <utility>
 #include <set>
@@ -1733,6 +1732,3 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME,
     VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
 };
-
-
-#endif // VK_EXTENSION_HELPER_H_

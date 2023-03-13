@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef PARAMETER_NAME_H
-#define PARAMETER_NAME_H
+#pragma once
 
 #include <cassert>
 #include <sstream>
@@ -126,5 +125,3 @@ class ParameterName {
     const size_t *args_;  ///< Array index values for formatting.
     size_t num_indices_;  ///< Number of array index values.
 };
-
-#endif  // PARAMETER_NAME_H

@@ -17,8 +17,8 @@
  *
  * The Shader Validation file is in charge of taking the Shader Module data and validating it
  */
-#ifndef VULKAN_SHADER_VALIDATION_H
-#define VULKAN_SHADER_VALIDATION_H
+
+#pragma once
 
 #include <cstdlib>
 
@@ -150,4 +150,3 @@ spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);
 
-#endif  // VULKAN_SHADER_VALIDATION_H

@@ -19,8 +19,6 @@
  *
  */
 #pragma once
-#ifndef IMAGE_LAYOUT_MAP_H_
-#define IMAGE_LAYOUT_MAP_H_
 
 #include <functional>
 #include <memory>
@@ -179,4 +177,3 @@ class ImageSubresourceLayoutMap {
     InitialLayoutStates initial_layout_states_;
 };
 }  // namespace image_layout_map
-#endif

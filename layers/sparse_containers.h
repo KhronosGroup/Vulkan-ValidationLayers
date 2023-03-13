@@ -18,8 +18,7 @@
  * John Zulauf <jzulauf@lunarg.com>
  *
  */
-#ifndef SPARSE_CONTAINERS_H_
-#define SPARSE_CONTAINERS_H_
+#pragma once
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -399,4 +398,3 @@ class SparseVector {
 };
 
 }  // namespace sparse_container
-#endif

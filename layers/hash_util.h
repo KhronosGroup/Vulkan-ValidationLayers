@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HASH_UTIL_H_
-#define HASH_UTIL_H_
+
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -157,5 +157,3 @@ class Dictionary {
     Dict dict;
 };
 }  // namespace hash_util
-
-#endif  // HASH_UTILS_H_
