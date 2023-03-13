@@ -3230,23 +3230,6 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
             skip |= LogError(objlist, "VUID-vkCmdBindPipeline-None-02323", "vkCmdBindPipeline(): transform feedback is active.");
         }
-        if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
-            const auto rendering_info = cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info;
-            const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(rendering_info.pNext);
-            // If no color attachment exists, this can be nullptr.
-            const auto multisample_state = pipeline_state.MultisampleState();
-            const auto pipeline_rasterization_samples = multisample_state ? multisample_state->rasterizationSamples : 0;
-            if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
-                (msrtss_info->rasterizationSamples != pipeline_rasterization_samples)) {
-                const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
-                skip |= LogError(objlist, "VUID-vkCmdBindPipeline-pipeline-06856",
-                                 "vkCmdBindPipeline(): A VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain of "
-                                 "VkRenderingInfo passed to vkCmdBeginRendering has a rasterizationSamples of (%" PRIu32
-                                 ") which is not equal to pMultisampleState.rasterizationSamples used to create the pipeline, "
-                                 "which is (%" PRIu32 ").",
-                                 msrtss_info->rasterizationSamples, pipeline_rasterization_samples);
-            }
-        }
         if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
                 const LogObjectList objlist(cb_state->commandBuffer(), pipeline);

@@ -11752,9 +11752,8 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
     // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06856");
+    // Valid because never hit draw time
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper.pipeline_);
-    m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 

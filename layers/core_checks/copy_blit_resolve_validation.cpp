@@ -2003,7 +2003,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
     skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, regionCount, pRegions, func_name, vuid);
 
-    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-07930" : "VUID-vkCmdCopyImageToBuffer-srcImage-07930";
+    vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-None-07930" : "VUID-vkCmdCopyImageToBuffer-None-07930";
     std::string location = func_name;
     location.append("() : srcImage");
     skip |= ValidateImageSampleCount(commandBuffer, *src_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
@@ -2162,7 +2162,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-pRegions-00171" : "VUID-vkCmdCopyBufferToImage-pRegions-00171";
     skip |= ValidateBufferBounds(commandBuffer, *dst_image_state, *src_buffer_state, regionCount, pRegions, func_name, vuid);
 
-    vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-07930" : "VUID-vkCmdCopyBufferToImage-dstImage-07930";
+    vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-None-07930" : "VUID-vkCmdCopyBufferToImage-None-07930";
     std::string location = func_name;
     location.append("() : dstImage");
     skip |= ValidateImageSampleCount(commandBuffer, *dst_image_state, VK_SAMPLE_COUNT_1_BIT, location.c_str(), vuid);
