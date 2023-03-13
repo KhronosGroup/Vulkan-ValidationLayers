@@ -133,12 +133,12 @@ TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
     }
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-06218");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07928");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), width_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageOffset-00200");
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-06217");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-07927");
 
     VkResult err;
     VkImageCreateInfo depth_image_create_info = LvlInitStruct<VkImageCreateInfo>();
