@@ -598,24 +598,6 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETSAMPLELOCATIONSEXT, VK_TRUE, nullptr, nullptr);
     skip |= ValidateSampleLocationsInfo(pSampleLocationsInfo, "vkCmdSetSampleLocationsEXT");
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto *pipe = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (pipe != nullptr) {
-        // Check same error with different log messages
-        const auto *multisample_state = pipe->MultisampleState();
-        if (multisample_state == nullptr) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
-                             "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel must be equal to "
-                             "rasterizationSamples, but the bound graphics pipeline was created without a multisample state");
-        } else if (multisample_state->rasterizationSamples != pSampleLocationsInfo->sampleLocationsPerPixel) {
-            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
-                             "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel (%s) is not equal to "
-                             "the last bound pipeline's rasterizationSamples (%s)",
-                             string_VkSampleCountFlagBits(pSampleLocationsInfo->sampleLocationsPerPixel),
-                             string_VkSampleCountFlagBits(multisample_state->rasterizationSamples));
-        }
-    }
-
     return skip;
 }
 
