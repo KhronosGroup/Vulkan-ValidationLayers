@@ -296,6 +296,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t active_render_pass_device_mask;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
     void SetActiveSubpass(uint32_t subpass);
+    std::optional<VkSampleCountFlagBits> GetActiveSubpassRasterizationSampleCount() const { return active_subpass_sample_count_; }
+    void SetActiveSubpassRasterizationSampleCount(VkSampleCountFlagBits rasterization_sample_count) {
+        active_subpass_sample_count_ = rasterization_sample_count;
+    }
     std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
@@ -599,6 +603,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     int label_stack_depth_ = 0;
 
     uint32_t active_subpass_;
+    // Stores rasterization samples count obtained from the first pipeline with a pMultisampleState in the active subpass,
+    // or std::nullopt
+    std::optional<VkSampleCountFlagBits> active_subpass_sample_count_;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

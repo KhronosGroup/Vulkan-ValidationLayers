@@ -68,6 +68,8 @@ const char *CommandTypeString(CMD_TYPE type) {
 
 void CMD_BUFFER_STATE::SetActiveSubpass(uint32_t subpass) {
     active_subpass_ = subpass;
+    // Always reset stored rasterization samples count
+    active_subpass_sample_count_ = std::nullopt;
 }
 
 CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
