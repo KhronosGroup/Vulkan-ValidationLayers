@@ -2884,6 +2884,98 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
+TEST_F(VkLayerTest, InvalidSubpassRasterizationSamples) {
+    TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.variableMultisampleRate = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Create a render pass with 1 subpass. This subpass uses no attachment.
+    std::array<VkAttachmentReference, 1> attachmentRefs = {};
+    attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachmentRefs[0].attachment = VK_ATTACHMENT_UNUSED;
+
+    VkSubpassDescription subpass = {};
+    subpass.flags = VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = attachmentRefs.data();
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = m_renderTargets[0]->format();
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass renderpass(*m_device, rpci);
+    ASSERT_TRUE(renderpass.initialized());
+
+    auto render_target_view = m_renderTargets[0]->targetView(m_renderTargets[0]->format());
+    auto framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    framebuffer_info.renderPass = renderpass;
+    framebuffer_info.width = m_renderTargets[0]->width();
+    framebuffer_info.height = m_renderTargets[0]->height();
+    framebuffer_info.layers = 1;
+    framebuffer_info.attachmentCount = 1;
+    framebuffer_info.pAttachments = &render_target_view;
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_info);
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineObj pipeline_1(m_device);
+    pipeline_1.AddShader(&vs);
+    pipeline_1.AddShader(&fs);
+    VkPipelineMultisampleStateCreateInfo ms_state = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipeline_1.SetMSAA(&ms_state);
+
+    VkPipelineObj pipeline_2(m_device);
+    pipeline_2.AddShader(&vs);
+    pipeline_2.AddShader(&fs);
+    ms_state.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+    pipeline_2.SetMSAA(&ms_state);
+
+    pipeline_1.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+    pipeline_2.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
+
+    auto rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbinfo.renderPass = renderpass.handle();
+    rpbinfo.framebuffer = framebuffer;
+    rpbinfo.renderArea.extent.width = framebuffer_info.width;
+    rpbinfo.renderArea.extent.height = framebuffer_info.height;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rpbinfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.handle());
+
+    // VkPhysicalDeviceFeatures::variableMultisampleRate is false,
+    // the two pipelines refer to the same subpass, one that does not use any attachment,
+    // BUT the secondly created pipeline has a different sample samples count than the 1st, this is illegal
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_2.handle());
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
     AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
