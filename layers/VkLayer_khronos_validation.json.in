@@ -73,14 +73,60 @@
                     "status": "STABLE",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": []
+                            "key": "validate_core",
+                            "value": true
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT"
-                            ]
+                            "key": "check_image_layout",
+                            "value": true
+                        },
+                        {
+                            "key": "check_command_buffer",
+                            "value": true
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": true
+                        },
+                        {
+                            "key": "check_query",
+                            "value": true
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": true
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": true
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": true
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": true
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": true
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_NONE"
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "value": false
                         }
                     ]
                 },
@@ -93,22 +139,62 @@
                         "MACOS"
                     ],
                     "status": "STABLE",
-                    "editor_state": "01110111111111111111111001111111111110",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": []
+                            "key": "validate_core",
+                            "value": true
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
-                                "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",
-                                "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",
-                                "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",
-                                "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION"
-                            ]
+                            "key": "check_image_layout",
+                            "value": false
+                        },
+                        {
+                            "key": "check_command_buffer",
+                            "value": false
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": false
+                        },
+                        {
+                            "key": "check_query",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": true
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": true
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": false
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": true
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": true
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_NONE"
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "value": false
                         }
                     ]
                 },
@@ -124,20 +210,60 @@
                     "status": "STABLE",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT"
-                            ]
+                            "key": "validate_core",
+                            "value": false
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT"
-                            ]
+                            "key": "check_image_layout",
+                            "value": false
+                        },
+                        {
+                            "key": "check_command_buffer",
+                            "value": false
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": false
+                        },
+                        {
+                            "key": "check_query",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": false
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": false
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": false
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": false
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_NONE"
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "value": true
                         }
                     ]
                 },
@@ -153,19 +279,60 @@
                     "status": "STABLE",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT"
-                            ]
+                            "key": "validate_core",
+                            "value": false
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT"
-                            ]
+                            "key": "check_image_layout",
+                            "value": false
+                        },
+                        {
+                            "key": "check_command_buffer",
+                            "value": false
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": false
+                        },
+                        {
+                            "key": "check_query",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": false
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": false
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": false
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": false
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": true
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": true
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_NONE"
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "value": false
                         }
                     ]
                 },
@@ -179,21 +346,64 @@
                     "status": "STABLE",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",
-                                "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT"
-                            ]
+                            "key": "validate_core",
+                            "value": false
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT"
-                            ]
+                            "key": "check_image_layout",
+                            "value": false
+                        },
+                        {
+                            "key": "check_command_buffer",
+                            "value": false
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": false
+                        },
+                        {
+                            "key": "check_query",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": false
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": false
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": false
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": false
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_GPU_ASSISTED"
+                        },
+                        {
+                            "key": "reserve_binding_slot",
+                            "value": true
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "value": false
                         }
                     ]
                 },
@@ -207,29 +417,647 @@
                     "status": "STABLE",
                     "settings": [
                         {
-                            "key": "enables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
-                            ]
+                            "key": "validate_core",
+                            "value": false
                         },
                         {
-                            "key": "disables",
-                            "value": [
-                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
-                                "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT"
-                            ]
+                            "key": "check_image_layout",
+                            "value": false
                         },
                         {
-                            "key": "enable_message_limit",
+                            "key": "check_command_buffer",
+                            "value": false
+                        },
+                        {
+                            "key": "check_object_in_use",
+                            "value": false
+                        },
+                        {
+                            "key": "check_query",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders",
+                            "value": false
+                        },
+                        {
+                            "key": "check_shaders_caching",
+                            "value": false
+                        },
+                        {
+                            "key": "unique_handles",
+                            "value": false
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "value": false
+                        },
+                        {
+                            "key": "stateless_param",
+                            "value": false
+                        },
+                        {
+                            "key": "thread_safety",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_sync",
+                            "value": false
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "value": "GPU_BASED_DEBUG_PRINTF"
+                        },
+                        {
+                            "key": "validate_best_practices",
                             "value": false
                         }
                     ]
                 }
             ],
             "settings": [
+                {
+                    "key": "validation_control",
+                    "label": "Validation Areas",
+                    "description": "Control of the Validation layer validation",
+                    "type": "GROUP",
+                    "expanded": true,
+                    "settings": [
+                        {
+                            "key": "fine_grained_locking",
+                            "env": "VK_LAYER_FINE_GRAINED_LOCKING",
+                            "label": "Fine Grained Locking",
+                            "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
+                            "type": "BOOL",
+                            "default": true,
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        },
+                        {
+                            "key": "validate_core",
+                            "label": "Core",
+                            "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors.",
+                            "type": "BOOL",
+                            "default": true,
+                            "settings": [
+                                {
+                                    "key": "check_image_layout",
+                                    "label": "Image Layout",
+                                    "description": "Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_core",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "check_command_buffer",
+                                    "label": "Command Buffer State",
+                                    "description": "Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_core",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "check_object_in_use",
+                                    "label": "Object in Use",
+                                    "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_core",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "check_query",
+                                    "label": "Query",
+                                    "description": "Checks for commands that use VkQueryPool objects.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_core",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "check_shaders",
+                                    "label": "Shader",
+                                    "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "expanded": true,
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_core",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "settings": [
+                                        {
+                                            "key": "check_shaders_caching",
+                                            "label": "Caching",
+                                            "description": "Enable caching of shader validation results.",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_core",
+                                                        "value": true
+                                                    },
+                                                    {
+                                                        "key": "check_shaders",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "unique_handles",
+                            "label": "Handle Wrapping",
+                            "description": "Handle wrapping checks. Disable this feature if you are exerience crashes when creating new extensions or developing new Vulkan objects/structures.",
+                            "type": "BOOL",
+                            "default": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        },
+                        {
+                            "key": "object_lifetime",
+                            "label": "Object Lifetime",
+                            "description": "Object tracking checks. This may not always be necessary late in a development cycle.",
+                            "type": "BOOL",
+                            "default": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        },
+                        {
+                            "key": "stateless_param",
+                            "label": "Stateless Parameter",
+                            "description": "Stateless parameter checks. This may not always be necessary late in a development cycle.",
+                            "type": "BOOL",
+                            "default": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        },
+                        {
+                            "key": "thread_safety",
+                            "label": "Thread Safety",
+                            "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors.",
+                            "type": "BOOL",
+                            "default": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
+                        },
+                        {
+                            "key": "validate_sync",
+                            "label": "Synchronization",
+                            "description": "Enable synchronization validation during command buffers recording. This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
+                            "url": "${LUNARG_SDK}/synchronization_usage.html",
+                            "type": "BOOL",
+                            "default": false,
+                            "expanded": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ],
+                            "settings": [
+                                {
+                                    "key": "sync_queue_submit",
+                                    "label": "QueueSubmit Synchronization Validation",
+                                    "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled. This option will increase the synchronization performance cost.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "status": "ALPHA",
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_sync",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "key": "validate_gpu_based",
+                            "label": "GPU Base",
+                            "description": "Setting an option here will enable specialized areas of validation",
+                            "type": "ENUM",
+                            "default": "GPU_BASED_NONE",
+                            "expanded": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ],
+                            "flags": [
+                                {
+                                    "key": "GPU_BASED_NONE",
+                                    "label": "None",
+                                    "description": "No GPU-based validation."
+                                },
+                                {
+                                    "key": "GPU_BASED_DEBUG_PRINTF",
+                                    "label": "Debug Printf",
+                                    "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
+                                    "url": "${LUNARG_SDK}/debug_printf.html",
+                                    "status": "STABLE",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "settings": [
+                                        {
+                                            "key": "printf_to_stdout",
+                                            "label": "Redirect Printf messages to stdout",
+                                            "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "printf_verbose",
+                                            "label": "Printf verbose",
+                                            "description": "Set the verbosity of debug printf messages",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "printf_buffer_size",
+                                            "label": "Printf buffer size",
+                                            "description": "Set the size in bytes of the buffer used by debug printf",
+                                            "type": "INT",
+                                            "default": 1024,
+                                            "range": {
+                                                "min": 128,
+                                                "max": 1048576
+                                            },
+                                            "unit": "bytes",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "GPU_BASED_GPU_ASSISTED",
+                                    "label": "GPU-Assisted",
+                                    "description": "Check for API usage errors at shader execution time.",
+                                    "url": "${LUNARG_SDK}/gpu_validation.html",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "settings": [
+                                        {
+                                            "key": "reserve_binding_slot",
+                                            "label": "Reserve Descriptor Set Binding Slot",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "vma_linear_output",
+                                            "label": "Linear Memory Allocation Mode",
+                                            "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "status": "STABLE",
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_descriptor_indexing",
+                                            "label": "Check descriptor indexing accesses",
+                                            "description": "Enable descriptor indexing access checking",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_buffer_oob",
+                                            "label": "Check Out of Bounds",
+                                            "description": "Enable buffer out of bounds checking",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "warn_on_robust_oob",
+                                                    "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
+                                                    "description": "Warn on out of bounds accesses even if robustness is enabled",
+                                                    "type": "BOOL",
+                                                    "default": true,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "gpuav_buffer_oob",
+                                                                "value": true
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "validate_draw_indirect",
+                                            "label": "Check Draw Indirect Count Buffers and firstInstance values",
+                                            "description": "Enable draw indirect checking",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "validate_dispatch_indirect",
+                                            "label": "Check Dispatch Indirect group count values",
+                                            "description": "Enable dispatch indirect checking",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "validate_gpu_based",
+                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "validate_best_practices",
+                            "label": "Best Practices",
+                            "description": "Outputs warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
+                            "url": "${LUNARG_SDK}/best_practices.html",
+                            "type": "BOOL",
+                            "default": false,
+                            "expanded": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ],
+                            "settings": [
+                                {
+                                    "key": "validate_best_practices_arm",
+                                    "label": "ARM-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on ARM GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX",
+                                        "MACOS",
+                                        "ANDROID"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_best_practices",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_amd",
+                                    "label": "AMD-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on AMD GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX",
+                                        "MACOS"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_best_practices",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_img",
+                                    "label": "IMG-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on Imagination GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX",
+                                        "MACOS"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_best_practices",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "validate_best_practices_nvidia",
+                                    "label": "NVIDIA-specific best practices",
+                                    "description": "Outputs warnings for spec-conforming but non-ideal code on NVIDIA GPUs.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX",
+                                        "ANDROID"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "validate_best_practices",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
                 {
                     "key": "debug_action",
                     "label": "Debug Action",
@@ -467,79 +1295,6 @@
                             "platforms": [
                                 "WINDOWS",
                                 "LINUX"
-                            ],
-                            "settings": [
-                                {
-                                    "key": "printf_to_stdout",
-                                    "label": "Redirect Printf messages to stdout",
-                                    "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "printf_verbose",
-                                    "label": "Printf verbose",
-                                    "description": "Set the verbosity of debug printf messages",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "printf_buffer_size",
-                                    "label": "Printf buffer size",
-                                    "description": "Set the size in bytes of the buffer used by debug printf",
-                                    "type": "INT",
-                                    "default": 1024,
-                                    "range": {
-                                        "min": 128,
-                                        "max": 1048576
-                                    },
-                                    "unit": "bytes",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                }
                             ]
                         },
                         {
@@ -550,140 +1305,6 @@
                             "platforms": [
                                 "WINDOWS",
                                 "LINUX"
-                            ],
-                            "settings": [
-                                {
-                                    "key": "gpuav_descriptor_indexing",
-                                    "label": "Check descriptor indexing accesses",
-                                    "description": "Enable descriptor indexing access checking",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "gpuav_buffer_oob",
-                                    "label": "Check Out of Bounds ",
-                                    "description": "Enable buffer out of bounds checking",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    },
-                                    "settings": [
-                                        {
-                                            "key": "warn_on_robust_oob",
-                                            "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
-                                            "description": "Warn on out of bounds accesses even if robustness is enabled",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    {
-                                                        "key": "gpuav_buffer_oob",
-                                                        "value": true
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "validate_draw_indirect",
-                                    "label": "Check Draw Indirect Count Buffers and firstInstance values",
-                                    "description": "Enable draw indirect checking",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "validate_dispatch_indirect",
-                                    "label": "Check Dispatch Indirect group count values",
-                                    "description": "Enable dispatch indirect checking",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "vma_linear_output",
-                                    "label": "Use VMA linear memory allocations for GPU-AV output buffers",
-                                    "description": "Use linear allocation algorithm",
-                                    "type": "BOOL",
-                                    "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
-                                    "dependence": {
-                                        "mode": "ANY",
-                                        "settings": [
-                                            {
-                                                "key": "enables",
-                                                "value": [
-                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                }
                             ]
                         },
                         {
@@ -750,21 +1371,6 @@
                         }
                     ],
                     "default": []
-                },
-                {
-                    "key": "fine_grained_locking",
-                    "env": "VK_LAYER_FINE_GRAINED_LOCKING",
-                    "label": "Fine Grained Locking",
-                    "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
-                    "status": "STABLE",
-                    "type": "BOOL",
-                    "default": true,
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX",
-                        "MACOS",
-                        "ANDROID"
-                    ]
                 }
             ]
         }
