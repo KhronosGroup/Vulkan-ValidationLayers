@@ -5796,8 +5796,7 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
     bool skip = false;
 
     if (pCreateInfo->hwnd == nullptr) {
-        skip |= LogError(device, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308",
-                         "vkCreateWin32SurfaceKHR(): hwnd must be a valid Win32 HWND but hwnd is NULL.");
+        skip |= LogError(device, "VUID-VkWin32SurfaceCreateInfoKHR-hwnd-01308", "vkCreateWin32SurfaceKHR(): hwnd is NULL.");
     }
 
     return skip;
@@ -5815,18 +5814,12 @@ bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstan
     const auto display = pCreateInfo->display;
     const auto surface = pCreateInfo->surface;
 
-    // Beyond checking for nullptr not much we can do.
-    // EX: Calling wl_display_get_registry on an invalid display will crash the application.
     if (display == nullptr) {
-        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-display-01304",
-                         "vkCreateWaylandSurfaceKHR: display must be valid Wayland wl_display but display is NULL!");
+        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-display-01304", "vkCreateWaylandSurfaceKHR: display is NULL!");
     }
 
-    // Beyond checking for nullptr not much we can do.
-    // EX: Calling wl_surface_get_version on an invalid surface will crash the application.
     if (surface == nullptr) {
-        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305",
-                         "vkCreateWaylandSurfaceKHR: surface must be valid Wayland wl_surface but surface is NULL!");
+        skip |= LogError(device, "VUID-VkWaylandSurfaceCreateInfoKHR-surface-01305", "vkCreateWaylandSurfaceKHR: surface is NULL!");
     }
 
     return skip;
@@ -5845,14 +5838,10 @@ bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance i
     const auto connection = pCreateInfo->connection;
     const auto window = pCreateInfo->window;
 
-    // Beyond checking for nullptr not much we can do.
-    // EX: Calling xcb_generate_id will crash the app.
     if (connection == nullptr) {
         skip |= LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-connection-01310", "vkCreateXcbSurfaceKHR: connection is NULL!");
     }
 
-    // Beyond checking for 0 not much we can do.
-    // EX: xcb_map_window will crash the app.
     if (window == 0) {
         skip |= LogError(device, "VUID-VkXcbSurfaceCreateInfoKHR-window-01311", "vkCreateXcbSurfaceKHR: window is 0!");
     }
