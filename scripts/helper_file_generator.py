@@ -588,9 +588,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         V_1_2_device_extensions_promoted_to_V_1_3_core = sorted([e.get('name') for e in promoted_1_3_exts if e.get('type') == 'device'])
 
         output = [
+            '#pragma once',
             '',
-            '#ifndef VK_EXTENSION_HELPER_H_',
-            '#define VK_EXTENSION_HELPER_H_',
             '#include <string>',
             '#include <utility>',
             '#include <set>',
@@ -809,7 +808,6 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct.extend(['};', ''])
             output.extend(struct)
 
-        output.extend(['', '#endif // VK_EXTENSION_HELPER_H_'])
         return '\n'.join(output)
     #
     # Combine object types helper header file preamble with body text and return

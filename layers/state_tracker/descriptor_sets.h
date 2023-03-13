@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CORE_VALIDATION_DESCRIPTOR_SETS_H_
-#define CORE_VALIDATION_DESCRIPTOR_SETS_H_
+
+#pragma once
 
 #include "state_tracker/base_node.h"
 #include "state_tracker/buffer_state.h"
@@ -1093,4 +1093,3 @@ class PrefilterBindRequestMap {
     bool IsManyDescriptors() const { return descriptor_set_.GetTotalDescriptorCount() > kManyDescriptors_; }
 };
 }  // namespace cvdescriptorset
-#endif  // CORE_VALIDATION_DESCRIPTOR_SETS_H_

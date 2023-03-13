@@ -18,8 +18,7 @@
  * limitations under the License.
  */
 
-#ifndef BEST_PRACTICES_ERROR_ENUMS_H_
-#define BEST_PRACTICES_ERROR_ENUMS_H_
+#pragma once
 
 // clang-format off
 
@@ -297,5 +296,3 @@
     "UNASSIGNED-BestPractices-ClearColor-NotCompressed";
 
 // clang-format on
-
-#endif

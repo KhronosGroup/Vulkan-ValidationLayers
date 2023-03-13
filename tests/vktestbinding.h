@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-#ifndef VKTESTBINDING_H
-#define VKTESTBINDING_H
+#pragma once
 
 #include <algorithm>
 #include <cassert>
@@ -1276,4 +1275,3 @@ struct GraphicsPipelineFromLibraries {
 
 }  // namespace vk_testing
 
-#endif  // VKTESTBINDING_H

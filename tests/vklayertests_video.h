@@ -9,8 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#ifndef VKLAYERTESTS_VIDEO_H
-#define VKLAYERTESTS_VIDEO_H
+#pragma once
 
 #include "layer_validation_tests.h"
 #include "vk_extension_helper.h"
@@ -1521,5 +1520,3 @@ class VkVideoBestPracticesLayerTest : public VkVideoLayerTest {
         VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
-
-#endif  // VKLAYERTESTS_VIDEO_H

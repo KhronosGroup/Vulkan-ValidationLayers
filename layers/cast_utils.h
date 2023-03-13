@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 #pragma once
-#ifndef CAST_UTILS_H_
-#define CAST_UTILS_H_
 
 #include <cassert>
 #include <cstddef>
@@ -105,5 +103,3 @@ ValueType CastFromHandle(HandleType handle) {
     CastFromHandle(handle, &value);
     return value;
 }
-
-#endif  // CAST_UTILS_H_

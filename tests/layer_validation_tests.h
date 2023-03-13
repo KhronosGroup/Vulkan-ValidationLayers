@@ -11,8 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#ifndef VKLAYERTEST_H
-#define VKLAYERTEST_H
+#pragma once
 
 #include <vulkan/vulkan.h>
 
@@ -977,4 +976,3 @@ std::pair<VkBufferObj &&, VkAccelerationStructureGeometryKHR> GetSimpleAABB(cons
                                                                             uint32_t vk_api_version = VK_API_VERSION_1_2);
 
 void print_android(const char *c);
-#endif  // VKLAYERTEST_H

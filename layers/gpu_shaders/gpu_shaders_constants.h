@@ -15,8 +15,7 @@
 // limitations under the License.
 // Values used between the GLSL shaders and the GPU-AV logic
 
-#ifndef GPU_SHADER_CONSTANTS
-#define GPU_SHADER_CONSTANTS
+#pragma once
 
 // values match those found in SPIRV-Tools instrument.hpp file.
 #define _kInstErrorMax 7
@@ -37,5 +36,3 @@
 #define pre_dispatch_count_exceeds_limit_x_error 1
 #define pre_dispatch_count_exceeds_limit_y_error 2
 #define pre_dispatch_count_exceeds_limit_z_error 3
-
-#endif

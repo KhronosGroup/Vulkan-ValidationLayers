@@ -14,8 +14,8 @@
  *
  * The Shader Module file is in charge of all things around creating and parsing an internal representation of a shader module
  */
-#ifndef VULKAN_SHADER_MODULE_H
-#define VULKAN_SHADER_MODULE_H
+
+#pragma once
 
 #include <cassert>
 #include <cstdlib>
@@ -440,5 +440,3 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     void SetUsedStructMember(const uint32_t variable_id, vvl::unordered_set<uint32_t> &accessible_ids,
                              const StructInfo &data) const;
 };
-
-#endif  // VULKAN_SHADER_MODULE_H

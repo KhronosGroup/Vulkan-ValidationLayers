@@ -10,8 +10,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#ifndef ICD_SPV_H
-#define ICD_SPV_H
+#pragma once
 
 #include <stdint.h>
 
@@ -24,4 +23,3 @@ struct icd_spv_header {
     uint32_t gen_magic;  // Generator's magic number
 };
 
-#endif /* ICD_SPV_H */

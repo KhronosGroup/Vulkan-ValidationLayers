@@ -17,8 +17,7 @@
  * limitations under the License.
  */
 
-#ifndef __VK_DEVICE_PROFILE_API_H__
-#define __VK_DEVICE_PROFILE_API_H__
+#pragma once
 
 #include "vulkan/vulkan.h"
 #ifdef __cplusplus
@@ -51,5 +50,3 @@ typedef void(VKAPI_PTR *PFN_VkSetPhysicalDeviceProperties2EXT)(VkPhysicalDevice 
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
-
-#endif  // __VK_DEVICE_PROFILE_API_H__

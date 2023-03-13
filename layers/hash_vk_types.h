@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HASH_VK_TYPES_H_
-#define HASH_VK_TYPES_H_
+#pragma once
 
 // Includes everything needed for overloading std::hash
 #include "hash_util.h"
@@ -109,5 +108,3 @@ struct hash<const ExtEnabled DeviceExtensions::*> {
     }
 };
 }  // namespace std
-
-#endif  // HASH_VK_TYPES_H_

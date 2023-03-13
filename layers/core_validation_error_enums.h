@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CORE_VALIDATION_ERROR_ENUMS_H_
-#define CORE_VALIDATION_ERROR_ENUMS_H_
+#pragma once
 
 // clang-format off
 
@@ -77,5 +76,3 @@
 // clang-format on
 
 #undef DECORATE_UNUSED
-
-#endif  // CORE_VALIDATION_ERROR_ENUMS_H_
