@@ -2497,7 +2497,6 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
         sample_locations_info.sampleLocationsCount = valid_count * 64;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529");
         vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
         m_errorMonitor->VerifyFound();
 
