@@ -893,31 +893,6 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     }
                 }
 
-                if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                    if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
-                        skip |= ValidateRenderPassCompatibility("primary command buffer", *cb_state->activeRenderPass.get(),
-                                                                "secondary command buffer", *secondary_rp_state.get(),
-                                                                "vkCmdExecuteCommands()",
-                                                                "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
-                    }
-                    if (inheritance_subpass != cb_state->activeSubpass) {
-                        const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                        skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00097",
-                                         "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32 "] %s subpass %" PRIu32
-                                         " is different than the active subpass %" PRIu32 ".",
-                                         i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), inheritance_subpass,
-                                         cb_state->activeSubpass);
-                    }
-                    if (cb_state->activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS) {
-                        const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                        skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-contents-00095",
-                                         "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
-                                         "] render pass instance is active, but was not begun with "
-                                         "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS.",
-                                         i);
-                    }
-                }
-
                 if (!cb_state->activeRenderPass->UsesDynamicRendering() && (cb_state->activeSubpass != inheritance_subpass)) {
                     const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state->activeRenderPass->renderPass());
                     skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019",

@@ -9005,7 +9005,6 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
     m_commandBuffer->BeginRenderPass(rp_bi);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-00095");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
@@ -9083,7 +9082,6 @@ TEST_F(VkLayerTest, BadExecuteCommandsSubpassIndices) {
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00097");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 }
@@ -9148,7 +9146,6 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
@@ -10087,7 +10084,6 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
         secondary.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(rp_bi_no_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
@@ -10107,7 +10103,6 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
         secondary.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
@@ -10128,7 +10123,6 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
         secondary.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
