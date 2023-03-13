@@ -2737,6 +2737,32 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     }
 }
 
+void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                           VkPipeline pipeline) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    auto pipe_state = Get<PIPELINE_STATE>(pipeline);
+
+    if (enabled_features.core.variableMultisampleRate == VK_FALSE) {
+        if (const auto *multisample_state = pipe_state->MultisampleState(); multisample_state) {
+            if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
+                const uint32_t subpass = cb_state->GetActiveSubpass();
+                // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
+                // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
+                // first bound pipeline.
+                if (!render_pass->UsesDynamicRendering() && !render_pass->UsesColorAttachment(subpass) &&
+                    !render_pass->UsesDepthStencilAttachment(subpass)) {
+                    if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                            cb_state->GetActiveSubpassRasterizationSampleCount();
+                        !subpass_rasterization_samples) {
+                        cb_state->SetActiveSubpassRasterizationSampleCount(multisample_state->rasterizationSamples);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                           uint32_t viewportCount, const VkViewport *pViewports) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);

@@ -3222,6 +3222,38 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                     }
                 }
             }
+
+            if (enabled_features.core.variableMultisampleRate == VK_FALSE) {
+                if (const auto *multisample_state = pipeline_state.MultisampleState(); multisample_state) {
+                    if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
+                        const uint32_t subpass = cb_state->GetActiveSubpass();
+                        // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
+                        // pMultisampleState->rasterizationSamples.
+                        if (!render_pass->UsesDynamicRendering() && !render_pass->UsesColorAttachment(subpass) &&
+                            !render_pass->UsesDepthStencilAttachment(subpass)) {
+                            // If execution ends up here, GetActiveSubpassRasterizationSampleCount() can still be empty if this is
+                            // the first bound pipeline with the previous conditions holding. Rasterization samples count for the
+                            // subpass will be updated in PostCallRecordCmdBindPipeline, if it is empty.
+                            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                                    cb_state->GetActiveSubpassRasterizationSampleCount();
+                                subpass_rasterization_samples &&
+                                *subpass_rasterization_samples != multisample_state->rasterizationSamples) {
+                                const LogObjectList objlist(device, render_pass->Handle(), pipeline_state.Handle());
+                                skip |= LogError(
+                                    objlist, "VUID-VkGraphicsPipelineCreateInfo-subpass-00758",
+                                    "vkCreateGraphicsPipelines(): VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE "
+                                    "and "
+                                    "pipeline has pMultisampleState->rasterizationSamples equal to %s, while a previously bound "
+                                    "pipeline in the current subpass (%" PRIu32
+                                    ") used "
+                                    "pMultisampleState->rasterizationSamples equal to %s.",
+                                    string_VkSampleCountFlagBits(multisample_state->rasterizationSamples), subpass,
+                                    string_VkSampleCountFlagBits(*subpass_rasterization_samples));
+                            }
+                        }
+                    }
+                }
+            }
         }
         if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             const LogObjectList objlist(cb_state->commandBuffer(), pipeline);
