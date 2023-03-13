@@ -7054,8 +7054,8 @@ void DispatchCmdEncodeVideoKHR(
         if (pEncodeInfo) {
             local_pEncodeInfo = &var_local_pEncodeInfo;
             local_pEncodeInfo->initialize(pEncodeInfo);
-            if (pEncodeInfo->dstBitstreamBuffer) {
-                local_pEncodeInfo->dstBitstreamBuffer = layer_data->Unwrap(pEncodeInfo->dstBitstreamBuffer);
+            if (pEncodeInfo->dstBuffer) {
+                local_pEncodeInfo->dstBuffer = layer_data->Unwrap(pEncodeInfo->dstBuffer);
             }
             if (pEncodeInfo->srcPictureResource.imageViewBinding) {
                 local_pEncodeInfo->srcPictureResource.imageViewBinding = layer_data->Unwrap(pEncodeInfo->srcPictureResource.imageViewBinding);
