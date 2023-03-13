@@ -1626,7 +1626,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
-        skip |= LogError(object, "VUID-VkViewport-height-01772", "%s: %s.height (=%f) is not greater 0.0.", fn_name,
+        skip |= LogError(object, "VUID-VkViewport-apiVersion-07917", "%s: %s.height (=%f) is not greater 0.0.", fn_name,
                          parameter_name.get_name().c_str(), viewport.height);
     } else if (!(f_lte_u32_exact(fabsf(viewport.height), max_h) || f_lte_u32_direct(fabsf(viewport.height), max_h))) {
         height_healthy = false;
