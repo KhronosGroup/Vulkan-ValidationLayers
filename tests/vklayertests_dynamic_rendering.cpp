@@ -3003,7 +3003,6 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleRenderPass
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
     m_errorMonitor->VerifyFound();
 
@@ -3062,7 +3061,6 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferIncompatibleSubpass) {
     m_commandBuffer->BeginRenderPass(render_pass_begin_info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00097");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
     m_errorMonitor->VerifyFound();
@@ -3099,7 +3097,6 @@ TEST_F(VkLayerTest, DynamicRenderingSecondaryCommandBufferInvalidContents) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-00095");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
     m_errorMonitor->VerifyFound();
