@@ -241,7 +241,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
     } else {
         if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
-            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-00638", "vkAllocateMemory: allocationSize is 0.");
+            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-07898", "vkAllocateMemory: allocationSize is 0.");
         }
     }
 
