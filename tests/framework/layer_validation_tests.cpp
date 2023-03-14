@@ -3823,6 +3823,7 @@ void android_main(struct android_app *app) {
 }
 #endif
 
+#if !defined(ANDROID) && !defined(VALIDATION_APK)
 #if defined(_WIN32) && !defined(NDEBUG)
 #include <crtdbg.h>
 #endif
@@ -3852,3 +3853,4 @@ int main(int argc, char **argv) {
     VkTestFramework::Finish();
     return result;
 }
+#endif
