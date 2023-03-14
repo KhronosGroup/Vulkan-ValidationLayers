@@ -20,8 +20,6 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
-#include "state_tracker/state_tracker.h"
-#include "vk_layer_utils.h"
 #include <limits>
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {

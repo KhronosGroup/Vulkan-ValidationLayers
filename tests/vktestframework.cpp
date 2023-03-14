@@ -21,7 +21,6 @@
 #include "glslang/SPIRV/GlslangToSpv.h"
 #include "glslang/SPIRV/SPVRemapper.h"
 #include <filesystem>
-#include <climits>
 #include <cmath>
 
 // Command-line options

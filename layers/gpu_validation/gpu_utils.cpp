@@ -16,14 +16,12 @@
  */
 
 #include "gpu_validation/gpu_utils.h"
-#include "state_tracker/descriptor_sets.h"
 #include "sync/sync_utils.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
 #include <spirv/unified1/spirv.hpp>
 #include <algorithm>
-#include <regex>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -1125,6 +1123,7 @@ bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::st
     return true;
 }
 #else
+#include <regex>
 bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
     static const std::regex line_regex(  // matches #line directives
         "^"                              // beginning of line

@@ -17,11 +17,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <memory>
 #include <mutex>
 #include <thread>
 
-#include "cast_utils.h"
 #include "vk_layer_utils.h"
 
 //

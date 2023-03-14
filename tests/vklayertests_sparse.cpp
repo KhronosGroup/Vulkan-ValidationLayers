@@ -15,7 +15,6 @@
 #include "cast_utils.h"
 #include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
-#include "vk_layer_utils.h"
 
 TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");

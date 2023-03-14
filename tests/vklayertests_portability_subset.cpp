@@ -12,7 +12,6 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
-#include "core_validation_error_enums.h"
 
 class VkPortabilitySubsetTest : public VkLayerTest {};
 

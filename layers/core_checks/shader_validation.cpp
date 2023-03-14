@@ -21,15 +21,12 @@
 
 #include <cassert>
 #include <cinttypes>
-#include <cmath>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include <spirv/unified1/spirv.hpp>
 #include "vk_enum_string_helper.h"
-#include "vk_layer_data.h"
-#include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 #include "spirv_grammar_helper.h"

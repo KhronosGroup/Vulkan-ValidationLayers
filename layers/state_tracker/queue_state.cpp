@@ -18,7 +18,6 @@
  */
 #include "state_tracker/queue_state.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/state_tracker.h"
 
 using SemOp = SEMAPHORE_STATE::SemOp;
 

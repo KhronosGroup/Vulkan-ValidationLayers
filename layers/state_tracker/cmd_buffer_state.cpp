@@ -18,10 +18,6 @@
  * limitations under the License.
  */
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/video_session_state.h"
-#include "state_tracker/state_tracker.h"
-#include "state_tracker/image_state.h"
 
 COMMAND_POOL_STATE::COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
                                        VkQueueFlags flags)

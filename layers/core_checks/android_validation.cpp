@@ -17,11 +17,8 @@
  * limitations under the License.
  */
 
-#include <vector>
-
 #include "vk_layer_utils.h"
 #include "vk_enum_string_helper.h"
-#include "chassis.h"
 #include "core_checks/core_validation.h"
 
 #ifdef AHB_VALIDATION_SUPPORT
