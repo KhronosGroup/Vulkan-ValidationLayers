@@ -22,6 +22,7 @@
 #include "spirv-tools/instrument.hpp"
 #include <spirv/unified1/spirv.hpp>
 #include <algorithm>
+#include <regex>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -1094,36 +1095,6 @@ void ReadOpSource(const SHADER_MODULE_STATE &module_state, const uint32_t report
 //   when finding a #line line number larger than the reported error line number.
 //
 
-// GCC 4.8 has a problem with std::regex that is fixed in GCC 4.9.  Provide fallback code for 4.8
-#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
-
-#if defined(__GNUC__) && GCC_VERSION < 40900
-bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
-    // # line <linenumber> "<filename>" or
-    // #line <linenumber> "<filename>"
-    std::vector<std::string> tokens;
-    std::stringstream stream(string);
-    std::string temp;
-    uint32_t line_index = 0;
-
-    while (stream >> temp) tokens.push_back(temp);
-    auto size = tokens.size();
-    if (size > 1) {
-        if (tokens[0] == "#" && tokens[1] == "line") {
-            line_index = 2;
-        } else if (tokens[0] == "#line") {
-            line_index = 1;
-        }
-    }
-    if (0 == line_index) return false;
-    *linenumber = static_cast<uint32_t>(std::stoul(tokens[line_index]));
-    uint32_t filename_index = line_index + 1;
-    // Remove enclosing double quotes around filename
-    if (size > filename_index) filename = tokens[filename_index].substr(1, tokens[filename_index].size() - 2);
-    return true;
-}
-#else
-#include <regex>
 bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
     static const std::regex line_regex(  // matches #line directives
         "^"                              // beginning of line
@@ -1150,7 +1121,6 @@ bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::st
     *linenumber = (uint32_t)std::stoul(captures[1]);
     return true;
 }
-#endif  // GCC_VERSION
 
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
