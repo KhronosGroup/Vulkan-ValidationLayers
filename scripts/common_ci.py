@@ -46,8 +46,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file
 EXTERNAL_DIR_NAME = "external"
 BUILD_DIR_NAME = "build"
 VVL_BUILD_DIR = RepoRelative(BUILD_DIR_NAME)
-CONFIGURATIONS = ['release', 'debug']
-DEFAULT_CONFIGURATION = CONFIGURATIONS[0]
+TEST_INSTALL_DIR = RepoRelative("build/install")
 
 def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), config)
 
@@ -67,27 +66,27 @@ def IsWindows(): return 'windows' == platform.system().lower()
 
 #
 # Verify consistency of generated source code
-def CheckVVLCodegenConsistency(args):
+def CheckVVLCodegenConsistency(config):
     print("Check Generated Source Code Consistency")
-    ext_dir = externalDir(args.configuration)
+    ext_dir = externalDir(config)
     gen_check_cmd = f'python3 scripts/generate_source.py --verify {ext_dir}/Vulkan-Headers/registry {ext_dir}/SPIRV-Headers/include/spirv/unified1/'
     RunShellCmd(gen_check_cmd)
 
 #
 # Prepare the Validation Layers for testing
-def BuildVVL(args, build_tests="OFF"):
+def BuildVVL(config, cmake_args, build_tests):
     print("Log CMake version")
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
 
     print("Run CMake for Validation Layers")
-    cmake_cmd = f'cmake -S . -B {VVL_BUILD_DIR} -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration}'
+    cmake_cmd = f'cmake -S . -B {VVL_BUILD_DIR} -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={config}'
     # By default BUILD_WERROR is OFF, CI should always enable it.
     cmake_cmd += ' -DBUILD_WERROR=ON'
     cmake_cmd += f' -DBUILD_TESTS={build_tests}'
 
-    if args.cmake:
-         cmake_cmd += f' {args.cmake}'
+    if cmake_args:
+         cmake_cmd += f' {cmake_args}'
 
     RunShellCmd(cmake_cmd)
 
@@ -96,20 +95,19 @@ def BuildVVL(args, build_tests="OFF"):
     RunShellCmd(build_cmd)
 
     print("Install Validation Layers")
-    install_cmd = f'cmake --install {VVL_BUILD_DIR} --prefix {VVL_BUILD_DIR}/install/'
+    install_cmd = f'cmake --install {VVL_BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
     RunShellCmd(install_cmd)
 
     print('Run vk_validation_stats.py')
-    make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration))
-    ext_dir = externalDir(args.configuration)
-    stats_script = os.path.join('..', 'scripts', 'vk_validation_stats.py')
+    ext_dir = externalDir(config)
+    stats_script = RepoRelative('scripts/vk_validation_stats.py')
     validusage = os.path.join(ext_dir, 'Vulkan-Headers', 'registry', 'validusage.json')
-    outfile = os.path.join('layers', args.configuration, 'vuid_coverage_database.txt')
+    outfile = os.path.join('layers', 'vuid_coverage_database.txt')
     RunShellCmd(f'{sys.executable} {stats_script} {validusage} -text {outfile}', VVL_BUILD_DIR)
 
 #
 # Prepare Loader for executing Layer Validation Tests
-def BuildLoader(args):
+def BuildLoader():
     LOADER_DIR = RepoRelative(os.path.join("%s/Vulkan-Loader" % EXTERNAL_DIR_NAME))
     # Clone Loader repo
     if not os.path.exists(LOADER_DIR):
@@ -122,18 +120,23 @@ def BuildLoader(args):
 
     print("Run CMake for Loader")
     cmake_cmd = f'cmake -S {LOADER_DIR} -B {LOADER_BUILD_DIR} '
-    cmake_cmd += f'-D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE={args.configuration}'
+    cmake_cmd += '-D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE=Release'
     # This enables better stack traces from leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
-    if not IsWindows(): cmake_cmd = cmake_cmd + ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+    if not IsWindows():
+        cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
     RunShellCmd(cmake_cmd)
 
     print("Build Loader")
     build_cmd = f'cmake --build {LOADER_BUILD_DIR}'
     RunShellCmd(build_cmd)
 
+    print("Install Loader")
+    install_cmd = f'cmake --install {LOADER_BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
+    RunShellCmd(install_cmd)
+
 #
 # Prepare Mock ICD for use with Layer Validation Tests
-def BuildMockICD(args):
+def BuildMockICD():
     VT_DIR = RepoRelative("%s/Vulkan-Tools" % EXTERNAL_DIR_NAME)
     if not os.path.exists(VT_DIR):
         print("Clone Vulkan-Tools Repository")
@@ -143,11 +146,11 @@ def BuildMockICD(args):
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
 
     print("Running update_deps.py for ICD")
-    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration}', VT_DIR)
+    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config release', VT_DIR)
 
     print("Run CMake for ICD")
-    cmake_cmd = f'cmake -S {VT_DIR} -B {ICD_BUILD_DIR} -DCMAKE_BUILD_TYPE={args.configuration} '
-    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF ' 
+    cmake_cmd = f'cmake -S {VT_DIR} -B {ICD_BUILD_DIR} -D CMAKE_BUILD_TYPE=Release '
+    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -D INSTALL_ICD=ON '
     cmake_cmd += f'-C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake'
     RunShellCmd(cmake_cmd)
 
@@ -155,9 +158,13 @@ def BuildMockICD(args):
     build_cmd = f'cmake --build {ICD_BUILD_DIR}'
     RunShellCmd(build_cmd)
 
+    print("Install Mock ICD")
+    install_cmd = f'cmake --install {ICD_BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
+    RunShellCmd(install_cmd)
+
 #
 # Prepare Profile Layer for use with Layer Validation Tests
-def BuildProfileLayer(args):
+def BuildProfileLayer():
     RunShellCmd('pip3 install jsonschema', EXTERNAL_DIR_NAME)
 
     VP_DIR = RepoRelative("%s/Vulkan-Profiles" % EXTERNAL_DIR_NAME)
@@ -169,7 +176,8 @@ def BuildProfileLayer(args):
     BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
 
     print("Run CMake for Profile Layer")
-    cmake_cmd = f'cmake -S {VP_DIR} -B {BUILD_DIR} -D CMAKE_BUILD_TYPE={args.configuration.capitalize()}'
+    cmake_cmd = f'cmake -S {VP_DIR} -B {BUILD_DIR}'
+    cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
     cmake_cmd += ' -D UPDATE_DEPS=ON'
     cmake_cmd += ' -D PROFILES_BUILD_TESTS=OFF'
     RunShellCmd(cmake_cmd)
@@ -178,36 +186,28 @@ def BuildProfileLayer(args):
     build_cmd = f'cmake --build {BUILD_DIR}'
     RunShellCmd(build_cmd)
 
+    print("Install Profile Layer")
+    install_cmd = f'cmake --install {BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
+    RunShellCmd(install_cmd)
+
 #
 # Run the Layer Validation Tests
-def RunVVLTests(args):
+def RunVVLTests(config):
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
-    lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests')
-    if IsWindows(): lvt_cmd = os.path.join(lvt_cmd, args.configuration)
-    lvt_cmd = os.path.join(lvt_cmd, 'vk_layer_validation_tests')
+
+    if IsWindows():
+        print("Not implemented yet")
+        exit(-1)
+
+    lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests', 'vk_layer_validation_tests')
 
     lvt_env = dict(os.environ)
 
-    if not IsWindows():
-        lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
-    else:
-        loader_dll = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration, 'vulkan-1.dll')
-        loader_dll_dst = os.path.join(os.path.dirname(lvt_cmd), 'vulkan-1.dll')
-        shutil.copyfile(loader_dll, loader_dll_dst)
-
-    layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
-    if IsWindows(): layer_path = os.path.join(layer_path, args.configuration)
-    if not os.path.isdir(layer_path):
-        raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
-    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'layer')
-    lvt_env['VK_LAYER_PATH'] = layer_path
-
-    vk_driver_files = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
-    if IsWindows(): vk_driver_files = os.path.join(vk_driver_files, args.configuration)
-    vk_driver_files = os.path.join(vk_driver_files, 'VkICD_mock_icd.json')
-    if not os.path.isfile(vk_driver_files):
-        raise Exception(f'VK_DRIVER_FILES "{vk_driver_files}" does not exist')
-    lvt_env['VK_DRIVER_FILES'] = vk_driver_files
+    # Because we installed everything to TEST_INSTALL_DIR all the libraries/json files are in pre-determined locations
+    # defined by GNUInstallDirs. This makes adding the LD_LIBRARY_PATH and VK_LAYER_PATH trivial/robust.
+    lvt_env['LD_LIBRARY_PATH'] = os.path.join(TEST_INSTALL_DIR, 'lib')
+    lvt_env['VK_LAYER_PATH'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
+    lvt_env['VK_DRIVER_FILES'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
 
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
     lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT'
@@ -219,15 +219,17 @@ def RunVVLTests(args):
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '1'
     RunShellCmd(lvt_cmd + ' --gtest_filter=*Thread*', env=lvt_env)
 
-
 def GetArgParser():
+    configs = ['release', 'debug']
+    default_config = configs[0]
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', dest='configuration',
         metavar='CONFIG', action='store',
-        choices=CONFIGURATIONS, default=DEFAULT_CONFIGURATION,
+        choices=configs, default=default_config,
         help='Build target configuration. Can be one of: {0}'.format(
-            ', '.join(CONFIGURATIONS)))
+            ', '.join(configs)))
     parser.add_argument(
         '--cmake', dest='cmake',
         metavar='CMAKE', type=str,
