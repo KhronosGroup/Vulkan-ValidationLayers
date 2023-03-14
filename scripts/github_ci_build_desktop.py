@@ -29,9 +29,11 @@ def main():
     parser = common_ci.GetArgParser()
     args = parser.parse_args()
 
+    config = args.configuration
+
     try:
-        common_ci.BuildVVL(args)
-        common_ci.CheckVVLCodegenConsistency(args)
+        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF")
+        common_ci.CheckVVLCodegenConsistency(config = config)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
