@@ -5602,6 +5602,21 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
     }
 }
 
+void ValidationStateTracker::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,
+                                                                        VkShaderModuleIdentifierEXT *pIdentifier) {
+    if (const auto shader_state = Get<SHADER_MODULE_STATE>(shaderModule); shader_state) {
+        WriteLockGuard guard(shader_identifier_map_lock_);
+        shader_identifier_map_.emplace(*pIdentifier, std::move(shader_state));
+    }
+}
+
+void ValidationStateTracker::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice,
+                                                                                  const VkShaderModuleCreateInfo *pCreateInfo,
+                                                                                  VkShaderModuleIdentifierEXT *pIdentifier) {
+    WriteLockGuard guard(shader_identifier_map_lock_);
+    shader_identifier_map_.emplace(*pIdentifier, CreateShaderModuleState(*pCreateInfo, 0, VK_NULL_HANDLE));
+}
+
 void ValidationStateTracker::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                                   VkDeviceAddress address) {
     RecordGetBufferDeviceAddress(pInfo, address);
