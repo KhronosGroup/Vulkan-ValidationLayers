@@ -1421,6 +1421,12 @@ class ValidationStateTracker : public ValidationObject {
                                                  VkDeviceAddress address) override;
     void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                  VkDeviceAddress address) override;
+
+    void PostCallRecordGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
+                                                    VkShaderModuleIdentifierEXT* pIdentifier) override;
+    void PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                                              VkShaderModuleIdentifierEXT* pIdentifier) override;
+
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
         assert(ext_prop);
@@ -1545,6 +1551,10 @@ class ValidationStateTracker : public ValidationObject {
     std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};
+
+    // Keep track of identifier -> state
+    vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<SHADER_MODULE_STATE>> shader_identifier_map_;
+    mutable std::shared_mutex shader_identifier_map_lock_;
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)

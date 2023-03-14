@@ -108,3 +108,23 @@ struct hash<const ExtEnabled DeviceExtensions::*> {
     }
 };
 }  // namespace std
+
+static inline bool operator==(const VkShaderModuleIdentifierEXT &a, const VkShaderModuleIdentifierEXT &b) {
+    if (a.identifierSize != b.identifierSize) {
+        return false;
+    }
+    for (uint32_t i = 0u; i < a.identifierSize; ++i) {
+        if (a.identifier[i] != b.identifier[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+namespace std {
+template <>
+struct hash<VkShaderModuleIdentifierEXT> {
+    size_t operator()(const VkShaderModuleIdentifierEXT &value) const {
+        return hash_util::HashCombiner().Combine(value.identifier, value.identifier + value.identifierSize).Value();
+    }
+};
+}  // namespace std
