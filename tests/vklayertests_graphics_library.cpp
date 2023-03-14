@@ -1655,13 +1655,14 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Pass patch topology without tessellation shaders
-    CreatePipelineHelper vi_patch_lib(*this);
-    vi_patch_lib.InitVertexInputLibInfo();
-    vi_patch_lib.InitState();
-    vi_patch_lib.gp_ci_.pInputAssemblyState = &iasci;
-    vi_patch_lib.CreateGraphicsPipeline(true, false);
     {
+        // Pass patch topology without tessellation shaders
+        CreatePipelineHelper vi_patch_lib(*this);
+        vi_patch_lib.InitVertexInputLibInfo();
+        vi_patch_lib.InitState();
+        vi_patch_lib.gp_ci_.pInputAssemblyState = &iasci;
+        vi_patch_lib.CreateGraphicsPipeline(true, false);
+
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
         pre_raster_lib.InitState();
