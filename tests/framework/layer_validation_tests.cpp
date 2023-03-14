@@ -3828,25 +3828,42 @@ void android_main(struct android_app *app) {
 #include <crtdbg.h>
 #endif
 
+// Makes any failed assertion throw, allowing for graceful cleanup of resources instead of hard aborts
+class ThrowListener : public testing::EmptyTestEventListener {
+    void OnTestPartResult(const testing::TestPartResult &result) override {
+        if (result.type() == testing::TestPartResult::kFatalFailure) {
+            // We need to make sure an exception wasn't already thrown so we dont throw another exception at the same time
+            std::exception_ptr ex = std::current_exception();
+            if (ex) {
+                return;
+            }
+            throw testing::AssertionException(result);
+        }
+    }
+};
+
 int main(int argc, char **argv) {
-    int result;
+    int result = -1;  // -1 indicates faliure, this is in case of an uncaught exception causing RUN_ALL_TESTS();
+                      // to not return 0
 
 #if defined(_WIN32)
-#if !defined(NDEBUG)
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-#endif
     // Avoid "Abort, Retry, Ignore" dialog boxes
+    _set_error_mode(_OUT_TO_STDERR);
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
     _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 #endif
 
     ::testing::InitGoogleTest(&argc, argv);
     VkTestFramework::InitArgs(&argc, argv);
 
     ::testing::AddGlobalTestEnvironment(new TestEnvironment);
+    ::testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
 
     result = RUN_ALL_TESTS();
 
