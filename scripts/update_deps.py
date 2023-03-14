@@ -457,10 +457,8 @@ class GoodRepo(object):
         for option in self.cmake_options:
             cmake_cmd.append(escape(option.format(**self.__dict__)))
 
-        # Set build config for single-configuration generators
-        if platform.system() == 'Linux' or platform.system() == 'Darwin':
-            cmake_cmd.append('-DCMAKE_BUILD_TYPE={config}'.format(
-                config=CONFIG_MAP[self._args.config]))
+        # Set build config for single-configuration generators (this is a no-op on multi-config generators)
+        cmake_cmd.append(f'-D CMAKE_BUILD_TYPE={CONFIG_MAP[self._args.config]}')
 
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
