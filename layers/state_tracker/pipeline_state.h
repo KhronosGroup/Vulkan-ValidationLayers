@@ -253,6 +253,15 @@ class PIPELINE_STATE : public BASE_NODE {
 
     bool IsGraphicsLibrary() const { return !HasFullState(); }
     bool HasFullState() const {
+        // First make sure that this pipeline is a "classic" pipeline, or is linked together with the appropriate sub-state
+        // libraries
+        if (graphics_lib_type && (graphics_lib_type != (VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                                                        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT))) {
+            return false;
+        }
+
         // If Pre-raster state does contain a vertex shader, vertex input state is not required
         const bool vi_satisfied = [this]() -> bool {
             if (pre_raster_state && pre_raster_state->vertex_shader) {

@@ -77,6 +77,10 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
                 }
             }
 
+            // TODO (ncesario) Need to check if a shader module identifier is used to reference the shader module.
+            //                 This requires adding identifier -> module state tracking similar to buffer device
+            //                 address.
+
             if (module_state) {
                 const auto *stage_ci = &create_info.pStages[i];
                 switch (create_info.pStages[i].stage) {
