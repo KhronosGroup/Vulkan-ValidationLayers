@@ -18,8 +18,6 @@
 #include <sstream>
 #include <string>
 
-#include "vk_layer_data.h"
-#include "vk_layer_utils.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "spirv_grammar_helper.h"

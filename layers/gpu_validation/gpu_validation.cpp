@@ -23,10 +23,6 @@
 #include "spirv-tools/instrument.hpp"
 #include "layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
-#include "state_tracker/buffer_state.h"
-#include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/render_pass_state.h"
-#include "vk_layer_config.h"
 // Generated shaders
 #include "gpu_shaders/gpu_shaders_constants.h"
 #include "gpu_pre_draw_vert.h"

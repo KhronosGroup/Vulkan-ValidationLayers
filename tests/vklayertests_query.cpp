@@ -13,12 +13,8 @@
  */
 
 #include "cast_utils.h"
-#include "core_validation_error_enums.h"
 #include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
-#include "vk_layer_utils.h"
-#include "generated/vk_validation_error_messages.h"
-#include "vk_layer_logging.h"
 
 class VkLayerQueryTest : public VkLayerTest {};
 

@@ -14,11 +14,6 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "cast_utils.h"
 
 TEST_F(VkVideoLayerTest, VideoCodingScope) {
     TEST_DESCRIPTION("Tests calling functions inside/outside video coding scope");

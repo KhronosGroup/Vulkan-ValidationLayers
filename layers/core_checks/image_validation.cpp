@@ -24,8 +24,6 @@
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
 #include "core_checks/core_validation.h"
-#include "core_error_location.h"
-#include "sync/sync_vuid_maps.h"
 
 // There is a table in the Vulkan spec to list all formats that implicitly require YCbCr conversion,
 // but some features/extensions can explicitly turn that restriction off

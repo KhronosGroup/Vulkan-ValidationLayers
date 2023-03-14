@@ -17,11 +17,8 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <memory>
 #include <mutex>
 #include <thread>
-
-#include "cast_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS

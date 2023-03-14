@@ -14,15 +14,10 @@
 #include "../layer_validation_tests.h"
 #include "vk_extension_helper.h"
 
-#include <algorithm>
 #include <array>
 #include <chrono>
 #include <deque>
-#include <memory>
-#include <mutex>
 #include <thread>
-
-#include "cast_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS

@@ -1751,11 +1751,9 @@ void DispatchGetDescriptorEXT(
         if not self.header:
             write(self.inline_copyright_message, file=self.outFile)
             self.newline()
-            write('#include <mutex>', file=self.outFile)
             write('#include "cast_utils.h"', file=self.outFile)
             write('#include "chassis.h"', file=self.outFile)
             write('#include "layer_chassis_dispatch.h"', file=self.outFile)
-            write('#include "vk_layer_utils.h"', file=self.outFile)
             write('#include "vk_safe_struct.h"', file=self.outFile)
             self.newline()
             write('std::shared_mutex dispatch_lock;', file=self.outFile)

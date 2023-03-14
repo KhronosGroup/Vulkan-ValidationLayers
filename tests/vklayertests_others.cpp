@@ -18,7 +18,6 @@
 #include "layer_validation_tests.h"
 #include "vk_layer_utils.h"
 #include "generated/vk_validation_error_messages.h"
-#include "vk_layer_logging.h"
 
 class MessageIdFilter {
   public:

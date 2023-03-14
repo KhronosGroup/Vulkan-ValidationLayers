@@ -13,7 +13,6 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
-#include "best_practices/best_practices_error_enums.h"
 
 const char *kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 

@@ -20,7 +20,6 @@
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "layer_chassis_dispatch.h"
-#include "state_tracker/cmd_buffer_state.h"
 
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {

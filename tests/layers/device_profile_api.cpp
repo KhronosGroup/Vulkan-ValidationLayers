@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 #include <string.h>
-#include <stdlib.h>
 #include <cassert>
 #include <mutex>
 #include <unordered_map>

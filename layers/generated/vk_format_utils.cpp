@@ -23,7 +23,6 @@
 
 #include "vk_format_utils.h"
 #include "vk_layer_utils.h"
-#include <map>
 #include <vector>
 
 

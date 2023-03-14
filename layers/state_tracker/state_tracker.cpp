@@ -19,13 +19,10 @@
  */
 
 #include <algorithm>
-#include <cmath>
 
-#include "vk_enum_string_helper.h"
 #include "vk_format_utils.h"
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
-#include "vk_layer_logging.h"
 #include "vk_typemap_helper.h"
 
 #include "chassis.h"
@@ -33,7 +30,6 @@
 #include "core_checks/shader_validation.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/render_pass_state.h"
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.

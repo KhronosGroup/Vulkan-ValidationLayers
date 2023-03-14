@@ -257,6 +257,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     object_lifetime_validation.h
     object_tracker_utils.cpp
     range_vector.h
+    sparse_containers.h
     subresource_adapter.cpp
     subresource_adapter.h
     vk_layer_settings_ext.h

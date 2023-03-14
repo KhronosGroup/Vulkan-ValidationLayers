@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 #include "state_tracker/base_node.h"
-#include "vk_layer_utils.h"
 
 BASE_NODE::~BASE_NODE() { Destroy(); }
 
