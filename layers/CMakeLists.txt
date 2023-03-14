@@ -54,7 +54,6 @@ target_sources(VkLayer_utils PRIVATE
 target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
-set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils PUBLIC
     .
     generated # Needed otherwise VkLayer_utils won't install properly.
