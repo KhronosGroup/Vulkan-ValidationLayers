@@ -25,7 +25,10 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "d13b52222c39a7e9a401b44646f0ca3a640fbd47"
+            "commit": "d13b52222c39a7e9a401b44646f0ca3a640fbd47",
+            "cmake_options": [
+                "-D SPIRV_HEADERS_SKIP_EXAMPLES=ON"
+            ]
         },
         {
             "name": "SPIRV-Tools",
