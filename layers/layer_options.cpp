@@ -19,6 +19,12 @@
 #include "layer_options.h"
 #include "xxhash.h"
 
+// Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
+// part of the VVL but not the layer utils library.
+#if defined(USE_MIMALLOC) && defined(_WIN64)
+#include "mimalloc-new-delete.h"
+#endif
+
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {

@@ -24,12 +24,6 @@
 #include "vulkan/vulkan.h"
 #include "vk_layer_config.h"
 
-// Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
-// part of the layer utils library.
-#if defined(USE_MIMALLOC) && defined(_WIN64)
-#include "mimalloc-new-delete.h"
-#endif
-
 static const uint8_t kUtF8OneByteCode = 0xC0;
 static const uint8_t kUtF8OneByteMask = 0xE0;
 static const uint8_t kUtF8TwoByteCode = 0xE0;

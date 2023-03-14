@@ -67,18 +67,6 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
-# Using mimalloc on non-Windows OSes currently results in unit test instability with some
-# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
-# the amount of virtual address space needed, which can also cause stability problems.
-if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-   find_package(mimalloc CONFIG)
-   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
-   if (USE_MIMALLOC)
-      target_compile_definitions(mimalloc-static INTERFACE USE_MIMALLOC)
-      target_link_libraries(VkLayer_utils PRIVATE mimalloc-static)
-   endif()
-endif()
-
 # Currently repos like LunarG/VulkanTools require source code from VVL
 # This results in VkLayer_utils needing to be installed. Ideally this is
 # cleaned up in the future since this is a result of history involving the mono-repo.
@@ -299,6 +287,19 @@ endif()
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
 target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
+
+# Using mimalloc on non-Windows OSes currently results in unit test instability with some
+# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
+# the amount of virtual address space needed, which can also cause stability problems.
+if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+   find_package(mimalloc CONFIG)
+   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
+   if (USE_MIMALLOC)
+      target_compile_definitions(mimalloc-static INTERFACE USE_MIMALLOC)
+      target_link_libraries(VkLayer_khronos_validation PRIVATE mimalloc-static)
+   endif()
+endif()
+
 
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)
