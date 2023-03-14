@@ -187,10 +187,15 @@ class PIPELINE_STATE : public BASE_NODE {
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_states;
-    // Flag of which shader stages are active for this pipeline
-    const uint32_t active_shaders = 0;
+
+    // Shaders from the pipeline create info
+    // Normally used for validating pipeline creation, if stages are linked, they will already have been validated
+    const VkShaderStageFlags create_info_shaders = 0;
     // Shaders being linked in, don't need to be re-validated
-    const uint32_t linking_shaders = 0;
+    const VkShaderStageFlags linking_shaders = 0;
+    // Flag of which shader stages are active for this pipeline
+    // create_info_shaders + linking_shaders
+    const VkShaderStageFlags active_shaders = 0;
 
     const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
@@ -288,6 +293,10 @@ class PIPELINE_STATE : public BASE_NODE {
         }
         return {};
     }
+
+    // Used to know if the pipeline substate is being created (as opposed to being linked)
+    // Important as some pipeline checks need pipeline state that won't be there if the substate is from linking
+    bool OwnsSubState(const std::shared_ptr<PipelineSubState> sub_state) const { return sub_state && (&sub_state->parent == this); }
 
     const std::shared_ptr<const RENDER_PASS_STATE> RenderPassState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?

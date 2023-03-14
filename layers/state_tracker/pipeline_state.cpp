@@ -194,10 +194,10 @@ static uint32_t GetMaxActiveSlot(const PIPELINE_STATE::ActiveSlotMap &active_slo
     return max_active_slot;
 }
 
-static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stage_states) {
+static uint32_t GetCreateInfoShaders(const PIPELINE_STATE &pipe_state) {
     uint32_t result = 0;
-    for (const auto &stage : stage_states) {
-        result |= stage.stage_flag;
+    for (const auto &stage_ci : pipe_state.shader_stages_ci) {
+        result |= stage_ci.stage;
     }
     return result;
 }
@@ -565,8 +565,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_states)),
+      create_info_shaders(GetCreateInfoShaders(*this)),
       linking_shaders(GetLinkingShaders(library_create_info, *state_data)),
+      active_shaders(create_info_shaders | linking_shaders),
       fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_states)),
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
@@ -643,7 +644,8 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       create_flags(create_info.compute.flags),
       shader_stages_ci(&create_info.compute.stage, 1),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_states)),
+      create_info_shaders(GetCreateInfoShaders(*this)),
+      active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
@@ -664,7 +666,8 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
       ray_tracing_library_ci(create_info.raytracing.pLibraryInfo),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_states)),
+      create_info_shaders(GetCreateInfoShaders(*this)),
+      active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
@@ -687,7 +690,8 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
       ray_tracing_library_ci(create_info.raytracing.pLibraryInfo),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
-      active_shaders(GetActiveShaders(stage_states)),
+      create_info_shaders(GetCreateInfoShaders(*this)),
+      active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),

@@ -34,10 +34,14 @@ static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateI
     return static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
 }
 
-struct VertexInputState {
-    VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info);
-
+// Common amoung all pipeline sub state
+struct PipelineSubState {
+    PipelineSubState(const PIPELINE_STATE &p) : parent(p) {}
     const PIPELINE_STATE &parent;
+};
+
+struct VertexInputState : public PipelineSubState {
+    VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info);
 
     safe_VkPipelineVertexInputStateCreateInfo *input_state = nullptr;
     safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
@@ -58,7 +62,7 @@ struct VertexInputState {
                                                      const safe_VkGraphicsPipelineCreateInfo &create_info);
 };
 
-struct PreRasterState {
+struct PreRasterState : public PipelineSubState {
     PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
                    const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp);
 
@@ -66,8 +70,6 @@ struct PreRasterState {
         return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
                VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
     }
-
-    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     safe_VkPipelineViewportStateCreateInfo *viewport_state = nullptr;
@@ -101,7 +103,7 @@ std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthSte
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const safe_VkPipelineShaderStageCreateInfo &cbs);
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs);
 
-struct FragmentShaderState {
+struct FragmentShaderState : public PipelineSubState {
     FragmentShaderState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
                         std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t subpass, VkPipelineLayout layout);
 
@@ -119,8 +121,6 @@ struct FragmentShaderState {
     }
 
     static inline VkShaderStageFlags ValidShaderStages() { return VK_SHADER_STAGE_FRAGMENT_BIT; }
-
-    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
@@ -152,7 +152,7 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
     return result;
 }
 
-struct FragmentOutputState {
+struct FragmentOutputState : public PipelineSubState {
     using AttachmentVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
     FragmentOutputState(const PIPELINE_STATE &p, std::shared_ptr<const RENDER_PASS_STATE> rp, uint32_t sp);
@@ -189,8 +189,6 @@ struct FragmentOutputState {
 
     static bool IsBlendConstantsEnabled(const AttachmentVector &attachments);
     static bool GetDualSourceBlending(const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state);
-
-    const PIPELINE_STATE &parent;
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
