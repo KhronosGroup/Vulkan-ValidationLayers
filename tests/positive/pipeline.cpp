@@ -750,6 +750,76 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentArray) {
     }
 }
 
+TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentDepthStencil) {
+    TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    GetPhysicalDeviceFeatures2(features12);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    const VkAttachmentDescription inputAttachmentDescriptions[2] = {
+        {0, m_render_target_fmt, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+        {0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL}};
+
+    // index 0 = color | index 1 = depth | index 2 = stencil
+    const VkAttachmentReference inputAttachmentReferences[3] = {
+        {0, VK_IMAGE_LAYOUT_GENERAL}, {1, VK_IMAGE_LAYOUT_GENERAL}, {1, VK_IMAGE_LAYOUT_GENERAL}};
+
+    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     3,
+                                                     inputAttachmentReferences,
+                                                     1,
+                                                     &inputAttachmentReferences[0],
+                                                     nullptr,
+                                                     nullptr,
+                                                     0,
+                                                     nullptr};
+
+    auto renderPassInfo = LvlInitStruct<VkRenderPassCreateInfo>();
+    renderPassInfo.attachmentCount = 2;
+    renderPassInfo.pAttachments = inputAttachmentDescriptions;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpassDescription;
+
+    vk_testing::RenderPass renderPass(*m_device, renderPassInfo);
+
+    // Depth and Stencil use same index, but valid because differnet image aspect masks
+    const char *fs_source = R"(
+            #version 460
+            layout(input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput i_color;
+            layout(input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput i_depth;
+            layout(input_attachment_index = 1, set = 0, binding = 2) uniform usubpassInput i_stencil;
+            layout(location=0) out vec4 color;
+
+            void main(void)
+            {
+                color = subpassLoad(i_color);
+                vec4 depth = subpassLoad(i_depth);
+                uvec4 stencil = subpassLoad(i_stencil);
+            }
+        )";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                {2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        helper.gp_ci_.renderPass = renderPass.handle();
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
 TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed resource which is not "
