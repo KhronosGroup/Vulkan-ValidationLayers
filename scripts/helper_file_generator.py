@@ -600,7 +600,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <cassert>',
             '',
             '#include <vulkan/vulkan.h>',
-            '#include "vk_layer_data.h"',
+            '#include "containers/custom_containers.h"',
             ''
             '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
             '',
@@ -822,7 +822,7 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Object types header: create object enum type header file
     def GenerateObjectTypesHeader(self):
-        object_types_header = '#include "cast_utils.h"\n'
+        object_types_header = '#include "utils/cast_utils.h"\n'
         object_types_header += '\n'
         object_types_header += '// Object Type enum for validation layer internal object handling\n'
         object_types_header += 'typedef enum VulkanObjectType {\n'
@@ -1167,7 +1167,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
         safe_struct_helper_source += '#include "vk_typemap_helper.h"\n'
-        safe_struct_helper_source += '#include "vk_layer_utils.h"\n'
+        safe_struct_helper_source += '#include "utils/vk_layer_utils.h"\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '#include <cassert>\n'

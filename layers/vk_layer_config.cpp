@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
-#include "vk_layer_utils.h"
+#include "utils/vk_layer_utils.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -413,7 +413,7 @@ void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
 
 // This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
 #if defined(__ANDROID__)
-#include "android_ndk_types.h"  // get AHB_VALIDATION_SUPPORT macro
+#include "utils/android_ndk_types.h"  // get AHB_VALIDATION_SUPPORT macro
 void __attribute__((constructor)) CheckAndroidVersion();
 void CheckAndroidVersion() {
 #ifdef AHB_VALIDATION_SUPPORT

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "hash_vk_types.h"
+#include "utils/hash_vk_types.h"
 #include "state_tracker/base_node.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"

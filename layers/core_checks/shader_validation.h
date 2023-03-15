@@ -25,7 +25,7 @@
 #include "vulkan/vulkan.h"
 #include <generated/spirv_tools_commit_id.h>
 #include "state_tracker/shader_module.h"
-#include "vk_layer_utils.h"
+#include "utils/vk_layer_utils.h"
 
 struct DeviceFeatures;
 struct DeviceExtensions;

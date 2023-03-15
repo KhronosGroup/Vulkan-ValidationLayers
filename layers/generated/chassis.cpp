@@ -45,7 +45,7 @@ bool wrap_handles = true;
 #include "best_practices/best_practices_validation.h"
 #include "core_checks/core_validation.h"
 #include "gpu_validation/gpu_validation.h"
-#include "object_lifetime_validation.h"
+#include "object_tracker/object_lifetime_validation.h"
 #include "gpu_validation/debug_printf.h"
 #include "stateless/stateless_validation.h"
 #include "sync/sync_validation.h"

@@ -55,7 +55,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/core_checks/image_validation.cpp',
     'layers/core_checks/image_layout_validation.cpp',
     'layers/core_checks/pipeline_validation.cpp',
-    'layers/object_tracker_utils.cpp',
+    'layers/object_tracker/object_tracker_utils.cpp',
     'layers/core_checks/query_validation.cpp',
     'layers/core_checks/queue_validation.cpp',
     'layers/core_checks/ray_tracing_validation.cpp',
@@ -79,8 +79,8 @@ test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests')
 unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
     'layers/best_practices/best_practices_error_enums.h',
     'layers/stateless/stateless_validation.h',
-    'layers/core_validation_error_enums.h',
-    'layers/object_lifetime_validation.h'
+    'layers/error_message/validation_error_enums.h',
+    'layers/object_tracker/object_lifetime_validation.h'
 ]]
 
 # These files should not change unless event there is a major refactoring in SPIR-V Tools

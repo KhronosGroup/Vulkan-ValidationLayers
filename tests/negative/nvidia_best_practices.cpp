@@ -14,7 +14,7 @@
 #include <chrono>
 #include <thread>
 
-#include "cast_utils.h"
+#include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
 // Tests for NVIDIA-specific best practices

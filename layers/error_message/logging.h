@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "vk_layer_config.h"
-#include "vk_layer_data.h"
+#include "containers/custom_containers.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_object_types.h"
 #include "vk_typemap_helper.h"

@@ -22,7 +22,7 @@
  ****************************************************************************/
 
 #include "vk_format_utils.h"
-#include "vk_layer_utils.h"
+#include "utils/vk_layer_utils.h"
 #include <vector>
 
 

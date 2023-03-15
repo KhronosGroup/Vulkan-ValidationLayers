@@ -48,11 +48,11 @@ include_directories(${SRC_DIR}/include
                     ${SRC_DIR}/layers)
 add_library(layer_utils STATIC
         ${SRC_DIR}/layers/vk_layer_config.cpp
-        ${SRC_DIR}/layers/vk_layer_extension_utils.cpp
-        ${SRC_DIR}/layers/vk_layer_logging.cpp
-        ${SRC_DIR}/layers/vk_layer_utils.cpp
+        ${SRC_DIR}/layers/utils/vk_layer_extension_utils.cpp
+        ${SRC_DIR}/layers/error_message/logging.cpp
+        ${SRC_DIR}/layers/utils/vk_layer_utils.cpp
         ${SRC_DIR}/layers/generated/vk_format_utils.cpp
-        ${SRC_DIR}/layers/xxhash.cpp)
+        ${SRC_DIR}/layers/external/xxhash.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_clone}")
 
 # assume shaderc already built externally
@@ -86,7 +86,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/state_tracker/video_session_state.cpp
         ${SRC_DIR}/layers/core_checks/video_validation.cpp
         ${SRC_DIR}/layers/core_checks/drawdispatch_validation.cpp
-        ${SRC_DIR}/layers/convert_to_renderpass2.cpp
+        ${SRC_DIR}/layers/utils/convert_to_renderpass2.cpp
         ${SRC_DIR}/layers/state_tracker/descriptor_sets.cpp
         ${SRC_DIR}/layers/core_checks/descriptor_validation.cpp
         ${SRC_DIR}/layers/core_checks/buffer_validation.cpp
@@ -103,7 +103,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/best_practices/best_practices_utils.cpp
         ${SRC_DIR}/layers/sync/sync_utils.cpp
         ${SRC_DIR}/layers/sync/sync_vuid_maps.cpp
-        ${SRC_DIR}/layers/core_error_location.cpp
+        ${SRC_DIR}/layers/error_message/core_error_location.cpp
         ${SRC_DIR}/layers/generated/sync_validation_types.cpp
         ${SRC_DIR}/layers/sync/sync_validation.cpp
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
@@ -111,10 +111,10 @@ add_library(VkLayer_khronos_validation SHARED
         ${COMMON_DIR}/include/parameter_validation.cpp
         ${SRC_DIR}/layers/stateless/parameter_validation_utils.cpp
         ${COMMON_DIR}/include/object_tracker.cpp
-        ${SRC_DIR}/layers/object_tracker_utils.cpp
+        ${SRC_DIR}/layers/object_tracker/object_tracker_utils.cpp
         ${COMMON_DIR}/include/thread_safety.cpp
         ${SRC_DIR}/layers/state_tracker/image_layout_map.cpp
-        ${SRC_DIR}/layers/subresource_adapter.cpp
+        ${SRC_DIR}/layers/containers/subresource_adapter.cpp
         ${SRC_DIR}/layers/core_checks/query_validation.cpp
         ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp

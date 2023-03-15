@@ -29,7 +29,7 @@
 #include <map>
 #include <stdint.h>
 #include <vulkan/vulkan.h>
-#include "vk_layer_data.h"
+#include "containers/custom_containers.h"
 using SyncStageAccessFlags = std::bitset<128>;
 
 // clang-format off

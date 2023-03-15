@@ -26,7 +26,7 @@
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
-#include "convert_to_renderpass2.h"
+#include "utils/convert_to_renderpass2.h"
 
 bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
                                              const RENDER_PASS_STATE &rp2_state, uint32_t primary_attach, uint32_t secondary_attach,

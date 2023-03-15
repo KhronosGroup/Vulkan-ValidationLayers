@@ -19,7 +19,7 @@
  */
 #pragma once
 #include "state_tracker/device_memory_state.h"
-#include "range_vector.h"
+#include "containers/range_vector.h"
 
 class ValidationStateTracker;
 class VideoProfileDesc;

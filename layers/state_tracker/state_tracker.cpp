@@ -21,8 +21,8 @@
 #include <algorithm>
 
 #include "vk_format_utils.h"
-#include "vk_layer_data.h"
-#include "vk_layer_utils.h"
+#include "containers/custom_containers.h"
+#include "utils/vk_layer_utils.h"
 #include "vk_typemap_helper.h"
 
 #include "chassis.h"

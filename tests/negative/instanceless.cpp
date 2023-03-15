@@ -30,7 +30,7 @@
 #include <memory>
 #include <vector>
 
-#include "cast_utils.h"
+#include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
 static VkInstance dummy_instance;

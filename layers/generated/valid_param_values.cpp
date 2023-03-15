@@ -21,7 +21,7 @@
 
 
 #include "chassis.h"
-#include "hash_vk_types.h"
+#include "utils/hash_vk_types.h"
 
 
 template<>

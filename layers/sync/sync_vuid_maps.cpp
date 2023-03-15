@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 #include "sync/sync_vuid_maps.h"
-#include "core_error_location.h"
+#include "error_message/core_error_location.h"
 #include "core_checks/core_validation.h"
 #include <cassert>
 #include <array>

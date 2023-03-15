@@ -24,7 +24,7 @@
 #include <array>
 #include <vector>
 #include "range_vector.h"
-#include "vk_layer_data.h"
+#include "custom_containers.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #else

@@ -32,7 +32,7 @@
 #define VMA_IMPLEMENTATION
 // This define indicates that we will supply Vulkan function pointers at initialization
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
-#include "vk_mem_alloc.h"
+#include "external/vk_mem_alloc.h"
 
 #ifdef _MSC_VER
 #pragma warning(pop)
