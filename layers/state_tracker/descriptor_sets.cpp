@@ -361,11 +361,11 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint
         if (next_bi_itr != binding_to_index_map_.end()) {
             auto type = bindings_[bi_itr->second].descriptorType;
             auto stage_flags = bindings_[bi_itr->second].stageFlags;
-            auto immut_samp = bindings_[bi_itr->second].pImmutableSamplers ? true : false;
+            auto immut_samp = bindings_[bi_itr->second].pImmutableSamplers != nullptr;
             auto flags = binding_flags_[bi_itr->second];
             if ((type != bindings_[next_bi_itr->second].descriptorType) ||
                 (stage_flags != bindings_[next_bi_itr->second].stageFlags) ||
-                (immut_samp != (bindings_[next_bi_itr->second].pImmutableSamplers ? true : false)) ||
+                (immut_samp != (bindings_[next_bi_itr->second].pImmutableSamplers != nullptr)) ||
                 (flags != binding_flags_[next_bi_itr->second])) {
                 return false;
             }

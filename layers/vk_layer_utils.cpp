@@ -107,7 +107,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
+    const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
 
     auto dbg_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;

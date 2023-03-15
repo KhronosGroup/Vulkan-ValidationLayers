@@ -2326,7 +2326,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         bool all_not_zero = true;
         for (uint32_t i = 0; i < multiview_info->subpassCount; ++i) {
             all_zero &= multiview_info->pViewMasks[i] == 0;
-            all_not_zero &= !(multiview_info->pViewMasks[i] == 0);
+            all_not_zero &= multiview_info->pViewMasks[i] != 0;
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
                 static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
                 skip |= LogError(device, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697",
@@ -2485,7 +2485,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
         if (resolve_has_depth && resolve_has_stencil) {
             if (phys_dev_props_core12.independentResolve == VK_FALSE && phys_dev_props_core12.independentResolveNone == VK_FALSE &&
-                !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
+                resolve->depthResolveMode != resolve->stencilResolveMode) {
                 skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
                                  "%s: Subpass %" PRIu32
                                  " includes a VkSubpassDescriptionDepthStencilResolve "
@@ -3383,7 +3383,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
              ++deviceRenderAreaIndex) {
             auto offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
             auto width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
-            if (!(offset_x >= 0)) {
+            if (offset_x < 0) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166",
                                  "%s(): pDeviceRenderAreas[%u].offset.x: %d must be greater than or equal to 0.", func_name,
                                  deviceRenderAreaIndex, offset_x);
@@ -3396,7 +3396,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             auto offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
             auto height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
-            if (!(offset_y >= 0)) {
+            if (offset_y < 0) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167",
                                  "%s(): pDeviceRenderAreas[%u].offset.y: %d must be greater than or equal to 0.", func_name,
                                  deviceRenderAreaIndex, offset_y);
@@ -3412,14 +3412,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                     auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
                     IMAGE_STATE *image_state = image_view_state->image_state.get();
-                    if (!(image_state->createInfo.extent.width >= offset_x + width)) {
+                    if (image_state->createInfo.extent.width < offset_x + width) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                          "%s(): width of the pColorAttachments[%" PRIu32 "].imageView: %" PRIu32
                                          " must be greater than or equal to"
                                          "renderArea.offset.x (%" PRIu32 ") + renderArea.extent.width (%" PRIu32 ").",
                                          func_name, j, image_state->createInfo.extent.width, offset_x, width);
                     }
-                    if (!(image_state->createInfo.extent.height >= offset_y + height)) {
+                    if (image_state->createInfo.extent.height < offset_y + height) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                          "%s(): height of the pColorAttachments[%" PRIu32 "].imageView: %" PRIu32
                                          " must be greater than or equal to"
@@ -3432,14 +3432,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (pRenderingInfo->pDepthAttachment != VK_NULL_HANDLE) {
                 auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
                 IMAGE_STATE *image_state = depth_view_state->image_state.get();
-                if (!(image_state->createInfo.extent.width >= offset_x + width)) {
+                if (image_state->createInfo.extent.width < offset_x + width) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                      "%s(): width of the pDepthAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
                                      "renderArea.offset.x (%" PRIu32 ") + renderArea.extent.width (%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.width, offset_x, width);
                 }
-                if (!(image_state->createInfo.extent.height >= offset_y + height)) {
+                if (image_state->createInfo.extent.height < offset_y + height) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                      "%s(): height of the pDepthAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
@@ -3451,14 +3451,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (pRenderingInfo->pStencilAttachment != VK_NULL_HANDLE) {
                 auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
                 IMAGE_STATE *image_state = stencil_view_state->image_state.get();
-                if (!(image_state->createInfo.extent.width >= offset_x + width)) {
+                if (image_state->createInfo.extent.width < offset_x + width) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                      "%s(): width of the pStencilAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
                                      "renderArea.offset.x (%" PRIu32 ") +  renderArea.extent.width (%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.width, offset_x, width);
                 }
-                if (!(image_state->createInfo.extent.height >= offset_y + height)) {
+                if (image_state->createInfo.extent.height < offset_y + height) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                      "%s(): height of the pStencilAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
@@ -3503,7 +3503,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     if (pRenderingInfo->pDepthAttachment != nullptr && pRenderingInfo->pStencilAttachment != nullptr) {
         if (pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE &&
             pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-            if (!(pRenderingInfo->pDepthAttachment->imageView == pRenderingInfo->pStencilAttachment->imageView)) {
+            if (pRenderingInfo->pDepthAttachment->imageView != pRenderingInfo->pStencilAttachment->imageView) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06085",
                                  "%s(): imageView of pDepthAttachment and pStencilAttachment must be the same.", func_name);
             }
@@ -3530,7 +3530,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
-            if (!(pRenderingInfo->pDepthAttachment->resolveImageView == pRenderingInfo->pStencilAttachment->resolveImageView)) {
+            if (pRenderingInfo->pDepthAttachment->resolveImageView != pRenderingInfo->pStencilAttachment->resolveImageView) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06086",
                                  "%s(): resolveImageView of pDepthAttachment and pStencilAttachment must be the same.", func_name);
             }

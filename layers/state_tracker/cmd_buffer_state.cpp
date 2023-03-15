@@ -491,7 +491,7 @@ void CMD_BUFFER_STATE::UpdateSubpassAttachments(const safe_VkSubpassDescription2
 
 void CMD_BUFFER_STATE::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
     auto &attachments = *(active_attachments.get());
-    const bool imageless = (activeFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) ? true : false;
+    const bool imageless = (activeFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
     if (pRenderPassBegin) attachment_info_struct = LvlFindInChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
