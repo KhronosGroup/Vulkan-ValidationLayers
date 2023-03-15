@@ -9,7 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../vklayertests_video.h"
+#include "../framework/video_objects.h"
 #include "vk_extension_helper.h"
 
 #include <algorithm>

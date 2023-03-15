@@ -29,6 +29,19 @@ target_sources(vk_layer_validation_tests PRIVATE
     ${VVL_SOURCE_DIR}/layers/generated/lvt_function_pointers.cpp
     ${VVL_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
     ${VVL_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
+    framework/layer_validation_tests.h
+    framework/layer_validation_tests.cpp
+    framework/test_common.h
+    framework/error_monitor.cpp
+    framework/error_monitor.h
+    framework/video_objects.h
+    framework/render.cpp
+    framework/render.h
+    framework/binding.h
+    framework/binding.cpp
+    framework/test_framework.cpp
+    framework/ray_tracing_objects.h
+    framework/ray_tracing_objects.cpp
     positive/android_hardware_buffer.cpp
     positive/best_practices.cpp
     positive/command.cpp
@@ -48,48 +61,39 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/tooling.cpp
     positive/video.cpp
     positive/wsi.cpp
-    layer_validation_tests.cpp
-    vkerrormonitor.cpp
-    vkerrormonitor.h
-    vklayertests_amd_best_practices.cpp
-    vklayertests_android_hardware_buffer.cpp
-    vklayertests_arm_best_practices.cpp
-    vklayertests_best_practices.cpp
-    vklayertests_buffer.cpp
-    vklayertests_command.cpp
-    vklayertests_debug_printf.cpp
-    vklayertests_descriptor_renderpass_framebuffer.cpp
-    vklayertests_dynamic_rendering.cpp
-	vklayertests_external_memory_sync.cpp
-    vklayertests_gpu.cpp
-    vklayertests_graphics_library.cpp
-	vklayertests_image.cpp
-    vklayertests_imageless_framebuffer.cpp
-    vklayertests_instanceless.cpp
-	vklayertests_memory.cpp
-    vklayertests_nvidia_best_practices.cpp
-	vklayertests_object_lifetime.cpp
-    vklayertests_others.cpp
-    vklayertests_pipeline_shader.cpp
-    vklayertests_portability_subset.cpp
-    vklayertests_query.cpp
-    vklayertests_ray_tracing.cpp
-    vklayertests_ray_tracing_gpu.cpp
-    vklayertests_ray_tracing_pipeline.cpp
-	vklayertests_sampler.cpp
-	vklayertests_sparse.cpp
-	vklayertests_sync.cpp
-    vklayertests_video.cpp
-    vklayertests_viewport_inheritance.cpp
-    vklayertests_wsi.cpp
-	vklayertests_ycbcr.cpp
-    vkrenderframework.cpp
-    vkrenderframework.h
-    vksyncvaltests.cpp
-    vktestbinding.cpp
-    vktestframework.cpp
-    ray_tracing_objects.h
-    ray_tracing_objects.cpp
+    negative/amd_best_practices.cpp
+    negative/android_hardware_buffer.cpp
+    negative/arm_best_practices.cpp
+    negative/best_practices.cpp
+    negative/buffer.cpp
+    negative/command.cpp
+    negative/debug_printf.cpp
+    negative/descriptor_renderpass_framebuffer.cpp
+    negative/dynamic_rendering.cpp
+    negative/external_memory_sync.cpp
+    negative/gpu_av.cpp
+    negative/graphics_library.cpp
+    negative/image.cpp
+    negative/imageless_framebuffer.cpp
+    negative/instanceless.cpp
+    negative/memory.cpp
+    negative/nvidia_best_practices.cpp
+    negative/object_lifetime.cpp
+    negative/others.cpp
+    negative/pipeline_shader.cpp
+    negative/portability_subset.cpp
+    negative/query.cpp
+    negative/ray_tracing.cpp
+    negative/ray_tracing_gpu.cpp
+    negative/ray_tracing_pipeline.cpp
+    negative/sampler.cpp
+    negative/sparse.cpp
+    negative/sync_object.cpp
+    negative/sync_val.cpp
+    negative/video.cpp
+    negative/viewport_inheritance.cpp
+    negative/wsi.cpp
+    negative/ycbcr.cpp
 )
 
 if (VVL_ENABLE_ASAN)

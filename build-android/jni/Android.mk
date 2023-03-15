@@ -116,33 +116,33 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayerValidationTests
-LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
-                   $(SRC_DIR)/tests/vklayertests_instanceless.cpp \
-                   $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
-                   $(SRC_DIR)/tests/vklayertests_buffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_external_memory_sync.cpp \
-                   $(SRC_DIR)/tests/vklayertests_image.cpp \
-                   $(SRC_DIR)/tests/vklayertests_memory.cpp \
-                   $(SRC_DIR)/tests/vklayertests_object_lifetime.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sampler.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sparse.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sync.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ycbcr.cpp \
-                   $(SRC_DIR)/tests/vklayertests_others.cpp \
-                   $(SRC_DIR)/tests/vklayertests_query.cpp \
-                   $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_command.cpp \
-                   $(SRC_DIR)/tests/vklayertests_gpu.cpp \
-                   $(SRC_DIR)/tests/vklayertests_debug_printf.cpp \
-                   $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
-                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
-                   $(SRC_DIR)/tests/vklayertests_wsi.cpp \
-                   $(SRC_DIR)/tests/vklayertests_imageless_framebuffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_graphics_library.cpp \
-                   $(SRC_DIR)/tests/vklayertests_android_hardware_buffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing_gpu.cpp \
+LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
+                   $(SRC_DIR)/tests/negative/instanceless.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline_shader.cpp \
+                   $(SRC_DIR)/tests/negative/buffer.cpp \
+                   $(SRC_DIR)/tests/negative/external_memory_sync.cpp \
+                   $(SRC_DIR)/tests/negative/image.cpp \
+                   $(SRC_DIR)/tests/negative/memory.cpp \
+                   $(SRC_DIR)/tests/negative/object_lifetime.cpp \
+                   $(SRC_DIR)/tests/negative/sampler.cpp \
+                   $(SRC_DIR)/tests/negative/sparse.cpp \
+                   $(SRC_DIR)/tests/negative/sync_object.cpp \
+                   $(SRC_DIR)/tests/negative/ycbcr.cpp \
+                   $(SRC_DIR)/tests/negative/others.cpp \
+                   $(SRC_DIR)/tests/negative/query.cpp \
+                   $(SRC_DIR)/tests/negative/descriptor_renderpass_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/command.cpp \
+                   $(SRC_DIR)/tests/negative/gpu_av.cpp \
+                   $(SRC_DIR)/tests/negative/debug_printf.cpp \
+                   $(SRC_DIR)/tests/negative/best_practices.cpp \
+                   $(SRC_DIR)/tests/negative/arm_best_practices.cpp \
+                   $(SRC_DIR)/tests/negative/wsi.cpp \
+                   $(SRC_DIR)/tests/negative/imageless_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/graphics_library.cpp \
+                   $(SRC_DIR)/tests/negative/android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing_pipeline.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
@@ -156,12 +156,12 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/vksyncvaltests.cpp \
-                   $(SRC_DIR)/tests/vktestbinding.cpp \
-                   $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
-                   $(SRC_DIR)/tests/vkerrormonitor.cpp \
-                   $(SRC_DIR)/tests/vkrenderframework.cpp \
-                   $(SRC_DIR)/tests/ray_tracing_objects.cpp \
+                   $(SRC_DIR)/tests/negative/sync_val.cpp \
+                   $(SRC_DIR)/tests/framework/binding.cpp \
+                   $(SRC_DIR)/tests/framework/test_framework_android.cpp \
+                   $(SRC_DIR)/tests/framework/error_monitor.cpp \
+                   $(SRC_DIR)/tests/framework/render.cpp \
+                   $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
@@ -182,33 +182,33 @@ include $(BUILD_EXECUTABLE)
 # Note: The following module is similar in name to the executable, but differs so that loader won't enumerate the resulting .so
 include $(CLEAR_VARS)
 LOCAL_MODULE := VulkanLayerValidationTests
-LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
-                   $(SRC_DIR)/tests/vklayertests_instanceless.cpp \
-                   $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
-                   $(SRC_DIR)/tests/vklayertests_buffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_external_memory_sync.cpp \
-                   $(SRC_DIR)/tests/vklayertests_image.cpp \
-                   $(SRC_DIR)/tests/vklayertests_memory.cpp \
-                   $(SRC_DIR)/tests/vklayertests_object_lifetime.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sampler.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sparse.cpp \
-                   $(SRC_DIR)/tests/vklayertests_sync.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ycbcr.cpp \
-                   $(SRC_DIR)/tests/vklayertests_others.cpp \
-                   $(SRC_DIR)/tests/vklayertests_query.cpp \
-                   $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_command.cpp \
-                   $(SRC_DIR)/tests/vklayertests_gpu.cpp \
-                   $(SRC_DIR)/tests/vklayertests_debug_printf.cpp \
-                   $(SRC_DIR)/tests/vklayertests_best_practices.cpp \
-                   $(SRC_DIR)/tests/vklayertests_arm_best_practices.cpp \
-                   $(SRC_DIR)/tests/vklayertests_wsi.cpp \
-                   $(SRC_DIR)/tests/vklayertests_imageless_framebuffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_graphics_library.cpp \
-                   $(SRC_DIR)/tests/vklayertests_android_hardware_buffer.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/vklayertests_ray_tracing_gpu.cpp \
+LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
+                   $(SRC_DIR)/tests/negative/instanceless.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline_shader.cpp \
+                   $(SRC_DIR)/tests/negative/buffer.cpp \
+                   $(SRC_DIR)/tests/negative/external_memory_sync.cpp \
+                   $(SRC_DIR)/tests/negative/image.cpp \
+                   $(SRC_DIR)/tests/negative/memory.cpp \
+                   $(SRC_DIR)/tests/negative/object_lifetime.cpp \
+                   $(SRC_DIR)/tests/negative/sampler.cpp \
+                   $(SRC_DIR)/tests/negative/sparse.cpp \
+                   $(SRC_DIR)/tests/negative/sync_object.cpp \
+                   $(SRC_DIR)/tests/negative/ycbcr.cpp \
+                   $(SRC_DIR)/tests/negative/others.cpp \
+                   $(SRC_DIR)/tests/negative/query.cpp \
+                   $(SRC_DIR)/tests/negative/descriptor_renderpass_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/command.cpp \
+                   $(SRC_DIR)/tests/negative/gpu_av.cpp \
+                   $(SRC_DIR)/tests/negative/debug_printf.cpp \
+                   $(SRC_DIR)/tests/negative/best_practices.cpp \
+                   $(SRC_DIR)/tests/negative/arm_best_practices.cpp \
+                   $(SRC_DIR)/tests/negative/wsi.cpp \
+                   $(SRC_DIR)/tests/negative/imageless_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/graphics_library.cpp \
+                   $(SRC_DIR)/tests/negative/android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing_pipeline.cpp \
+                   $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
@@ -223,12 +223,12 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/vksyncvaltests.cpp \
-                   $(SRC_DIR)/tests/vktestbinding.cpp \
-                   $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
-                   $(SRC_DIR)/tests/vkerrormonitor.cpp \
-                   $(SRC_DIR)/tests/vkrenderframework.cpp \
-                   $(SRC_DIR)/tests/ray_tracing_objects.cpp \
+                   $(SRC_DIR)/tests/negative/sync_val.cpp \
+                   $(SRC_DIR)/tests/framework/binding.cpp \
+                   $(SRC_DIR)/tests/framework/test_framework_android.cpp \
+                   $(SRC_DIR)/tests/framework/error_monitor.cpp \
+                   $(SRC_DIR)/tests/framework/render.cpp \
+                   $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
