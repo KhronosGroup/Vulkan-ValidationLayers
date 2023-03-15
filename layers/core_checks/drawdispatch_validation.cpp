@@ -2958,11 +2958,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                 result |= LogError(objlist, vuid.push_constants_set_06425,
                                    "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                    "pipeline layout %s.",
-                                   function, string_VkShaderStageFlags(stage.stage_flag).c_str(),
+                                   function, string_VkShaderStageFlags(stage.create_info->stage).c_str(),
                                    report_data->FormatHandle(pipeline_layout->layout()).c_str());
             }
 
-            const auto it = cb_state.push_constant_data_update.find(stage.stage_flag);
+            const auto it = cb_state.push_constant_data_update.find(stage.create_info->stage);
             if (it == cb_state.push_constant_data_update.end()) {
                 // This error has been printed in ValidatePushConstantUsage.
                 break;

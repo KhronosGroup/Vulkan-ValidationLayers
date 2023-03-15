@@ -2519,7 +2519,7 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
     return skip;
 }
 
-bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state, const PipelineStageState &stage_state,
+bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                                         const safe_VkPipelineShaderStageCreateInfo *create_info,
                                         const VkPipelineCreateFlags flags) const {
     bool skip = false;
@@ -2533,7 +2533,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                     "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                     "struct in the pNext chain but the shaderModuleIdentifier feature is not enabled",
                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                    string_VkShaderStageFlagBits(stage_state.stage_flag));
+                    string_VkShaderStageFlagBits(create_info->stage));
             }
             if (!(flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
                 skip |= LogError(
@@ -2543,7 +2543,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                     "), but the "
                     "VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT bit is not set in the pipeline create flags",
                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                    string_VkShaderStageFlagBits(stage_state.stage_flag), module_identifier->identifierSize);
+                    string_VkShaderStageFlagBits(create_info->stage), module_identifier->identifierSize);
             }
             if (module_identifier->identifierSize > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT) {
                 skip |= LogError(
@@ -2552,7 +2552,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                     "struct in the pNext chain whose identifierSize (%" PRIu32
                     ") is > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT (%" PRIu32 ")",
                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                    string_VkShaderStageFlagBits(stage_state.stage_flag), module_identifier->identifierSize,
+                    string_VkShaderStageFlagBits(create_info->stage), module_identifier->identifierSize,
                     VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT);
             }
         }
@@ -2562,7 +2562,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                              "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                              "struct and a VkShaderModuleCreateInfo struct in the pNext chain",
                              report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                             string_VkShaderStageFlagBits(stage_state.stage_flag));
+                             string_VkShaderStageFlagBits(create_info->stage));
         }
         if (create_info->module != VK_NULL_HANDLE) {
             skip |= LogError(
@@ -2570,7 +2570,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                 "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                 "struct in the pNext chain, and module is not VK_NULL_HANDLE",
                 report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                string_VkShaderStageFlagBits(stage_state.stage_flag));
+                string_VkShaderStageFlagBits(create_info->stage));
         }
     } else {
         if (enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
@@ -2581,7 +2581,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                     "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                     "struct and no VkShaderModuleCreateInfo struct in the pNext chain, and module is not a valid VkShaderModule",
                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                    string_VkShaderStageFlagBits(stage_state.stage_flag));
+                    string_VkShaderStageFlagBits(create_info->stage));
             }
         } else if (create_info->module == VK_NULL_HANDLE) {
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_pipeline_library)
@@ -2593,7 +2593,7 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
                 "struct in the pNext chain, the graphicsPipelineLibrary feature is not enabled, and module is not a valid "
                 "VkShaderModule",
                 report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                string_VkShaderStageFlagBits(stage_state.stage_flag));
+                string_VkShaderStageFlagBits(create_info->stage));
         }
     }
     return skip;
@@ -2725,9 +2725,6 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                                                   const std::string &vuid_layout_mismatch) const {
     bool skip = false;
     for (const auto &variable : descriptor_variables) {
-        // Verify given pipelineLayout has requested setLayout with requested binding
-        // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
-        // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
         const auto &binding =
             GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
         uint32_t required_descriptor_count;
@@ -2991,15 +2988,14 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     auto entrypoint_optional = stage_state.entrypoint;
     const VkShaderStageFlagBits stage = create_info->stage;
 
-    skip |= ValidateShaderModuleId(module_state, stage_state, create_info, pipeline.create_flags);
+    skip |= ValidateShaderModuleId(module_state, create_info, pipeline.create_flags);
 
     // Check the module
     if (!module_state.has_valid_spirv && module_state.vk_shader_module() != VK_NULL_HANDLE) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
                          "%s(): pCreateInfos[%" PRIu32 "] %s does not contain valid spirv for stage %s.",
                          pipeline.GetCreateFunctionName(), pipeline.create_index,
-                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                         string_VkShaderStageFlagBits(stage_state.stage_flag));
+                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(), string_VkShaderStageFlagBits(stage));
     }
 
     if (skip || (pipeline.uses_shader_module_id && module_state.vk_shader_module() == VK_NULL_HANDLE)) {
@@ -3022,14 +3018,14 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         // setup the call back if the optimizer fails
         spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
-        spvtools::MessageConsumer consumer = [&skip, &module_state, &stage_state, &pipeline, this](
+        spvtools::MessageConsumer consumer = [&skip, &module_state, &stage, &pipeline, this](
                                                  spv_message_level_t level, const char *source, const spv_position_t &position,
                                                  const char *message) {
             skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
                              "%s(): pCreateInfos[%" PRIu32 "] %s does not contain valid spirv for stage %s. %s",
                              pipeline.GetCreateFunctionName(), pipeline.create_index,
                              report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                             string_VkShaderStageFlagBits(stage_state.stage_flag), message);
+                             string_VkShaderStageFlagBits(stage), message);
         };
         optimizer.SetMessageConsumer(consumer);
 
@@ -3128,7 +3124,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                                  "] After specialization was applied, %s does not contain valid spirv for stage %s.",
                                  pipeline.GetCreateFunctionName(), pipeline.create_index,
                                  report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                                 string_VkShaderStageFlagBits(stage_state.stage_flag));
+                                 string_VkShaderStageFlagBits(stage));
             }
 
             // The new optimized SPIR-V will NOT match the original SHADER_MODULE_STATE object parsing, so a new SHADER_MODULE_STATE
@@ -3207,12 +3203,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             spvContextDestroy(ctx);
         } else {
             // Should never get here, but better then asserting
-            skip |= LogError(device, pSpecializationInfo_vuid,
-                             "%s(): pCreateInfos[%" PRIu32
-                             "] %s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
-                             pipeline.GetCreateFunctionName(), pipeline.create_index,
-                             report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                             string_VkShaderStageFlagBits(stage_state.stage_flag));
+            skip |=
+                LogError(device, pSpecializationInfo_vuid,
+                         "%s(): pCreateInfos[%" PRIu32
+                         "] %s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
+                         pipeline.GetCreateFunctionName(), pipeline.create_index,
+                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(), string_VkShaderStageFlagBits(stage));
         }
     }
 
@@ -3221,7 +3217,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
                          "%s(): pCreateInfos[%" PRIu32 "] No entrypoint found named `%s` for stage %s.",
                          pipeline.GetCreateFunctionName(), pipeline.create_index, create_info->pName,
-                         string_VkShaderStageFlagBits(stage_state.stage_flag));
+                         string_VkShaderStageFlagBits(stage));
     }
     if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
 
@@ -3474,16 +3470,17 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     }
 
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
-    for (auto &stage : pipeline.stage_states) {
+    for (auto &stage_state : pipeline.stage_states) {
+        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
         // Only validate the shader state once when added, not again when linked
-        if ((stage.stage_flag & pipeline.linking_shaders) == 0) {
-            skip |= ValidatePipelineShaderStage(pipeline, stage);
+        if ((stage & pipeline.linking_shaders) == 0) {
+            skip |= ValidatePipelineShaderStage(pipeline, stage_state);
         }
-        if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) {
-            vertex_stage = &stage;
+        if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
+            vertex_stage = &stage_state;
         }
-        if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            fragment_stage = &stage;
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            fragment_stage = &stage_state;
         }
     }
 
@@ -3505,9 +3502,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         if (consumer.module_state) {
             if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
                 producer.entrypoint) {
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *(producer.entrypoint), producer.stage_flag,
-                                                       *consumer.module_state.get(), *(consumer.entrypoint), consumer.stage_flag,
-                                                       pipeline.create_index);
+                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *(producer.entrypoint),
+                                                       producer.create_info->stage, *consumer.module_state.get(),
+                                                       *(consumer.entrypoint), consumer.create_info->stage, pipeline.create_index);
             }
         }
     }
@@ -3530,18 +3527,18 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    for (auto &stage : pipeline.stage_states) {
-        if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-            stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT) {
+    for (auto &stage_state : pipeline.stage_states) {
+        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
+        if (stage == VK_SHADER_STAGE_VERTEX_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
-                if (stage.wrote_primitive_shading_rate) {
-                    skip |=
-                        LogError(stage.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
-                                 "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
-                                 "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
-                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                 caller, string_VkShaderStageFlagBits(stage.stage_flag));
+                if (stage_state.wrote_primitive_shading_rate) {
+                    skip |= LogError(
+                        stage_state.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
+                        "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
+                        "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
+                        "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                        caller, string_VkShaderStageFlagBits(stage));
                 }
             }
         }
@@ -3745,11 +3742,11 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
         const uint32_t requiredSubgroupSize = required_subgroup_size_features->requiredSubgroupSize;
         skip |= RequireFeature(module_state, enabled_features.core13.subgroupSizeControl, "subgroupSizeControl",
                                "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
-        if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.stage_flag) == 0) {
+        if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.create_info->stage) == 0) {
             skip |= LogError(
                 module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-pNext-02755",
                 "Stage %s is not in VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%s).",
-                string_VkShaderStageFlagBits(stage_state.stage_flag),
+                string_VkShaderStageFlagBits(stage_state.create_info->stage),
                 string_VkShaderStageFlags(phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages).c_str());
         }
         if ((invocations > requiredSubgroupSize * phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups)) {
