@@ -282,13 +282,6 @@ std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instru
     return result;
 }
 
-std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() const {
-    if (static_data_.entry_points.size() > 0) {
-        return GetTopology(static_data_.entry_points[0].entrypoint_insn);
-    }
-    return {};
-}
-
 static inline bool IsImageOperandsBiasOffset(uint32_t type) {
     return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
                     spv::ImageOperandsConstOffsetsMask)) != 0;

@@ -169,7 +169,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     CB_STATE state;               // Track cmd buffer update state
     uint64_t command_count;       // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submitCount;         // Number of times CB has been submitted
-    bool pipeline_bound = false;  // True if CmdBindPipeline has been called on this command buffer, false otherwise
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
 
@@ -353,7 +352,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     std::map<VkShaderStageFlagBits, std::vector<uint8_t>>
         push_constant_data_update;  // vector's value is enum PushConstantByteState.
-    VkPipelineLayout push_constant_pipeline_layout_set;
 
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
@@ -422,14 +420,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     }
 
     const QFOTransferBarrierSets<QFOBufferTransferBarrier> &GetQFOBarrierSets(const QFOBufferTransferBarrier &type_tag) const {
-        return qfo_transfer_buffer_barriers;
-    }
-
-    QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) {
-        return qfo_transfer_image_barriers;
-    }
-
-    QFOTransferBarrierSets<QFOBufferTransferBarrier> &GetQFOBarrierSets(const QFOBufferTransferBarrier &type_tag) {
         return qfo_transfer_buffer_barriers;
     }
 
@@ -588,7 +578,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool RasterizationDisabled() const;
     inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
-        pipeline_bound = true;
     }
 
     bool IsPrimary() const { return createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }

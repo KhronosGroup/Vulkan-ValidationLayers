@@ -33,17 +33,6 @@ extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
 
-// String returned by string_VkResult for an unrecognized type.
-const std::string UnsupportedResultString = "Unhandled VkResult";
-
-// The base value used when computing the offset for an enumeration token value that is added by an extension.
-// When validating enumeration tokens, any value >= to this value is considered to be provided by an extension.
-// See Appendix C.10 "Assigning Extension Token Values" from the Vulkan specification
-const uint32_t ExtEnumBaseValue = 1000000000;
-
-// The value of all VK_xxx_MAX_ENUM tokens
-const uint32_t MaxEnumValue = 0x7FFFFFFF;
-
 class StatelessValidation : public ValidationObject {
   public:
     VkPhysicalDeviceLimits device_limits = {};
@@ -1033,13 +1022,6 @@ class StatelessValidation : public ValidationObject {
                         const char *validateString) const;
 
     bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const;
-
-    bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families, const char *cmd_name,
-                               const char *array_parameter_name, const std::string &unique_error_code,
-                               const std::string &valid_error_code, bool optional);
-
-    bool ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
-                                   const std::string &error_code, bool optional);
 
     bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
                                      const char *func_name) const;

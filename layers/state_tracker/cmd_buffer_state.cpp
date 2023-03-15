@@ -1569,7 +1569,6 @@ void CMD_BUFFER_STATE::UnbindResources() {
     push_constant_data.clear();
     push_constant_data_ranges.reset();
     push_constant_data_update.clear();
-    push_constant_pipeline_layout_set = VK_NULL_HANDLE;
 
     // Reset status of cb to force rebinding of all resources
     // Index buffer included
@@ -1579,6 +1578,7 @@ void CMD_BUFFER_STATE::UnbindResources() {
     lastBound[BindPoint_Graphics].Reset();
 }
 
+// Need to think about dynamic state when grabbing state
 bool CMD_BUFFER_STATE::RasterizationDisabled() const {
     auto pipeline = lastBound[BindPoint_Graphics].pipeline_state;
     if (pipeline) {

@@ -194,7 +194,6 @@ class GpuAssisted : public GpuAssistedBase {
                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                       VkBuffer scratch, VkDeviceSize scratchOffset) override;
-    void ProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, gpuav_state::CommandBuffer* cb_node);
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) override;
     bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
                           uint32_t* unique_shader_id) override;
@@ -206,7 +205,6 @@ class GpuAssisted : public GpuAssistedBase {
 
     void SetBindingState(uint32_t* data, uint32_t index, const cvdescriptorset::DescriptorBinding* binding);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
-    const GpuVuid& GetGpuVuid(CMD_TYPE cmd_type) const;
     void PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                              const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,

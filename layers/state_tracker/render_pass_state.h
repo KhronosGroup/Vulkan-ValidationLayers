@@ -48,13 +48,7 @@ struct DAGNode {
 
 struct SubpassDependencyGraphNode {
     uint32_t pass;
-    struct Dependency {
-        const VkSubpassDependency2 *dependency;
-        const SubpassDependencyGraphNode *node;
-        Dependency() = default;
-        Dependency(const VkSubpassDependency2 *dependency_, const SubpassDependencyGraphNode *node_)
-            : dependency(dependency_), node(node_) {}
-    };
+
     std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> prev;
     std::map<const SubpassDependencyGraphNode *, std::vector<const VkSubpassDependency2 *>> next;
     std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index

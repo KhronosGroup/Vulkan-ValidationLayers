@@ -378,13 +378,6 @@ inline VkImageSubresourceRange GetRemaining(const VkImageSubresourceRange& full_
 inline bool CoversAllLayers(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {
     return (subres_range.baseArrayLayer == 0) && (subres_range.layerCount == full_range.layerCount);
 }
-inline bool CoversAllLevels(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {
-    return (subres_range.baseMipLevel == 0) && (subres_range.layerCount == full_range.levelCount);
-}
-inline bool CoversAllAspects(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {
-    return full_range.aspectMask == subres_range.aspectMask;
-}
-
 static bool SubresourceRangeIsEmpty(const VkImageSubresourceRange& range) {
     return (0 == range.aspectMask) || (0 == range.levelCount) || (0 == range.layerCount);
 }

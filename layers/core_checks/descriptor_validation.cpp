@@ -738,7 +738,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const Bi
     }
     bool result = false;
     VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->framebuffer() : VK_NULL_HANDLE;
-    DescriptorContext context{caller, vuids, cb_state, descriptor_set, framebuffer, true, dynamic_offsets, checked_layouts};
+    DescriptorContext context{caller, vuids, cb_state, descriptor_set, framebuffer, true, checked_layouts};
 
     for (const auto &binding_pair : bindings) {
         const auto *binding = descriptor_set.GetBinding(binding_pair.first);

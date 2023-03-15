@@ -42,8 +42,6 @@ using Range = sparse_container::range<Element>;
 using IndexRange = Range<IndexType>;
 using WritePolicy = sparse_container::value_precedence;
 using split_op_keep_both = sparse_container::split_op_keep_both;
-using split_op_keep_lower = sparse_container::split_op_keep_lower;
-using split_op_keep_upper = sparse_container::split_op_keep_upper;
 
 // Interface for aspect specific traits objects (now isolated in the cpp file)
 class AspectParameters {

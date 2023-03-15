@@ -158,8 +158,6 @@ typedef struct _debug_report_data {
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
     VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
     VkDebugUtilsMessageTypeFlagsEXT active_types{0};
-    bool queueLabelHasInsert{false};
-    bool cmdBufLabelHasInsert{false};
     vvl::unordered_map<uint64_t, std::string> debugObjectNameMap;
     vvl::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
     vvl::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;

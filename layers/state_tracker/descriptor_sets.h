@@ -163,7 +163,6 @@ class DescriptorSetLayoutDef {
     // Return true if given binding is present in this layout
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
-    bool IsNextBindingConsistent(const uint32_t) const;
     uint32_t GetIndexFromBinding(uint32_t binding) const;
     // Various Get functions that can either be passed a binding#, which will
     //  be automatically translated into the appropriate index, or the index# can be passed in directly
@@ -184,10 +183,7 @@ class DescriptorSetLayoutDef {
     }
     VkDescriptorType GetTypeFromIndex(const uint32_t) const;
     VkDescriptorType GetTypeFromBinding(const uint32_t binding) const { return GetTypeFromIndex(GetIndexFromBinding(binding)); }
-    VkShaderStageFlags GetStageFlagsFromIndex(const uint32_t) const;
-    VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
-        return GetStageFlagsFromIndex(GetIndexFromBinding(binding));
-    }
+
     VkDescriptorBindingFlags GetDescriptorBindingFlagsFromIndex(const uint32_t) const;
     VkDescriptorBindingFlags GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
@@ -278,10 +274,7 @@ class DescriptorSetLayout : public BASE_NODE {
     }
     VkDescriptorType GetTypeFromIndex(const uint32_t index) const { return layout_id_->GetTypeFromIndex(index); }
     VkDescriptorType GetTypeFromBinding(const uint32_t binding) const { return layout_id_->GetTypeFromBinding(binding); }
-    VkShaderStageFlags GetStageFlagsFromIndex(const uint32_t index) const { return layout_id_->GetStageFlagsFromIndex(index); }
-    VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
-        return layout_id_->GetStageFlagsFromBinding(binding);
-    }
+
     VkDescriptorBindingFlags GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
         return layout_id_->GetDescriptorBindingFlagsFromIndex(index);
     }
@@ -890,8 +883,6 @@ class DescriptorSet : public BASE_NODE {
         }
         return layout_->GetGlobalIndexRangeFromBinding(binding);
     };
-    // Return true if any part of set has ever been updated
-    bool IsUpdated() const { return some_update_; };
     bool IsPushDescriptor() const { return layout_->IsPushDescriptor(); };
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
@@ -1058,8 +1049,6 @@ class DescriptorSet : public BASE_NODE {
         return std::unique_ptr<T, BindingDeleter>(new (location->data) T(create_info, descriptor_count, flags));
     }
 
-    // Private helper to set all bound cmd buffers to INVALID state
-    void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
     std::atomic<bool> some_update_;  // has any part of the set ever been updated?
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> layout_;

@@ -368,8 +368,6 @@ class SURFACE_STATE : public BASE_NODE {
 
     void Destroy() override;
 
-    VkImageCreateInfo GetImageCreateInfo() const;
-
     void RemoveParent(BASE_NODE *parent_node) override;
 
     void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
