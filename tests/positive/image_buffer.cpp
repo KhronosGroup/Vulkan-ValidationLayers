@@ -20,7 +20,7 @@
 #include <mutex>
 #include <thread>
 
-#include "vk_layer_utils.h"
+#include "utils/vk_layer_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS

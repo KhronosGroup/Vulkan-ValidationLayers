@@ -19,8 +19,8 @@
  */
 #pragma once
 #include "state_tracker/base_node.h"
-#include "hash_vk_types.h"
-#include "vk_layer_utils.h"
+#include "utils/hash_vk_types.h"
+#include "utils/vk_layer_utils.h"
 
 class VideoProfileDesc;
 

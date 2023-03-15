@@ -21,10 +21,10 @@
 #include "chassis.h"
 #include "stateless/stateless_validation.h"
 #include "layer_chassis_dispatch.h"
-#include "core_validation_error_enums.h"
+#include "error_message/validation_error_enums.h"
 #include "enum_flag_bits.h"
-#include "vk_layer_data.h"
-#include "convert_to_renderpass2.h"
+#include "containers/custom_containers.h"
+#include "utils/convert_to_renderpass2.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 

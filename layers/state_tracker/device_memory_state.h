@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/base_node.h"
-#include "range_vector.h"
+#include "containers/range_vector.h"
 #include "vk_safe_struct.h"
 
 struct MemRange {

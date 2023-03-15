@@ -14,7 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "vk_extension_helper.h"
 
-#include "android_ndk_types.h"
+#include "utils/android_ndk_types.h"
 #ifdef AHB_VALIDATION_SUPPORT
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");

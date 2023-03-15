@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * The Shader Instruction file is in charge of holding instruction information
  */
 #pragma once
@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "vk_layer_data.h"
+#include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
 
 struct SHADER_MODULE_STATE;

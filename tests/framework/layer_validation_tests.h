@@ -28,11 +28,11 @@
 #include "icd-spv.h"
 #include "test_common.h"
 #include "vk_layer_config.h"
-#include "vk_layer_data.h"
+#include "containers/custom_containers.h"
 #include "vk_format_utils.h"
 #include "render.h"
 #include "vk_typemap_helper.h"
-#include "convert_to_renderpass2.h"
+#include "utils/convert_to_renderpass2.h"
 
 #include <algorithm>
 #include <cmath>

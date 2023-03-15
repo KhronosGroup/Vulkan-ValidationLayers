@@ -19,7 +19,7 @@
  * limitations under the License.
  ****************************************************************************/
 
-#include "vk_layer_logging.h"
+#include "error_message/logging.h"
 #include "core_checks/core_validation.h"
 
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{

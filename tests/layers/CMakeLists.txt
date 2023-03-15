@@ -17,7 +17,7 @@
 add_library(VkLayer_device_profile_api MODULE)
 
 target_sources(VkLayer_device_profile_api PRIVATE
-    ${VVL_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
+    ${VVL_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.cpp
     device_profile_api.cpp
     vk_lunarg_device_profile_api_layer.h
 )
@@ -33,14 +33,14 @@ else()
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    target_compile_options(VkLayer_device_profile_api PRIVATE 
+    target_compile_options(VkLayer_device_profile_api PRIVATE
         -Wno-sign-compare
         -Wno-shorten-64-to-32
         -Wno-unused-parameter
         -Wno-missing-field-initializers
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(VkLayer_device_profile_api PRIVATE 
+        target_compile_options(VkLayer_device_profile_api PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
             -Wno-enum-enum-conversion

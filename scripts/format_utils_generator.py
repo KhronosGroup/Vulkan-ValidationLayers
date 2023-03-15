@@ -143,7 +143,7 @@ class FormatUtilsOutputGenerator(OutputGenerator):
         write(copyright, file=self.outFile)
         if self.sourceFile:
             write('#include "vk_format_utils.h"', file=self.outFile)
-            write('#include "vk_layer_utils.h"', file=self.outFile)
+            write('#include "utils/vk_layer_utils.h"', file=self.outFile)
             write('#include <vector>', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)

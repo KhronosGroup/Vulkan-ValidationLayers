@@ -20,9 +20,9 @@
 
 #include "vulkan/vulkan.h"
 #include "vk_object_types.h"
-#include "vk_layer_data.h"
-#include "vk_layer_logging.h"
-#include "vk_layer_utils.h"
+#include "containers/custom_containers.h"
+#include "error_message/logging.h"
+#include "utils/vk_layer_utils.h"
 
 #include <atomic>
 

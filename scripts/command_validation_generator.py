@@ -158,7 +158,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         write(copyright, file=self.outFile)
 
         if self.source_file:
-            write('#include "vk_layer_logging.h"', file=self.outFile)
+            write('#include "error_message/logging.h"', file=self.outFile)
             write('#include "core_checks/core_validation.h"', file=self.outFile)
         elif self.header_file:
             write('#pragma once', file=self.outFile)

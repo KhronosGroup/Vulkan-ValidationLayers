@@ -23,7 +23,7 @@
 #include <cstring>
 #include <thread>
 
-#include "vk_layer_logging.h"
+#include "error_message/logging.h"
 
 #include <vulkan/vulkan.h>
 

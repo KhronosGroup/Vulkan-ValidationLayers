@@ -10,10 +10,10 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-#include "cast_utils.h"
+#include "utils/cast_utils.h"
 #include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
-#include "vk_layer_utils.h"
+#include "utils/vk_layer_utils.h"
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"

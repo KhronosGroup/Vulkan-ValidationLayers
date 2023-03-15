@@ -20,7 +20,7 @@
 
 #pragma once
 #include "chassis.h"
-#include "core_validation_error_enums.h"
+#include "error_message/validation_error_enums.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/query_state.h"
@@ -28,12 +28,12 @@
 #include "state_tracker/video_session_state.h"
 #include "command_validation.h"
 #include "layer_chassis_dispatch.h"
-#include "vk_layer_logging.h"
+#include "error_message/logging.h"
 #include "vulkan/vk_layer.h"
 #include "vk_typemap_helper.h"
-#include "vk_layer_data.h"
-#include "android_ndk_types.h"
-#include "range_vector.h"
+#include "containers/custom_containers.h"
+#include "utils/android_ndk_types.h"
+#include "containers/range_vector.h"
 #include <atomic>
 #include <functional>
 #include <memory>

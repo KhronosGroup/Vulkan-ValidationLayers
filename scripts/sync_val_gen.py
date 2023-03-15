@@ -973,7 +973,7 @@ def GenSyncTypeHelper(gen, is_source) :
         lines.extend(('#include "sync_validation_types.h"', ''))
     else:
         lines.extend(('#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
-                 '#include "vk_layer_data.h"'))
+                 '#include "containers/custom_containers.h"'))
         lines.extend(('using {} = {};'.format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])
 

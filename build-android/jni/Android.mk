@@ -24,11 +24,11 @@ VULKAN_INCLUDE := $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Headers/include
 include $(CLEAR_VARS)
 LOCAL_MODULE := layer_utils
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_config.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_extension_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_logging.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/vk_layer_extension_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/logging.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/vk_layer_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_format_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/xxhash.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
@@ -81,10 +81,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices/best_practices_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/best_practices.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_vuid_maps.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_error_location.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/core_error_location.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/sync_validation_types.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/valid_param_values.cpp
@@ -96,11 +96,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/wsi_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
@@ -162,7 +162,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
-                   $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
+                   $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
@@ -229,7 +229,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
-                   $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
+                   $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \

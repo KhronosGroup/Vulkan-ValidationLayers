@@ -1751,7 +1751,7 @@ void DispatchGetDescriptorEXT(
         if not self.header:
             write(self.inline_copyright_message, file=self.outFile)
             self.newline()
-            write('#include "cast_utils.h"', file=self.outFile)
+            write('#include "utils/cast_utils.h"', file=self.outFile)
             write('#include "chassis.h"', file=self.outFile)
             write('#include "layer_chassis_dispatch.h"', file=self.outFile)
             write('#include "vk_safe_struct.h"', file=self.outFile)

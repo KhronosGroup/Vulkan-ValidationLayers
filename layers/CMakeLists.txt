@@ -16,6 +16,11 @@
 # ~~~
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
+    containers/custom_containers.h
+    error_message/logging.h
+    error_message/logging.cpp
+    external/xxhash.h
+    external/xxhash.cpp
     generated/vk_format_utils.h
     generated/vk_format_utils.cpp
     generated/vk_validation_error_messages.h
@@ -29,20 +34,15 @@ target_sources(VkLayer_utils PRIVATE
     generated/vk_object_types.h
     generated/vk_extension_helper.h
     generated/vk_typemap_helper.h
-    cast_utils.h
-    hash_util.h
-    hash_vk_types.h
+    utils/cast_utils.h
+    utils/hash_util.h
+    utils/hash_vk_types.h
+    utils/vk_layer_extension_utils.cpp
+    utils/vk_layer_extension_utils.h
+    utils/vk_layer_utils.cpp
+    utils/vk_layer_utils.h
     vk_layer_config.h
     vk_layer_config.cpp
-    vk_layer_data.h
-    vk_layer_extension_utils.h
-    vk_layer_extension_utils.cpp
-    vk_layer_logging.h
-    vk_layer_logging.cpp
-    vk_layer_utils.h
-    vk_layer_utils.cpp
-    xxhash.h
-    xxhash.cpp
 )
 
 # XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
@@ -144,6 +144,11 @@ target_sources(VkLayer_khronos_validation PRIVATE
     best_practices/best_practices_error_enums.h
     best_practices/best_practices_utils.cpp
     best_practices/best_practices_validation.h
+    containers/qfo_transfer.h
+    containers/range_vector.h
+    containers/sparse_containers.h
+    containers/subresource_adapter.cpp
+    containers/subresource_adapter.h
     core_checks/android_validation.cpp
     core_checks/buffer_validation.cpp
     core_checks/cmd_buffer_dynamic_validation.cpp
@@ -167,6 +172,9 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/synchronization_validation.cpp
     core_checks/video_validation.cpp
     core_checks/wsi_validation.cpp
+    error_message/core_error_location.cpp
+    error_message/core_error_location.h
+    error_message/validation_error_enums.h
     generated/best_practices.cpp
     generated/best_practices.h
     generated/chassis.cpp
@@ -192,6 +200,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h
+    object_tracker/object_lifetime_validation.h
+    object_tracker/object_tracker_utils.cpp
     state_tracker/base_node.cpp
     state_tracker/base_node.h
     state_tracker/buffer_state.cpp
@@ -236,17 +246,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     sync/sync_utils.h
     sync/sync_vuid_maps.cpp
     sync/sync_vuid_maps.h
-    convert_to_renderpass2.cpp
-    core_error_location.cpp
-    core_error_location.h
-    core_validation_error_enums.h
     layer_options.cpp
-    object_lifetime_validation.h
-    object_tracker_utils.cpp
-    range_vector.h
-    sparse_containers.h
-    subresource_adapter.cpp
-    subresource_adapter.h
+    utils/convert_to_renderpass2.cpp
     vk_layer_settings_ext.h
 )
 
