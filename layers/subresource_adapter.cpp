@@ -854,4 +854,4 @@ void ImageRangeGenerator::IncrementerState::Set(uint32_t y_count_, uint32_t laye
     incr_layer_z = z_step;
 }
 
-};  // namespace subresource_adapter
+}  // namespace subresource_adapter

@@ -741,7 +741,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             if ((new_swapchain_image_index >= image_vector_size) ||
                 !swapchain_state->images[new_swapchain_image_index].image_state) {
                 break;
-            };
+            }
         }
     }
     StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);

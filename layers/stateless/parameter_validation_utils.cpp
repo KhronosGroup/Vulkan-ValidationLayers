@@ -317,7 +317,7 @@ void StatelessValidation::PreCallRecordDestroyInstance(VkInstance instance, cons
         delete (it->second);
         it = physical_device_properties_map.erase(it);
     }
-};
+}
 
 void StatelessValidation::GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                        VkPhysicalDeviceProperties2 &pProperties) const {
@@ -3996,7 +3996,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                  "VkSamplerCreateInfo->borderColor is %s but VkSamplerCustomBorderColorCreateInfoEXT.format = %s "
                                  "whose type does not match\n",
                                  string_VkBorderColor(pCreateInfo->borderColor), string_VkFormat(custom_create_info->format));
-                    ;
                 }
             }
         }

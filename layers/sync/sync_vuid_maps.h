@@ -110,4 +110,4 @@ enum class SubmitError {
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
-};  // namespace sync_vuid_maps
+}  // namespace sync_vuid_maps

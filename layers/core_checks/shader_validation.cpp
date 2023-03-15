@@ -1918,7 +1918,6 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                         skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-shaderDenormPreserveFloat16-06296",
                                          "Shader requires DenormPreserve for bit width 16 but it is not enabled on the device\n%s",
                                          insn->Describe().c_str());
-                        ;
                     } else if (bit_width == 32 && !phys_dev_props_core12.shaderDenormPreserveFloat32) {
                         skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-shaderDenormPreserveFloat32-06297",
                                          "Shader requires DenormPreserve for bit width 32 but it is not enabled on the device\n%s",

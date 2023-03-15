@@ -2027,7 +2027,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                 (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2 ||
                  pipeline_state->uses_pipeline_robustness);
             data_ptr[spvtools::kDebugOutputFlagsOffset] = spvtools::kInstBufferOOBEnable;
-            ;
         }
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
