@@ -284,12 +284,6 @@ VkDescriptorType cvdescriptorset::DescriptorSetLayoutDef::GetTypeFromIndex(const
     if (index < bindings_.size()) return bindings_[index].descriptorType;
     return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 }
-// For the given index, return stageFlags
-VkShaderStageFlags cvdescriptorset::DescriptorSetLayoutDef::GetStageFlagsFromIndex(const uint32_t index) const {
-    assert(index < bindings_.size());
-    if (index < bindings_.size()) return bindings_[index].stageFlags;
-    return VkShaderStageFlags(0);
-}
 // Return binding flags for given index, 0 if index is unavailable
 VkDescriptorBindingFlags cvdescriptorset::DescriptorSetLayoutDef::GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
     if (index >= binding_flags_.size()) return 0;
@@ -351,28 +345,6 @@ const std::vector<VkDescriptorType> &cvdescriptorset::DescriptorSetLayoutDef::Ge
         return empty;
     }
     return mutable_types_[binding];
-}
-
-bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint32_t binding) const {
-    if (!binding_to_index_map_.count(binding + 1)) return false;
-    auto const &bi_itr = binding_to_index_map_.find(binding);
-    if (bi_itr != binding_to_index_map_.end()) {
-        const auto &next_bi_itr = binding_to_index_map_.find(binding + 1);
-        if (next_bi_itr != binding_to_index_map_.end()) {
-            auto type = bindings_[bi_itr->second].descriptorType;
-            auto stage_flags = bindings_[bi_itr->second].stageFlags;
-            auto immut_samp = bindings_[bi_itr->second].pImmutableSamplers != nullptr;
-            auto flags = binding_flags_[bi_itr->second];
-            if ((type != bindings_[next_bi_itr->second].descriptorType) ||
-                (stage_flags != bindings_[next_bi_itr->second].stageFlags) ||
-                (immut_samp != (bindings_[next_bi_itr->second].pImmutableSamplers != nullptr)) ||
-                (flags != binding_flags_[next_bi_itr->second])) {
-                return false;
-            }
-            return true;
-        }
-    }
-    return false;
 }
 
 void cvdescriptorset::DescriptorSetLayout::SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_) {

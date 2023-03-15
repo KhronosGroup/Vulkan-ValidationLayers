@@ -1077,11 +1077,6 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.device_coherent_memory_features = *device_coherent_memory_features;
         }
 
-        const auto *ycbcr_image_array_features = LvlFindInChain<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT>(pCreateInfo->pNext);
-        if (ycbcr_image_array_features) {
-            enabled_features.ycbcr_image_array_features = *ycbcr_image_array_features;
-        }
-
         const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(pCreateInfo->pNext);
         if (ray_query_features) {
             enabled_features.ray_query_features = *ray_query_features;
@@ -3194,7 +3189,6 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
         std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
-        cb_state->push_constant_pipeline_layout_set = layout;
 
         auto flags = stageFlags;
         uint32_t bit_shift = 0;

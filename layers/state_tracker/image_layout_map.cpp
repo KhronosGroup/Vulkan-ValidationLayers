@@ -164,17 +164,6 @@ void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
     }
 }
 
-// Saves an encode to fetch both in the same call
-const ImageSubresourceLayoutMap::LayoutEntry* ImageSubresourceLayoutMap::GetSubresourceLayouts(
-    const VkImageSubresource& subresource) const {
-    IndexType index = encoder_.Encode(subresource);
-    auto found = layouts_.find(index);
-    if (found != layouts_.end()) {
-        return &found->second;
-    }
-    return nullptr;
-}
-
 // TODO: make sure this paranoia check is sufficient and not too much.
 uintptr_t ImageSubresourceLayoutMap::CompatibilityKey() const {
     return (reinterpret_cast<uintptr_t>(&image_state_) ^ encoder_.AspectMask());

@@ -323,14 +323,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const std::vector<const Instruction *> &GetMemberDecorationInstructions() const { return static_data_.member_decoration_inst; }
     const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
     const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
-    const vvl::unordered_set<uint32_t> *GetAccessibleIds(const Instruction &entrypoint) const {
-        for (const auto &entry_point : static_data_.entry_points) {
-            if (entry_point.entrypoint_insn == entrypoint) {
-                return &entry_point.accessible_ids;
-            }
-        }
-        return nullptr;
-    }
     const std::vector<ResourceInterfaceVariable> *GetResourceInterfaceVariable(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
@@ -370,10 +362,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::string DescribeType(uint32_t type) const;
 
     std::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
-    // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
-    // Since we currently don't support multiple entry points, this is a helper to return the topology
-    // for the "first" (and for our purposes _only_) entrypoint.
-    std::optional<VkPrimitiveTopology> GetTopology() const;
 
     const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
     std::optional<Instruction> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;

@@ -134,7 +134,5 @@ class REFCOUNTED_NODE : public BASE_NODE {
 
     void EndUse() { in_use_.fetch_sub(1); }
 
-    void ResetUse() { in_use_.store(0); }
-
     bool InUse() const override { return (in_use_.load() > 0) || BASE_NODE::InUse(); }
 };

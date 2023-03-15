@@ -39,18 +39,6 @@ typename Map::mapped_type GetMapped(const Map &map, const typename Map::key_type
     return (value) ? *value : default_factory();
 }
 
-template <typename Map, typename Fn>
-typename Map::mapped_type GetMappedInsert(Map &map, const typename Map::key_type &key, Fn &&emplace_factory) {
-    auto value = GetMappedOptional(map, key);
-    if (value) {
-        return *value;
-    }
-    auto insert_it = map.emplace(std::make_pair(key, emplace_factory()));
-    assert(insert_it.second);
-
-    return insert_it.first->second;
-}
-
 template <typename Map, typename Key = typename Map::key_type, typename Mapped = typename Map::mapped_type,
           typename Value = typename Mapped::element_type>
 Value *GetMappedPlainFromShared(const Map &map, const Key &key) {
@@ -522,28 +510,7 @@ class MapRangesRangeGenerator {
     typename RangeMap::const_iterator map_pos_;
     KeyType current_;
 };
-using SingleAccessRangeGenerator = SingleRangeGenerator<ResourceAccessRange>;
 using EventSimpleRangeGenerator = MapRangesRangeGenerator<SyncEventState::ScopeMap>;
-
-// Generate the ranges for entries meeting the predicate that are the intersection of range and the entries in the RangeMap
-template <typename RangeMap, typename Predicate, typename KeyType = typename RangeMap::key_type>
-class PredicatedMapRangesRangeGenerator : public MapRangesRangeGenerator<RangeMap, KeyType> {
-  public:
-    using Base = MapRangesRangeGenerator<RangeMap, KeyType>;
-    // Default constructed is safe to dereference for "empty" test, but for no other operation.
-    PredicatedMapRangesRangeGenerator() : Base(), pred_() {}
-    PredicatedMapRangesRangeGenerator(const RangeMap &filter, const KeyType &range, Predicate pred)
-        : Base(filter, range), pred_(pred) {}
-    PredicatedMapRangesRangeGenerator(const PredicatedMapRangesRangeGenerator &from) = default;
-
-    PredicatedMapRangesRangeGenerator &operator++() {
-        Base::PredicatedIncrement(pred_);
-        return *this;
-    }
-
-  protected:
-    Predicate pred_;
-};
 
 // Generate the ranges that are the intersection of the RangeGen ranges and the entries in the FilterMap
 // Templated to allow for different Range generators or map sources...
@@ -701,21 +668,6 @@ bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
             image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-// Class AccessContext stores the state of accesses specific to a Command, Subpass, or Queue
-template <typename Action>
-static void ApplyOverImageRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
-                                Action &action) {
-    // At this point the "apply over range" logic only supports a single memory binding
-    if (!SimpleBinding(image_state)) return;
-    auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
-    const auto base_address = ResourceBaseAddress(image_state);
-    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
-                                                       image_state.createInfo.extent, base_address, false);
-    for (; range_gen->non_empty(); ++range_gen) {
-        action(*range_gen);
-    }
-}
-
 // Tranverse the attachment resolves for this a specific subpass, and do action() to them.
 // Used by both validation and record operations
 //
@@ -861,8 +813,6 @@ void HazardResult::Set(const ResourceAccessState *access_state_, SyncStageAccess
 void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
     recorded_access = std::make_unique<const ResourceFirstAccess>(first_access);
 }
-
-void AccessContext::DeleteAccess(const AddressRange &address) { GetAccessStateMap(address.type).erase_range(address.range); }
 
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
@@ -1074,29 +1024,6 @@ struct ApplyTrackbackStackAction {
     const std::vector<SyncBarrier> &barriers;
     const ResourceAccessStateFunction *previous_barrier;
 };
-
-// Splits a single map entry into piece matching the entries in [first, last) the total range over [first, last) must be
-// contained with entry.  Entry must be an iterator pointing to dest, first and last must be iterators pointing to a
-// *different* map from dest.
-// Returns the position past the last resolved range -- the entry covering the remainder of entry->first not included in the
-// range [first, last)
-template <typename BarrierAction>
-static void ResolveMapToEntry(ResourceAccessRangeMap *dest, const ResourceAccessRangeMap::iterator &entry,
-                              const ResourceAccessRangeMap::const_iterator &first,
-                              const ResourceAccessRangeMap::const_iterator &last, BarrierAction &barrier_action) {
-    auto at = entry;
-    for (auto pos = first; pos != last; ++pos) {
-        // Every member of the input iterator range must fit within the remaining portion of entry
-        assert(at->first.includes(pos->first));
-        assert(at != dest->end());
-        // Trim up at to the same size as the entry to resolve
-        at = sparse_container::split(at, *dest, pos->first);
-        auto access = pos->second;  // intentional copy
-        barrier_action(&access);
-        at->second.Resolve(access);
-        ++at;  // Go to the remaining unused section of entry
-    }
-}
 
 static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
     SyncBarrier merged = {};

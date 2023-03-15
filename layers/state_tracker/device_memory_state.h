@@ -99,10 +99,6 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
   public:
     BindableNoMemoryTracker(const VkMemoryRequirements *) {}
 
-    bool IsSparse() const { return false; }
-    bool IsResident() const { return false; }
-    unsigned TrackingsCount() const { return 0; }
-
     //----------------------------------------------------------------------------------------------------
     // Kept for backwards compatibility
     const MEM_BINDING *Binding() const { return nullptr; }
@@ -121,10 +117,6 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
 class BindableLinearMemoryTracker : public BindableMemoryTracker {
   public:
     BindableLinearMemoryTracker(const VkMemoryRequirements *) {}
-
-    bool IsSparse() const { return false; }
-    bool IsResident() const { return false; }
-    unsigned TrackingsCount() const { return 1; }
 
     //----------------------------------------------------------------------------------------------------
     // Kept for backwards compatibility
@@ -152,10 +144,6 @@ template <bool IS_RESIDENT>
 class BindableSparseMemoryTracker : public BindableMemoryTracker {
   public:
     BindableSparseMemoryTracker(const VkMemoryRequirements *requirements) : resource_size_(requirements->size) {}
-
-    bool IsSparse() const { return true; }
-    bool IsResident() const { return IS_RESIDENT; }
-    unsigned TrackingsCount() const { return 1; }
 
     //----------------------------------------------------------------------------------------------------
     // Kept for backwards compatibility
@@ -260,10 +248,6 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
             plane_size_[i] = requirements[i].size;
         }
     }
-
-    bool IsSparse() const { return false; }
-    bool IsResident() const { return false; }
-    unsigned TrackingsCount() const { return TRACKING_COUNT; }
 
     //----------------------------------------------------------------------------------------------------
     // Kept for backwards compatibility

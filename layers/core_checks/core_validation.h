@@ -374,7 +374,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo, const char* func_name) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_state, const char* action, const char* error_code) const;
-    void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                       const VkPipelineLibraryCreateInfoKHR& link_info,
@@ -575,8 +574,6 @@ class CoreChecks : public ValidationStateTracker {
                           VkImageLayout new_layout) const;
     bool ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
                                  const char* error_type, const char* function_name) const;
-    bool ValidateMSRTSSAttachmentSampleCount(VkDevice device, const char* function_name, uint32_t attachment_index,
-                                             VkSampleCountFlagBits attachment_bits, VkSampleCountFlagBits msrtss_bit) const;
     bool ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
                                   const char* function_name) const;
 
@@ -754,7 +751,6 @@ class CoreChecks : public ValidationStateTracker {
         const cvdescriptorset::DescriptorSet& descriptor_set;
         const VkFramebuffer framebuffer;
         bool record_time_validate;
-        const std::vector<uint32_t>& dynamic_offsets;
         std::optional<vvl::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
     };
     using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;

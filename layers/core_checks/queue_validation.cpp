@@ -66,7 +66,6 @@ struct CommandBufferSubmitState {
                                                       *set_node,
                                                       cmd_info.framebuffer,
                                                       false,  // This is submit time not record time...
-                                                      dynamic_offsets,
                                                       checked_layouts};
 
                 for (const auto &binding_info : cmd_info.binding_infos) {
