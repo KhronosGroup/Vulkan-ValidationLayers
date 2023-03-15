@@ -1863,6 +1863,59 @@ TEST_F(VkLayerTest, InvalidPipelineCreateStateBadStageBit) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, DispatchWithUnboundSet) {
+    TEST_DESCRIPTION("Dispatch with unbound descriptor set");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+        layout(set = 0, binding = 0) uniform sampler2D InputTexture;
+        layout(set = 1, binding = 0, rgba32f) uniform image2D OutputTexture;
+        void main() {
+            vec4 value = textureGather(InputTexture, vec2(0), 0);
+            imageStore(OutputTexture, ivec2(0), value);
+        }
+    )glsl";
+
+    OneOffDescriptorSet combined_image_set(
+        m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+    OneOffDescriptorSet storage_image_set(m_device,
+                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+
+    const VkFormat combined_image_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    image.Init(1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    ASSERT_TRUE(image.initialized());
+
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&combined_image_set.layout_, &storage_image_set.layout_});
+    cs_pipeline.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
+
+    combined_image_set.WriteDescriptorImageInfo(0, image.targetView(combined_image_format), sampler.handle());
+    combined_image_set.UpdateDescriptorSets();
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
+                              1, &combined_image_set.set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-02697");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
 
