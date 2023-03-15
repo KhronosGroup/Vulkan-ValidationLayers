@@ -167,9 +167,9 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     void ResetCBState();
     void ProcessAccelerationStructure(VkQueue queue);
 };
-};  // namespace gpuav_state
+}  // namespace gpuav_state
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE)
 
 class GpuAssisted : public GpuAssistedBase {
   public:

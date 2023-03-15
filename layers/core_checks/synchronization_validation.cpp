@@ -2117,7 +2117,7 @@ class ValidatorState {
                     return valid;
                 }
                 return invalid;
-        };
+        }
     }
     const char *GetTypeString() const { return object_string[barrier_handle_.type]; }
     VkSharingMode GetSharingMode() const { return sharing_mode_; }

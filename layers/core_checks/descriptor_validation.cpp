@@ -2604,7 +2604,7 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
         out = str.str();
     }
     return out;
-};
+}
 
 // Loop through the write updates to validate for a push descriptor set, ignoring dstSet
 bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, uint32_t write_count,

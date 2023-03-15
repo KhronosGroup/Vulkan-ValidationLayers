@@ -74,7 +74,7 @@ static const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::m
 static const std::array<AccessAddressType, static_cast<size_t>(AccessAddressType::kTypeCount)> kAddressTypes = {
     AccessAddressType::kLinear, AccessAddressType::kIdealized};
 
-static constexpr AccessAddressType GetAccessAddressType(const BUFFER_STATE &) { return AccessAddressType::kLinear; };
+static constexpr AccessAddressType GetAccessAddressType(const BUFFER_STATE &) { return AccessAddressType::kLinear; }
 static AccessAddressType GetAccessAddressType(const IMAGE_STATE &image) {
     return SimpleBinding(image) ? AccessContext::ImageAddressType(image) : AccessAddressType::kIdealized;
 }
