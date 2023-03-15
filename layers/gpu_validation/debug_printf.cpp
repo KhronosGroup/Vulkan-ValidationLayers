@@ -35,11 +35,11 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
     transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
-    verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
+    verbose = !verbose_string.compare("true");
 
     std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
     transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
-    use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
+    use_stdout = !stdout_string.compare("true");
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
 
     // GpuAssistedBase::CreateDevice will set up bindings

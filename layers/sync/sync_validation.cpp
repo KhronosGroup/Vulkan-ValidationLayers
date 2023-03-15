@@ -692,17 +692,13 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
 bool IsImageLayoutDepthWritable(VkImageLayout image_layout) {
     return (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
             image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
-               ? true
-               : false;
+            image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 }
 
 bool IsImageLayoutStencilWritable(VkImageLayout image_layout) {
     return (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
             image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-            image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL)
-               ? true
-               : false;
+            image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 // Class AccessContext stores the state of accesses specific to a Command, Subpass, or Queue

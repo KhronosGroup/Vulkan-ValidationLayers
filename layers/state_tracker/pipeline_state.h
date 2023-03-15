@@ -266,8 +266,8 @@ class PIPELINE_STATE : public BASE_NODE {
 
         // Fragment output/shader state is not required if rasterization is disabled.
         const bool rasterization_disabled = RasterizationDisabled();
-        const bool frag_shader_satisfied = rasterization_disabled ? true : static_cast<bool>(fragment_shader_state);
-        const bool frag_out_satisfied = rasterization_disabled ? true : static_cast<bool>(fragment_output_state);
+        const bool frag_shader_satisfied = rasterization_disabled || static_cast<bool>(fragment_shader_state);
+        const bool frag_out_satisfied = rasterization_disabled || static_cast<bool>(fragment_output_state);
 
         return vi_satisfied && pre_raster_state && frag_shader_satisfied && frag_out_satisfied;
     }
@@ -432,9 +432,9 @@ class PIPELINE_STATE : public BASE_NODE {
         return nullptr;
     }
 
-    bool BlendConstantsEnabled() const { return fragment_output_state ? fragment_output_state->blend_constants_enabled : false; }
+    bool BlendConstantsEnabled() const { return fragment_output_state && fragment_output_state->blend_constants_enabled; }
 
-    bool SampleLocationEnabled() const { return fragment_output_state ? fragment_output_state->sample_location_enabled : false; }
+    bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
 
     template <typename CI>
     VkPipeline BasePipeline() const {
@@ -670,7 +670,7 @@ struct LAST_BOUND_STATE {
 
     void UnbindAndResetPushDescriptorSet(std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds);
 
-    inline bool IsUsing() const { return pipeline_state ? true : false; }
+    inline bool IsUsing() const { return pipeline_state != nullptr; }
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,

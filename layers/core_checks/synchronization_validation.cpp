@@ -1835,7 +1835,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
         // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
         // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
         auto handle_state = BarrierHandleState(*this, barrier);
-        const bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
+        const bool mode_concurrent = handle_state && handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT;
         if (!mode_concurrent) {
             const auto typed_handle = BarrierTypedHandle(barrier);
             core_error::LocationCapture loc_capture(loc);

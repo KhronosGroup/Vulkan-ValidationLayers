@@ -172,7 +172,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         bool IsUsed() const {
             if (!root) return false;
-            return root->used_bytes.size() ? true : false;
+            return !root->used_bytes.empty();
         }
 
         std::vector<uint8_t> *GetUsedbytes() const {

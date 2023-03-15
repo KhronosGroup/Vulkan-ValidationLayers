@@ -1412,9 +1412,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 if (!class_compatible) {
                     if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
                         const bool size_compatible =
-                            FormatIsCompressed(format_list_info->pViewFormats[i])
-                                ? false
-                                : FormatElementSize(format_list_info->pViewFormats[i]) == FormatElementSize(image_format);
+                            !FormatIsCompressed(format_list_info->pViewFormats[i]) &&
+                            FormatElementSize(format_list_info->pViewFormats[i]) == FormatElementSize(image_format);
                         if (!size_compatible) {
                             skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-06722",
                                              "vkCreateImage(): VkImageFormatListCreateInfo::pViewFormats[%" PRIu32
@@ -1649,7 +1648,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     // x + width
     if (x_healthy && width_healthy) {
         const float right_bound = viewport.x + viewport.width;
-        if (!(right_bound <= device_limits.viewportBoundsRange[1])) {
+        if (right_bound > device_limits.viewportBoundsRange[1]) {
             skip |= LogError(
                 object, "VUID-VkViewport-x-01232",
                 "%s: %s.x + %s.width (=%f + %f = %f) is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
@@ -1665,7 +1664,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
         skip |= LogError(object, "VUID-VkViewport-y-01775",
                          "%s: %s.y (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
                          parameter_name.get_name().c_str(), viewport.y, device_limits.viewportBoundsRange[0]);
-    } else if (negative_height_enabled && !(viewport.y <= device_limits.viewportBoundsRange[1])) {
+    } else if (negative_height_enabled && viewport.y > device_limits.viewportBoundsRange[1]) {
         y_healthy = false;
         skip |= LogError(object, "VUID-VkViewport-y-01776",
                          "%s: %s.y (=%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).", fn_name,
@@ -1676,12 +1675,12 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     if (y_healthy && height_healthy) {
         const float boundary = viewport.y + viewport.height;
 
-        if (!(boundary <= device_limits.viewportBoundsRange[1])) {
+        if (boundary > device_limits.viewportBoundsRange[1]) {
             skip |= LogError(object, "VUID-VkViewport-y-01233",
                              "%s: %s.y + %s.height (=%f + %f = %f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
                              fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.y,
                              viewport.height, boundary, device_limits.viewportBoundsRange[1]);
-        } else if (negative_height_enabled && !(boundary >= device_limits.viewportBoundsRange[0])) {
+        } else if (negative_height_enabled && boundary < device_limits.viewportBoundsRange[0]) {
             skip |=
                 LogError(object, "VUID-VkViewport-y-01777",
                          "%s: %s.y + %s.height (=%f + %f = %f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).",
