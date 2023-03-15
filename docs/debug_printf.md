@@ -174,7 +174,7 @@ Would print "Unsigned long as decimal 2305843009213693953 and as hex 0x200000000
 * Debug Printf cannot be used at the same time as GPU Assisted Validation.
 * Debug Printf consumes a descriptor set. If your application uses every last
 descriptor set on the GPU, Debug Printf will not work.
-* Debug Printf consumes device memory on the GPU. Large or numerous Debug Printf 
+* Debug Printf consumes device memory on the GPU. Large or numerous Debug Printf
 messages can exhaust device memory. See settings above to control
 buffer size.
 * Validation Layers version: 1.2.135.0 or later is required
@@ -192,6 +192,6 @@ Documentation for the GL_EXT_debug_printf extension can be found
 [here](https://github.com/KhronosGroup/GLSL/blob/main/extensions/ext/GLSL_EXT_debug_printf.txt)
 
 There is a validation layer test that demonstrates the simple and programmatic use of Debug
-Printf. It is called "GpuDebugPrintf" and is in vklayertests_gpu.cpp in the
+Printf. It is called "GpuDebugPrintf" and is in `tests/negative/gpu_av.cpp` in the
 Vulkan-ValidationLayers repository.
 

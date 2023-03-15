@@ -11,7 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../layer_validation_tests.h"
+#include "../framework/layer_validation_tests.h"
 #include "vk_extension_helper.h"
 
 #include <algorithm>
