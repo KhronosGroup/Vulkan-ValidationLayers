@@ -1455,6 +1455,29 @@ class ValidationStateTracker : public ValidationObject {
         }
     }
 
+    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
+        ReadLockGuard guard(shader_identifier_map_lock_);
+        if (const auto itr = shader_identifier_map_.find(ident); itr != shader_identifier_map_.cend()) {
+            return itr->second;
+        }
+        return {};
+    }
+
+    inline std::shared_ptr<SHADER_MODULE_STATE> GetShaderModuleStateFromIdentifier(
+        const VkPipelineShaderStageModuleIdentifierCreateInfoEXT& shader_stage_id) const {
+        if (shader_stage_id.pIdentifier) {
+            auto shader_id = LvlInitStruct<VkShaderModuleIdentifierEXT>();
+            shader_id.identifierSize = shader_stage_id.identifierSize;
+            const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
+            std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);
+            ReadLockGuard guard(shader_identifier_map_lock_);
+            if (const auto itr = shader_identifier_map_.find(shader_id); itr != shader_identifier_map_.cend()) {
+                return itr->second;
+            }
+        }
+        return {};
+    }
+
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 

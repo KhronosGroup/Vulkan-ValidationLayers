@@ -616,7 +616,7 @@ TEST_F(VkLayerTest, RayTracingTestWriteAccelerationStructureMemory) {
     vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &build_info_khr, &pBuildRangeInfos);
     m_errorMonitor->VerifyFound();
 
-    std::vector<uint32_t> data(buffer.create_info().size);
+    std::vector<uint32_t> data(static_cast<size_t>(buffer.create_info().size));
     VkAccelerationStructureKHR acceleration_structure_handle = acceleration_structure.handle();
     // .dstAccelerationStructure buffer is not bound to host visible memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");

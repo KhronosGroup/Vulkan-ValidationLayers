@@ -77,9 +77,14 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
                 }
             }
 
-            // TODO (ncesario) Need to check if a shader module identifier is used to reference the shader module.
-            //                 This requires adding identifier -> module state tracking similar to buffer device
-            //                 address.
+            // Check if a shader module identifier is used to reference the shader module.
+            if (!module_state) {
+                if (const auto shader_stage_id =
+                        LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                    shader_stage_id) {
+                    module_state = dev_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
+                }
+            }
 
             if (module_state) {
                 const auto *stage_ci = &create_info.pStages[i];
@@ -165,6 +170,15 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
                 if (shader_ci) {
                     const uint32_t unique_shader_id = 0;  // TODO GPU-AV rework required to get this value properly
                     module_state = state_data.CreateShaderModuleState(*shader_ci, unique_shader_id);
+                }
+            }
+
+            // Check if a shader module identifier is used to reference the shader module.
+            if (!module_state) {
+                if (const auto shader_stage_id =
+                        LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                    shader_stage_id) {
+                    module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }
             }
 
