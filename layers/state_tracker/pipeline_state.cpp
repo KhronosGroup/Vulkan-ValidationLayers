@@ -38,16 +38,15 @@ static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const In
     return primitive_rate_written;
 }
 
-PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *stage,
+PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
     : module_state(module_state),
-      create_info(stage),
-      stage_flag(stage->stage),
-      entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
+      create_info(create_info),
+      entrypoint(module_state->FindEntrypoint(create_info->pName, create_info->stage)),
       writes_to_gl_layer(module_state->WritesToGlLayer()) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
-        wrote_primitive_shading_rate = WrotePrimitiveShadingRate(stage_flag, *entrypoint, module_state.get());
+        wrote_primitive_shading_rate = WrotePrimitiveShadingRate(create_info->stage, *entrypoint, module_state.get());
     }
 }
 
@@ -197,6 +196,7 @@ static uint32_t GetCreateInfoShaders(const PIPELINE_STATE &pipe_state) {
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
         result |= stage_ci.stage;
     }
+    result |= pipe_state.linking_shaders;
     return result;
 }
 
@@ -251,12 +251,12 @@ static bool UsesShaderModuleId(const PIPELINE_STATE &pipe_state) {
 
 static vvl::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
     vvl::unordered_set<uint32_t> result;
-    for (const auto &stage : stage_states) {
-        if (!stage.entrypoint) {
+    for (const auto &stage_state : stage_states) {
+        if (!stage_state.entrypoint) {
             continue;
         }
-        if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            result = stage.module_state->CollectWritableOutputLocationinFS(*(stage.entrypoint));
+        if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            result = stage_state.module_state->CollectWritableOutputLocationinFS(*(stage_state.entrypoint));
             break;
         }
     }
@@ -558,6 +558,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       pipeline_type(VK_PIPELINE_BIND_POINT_GRAPHICS),
       create_flags(create_info.graphics.flags),
       shader_stages_ci(create_info.graphics.pStages, create_info.graphics.stageCount),
+      uses_shader_module_id(UsesShaderModuleId(*this)),
       vertex_input_state(CreateVertexInputState(*this, *state_data, create_info.graphics)),
       pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
       fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
@@ -570,7 +571,6 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
-      uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       csm_states(csm_states) {
@@ -641,12 +641,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       pipeline_type(VK_PIPELINE_BIND_POINT_COMPUTE),
       create_flags(create_info.compute.flags),
       shader_stages_ci(&create_info.compute.stage, 1),
+      uses_shader_module_id(UsesShaderModuleId(*this)),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // compute has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       csm_states(csm_states),
@@ -664,12 +664,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       create_flags(create_info.raytracing.flags),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
       ray_tracing_library_ci(create_info.raytracing.pLibraryInfo),
+      uses_shader_module_id(UsesShaderModuleId(*this)),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       csm_states(csm_states),
@@ -689,12 +689,12 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       create_flags(create_info.raytracing.flags),
       shader_stages_ci(create_info.raytracing.pStages, create_info.raytracing.stageCount),
       ray_tracing_library_ci(create_info.raytracing.pLibraryInfo),
+      uses_shader_module_id(UsesShaderModuleId(*this)),
       stage_states(GetStageStates(*state_data, *this, csm_states)),
       create_info_shaders(GetCreateInfoShaders(*this)),
       active_shaders(create_info_shaders),  // RTX has no linking shaders
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
-      uses_shader_module_id(UsesShaderModuleId(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
       csm_states(csm_states),

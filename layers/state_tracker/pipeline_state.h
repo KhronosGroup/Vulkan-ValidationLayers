@@ -97,13 +97,13 @@ typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
 struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
-    VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
     const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
     bool wrote_primitive_shading_rate;
     bool writes_to_gl_layer;
 
-    PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *stage, std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
+    PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
+                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
 };
 
 class PIPELINE_STATE : public BASE_NODE {
@@ -176,6 +176,8 @@ class PIPELINE_STATE : public BASE_NODE {
     VkPipelineCreateFlags create_flags;
     vvl::span<const safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
     const safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
+    // If using a shader module identifier, the module itself is not validated, but the shader stage is still known
+    const bool uses_shader_module_id;
 
     // State split up based on library types
     const std::shared_ptr<VertexInputState> vertex_input_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
@@ -208,7 +210,6 @@ class PIPELINE_STATE : public BASE_NODE {
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-    const bool uses_shader_module_id;
     const bool descriptor_buffer_mode = false;
     const bool uses_pipeline_robustness;
 
@@ -455,15 +456,6 @@ class PIPELINE_STATE : public BASE_NODE {
     VkShaderModule GetShaderModuleByCIIndex(uint32_t i) {
         // TODO this _should_ be a static_assert, but that only works on MSVC currently
         assert(false && "Not implemented");
-        return {};
-    }
-
-    std::shared_ptr<const SHADER_MODULE_STATE> GetShaderModuleState(VkShaderStageFlagBits stage) {
-        for (auto &s : stage_states) {
-            if (s.stage_flag == stage) {
-                return s.module_state;
-            }
-        }
         return {};
     }
 

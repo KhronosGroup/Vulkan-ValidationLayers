@@ -853,23 +853,24 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
             // !replace_shaders implies that the instrumented shaders should be used. However, if this is a non-executable pipeline
             // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
             if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
-                for (const auto &stage : pipe->stage_states) {
-                    auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage.module_state);
+                for (const auto &stage_state : pipe->stage_states) {
+                    auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage_state.module_state);
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
                         // case above. Otherwise, it is being defined during CGPL time
                         if (cgpl_state.shader_states.size() <= pipeline) {
                             cgpl_state.shader_states.resize(pipeline + 1);
                         }
-                        auto &csm_state = cgpl_state.shader_states[pipeline][stage.stage_flag];
+                        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
+                        auto &csm_state = cgpl_state.shader_states[pipeline][stage];
                         const auto pass =
                             InstrumentShader(module_state->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
                         if (pass) {
                             module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
                             // Now we need to find the corresponding VkShaderModuleCreateInfo and update its shader code
-                            auto &stage_ci = GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(
-                                new_pipeline_ci, stage.stage_flag);
+                            auto &stage_ci =
+                                GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(new_pipeline_ci, stage);
                             // We're modifying the copied, safe create info, which is ok to be non-const
                             auto sm_ci =
                                 const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
@@ -907,14 +908,14 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
 
         if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
             const auto pipeline_layout = pipeline_state->PipelineLayoutState();
-            for (auto &stage : pipeline_state->stage_states) {
-                auto &module_state = stage.module_state;
+            for (auto &stage_state : pipeline_state->stage_states) {
+                auto &module_state = stage_state.module_state;
                 const auto shader_module = module_state->Handle();
 
                 if (pipeline_state->active_slots.find(desc_set_bind_index) != pipeline_state->active_slots.end() ||
                     (pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets)) {
                     auto *modified_ci = reinterpret_cast<const CreateInfo *>(modified_create_infos[pipeline].ptr());
-                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage.stage_flag);
+                    auto uninstrumented_module = GetShaderModule(*modified_ci, stage_state.create_info->stage);
                     assert(uninstrumented_module != shader_module.Cast<VkShaderModule>());
                     DispatchDestroyShaderModule(device, uninstrumented_module, pAllocator);
                 }
