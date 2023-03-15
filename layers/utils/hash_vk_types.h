@@ -113,7 +113,8 @@ static inline bool operator==(const VkShaderModuleIdentifierEXT &a, const VkShad
     if (a.identifierSize != b.identifierSize) {
         return false;
     }
-    for (uint32_t i = 0u; i < a.identifierSize; ++i) {
+    const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, a.identifierSize);
+    for (uint32_t i = 0u; i < copy_size; ++i) {
         if (a.identifier[i] != b.identifier[i]) {
             return false;
         }
