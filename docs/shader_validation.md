@@ -33,22 +33,22 @@ The code is currently split up into the following main sections
 
 ### Design details
 
-When dealing with shader validation there a few concepts to understand and not confuse
+When dealing with shader validation there are a few concepts to understand and not confuse
 
 - `EntryPoints`
   - Tied to a shader stage (fragment, vertex, etc)
   - Knows which variables and instructions are touched in stage
-    - There might be things in a `ShaderModule` not related the the shader stage checking
+    - There might be things in a `ShaderModule` not related to shader stage validation
 - `Shader Module`
   - a `VkShaderModule` object
   - contains all information about the SPIR-V module
-  - contains SPIR-V instructs (in array of `uint32_t` words)
+  - contains SPIR-V instructions (in an array of `uint32_t` words)
   - knows the relationship between instructions
   - can contain multiple `EntryPoints`
     - [For more details](https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/entry_execution.md#instructions-with-multiple-execution-modes)
 - `Pipeline`
   - contains 1 or more shader object
-  - dcecides both which `Shader Module` and `EntryPoint` is used
+  - decides both which `Shader Module` and `EntryPoint` are used
   - has other state not known if validating just the shader object
 - `Pipeline Library` (GPL) (`VK_EXT_graphics_pipeline_library`)
   - part of a pipeline that can be reused
@@ -56,12 +56,12 @@ When dealing with shader validation there a few concepts to understand and not c
   - lets app use a hash instead of having the driver re-create the `ShaderModule`
   - not possible to validate as the VVL don't know what the `ShaderModule` is
 
-When dealing with validation, it is important to know what should be validated when.
+When dealing with validation, it is important to know what should be validated, and when.
 
 If validation only cares about... :
 
-- the SPIR-V itself, should be mapped to the `Shader Module`
-- if how two stages interface, needs to be done when all stages are there
+- the SPIR-V itself, is mapped to the `Shader Module`
+- if two stages interface, needs to be done when all stages are there
   -For `Pipeline Library` it might need to wait until linking
-- descriptors variables, should use `EntryPoint`
+- descriptors variables, use `EntryPoint`
 - the stage of a shader module is always known, regardless of even using `ShaderModuleIdentifier`
