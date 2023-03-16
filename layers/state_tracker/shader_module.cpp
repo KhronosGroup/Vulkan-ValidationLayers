@@ -728,12 +728,13 @@ uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool str
             // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
             // pointers around.
             return GetLocationsConsumedByType(insn->Word(3), strip_array_level);
-        case spv::OpTypeArray:
-            if (strip_array_level) {
-                return GetLocationsConsumedByType(insn->Word(2), false);
-            } else {
-                return GetConstantValueById(insn->Word(3)) * GetLocationsConsumedByType(insn->Word(2), false);
+        case spv::OpTypeArray: {
+            uint32_t locations = GetLocationsConsumedByType(insn->Word(2), false);
+            if (!strip_array_level) {
+                locations *= GetConstantValueById(insn->Word(3));
             }
+            return locations;
+        }
         case spv::OpTypeMatrix:
             // Num locations is the dimension * element size
             return insn->Word(3) * GetLocationsConsumedByType(insn->Word(2), false);
@@ -769,12 +770,13 @@ uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool st
             }
             return sum;
         }
-        case spv::OpTypeArray:
-            if (strip_array_level) {
-                return GetComponentsConsumedByType(insn->Word(2), false);
-            } else {
-                return GetConstantValueById(insn->Word(3)) * GetComponentsConsumedByType(insn->Word(2), false);
+        case spv::OpTypeArray: {
+            uint32_t locations = GetComponentsConsumedByType(insn->Word(2), false);
+            if (!strip_array_level) {
+                components *= GetConstantValueById(insn->Word(3));
             }
+            return components;
+        }
         case spv::OpTypeMatrix:
             // Num locations is the dimension * element size
             return insn->Word(3) * GetComponentsConsumedByType(insn->Word(2), false);
@@ -1453,7 +1455,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
 vvl::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction& entrypoint) const {
     vvl::unordered_set<uint32_t> location_list;
-    const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
+    const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
     vvl::unordered_set<uint32_t> store_pointer_ids;
     vvl::unordered_map<uint32_t, uint32_t> accesschain_members;
 
@@ -1563,12 +1565,18 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
     return true;
 }
 
-std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByLocation(const Instruction& entrypoint,
-                                                                                                   spv::StorageClass sinterface,
-                                                                                                   bool is_array_of_verts) const {
+std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByLocation(
+    const Instruction& entrypoint, spv::StorageClass sinterface) const {
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
     std::map<location_t, UserDefinedInterfaceVariable> out;
+    // TODO - pass in the EntryPoint object so this can be found there
+    const VkShaderStageFlagBits stage = static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)));
+    const bool strip_output_array_level = (stage == (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) != 0;
+    const bool strip_input_array_level =
+        (stage == (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                   VK_SHADER_STAGE_GEOMETRY_BIT)) != 0;
+    const bool is_array_of_verts = (sinterface == spv::StorageClassOutput) ? strip_output_array_level : strip_input_array_level;
 
     for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
         const Instruction* insn = FindDef(iid);

@@ -385,8 +385,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
                                       bool is_patch, const Instruction *variable_insn) const;
     std::map<location_t, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
-                                                                                  spv::StorageClass sinterface,
-                                                                                  bool is_array_of_verts) const;
+                                                                                  spv::StorageClass sinterface) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
