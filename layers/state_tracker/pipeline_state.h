@@ -97,13 +97,13 @@ typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
 struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
-    std::optional<Instruction> entrypoint;
+    const SHADER_MODULE_STATE::EntryPoint *entrypoint;
     const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
     bool wrote_primitive_shading_rate;
     bool writes_to_gl_layer;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state);
+                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state, const SHADER_MODULE_STATE::EntryPoint *entrypoint);
 };
 
 class PIPELINE_STATE : public BASE_NODE {
