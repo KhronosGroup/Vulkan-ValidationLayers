@@ -105,7 +105,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                            const Instruction &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
-    const auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, false);
+    const auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput);
 
     // Build index by location
     std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
@@ -172,7 +172,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     std::map<uint32_t, Attachment> location_map;
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
+    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
         auto const location = output_it.first.first;
         location_map[location].output = &output_it.second;
@@ -348,7 +348,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
 
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
+    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
         auto const location = output_it.first.first;
         location_map[location].output = &output_it.second;
@@ -913,8 +913,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     uint32_t max_comp_in = 0;
     uint32_t max_comp_out = 0;
 
-    auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, strip_input_array_level);
-    auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, strip_output_array_level);
+    auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput);
+    auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
 
     // Find max component location used for input variables.
     for (auto &var : inputs) {
@@ -3310,12 +3310,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                                                 uint32_t pipe_index) const {
     bool skip = false;
 
-    const bool arrayed_output = producer_stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    const bool arrayed_input = (consumer_stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                                  VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0;
-
-    auto outputs = producer.CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput, arrayed_output);
-    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput, arrayed_input);
+    auto outputs = producer.CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput);
+    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput);
 
     auto output_it = outputs.begin();
     auto input_it = inputs.begin();
