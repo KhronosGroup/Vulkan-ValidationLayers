@@ -2991,16 +2991,16 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     bool skip = false;
     const auto *create_info = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
-    auto entrypoint_optional = stage_state.entrypoint;
     const VkShaderStageFlagBits stage = create_info->stage;
 
     if (pipeline.uses_shader_module_id || !module_state.has_valid_spirv) {
         return skip;  // these edge cases should be validated already
     }
-
-    if (skip || (pipeline.uses_shader_module_id && module_state.vk_shader_module() == VK_NULL_HANDLE)) {
-        // No reason in continuing if the spir-v is invalid
-        return skip;
+    if (!stage_state.entrypoint) {
+        return LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
+                        "%s(): pCreateInfos[%" PRIu32 "] No entrypoint found named `%s` for stage %s.",
+                        pipeline.GetCreateFunctionName(), pipeline.create_index, create_info->pName,
+                        string_VkShaderStageFlagBits(stage));
     }
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
@@ -3210,18 +3210,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                          pipeline.GetCreateFunctionName(), pipeline.create_index,
                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(), string_VkShaderStageFlagBits(stage));
         }
+
+        if (skip) {
+            return skip;  // if spec constants have errors, can produce false positives later
+        }
     }
 
-    // Check the entrypoint
-    if (!entrypoint_optional) {
-        skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
-                         "%s(): pCreateInfos[%" PRIu32 "] No entrypoint found named `%s` for stage %s.",
-                         pipeline.GetCreateFunctionName(), pipeline.create_index, create_info->pName,
-                         string_VkShaderStageFlagBits(stage));
-    }
-    if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
-
-    const Instruction &entrypoint = *entrypoint_optional;
+    const Instruction &entrypoint = stage_state.entrypoint->entrypoint_insn;
 
     // Validate descriptor set layout against what the entrypoint actually uses
 
@@ -3489,7 +3484,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
+        skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), vertex_stage->entrypoint->entrypoint_insn);
     }
 
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
@@ -3502,9 +3497,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         if (consumer.module_state) {
             if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
                 producer.entrypoint) {
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *(producer.entrypoint),
+                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), producer.entrypoint->entrypoint_insn,
                                                        producer.create_info->stage, *consumer.module_state.get(),
-                                                       *(consumer.entrypoint), consumer.create_info->stage, pipeline.create_index);
+                                                       consumer.entrypoint->entrypoint_insn, consumer.create_info->stage,
+                                                       pipeline.create_index);
             }
         }
     }
@@ -3513,10 +3509,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         const auto &rp_state = pipeline.RenderPassState();
         if (rp_state && rp_state->UsesDynamicRendering()) {
             skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state.get(),
-                                                                       *(fragment_stage->entrypoint), pipeline);
+                                                                       fragment_stage->entrypoint->entrypoint_insn, pipeline);
         } else {
-            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(), *(fragment_stage->entrypoint), pipeline,
-                                                       pipeline.Subpass());
+            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(),
+                                                       fragment_stage->entrypoint->entrypoint_insn, pipeline, pipeline.Subpass());
         }
     }
 

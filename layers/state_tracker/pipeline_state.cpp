@@ -39,14 +39,16 @@ static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const In
 }
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state)
+                                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
+                                       const SHADER_MODULE_STATE::EntryPoint *entrypoint)
     : module_state(module_state),
       create_info(create_info),
-      entrypoint(module_state->FindEntrypoint(create_info->pName, create_info->stage)),
+      entrypoint(entrypoint),
       writes_to_gl_layer(module_state->WritesToGlLayer()) {
     if (entrypoint) {
-        descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
-        wrote_primitive_shading_rate = WrotePrimitiveShadingRate(create_info->stage, *entrypoint, module_state.get());
+        descriptor_variables = module_state->GetResourceInterfaceVariable((*entrypoint).entrypoint_insn);
+        wrote_primitive_shading_rate =
+            WrotePrimitiveShadingRate(create_info->stage, (*entrypoint).entrypoint_insn, module_state.get());
     }
 }
 
@@ -83,59 +85,67 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                     }
                 }
 
-                stage_states.emplace_back(&stage_ci, module);
+                const auto *entrypoint = module->FindEntrypoint(stage_ci.pName, stage_ci.stage);
+                stage_states.emplace_back(&stage_ci, module, entrypoint);
                 stage_found = true;
             }
         }
         if (!stage_found) {
             // Check if stage has been supplied by a library
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = nullptr;
+            const safe_VkPipelineShaderStageCreateInfo *stage_ci = nullptr;
             switch (stage) {
                 case VK_SHADER_STAGE_VERTEX_BIT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->vertex_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->vertex_shader_ci,
-                                                  pipe_state.pre_raster_state->vertex_shader);
+                        module_state = pipe_state.pre_raster_state->vertex_shader;
+                        stage_ci = pipe_state.pre_raster_state->vertex_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->tessc_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->tessc_shader_ci,
-                                                  pipe_state.pre_raster_state->tessc_shader);
+                        module_state = pipe_state.pre_raster_state->tessc_shader;
+                        stage_ci = pipe_state.pre_raster_state->tessc_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->tesse_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->tesse_shader_ci,
-                                                  pipe_state.pre_raster_state->tesse_shader);
+                        module_state = pipe_state.pre_raster_state->tesse_shader;
+                        stage_ci = pipe_state.pre_raster_state->tesse_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_GEOMETRY_BIT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->geometry_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->geometry_shader_ci,
-                                                  pipe_state.pre_raster_state->geometry_shader);
+                        module_state = pipe_state.pre_raster_state->geometry_shader;
+                        stage_ci = pipe_state.pre_raster_state->geometry_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_TASK_BIT_EXT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->task_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->task_shader_ci,
-                                                  pipe_state.pre_raster_state->task_shader);
+                        module_state = pipe_state.pre_raster_state->task_shader;
+                        stage_ci = pipe_state.pre_raster_state->task_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_MESH_BIT_EXT:
                     if (pipe_state.pre_raster_state && pipe_state.pre_raster_state->mesh_shader) {
-                        stage_states.emplace_back(pipe_state.pre_raster_state->mesh_shader_ci,
-                                                  pipe_state.pre_raster_state->mesh_shader);
+                        module_state = pipe_state.pre_raster_state->mesh_shader;
+                        stage_ci = pipe_state.pre_raster_state->mesh_shader_ci;
                     }
                     break;
                 case VK_SHADER_STAGE_FRAGMENT_BIT:
                     if (pipe_state.fragment_shader_state && pipe_state.fragment_shader_state->fragment_shader) {
-                        stage_states.emplace_back(pipe_state.fragment_shader_state->fragment_shader_ci.get(),
-                                                  pipe_state.fragment_shader_state->fragment_shader);
+                        module_state = pipe_state.fragment_shader_state->fragment_shader;
+                        stage_ci = pipe_state.fragment_shader_state->fragment_shader_ci.get();
                     }
                     break;
                 default:
                     // no-op
                     break;
             }
+            if (!stage_ci) {
+                continue;
+            }
+            const auto *entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+            stage_states.emplace_back(stage_ci, module_state, entrypoint);
         }
     }
     return stage_states;
@@ -255,7 +265,7 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::S
             continue;
         }
         if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            result = stage_state.module_state->CollectWritableOutputLocationinFS(*(stage_state.entrypoint));
+            result = stage_state.module_state->CollectWritableOutputLocationinFS(stage_state.entrypoint->entrypoint_insn);
             break;
         }
     }
@@ -270,7 +280,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE &pipelin
         if (!stage.entrypoint) {
             continue;
         }
-        auto stage_topo = stage.module_state->GetTopology(*(stage.entrypoint));
+        auto stage_topo = stage.module_state->GetTopology(stage.entrypoint->entrypoint_insn);
         if (stage_topo) {
             result = *stage_topo;
         }

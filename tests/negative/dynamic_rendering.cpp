@@ -3339,6 +3339,7 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryViewMask) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.shader_stages_ = {pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895");  // spec bug
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

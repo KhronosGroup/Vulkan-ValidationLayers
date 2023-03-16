@@ -608,7 +608,17 @@ const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushCo
     return nullptr;
 }
 
-std::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+const SHADER_MODULE_STATE::EntryPoint* SHADER_MODULE_STATE::FindEntrypoint(char const* name,
+                                                                           VkShaderStageFlagBits stageBits) const {
+    for (const auto& entry_point : static_data_.entry_points) {
+        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
+            return &entry_point;
+        }
+    }
+    return nullptr;
+}
+
+std::optional<Instruction> SHADER_MODULE_STATE::FindEntrypointInstruction(char const* name, VkShaderStageFlagBits stageBits) const {
     std::optional<Instruction> result;
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {

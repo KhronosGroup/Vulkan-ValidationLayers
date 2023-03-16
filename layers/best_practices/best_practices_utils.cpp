@@ -1367,7 +1367,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
         return false;
     }
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint_optional = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    auto entrypoint_optional = module_state->FindEntrypointInstruction(createInfo.stage.pName, createInfo.stage.stage);
     if (!entrypoint_optional) return false;
 
     const Instruction& entrypoint = *entrypoint_optional;
