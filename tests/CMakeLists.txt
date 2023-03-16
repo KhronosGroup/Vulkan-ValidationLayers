@@ -59,6 +59,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/render_pass.cpp
     positive/shaderval.cpp
     positive/sync.cpp
+    positive/sync_val.cpp
     positive/tooling.cpp
     positive/video.cpp
     positive/wsi.cpp

@@ -298,6 +298,242 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
     }
 }
 
+TEST_F(VkSyncValTest, SyncCmdClearAttachmentsHazards) {
+    TEST_DESCRIPTION("Test for hazards when attachment is cleared inside render pass.");
+
+    // VK_EXT_load_store_op_none is needed to disable render pass load/store accesses, so clearing
+    // attachment inside a render pass can create hazards with the copy operations outside render pass.
+    AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    const uint32_t width = 256;
+    const uint32_t height = 128;
+    const VkFormat rt_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    const auto transfer_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    const auto rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | transfer_usage;
+    const auto ds_usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | transfer_usage;
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(width, height, 1, rt_format, transfer_usage, VK_IMAGE_TILING_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image_ds(m_device);
+    image_ds.InitNoLayout(width, height, 1, ds_format, transfer_usage, VK_IMAGE_TILING_OPTIMAL);
+    image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj rt(m_device);
+    rt.InitNoLayout(width, height, 1, rt_format, rt_usage, VK_IMAGE_TILING_OPTIMAL);
+    rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj ds(m_device);
+    ds.InitNoLayout(width, height, 1, ds_format, ds_usage, VK_IMAGE_TILING_OPTIMAL);
+    ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    auto attachment_without_load_store = [](VkFormat format) {
+        VkAttachmentDescription attachment = {};
+        attachment.format = format;
+        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
+        attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+        return attachment;
+    };
+    const VkAttachmentDescription attachments[] = {attachment_without_load_store(rt_format),
+                                                   attachment_without_load_store(ds_format)};
+
+    const VkImageView views[] = {rt.targetView(rt_format, VK_IMAGE_ASPECT_COLOR_BIT),
+                                 ds.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)};
+
+    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference depth_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_ref;
+    subpass.pDepthStencilAttachment = &depth_ref;
+
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = size32(attachments);
+    rpci.pAttachments = attachments;
+    vk_testing::RenderPass render_pass(*m_device, rpci);
+
+    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.flags = 0;
+    fbci.renderPass = render_pass;
+    fbci.attachmentCount = size32(views);
+    fbci.pAttachments = views;
+    fbci.width = width;
+    fbci.height = height;
+    fbci.layers = 1;
+    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.framebuffer = framebuffer;
+    rpbi.renderPass = render_pass;
+    rpbi.renderArea.extent.width = width;
+    rpbi.renderArea.extent.height = height;
+
+    const auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.gp_ci_.pDepthStencilState = &ds_ci;
+    pipe.InitState();
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
+
+    struct AspectInfo {
+        VkImageAspectFlagBits aspect;
+        VkImage src_image;
+        VkImage dst_image;
+    };
+    const AspectInfo aspect_infos[] = {{VK_IMAGE_ASPECT_COLOR_BIT, image, rt},
+                                       {VK_IMAGE_ASPECT_DEPTH_BIT, image_ds, ds},
+                                       {VK_IMAGE_ASPECT_STENCIL_BIT, image_ds, ds}};
+
+    // WAW hazard: copy to render target then clear it. Test each aspect (color/depth/stencil).
+    for (const auto& info : aspect_infos) {
+        const VkClearAttachment clear_attachment = {VkImageAspectFlags(info.aspect)};
+
+        VkClearRect clear_rect = {};
+        clear_rect.rect.offset = {0, 0};
+        clear_rect.rect.extent = {width / 2, height / 2};
+        clear_rect.baseArrayLayer = 0;
+        clear_rect.layerCount = 1;
+
+        VkImageCopy copy_region = {};
+        copy_region.srcSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
+        copy_region.dstSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
+        copy_region.extent = {width, height, 1};
+
+        m_commandBuffer->begin();
+        // Write 1
+        vk::CmdCopyImage(*m_commandBuffer, info.src_image, VK_IMAGE_LAYOUT_GENERAL, info.dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+                         &copy_region);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBeginRenderPass(*m_commandBuffer, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+        // Write 2
+        vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
+        m_errorMonitor->VerifyFound();
+
+        vk::CmdEndRenderPass(*m_commandBuffer);
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+
+    // RAW hazard: clear render target then copy from it.
+    // This tests that vkCmdClearAttachments correctly updates access state, so vkCmdCopyImage can detect hazard.
+    {
+        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
+
+        VkClearRect clear_rect = {};
+        clear_rect.rect.offset = {0, 0};
+        clear_rect.rect.extent = {width, height};
+        clear_rect.baseArrayLayer = 0;
+        clear_rect.layerCount = 1;
+
+        VkImageCopy copy_region = {};
+        copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+        copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+        copy_region.extent = {width, height, 1};
+
+        m_commandBuffer->begin();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBeginRenderPass(*m_commandBuffer, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+        // Write
+        vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
+        vk::CmdEndRenderPass(*m_commandBuffer);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
+        // Read
+        vk::CmdCopyImage(*m_commandBuffer, ds, VK_IMAGE_LAYOUT_GENERAL, image_ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+
+    // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
+    {
+        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT};
+
+        VkClearRect clear_rect = {};
+        clear_rect.rect.offset = {0, 0};
+        clear_rect.rect.extent = {32, 32};
+        clear_rect.baseArrayLayer = 0;
+        clear_rect.layerCount = 1;
+
+        VkImageCopy copy_region = {};
+        copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copy_region.srcOffset = {31, 31, 0};
+        copy_region.dstOffset = {31, 31, 0};
+        copy_region.extent = {64, 64, 1};
+
+        m_commandBuffer->begin();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBeginRenderPass(*m_commandBuffer, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+        // Write
+        vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
+        vk::CmdEndRenderPass(*m_commandBuffer);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
+        // Read
+        vk::CmdCopyImage(*m_commandBuffer, rt, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+
+    // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
+    // Copy to the first region, clear the second region.
+    {
+        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
+
+        VkClearRect clear_rect = {};
+        clear_rect.rect.offset = {0, 0};
+        clear_rect.rect.extent = {32, 32};
+        clear_rect.baseArrayLayer = 0;
+        clear_rect.layerCount = 1;
+
+        VkImageCopy copy_region = {};
+        copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
+        copy_region.dstSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
+        copy_region.srcOffset = {32, 32, 0};
+        copy_region.dstOffset = {32, 32, 0};
+        copy_region.extent = {64, 64, 1};
+
+        m_commandBuffer->begin();
+        // Write 1
+        vk::CmdCopyImage(*m_commandBuffer, image_ds, VK_IMAGE_LAYOUT_GENERAL, ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBeginRenderPass(*m_commandBuffer, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+        // Write 2
+        vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
+        vk::CmdEndRenderPass(*m_commandBuffer);
+        m_commandBuffer->end();
+        m_commandBuffer->QueueCommandBuffer();
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+}
+
 TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
