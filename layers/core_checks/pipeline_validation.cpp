@@ -284,6 +284,7 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
         }
     }
 
+    skip |= ValidateShaderModuleId(pipeline);
     skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, pipeline.create_index, "vkCreateGraphicsPipelines",
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, pipeline.create_index);
@@ -973,6 +974,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             continue;
         }
         skip |= ValidateComputePipelineShaderState(*pipeline);
+        skip |= ValidateShaderModuleId(*pipeline);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateComputePipelines",
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
     }
@@ -1041,8 +1043,8 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
     }
     const auto *groups = create_info.ptr()->pGroups;
 
-    for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
-        skip |= ValidatePipelineShaderStage(pipeline, pipeline.stage_states[stage_index]);
+    for (auto &stage_state : pipeline.stage_states) {
+        skip |= ValidatePipelineShaderStage(pipeline, stage_state);
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -1159,6 +1161,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, /*isKHR*/ false);
+        skip |= ValidateShaderModuleId(*pipeline);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateRayTracingPipelinesNV",
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
     }
@@ -1200,6 +1203,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, /*isKHR*/ true);
+        skip |= ValidateShaderModuleId(*pipeline);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateRayTracingPipelinesKHR",
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
         const auto create_info = pipeline->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
