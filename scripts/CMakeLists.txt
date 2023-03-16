@@ -54,7 +54,7 @@ if (UPDATE_DEPS)
     endif()
 
     set(_update_deps_dir ${VVL_SOURCE_DIR}/external/${_build_type})
-    if (UPDATE_DEPS_DIR AND EXISTS "${UPDATE_DEPS_DIR}")
+    if (UPDATE_DEPS_DIR)
         set(_update_deps_dir ${UPDATE_DEPS_DIR})
     endif()
     set(_helper_file "${_update_deps_dir}/helper.cmake")
