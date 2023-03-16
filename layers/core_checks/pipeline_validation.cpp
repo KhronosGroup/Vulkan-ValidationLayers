@@ -216,6 +216,7 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
 
     skip |= ValidateGraphicsPipelineLibrary(pipeline);
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline);
+    skip |= ValidateGraphicsPipelineInputAssemblyState(pipeline);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc);
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc);
@@ -1383,6 +1384,88 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipel
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineInputAssemblyState(const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+
+    // if vertex_input_state is not set, will be null
+    const auto *ia_state = pipeline.InputAssemblyState();
+    if (ia_state) {
+        const VkPrimitiveTopology topology = ia_state->topology;
+        if ((ia_state->primitiveRestartEnable == VK_TRUE) &&
+            (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST || topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
+             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY || topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            if (IsExtEnabled(device_extensions.vk_ext_primitive_topology_list_restart)) {
+                if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+                    if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
+                        skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                         "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                         "]: topology is %s and primitiveRestartEnable is VK_TRUE and the "
+                                         "primitiveTopologyPatchListRestart feature is not enabled.",
+                                         pipeline.create_index, string_VkPrimitiveTopology(topology));
+                    }
+                } else if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyListRestart) {
+                    skip |= LogError(
+                        device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
+                        "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                        "]: topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
+                        "is not enabled.",
+                        pipeline.create_index, string_VkPrimitiveTopology(topology));
+                }
+            } else {
+                skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                 "]: topology is %s and primitiveRestartEnable is VK_TRUE. It is invalid.",
+                                 pipeline.create_index, string_VkPrimitiveTopology(topology));
+            }
+        }
+        if ((enabled_features.core.geometryShader == VK_FALSE) &&
+            (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
+             topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY ||
+             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
+             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY)) {
+            skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: topology is %s and geometry shaders feature is not enabled. "
+                             "It is invalid.",
+                             pipeline.create_index, string_VkPrimitiveTopology(topology));
+        }
+        if ((enabled_features.core.tessellationShader == VK_FALSE) && (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: topology is %s and tessellation shaders feature is not "
+                             "enabled. It is invalid.",
+                             pipeline.create_index, string_VkPrimitiveTopology(topology));
+        }
+    }
+
+    // pre_raster has tessellation stage, vertex input has topology
+    // Both are needed for  these checks
+    if (pipeline.pre_raster_state && pipeline.vertex_input_state) {
+        // Either both or neither TC/TE shaders should be defined
+        const bool has_control = (pipeline.active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
+        const bool has_eval = (pipeline.active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
+        const bool has_tessellation = has_control && has_eval;  // need both
+        // VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid for tessellation pipelines.
+        // Mismatching primitive topology and tessellation fails graphics pipeline creation.
+        if (has_tessellation && (!ia_state || ia_state->topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST must be set as IA topology for "
+                             "tessellation pipelines, but currently is %s.",
+                             pipeline.create_index, ia_state ? string_VkPrimitiveTopology(ia_state->topology) : "null");
+        }
+        if (!has_tessellation && (ia_state && ia_state->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-topology-00737",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid "
+                             "for tessellation pipelines.",
+                             pipeline.create_index);
+        }
+    };
+    return skip;
+}
+
 bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     // Only validate once during creation
@@ -1478,86 +1561,7 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
                              "] State: TE and TC shaders must be included or excluded as a pair.",
                              pipeline.create_index);
         }
-
-        const auto *ia_state = pipeline.InputAssemblyState();
-        if (ia_state) {
-            if ((ia_state->primitiveRestartEnable == VK_TRUE) &&
-                (ia_state->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST || ia_state->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-                if (IsExtEnabled(device_extensions.vk_ext_primitive_topology_list_restart)) {
-                    if (ia_state->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-                        if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyPatchListRestart) {
-                            skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                             "]: topology is %s and primitiveRestartEnable is VK_TRUE and the "
-                                             "primitiveTopologyPatchListRestart feature is not enabled.",
-                                             pipeline.create_index, string_VkPrimitiveTopology(ia_state->topology));
-                        }
-                    } else if (!enabled_features.primitive_topology_list_restart_features.primitiveTopologyListRestart) {
-                        skip |= LogError(
-                            device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
-                            "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                            "]: topology is %s and primitiveRestartEnable is VK_TRUE and the primitiveTopologyListRestart feature "
-                            "is not enabled.",
-                            pipeline.create_index, string_VkPrimitiveTopology(ia_state->topology));
-                    }
-                } else {
-                    skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                     "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                     "]: topology is %s and primitiveRestartEnable is VK_TRUE. It is invalid.",
-                                     pipeline.create_index, string_VkPrimitiveTopology(ia_state->topology));
-                }
-            }
-            if ((enabled_features.core.geometryShader == VK_FALSE) &&
-                (ia_state->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
-                 ia_state->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY)) {
-                skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429",
-                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                 "]: topology is %s and geometry shaders feature is not enabled. "
-                                 "It is invalid.",
-                                 pipeline.create_index, string_VkPrimitiveTopology(ia_state->topology));
-            }
-            if ((enabled_features.core.tessellationShader == VK_FALSE) &&
-                (ia_state->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-                skip |= LogError(device, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
-                                 "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                 "]: topology is %s and tessellation shaders feature is not "
-                                 "enabled. It is invalid.",
-                                 pipeline.create_index, string_VkPrimitiveTopology(ia_state->topology));
-            }
-        }
     }
-
-    // pre_raster has Tessellation shaders, but vertex input has topology
-    if (pipeline.pre_raster_state && pipeline.vertex_input_state) {
-        // Either both or neither TC/TE shaders should be defined
-        const bool has_control = (pipeline.active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
-        const bool has_eval = (pipeline.active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
-        const bool has_tessellation = has_control && has_eval;  // need both
-        const auto *ia_state = pipeline.InputAssemblyState();
-        // VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid for tessellation pipelines.
-        // Mismatching primitive topology and tessellation fails graphics pipeline creation.
-        if (has_tessellation && (!ia_state || ia_state->topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST must be set as IA topology for "
-                             "tessellation pipelines, but currently is %s.",
-                             pipeline.create_index, ia_state ? string_VkPrimitiveTopology(ia_state->topology) : "null");
-        }
-        if (!has_tessellation && (ia_state && ia_state->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-topology-00737",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid "
-                             "for tessellation pipelines.",
-                             pipeline.create_index);
-        }
-    }
-
     return skip;
 }
 

@@ -196,7 +196,6 @@ static uint32_t GetCreateInfoShaders(const PIPELINE_STATE &pipe_state) {
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
         result |= stage_ci.stage;
     }
-    result |= pipe_state.linking_shaders;
     return result;
 }
 
