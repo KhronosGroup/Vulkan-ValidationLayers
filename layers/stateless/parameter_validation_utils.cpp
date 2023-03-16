@@ -883,19 +883,17 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
-            if (pCreateInfo->queueFamilyIndexCount <= 1) {
+            auto const queue_family_index_count = pCreateInfo->queueFamilyIndexCount;
+            if (queue_family_index_count <= 1) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-sharingMode-00942",
-                                 "vkCreateImage(): if pCreateInfo->sharingMode is VK_SHARING_MODE_CONCURRENT, "
-                                 "pCreateInfo->queueFamilyIndexCount must be greater than 1.");
+                                 "vkCreateImage(): queueFamilyIndexCount is %" PRIu32 "!", queue_family_index_count);
             }
 
             // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
             // queueFamilyIndexCount uint32_t values
             if (pCreateInfo->pQueueFamilyIndices == nullptr) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-sharingMode-00941",
-                                 "vkCreateImage(): if pCreateInfo->sharingMode is VK_SHARING_MODE_CONCURRENT, "
-                                 "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
-                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
+                                 "vkCreateImage(): pQueueFamilyIndices is nullptr!");
             }
         }
 
