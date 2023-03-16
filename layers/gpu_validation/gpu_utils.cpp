@@ -20,23 +20,10 @@
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
+#include "vma/vma.h"
 #include <spirv/unified1/spirv.hpp>
 #include <algorithm>
 #include <regex>
-
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4189)
-#endif
-
-#define VMA_IMPLEMENTATION
-// This define indicates that we will supply Vulkan function pointers at initialization
-#define VMA_STATIC_VULKAN_FUNCTIONS 0
-#include "external/vk_mem_alloc.h"
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 // Implementation for Descriptor Set Manager class
 UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)

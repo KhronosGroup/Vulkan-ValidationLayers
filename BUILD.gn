@@ -100,6 +100,7 @@ config("vulkan_internal_config") {
 config("vulkan_layer_config") {
   include_dirs = [
     "layers",
+    "layers/external",
     "layers/generated",
   ]
   if (is_clang) {
@@ -137,6 +138,9 @@ core_validation_sources = [
   "layers/error_message/core_error_location.cpp",
   "layers/error_message/core_error_location.h",
   "layers/error_message/validation_error_enums.h",
+  "layers/external/vma/vk_mem_alloc.h",
+  "layers/external/vma/vma.cpp",
+  "layers/external/vma/vma.h",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
   "layers/generated/gpu_as_inspection_comp.h",
@@ -314,6 +318,7 @@ config("vulkan_memory_allocator_config") {
 source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
+    "layers/external",
     "layers/generated",
   ]
   sources = [
@@ -342,7 +347,6 @@ source_set("vulkan_layer_utils") {
     "layers/error_message/logging.cpp",
     "layers/utils/vk_layer_utils.cpp",
     "layers/utils/vk_layer_utils.h",
-    "layers/external/vk_mem_alloc.h",
     "layers/external/xxhash.cpp",
     "layers/external/xxhash.h",
   ]
