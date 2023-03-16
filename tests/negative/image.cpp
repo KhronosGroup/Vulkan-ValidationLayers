@@ -3467,23 +3467,6 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        image_ci.queueFamilyIndexCount = 2;
-        image_ci.pQueueFamilyIndices = nullptr;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-sharingMode-00941");
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        image_ci.queueFamilyIndexCount = 1;
-        const uint32_t queue_family = 0;
-        image_ci.pQueueFamilyIndices = &queue_family;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-sharingMode-00942");
-    }
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.format = VK_FORMAT_UNDEFINED;
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-format-00943");
     }
@@ -5329,40 +5312,67 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     vk::DestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
-    TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo.");
+TEST_F(VkLayerTest, CreateImageSharingModeConcurrentInvalidQueueFamilies) {
+    TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo when sharingMode is VK_SHARING_MODE_CONCURRENT");
 
     AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool get_physical_device_properties2 = IsExtensionsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-    uint32_t queue_families[2] = {0, 0};
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.extent.width = 64;
+    ci.extent.height = 64;
+    ci.extent.depth = 1;
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.queueFamilyIndexCount = 2;
-    image_create_info.pQueueFamilyIndices = queue_families;
-    image_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &ci));
+
+    // Invalid pQueueFamilyIndices
+    {
+        ci.queueFamilyIndexCount = 2;
+        ci.pQueueFamilyIndices = nullptr;
+        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-00941");
+    }
+
+    // queueFamilyIndexCount must be greater than 1
+    {
+        ci.queueFamilyIndexCount = 1;
+        const uint32_t queue_family = 0;
+        ci.pQueueFamilyIndices = &queue_family;
+        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-00942");
+    }
 
     const char *vuid =
         (get_physical_device_properties2) ? "VUID-VkImageCreateInfo-sharingMode-01420" : "VUID-VkImageCreateInfo-sharingMode-01392";
-    CreateImageTest(*this, &image_create_info, vuid);
 
-    uint32_t queue_node_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
+    // Each element of pQueueFamilyIndices must be unique
+    {
+        const std::array queue_families = {0U, 0U};
+        ci.queueFamilyIndexCount = size32(queue_families);
+        ci.pQueueFamilyIndices = queue_families.data();
+        CreateImageTest(*this, &ci, vuid);
+    }
 
-    queue_families[1] = queue_node_count;
-    CreateImageTest(*this, &image_create_info, vuid);
+    // Each element of pQueueFamilyIndices must be less than pQueueFamilyPropertyCount returned by either
+    // vkGetPhysicalDeviceQueueFamilyProperties or vkGetPhysicalDeviceQueueFamilyProperties2
+    {
+        uint32_t queue_node_count = 0;
+        vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, nullptr);
+
+        const std::array queue_families = {0U, queue_node_count};
+        ci.queueFamilyIndexCount = size32(queue_families);
+        ci.pQueueFamilyIndices = queue_families.data();
+
+        CreateImageTest(*this, &ci, vuid);
+    }
 }
 
 TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
