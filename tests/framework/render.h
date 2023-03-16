@@ -521,7 +521,7 @@ class VkImageObj : public vk_testing::Image {
         return ci;
     }
 
-    VkImageView targetView(VkImageViewCreateInfo ci) {
+    const VkImageView &targetView(VkImageViewCreateInfo ci) {
         if (!m_targetView.initialized()) {
             ci.image = handle();
             m_targetView.init(*m_device, ci);
@@ -529,9 +529,9 @@ class VkImageObj : public vk_testing::Image {
         return m_targetView.handle();
     }
 
-    VkImageView targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
-                           uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
-                           uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
+    const VkImageView &targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
+                                  uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
+                                  uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D) {
         if (!m_targetView.initialized()) {
             VkImageViewCreateInfo createView = LvlInitStruct<VkImageViewCreateInfo>();
             createView.image = handle();
