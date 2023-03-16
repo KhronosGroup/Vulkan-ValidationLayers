@@ -54,6 +54,7 @@ target_sources(VkLayer_utils PRIVATE
 target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
+target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
 target_include_directories(VkLayer_utils PUBLIC
     .
     generated # Needed otherwise VkLayer_utils won't install properly.
@@ -175,6 +176,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     error_message/core_error_location.cpp
     error_message/core_error_location.h
     error_message/validation_error_enums.h
+    external/vma/vma.h
+    external/vma/vma.cpp
     generated/best_practices.cpp
     generated/best_practices.h
     generated/chassis.cpp
@@ -300,6 +303,7 @@ if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
    endif()
 endif()
 
+target_include_directories(VkLayer_khronos_validation SYSTEM PRIVATE external)
 
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)

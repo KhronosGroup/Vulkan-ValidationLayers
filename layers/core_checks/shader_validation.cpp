@@ -30,7 +30,7 @@
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 #include "spirv_grammar_helper.h"
-#include "external/xxhash.h"
+#include "xxhash.h"
 
 static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, const Instruction *a_base_insn,
                            const Instruction *b_base_insn) {

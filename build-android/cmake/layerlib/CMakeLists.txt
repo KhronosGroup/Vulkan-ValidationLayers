@@ -43,6 +43,9 @@ set(COMMON_DIR "${SRC_DIR}/build-android/generated")
 set(CMAKE_CXX_clone "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
         -fvisibility=hidden")
+
+include_directories(SYSTEM ${SRC_DIR}/layers/external)
+
 include_directories(${SRC_DIR}/include
                     ${COMMON_DIR}/include
                     ${SRC_DIR}/layers)
@@ -118,7 +121,8 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/query_validation.cpp
         ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
-        ${SRC_DIR}/layers/core_checks/wsi_validation.cpp)
+        ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
+        ${SRC_DIR}/layers/external/vma/vma.cpp)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers

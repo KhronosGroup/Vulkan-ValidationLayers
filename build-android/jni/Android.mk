@@ -32,6 +32,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/xxhash.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/external \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
@@ -101,8 +102,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/external \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
