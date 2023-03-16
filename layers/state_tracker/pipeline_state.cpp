@@ -344,24 +344,9 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            bool contains_frag_shader = false;
-            const auto stages = vvl::make_span(create_info.pStages, create_info.stageCount);
-            for (const auto &stage : stages) {
-                if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                    contains_frag_shader = true;
-                    break;
-                }
-            }
-
             // No fragment shader _should_ imply no fragment shader state, however, for historical (GL) reasons, a pipeline _can_
-            // be created without a VS but no FS and still have valid fragment shader state. Here we try to infer if this is the
-            // case based on whether or not depth is written to.
+            // be created with a VS but no FS and still have valid fragment shader state.
             // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3178 for more details.
-            if (!contains_frag_shader && !(create_info.pDepthStencilState && create_info.pDepthStencilState->depthTestEnable &&
-                                           create_info.pDepthStencilState->depthWriteEnable)) {
-                return {};
-            }
-
             return std::make_shared<FragmentShaderState>(p, state, safe_create_info, rp);
         }
     }
