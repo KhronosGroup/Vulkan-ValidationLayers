@@ -60096,9 +60096,12 @@ safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR
             geometry.instances.data.hostAddress = allocation;
             as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
         } else {
-            size_t array_size = build_range_info->primitiveOffset + build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            const auto primitive_offset = build_range_info->primitiveOffset;
+            const auto primitive_count = build_range_info->primitiveCount;
+            size_t array_size = primitive_offset + primitive_count * sizeof(VkAccelerationStructureInstanceKHR);
             uint8_t *allocation = new uint8_t[array_size];
-            memcpy(allocation, in_struct->geometry.instances.data.hostAddress, array_size);
+            auto host_address = static_cast<const uint8_t*>(in_struct->geometry.instances.data.hostAddress);
+            memcpy(allocation + primitive_offset, host_address + primitive_offset, primitive_count * sizeof(VkAccelerationStructureInstanceKHR));
             geometry.instances.data.hostAddress = allocation;
             as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
         }
@@ -60229,9 +60232,12 @@ void safe_VkAccelerationStructureGeometryKHR::initialize(const VkAccelerationStr
             geometry.instances.data.hostAddress = allocation;
             as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
         } else {
-            size_t array_size = build_range_info->primitiveOffset + build_range_info->primitiveCount * sizeof(VkAccelerationStructureInstanceKHR);
+            const auto primitive_offset = build_range_info->primitiveOffset;
+            const auto primitive_count = build_range_info->primitiveCount;
+            size_t array_size = primitive_offset + primitive_count * sizeof(VkAccelerationStructureInstanceKHR);
             uint8_t *allocation = new uint8_t[array_size];
-            memcpy(allocation, in_struct->geometry.instances.data.hostAddress, array_size);
+            auto host_address = static_cast<const uint8_t*>(in_struct->geometry.instances.data.hostAddress);
+            memcpy(allocation + primitive_offset, host_address + primitive_offset, primitive_count * sizeof(VkAccelerationStructureInstanceKHR));
             geometry.instances.data.hostAddress = allocation;
             as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));
         }
