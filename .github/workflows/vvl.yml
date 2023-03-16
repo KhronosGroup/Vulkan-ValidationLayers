@@ -317,6 +317,9 @@ jobs:
 
   mingw:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
     steps:
@@ -340,8 +343,8 @@ jobs:
             external/Debug/mimalloc/build/install
           key: mingw-Debug-${{ hashfiles('scripts/known_good.json') }}
       - uses: lukka/get-cmake@latest
-      - name: Set up MinGW
-        uses: egor-tensin/setup-mingw@v2
+      - name: GCC Version
+        run: gcc --version # If this fails MINGW is not setup correctly
       - name: Configure
         run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
         env:
