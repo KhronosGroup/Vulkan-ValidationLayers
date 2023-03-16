@@ -7363,10 +7363,6 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
     auto float16_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
     auto cooperative_matrix_features = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
     auto memory_model_features = LvlInitStruct<VkPhysicalDeviceVulkanMemoryModelFeaturesKHR>(&cooperative_matrix_features);
@@ -7422,13 +7418,9 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
-    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
