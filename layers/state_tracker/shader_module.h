@@ -217,6 +217,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // There is no single unique item for a single entry point
         const Instruction &entrypoint_insn;  // OpEntryPoint instruction
         const VkShaderStageFlagBits stage;
+        const uint32_t id;
         const std::string name;
         // All ids that can be accessed from the entry point
         vvl::unordered_set<uint32_t> accessible_ids;
@@ -225,6 +226,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
 
         StructInfo push_constant_used_in_shader;
+
+        // Mark if a BuiltIn is written to
+        bool written_builtin_point_size{false};
+        bool written_builtin_primitive_shading_rate_khr{false};
+        bool written_builtin_viewport_index{false};
+        bool written_builtin_viewport_mask_nv{false};
 
         EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint);
     };
@@ -261,6 +268,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // BuiltIn we just care about existing or not, don't have to be written to
         bool has_builtin_layer{false};
         bool has_builtin_workgroup_size{false};
+        uint32_t builtin_workgroup_size_id = 0;
 
         std::vector<const Instruction *> atomic_inst;
         std::vector<spv::Capability> capability_list;
@@ -325,7 +333,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     const std::vector<Instruction> &GetInstructions() const { return static_data_.instructions; }
     const std::vector<const Instruction *> &GetDecorationInstructions() const { return static_data_.decoration_inst; }
-    const std::vector<const Instruction *> &GetMemberDecorationInstructions() const { return static_data_.member_decoration_inst; }
     const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
     const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
     const std::vector<ResourceInterfaceVariable> *GetResourceInterfaceVariable(const Instruction &entrypoint) const {
@@ -418,8 +425,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // point functions and which offset in the structs are used
     uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const StructInfo &data) const;
     void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const StructInfo &data) const;
-    void DefineStructMember(const Instruction *insn, std::vector<const Instruction *> &member_decorate_insn,
-                            StructInfo &data) const;
+    void DefineStructMember(const Instruction *insn, StructInfo &data) const;
     void RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
                       const Instruction *access_chain, const StructInfo &data) const;
     void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,

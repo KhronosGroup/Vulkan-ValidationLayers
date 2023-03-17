@@ -21,31 +21,12 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "enum_flag_bits.h"
 
-static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const Instruction &entrypoint,
-                                      const SHADER_MODULE_STATE *module_state) {
-    bool primitive_rate_written = false;
-    if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-        stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT) {
-        for (const Instruction *inst : module_state->GetBuiltinDecorationList()) {
-            if (inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) {
-                primitive_rate_written = module_state->IsBuiltInWritten(inst, entrypoint);
-            }
-            if (primitive_rate_written) {
-                break;
-            }
-        }
-    }
-    return primitive_rate_written;
-}
-
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
                                        const SHADER_MODULE_STATE::EntryPoint *entrypoint)
     : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable((*entrypoint).entrypoint_insn);
-        wrote_primitive_shading_rate =
-            WrotePrimitiveShadingRate(create_info->stage, (*entrypoint).entrypoint_insn, module_state.get());
     }
 }
 

@@ -842,9 +842,9 @@ class CoreChecks : public ValidationStateTracker {
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
     bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;
     bool ValidatePointSizeShaderState(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                      const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
+                                      const SHADER_MODULE_STATE::EntryPoint& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                          const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
+                                          const SHADER_MODULE_STATE::EntryPoint& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
 
     // Auto-generated helper functions

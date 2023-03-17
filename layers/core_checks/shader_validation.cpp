@@ -2218,7 +2218,8 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
 }
 
 bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                              const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
+                                              const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+                                              VkShaderStageFlagBits stage) const {
     bool skip = false;
     // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
     //
@@ -2230,24 +2231,12 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
         return skip;
     }
 
-    // Search for PointSize built-in decorations
-    bool pointsize_written = false;
-    for (const Instruction *insn : module_state.GetBuiltinDecorationList()) {
-        if (insn->GetBuiltIn() == spv::BuiltInPointSize) {
-            pointsize_written = module_state.IsBuiltInWritten(insn, entrypoint);
-            if (pointsize_written) {
-                break;
-            }
-        }
-    }
-
     // Search for execution modes used, unless a vertex shader where points are determined by the input topology
     bool output_points = false;
     bool point_mode = false;
     if (stage != VK_SHADER_STAGE_VERTEX_BIT) {
-        uint32_t entrypoint_id = entrypoint.Word(2);
         const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
-        auto it = execution_mode_inst.find(entrypoint_id);
+        auto it = execution_mode_inst.find(entrypoint.id);
         if (it != execution_mode_inst.end()) {
             for (const Instruction *insn : it->second) {
                 uint32_t mode = insn->Word(2);
@@ -2263,13 +2252,13 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
     }
 
     if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
-        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] shaderTessellationAndGeometryPointSize is enabled, but PointSize is not "
                              "written in the Geometry shader.",
                              pipeline.create_index);
-        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && pointsize_written) {
+        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && entrypoint.written_builtin_point_size) {
             skip |=
                 LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Geometry-07726",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -2279,13 +2268,13 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
         }
     } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
                ((pipeline.create_info_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) == 0) && point_mode) {
-        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] shaderTessellationAndGeometryPointSize is enabled, but PointSize is not "
                              "written in the Tessellation Evaluation shader.",
                              pipeline.create_index);
-        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && pointsize_written) {
+        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && entrypoint.written_builtin_point_size) {
             skip |= LogError(
                 module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724",
                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -2297,7 +2286,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
                 0) &&
                pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        if (!pointsize_written) {
+        if (!entrypoint.written_builtin_point_size) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST, but "
@@ -2310,32 +2299,15 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
 }
 
 bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                                  const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
-    bool primitive_rate_written = false;
-    bool viewport_index_written = false;
-    bool viewport_mask_written = false;
+                                                  const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+                                                  VkShaderStageFlagBits stage) const {
     bool skip = false;
-
-    // Check if the primitive shading rate is written
-    for (const Instruction *insn : module_state.GetBuiltinDecorationList()) {
-        spv::BuiltIn builtin = insn->GetBuiltIn();
-        if (builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-            primitive_rate_written = module_state.IsBuiltInWritten(insn, entrypoint);
-        } else if (builtin == spv::BuiltInViewportIndex) {
-            viewport_index_written = module_state.IsBuiltInWritten(insn, entrypoint);
-        } else if (builtin == spv::BuiltInViewportMaskNV) {
-            viewport_mask_written = module_state.IsBuiltInWritten(insn, entrypoint);
-        }
-        if (primitive_rate_written && viewport_index_written && viewport_mask_written) {
-            break;
-        }
-    }
 
     const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
         (pipeline.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
-            primitive_rate_written) {
+            entrypoint.written_builtin_primitive_shading_rate_khr) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2345,7 +2317,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
                              pipeline.create_index, string_VkShaderStageFlagBits(stage));
         }
 
-        if (primitive_rate_written && viewport_index_written) {
+        if (entrypoint.written_builtin_primitive_shading_rate_khr && entrypoint.written_builtin_viewport_index) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2355,7 +2327,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
                              pipeline.create_index, string_VkShaderStageFlagBits(stage));
         }
 
-        if (primitive_rate_written && viewport_mask_written) {
+        if (entrypoint.written_builtin_primitive_shading_rate_khr && entrypoint.written_builtin_viewport_mask_nv) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
                              "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -3239,13 +3211,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);
     skip |= ValidateDecorations(module_state, pipeline);
     skip |= ValidateVariables(module_state);
-    skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, stage);
+    skip |= ValidatePointSizeShaderState(pipeline, module_state, *stage_state.entrypoint, stage);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, create_info);
     }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
-        skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, stage);
+        skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, *stage_state.entrypoint, stage);
     }
     if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
         skip |= ValidateShaderResolveQCOM(module_state, stage, pipeline);
@@ -3524,7 +3496,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
         if (stage == VK_SHADER_STAGE_VERTEX_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
                 pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
-                if (stage_state.wrote_primitive_shading_rate) {
+                if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
                     skip |= LogError(
                         stage_state.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
                         "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
