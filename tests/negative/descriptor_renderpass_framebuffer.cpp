@@ -15,6 +15,7 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include "../framework/ray_tracing_objects.h"
 
 TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
@@ -12524,27 +12525,16 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     }
 
     if (IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-        uint32_t qfi = 0;
-        auto buffCI = LvlInitStruct<VkBufferCreateInfo>();
-        buffCI.size = 4096;
-        buffCI.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-        buffCI.queueFamilyIndexCount = 1;
-        buffCI.pQueueFamilyIndices = &qfi;
-
-        vk_testing::Buffer as_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0U);
-
-        auto asci = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
-        asci.createFlags = 0;
-        asci.buffer = as_buffer.handle();
-        vk_testing::AccelerationStructureKHR as(*m_device, asci);
+        auto as = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+        as->Build(*m_device);
 
         uint8_t data[256];
         auto vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT =
-            reinterpret_cast<PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT>(
-                vk::GetDeviceProcAddr(m_device->device(), "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT"));
+            GetDeviceProcAddr<PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT>(
+                "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT");
 
         auto ascddi = LvlInitStruct<VkAccelerationStructureCaptureDescriptorDataInfoEXT>();
-        ascddi.accelerationStructure = as.handle();
+        ascddi.accelerationStructure = as->handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-None-08088");
         m_errorMonitor->SetDesiredFailureMsg(

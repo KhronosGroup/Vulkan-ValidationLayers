@@ -1246,7 +1246,8 @@
                     "maxPerStageDescriptorAccelerationStructures": 2048,
                     "maxPerStageDescriptorUpdateAfterBindAccelerationStructures": 2048,
                     "maxDescriptorSetAccelerationStructures": 2048,
-                    "maxDescriptorSetUpdateAfterBindAccelerationStructures": 2048
+                    "maxDescriptorSetUpdateAfterBindAccelerationStructures": 2048,
+                    "minAccelerationStructureScratchOffsetAlignment": 128
                 },
                 "VkPhysicalDeviceRayTracingPipelinePropertiesKHR": {
                     "maxRayDispatchInvocationCount": 1073741824,

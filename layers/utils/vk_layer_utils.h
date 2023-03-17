@@ -153,7 +153,12 @@ static inline dispatch_key get_dispatch_key(const void *object) { return (dispat
 VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
 VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
-static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
+template <typename T>
+constexpr bool IsPowerOfTwo(T x) {
+    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
+    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
+    return x && !(x & (x - 1));
+}
 
 // Returns the 0-based index of the MSB, like the x86 bit scan reverse (bsr) instruction
 // Note: an input mask of 0 yields -1
@@ -183,6 +188,17 @@ static inline int u_ffs(int val) {
 #else
     return ffs(val);
 #endif
+}
+
+// Given p2 a power of two, returns smallest multiple of p2 greater than or equal to x
+// Different than std::align in that it simply aligns an unsigned integer, when std::align aligns a virtual address and does the
+// necessary bookkeeping to be able to correctly free memory at the new address
+template <typename T>
+constexpr T Align(T x, T p2) {
+    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
+    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
+    assert(IsPowerOfTwo(p2));
+    return (x + p2 - 1) & ~(p2 - 1);
 }
 
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
