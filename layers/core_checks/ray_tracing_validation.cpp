@@ -925,7 +925,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
 bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
                                           const VkPipelineBindPoint bind_point) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound = cb_state.lastBound[lv_bind_point];
     const auto *pipe = last_bound.pipeline_state;

@@ -2114,7 +2114,7 @@ bool CoreChecks::ValidateCmdDrawType(const CMD_BUFFER_STATE &cb_state, bool inde
 bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                          CMD_TYPE cmd_type) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
     // Verify maxMultiviewInstanceIndex
@@ -2132,7 +2132,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint3
 
 bool CoreChecks::ValidateVTGShaderStages(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *api_name = CommandTypeString(cmd_type);
 
     const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
@@ -2148,7 +2148,7 @@ bool CoreChecks::ValidateVTGShaderStages(const CMD_BUFFER_STATE &cb_state, CMD_T
 
 bool CoreChecks::ValidateMeshShaderStage(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type, bool is_NV) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *api_name = CommandTypeString(cmd_type);
 
     const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
@@ -2744,7 +2744,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                  uint32_t stride) const {
     const CMD_TYPE cmd_type = CMD_DRAWMESHTASKSINDIRECTCOUNTEXT;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller_name = CommandTypeString(cmd_type);
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -2771,7 +2771,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point) const {
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *function = CommandTypeString(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound = cb_state.lastBound[lv_bind_point];
@@ -2992,7 +2992,7 @@ bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampl
 
 bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &buffer_state, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller_name = CommandTypeString(cmd_type);
 
     skip |=
@@ -3009,7 +3009,7 @@ bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUF
 bool CoreChecks::ValidateIndirectCountCmd(const CMD_BUFFER_STATE &cb_state, const BUFFER_STATE &count_buffer_state,
                                           VkDeviceSize count_buffer_offset, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller_name = CommandTypeString(cmd_type);
 
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.commandBuffer(), count_buffer_state, caller_name,

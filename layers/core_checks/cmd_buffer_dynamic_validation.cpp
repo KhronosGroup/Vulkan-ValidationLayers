@@ -36,7 +36,7 @@ bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDyn
 bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
                                           CMD_TYPE cmd_type) const {
     bool skip = false;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
 
     // Check all state with no additional requirements
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET, cmd_type, vuid.patch_control_points_04875);
