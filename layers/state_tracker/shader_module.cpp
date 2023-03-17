@@ -336,6 +336,8 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
+                    has_builtin_layer |= (insn.Word(3) == spv::BuiltInLayer);
+                    has_builtin_workgroup_size |= (insn.Word(3) == spv::BuiltInWorkgroupSize);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     spec_const_map[insn.Word(3)] = target_id;
                 }
