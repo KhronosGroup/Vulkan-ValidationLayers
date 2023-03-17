@@ -41,10 +41,7 @@ static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const In
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
                                        const SHADER_MODULE_STATE::EntryPoint *entrypoint)
-    : module_state(module_state),
-      create_info(create_info),
-      entrypoint(entrypoint),
-      writes_to_gl_layer(module_state->WritesToGlLayer()) {
+    : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable((*entrypoint).entrypoint_insn);
         wrote_primitive_shading_rate =

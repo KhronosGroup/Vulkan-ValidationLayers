@@ -100,7 +100,6 @@ struct PipelineStageState {
     const SHADER_MODULE_STATE::EntryPoint *entrypoint;
     const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
     bool wrote_primitive_shading_rate;
-    bool writes_to_gl_layer;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state, const SHADER_MODULE_STATE::EntryPoint *entrypoint);

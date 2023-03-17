@@ -2976,7 +2976,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
 
             if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
                 for (const auto &stage : pipeline.stage_states) {
-                    if (stage.writes_to_gl_layer) {
+                    if (stage.module_state.static_data_.has_builtin_layer) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but "

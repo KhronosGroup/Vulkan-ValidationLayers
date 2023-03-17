@@ -258,6 +258,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         vvl::unordered_map<uint32_t, std::vector<const Instruction *>> execution_mode_inst;
         // both OpDecorate and OpMemberDecorate builtin instructions
         std::vector<const Instruction *> builtin_decoration_inst;
+        // BuiltIn we just care about existing or not, don't have to be written to
+        bool has_builtin_layer{false};
+        bool has_builtin_workgroup_size{false};
+
         std::vector<const Instruction *> atomic_inst;
         std::vector<spv::Capability> capability_list;
 
@@ -395,11 +399,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const Instruction *GetBaseTypeInstruction(uint32_t type) const;
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
-
-    bool WritesToGlLayer() const {
-        return std::any_of(static_data_.builtin_decoration_inst.begin(), static_data_.builtin_decoration_inst.end(),
-                           [](const Instruction *insn) { return insn->GetBuiltIn() == spv::BuiltInLayer; });
-    }
 
     bool HasCapability(spv::Capability find_capability) const {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
