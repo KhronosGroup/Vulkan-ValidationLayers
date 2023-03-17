@@ -389,12 +389,51 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                              "].flags (%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                              pipeline.create_index, pipeline.create_index, string_VkPipelineCreateFlags(pipeline_flags).c_str());
             }
-            if (!pipeline.PipelineLayoutState()) {
+
+            // A valid pipeline layout must _always_ be provided, even if the pipeline is defined completely from libraries.
+            // This a change from the original GPL spec. See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3334 for some
+            // context
+            auto &pipe_ci = pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>();
+            if (!pipe_ci.layout) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-None-07826",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] defines a complete set of state, but pCreateInfos[%" PRIu32
                                  "].layout is not a valid VkPipelineLayout.",
                                  pipeline.create_index, pipeline.create_index);
+            }
+
+            // graphics_lib_type effectively tracks which parts of the pipeline are defined by graphics libraries.
+            // If the complete state is defined by libraries, we need to check for compatibility with each library's layout
+            const bool from_libraries_only = pipeline.graphics_lib_type == AllVkGraphicsPipelineLibraryFlagBitsEXT;
+            const bool no_independent_sets = ((pipeline.pre_raster_state->PipelineLayoutCreateFlags() &
+                                               pipeline.fragment_shader_state->PipelineLayoutCreateFlags()) &
+                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) == 0;
+            if (from_libraries_only && no_independent_sets) {
+                // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
+                // (vertex input and fragment output state do not contain a layout)
+                const auto layout_state = Get<PIPELINE_LAYOUT_STATE>(pipe_ci.layout);
+                if (layout_state) {
+                    if (std::string err_msg;
+                        !VerifySetLayoutCompatibility(*layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
+                        LogObjectList objs(device);
+                        objs.add(layout_state->Handle());
+                        objs.add(pipeline.PreRasterPipelineLayoutState()->Handle());
+                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-layout-07827",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "].layout is incompatible with the layout specified in the pre-raster sub-state: %s",
+                                         pipeline.create_index, err_msg.c_str());
+                    }
+                    if (std::string err_msg;
+                        !VerifySetLayoutCompatibility(*layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
+                        LogObjectList objs(device);
+                        objs.add(layout_state->Handle());
+                        objs.add(pipeline.FragmentShaderPipelineLayoutState()->Handle());
+                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-layout-07827",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "].layout is incompatible with the layout specified in the fragment shader sub-state: %s",
+                                         pipeline.create_index, err_msg.c_str());
+                    }
+                }
             }
         }
 
