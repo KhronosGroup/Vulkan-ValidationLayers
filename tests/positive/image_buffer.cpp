@@ -2868,3 +2868,64 @@ TEST_F(VkPositiveLayerTest, GetEffectiveExtent) {
         ASSERT_TRUE(extent.depth == 8);
     }
 }
+
+TEST_F(VkPositiveLayerTest, BindImageMemoryMultiThreaded) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "This test can crash drivers with threading issues";
+    }
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    // Create an image object, allocate memory, bind memory, and destroy the object
+    auto worker_thread = [&]() {
+        for (uint32_t i = 0; i < 1000; ++i) {
+            VkImage image;
+            VkDeviceMemory mem;
+            VkMemoryRequirements mem_reqs;
+
+            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
+
+            auto mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+            mem_alloc.memoryTypeIndex = 0;
+            mem_alloc.allocationSize = mem_reqs.size;
+            const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+            ASSERT_TRUE(pass);
+
+            err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
+            ASSERT_VK_SUCCESS(err);
+
+            err = vk::BindImageMemory(m_device->device(), image, mem, 0);
+            ASSERT_VK_SUCCESS(err);
+
+            vk::DestroyImage(m_device->device(), image, nullptr);
+
+            vk::FreeMemory(m_device->device(), mem, nullptr);
+        }
+    };
+
+    constexpr int worker_count = 32;
+    std::vector<std::thread> workers;
+    workers.reserve(worker_count);
+    for (int i = 0; i < worker_count; ++i) {
+        workers.emplace_back(worker_thread);
+    }
+    for (auto &worker : workers) {
+        worker.join();
+    }
+}
