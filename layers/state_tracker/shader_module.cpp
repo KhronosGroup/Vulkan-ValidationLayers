@@ -771,7 +771,7 @@ uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool st
             return sum;
         }
         case spv::OpTypeArray: {
-            uint32_t locations = GetComponentsConsumedByType(insn->Word(2), false);
+            uint32_t components = GetComponentsConsumedByType(insn->Word(2), false);
             if (!strip_array_level) {
                 components *= GetConstantValueById(insn->Word(3));
             }
@@ -1397,7 +1397,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                         sampler_id = const_def->Word(const_def->ResultId());
                         sampler_index = const_def->GetConstantValue();
                     }
-                    auto sampler_dec = module_state.GetDecorationSet(sampler_id);
+                    const auto sampler_dec = module_state.GetDecorationSet(sampler_id);
                     if (image_index >= samplers_used_by_image.size()) {
                         samplers_used_by_image.resize(image_index + 1);
                     }
