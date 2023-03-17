@@ -113,6 +113,7 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint)
     : entrypoint_insn(entrypoint),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)))),
+      id(entrypoint_insn.Word(2)),
       name(entrypoint.GetAsString(3)) {
     if (module_state.has_valid_spirv) {
         // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
@@ -123,14 +124,14 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
         // converting parts of this to be generated from the machine-readable spec instead.
         vvl::unordered_set<uint32_t> worklist;
-        worklist.insert(entrypoint_insn.Word(2));
+        worklist.insert(id);
 
         while (!worklist.empty()) {
-            auto id_iter = worklist.begin();
-            auto id = *id_iter;
-            worklist.erase(id_iter);
+            auto worklist_id_iter = worklist.begin();
+            auto worklist_id = *worklist_id_iter;
+            worklist.erase(worklist_id_iter);
 
-            const Instruction* insn = module_state.FindDef(id);
+            const Instruction* insn = module_state.FindDef(worklist_id);
             if (!insn) {
                 // ID is something we didn't collect in SpirvStaticData. that's OK -- we'll stumble across all kinds of things here
                 // that we may not care about.
@@ -138,7 +139,7 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
             }
 
             // Try to add to the output set
-            if (!accessible_ids.insert(id).second) {
+            if (!accessible_ids.insert(worklist_id).second) {
                 continue;  // If we already saw this id, we don't want to walk it again.
             }
 
@@ -224,8 +225,8 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         }
 
         // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
-        for (const auto& id : accessible_ids) {
-            const Instruction* insn = module_state.FindDef(id);
+        for (const auto& accessible_id : accessible_ids) {
+            const Instruction* insn = module_state.FindDef(accessible_id);
             if (insn->Opcode() != spv::OpVariable) {
                 continue;
             }
@@ -235,6 +236,25 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
             if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
                 storage_class == spv::StorageClassStorageBuffer) {
                 resource_interface_variables.emplace_back(module_state, insn, stage);
+            }
+        }
+
+        for (const Instruction* decoration_inst : module_state.static_data_.builtin_decoration_inst) {
+            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) &&
+                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                written_builtin_point_size = true;
+            }
+            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
+                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                written_builtin_primitive_shading_rate_khr = true;
+            }
+            if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportIndex) &&
+                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                written_builtin_viewport_index = true;
+            }
+            if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportMaskNV) &&
+                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                written_builtin_viewport_mask_nv = true;
             }
         }
     }
@@ -337,7 +357,10 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
                     has_builtin_layer |= (insn.Word(3) == spv::BuiltInLayer);
-                    has_builtin_workgroup_size |= (insn.Word(3) == spv::BuiltInWorkgroupSize);
+                    if (insn.Word(3) == spv::BuiltInWorkgroupSize) {
+                        has_builtin_workgroup_size = true;
+                        builtin_workgroup_size_id = target_id;
+                    }
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     spec_const_map[insn.Word(3)] = target_id;
                 }
@@ -638,17 +661,14 @@ bool SHADER_MODULE_STATE::FindLocalSize(const Instruction& entrypoint, uint32_t&
                                         uint32_t& local_size_z) const {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
-    for (const Instruction* insn : GetBuiltinDecorationList()) {
-        if (insn->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
-            const uint32_t workgroup_size_id = insn->Word(1);
-            const Instruction* composite_def = FindDef(workgroup_size_id);
-            if (composite_def->Opcode() == spv::OpConstantComposite) {
-                // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
-                local_size_x = GetConstantValueById(composite_def->Word(3));
-                local_size_y = GetConstantValueById(composite_def->Word(4));
-                local_size_z = GetConstantValueById(composite_def->Word(5));
-                return true;
-            }
+    if (static_data_.has_builtin_workgroup_size) {
+        const Instruction* composite_def = FindDef(static_data_.builtin_workgroup_size_id);
+        if (composite_def->Opcode() == spv::OpConstantComposite) {
+            // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
+            local_size_x = GetConstantValueById(composite_def->Word(3));
+            local_size_y = GetConstantValueById(composite_def->Word(4));
+            local_size_z = GetConstantValueById(composite_def->Word(5));
+            return true;
         }
     }
 
@@ -842,8 +862,7 @@ const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn, b
     }
 }
 
-void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vector<const Instruction*>& member_decorate_insn,
-                                             StructInfo& data) const {
+void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, StructInfo& data) const {
     const Instruction* struct_type = GetStructType(insn, false);
     data.size = 0;
 
@@ -854,13 +873,12 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
     std::vector<uint32_t> offsets;
     offsets.resize(struct_type->Length() - element_index);
 
-    // The members of struct in SPRIV_R aren't always sort, so we need to know their order.
-    for (const Instruction* member_decorate : member_decorate_insn) {
-        if (member_decorate->Word(1) != struct_type->Word(1)) {
-            continue;
+    for (const Instruction* member_decorate : static_data_.member_decoration_inst) {
+        if ((member_decorate->Word(1) == struct_type->Word(1)) && (member_decorate->Length() == 5) &&
+            (member_decorate->Word(3) == spv::DecorationOffset)) {
+            // The members of struct in SPRIV_R aren't always sort, so we need to know their order.
+            offsets[member_decorate->Word(2)] = member_decorate->Word(4);
         }
-
-        offsets[member_decorate->Word(2)] = member_decorate->Word(4);
     }
 
     for (const uint32_t offset : offsets) {
@@ -879,7 +897,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
         }
 
         if (def_member->Opcode() == spv::OpTypeStruct) {
-            DefineStructMember(def_member, member_decorate_insn, data1);
+            DefineStructMember(def_member, data1);
         } else if (def_member->Opcode() == spv::OpTypePointer) {
             if (def_member->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
                 // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
@@ -887,7 +905,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
                 data1.size = 8;
             } else {
                 // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
-                DefineStructMember(def_member, member_decorate_insn, data1);
+                DefineStructMember(def_member, data1);
             }
         } else {
             if (def_member->Opcode() == spv::OpTypeMatrix) {
@@ -1016,14 +1034,8 @@ void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE&
         for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
             if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
                 const Instruction* type = module_state.FindDef(var_insn->Word(1));
-                std::vector<const Instruction*> member_decorate_insn;
-                for (const Instruction* member_decorate : module_state.GetMemberDecorationInstructions()) {
-                    if (member_decorate->Length() == 5 && member_decorate->Word(3) == spv::DecorationOffset) {
-                        member_decorate_insn.emplace_back(member_decorate);
-                    }
-                }
                 entrypoint.push_constant_used_in_shader.root = &entrypoint.push_constant_used_in_shader;
-                module_state.DefineStructMember(type, member_decorate_insn, entrypoint.push_constant_used_in_shader);
+                module_state.DefineStructMember(type, entrypoint.push_constant_used_in_shader);
                 module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.accessible_ids,
                                                  entrypoint.push_constant_used_in_shader);
             }
@@ -1139,11 +1151,11 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
 
     // Follow instructions in call graph looking for writes to target
     while (!worklist.empty() && !found_write) {
-        auto id_iter = worklist.begin();
-        auto id = *id_iter;
-        worklist.erase(id_iter);
+        auto worklist_id_iter = worklist.begin();
+        auto worklist_id = *worklist_id_iter;
+        worklist.erase(worklist_id_iter);
 
-        const Instruction* insn = FindDef(id);
+        const Instruction* insn = FindDef(worklist_id);
         if (!insn) {
             continue;
         }
@@ -1574,10 +1586,10 @@ std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectI
     std::map<location_t, UserDefinedInterfaceVariable> out;
     // TODO - pass in the EntryPoint object so this can be found there
     const VkShaderStageFlagBits stage = static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)));
-    const bool strip_output_array_level = (stage == (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) != 0;
+    const bool strip_output_array_level = (stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) != 0;
     const bool strip_input_array_level =
-        (stage == (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-                   VK_SHADER_STAGE_GEOMETRY_BIT)) != 0;
+        (stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+                  VK_SHADER_STAGE_GEOMETRY_BIT)) != 0;
     const bool is_array_of_verts = (sinterface == spv::StorageClassOutput) ? strip_output_array_level : strip_input_array_level;
 
     for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
@@ -1635,8 +1647,8 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
 
         // Now find all members belonging to the struct defining the IO block
         if (def->Opcode() == spv::OpTypeStruct) {
-            for (const Instruction* insn : GetBuiltinDecorationList()) {
-                if ((insn->Opcode() == spv::OpMemberDecorate) && (def->Word(1) == insn->Word(1))) {
+            for (const Instruction* insn : static_data_.member_decoration_inst) {
+                if (def->Word(1) == insn->Word(1)) {
                     // Start with undefined builtin for each struct member.
                     // But only when confirmed the struct is the built-in inteface block (can only be one per shader)
                     if (builtin_block_members.size() == 0) {
