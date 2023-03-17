@@ -3327,7 +3327,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                                const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
-    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
     const auto &dynamic_state_value = cb_state.dynamic_state_value;
 
