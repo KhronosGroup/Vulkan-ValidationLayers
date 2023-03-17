@@ -2200,3 +2200,164 @@ TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifierFeatures) {
     vkGetShaderModuleCreateInfoIdentifierEXT(device(), &sm_ci, &get_identifier);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, InvalidLayouts) {
+    TEST_DESCRIPTION("Various invalid layouts");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline());
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline());
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        vk_testing::GraphicsPipelineLibraryStage stage_ci(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+        pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci.stage_ci);
+        pre_raster_lib.InitState();
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
+    }
+
+    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
+    const auto render_pass = pre_raster_lib.gp_ci_.renderPass;
+    const auto subpass = pre_raster_lib.gp_ci_.subpass;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        vk_testing::GraphicsPipelineLibraryStage stage_ci(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        frag_shader_lib.InitFragmentLibInfo(1, &stage_ci.stage_ci);
+        frag_shader_lib.gp_ci_.renderPass = render_pass;
+        frag_shader_lib.gp_ci_.subpass = subpass;
+        frag_shader_lib.InitState();
+        ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline());
+    }
+
+    VkPipeline libraries[4] = {
+        vi_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        fo_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    auto lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
+    vk_testing::Pipeline lib(*m_device, lib_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkGraphicsLibraryLayerTest, IncompatibleLayouts) {
+    TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Prepare descriptors
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds2(m_device, {
+                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                      });
+
+    // pipeline_layout_lib is used for library creation, pipeline_layout_exe is used at link time for the executable pipeline, and
+    // these layouts are incompatible
+    VkPipelineLayoutObj pipeline_layout_lib(m_device, {&ds.layout_}, {});
+    VkPipelineLayoutObj pipeline_layout_exe(m_device, {&ds2.layout_}, {});
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline());
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline());
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+        pre_raster_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_lib.handle();
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+    }
+
+    const auto render_pass = pre_raster_lib.gp_ci_.renderPass;
+    const auto subpass = pre_raster_lib.gp_ci_.subpass;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        vk_testing::GraphicsPipelineLibraryStage stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        frag_shader_lib.InitFragmentLibInfo(1, &stage.stage_ci);
+        frag_shader_lib.InitState();
+
+        frag_shader_lib.gp_ci_.renderPass = render_pass;
+        frag_shader_lib.gp_ci_.subpass = subpass;
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
+        frag_shader_lib.CreateGraphicsPipeline(true, false);
+    }
+
+    VkPipeline libraries[4] = {
+        vi_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        fo_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    auto exe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_ci.layout = pipeline_layout_exe.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
+    vk_testing::Pipeline exe_pipe(*m_device, exe_ci);
+    m_errorMonitor->VerifyFound();
+}
