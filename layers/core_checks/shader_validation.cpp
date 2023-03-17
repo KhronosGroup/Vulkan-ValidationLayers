@@ -302,7 +302,7 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     bool fully_covered = false;
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         const Instruction *insn = module_state.FindDef(id);
-        const DecorationSet decorations = module_state.GetDecorationSet(insn->Word(2));
+        const auto decorations = module_state.GetDecorationSet(insn->Word(2));
         if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInFullyCoveredEXT)) {
             fully_covered = true;
             break;
@@ -519,7 +519,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         const Instruction *insn = module_state.FindDef(id);
         assert(insn->Opcode() == spv::OpVariable);
-        const DecorationSet decorations = module_state.GetDecorationSet(insn->Word(2));
+        const auto decorations = module_state.GetDecorationSet(insn->Word(2));
 
         // Currently don't need to search in structs
         if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInSampleMask)) {
@@ -1216,7 +1216,7 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
         }
 
         const uint32_t var_id = insn->Word(2);
-        DecorationSet decorations = module_state.GetDecorationSet(var_id);
+        const auto decorations = module_state.GetDecorationSet(var_id);
 
         if (!enabled_features.core.shaderStorageImageReadWithoutFormat && !decorations.Has(DecorationSet::nonreadable_bit)) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06270",

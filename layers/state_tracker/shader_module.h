@@ -98,7 +98,7 @@ struct ResourceInterfaceVariable {
     spv::StorageClass storage_class;
 
     VkShaderStageFlagBits stage;
-    DecorationSet decorations;
+    const DecorationSet &decorations;
 
     // If the type is a OpTypeArray save the length
     uint32_t array_length = 0;
@@ -245,6 +245,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         vvl::unordered_map<uint32_t, const Instruction *> definitions;
 
         vvl::unordered_map<uint32_t, DecorationSet> decorations;
+        DecorationSet empty_decoration;  // all zero values, allows use to return a reference and not a copy each time
         // <Specialization constant ID -> target ID> mapping
         vvl::unordered_map<uint32_t, uint32_t> spec_const_map;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
@@ -350,11 +351,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     VkShaderModule vk_shader_module() const { return handle_.Cast<VkShaderModule>(); }
 
-    DecorationSet GetDecorationSet(uint32_t id) const {
-        // return the actual decorations for this id, or a default set.
-        auto it = static_data_.decorations.find(id);
-        if (it != static_data_.decorations.end()) return it->second;
-        return DecorationSet();
+    const DecorationSet &GetDecorationSet(uint32_t id) const {
+        // return the actual decorations for this id, or a default empty set.
+        const auto it = static_data_.decorations.find(id);
+        return (it != static_data_.decorations.end()) ? it->second : static_data_.empty_decoration;
     }
 
     // Used to get human readable strings for error messages
