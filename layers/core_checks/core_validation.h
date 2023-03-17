@@ -746,6 +746,9 @@ class CoreChecks : public ValidationStateTracker {
                                       const PIPELINE_LAYOUT_STATE& pipeline_layout, const uint32_t layoutIndex,
                                       std::string& errorMsg) const;
 
+    bool VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE& layout_a, const PIPELINE_LAYOUT_STATE& layout_b,
+                                      std::string& errorMsg) const;
+
     struct DescriptorContext {
         const char* caller;
         const DrawDispatchVuid& vuids;

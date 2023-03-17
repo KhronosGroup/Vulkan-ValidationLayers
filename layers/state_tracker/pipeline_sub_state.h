@@ -38,6 +38,8 @@ static inline VkGraphicsPipelineLibraryFlagsEXT GetGraphicsLibType(const CreateI
 struct PipelineSubState {
     PipelineSubState(const PIPELINE_STATE &p) : parent(p) {}
     const PIPELINE_STATE &parent;
+
+    VkPipelineLayoutCreateFlags PipelineLayoutCreateFlags() const;
 };
 
 struct VertexInputState : public PipelineSubState {

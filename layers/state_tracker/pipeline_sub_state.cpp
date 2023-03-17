@@ -16,6 +16,12 @@
  */
 
 #include "state_tracker/pipeline_sub_state.h"
+#include "state_tracker/pipeline_state.h"
+
+VkPipelineLayoutCreateFlags PipelineSubState::PipelineLayoutCreateFlags() const {
+    const auto layout_state = parent.PipelineLayoutState();
+    return (layout_state) ? layout_state->CreateFlags() : static_cast<VkPipelineLayoutCreateFlags>(0);
+}
 
 VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
     : PipelineSubState(p), input_state(create_info.pVertexInputState), input_assembly_state(create_info.pInputAssemblyState) {

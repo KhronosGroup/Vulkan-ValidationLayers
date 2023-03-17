@@ -172,6 +172,21 @@ bool CoreChecks::VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorS
     }
 }
 
+bool CoreChecks::VerifySetLayoutCompatibility(const PIPELINE_LAYOUT_STATE &layout_a, const PIPELINE_LAYOUT_STATE &layout_b,
+                                              std::string &error_msg) const {
+    const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.size(), layout_b.set_layouts.size()));
+    for (uint32_t i = 0; i < num_sets; ++i) {
+        const auto ds_a = layout_a.set_layouts[i];
+        const auto ds_b = layout_b.set_layouts[i];
+        if (ds_a && ds_b) {
+            if (!VerifySetLayoutCompatibility(*ds_a, *ds_b, error_msg)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
