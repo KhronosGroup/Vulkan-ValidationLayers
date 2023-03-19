@@ -454,7 +454,7 @@ PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vecto
 }
 
 bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                           safe_VkPipelineShaderStageCreateInfo const *create_info, const std::string &vuid) const {
+                                           safe_VkPipelineShaderStageCreateInfo const *create_info) const {
     bool skip = false;
     // Temp workaround to prevent false positive errors
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
@@ -470,6 +470,25 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     }
     const auto &pipeline_layout = pipeline.PipelineLayoutState();
     std::vector<VkPushConstantRange> const *push_constant_ranges = pipeline_layout->push_constant_ranges.get();
+
+    std::string vuid;
+    switch (pipeline.GetCreateInfoSType()) {
+        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
+            vuid = "VUID-VkGraphicsPipelineCreateInfo-layout-07987";
+            break;
+        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
+            vuid = "VUID-VkComputePipelineCreateInfo-layout-07987";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
+            vuid = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07987";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
+            vuid = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07987";
+            break;
+        default:
+            assert(false);
+            break;
+    }
 
     bool found_stage = false;
     for (auto const &range : *push_constant_ranges) {
@@ -2699,9 +2718,43 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
 
 bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                   const PIPELINE_STATE &pipeline,
-                                                  const std::vector<ResourceInterfaceVariable> &descriptor_variables,
-                                                  const std::string &vuid_layout_mismatch) const {
+                                                  const std::vector<ResourceInterfaceVariable> &descriptor_variables) const {
     bool skip = false;
+
+    std::string vuid_07988;
+    std::string vuid_07989;
+    std::string vuid_07990;
+    std::string vuid_07991;
+    switch (pipeline.GetCreateInfoSType()) {
+        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
+            vuid_07988 = "VUID-VkGraphicsPipelineCreateInfo-layout-07988";
+            vuid_07989 = "VUID-VkGraphicsPipelineCreateInfo-layout-07989";
+            vuid_07990 = "VUID-VkGraphicsPipelineCreateInfo-layout-07990";
+            vuid_07991 = "VUID-VkGraphicsPipelineCreateInfo-layout-07991";
+            break;
+        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
+            vuid_07988 = "VUID-VkComputePipelineCreateInfo-layout-07988";
+            vuid_07989 = "VUID-VkComputePipelineCreateInfo-layout-07989";
+            vuid_07990 = "VUID-VkComputePipelineCreateInfo-layout-07990";
+            vuid_07991 = "VUID-VkComputePipelineCreateInfo-layout-07991";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
+            vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988";
+            vuid_07989 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07989";
+            vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990";
+            vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991";
+            break;
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
+            vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
+            vuid_07989 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07989";
+            vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
+            vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
+            break;
+        default:
+            assert(false);
+            break;
+    }
+
     for (const auto &variable : descriptor_variables) {
         const auto &binding =
             GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
@@ -2711,7 +2764,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
 
         if (!binding) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
+            skip |= LogError(objlist, vuid_07988,
                              "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
                              " in shader (%s) uses descriptor slot (expected `%s`) but not declared in pipeline layout",
                              pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
@@ -2719,7 +2772,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                              string_descriptorTypeSet(descriptor_type_set).c_str());
         } else if (~binding->stageFlags & stage) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
+            skip |= LogError(objlist, vuid_07988,
                              "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
                              " in shader (%s) uses descriptor slot but descriptor not accessible from stage %s",
                              pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
@@ -2727,9 +2780,13 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                              string_VkShaderStageFlagBits(stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
+            std::string vuid = (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type) ||
+                                IsExtEnabled(device_extensions.vk_ext_mutable_descriptor_type))
+                                   ? vuid_07990
+                                   : vuid_07989;
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |=
-                LogError(objlist, vuid_layout_mismatch,
+                LogError(objlist, vuid,
                          "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
                          " type mismatch on descriptor slot in shader (%s), uses type %s but expected %s",
                          pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
@@ -2737,7 +2794,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                          string_VkDescriptorType(binding->descriptorType), string_descriptorTypeSet(descriptor_type_set).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
+            skip |= LogError(objlist, vuid_07991,
                              "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
                              " in shader (%s) expects at least %" PRIu32 " descriptors, but only %" PRIu32 " provided",
                              pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
@@ -3237,32 +3294,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         }
     }
 
-    // "layout must be consistent with the layout of the * shader"
-    // 'consistent' -> #descriptorsets-pipelinelayout-consistency
-    std::string vuid_layout_mismatch;
-    switch (pipeline.GetCreateInfoSType()) {
-        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-            vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
-            break;
-        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-            vuid_layout_mismatch = "VUID-VkComputePipelineCreateInfo-layout-00703";
-            break;
-        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-            vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03427";
-            break;
-        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-            vuid_layout_mismatch = "VUID-VkRayTracingPipelineCreateInfoNV-layout-03427";
-            break;
-        default:
-            assert(false);
-            break;
-    }
-
     // Validate Push Constants use
-    skip |= ValidatePushConstantUsage(pipeline, module_state, create_info, vuid_layout_mismatch);
+    skip |= ValidatePushConstantUsage(pipeline, module_state, create_info);
     // can dereference because entrypoint is validated by here
-    skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, *stage_state.descriptor_variables,
-                                             vuid_layout_mismatch);
+    skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, *stage_state.descriptor_variables);
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
