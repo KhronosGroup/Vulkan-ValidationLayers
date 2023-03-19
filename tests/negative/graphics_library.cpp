@@ -1502,7 +1502,7 @@ TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
         vs_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
         vs_lib.InitState();
         vs_lib.gp_ci_.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
         vs_lib.CreateGraphicsPipeline(true, false);
         m_errorMonitor->VerifyFound();
 
@@ -1536,7 +1536,7 @@ TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
         fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
         fs_lib.InitState();
         fs_lib.gp_ci_.layout = pipeline_layout.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
         fs_lib.CreateGraphicsPipeline(true, false);
         m_errorMonitor->VerifyFound();
     }

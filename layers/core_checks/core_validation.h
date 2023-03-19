@@ -879,7 +879,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                            const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                   safe_VkPipelineShaderStageCreateInfo const* create_info, const std::string& vuid) const;
+                                   safe_VkPipelineShaderStageCreateInfo const* create_info) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                const PIPELINE_STATE& pipeline) const;
     PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
@@ -899,8 +899,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                           const PIPELINE_STATE& pipeline,
-                                          const std::vector<ResourceInterfaceVariable>& descriptor_variables,
-                                          const std::string& vuid_layout_mismatch) const;
+                                          const std::vector<ResourceInterfaceVariable>& descriptor_variables) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;

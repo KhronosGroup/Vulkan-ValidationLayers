@@ -1131,7 +1131,7 @@ bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice devic
                                    "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
-                                       "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03421",
+                                       "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984",
                                        "VUID-VkRayTracingPipelineCreateInfoKHR-commonparent");
         }
     }

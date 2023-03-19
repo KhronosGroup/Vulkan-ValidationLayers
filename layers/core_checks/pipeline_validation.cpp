@@ -96,7 +96,7 @@ bool CoreChecks::ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELIN
         const VkPipeline base_handle = pipeline.BasePipeline<VkGraphicsPipelineCreateInfo>();
         const int32_t base_index = pipeline.BasePipelineIndex<VkGraphicsPipelineCreateInfo>();
         if (!((base_handle != VK_NULL_HANDLE) ^ (base_index != -1))) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00724",
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-07986",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "]: exactly one of base pipeline index and handle must be specified",
                              pipeline.create_index);
