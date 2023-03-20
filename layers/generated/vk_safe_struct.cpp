@@ -27,7 +27,7 @@
 #include "vk_typemap_helper.h"
 #include "utils/vk_layer_utils.h"
 
-#include <string.h>
+#include <cstddef>
 #include <cassert>
 #include <cstring>
 #include <vector>
@@ -2723,11 +2723,16 @@ safe_VkSpecializationInfo::safe_VkSpecializationInfo(const VkSpecializationInfo*
     mapEntryCount(in_struct->mapEntryCount),
     pMapEntries(nullptr),
     dataSize(in_struct->dataSize),
-    pData(in_struct->pData)
+    pData(nullptr)
 {
     if (in_struct->pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[in_struct->mapEntryCount];
         memcpy ((void *)pMapEntries, (void *)in_struct->pMapEntries, sizeof(VkSpecializationMapEntry)*in_struct->mapEntryCount);
+    }
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
     }
 }
 
@@ -2743,10 +2748,14 @@ safe_VkSpecializationInfo::safe_VkSpecializationInfo(const safe_VkSpecialization
     mapEntryCount = copy_src.mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     if (copy_src.pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src.mapEntryCount];
         memcpy ((void *)pMapEntries, (void *)copy_src.pMapEntries, sizeof(VkSpecializationMapEntry)*copy_src.mapEntryCount);
+    }
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
     }
 }
 
@@ -2756,14 +2765,22 @@ safe_VkSpecializationInfo& safe_VkSpecializationInfo::operator=(const safe_VkSpe
 
     if (pMapEntries)
         delete[] pMapEntries;
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
 
     mapEntryCount = copy_src.mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     if (copy_src.pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src.mapEntryCount];
         memcpy ((void *)pMapEntries, (void *)copy_src.pMapEntries, sizeof(VkSpecializationMapEntry)*copy_src.mapEntryCount);
+    }
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
     }
 
     return *this;
@@ -2773,19 +2790,31 @@ safe_VkSpecializationInfo::~safe_VkSpecializationInfo()
 {
     if (pMapEntries)
         delete[] pMapEntries;
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
 }
 
 void safe_VkSpecializationInfo::initialize(const VkSpecializationInfo* in_struct)
 {
     if (pMapEntries)
         delete[] pMapEntries;
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     mapEntryCount = in_struct->mapEntryCount;
     pMapEntries = nullptr;
     dataSize = in_struct->dataSize;
-    pData = in_struct->pData;
     if (in_struct->pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[in_struct->mapEntryCount];
         memcpy ((void *)pMapEntries, (void *)in_struct->pMapEntries, sizeof(VkSpecializationMapEntry)*in_struct->mapEntryCount);
+    }
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
     }
 }
 
@@ -2794,10 +2823,14 @@ void safe_VkSpecializationInfo::initialize(const safe_VkSpecializationInfo* copy
     mapEntryCount = copy_src->mapEntryCount;
     pMapEntries = nullptr;
     dataSize = copy_src->dataSize;
-    pData = copy_src->pData;
     if (copy_src->pMapEntries) {
         pMapEntries = new VkSpecializationMapEntry[copy_src->mapEntryCount];
         memcpy ((void *)pMapEntries, (void *)copy_src->pMapEntries, sizeof(VkSpecializationMapEntry)*copy_src->mapEntryCount);
+    }
+    if (copy_src->pData != nullptr) {
+        auto temp = new std::byte[copy_src->dataSize];
+        std::memcpy(temp, copy_src->pData, copy_src->dataSize);
+        pData = temp;
     }
 }
 
@@ -19351,9 +19384,14 @@ void safe_VkPhysicalDeviceInlineUniformBlockProperties::initialize(const safe_Vk
 safe_VkWriteDescriptorSetInlineUniformBlock::safe_VkWriteDescriptorSetInlineUniformBlock(const VkWriteDescriptorSetInlineUniformBlock* in_struct) :
     sType(in_struct->sType),
     dataSize(in_struct->dataSize),
-    pData(in_struct->pData)
+    pData(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkWriteDescriptorSetInlineUniformBlock::safe_VkWriteDescriptorSetInlineUniformBlock() :
@@ -19367,47 +19405,75 @@ safe_VkWriteDescriptorSetInlineUniformBlock::safe_VkWriteDescriptorSetInlineUnif
 {
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkWriteDescriptorSetInlineUniformBlock& safe_VkWriteDescriptorSetInlineUniformBlock::operator=(const safe_VkWriteDescriptorSetInlineUniformBlock& copy_src)
 {
     if (&copy_src == this) return *this;
 
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
 
     return *this;
 }
 
 safe_VkWriteDescriptorSetInlineUniformBlock::~safe_VkWriteDescriptorSetInlineUniformBlock()
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 }
 
 void safe_VkWriteDescriptorSetInlineUniformBlock::initialize(const VkWriteDescriptorSetInlineUniformBlock* in_struct)
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
-    pData = in_struct->pData;
     pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
 }
 
 void safe_VkWriteDescriptorSetInlineUniformBlock::initialize(const safe_VkWriteDescriptorSetInlineUniformBlock* copy_src)
 {
     sType = copy_src->sType;
     dataSize = copy_src->dataSize;
-    pData = copy_src->pData;
     pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pData != nullptr) {
+        auto temp = new std::byte[copy_src->dataSize];
+        std::memcpy(temp, copy_src->pData, copy_src->dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkDescriptorPoolInlineUniformBlockCreateInfo::safe_VkDescriptorPoolInlineUniformBlockCreateInfo(const VkDescriptorPoolInlineUniformBlockCreateInfo* in_struct) :
@@ -29021,7 +29087,7 @@ safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInt
     sType(in_struct->sType),
     isText(in_struct->isText),
     dataSize(in_struct->dataSize),
-    pData(in_struct->pData)
+    pData(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
@@ -29029,6 +29095,11 @@ safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInt
     }
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
+    }
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
     }
 }
 
@@ -29045,13 +29116,17 @@ safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInt
     sType = copy_src.sType;
     isText = copy_src.isText;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         name[i] = copy_src.name[i];
     }
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
+    }
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
     }
 }
 
@@ -29059,13 +29134,16 @@ safe_VkPipelineExecutableInternalRepresentationKHR& safe_VkPipelineExecutableInt
 {
     if (&copy_src == this) return *this;
 
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     isText = copy_src.isText;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         name[i] = copy_src.name[i];
@@ -29073,30 +29151,47 @@ safe_VkPipelineExecutableInternalRepresentationKHR& safe_VkPipelineExecutableInt
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src.description[i];
     }
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
 
     return *this;
 }
 
 safe_VkPipelineExecutableInternalRepresentationKHR::~safe_VkPipelineExecutableInternalRepresentationKHR()
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 }
 
 void safe_VkPipelineExecutableInternalRepresentationKHR::initialize(const VkPipelineExecutableInternalRepresentationKHR* in_struct)
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
     isText = in_struct->isText;
     dataSize = in_struct->dataSize;
-    pData = in_struct->pData;
     pNext = SafePnextCopy(in_struct->pNext);
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         name[i] = in_struct->name[i];
     }
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = in_struct->description[i];
+    }
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
     }
 }
 
@@ -29105,13 +29200,17 @@ void safe_VkPipelineExecutableInternalRepresentationKHR::initialize(const safe_V
     sType = copy_src->sType;
     isText = copy_src->isText;
     dataSize = copy_src->dataSize;
-    pData = copy_src->pData;
     pNext = SafePnextCopy(copy_src->pNext);
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         name[i] = copy_src->name[i];
     }
     for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
         description[i] = copy_src->description[i];
+    }
+    if (copy_src->pData != nullptr) {
+        auto temp = new std::byte[copy_src->dataSize];
+        std::memcpy(temp, copy_src->pData, copy_src->dataSize);
+        pData = temp;
     }
 }
 
@@ -31130,9 +31229,14 @@ void safe_VkPipelineRasterizationStateStreamCreateInfoEXT::initialize(const safe
 safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct) :
     sType(in_struct->sType),
     dataSize(in_struct->dataSize),
-    pData(in_struct->pData)
+    pData(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX() :
@@ -31146,47 +31250,75 @@ safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const safe_VkCuModule
 {
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkCuModuleCreateInfoNVX& safe_VkCuModuleCreateInfoNVX::operator=(const safe_VkCuModuleCreateInfoNVX& copy_src)
 {
     if (&copy_src == this) return *this;
 
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     dataSize = copy_src.dataSize;
-    pData = copy_src.pData;
     pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
 
     return *this;
 }
 
 safe_VkCuModuleCreateInfoNVX::~safe_VkCuModuleCreateInfoNVX()
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
 }
 
 void safe_VkCuModuleCreateInfoNVX::initialize(const VkCuModuleCreateInfoNVX* in_struct)
 {
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
     dataSize = in_struct->dataSize;
-    pData = in_struct->pData;
     pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
 }
 
 void safe_VkCuModuleCreateInfoNVX::initialize(const safe_VkCuModuleCreateInfoNVX* copy_src)
 {
     sType = copy_src->sType;
     dataSize = copy_src->dataSize;
-    pData = copy_src->pData;
     pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pData != nullptr) {
+        auto temp = new std::byte[copy_src->dataSize];
+        std::memcpy(temp, copy_src->pData, copy_src->dataSize);
+        pData = temp;
+    }
 }
 
 safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct) :

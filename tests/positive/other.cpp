@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "generated/vk_safe_struct.h"
 #include "vk_extension_helper.h"
 
 #include <algorithm>
@@ -951,4 +952,49 @@ TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
     m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5112
+TEST_F(VkPositiveLayerTest, SafeVoidPointerCopies) {
+    TEST_DESCRIPTION("Ensure valid deep copy of pData / dataSize combination structures");
+
+    // safe_VkSpecializationInfo, constructor
+    {
+        std::vector<std::byte> data(20, std::byte{0b11110000});
+
+        VkSpecializationInfo info = {};
+        info.dataSize = size32(data);
+        info.pData = data.data();
+
+        safe_VkSpecializationInfo safe(&info);
+
+        ASSERT_TRUE(safe.pData != info.pData);
+        ASSERT_TRUE(safe.dataSize == info.dataSize);
+
+        data.clear();  // Invalidate any references, pointers, or iterators referring to contained elements.
+
+        auto copied_bytes = reinterpret_cast<const std::byte *>(safe.pData);
+        ASSERT_TRUE(copied_bytes[19] == std::byte{0b11110000});
+    }
+
+    // safe_VkPipelineExecutableInternalRepresentationKHR, initialize
+    {
+        std::vector<std::byte> data(11, std::byte{0b01001001});
+
+        VkPipelineExecutableInternalRepresentationKHR info = {};
+        info.dataSize = size32(data);
+        info.pData = data.data();
+
+        safe_VkPipelineExecutableInternalRepresentationKHR safe;
+
+        safe.initialize(&info);
+
+        ASSERT_TRUE(safe.dataSize == info.dataSize);
+        ASSERT_TRUE(safe.pData != info.pData);
+
+        data.clear();  // Invalidate any references, pointers, or iterators referring to contained elements.
+
+        auto copied_bytes = reinterpret_cast<const std::byte *>(safe.pData);
+        ASSERT_TRUE(copied_bytes[10] == std::byte{0b01001001});
+    }
 }
