@@ -6530,6 +6530,15 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 #endif
         }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        if (LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext) &&
+            LvlFindInChain<VkImportMemoryWin32HandleInfoNV>(pAllocateInfo->pNext)) {
+            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-00641",
+                             "pNext chain of VkMemoryAllocateInfo includes both VkImportMemoryWin32HandleInfoKHR and "
+                             "VkImportMemoryWin32HandleInfoNV");
+        }
+#endif
+
         if (flags) {
             VkBool32 capture_replay = false;
             VkBool32 buffer_device_address = false;
