@@ -1169,7 +1169,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_source += '#include "vk_typemap_helper.h"\n'
         safe_struct_helper_source += '#include "utils/vk_layer_utils.h"\n'
         safe_struct_helper_source += '\n'
-        safe_struct_helper_source += '#include <string.h>\n'
+        safe_struct_helper_source += '#include <cstddef>\n'
         safe_struct_helper_source += '#include <cassert>\n'
         safe_struct_helper_source += '#include <cstring>\n'
         safe_struct_helper_source += '#include <vector>\n'
@@ -1760,9 +1760,22 @@ class HelperFileOutputGenerator(OutputGenerator):
                                     copy_strings += '    %s = SafeStringCopy(in_struct->%s);\n' % (member.name, member.name)
                                     destruct_txt += '    if (%s) delete [] %s;\n' % (member.name, member.name)
                             else:
-                                # For these exceptions just copy initial value over for now
-                                init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
-                                init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
+                                # We need a deep copy of pData / dataSize combos
+                                if member.name == 'pData':
+                                    init_list += '\n    %s(nullptr),' % (member.name)
+                                    construct_txt += '    if (in_struct->pData != nullptr) {\n'
+                                    construct_txt += '        auto temp = new std::byte[in_struct->dataSize];\n'
+                                    construct_txt += '        std::memcpy(temp, in_struct->pData, in_struct->dataSize);\n'
+                                    construct_txt += '        pData = temp;\n'
+                                    construct_txt += '    }\n'
+
+                                    destruct_txt  += '    if (pData != nullptr) {\n'
+                                    destruct_txt  += '        auto temp = reinterpret_cast<const std::byte*>(pData);\n'
+                                    destruct_txt  += '        delete [] temp;\n'
+                                    destruct_txt  += '    }\n'
+                                else:
+                                    init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
+                                    init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
                         default_init_list += '\n    %s(nullptr),' % (member.name)
                     else:
                         default_init_list += '\n    %s(nullptr),' % (member.name)
