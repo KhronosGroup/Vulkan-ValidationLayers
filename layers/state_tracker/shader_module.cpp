@@ -716,6 +716,7 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     if (!value) {
         // TODO: Either ensure that the specialization transform is already performed on a module we're
         //       considering here, OR -- specialize on the fly now.
+        // If using to get index into array, this could be hit if using VK_EXT_descriptor_indexing
         return 1;
     }
 
@@ -1349,8 +1350,12 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 if (is_input_attachment && !runtime_array) {
                     for (const Instruction* insn : image_read_loads) {
                         if (insn->Opcode() == spv::OpAccessChain) {
-                            const uint32_t access_index = module_state.GetConstantValueById(insn->Word(4));
-                            input_attachment_index_read[access_index] = true;
+                            // TODO 5465 - Better way to check for descriptor indexing
+                            const Instruction* const_def = module_state.GetConstantDef(insn->Word(4));
+                            if (const_def) {
+                                const uint32_t access_index = const_def->GetConstantValue();
+                                input_attachment_index_read[access_index] = true;
+                            }
                         } else if (insn->Opcode() == spv::OpLoad) {
                             // if InputAttachment is accessed from load, just a single, non-array, index
                             input_attachment_index_read.resize(1);
@@ -1385,7 +1390,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 // Currently just need to care about the first image_loads because the above loop will have combos to
                 // image-to-samplers for us
                 if (image_loads[0]->Opcode() == spv::OpAccessChain) {
-                    // TODO - Can this just be GetConstantValueById() - is a spec const possible here?
+                    // TODO 5465 - Can this just be GetConstantValueById() - is a spec const possible here?
                     const Instruction* const_def = module_state.GetConstantDef(image_loads[0]->Word(4));
                     if (!const_def) {
                         continue;  // access chain index not a constant
