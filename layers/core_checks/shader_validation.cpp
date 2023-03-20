@@ -124,7 +124,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
     };
     std::map<uint32_t, AttribInputPair> location_map;
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
-    for (const auto &input_it : inputs) location_map[input_it.first.first].input = &input_it.second;
+    for (const auto &input_it : inputs) location_map[input_it.first.Location()].input = &input_it.second;
 
     for (const auto &location_it : location_map) {
         const auto location = location_it.first;
@@ -174,7 +174,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
     const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
-        auto const location = output_it.first.first;
+        auto const location = output_it.first.Location();
         location_map[location].output = &output_it.second;
     }
 
@@ -350,7 +350,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
 
     const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
-        auto const location = output_it.first.first;
+        auto const location = output_it.first.Location();
         location_map[location].output = &output_it.second;
     }
 
@@ -918,8 +918,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
 
     // Find max component location used for input variables.
     for (auto &var : inputs) {
-        const uint32_t location = var.first.first;
-        const uint32_t component = var.first.second;
+        const uint32_t location = var.first.Location();
+        const uint32_t component = var.first.Component();
         UserDefinedInterfaceVariable &variable = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
@@ -933,8 +933,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
 
     // Find max component location used for output variables.
     for (auto &var : outputs) {
-        const uint32_t location = var.first.first;
-        const uint32_t component = var.first.second;
+        const uint32_t location = var.first.Location();
+        const uint32_t component = var.first.Component();
         UserDefinedInterfaceVariable &variable = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
@@ -3295,11 +3295,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     while ((outputs.size() > 0 && output_it != outputs.end()) || (inputs.size() && input_it != inputs.end())) {
         const bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
         const bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
-        auto output_first = output_at_end ? std::make_pair(0u, 0u) : output_it->first;
-        auto input_first = input_at_end ? std::make_pair(0u, 0u) : input_it->first;
-
-        output_first.second += output_component;
-        input_first.second += input_component;
+        auto output_first = output_at_end ? InterfaceSlot(0) : output_it->first;
+        auto input_first = input_at_end ? InterfaceSlot(0) : input_it->first;
 
         const auto output_length =
             output_at_end ? 0 : producer.GetNumComponentsInBaseType(producer.FindDef(output_it->second.type_id));
@@ -3308,29 +3305,30 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
         assert(output_at_end || output_component < output_length);
         assert(input_at_end || input_component < input_length);
 
-        if (input_at_end || ((!output_at_end) && (output_first < input_first))) {
+        if (input_at_end || ((!output_at_end) && (output_first.slot < input_first.slot))) {
             if (!enabled_features.core13.maintenance4) {
                 // It is not an error if a stage does not consume all outputs from the previous stage
                 skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
                                               "%s writes to output location %" PRIu32 ".%" PRIu32
                                               " which is not consumed by %s. Enable VK_KHR_maintenance4 device extension to allow "
                                               "relaxed interface matching between input and output vectors.",
-                                              string_VkShaderStageFlagBits(producer_stage), output_first.first, output_first.second,
+                                              string_VkShaderStageFlagBits(producer_stage), output_first.Location(),
+                                              output_first.Component() + output_component,
                                               string_VkShaderStageFlagBits(consumer_stage));
             }
-            if ((input_first.first > output_first.first) || input_at_end || (output_component + 1 == output_length)) {
+            if ((input_first.Location() > output_first.Location()) || input_at_end || (output_component + 1 == output_length)) {
                 output_it++;
                 output_component = 0;
             } else {
                 output_component++;
             }
-        } else if (output_at_end || output_first > input_first) {
+        } else if (output_at_end || output_first.slot > input_first.slot) {
             skip |= LogError(consumer.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s consumes input location %" PRIu32
                              ".%" PRIu32 " which is not written by %s",
-                             pipe_index, string_VkShaderStageFlagBits(consumer_stage), input_first.first, input_first.second,
-                             string_VkShaderStageFlagBits(producer_stage));
-            if ((output_first.first > input_first.first) || output_at_end || (input_component + 1 == input_length)) {
+                             pipe_index, string_VkShaderStageFlagBits(consumer_stage), input_first.Location(),
+                             input_first.Component() + input_component, string_VkShaderStageFlagBits(producer_stage));
+            if ((output_first.Location() > input_first.Location()) || output_at_end || (input_component + 1 == input_length)) {
                 input_it++;
                 input_component = 0;
             } else {
@@ -3346,9 +3344,9 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on location %" PRIu32 ".%" PRIu32
                              ", between\n%s stage:\n%s\n%s stage:\n%s",
-                             pipe_index, output_first.first, output_first.second, string_VkShaderStageFlagBits(producer_stage),
-                             producer.DescribeType(output_it->second.type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
-                             consumer.DescribeType(input_it->second.type_id).c_str());
+                             pipe_index, output_first.Location(), output_first.Component() + output_component,
+                             string_VkShaderStageFlagBits(producer_stage), producer.DescribeType(output_it->second.type_id).c_str(),
+                             string_VkShaderStageFlagBits(consumer_stage), consumer.DescribeType(input_it->second.type_id).c_str());
                 output_it++;
                 input_it++;
                 continue;
@@ -3357,7 +3355,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Decoration mismatch on location %" PRIu32
                                  ".%" PRIu32 ": is per-%s in %s stage but per-%s in %s stage",
-                                 pipe_index, output_first.first, output_first.second,
+                                 pipe_index, output_first.Location(), output_first.Component() + output_component,
                                  output_it->second.is_patch ? "patch" : "vertex", string_VkShaderStageFlagBits(producer_stage),
                                  input_it->second.is_patch ? "patch" : "vertex", string_VkShaderStageFlagBits(consumer_stage));
             }

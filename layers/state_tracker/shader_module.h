@@ -67,6 +67,25 @@ struct DecorationSet {
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
+// A slot is a <Location, Component> mapping
+struct InterfaceSlot {
+    // A Location is made up of 4 Components
+    // Example: Location 2, Component 1
+    // L0 : [ C0, C1, C2, C3 ]
+    // L1 : [ C0, C1, C2, C3 ]
+    // L2 : [ C0, C1, C2, C3 ]
+    //            ^
+    // index == 9 == (Location * 4) + Component
+    const uint32_t slot = 0;  // default
+    uint32_t Location() const { return slot / 4; }
+    uint32_t Component() const { return slot % 4; }
+    InterfaceSlot(uint32_t slot) : slot(slot) {}
+    // Having a single uint32_t slot allows a 64-bit Vec3 to pass in (Loc 0, Comp 5) and have it automatically mean (Loc 1, Comp 1)
+    InterfaceSlot(uint32_t location, uint32_t component) : slot((location * 4) + component) {}
+
+    bool operator<(const InterfaceSlot &rhs) const { return slot < rhs.slot; }
+};
+
 // vkspec.html#interfaces-iointerfaces-user describes 'User-defined Variable Interface'
 // These are Input/Output OpVariable that go in-between stages
 // (also for example the input to a Vertex and output of the Fragment).
@@ -149,9 +168,6 @@ enum FORMAT_TYPE {
     FORMAT_TYPE_SINT = 2,
     FORMAT_TYPE_UINT = 4,
 };
-
-// <Location, Component>
-typedef std::pair<uint32_t, uint32_t> location_t;
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     // Contains all the details for a OpTypeStruct
@@ -393,10 +409,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // State tracking helpers for collecting interface information
     vvl::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
-    bool CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
+    bool CollectInterfaceBlockMembers(std::map<InterfaceSlot, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
                                       bool is_patch, const Instruction *variable_insn) const;
-    std::map<location_t, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
-                                                                                  spv::StorageClass sinterface) const;
+    std::map<InterfaceSlot, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
+                                                                                     spv::StorageClass sinterface) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;

@@ -1496,7 +1496,7 @@ vvl::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationi
     for (const auto& output : outputs) {
         auto store_it = store_pointer_ids.find(output.second.id);
         if (store_it != store_pointer_ids.end()) {
-            location_list.insert(output.first.first);
+            location_list.insert(output.first.Location());
             store_pointer_ids.erase(store_it);
             continue;
         }
@@ -1508,7 +1508,7 @@ vvl::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationi
                 continue;
             }
             if (accesschain_it->second == output.second.id) {
-                location_list.insert(output.first.first);
+                location_list.insert(output.first.Location());
                 store_pointer_ids.erase(store_it);
                 accesschain_members.erase(accesschain_it);
                 break;
@@ -1519,7 +1519,7 @@ vvl::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationi
     return location_list;
 }
 
-bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable>* out,
+bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<InterfaceSlot, UserDefinedInterfaceVariable>* out,
                                                        bool is_array_of_verts, bool is_patch,
                                                        const Instruction* variable_insn) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
@@ -1570,7 +1570,7 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
                     variable.type_id = member_type_id;
                     variable.offset = offset;
                     variable.is_patch = member_is_patch;
-                    (*out)[std::make_pair(location + offset, component)] = variable;
+                    (*out)[InterfaceSlot(location + offset, component)] = variable;
                 }
             }
         }
@@ -1579,11 +1579,11 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
     return true;
 }
 
-std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByLocation(
+std::map<InterfaceSlot, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByLocation(
     const Instruction& entrypoint, spv::StorageClass sinterface) const {
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
-    std::map<location_t, UserDefinedInterfaceVariable> out;
+    std::map<InterfaceSlot, UserDefinedInterfaceVariable> out;
     // TODO - pass in the EntryPoint object so this can be found there
     const VkShaderStageFlagBits stage = static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)));
     const bool strip_output_array_level = (stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) != 0;
@@ -1616,7 +1616,7 @@ std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectI
                     UserDefinedInterfaceVariable variable(insn);
                     variable.offset = offset;
                     variable.is_patch = is_patch;
-                    out[std::make_pair(location + offset, component)] = variable;
+                    out[InterfaceSlot(location + offset, component)] = variable;
                 }
             }
         }
