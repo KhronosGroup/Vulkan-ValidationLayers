@@ -762,9 +762,7 @@ uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool str
             return insn->Word(3) * GetLocationsConsumedByType(insn->Word(2), false);
         case spv::OpTypeVector: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
-            auto bit_width =
-                (scalar_type->Opcode() == spv::OpTypeInt || scalar_type->Opcode() == spv::OpTypeFloat) ? scalar_type->Word(2) : 32;
-
+            auto bit_width = scalar_type->GetByteWidth();
             // Locations are 128-bit wide; 3- and 4-component vectors of 64 bit types require two.
             return (bit_width * insn->Word(3) + 127) / 128;
         }
@@ -804,19 +802,13 @@ uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool st
             return insn->Word(3) * GetComponentsConsumedByType(insn->Word(2), false);
         case spv::OpTypeVector: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
-            auto bit_width =
-                (scalar_type->Opcode() == spv::OpTypeInt || scalar_type->Opcode() == spv::OpTypeFloat) ? scalar_type->Word(2) : 32;
+            const uint32_t bit_width = scalar_type->GetByteWidth();
             // One component is 32-bit
             return (bit_width * insn->Word(3) + 31) / 32;
         }
-        case spv::OpTypeFloat: {
-            auto bit_width = insn->Word(2);
-            return (bit_width + 31) / 32;
-        }
-        case spv::OpTypeInt: {
-            auto bit_width = insn->Word(2);
-            return (bit_width + 31) / 32;
-        }
+        case spv::OpTypeFloat:
+        case spv::OpTypeInt:
+            return insn->GetByteWidth();
         case spv::OpConstant:
             return GetComponentsConsumedByType(insn->Word(1), false);
         default:
