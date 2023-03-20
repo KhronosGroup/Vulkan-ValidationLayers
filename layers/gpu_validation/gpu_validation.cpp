@@ -98,6 +98,9 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         binding.binding = i;
         bindings_.push_back(binding);
     }
+#ifdef WIN32
+    This won't compile
+#endif
     GpuAssistedBase::CreateDevice(pCreateInfo);
 
     buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
