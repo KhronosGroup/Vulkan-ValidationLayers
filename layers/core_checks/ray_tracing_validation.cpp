@@ -1188,9 +1188,9 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                 std::string error_msg;
             };
 
-            InvalidBuffers vuid_binding_table_flag_invalid_buffers{{commandBuffer}};
-            InvalidBuffers vuid_address_range_invalid_buffers{{commandBuffer}};
-            InvalidBuffers vuid_stride_invalid_buffers{{commandBuffer}};
+            InvalidBuffers vuid_binding_table_flag_invalid_buffers{{commandBuffer}, {}};
+            InvalidBuffers vuid_address_range_invalid_buffers{{commandBuffer}, {}};
+            InvalidBuffers vuid_stride_invalid_buffers{{commandBuffer}, {}};
             const std::string address_string = std::to_string(binding_table.deviceAddress);
             const sparse_container::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
                                                                         binding_table.deviceAddress + binding_table.size - 1);
