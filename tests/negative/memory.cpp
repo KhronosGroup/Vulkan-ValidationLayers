@@ -2216,45 +2216,60 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
 }
 
 TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
-    // Attempts to allocate from a memory type that doesn't exist
-
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    // Check for external memory device extensions
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDeviceMemoryProperties memory_info;
-    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
-
-    VkExportMemoryAllocateInfoNV export_memory_info_nv = LvlInitStruct<VkExportMemoryAllocateInfoNV>();
-    export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
-
-    VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
-    export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>(&export_memory_info);
-    mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
+    VkDeviceMemory mem;
+    auto mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = 4;
 
-    VkDeviceMemory mem;
+    // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryAllocateInfoNV
+    {
+        auto export_memory_info_nv = LvlInitStruct<VkExportMemoryAllocateInfoNV>();
+        export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    m_errorMonitor->VerifyFound();
+        auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
+        export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+        mem_alloc.pNext = &export_memory_info;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+        m_errorMonitor->VerifyFound();
+    }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    VkExportMemoryWin32HandleInfoNV export_memory_info_win32_nv = LvlInitStruct<VkExportMemoryWin32HandleInfoNV>();
-    export_memory_info_win32_nv.pAttributes = nullptr;
-    export_memory_info_win32_nv.dwAccess = 0;
+    // pNext chain includes both VkExportMemoryAllocateInfo and VkExportMemoryWin32HandleInfoNV
+    {
+        auto export_memory_info_win32_nv = LvlInitStruct<VkExportMemoryWin32HandleInfoNV>();
+        export_memory_info_win32_nv.pAttributes = nullptr;
+        export_memory_info_win32_nv.dwAccess = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
-    export_memory_info.pNext = &export_memory_info_win32_nv;
-    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    m_errorMonitor->VerifyFound();
-#endif
+        auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_win32_nv);
+        export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00640");
+        mem_alloc.pNext = &export_memory_info;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+        m_errorMonitor->VerifyFound();
+    }
+    // pNext chain includes both VkImportMemoryWin32HandleInfoKHR and VkImportMemoryWin32HandleInfoNV
+    {
+        auto import_memory_info_win32_khr = LvlInitStruct<VkImportMemoryWin32HandleInfoKHR>();
+        import_memory_info_win32_khr.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+        auto import_memory_info_win32_nv = LvlInitStruct<VkImportMemoryWin32HandleInfoNV>(&import_memory_info_win32_khr);
+        import_memory_info_win32_nv.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00641");
+        mem_alloc.pNext = &import_memory_info_win32_nv;
+        vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+        m_errorMonitor->VerifyFound();
+    }
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 }
 
 TEST_F(VkLayerTest, DeviceImageMemoryRequirementsSwapchain) {
