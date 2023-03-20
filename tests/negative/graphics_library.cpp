@@ -1672,6 +1672,7 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
         libs[0] = vi_patch_lib.pipeline_;
         libs[1] = pre_raster_lib.pipeline_;
         auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
         vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
@@ -1748,6 +1749,7 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
         libs[0] = vi_lib.pipeline_;
         libs[1] = pre_raster_lib.pipeline_;
         auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
         vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();

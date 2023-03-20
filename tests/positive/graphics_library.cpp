@@ -286,6 +286,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
     link_info.pLibraries = libraries;
 
     auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -708,6 +709,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DynamicPrimitiveTopolgy) {
     auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     exe_pipe_ci.pInputAssemblyState = &ia_state;
     exe_pipe_ci.pDynamicState = &dynamic_create_info;
+    exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -825,6 +827,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, LinkingInputAttachment) {
     link_info.pLibraries = libraries;
 
     auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }

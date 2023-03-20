@@ -6346,6 +6346,7 @@ TEST_F(VkPositiveLayerTest, ShaderModuleIdentifierGPL) {
 
     auto pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe_ci.layout = pipe.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, pipe_ci);
 }
 
