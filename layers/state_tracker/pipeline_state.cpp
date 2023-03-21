@@ -328,6 +328,9 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
+        if (!EnablesRasterizationStates(safe_create_info)) {
+            return {};
+        }
         return std::make_shared<FragmentShaderState>(p, state, create_info, rp);
     }
 
@@ -338,6 +341,9 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         }
     } else {
         if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
+            if (!EnablesRasterizationStates(safe_create_info)) {
+                return {};
+            }
             // No fragment shader _should_ imply no fragment shader state, however, for historical (GL) reasons, a pipeline _can_
             // be created with a VS but no FS and still have valid fragment shader state.
             // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3178 for more details.
@@ -349,14 +355,30 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
     return {};
 }
 
+bool PIPELINE_STATE::EnablesRasterizationStates(const safe_VkGraphicsPipelineCreateInfo &create_info) {
+    if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
+        for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
+            if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                return create_info.pRasterizationState != nullptr;
+            }
+        }
+    }
+
+    if (create_info.pRasterizationState) {
+        return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
+    } else {
+        return false;
+    }
+}
+
 // static
 // Pointers that should be ignored have been set to null in safe_create_info, but if this is a graphics library we need the "raw"
 // create_info.
 std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
     const PIPELINE_STATE &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
     const safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const RENDER_PASS_STATE> &rp) {
-    // If we have rasterization state and rasterizerDiscardEnable is VK_TRUE, then there is no fragment output state
-    if (create_info.pRasterizationState && create_info.pRasterizationState->rasterizerDiscardEnable == VK_TRUE) {
+
+    if (!EnablesRasterizationStates(safe_create_info)) {
         return {};
     }
 
