@@ -1031,8 +1031,6 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
 VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
 VkLayerTest::VkLayerTest() {
-    m_enableWSI = false;
-
     // TODO: not quite sure why most of this is here instead of in super
 
     // Add default instance extensions to the list
@@ -1065,71 +1063,26 @@ VkLayerTest::VkLayerTest() {
     m_target_api_version = app_info_.apiVersion;
 }
 
-void VkLayerTest::AddSurfaceExtension([[maybe_unused]] const WsiPreference preference) {
-    m_enableWSI = true;
-
-    // Instance Extensions
+void VkLayerTest::AddSurfaceExtension() {
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
-    // Device extensions
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    AddRequiredExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-    return;
+    AddWsiExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
-    AddRequiredExtensions(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-    return;
+    AddWsiExtensions(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
 #endif
 
-    switch (preference) {
-        case WsiPreference::Wayland: {
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-            AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-#endif
-            return;
-        }
-        case WsiPreference::X11: {
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-            AddRequiredExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#endif
-            return;
-        }
-        case WsiPreference::XCB: {
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-            AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#endif
-            return;
-        }
-        case WsiPreference::Default:
-            [[fallthrough]];
-        default:
-            break;
-    }
-
-    // User doesn't care which WSI backend they use. Pick the first one that works
-    assert(preference == WsiPreference::Default);
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    if (auto temp_display = wl_display_connect(nullptr); temp_display) {
-        AddRequiredExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-        wl_display_disconnect(temp_display);
-        return;
-    }
+    AddWsiExtensions(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (auto temp_display = XOpenDisplay(nullptr); temp_display) {
-        AddRequiredExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        XCloseDisplay(temp_display);
-        return;
-    }
+    AddWsiExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (auto temp_xcb = xcb_connect(nullptr, nullptr); temp_xcb) {
-        AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-        xcb_disconnect(temp_xcb);
-        return;
-    }
+    AddWsiExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
 #endif
 }
 

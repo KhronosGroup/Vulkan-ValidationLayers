@@ -377,17 +377,27 @@ void VkRenderFramework::AddOptionalExtensions(const char *ext_name) {
     AddRequestedInstanceExtensions(ext_name);
 }
 
+void VkRenderFramework::AddWsiExtensions(const char *ext_name) {
+    m_wsi_extensions.push_back(ext_name);
+    AddRequestedInstanceExtensions(ext_name);
+}
+
 bool VkRenderFramework::IsExtensionsEnabled(const char *ext_name) const {
     return (CanEnableDeviceExtension(ext_name) || CanEnableInstanceExtension(ext_name));
 }
 
 bool VkRenderFramework::AreRequiredExtensionsEnabled() const {
-    for (const auto &ext : m_required_extensions) {
-        // `ext` may refer to an instance or device extension
-        if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
-            return false;
-        }
+    if (!std::all_of(m_required_extensions.begin(), m_required_extensions.end(),
+                     [&](const char *ext) -> bool { return IsExtensionsEnabled(ext); })) {
+        return false;
     }
+
+    // If the user requested wsi extension(s), only 1 needs to be enabled.
+    if (!m_wsi_extensions.empty()) {
+        return std::any_of(m_wsi_extensions.begin(), m_wsi_extensions.end(),
+                           [&](const char *ext) -> bool { return CanEnableInstanceExtension(ext); });
+    }
+
     return true;
 }
 
@@ -403,6 +413,9 @@ std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
             }
             ss << ext;
         }
+    }
+    if (!m_wsi_extensions.empty() && ss.str().empty()) {
+        ss << "Unable to find at least 1 supported WSI extension";
     }
     return ss.str();
 }
@@ -645,50 +658,58 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface) {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    HINSTANCE window_instance = GetModuleHandle(nullptr);
-    const char class_name[] = "test";
-    WNDCLASS wc = {};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = window_instance;
-    wc.lpszClassName = class_name;
-    RegisterClass(&wc);
-    HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
-    ShowWindow(window, SW_HIDE);
+    if (IsExtensionsEnabled(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
+        HINSTANCE window_instance = GetModuleHandle(nullptr);
+        const char class_name[] = "test";
+        WNDCLASS wc = {};
+        wc.lpfnWndProc = WindowProc;
+        wc.hInstance = window_instance;
+        wc.lpszClassName = class_name;
+        RegisterClass(&wc);
+        HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+        ShowWindow(window, SW_HIDE);
 
-    VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
-    surface_create_info.hinstance = window_instance;
-    surface_create_info.hwnd = window;
-    return VK_SUCCESS == vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+        VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
+        surface_create_info.hinstance = window_instance;
+        surface_create_info.hwnd = window;
+        return VK_SUCCESS == vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    }
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
-    VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
-    surface_create_info.window = VkTestFramework::window;
-    return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    if (IsExtensionsEnabled(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
+        VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
+        surface_create_info.window = VkTestFramework::window;
+        return VK_SUCCESS == vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    }
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    surface_context.m_surface_dpy = XOpenDisplay(NULL);
-    if (surface_context.m_surface_dpy) {
-        int s = DefaultScreen(surface_context.m_surface_dpy);
-        surface_context.m_surface_window = XCreateSimpleWindow(
-            surface_context.m_surface_dpy, RootWindow(surface_context.m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
-            BlackPixel(surface_context.m_surface_dpy, s), WhitePixel(surface_context.m_surface_dpy, s));
-        VkXlibSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
-        surface_create_info.dpy = surface_context.m_surface_dpy;
-        surface_create_info.window = surface_context.m_surface_window;
-        return VK_SUCCESS == vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    if (IsExtensionsEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
+        surface_context.m_surface_dpy = XOpenDisplay(nullptr);
+        if (surface_context.m_surface_dpy) {
+            int s = DefaultScreen(surface_context.m_surface_dpy);
+            surface_context.m_surface_window = XCreateSimpleWindow(
+                surface_context.m_surface_dpy, RootWindow(surface_context.m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
+                BlackPixel(surface_context.m_surface_dpy, s), WhitePixel(surface_context.m_surface_dpy, s));
+            auto surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
+            surface_create_info.dpy = surface_context.m_surface_dpy;
+            surface_create_info.window = surface_context.m_surface_window;
+            return VK_SUCCESS == vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+        }
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    surface_context.m_surface_xcb_conn = xcb_connect(NULL, NULL);
-    if (surface_context.m_surface_xcb_conn) {
-        xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
-        VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
-        surface_create_info.connection = surface_context.m_surface_xcb_conn;
-        surface_create_info.window = window;
-        return VK_SUCCESS == vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    if (IsExtensionsEnabled(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
+        surface_context.m_surface_xcb_conn = xcb_connect(nullptr, nullptr);
+        if (surface_context.m_surface_xcb_conn) {
+            xcb_window_t window = xcb_generate_id(surface_context.m_surface_xcb_conn);
+            auto surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
+            surface_create_info.connection = surface_context.m_surface_xcb_conn;
+            surface_create_info.window = window;
+            return VK_SUCCESS == vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+        }
     }
 #endif
     return surface != VK_NULL_HANDLE;

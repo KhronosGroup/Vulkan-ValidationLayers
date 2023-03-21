@@ -234,6 +234,8 @@ class VkRenderFramework : public VkTestFramework {
     // Does not return anything as the caller should use AreRequiredExtensionsEnabled or AddOptionalExtensions then
     // `ext_name` can refer to a device or instance extension.
     void AddRequiredExtensions(const char *ext_name);
+    // Ensures at least 1 WSI instance extension is enabled
+    void AddWsiExtensions(const char *ext_name);
     // Same as AddRequiredExtensions but won't fail a check to AreRequiredExtensionsEnabled
     void AddOptionalExtensions(const char *ext_name);
     // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
@@ -326,6 +328,8 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_required_extensions;
     // Optional extensions to try and enable at device creation time
     std::vector<const char *> m_optional_extensions;
+    // wsi extensions to try and enable
+    std::vector<const char *> m_wsi_extensions;
     // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
 
