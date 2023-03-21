@@ -1815,6 +1815,7 @@
                 "VK_KHR_image_format_list": 1,
                 "VK_KHR_imageless_framebuffer": 1,
                 "VK_KHR_incremental_present": 1,
+                "VK_KHR_map_memory2": 1,
                 "VK_KHR_maintenance1": 1,
                 "VK_KHR_maintenance2": 1,
                 "VK_KHR_maintenance3": 1,

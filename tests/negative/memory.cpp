@@ -188,6 +188,79 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     vk::FreeMemory(m_device->device(), mem, NULL);
 }
 
+TEST_F(VkLayerTest, MapMemory2) {
+    TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
+
+    AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto fpvkMapMemory2KHR = (PFN_vkMapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkMapMemory2KHR");
+    auto fpvkUnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkUnmapMemory2KHR");
+
+    /* Vulkan doesn't have any requirements on what allocationSize can be
+     * other than that it must be non-zero.  Pick 64KB because that should
+     * work out to an even number of pages on basically any GPU.
+     */
+    const VkDeviceSize allocation_size = 64 << 10;
+
+    VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_info.allocationSize = allocation_size;
+
+    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    ASSERT_TRUE(pass);
+
+    VkDeviceMemory memory;
+    VkResult err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    ASSERT_VK_SUCCESS(err);
+
+    VkMemoryMapInfoKHR map_info = LvlInitStruct<VkMemoryMapInfoKHR>();
+    map_info.memory = memory;
+
+    VkMemoryUnmapInfoKHR unmap_info = LvlInitStruct<VkMemoryUnmapInfoKHR>();
+    unmap_info.memory = memory;
+
+    uint8_t *pData;
+    // Attempt to map memory size 0 is invalid
+    map_info.offset = 0;
+    map_info.size = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07960");
+    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+    // Map memory twice
+    map_info.offset = 0;
+    map_info.size = VK_WHOLE_SIZE;
+    ASSERT_VK_SUCCESS(fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData));
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-memory-07958");
+    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+
+    // Unmap the memory to avoid re-map error
+    fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    // overstep offset with VK_WHOLE_SIZE
+    map_info.offset = allocation_size + 1;
+    map_info.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-offset-07959");
+    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+    // overstep allocation w/o VK_WHOLE_SIZE
+    map_info.offset = 1,
+    map_info.size = allocation_size;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07961");
+    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+    // Now error due to unmapping memory that's not mapped
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryUnmapInfoKHR-memory-07964");
+    fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeMemory(m_device->device(), memory, NULL);
+}
+
 TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
     VkResult err;
