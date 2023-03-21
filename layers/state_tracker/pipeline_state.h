@@ -514,6 +514,8 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const RENDER_PASS_STATE> &rp);
 
+    static bool EnablesRasterizationStates(const safe_VkGraphicsPipelineCreateInfo &create_info);
+
     // Merged layouts
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> merged_graphics_layout;
 };
