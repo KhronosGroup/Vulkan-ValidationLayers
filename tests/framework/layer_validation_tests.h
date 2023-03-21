@@ -265,8 +265,7 @@ class VkLayerTest : public VkRenderFramework {
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
-    enum class WsiPreference { Default, Wayland, X11, XCB };
-    void AddSurfaceExtension(const WsiPreference preference = WsiPreference::Default);
+    void AddSurfaceExtension();
     VkCommandBufferObj *CommandBuffer();
     void OOBRayTracingShadersTestBody(bool gpu_assisted);
 
@@ -309,7 +308,6 @@ class VkLayerTest : public VkRenderFramework {
   protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
-    bool m_enableWSI;
 
     void SetTargetApiVersion(uint32_t target_api_version);
     uint32_t DeviceValidationVersion() const;
@@ -364,11 +362,7 @@ class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
 };
 class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
-class VkWsiEnabledLayerTest : public VkLayerTest {
-  public:
-  protected:
-    VkWsiEnabledLayerTest() { m_enableWSI = true; }
-};
+class VkWsiEnabledLayerTest : public VkLayerTest {};
 
 class VkGpuAssistedLayerTest : public VkLayerTest {
   public:

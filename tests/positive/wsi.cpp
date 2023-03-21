@@ -23,12 +23,16 @@ TEST_F(VkPositiveWsiTest, CreateWaylandSurface) {
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
     GTEST_SKIP() << "test not supported on platform";
 #else
-    AddSurfaceExtension(VkLayerTest::WsiPreference::Wayland);
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsExtensionsEnabled(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME << " extension not supported.";
     }
 
     wl_display *display = nullptr;
@@ -94,12 +98,16 @@ TEST_F(VkPositiveWsiTest, CreateXcbSurface) {
 #ifndef VK_USE_PLATFORM_XCB_KHR
     GTEST_SKIP() << "test not supported on platform";
 #else
-    AddSurfaceExtension(VkLayerTest::WsiPreference::XCB);
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsExtensionsEnabled(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_XCB_SURFACE_EXTENSION_NAME << " not supported.";
     }
 
     xcb_connection_t *xcb_connection = xcb_connect(nullptr, nullptr);
@@ -129,12 +137,16 @@ TEST_F(VkPositiveWsiTest, CreateX11Surface) {
 #ifndef VK_USE_PLATFORM_XLIB_KHR
     GTEST_SKIP() << "test not supported on platform";
 #else
-    AddSurfaceExtension(VkLayerTest::WsiPreference::X11);
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsExtensionsEnabled(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_XLIB_SURFACE_EXTENSION_NAME << " not supported.";
     }
 
     if (std::getenv("DISPLAY") == nullptr) {
