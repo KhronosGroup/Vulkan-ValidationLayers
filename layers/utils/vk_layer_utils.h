@@ -451,7 +451,7 @@ constexpr uint32_t ResolveRemainingLevels(const VkImageCreateInfo &ci, VkImageSu
     return (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (ci.mipLevels - range.baseMipLevel) : range.levelCount;
 }
 
-// Calculates the number of mip layers a VkImageView references.
+// Calculates the number of array layers a VkImageView references.
 constexpr uint32_t ResolveRemainingLayers(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
     return (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (ci.arrayLayers - range.baseArrayLayer) : range.layerCount;
 }
