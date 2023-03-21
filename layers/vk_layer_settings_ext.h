@@ -75,8 +75,10 @@
 // This extension is exclusively used by VVL, and is NOT intended as a deliverable.
 // The value of the VK_STRUCTURE_TYPE is arbitrary. The only requirement,
 // is that it must not conflict with existing sTypes.
+//
+// NOTE: VK_STRUCTURE_TYPE_MAX_ENUM - 1 is used by the intel driver.
 constexpr VkStructureType VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT =
-    static_cast<VkStructureType>(VK_STRUCTURE_TYPE_MAX_ENUM - 1);
+    static_cast<VkStructureType>(VK_STRUCTURE_TYPE_MAX_ENUM - 42);
 
 typedef enum VkLayerSettingValueTypeEXT {
     VK_LAYER_SETTING_VALUE_TYPE_UINT32_EXT,
