@@ -3722,8 +3722,22 @@ void ValidationStateTracker::PostCallRecordMapMemory(VkDevice device, VkDeviceMe
     RecordMappedMemory(mem, offset, size, ppData);
 }
 
+void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData,
+                                                         VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordMappedMemory(pMemoryMapInfo->memory, pMemoryMapInfo->offset, pMemoryMapInfo->size, ppData);
+}
+
 void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
     auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
+    if (mem_info) {
+        mem_info->mapped_range = MemRange();
+        mem_info->p_driver_data = nullptr;
+    }
+}
+
+void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+    auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
     if (mem_info) {
         mem_info->mapped_range = MemRange();
         mem_info->p_driver_data = nullptr;
