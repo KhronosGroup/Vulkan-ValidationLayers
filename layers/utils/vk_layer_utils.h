@@ -401,8 +401,8 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-[[nodiscard]] constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
-                                                      const uint32_t mip_level) {
+[[nodiscard]] static inline VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
+                                                          const uint32_t mip_level) {
     // Return zero extent if mip level doesn't exist
     if (mip_level >= ci.mipLevels) {
         return VkExtent3D{0, 0, 0};
