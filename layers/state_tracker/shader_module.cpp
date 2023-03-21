@@ -1652,7 +1652,7 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
 
         // Now find all members belonging to the struct defining the IO block
         if (def->Opcode() == spv::OpTypeStruct) {
-            for (const Instruction* insn : static_data_.member_decoration_inst) {
+            for (const Instruction* insn : static_data_.builtin_decoration_inst) {
                 if (def->Word(1) == insn->Word(1)) {
                     // Start with undefined builtin for each struct member.
                     // But only when confirmed the struct is the built-in inteface block (can only be one per shader)
