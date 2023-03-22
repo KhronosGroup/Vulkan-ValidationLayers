@@ -1607,8 +1607,6 @@ TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
-
     // Allocate common buffer memory
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -1644,10 +1642,8 @@ TEST_F(VkLayerTest, RayTracingBuffersAndBufferDeviceAddressesMapping) {
 
         // Those calls to vkGetBufferDeviceAddressKHR will internally record vbo and ibo device addresses
         {
-            VkBufferDeviceAddressInfo addr_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, vbo.handle()};
-            const VkDeviceAddress vbo_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &addr_info);
-            addr_info.buffer = ibo.handle();
-            const VkDeviceAddress ibo_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &addr_info);
+            const VkDeviceAddress vbo_address = vbo.address(DeviceValidationVersion());
+            const VkDeviceAddress ibo_address = ibo.address(DeviceValidationVersion());
             if (vbo_address != ibo_address) {
                 GTEST_SKIP()
                     << "Bounding two buffers to the same memory location does not result in identical buffer device addresses";
