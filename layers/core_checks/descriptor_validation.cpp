@@ -4681,7 +4681,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                                                                     const void *pData) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
+    const char *const func_name = "vkCmdPushDescriptorSetWithTemplateKHR()";
     bool skip = false;
     skip |= ValidateCmd(*cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
 
@@ -4690,12 +4690,12 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
-            skip = LogError(layout, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
+            skip = LogError(layout, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305",
                             "%s: Set index %" PRIu32 " does not match push descriptor set layout index for %s.", func_name, set,
                             report_data->FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
-        skip = LogError(layout, "VUID-vkCmdPushDescriptorSetKHR-set-00364",
+        skip = LogError(layout, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304",
                         "%s: Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", func_name, set,
                         report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
