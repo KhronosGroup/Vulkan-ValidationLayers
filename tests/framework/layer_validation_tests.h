@@ -362,8 +362,6 @@ class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
 };
 class VkNvidiaBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
-class VkWsiEnabledLayerTest : public VkLayerTest {};
-
 class VkGpuAssistedLayerTest : public VkLayerTest {
   public:
     VkValidationFeaturesEXT GetValidationFeatures();
