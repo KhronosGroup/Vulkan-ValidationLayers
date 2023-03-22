@@ -1519,6 +1519,13 @@ bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const override;
+bool PreCallValidateMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) const override;
+bool PreCallValidateUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) const override;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,

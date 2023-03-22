@@ -6029,6 +6029,40 @@ struct safe_VkPipelineExecutableInternalRepresentationKHR {
     VkPipelineExecutableInternalRepresentationKHR const *ptr() const { return reinterpret_cast<VkPipelineExecutableInternalRepresentationKHR const *>(this); }
 };
 
+struct safe_VkMemoryMapInfoKHR {
+    VkStructureType sType;
+    const void* pNext{};
+    VkMemoryMapFlags flags;
+    VkDeviceMemory memory;
+    VkDeviceSize offset;
+    VkDeviceSize size;
+    safe_VkMemoryMapInfoKHR(const VkMemoryMapInfoKHR* in_struct);
+    safe_VkMemoryMapInfoKHR(const safe_VkMemoryMapInfoKHR& copy_src);
+    safe_VkMemoryMapInfoKHR& operator=(const safe_VkMemoryMapInfoKHR& copy_src);
+    safe_VkMemoryMapInfoKHR();
+    ~safe_VkMemoryMapInfoKHR();
+    void initialize(const VkMemoryMapInfoKHR* in_struct);
+    void initialize(const safe_VkMemoryMapInfoKHR* copy_src);
+    VkMemoryMapInfoKHR *ptr() { return reinterpret_cast<VkMemoryMapInfoKHR *>(this); }
+    VkMemoryMapInfoKHR const *ptr() const { return reinterpret_cast<VkMemoryMapInfoKHR const *>(this); }
+};
+
+struct safe_VkMemoryUnmapInfoKHR {
+    VkStructureType sType;
+    const void* pNext{};
+    VkMemoryUnmapFlagsKHR flags;
+    VkDeviceMemory memory;
+    safe_VkMemoryUnmapInfoKHR(const VkMemoryUnmapInfoKHR* in_struct);
+    safe_VkMemoryUnmapInfoKHR(const safe_VkMemoryUnmapInfoKHR& copy_src);
+    safe_VkMemoryUnmapInfoKHR& operator=(const safe_VkMemoryUnmapInfoKHR& copy_src);
+    safe_VkMemoryUnmapInfoKHR();
+    ~safe_VkMemoryUnmapInfoKHR();
+    void initialize(const VkMemoryUnmapInfoKHR* in_struct);
+    void initialize(const safe_VkMemoryUnmapInfoKHR* copy_src);
+    VkMemoryUnmapInfoKHR *ptr() { return reinterpret_cast<VkMemoryUnmapInfoKHR *>(this); }
+    VkMemoryUnmapInfoKHR const *ptr() const { return reinterpret_cast<VkMemoryUnmapInfoKHR const *>(this); }
+};
+
 struct safe_VkPipelineLibraryCreateInfoKHR {
     VkStructureType sType;
     const void* pNext{};

@@ -791,6 +791,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPreCallRecordGetPipelineExecutableInternalRepresentationsKHR,
     InterceptIdPostCallRecordGetPipelineExecutableInternalRepresentationsKHR,
+    InterceptIdPreCallValidateMapMemory2KHR,
+    InterceptIdPreCallRecordMapMemory2KHR,
+    InterceptIdPostCallRecordMapMemory2KHR,
+    InterceptIdPreCallValidateUnmapMemory2KHR,
+    InterceptIdPreCallRecordUnmapMemory2KHR,
+    InterceptIdPostCallRecordUnmapMemory2KHR,
     InterceptIdPreCallValidateCmdEncodeVideoKHR,
     InterceptIdPreCallRecordCmdEncodeVideoKHR,
     InterceptIdPostCallRecordCmdEncodeVideoKHR,
@@ -2411,6 +2417,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineExecutableInternalRepresentationsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineExecutableInternalRepresentationsKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateMapMemory2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordMapMemory2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordMapMemory2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateUnmapMemory2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordUnmapMemory2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordUnmapMemory2KHR);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEncodeVideoKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEncodeVideoKHR);

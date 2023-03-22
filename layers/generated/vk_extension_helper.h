@@ -544,6 +544,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_maintenance2{kNotEnabled};
     ExtEnabled vk_khr_maintenance3{kNotEnabled};
     ExtEnabled vk_khr_maintenance4{kNotEnabled};
+    ExtEnabled vk_khr_map_memory2{kNotEnabled};
     ExtEnabled vk_khr_multiview{kNotEnabled};
     ExtEnabled vk_khr_performance_query{kNotEnabled};
     ExtEnabled vk_khr_pipeline_executable_properties{kNotEnabled};
@@ -1053,6 +1054,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_MAINTENANCE_4_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance4, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+            {VK_KHR_MAP_MEMORY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_map_memory2, {})},
             {VK_KHR_MULTIVIEW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_multiview, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_performance_query, {{
@@ -1619,6 +1621,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_MAINTENANCE_2_EXTENSION_NAME,
     VK_KHR_MAINTENANCE_3_EXTENSION_NAME,
     VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+    VK_KHR_MAP_MEMORY_2_EXTENSION_NAME,
     VK_KHR_MULTIVIEW_EXTENSION_NAME,
     VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME,
     VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME,

@@ -4599,6 +4599,31 @@ bool ObjectLifetimes::PreCallValidateGetPipelineExecutableInternalRepresentation
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkMapMemory2KHR-device-parameter", kVUIDUndefined);
+    if (pMemoryMapInfo) {
+        skip |= ValidateObject(pMemoryMapInfo->memory, kVulkanObjectTypeDeviceMemory, false, "VUID-VkMemoryMapInfoKHR-memory-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkUnmapMemory2KHR-device-parameter", kVUIDUndefined);
+    if (pMemoryUnmapInfo) {
+        skip |= ValidateObject(pMemoryUnmapInfo->memory, kVulkanObjectTypeDeviceMemory, false, "VUID-VkMemoryUnmapInfoKHR-memory-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(

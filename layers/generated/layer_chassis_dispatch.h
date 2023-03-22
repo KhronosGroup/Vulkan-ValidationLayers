@@ -1548,6 +1548,13 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations);
+VkResult DispatchMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData);
+VkResult DispatchUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void DispatchCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,

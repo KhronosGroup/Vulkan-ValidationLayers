@@ -1998,6 +1998,16 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations);
 
 
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData);
+
+VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo);
+
+
 
 
 
@@ -5143,6 +5153,12 @@ class ValidationObject {
         virtual bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(VkDevice                        device, const VkPipelineExecutableInfoKHR*  pExecutableInfo, uint32_t* pInternalRepresentationCount, VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const { return false; };
         virtual void PreCallRecordGetPipelineExecutableInternalRepresentationsKHR(VkDevice                        device, const VkPipelineExecutableInfoKHR*  pExecutableInfo, uint32_t* pInternalRepresentationCount, VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {};
         virtual void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(VkDevice                        device, const VkPipelineExecutableInfoKHR*  pExecutableInfo, uint32_t* pInternalRepresentationCount, VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, VkResult result) {};
+        virtual bool PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) const { return false; };
+        virtual void PreCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {};
+        virtual void PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData, VkResult result) {};
+        virtual bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) const { return false; };
+        virtual void PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {};
+        virtual void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo, VkResult result) {};
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) const { return false; };
         virtual void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {};
