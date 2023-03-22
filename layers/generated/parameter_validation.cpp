@@ -13707,6 +13707,43 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
 
 
 
+bool StatelessValidation::PreCallValidateMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_khr_map_memory2)) skip |= OutputExtensionError("vkMapMemory2KHR", "VK_KHR_map_memory2");
+    skip |= ValidateStructType("vkMapMemory2KHR", "pMemoryMapInfo", "VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR", pMemoryMapInfo, VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR, true, "VUID-vkMapMemory2KHR-pMemoryMapInfo-parameter", "VUID-VkMemoryMapInfoKHR-sType-sType");
+    if (pMemoryMapInfo != nullptr)
+    {
+        skip |= ValidateStructPnext("vkMapMemory2KHR", "pMemoryMapInfo->pNext", nullptr, pMemoryMapInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, "VUID-VkMemoryMapInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= ValidateReservedFlags("vkMapMemory2KHR", "pMemoryMapInfo->flags", pMemoryMapInfo->flags, "VUID-VkMemoryMapInfoKHR-flags-zerobitmask");
+
+        skip |= ValidateRequiredHandle("vkMapMemory2KHR", "pMemoryMapInfo->memory", pMemoryMapInfo->memory);
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_khr_map_memory2)) skip |= OutputExtensionError("vkUnmapMemory2KHR", "VK_KHR_map_memory2");
+    skip |= ValidateStructType("vkUnmapMemory2KHR", "pMemoryUnmapInfo", "VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR", pMemoryUnmapInfo, VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR, true, "VUID-vkUnmapMemory2KHR-pMemoryUnmapInfo-parameter", "VUID-VkMemoryUnmapInfoKHR-sType-sType");
+    if (pMemoryUnmapInfo != nullptr)
+    {
+        skip |= ValidateStructPnext("vkUnmapMemory2KHR", "pMemoryUnmapInfo->pNext", nullptr, pMemoryUnmapInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, "VUID-VkMemoryUnmapInfoKHR-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= ValidateReservedFlags("vkUnmapMemory2KHR", "pMemoryUnmapInfo->flags", pMemoryUnmapInfo->flags, "VUID-VkMemoryUnmapInfoKHR-flags-zerobitmask");
+
+        skip |= ValidateRequiredHandle("vkUnmapMemory2KHR", "pMemoryUnmapInfo->memory", pMemoryUnmapInfo->memory);
+    }
+    return skip;
+}
+
+
+
 
 
 

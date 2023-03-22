@@ -1097,6 +1097,13 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkResult                                    result) override;
 
 
+void PostCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData,
+    VkResult                                    result) override;
+
+
 void PostCallRecordQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,

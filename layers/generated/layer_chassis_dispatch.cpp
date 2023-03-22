@@ -7038,6 +7038,51 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
+VkResult DispatchMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.MapMemory2KHR(device, pMemoryMapInfo, ppData);
+    safe_VkMemoryMapInfoKHR var_local_pMemoryMapInfo;
+    safe_VkMemoryMapInfoKHR *local_pMemoryMapInfo = nullptr;
+    {
+        if (pMemoryMapInfo) {
+            local_pMemoryMapInfo = &var_local_pMemoryMapInfo;
+            local_pMemoryMapInfo->initialize(pMemoryMapInfo);
+            if (pMemoryMapInfo->memory) {
+                local_pMemoryMapInfo->memory = layer_data->Unwrap(pMemoryMapInfo->memory);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.MapMemory2KHR(device, (const VkMemoryMapInfoKHR*)local_pMemoryMapInfo, ppData);
+
+    return result;
+}
+
+VkResult DispatchUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.UnmapMemory2KHR(device, pMemoryUnmapInfo);
+    safe_VkMemoryUnmapInfoKHR var_local_pMemoryUnmapInfo;
+    safe_VkMemoryUnmapInfoKHR *local_pMemoryUnmapInfo = nullptr;
+    {
+        if (pMemoryUnmapInfo) {
+            local_pMemoryUnmapInfo = &var_local_pMemoryUnmapInfo;
+            local_pMemoryUnmapInfo->initialize(pMemoryUnmapInfo);
+            if (pMemoryUnmapInfo->memory) {
+                local_pMemoryUnmapInfo->memory = layer_data->Unwrap(pMemoryUnmapInfo->memory);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.UnmapMemory2KHR(device, (const VkMemoryUnmapInfoKHR*)local_pMemoryUnmapInfo);
+
+    return result;
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdEncodeVideoKHR(

@@ -3921,6 +3921,26 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations,
     VkResult                                    result) override;
 
+void PreCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) override;
+
+void PostCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData,
+    VkResult                                    result) override;
+
+void PreCallRecordUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) override;
+
+void PostCallRecordUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo,
+    VkResult                                    result) override;
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCmdEncodeVideoKHR(

@@ -616,6 +616,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;
     PFN_vkGetPipelineExecutableInternalRepresentationsKHR GetPipelineExecutableInternalRepresentationsKHR;
 
+    // ---- VK_KHR_map_memory2 extension commands
+    PFN_vkMapMemory2KHR MapMemory2KHR;
+    PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
+
     // ---- VK_KHR_video_encode_queue extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;

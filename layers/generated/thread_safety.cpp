@@ -5760,6 +5760,34 @@ void ThreadSafety::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR
     FinishReadObjectParentInstance(device, "vkGetPipelineExecutableInternalRepresentationsKHR");
 }
 
+void ThreadSafety::PreCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) {
+    StartReadObjectParentInstance(device, "vkMapMemory2KHR");
+}
+
+void ThreadSafety::PostCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkMapMemory2KHR");
+}
+
+void ThreadSafety::PreCallRecordUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) {
+    StartReadObjectParentInstance(device, "vkUnmapMemory2KHR");
+}
+
+void ThreadSafety::PostCallRecordUnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkUnmapMemory2KHR");
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCmdEncodeVideoKHR(

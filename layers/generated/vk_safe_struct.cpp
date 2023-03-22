@@ -29214,6 +29214,142 @@ void safe_VkPipelineExecutableInternalRepresentationKHR::initialize(const safe_V
     }
 }
 
+safe_VkMemoryMapInfoKHR::safe_VkMemoryMapInfoKHR(const VkMemoryMapInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    memory(in_struct->memory),
+    offset(in_struct->offset),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryMapInfoKHR::safe_VkMemoryMapInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR),
+    pNext(nullptr),
+    flags(),
+    memory(),
+    offset(),
+    size()
+{}
+
+safe_VkMemoryMapInfoKHR::safe_VkMemoryMapInfoKHR(const safe_VkMemoryMapInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    memory = copy_src.memory;
+    offset = copy_src.offset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryMapInfoKHR& safe_VkMemoryMapInfoKHR::operator=(const safe_VkMemoryMapInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    memory = copy_src.memory;
+    offset = copy_src.offset;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryMapInfoKHR::~safe_VkMemoryMapInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryMapInfoKHR::initialize(const VkMemoryMapInfoKHR* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    memory = in_struct->memory;
+    offset = in_struct->offset;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryMapInfoKHR::initialize(const safe_VkMemoryMapInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    memory = copy_src->memory;
+    offset = copy_src->offset;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMemoryUnmapInfoKHR::safe_VkMemoryUnmapInfoKHR(const VkMemoryUnmapInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    memory(in_struct->memory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryUnmapInfoKHR::safe_VkMemoryUnmapInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR),
+    pNext(nullptr),
+    flags(),
+    memory()
+{}
+
+safe_VkMemoryUnmapInfoKHR::safe_VkMemoryUnmapInfoKHR(const safe_VkMemoryUnmapInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    memory = copy_src.memory;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryUnmapInfoKHR& safe_VkMemoryUnmapInfoKHR::operator=(const safe_VkMemoryUnmapInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    memory = copy_src.memory;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryUnmapInfoKHR::~safe_VkMemoryUnmapInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryUnmapInfoKHR::initialize(const VkMemoryUnmapInfoKHR* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    memory = in_struct->memory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryUnmapInfoKHR::initialize(const safe_VkMemoryUnmapInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    memory = copy_src->memory;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPipelineLibraryCreateInfoKHR::safe_VkPipelineLibraryCreateInfoKHR(const VkPipelineLibraryCreateInfoKHR* in_struct) :
     sType(in_struct->sType),
     libraryCount(in_struct->libraryCount),

@@ -2968,6 +2968,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_RE
     typedef VkPipelineExecutableInternalRepresentationKHR Type;
 };
 
+// Map type VkMemoryMapInfoKHR to id VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR
+template <> struct LvlTypeMap<VkMemoryMapInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR> {
+    typedef VkMemoryMapInfoKHR Type;
+};
+
+// Map type VkMemoryUnmapInfoKHR to id VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR
+template <> struct LvlTypeMap<VkMemoryUnmapInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR> {
+    typedef VkMemoryUnmapInfoKHR Type;
+};
+
 // Map type VkPipelineLibraryCreateInfoKHR to id VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR
 template <> struct LvlTypeMap<VkPipelineLibraryCreateInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;

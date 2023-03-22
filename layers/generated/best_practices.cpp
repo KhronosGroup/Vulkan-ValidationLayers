@@ -1841,6 +1841,18 @@ void BestPractices::PostCallRecordGetPipelineExecutableInternalRepresentationsKH
     }
 }
 
+void BestPractices::PostCallRecordMapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, result);
+    if (result != VK_SUCCESS) {
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_MEMORY_MAP_FAILED};
+        ValidateReturnCodes("vkMapMemory2KHR", result, error_codes, {});
+    }
+}
+
 void BestPractices::PostCallRecordQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,

@@ -8354,6 +8354,52 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
 }
 
 
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryMapInfoKHR*                   pMemoryMapInfo,
+    void**                                      ppData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateMapMemory2KHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateMapMemory2KHR(device, pMemoryMapInfo, ppData);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordMapMemory2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData);
+    }
+    VkResult result = DispatchMapMemory2KHR(device, pMemoryMapInfo, ppData);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordMapMemory2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
+    VkDevice                                    device,
+    const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateUnmapMemory2KHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateUnmapMemory2KHR(device, pMemoryUnmapInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordUnmapMemory2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo);
+    }
+    VkResult result = DispatchUnmapMemory2KHR(device, pMemoryUnmapInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordUnmapMemory2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, result);
+    }
+    return result;
+}
+
+
 
 
 
@@ -15527,6 +15573,8 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetPipelineExecutablePropertiesKHR", {kFuncTypeDev, (void*)GetPipelineExecutablePropertiesKHR}},
     {"vkGetPipelineExecutableStatisticsKHR", {kFuncTypeDev, (void*)GetPipelineExecutableStatisticsKHR}},
     {"vkGetPipelineExecutableInternalRepresentationsKHR", {kFuncTypeDev, (void*)GetPipelineExecutableInternalRepresentationsKHR}},
+    {"vkMapMemory2KHR", {kFuncTypeDev, (void*)MapMemory2KHR}},
+    {"vkUnmapMemory2KHR", {kFuncTypeDev, (void*)UnmapMemory2KHR}},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdEncodeVideoKHR", {kFuncTypeDev, (void*)CmdEncodeVideoKHR}},
 #endif
