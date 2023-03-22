@@ -21,23 +21,17 @@ While it's not technically required, it's practically required for most users.
 
 ## Building Overview
 
-The following will be enough for most people, for platform-specific instructions, see below.
+The following will be enough for most people, for more detailed instructions, see below.
 
 ```bash
 git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 cd Vulkan-ValidationLayers
 
-mkdir build
-cd build
+cmake -S . -B build -D UPDATE_DEPS=ON -D BUILD_WERROR=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=Debug
+cmake --build . --config Debug
 
-# Linux
-python3 ../scripts/update_deps.py --dir ../external --arch x64 --config debug
-cmake -G Ninja -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-
-# Windows
-python ..\scripts\update_deps.py --dir ..\external --arch x64 --config debug
-cmake -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-
+# CMake 3.21+
+cmake -S . -B build --preset dev
 cmake --build . --config Debug
 ```
 
