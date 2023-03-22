@@ -7418,8 +7418,8 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316");
+    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06317");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -9739,7 +9739,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -9766,7 +9766,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -9794,7 +9794,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -9824,7 +9824,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -9852,7 +9852,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -9880,7 +9880,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -9925,7 +9925,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if ((VK_SUCCESS == vs.InitFromGLSLTry()) && (VK_SUCCESS == fs.InitFromGLSLTry())) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -9955,7 +9955,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -9984,7 +9984,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
@@ -10013,7 +10013,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
             VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
             VkPipelineLayoutCreateInfo pipeline_layout_info{
@@ -10058,7 +10058,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
         )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-        m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
         if ((VK_SUCCESS == vs.InitFromGLSLTry()) && (VK_SUCCESS == fs.InitFromGLSLTry())) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -10748,7 +10748,7 @@ TEST_F(VkLayerTest, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01377");
         VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
         m_errorMonitor->VerifyFound();
     }
@@ -11714,7 +11714,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // capability requirements with other features, but this is simpler
     current_shader = std::make_unique<VkShaderObj>(this, cs_image_load.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                                    SPV_SOURCE_GLSL_TRY);
-    m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
     if (VK_SUCCESS == current_shader->InitFromGLSLTry()) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
@@ -11725,7 +11725,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     // glslang doesn't omit Int64Atomics for store currently
     current_shader = std::make_unique<VkShaderObj>(this, cs_image_store.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                                    SPV_SOURCE_GLSL_TRY);
-    m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
     if (VK_SUCCESS == current_shader->InitFromGLSLTry()) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
@@ -11735,7 +11735,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = std::make_unique<VkShaderObj>(this, cs_image_exchange.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                                    SPV_SOURCE_GLSL_TRY);
-    m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
     if (VK_SUCCESS == current_shader->InitFromGLSLTry()) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
@@ -11745,7 +11745,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = std::make_unique<VkShaderObj>(this, cs_image_add.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                                    SPV_SOURCE_GLSL_TRY);
-    m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
     if (VK_SUCCESS == current_shader->InitFromGLSLTry()) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
@@ -13739,7 +13739,7 @@ TEST_F(VkLayerTest, NoUniformBufferStandardLayout10) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01377");
     VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyFound();
 }
@@ -13783,7 +13783,7 @@ TEST_F(VkLayerTest, NoUniformBufferStandardLayout12) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01377");
     VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
@@ -13826,7 +13826,7 @@ TEST_F(VkLayerTest, NoScalarBlockLayout10) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01377");
     VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
     m_errorMonitor->VerifyFound();
 }
@@ -13869,7 +13869,7 @@ TEST_F(VkLayerTest, NoScalarBlockLayout12) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01377");
     VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }

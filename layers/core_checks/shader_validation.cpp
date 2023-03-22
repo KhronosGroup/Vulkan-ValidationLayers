@@ -1483,7 +1483,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
                         }
                     }
                     if (!valid) {
-                        skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_CooperativeMatrixType,
+                        skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316",
                                          "OpTypeCooperativeMatrixNV (result id = %u) operands don't match a supported matrix type",
                                          insn.Word(1));
                     }
@@ -1508,29 +1508,48 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
                 if (a.all_constant && b.all_constant && c.all_constant && d.all_constant) {
                     // Validate that the type parameters are all supported for the same
                     // cooperative matrix property.
-                    bool valid = false;
+                    bool valid_a = false;
+                    bool valid_b = false;
+                    bool valid_c = false;
+                    bool valid_d = false;
                     for (uint32_t i = 0; i < cooperative_matrix_properties.size(); ++i) {
-                        if (cooperative_matrix_properties[i].AType == a.component_type &&
-                            cooperative_matrix_properties[i].MSize == a.rows && cooperative_matrix_properties[i].KSize == a.cols &&
-                            cooperative_matrix_properties[i].scope == a.scope &&
-
-                            cooperative_matrix_properties[i].BType == b.component_type &&
-                            cooperative_matrix_properties[i].KSize == b.rows && cooperative_matrix_properties[i].NSize == b.cols &&
-                            cooperative_matrix_properties[i].scope == b.scope &&
-
-                            cooperative_matrix_properties[i].CType == c.component_type &&
-                            cooperative_matrix_properties[i].MSize == c.rows && cooperative_matrix_properties[i].NSize == c.cols &&
-                            cooperative_matrix_properties[i].scope == c.scope &&
-
-                            cooperative_matrix_properties[i].DType == d.component_type &&
-                            cooperative_matrix_properties[i].MSize == d.rows && cooperative_matrix_properties[i].NSize == d.cols &&
-                            cooperative_matrix_properties[i].scope == d.scope) {
-                            valid = true;
+                        valid_a = cooperative_matrix_properties[i].AType == a.component_type &&
+                                  cooperative_matrix_properties[i].MSize == a.rows &&
+                                  cooperative_matrix_properties[i].KSize == a.cols &&
+                                  cooperative_matrix_properties[i].scope == a.scope;
+                        valid_b = cooperative_matrix_properties[i].BType == b.component_type &&
+                                  cooperative_matrix_properties[i].KSize == b.rows &&
+                                  cooperative_matrix_properties[i].NSize == b.cols &&
+                                  cooperative_matrix_properties[i].scope == b.scope;
+                        valid_c = cooperative_matrix_properties[i].CType == c.component_type &&
+                                  cooperative_matrix_properties[i].MSize == c.rows &&
+                                  cooperative_matrix_properties[i].NSize == c.cols &&
+                                  cooperative_matrix_properties[i].scope == c.scope;
+                        valid_d = cooperative_matrix_properties[i].DType == d.component_type &&
+                                  cooperative_matrix_properties[i].MSize == d.rows &&
+                                  cooperative_matrix_properties[i].NSize == d.cols &&
+                                  cooperative_matrix_properties[i].scope == d.scope;
+                        if (valid_a && valid_b && valid_c && valid_d) {
                             break;
                         }
                     }
-                    if (!valid) {
-                        skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_CooperativeMatrixMulAdd,
+                    if (!valid_a) {
+                        skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06317",
+                                         "OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV",
+                                         insn.Word(2));
+                    } else if (!valid_b) {
+                        skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06318",
+                                         "OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV",
+                                         insn.Word(2));
+                    } else if (!valid_c) {
+                        skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06319",
+                                         "OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesNV",
+                                         insn.Word(2));
+                    } else if (!valid_d) {
+                        skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06320",
                                          "OpCooperativeMatrixMulAddNV (result id = %u) operands don't match a supported matrix "
                                          "VkCooperativeMatrixPropertiesNV",
                                          insn.Word(2));
@@ -3606,10 +3625,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 if (spv_valid == SPV_WARNING) {
-                    skip |= LogWarning(device, kVUID_Core_Shader_InconsistentSpirv, "SPIR-V module not valid: %s",
+                    skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-01377", "SPIR-V module not valid: %s",
                                        diag && diag->error ? diag->error : "(no error text)");
                 } else {
-                    skip |= LogError(device, kVUID_Core_Shader_InconsistentSpirv, "SPIR-V module not valid: %s",
+                    skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01377", "SPIR-V module not valid: %s",
                                      diag && diag->error ? diag->error : "(no error text)");
                 }
             }
