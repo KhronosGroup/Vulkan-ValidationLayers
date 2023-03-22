@@ -821,18 +821,17 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
     if (mem_info) {
-        if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
-             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
+        const uint32_t memoryTypeIndex = mem_info->alloc_info.memoryTypeIndex;
+        const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;
+        if ((propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
             skip = LogError(mem, "VUID-vkMapMemory-memory-00682",
-                            "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set: %s.",
-                            report_data->FormatHandle(mem).c_str());
+                            "Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
+                            "Memory has type %" PRIu32 " which has properties %s",
+                            memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
         }
 
         if (mem_info->multi_instance) {
-            skip = LogError(mem, "VUID-vkMapMemory-memory-00683",
-                            "Memory (%s) must not have been allocated with multiple instances -- either by supplying a deviceMask "
-                            "with more than one bit set, or by allocation from a heap with the MULTI_INSTANCE heap flag set.",
-                            report_data->FormatHandle(mem).c_str());
+            skip = LogError(mem, "VUID-vkMapMemory-memory-00683", "Memory allocated with multiple instances");
         }
 
         skip |= ValidateMapMemRange(mem_info.get(), offset, size);
@@ -845,7 +844,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
     auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
     if (mem_info && !mem_info->mapped_range.size) {
         // Valid Usage: memory must currently be mapped
-        skip |= LogError(mem, "VUID-vkUnmapMemory-memory-00689", "Unmapping Memory without memory being mapped: %s.",
+        skip |= LogError(mem, "VUID-vkUnmapMemory-memory-00689", "Invalid memory unmapping: %s.",
                          report_data->FormatHandle(mem).c_str());
     }
     return skip;
