@@ -1644,7 +1644,7 @@ struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
     uint32_t image_index;
     uint32_t present_index;
-    std::shared_ptr<const syncval_state::Swapchain> swapchain_state;
+    std::weak_ptr<const syncval_state::Swapchain> swapchain_state;
     std::shared_ptr<const IMAGE_STATE> image;
 };
 
@@ -1659,7 +1659,6 @@ struct PresentedImage : public PresentedImageRecord {
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
     PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
-
     bool Invalid() const { return BASE_NODE::Invalid(image); }
     void ExportToSwapchain(SyncValidator &);
     void SetImage(uint32_t at_index);

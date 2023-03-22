@@ -75,6 +75,9 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     static bool Invalid(const std::shared_ptr<const BASE_NODE> &node) { return !node || node->Destroyed(); }
 
     const VulkanTypedHandle &Handle() const { return handle_; }
+    static VulkanTypedHandle Handle(const BASE_NODE *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
+    static VulkanTypedHandle Handle(const std::shared_ptr<const BASE_NODE> &node) { return Handle(node.get()); }
+
     VulkanObjectType Type() const { return handle_.type; }
 
     virtual bool InUse() const;
