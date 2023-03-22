@@ -12599,12 +12599,11 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    auto vkCmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBuffersEXT"));
-    auto vkCmdBindDescriptorBufferEmbeddedSamplersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBufferEmbeddedSamplersEXT"));
-    auto vkCmdSetDescriptorBufferOffsetsEXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDescriptorBufferOffsetsEXT"));
+    auto vkCmdBindDescriptorBuffersEXT = GetDeviceProcAddr<PFN_vkCmdBindDescriptorBuffersEXT>("vkCmdBindDescriptorBuffersEXT");
+    auto vkCmdBindDescriptorBufferEmbeddedSamplersEXT =
+        GetDeviceProcAddr<PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT>("vkCmdBindDescriptorBufferEmbeddedSamplersEXT");
+    auto vkCmdSetDescriptorBufferOffsetsEXT =
+        GetDeviceProcAddr<PFN_vkCmdSetDescriptorBufferOffsetsEXT>("vkCmdSetDescriptorBufferOffsetsEXT");
 
     const bool testPushDescriptorsInBuffers =
         descriptor_buffer_features.descriptorBufferPushDescriptors && !descriptor_buffer_properties.bufferlessPushDescriptors;
@@ -12813,6 +12812,65 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
                 m_errorMonitor->VerifyFound();
                 command_buffer.end();
             }
+        }
+    }
+
+    // Test mapping from address to buffers when validating buffer offsets
+    {
+        const VkDeviceSize large_buffer_size =
+            std::max<VkDeviceSize>(256 * descriptor_buffer_properties.descriptorBufferOffsetAlignment, 8192);
+        const VkDeviceSize small_buffer_size =
+            std::max<VkDeviceSize>(4 * descriptor_buffer_properties.descriptorBufferOffsetAlignment, 4096);
+
+        // Allocate common buffer memory
+        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+        alloc_info.allocationSize = large_buffer_size;
+        vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+        // Create a large and a small buffer
+        buffCI = LvlInitStruct<VkBufferCreateInfo>();
+        buffCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        buffCI.size = large_buffer_size;
+        buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+        auto large_buffer = std::make_unique<vk_testing::Buffer>();
+        large_buffer->init_no_mem(*m_device, buffCI);
+
+        buffCI.size = small_buffer_size;
+        auto small_buffer = std::make_unique<vk_testing::Buffer>();
+        small_buffer->init_no_mem(*m_device, buffCI);
+
+        // Bind those buffers to the same buffer memory
+        vk::BindBufferMemory(device(), large_buffer->handle(), buffer_memory.handle(), 0);
+        vk::BindBufferMemory(device(), small_buffer->handle(), buffer_memory.handle(), 0);
+
+        // Check that internal mapping from address to buffers is correctly updated
+        if (large_buffer->address() == small_buffer->address()) {
+            // calling large_buffer->address() twice should not result in this buffer being mapped twice.
+            // If it is mapped twice, the error below will not be thrown.
+            const VkDeviceAddress common_address = large_buffer->address();
+
+            auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
+            dbbi.address = common_address;
+            dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+            vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+
+            constexpr uint32_t index = 0;
+
+            // First call should succeed because offset is small enough to fit in large_buffer
+            const VkDeviceSize offset = small_buffer_size;
+            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
+                                               0, 1, &index, &offset);
+
+            large_buffer = nullptr;
+            // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
+            // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08062");
+            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
+                                               0, 1, &index, &offset);
+            m_errorMonitor->VerifyFound();
         }
     }
 
