@@ -8235,8 +8235,8 @@ bool QueueBatchContext::DoQueuePresentValidate(const char *func_name, const Pres
                                                            AccessContext::DetectOptions::kDetectAll);
         if (hazard.hazard) {
             const auto queue_handle = queue_state_->Handle();
-            const auto swap_handle = presented.swapchain_state->Handle();
-            const auto image_handle = presented.image->Handle();
+            const auto swap_handle = BASE_NODE::Handle(presented.swapchain_state.lock());
+            const auto image_handle = BASE_NODE::Handle(presented.image);
             const auto *report_data = sync_state_->report_data;
             skip = sync_state_->LogError(queue_handle, string_SyncHazardVUID(hazard.hazard),
                                          "%s: Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32
@@ -8635,17 +8635,20 @@ PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> s
 // Export uses move semantics...
 void PresentedImage::ExportToSwapchain(SyncValidator &) {  // Include this argument to prove the const cast is safe
     // If the swapchain is dead just ignore the present
-    if (BASE_NODE::Invalid(swapchain_state)) return;
-    auto swap = std::const_pointer_cast<syncval_state::Swapchain>(swapchain_state);
+    auto swap_lock = swapchain_state.lock();
+    if (BASE_NODE::Invalid(swap_lock)) return;
+    auto swap = std::const_pointer_cast<syncval_state::Swapchain>(swap_lock);
     swap->RecordPresentedImage(std::move(*this));
 }
 
 void PresentedImage::SetImage(uint32_t at_index) {
     image_index = at_index;
 
-    if (BASE_NODE::Invalid(swapchain_state)) return;
-    image = swapchain_state->GetSwapChainImageShared(image_index);
+    auto swap_lock = swapchain_state.lock();
+    if (BASE_NODE::Invalid(swap_lock)) return;
+    image = swap_lock->GetSwapChainImageShared(image_index);
     if (Invalid()) return;
+
     // For valid images create the type/range_gen to used to scope the semaphore operations
     address_type = AccessContext::ImageAddressType(*image);
     range_gen = subresource_adapter::ImageRangeGenerator(*image->fragment_encoder.get(), image->full_range,
@@ -8667,7 +8670,7 @@ std::ostream &QueueBatchContext::PresentResourceRecord::Format(std::ostream &out
     out << "vkQueuePresentKHR ";
     out << "present_tag:" << presented_.tag;
     out << ", pSwapchains[" << presented_.present_index << "]";
-    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.get());
+    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get());
     out << ", image_index: " << presented_.image_index;
     out << SyncNodeFormatter(sync_state, presented_.image.get());
 
@@ -8681,7 +8684,7 @@ QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::Acqui
 std::ostream &QueueBatchContext::AcquireResourceRecord::Format(std::ostream &out, const SyncValidator &sync_state) const {
     out << func_name_ << " ";
     out << "aquire_tag:" << acquire_tag_;
-    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.get());
+    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get());
     out << ", image_index: " << presented_.image_index;
     out << SyncNodeFormatter(sync_state, presented_.image.get());
 
