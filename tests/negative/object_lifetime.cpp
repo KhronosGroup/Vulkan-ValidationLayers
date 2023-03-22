@@ -12,7 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 #include "enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 

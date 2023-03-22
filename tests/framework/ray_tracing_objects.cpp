@@ -14,7 +14,7 @@
 
 #include "ray_tracing_objects.h"
 
-#include "utils/vk_layer_utils.h"
+#include "vk_layer_utils.h"
 
 namespace rt {
 namespace as {

@@ -20,7 +20,7 @@
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
-#include "vma/vma.h"
+#include "vma.h"
 #include <spirv/unified1/spirv.hpp>
 #include <algorithm>
 #include <regex>

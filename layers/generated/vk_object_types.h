@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 
 // Object Type enum for validation layer internal object handling
 typedef enum VulkanObjectType {

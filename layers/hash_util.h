@@ -25,7 +25,7 @@
 #include <mutex>
 #include <type_traits>
 #include <vector>
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {

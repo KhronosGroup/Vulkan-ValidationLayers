@@ -21,7 +21,7 @@
 
 #include "vulkan/vk_layer.h"
 #include "vulkan/vulkan.h"
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 
 #if defined(WIN32)
 #define DEFAULT_VK_REGISTRY_HIVE HKEY_LOCAL_MACHINE

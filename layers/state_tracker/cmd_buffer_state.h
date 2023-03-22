@@ -22,14 +22,14 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/video_session_state.h"
 #include "command_validation.h"
-#include "utils/hash_vk_types.h"
+#include "hash_vk_types.h"
 #include "containers/subresource_adapter.h"
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "containers/qfo_transfer.h"
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;

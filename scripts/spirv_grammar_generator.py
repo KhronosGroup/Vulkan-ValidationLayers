@@ -159,7 +159,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         write(copyright, file=self.outFile)
 
         if self.sourceFile:
-            write('#include "containers/custom_containers.h"', file=self.outFile)
+            write('#include "vk_layer_data.h"', file=self.outFile)
             write('#include "spirv_grammar_helper.h"', file=self.outFile)
             write('#include "state_tracker/shader_instruction.h"', file=self.outFile)
         elif self.headerFile:

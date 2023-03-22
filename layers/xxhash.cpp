@@ -15,8 +15,11 @@
  * limitations under the License.
  */
 
-// https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-// https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/
-// https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/blob/master/src/VmaUsage.cpp
-#define VMA_IMPLEMENTATION
-#include "vma/vma.h"
+#define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
+#define XXH_IMPLEMENTATION      /* access definitions */
+
+#ifndef XXH_NO_LONG_LONG
+#error "XXH_NO_LONG_LONG not defined!"
+#endif
+
+#include "xxhash.h"

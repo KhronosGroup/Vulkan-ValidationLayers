@@ -17,7 +17,7 @@
 
 #include <climits>
 #include <cmath>
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"

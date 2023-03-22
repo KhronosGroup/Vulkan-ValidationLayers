@@ -28,7 +28,7 @@
 #include "containers/subresource_adapter.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
-#include "error_message/logging.h"
+#include "vk_layer_logging.h"
 
 // Forward declarations...
 class CMD_BUFFER_STATE;

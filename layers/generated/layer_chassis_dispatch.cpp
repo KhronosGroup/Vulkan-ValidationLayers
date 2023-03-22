@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 #include "vk_safe_struct.h"

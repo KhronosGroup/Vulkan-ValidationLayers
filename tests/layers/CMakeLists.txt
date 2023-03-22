@@ -17,7 +17,7 @@
 add_library(VkLayer_device_profile_api MODULE)
 
 target_sources(VkLayer_device_profile_api PRIVATE
-    ${VVL_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.cpp
+    ${VVL_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
     device_profile_api.cpp
     vk_lunarg_device_profile_api_layer.h
 )

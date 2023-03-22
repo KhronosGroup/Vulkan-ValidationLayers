@@ -12,7 +12,7 @@
  */
 #include <type_traits>
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "vk_enum_string_helper.h"
 

@@ -51,11 +51,11 @@ include_directories(${SRC_DIR}/include
                     ${SRC_DIR}/layers)
 add_library(layer_utils STATIC
         ${SRC_DIR}/layers/vk_layer_config.cpp
-        ${SRC_DIR}/layers/utils/vk_layer_extension_utils.cpp
-        ${SRC_DIR}/layers/error_message/logging.cpp
-        ${SRC_DIR}/layers/utils/vk_layer_utils.cpp
+        ${SRC_DIR}/layers/vk_layer_extension_utils.cpp
+        ${SRC_DIR}/layers/vk_layer_logging.cpp
+        ${SRC_DIR}/layers/vk_layer_utils.cpp
         ${SRC_DIR}/layers/generated/vk_format_utils.cpp
-        ${SRC_DIR}/layers/external/xxhash.cpp)
+        ${SRC_DIR}/layers/xxhash.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_clone}")
 
 # assume shaderc already built externally
@@ -122,7 +122,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
         ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
-        ${SRC_DIR}/layers/external/vma/vma.cpp)
+        ${SRC_DIR}/layers/vma.cpp)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers

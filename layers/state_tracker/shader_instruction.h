@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 #include <spirv/unified1/spirv.hpp>
 
 struct SHADER_MODULE_STATE;

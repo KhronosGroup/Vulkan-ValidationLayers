@@ -21,7 +21,7 @@
 #include <mutex>
 #include <thread>
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 
 //
 // POSITIVE VALIDATION TESTS

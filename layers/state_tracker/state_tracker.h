@@ -28,10 +28,10 @@
 #include "state_tracker/video_session_state.h"
 #include "command_validation.h"
 #include "layer_chassis_dispatch.h"
-#include "error_message/logging.h"
+#include "vk_layer_logging.h"
 #include "vulkan/vk_layer.h"
 #include "vk_typemap_helper.h"
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 #include "utils/android_ndk_types.h"
 #include "containers/range_vector.h"
 #include <atomic>

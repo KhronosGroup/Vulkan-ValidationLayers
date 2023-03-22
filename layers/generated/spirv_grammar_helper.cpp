@@ -23,7 +23,7 @@
  *
  ****************************************************************************/
 
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 #include "spirv_grammar_helper.h"
 #include "state_tracker/shader_instruction.h"
 

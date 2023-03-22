@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
-#include "utils/vk_layer_utils.h"
+#include "vk_layer_utils.h"
 
 #if defined(_WIN32)
 #include <windows.h>

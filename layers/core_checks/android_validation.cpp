@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "utils/vk_layer_utils.h"
+#include "vk_layer_utils.h"
 #include "vk_enum_string_helper.h"
 #include "core_checks/core_validation.h"
 

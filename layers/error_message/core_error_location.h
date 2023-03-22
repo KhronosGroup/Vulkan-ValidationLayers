@@ -22,7 +22,7 @@
 #include <sstream>
 #include <limits>
 
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 namespace core_error {
 // structure to track where a validation error occurs, and capture enough information
 // to generate the start of a log message and find the correct VUID for many commonvalidity errors.

@@ -26,7 +26,7 @@
 #include <map>
 #include <utility>
 #include <cstdint>
-#include "custom_containers.h"
+#include "vk_layer_data.h"
 
 #define RANGE_ASSERT(b) assert(b)
 

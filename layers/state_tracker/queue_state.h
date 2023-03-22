@@ -24,7 +24,7 @@
 #include <set>
 #include <thread>
 #include <vector>
-#include "utils/vk_layer_utils.h"
+#include "vk_layer_utils.h"
 
 class CMD_BUFFER_STATE;
 class QUEUE_STATE;

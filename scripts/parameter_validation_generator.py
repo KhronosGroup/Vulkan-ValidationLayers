@@ -584,7 +584,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             with open(os.path.join(self.genOpts.directory, self.categoryFilePath), mode='w', encoding='utf-8', newline='\n') as fd:
                 preamble = f'''{self.GenerateCopyright(None)}
 #include "chassis.h"
-#include "utils/hash_vk_types.h"
+#include "hash_vk_types.h"
 '''
                 write(preamble, file=fd)
                 for enum, string in self.enum_values_definitions.items():

@@ -16,11 +16,7 @@
 # ~~~
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
-    containers/custom_containers.h
-    error_message/logging.h
-    error_message/logging.cpp
     external/xxhash.h
-    external/xxhash.cpp
     generated/vk_format_utils.h
     generated/vk_format_utils.cpp
     generated/vk_validation_error_messages.h
@@ -34,15 +30,19 @@ target_sources(VkLayer_utils PRIVATE
     generated/vk_object_types.h
     generated/vk_extension_helper.h
     generated/vk_typemap_helper.h
-    utils/cast_utils.h
-    utils/hash_util.h
-    utils/hash_vk_types.h
-    utils/vk_layer_extension_utils.cpp
-    utils/vk_layer_extension_utils.h
-    utils/vk_layer_utils.cpp
-    utils/vk_layer_utils.h
+    cast_utils.h
+    hash_util.h
+    hash_vk_types.h
+    vk_layer_logging.h
+    vk_layer_logging.cpp
+    vk_layer_extension_utils.cpp
+    vk_layer_extension_utils.h
+    vk_layer_utils.cpp
+    vk_layer_utils.h
     vk_layer_config.h
     vk_layer_config.cpp
+    vk_layer_data.h
+    xxhash.cpp
 )
 
 # XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
@@ -176,8 +176,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     error_message/core_error_location.cpp
     error_message/core_error_location.h
     error_message/validation_error_enums.h
-    external/vma/vma.h
-    external/vma/vma.cpp
     generated/best_practices.cpp
     generated/best_practices.h
     generated/chassis.cpp
@@ -252,6 +250,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     layer_options.cpp
     utils/convert_to_renderpass2.cpp
     vk_layer_settings_ext.h
+    vma.h
+    vma.cpp
 )
 
 if(MSVC)

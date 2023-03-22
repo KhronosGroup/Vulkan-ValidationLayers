@@ -14,7 +14,7 @@
 #include <chrono>
 #include <thread>
 
-#include "utils/cast_utils.h"
+#include "cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 

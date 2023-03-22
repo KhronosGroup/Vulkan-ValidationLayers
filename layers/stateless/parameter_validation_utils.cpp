@@ -23,7 +23,7 @@
 #include "layer_chassis_dispatch.h"
 #include "error_message/validation_error_enums.h"
 #include "enum_flag_bits.h"
-#include "containers/custom_containers.h"
+#include "vk_layer_data.h"
 #include "utils/convert_to_renderpass2.h"
 
 static const int kMaxParamCheckerStringLength = 256;

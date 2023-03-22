@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "custom_containers.h"
-#include "utils/hash_util.h"
+#include "vk_layer_data.h"
+#include "hash_util.h"
 
 // Types to store queue family ownership (QFO) Transfers
 class COMMAND_POOL_STATE;
