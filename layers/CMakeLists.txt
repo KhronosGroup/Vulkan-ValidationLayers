@@ -67,13 +67,42 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
-# Currently repos like LunarG/VulkanTools require source code from VVL
-# This results in VkLayer_utils needing to be installed. Ideally this is
-# cleaned up in the future since this is a result of history involving the mono-repo.
+# NOTE: We need to install header/source files for Android
+# TODO: This should be removed once the official "Vulkan-Utility-Libraries" library is available for consumption
 if(BUILD_LAYER_SUPPORT_FILES)
-    # NOTE: We need to install header/source files for Android
-    get_target_property(LAYER_UTIL_FILES VkLayer_utils SOURCES)
-    install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/containers/custom_containers.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/containers)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/error_message
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan
+            FILES_MATCHING PATTERN "logging.*")
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/external
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan
+            FILES_MATCHING PATTERN "xxhash.*")
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/generated/vk_format_utils.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_validation_error_messages.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_layer_dispatch_table.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_dispatch_table_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
+                  # NOTE: This header file is installed by the LunarG SDK and treated as part of VulkanHeaders
+                  # IE: This header file is also a deliverable of VVL.
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_object_types.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_extension_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_typemap_helper.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/utils/cast_utils.h
+                  ${CMAKE_SOURCE_DIR}/layers/utils/hash_util.h
+                  ${CMAKE_SOURCE_DIR}/layers/utils/hash_vk_types.h
+                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.h
+                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_utils.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/utils)
+    install(FILES vk_layer_config.h
+                  vk_layer_config.cpp
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
     install(TARGETS VkLayer_utils)
 endif()
 
