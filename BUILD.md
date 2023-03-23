@@ -391,13 +391,6 @@ demo APKs can be installed on production devices with:
 
     ./install_all.sh [-s <serial number>]
 
-> **NOTE:** Manual installation of Android layer libraries on development devices will require modifying [build-android/jni/Application.mk](build-android/jni/Application.mk) to use `libc++_static.so` instead of `libc++_shared.so`, like so:
-```patch
--APP_STL := c++_shared
-+APP_STL := c++_static
-```
-
-
 Note that there are no equivalent scripts on Windows yet, that work needs to
 be completed. The following per platform commands can be used for layer only
 builds:
