@@ -727,13 +727,6 @@ static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-04069"},
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-04069"},
      }},
-    {QueueError::kSubmitQueueMustMatchSrcOrDst,
-     {
-         {Key(Struct::VkImageMemoryBarrier), kVUID_Core_ImageMemoryBarrier_SharingModeExclusiveSameFamily},
-         {Key(Struct::VkImageMemoryBarrier2), kVUID_Core_ImageMemoryBarrier2_SharingModeExclusiveSameFamily},
-         {Key(Struct::VkBufferMemoryBarrier), kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily},
-         {Key(Struct::VkBufferMemoryBarrier2), kVUID_Core_BufferMemoryBarrier2_SharingModeExclusiveSameFamily},
-     }},
 };
 
 const std::map<QueueError, std::string> kQueueErrorSummary{
@@ -742,8 +735,6 @@ const std::map<QueueError, std::string> kQueueErrorSummary{
     {QueueError::kSrcAndDstValidOrSpecial, "Source and destination queue family must be valid, ignored, or special."},
     {QueueError::kSrcAndDestMustBeIgnore, "Source and destination queue family must both be ignored."},
     {QueueError::kSrcAndDstBothValid, "Source and destination queue family must both be valid."},
-    {QueueError::kSubmitQueueMustMatchSrcOrDst,
-     "Source or destination queue family must match submit queue family, if not ignored."},
 };
 
 const std::string &GetBarrierQueueVUID(const Location &loc, QueueError error) {

@@ -2070,20 +2070,18 @@ class ValidatorState {
     // application input.
     static bool ValidateAtQueueSubmit(const QUEUE_STATE *queue_state, const ValidationStateTracker *device_data,
                                       uint32_t src_family, uint32_t dst_family, const ValidatorState &val) {
-        auto error_code = QueueError::kSubmitQueueMustMatchSrcOrDst;
         uint32_t queue_family = queue_state->queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
-            const std::string val_code = GetBarrierQueueVUID(val.loc_, error_code);
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
-            return device_data->LogError(queue_state->Handle(), val_code,
+            return device_data->LogError(queue_state->Handle(), "VUID-vkQueueSubmit-pSubmits-04626",
                                          "%s Barrier submitted to queue with family index %" PRIu32
                                          ", using %s %s created with sharingMode %s, has "
-                                         "srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32 "%s. %s",
+                                         "srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32
+                                         "%s. Source or destination queue family must match submit queue family, if not ignored.",
                                          val.loc_.Message().c_str(), queue_family, val.GetTypeString(),
                                          device_data->report_data->FormatHandle(val.barrier_handle_).c_str(), val.GetModeString(),
-                                         src_family, src_annotation, dst_family, dst_annotation,
-                                         kQueueErrorSummary.at(error_code).c_str());
+                                         src_family, src_annotation, dst_family, dst_annotation);
         }
         return false;
     }

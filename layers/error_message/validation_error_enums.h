@@ -50,11 +50,6 @@
 [[maybe_unused]] static const char *kVUID_Core_PushDescriptorUpdate_Template_SetMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-set";
 [[maybe_unused]] static const char *kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-layout";
 
-[[maybe_unused]] static const char *kVUID_Core_ImageMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family";
-[[maybe_unused]] static const char *kVUID_Core_ImageMemoryBarrier2_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkImageMemoryBarrier2KHR-sharing-mode-exclusive-same-family";
-[[maybe_unused]] static const char *kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family";
-[[maybe_unused]] static const char *kVUID_Core_BufferMemoryBarrier2_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier2KHR-sharing-mode-exclusive-same-family";
-
 // TODO - Need to be moved to Best Practice
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PriorCount = "UNASSIGNED-CoreValidation-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PreTransform = "UNASSIGNED-CoreValidation-SwapchainPreTransform";

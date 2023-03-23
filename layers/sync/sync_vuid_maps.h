@@ -43,7 +43,6 @@ enum class QueueError {
     kSrcAndDstValidOrSpecial,
     kSrcAndDestMustBeIgnore,
     kSrcAndDstBothValid,
-    kSubmitQueueMustMatchSrcOrDst,
 };
 
 extern const std::map<QueueError, std::string> kQueueErrorSummary;
