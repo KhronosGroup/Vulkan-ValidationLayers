@@ -1324,7 +1324,6 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00002", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002", submit_family,
                   other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
 
-        // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
         // Need a third queue family to test this.
         uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
         for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
@@ -1335,11 +1334,10 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         }
 
         if (third_family == VK_QUEUE_FAMILY_IGNORED) {
-            printf("No third queue family found -- kSubmitQueueMustMatchSrcOrDst test skipped.\n");
+            printf("No third queue family found -- test skipped.\n");
         } else {
-            excl_test("UNASSIGNED-CoreValidation-VkImageMemoryBarrier-sharing-mode-exclusive-same-family",
-                      "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family", other_family,
-                      third_family, submit_family);
+            excl_test("VUID-vkQueueSubmit-pSubmits-04626", "VUID-vkQueueSubmit-pSubmits-04626", other_family, third_family,
+                      submit_family);
         }
     }
 }
