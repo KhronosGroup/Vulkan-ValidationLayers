@@ -1,5 +1,6 @@
-# Copyright 2015 The Android Open Source Project
-# Copyright (C) 2015 Valve Corporation
+# Copyright 2023 The Android Open Source Project
+# Copyright (C) 2023 Valve Corporation
+# Copyright (C) 2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +17,6 @@
 APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
 # APP_ABI := arm64-v8a   # just build for pixel2  (don't check in)
 APP_PLATFORM := android-26
-APP_STL := c++_shared
+APP_STL := c++_static
 NDK_TOOLCHAIN_VERSION := clang
 NDK_MODULE_PATH := .
