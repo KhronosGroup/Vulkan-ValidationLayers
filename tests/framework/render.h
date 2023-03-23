@@ -367,6 +367,7 @@ typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Semaphore VkSemaphoreObj;
 typedef vk_testing::Buffer VkBufferObj;
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
+using VkDeviceMemoryObj = vk_testing::DeviceMemory;
 class VkCommandPoolObj : public vk_testing::CommandPool {
   public:
     VkCommandPoolObj() : vk_testing::CommandPool(){};

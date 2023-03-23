@@ -1577,3 +1577,199 @@ TEST_F(VkLayerTest, GetMemoryFdHandle) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkLayerTest, ImportMemoryFromFdHandle) {
+    TEST_DESCRIPTION("POSIX fd handle memory import. Import parameters do not match payload's parameters");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto vkGetMemoryFdKHR = GetInstanceProcAddr<PFN_vkGetMemoryFdKHR>("vkGetMemoryFdKHR");
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkExternalMemoryFeatureFlags external_features = 0;
+    {
+        constexpr auto required_features =
+            VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR;
+        auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        external_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        external_info.handleType = handle_type;
+        auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
+        vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_properties);
+        external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
+        if ((external_features & required_features) != required_features) {
+            GTEST_SKIP() << "External buffer does not support both export and import, skipping test";
+        }
+    }
+
+    VkBufferObj buffer;
+    {
+        auto external_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+        external_info.handleTypes = handle_type;
+        auto create_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        create_info.pNext = &external_info;
+        buffer.init_no_mem(*m_device, create_info);
+    }
+
+    VkDeviceMemoryObj memory;
+    VkDeviceSize payload_size = 0;
+    uint32_t payload_memory_type = 0;
+    {
+        const bool dedicated_allocation = (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+        auto dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+        dedicated_info.buffer = buffer;
+        auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
+        export_info.handleTypes = handle_type;
+        auto alloc_info = VkDeviceMemoryObj::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+        memory.init(*m_device, alloc_info);
+        buffer.bind_memory(memory, 0);
+        payload_size = alloc_info.allocationSize;
+        payload_memory_type = alloc_info.memoryTypeIndex;
+    }
+
+    int fd = -1;
+    {
+        auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = handle_type;
+        ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd));
+    }
+    auto import_info = LvlInitStruct<VkImportMemoryFdInfoKHR>();
+    import_info.handleType = handle_type;
+    import_info.fd = fd;
+    auto alloc_info_with_import = LvlInitStruct<VkMemoryAllocateInfo>(&import_info);
+    VkDeviceMemory imported_memory = VK_NULL_HANDLE;
+
+    // allocationSize != payload's allocationSize
+    {
+        alloc_info_with_import.allocationSize = payload_size * 2;
+        alloc_info_with_import.memoryTypeIndex = payload_memory_type;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-01742");
+        vk::AllocateMemory(*m_device, &alloc_info_with_import, nullptr, &imported_memory);
+        m_errorMonitor->VerifyFound();
+    }
+    // memoryTypeIndex != payload's memoryTypeIndex
+    {
+        alloc_info_with_import.allocationSize = payload_size;
+        alloc_info_with_import.memoryTypeIndex = payload_memory_type + 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-01742");
+        vk::AllocateMemory(*m_device, &alloc_info_with_import, nullptr, &imported_memory);
+        m_errorMonitor->VerifyFound();
+    }
+    // Finish this test with a successful import operation in order to release the ownership of the file descriptor.
+    // The alternative is to use 'close' system call.
+    {
+        alloc_info_with_import.allocationSize = payload_size;
+        alloc_info_with_import.memoryTypeIndex = payload_memory_type;
+        vk_testing::DeviceMemory successfully_imported_memory;
+        successfully_imported_memory.init(*m_device, alloc_info_with_import);
+    }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(VkLayerTest, ImportMemoryFromWin32Handle) {
+    TEST_DESCRIPTION("Win32 handle memory import. Import parameters do not match payload's parameters");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto vkGetMemoryWin32HandleKHR = GetInstanceProcAddr<PFN_vkGetMemoryWin32HandleKHR>("vkGetMemoryWin32HandleKHR");
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    VkExternalMemoryFeatureFlags external_features = 0;
+    {
+        constexpr auto required_features =
+            VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR;
+        auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        external_info.handleType = handle_type;
+        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+        image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_info.type = VK_IMAGE_TYPE_2D;
+        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+        const VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+        external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
+        if (result != VK_SUCCESS || (external_features & required_features) != required_features) {
+            GTEST_SKIP() << "External image does not support both export and import, skipping test";
+        }
+    }
+
+    VkImageObj image(m_device);
+    {
+        auto external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+        external_info.handleTypes = handle_type;
+        auto create_info = VkImageObj::create_info();
+        create_info.pNext = &external_info;
+        create_info.imageType = VK_IMAGE_TYPE_2D;
+        create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        image.init_no_mem(*m_device, create_info);
+    }
+
+    VkDeviceMemoryObj memory;
+    VkDeviceSize payload_size = 0;
+    uint32_t payload_memory_type = 0;
+    {
+        const bool dedicated_allocation = (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+        auto dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+        dedicated_info.image = image;
+        auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
+        export_info.handleTypes = handle_type;
+        auto alloc_info = VkDeviceMemoryObj::get_resource_alloc_info(*m_device, image.memory_requirements(), 0, &export_info);
+        memory.init(*m_device, alloc_info);
+        image.bind_memory(memory, 0);
+        payload_size = alloc_info.allocationSize;
+        payload_memory_type = alloc_info.memoryTypeIndex;
+    }
+
+    HANDLE handle = NULL;
+    {
+        auto get_handle_info = LvlInitStruct<VkMemoryGetWin32HandleInfoKHR>();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = handle_type;
+        ASSERT_VK_SUCCESS(vkGetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle));
+    }
+    auto import_info = LvlInitStruct<VkImportMemoryWin32HandleInfoKHR>();
+    import_info.handleType = handle_type;
+    import_info.handle = handle;
+    auto alloc_info_with_import = LvlInitStruct<VkMemoryAllocateInfo>(&import_info);
+    VkDeviceMemory imported_memory = VK_NULL_HANDLE;
+
+    // allocationSize != payload's allocationSize
+    {
+        alloc_info_with_import.allocationSize = payload_size * 2;
+        alloc_info_with_import.memoryTypeIndex = payload_memory_type;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-01743");
+        vk::AllocateMemory(*m_device, &alloc_info_with_import, nullptr, &imported_memory);
+        m_errorMonitor->VerifyFound();
+    }
+    // memoryTypeIndex != payload's memoryTypeIndex
+    {
+        alloc_info_with_import.allocationSize = payload_size;
+        alloc_info_with_import.memoryTypeIndex = payload_memory_type + 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-01743");
+        vk::AllocateMemory(*m_device, &alloc_info_with_import, nullptr, &imported_memory);
+        m_errorMonitor->VerifyFound();
+    }
+    // Importing memory object payloads from Windows handles does not transfer ownership of the handle to the driver.
+    // For NT handle types, the application must release handle ownership using the CloseHandle system call.
+    // That's in contrast with the POSIX file descriptor handles, where memory import operation transfers the ownership,
+    // so the application does not need to call 'close' system call.
+    ::CloseHandle(handle);
+}
+#endif
