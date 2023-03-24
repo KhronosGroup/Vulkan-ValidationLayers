@@ -374,34 +374,34 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, 
 //  and that the size of the map range should be:
 //  1. Not zero
 //  2. Within the size of the memory allocation
-bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize offset, VkDeviceSize size) const {
+bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE &mem_info, VkDeviceSize offset, VkDeviceSize size) const {
     bool skip = false;
-    assert(mem_info);
-    const auto mem = mem_info->mem();
+    const auto mem = mem_info.mem();
     if (size == 0) {
         skip = LogError(mem, "VUID-vkMapMemory-size-00680", "VkMapMemory: Attempting to map memory range of size zero");
     }
 
     // It is an application error to call VkMapMemory on an object that is already mapped
-    if (mem_info->mapped_range.size != 0) {
+    if (mem_info.mapped_range.size != 0) {
         skip = LogError(mem, "VUID-vkMapMemory-memory-00678", "VkMapMemory: Attempting to map memory on an already-mapped %s.",
                         report_data->FormatHandle(mem).c_str());
     }
 
     // Validate offset is not over allocaiton size
-    if (offset >= mem_info->alloc_info.allocationSize) {
+    const VkDeviceSize allocationSize = mem_info.alloc_info.allocationSize;
+    if (offset >= allocationSize) {
         skip = LogError(mem, "VUID-vkMapMemory-offset-00679",
                         "VkMapMemory: Attempting to map memory with an offset of 0x%" PRIx64
                         " which is larger than the total array size 0x%" PRIx64,
-                        offset, mem_info->alloc_info.allocationSize);
+                        offset, allocationSize);
     }
     // Validate that offset + size is within object's allocationSize
     if (size != VK_WHOLE_SIZE) {
-        if ((offset + size) > mem_info->alloc_info.allocationSize) {
+        if ((offset + size) > allocationSize) {
             skip = LogError(mem, "VUID-vkMapMemory-size-00681",
                             "VkMapMemory: Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64
                             ".",
-                            offset, size + offset, mem_info->alloc_info.allocationSize);
+                            offset, size + offset, allocationSize);
         }
     }
     return skip;
@@ -834,7 +834,7 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
             skip = LogError(mem, "VUID-vkMapMemory-memory-00683", "Memory allocated with multiple instances");
         }
 
-        skip |= ValidateMapMemRange(mem_info.get(), offset, size);
+        skip |= ValidateMapMemRange(*mem_info.get(), offset, size);
     }
     return skip;
 }
