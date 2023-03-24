@@ -578,6 +578,11 @@ class ValidationStateTracker : public ValidationObject {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                              VkImage* pSwapchainImages, VkResult result) override;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                               HANDLE* pHandle, VkResult result) override;
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result) override;
     void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,
                                         VkResult result) override;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -1480,6 +1485,24 @@ class ValidationStateTracker : public ValidationObject {
         return {};
     }
 
+    inline std::optional<VkMemoryAllocateInfo> GetAllocateInfoFromFdHandle(int fd) const {
+        ReadLockGuard guard(fd_handle_map_lock_);
+        if (const auto itr = fd_handle_map_.find(fd); itr != fd_handle_map_.cend()) {
+            return itr->second;
+        }
+        return {};
+    }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    inline std::optional<VkMemoryAllocateInfo> GetAllocateInfoFromWin32Handle(HANDLE handle) const {
+        ReadLockGuard guard(win32_handle_map_lock_);
+        if (const auto itr = win32_handle_map_.find(handle); itr != win32_handle_map_.cend()) {
+            return itr->second;
+        }
+        return {};
+    }
+#endif
+
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
@@ -1581,6 +1604,16 @@ class ValidationStateTracker : public ValidationObject {
     // Keep track of identifier -> state
     vvl::unordered_map<VkShaderModuleIdentifierEXT, std::shared_ptr<SHADER_MODULE_STATE>> shader_identifier_map_;
     mutable std::shared_mutex shader_identifier_map_lock_;
+
+    // If vkGetMemoryFdKHR is called, keep track of fd handle -> allocation info
+    vvl::unordered_map<int, VkMemoryAllocateInfo> fd_handle_map_;
+    mutable std::shared_mutex fd_handle_map_lock_;
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    // If vkGetMemoryWin32HandleKHR is called, keep track of HANDLE -> allocation info
+    vvl::unordered_map<HANDLE, VkMemoryAllocateInfo> win32_handle_map_;
+    mutable std::shared_mutex win32_handle_map_lock_;
+#endif
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)

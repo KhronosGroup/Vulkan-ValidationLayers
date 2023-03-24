@@ -1812,9 +1812,7 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
     auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
 
     std::optional<DedicatedBinding> dedicated_binding;
-
-    auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
-    if (dedicated) {
+    if (const auto dedicated = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext)) {
         if (dedicated->buffer) {
             auto buffer_state = Get<BUFFER_STATE>(dedicated->buffer);
             assert(buffer_state);
@@ -1830,6 +1828,14 @@ void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const
             }
             dedicated_binding.emplace(dedicated->image, image_state->createInfo);
         }
+    }
+    if (const auto import_memory_fd_info = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
+        // Successful import operation transfers POSIX handle ownership to the driver.
+        // Stop tracking handle at this point. It can not be used for import operations anymore.
+        // The map's erase is a no-op for externally created handles that are not tracked here.
+        // NOTE: In contrast, the successful import does not transfer ownership of a Win32 handle.
+        WriteLockGuard guard(fd_handle_map_lock_);
+        fd_handle_map_.erase(import_memory_fd_info->fd);
     }
     Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
                                 physical_device_count));
@@ -3874,6 +3880,45 @@ void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFen
 
     if (fence_node) {
         fence_node->Import(handle_type, flags);
+    }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device,
+                                                                   const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                                   HANDLE *pHandle, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetWin32HandleInfo->memory)) {
+        // For validation purposes we need to keep allocation size and memory type index.
+        // There is no need to keep pNext chain.
+        auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        alloc_info.allocationSize = memory_state->alloc_info.allocationSize;
+        alloc_info.memoryTypeIndex = memory_state->alloc_info.memoryTypeIndex;
+
+        WriteLockGuard guard(win32_handle_map_lock_);
+        // `insert_or_assign` ensures that information is updated when the system decides to re-use
+        // closed handle value for a new handle. The validation layer does not track handle close operation
+        // which is performed by 'CloseHandle' system call.
+        win32_handle_map_.insert_or_assign(*pHandle, alloc_info);
+    }
+}
+#endif
+
+void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
+                                                          VkResult result) {
+    if (VK_SUCCESS != result) return;
+    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
+        // For validation purposes we need to keep allocation size and memory type index.
+        // There is no need to keep pNext chain.
+        auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        alloc_info.allocationSize = memory_state->alloc_info.allocationSize;
+        alloc_info.memoryTypeIndex = memory_state->alloc_info.memoryTypeIndex;
+
+        WriteLockGuard guard(fd_handle_map_lock_);
+        // `insert_or_assign` ensures that information is updated when the system decides to re-use
+        // closed handle value for a new handle. The fd handle created inside Vulkan _can_ be closed
+        // using the 'close' system call, which is not tracked by the validation layer.
+        fd_handle_map_.insert_or_assign(*pFd, alloc_info);
     }
 }
 
