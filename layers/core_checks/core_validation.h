@@ -401,7 +401,7 @@ class CoreChecks : public ValidationStateTracker {
                                      const RENDER_PASS_STATE& rp2_state, const char* msg, const char* caller,
                                      const char* error_code) const;
     bool ValidateStageMaskHost(const Location& loc, VkPipelineStageFlags2KHR stageMask) const;
-    bool ValidateMapMemRange(const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize offset, VkDeviceSize size) const;
+    bool ValidateMapMemRange(const DEVICE_MEMORY_STATE& mem_info, VkDeviceSize offset, VkDeviceSize size) const;
     bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo) const;
     bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
