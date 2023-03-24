@@ -208,6 +208,11 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
                                 }
                                 break;
 
+                            case spv::OpEmitVertex:
+                            case spv::OpEmitStreamVertex:
+                                emit_vertex_geometry = true;
+                                break;
+
                             default: {
                                 if (AtomicOperation(insn->Opcode())) {
                                     if (insn->Opcode() == spv::OpAtomicStore) {

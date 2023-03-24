@@ -227,6 +227,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         StructInfo push_constant_used_in_shader;
 
+        bool emit_vertex_geometry{false};
+
         // Mark if a BuiltIn is written to
         bool written_builtin_point_size{false};
         bool written_builtin_primitive_shading_rate_khr{false};
