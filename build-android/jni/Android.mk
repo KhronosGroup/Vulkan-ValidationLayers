@@ -173,6 +173,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
                    $(SRC_DIR)/tests/negative/sync_val.cpp \
+                   $(SRC_DIR)/tests/containers/small_vector.cpp \
                    $(SRC_DIR)/tests/framework/binding.cpp \
                    $(SRC_DIR)/tests/framework/test_framework_android.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \
@@ -253,6 +254,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
                    $(SRC_DIR)/tests/negative/sync_val.cpp \
+                   $(SRC_DIR)/tests/containers/small_vector.cpp \
                    $(SRC_DIR)/tests/framework/binding.cpp \
                    $(SRC_DIR)/tests/framework/test_framework_android.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \

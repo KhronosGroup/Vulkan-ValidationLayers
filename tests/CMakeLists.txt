@@ -110,6 +110,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/viewport_inheritance.cpp
     negative/wsi.cpp
     negative/ycbcr.cpp
+    containers/small_vector.cpp
 )
 
 if (VVL_ENABLE_ASAN)
