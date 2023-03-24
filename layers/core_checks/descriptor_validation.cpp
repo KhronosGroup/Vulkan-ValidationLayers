@@ -4711,13 +4711,13 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         skip |= ValidatePipelineBindPoint(cb_state.get(), template_ci.pipelineBindPoint, func_name, bind_errors);
 
         if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
-            skip |= LogError(cb_state->commandBuffer(), kVUID_Core_PushDescriptorUpdate_TemplateType,
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994",
                              "%s: descriptorUpdateTemplate %s was not created with flag "
                              "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR.",
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str());
         }
         if (template_ci.set != set) {
-            skip |= LogError(cb_state->commandBuffer(), kVUID_Core_PushDescriptorUpdate_Template_SetMismatched,
+            skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995",
                              "%s: descriptorUpdateTemplate %s created with set %" PRIu32
                              " does not match command parameter set %" PRIu32 ".",
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
@@ -4725,7 +4725,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         auto template_layout = Get<PIPELINE_LAYOUT_STATE>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(cb_state->commandBuffer(), descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
-            skip |= LogError(objlist, kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched,
+            skip |= LogError(objlist, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993",
                              "%s: descriptorUpdateTemplate %s created with %s is incompatible with command parameter "
                              "%s for set %" PRIu32,
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(),
