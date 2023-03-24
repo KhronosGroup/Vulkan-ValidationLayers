@@ -951,6 +951,38 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(VkPositiveLayerTest, PointSizeGeomShaderDontEmit) {
+    TEST_DESCRIPTION("If vertex is not emitted, don't need Point Size in Geometry shader");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
+        GTEST_SKIP() << "Device does not support the required geometry shader features";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    // Never calls OpEmitVertex
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (points) out;
+        layout (max_vertices = 1) out;
+        void main() {
+           gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
 TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize outside of a structure.");
 

@@ -2290,7 +2290,8 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
     }
 
     if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
-        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !entrypoint.written_builtin_point_size &&
+            entrypoint.emit_vertex_geometry) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] shaderTessellationAndGeometryPointSize is enabled, but PointSize is not "
