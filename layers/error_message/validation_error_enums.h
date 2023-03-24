@@ -46,10 +46,6 @@
 
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 
-[[maybe_unused]] static const char *kVUID_Core_PushDescriptorUpdate_TemplateType = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-templateType";
-[[maybe_unused]] static const char *kVUID_Core_PushDescriptorUpdate_Template_SetMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-set";
-[[maybe_unused]] static const char *kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-layout";
-
 // TODO - Need to be moved to Best Practice
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PriorCount = "UNASSIGNED-CoreValidation-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PreTransform = "UNASSIGNED-CoreValidation-SwapchainPreTransform";
