@@ -357,7 +357,56 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
-    // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01742, 01743, 01745, 00645, 00648, 01744
+    if (const auto import_memory_fd_info = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext)) {
+        if (import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
+            if (const auto payload_info = GetAllocateInfoFromFdHandle(import_memory_fd_info->fd)) {
+                if (pAllocateInfo->allocationSize != payload_info->allocationSize) {
+                    skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-01742",
+                                     "vkAllocateMemory(): pAllocateInfo defines an import operation, the file descriptor handle fd "
+                                     "(%d) was created by the Vulkan API, but allocationSize (%" PRIu64
+                                     ") does not match payload's allocationSize (%" PRIu64 ").",
+                                     import_memory_fd_info->fd, pAllocateInfo->allocationSize, payload_info->allocationSize);
+                }
+                if (pAllocateInfo->memoryTypeIndex != payload_info->memoryTypeIndex) {
+                    skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-01742",
+                                     "vkAllocateMemory(): pAllocateInfo defines an import operation, the file descriptor handle fd "
+                                     "(%d) was created by the Vulkan API, but memoryTypeIndex (%" PRIu32
+                                     ") does not match payload's memoryTypeIndex (%" PRIu32 ").",
+                                     import_memory_fd_info->fd, pAllocateInfo->memoryTypeIndex, payload_info->memoryTypeIndex);
+                }
+            }
+        }
+    }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (const auto import_memory_win32_info = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext)) {
+        if (import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
+            import_memory_win32_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT) {
+            if (const auto payload_info = GetAllocateInfoFromWin32Handle(import_memory_win32_info->handle)) {
+                static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
+                if (pAllocateInfo->allocationSize != payload_info->allocationSize) {
+                    skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-01743",
+                                     "vkAllocateMemory(): pAllocateInfo defines an import operation, the Win32 handle (0x%" PRIxPTR
+                                     ") of type %s was created by the Vulkan API, but allocationSize (%" PRIu64
+                                     ") does not match the payload's allocationSize (%" PRIu64 ").",
+                                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                     string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                                     pAllocateInfo->allocationSize, payload_info->allocationSize);
+                }
+                if (pAllocateInfo->memoryTypeIndex != payload_info->memoryTypeIndex) {
+                    skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-01743",
+                                     "vkAllocateMemory(): pAllocateInfo defines an import operation, the Win32 handle (0x%" PRIxPTR
+                                     ") of type %s was created by the Vulkan API, but memoryTypeIndex (%" PRIu32
+                                     ") does not match the payload's memoryTypeIndex (%" PRIu32 ").",
+                                     reinterpret_cast<std::uintptr_t>(import_memory_win32_info->handle),
+                                     string_VkExternalMemoryHandleTypeFlagBits(import_memory_win32_info->handleType),
+                                     pAllocateInfo->memoryTypeIndex, payload_info->memoryTypeIndex);
+                }
+            }
+        }
+    }
+#endif
+    // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01745, 00645, 00648, 01744
     return skip;
 }
 
