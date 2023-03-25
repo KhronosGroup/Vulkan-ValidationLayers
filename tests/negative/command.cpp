@@ -8333,7 +8333,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     pipe.SetScissor(scissors);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
-    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+    pipe.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     const VkPipelineLayoutObj pl(m_device);
     {
         VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);

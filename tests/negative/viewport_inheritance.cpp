@@ -1093,8 +1093,8 @@ const VkPipelineDynamicStateCreateInfo ViewportInheritanceTestData::kDynamicStat
     VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0,
     static_cast<uint32_t>(kDynamicStateArray.size()), kDynamicStateArray.data()};
 
-static const std::array<VkDynamicState, 2> kDynamicStateWithCountArray = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-                                                                          VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT};
+static const std::array<VkDynamicState, 2> kDynamicStateWithCountArray = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+                                                                          VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
 const VkPipelineDynamicStateCreateInfo ViewportInheritanceTestData::kDynamicStateWithCount = {
     VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0,
     static_cast<uint32_t>(kDynamicStateWithCountArray.size()), kDynamicStateWithCountArray.data()};

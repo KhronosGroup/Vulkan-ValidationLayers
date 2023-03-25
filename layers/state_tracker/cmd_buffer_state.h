@@ -251,8 +251,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     // For each draw command D recorded to this command buffer, let
     //  * g_D be the graphics pipeline used
-    //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT)
-    //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT)
+    //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
+    //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
     // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
     uint32_t usedViewportScissorCount;
     uint32_t pipelineStaticViewportCount;  // v_G for currently-bound graphics pipeline.

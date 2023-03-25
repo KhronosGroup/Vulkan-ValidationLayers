@@ -55,8 +55,8 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {
-        VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,
+        VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
     };
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);

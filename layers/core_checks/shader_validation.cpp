@@ -2345,7 +2345,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
     const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
         (pipeline.pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && viewport_state->viewportCount > 1 &&
             entrypoint.written_builtin_primitive_shading_rate_khr) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
@@ -3550,7 +3550,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
         const VkShaderStageFlagBits stage = stage_state.create_info->stage;
         if (stage == VK_SHADER_STAGE_VERTEX_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
+                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.viewportWithCountCount != 1) {
                 if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
                     skip |= LogError(
                         stage_state.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,

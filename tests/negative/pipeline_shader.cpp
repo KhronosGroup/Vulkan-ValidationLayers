@@ -15961,7 +15961,7 @@ TEST_F(VkLayerTest, InvalidViewportCountWithExtendedDynamicState) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
+    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
