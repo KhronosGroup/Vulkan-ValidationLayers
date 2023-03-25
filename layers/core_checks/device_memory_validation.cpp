@@ -370,45 +370,6 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, 
     return skip;
 }
 
-// Validate that given Map memory range is valid. This means that the memory should not already be mapped,
-//  and that the size of the map range should be:
-//  1. Not zero
-//  2. Within the size of the memory allocation
-bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE &mem_info, bool map2, VkDeviceSize offset, VkDeviceSize size) const {
-    bool skip = false;
-    const auto mem = mem_info.mem();
-    if (size == 0) {
-        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-size-07960" : "VUID-vkMapMemory-size-00680",
-                        "Attempting to map memory range of size zero");
-    }
-
-    // It is an application error to call VkMapMemory on an object that is already mapped
-    if (mem_info.mapped_range.size != 0) {
-        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-memory-07958" : "VUID-vkMapMemory-memory-00678",
-                        "Attempting to map memory on an already-mapped %s.",
-                        report_data->FormatHandle(mem).c_str());
-    }
-
-    // Validate offset is not over allocaiton size
-    const VkDeviceSize allocationSize = mem_info.alloc_info.allocationSize;
-    if (offset >= allocationSize) {
-        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-offset-07959" : "VUID-vkMapMemory-offset-00679",
-                        "Attempting to map memory with an offset of 0x%" PRIx64
-                        " which is larger than the total array size 0x%" PRIx64,
-                        offset, allocationSize);
-    }
-    // Validate that offset + size is within object's allocationSize
-    if (size != VK_WHOLE_SIZE) {
-        if ((offset + size) > allocationSize) {
-            skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-size-07961" : "VUID-vkMapMemory-size-00681",
-                            "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64
-                            ".",
-                            offset, size + offset, allocationSize);
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const DEVICE_MEMORY_STATE *mem_info,
                                            VkDeviceSize memoryOffset, const char *api_name) const {
     bool skip = false;
@@ -818,25 +779,61 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, 
     return ValidateGetImageMemoryRequirements2(pInfo, "vkGetImageMemoryRequirements2KHR()");
 }
 
+bool CoreChecks::ValidateMapMemory(const DEVICE_MEMORY_STATE &mem_info, bool map2, VkDeviceSize offset, VkDeviceSize size) const {
+    bool skip = false;
+    const char *func_name = map2 ? "vkMapMemory2KHR()" : "vkMapMemory()";
+    const VkDeviceMemory mem = mem_info.mem();
+
+    const uint32_t memoryTypeIndex = mem_info.alloc_info.memoryTypeIndex;
+    const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;
+    if ((propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
+        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-memory-07962" : "VUID-vkMapMemory-memory-00682",
+                        "%s: Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
+                        "Memory has type %" PRIu32 " which has properties %s",
+                        func_name, memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
+    }
+
+    if (mem_info.multi_instance) {
+        skip = LogError(instance, map2 ? "VUID-VkMemoryMapInfoKHR-memory-07963" : "VUID-vkMapMemory-memory-00683",
+                        "%s: Memory allocated with multiple instances", func_name);
+    }
+
+    if (size == 0) {
+        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-size-07960" : "VUID-vkMapMemory-size-00680",
+                        "%s: Attempting to map memory range of size zero", func_name);
+    }
+
+    // It is an application error to call VkMapMemory on an object that is already mapped
+    if (mem_info.mapped_range.size != 0) {
+        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-memory-07958" : "VUID-vkMapMemory-memory-00678",
+                        "%s: memory has already be mapped.", func_name);
+    }
+
+    // Validate offset is not over allocaiton size
+    const VkDeviceSize allocationSize = mem_info.alloc_info.allocationSize;
+    if (offset >= allocationSize) {
+        skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-offset-07959" : "VUID-vkMapMemory-offset-00679",
+                        "%s: Attempting to map memory with an offset of 0x%" PRIx64
+                        " which is larger than the total array size 0x%" PRIx64,
+                        func_name, offset, allocationSize);
+    }
+    // Validate that offset + size is within object's allocationSize
+    if (size != VK_WHOLE_SIZE) {
+        if ((offset + size) > allocationSize) {
+            skip = LogError(mem, map2 ? "VUID-VkMemoryMapInfoKHR-size-07961" : "VUID-vkMapMemory-size-00681",
+                            "%s:  Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64 ".",
+                            func_name, offset, size + offset, allocationSize);
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,
                                           VkFlags flags, void **ppData) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
     if (mem_info) {
-        const uint32_t memoryTypeIndex = mem_info->alloc_info.memoryTypeIndex;
-        const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;
-        if ((propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-            skip = LogError(mem, "VUID-vkMapMemory-memory-00682",
-                            "Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
-                            "Memory has type %" PRIu32 " which has properties %s",
-                            memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
-        }
-
-        if (mem_info->multi_instance) {
-            skip = LogError(mem, "VUID-vkMapMemory-memory-00683", "Memory allocated with multiple instances");
-        }
-
-        skip |= ValidateMapMemRange(*mem_info.get(), false, offset, size);
+        skip |= ValidateMapMemory(*mem_info.get(), false, offset, size);
     }
     return skip;
 }
@@ -845,21 +842,7 @@ bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMap
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryMapInfo->memory);
     if (mem_info) {
-        const uint32_t memoryTypeIndex = mem_info->alloc_info.memoryTypeIndex;
-        const VkMemoryPropertyFlags propertyFlags = phys_dev_mem_props.memoryTypes[memoryTypeIndex].propertyFlags;
-        if ((propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-            skip = LogError(pMemoryMapInfo->memory, "VUID-VkMemoryMapInfoKHR-memory-07962",
-                            "Mapping memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set. "
-                            "Memory has type %" PRIu32 " which has properties %s",
-                            memoryTypeIndex, string_VkMemoryPropertyFlags(propertyFlags).c_str());
-        }
-
-        if (mem_info->multi_instance) {
-            skip = LogError(pMemoryMapInfo->memory, "VUID-VkMemoryMapInfoKHR-memory-07963",
-                            "Memory allocated with multiple instances");
-        }
-
-        skip |= ValidateMapMemRange(*mem_info.get(), true, pMemoryMapInfo->offset, pMemoryMapInfo->size);
+        skip |= ValidateMapMemory(*mem_info.get(), true, pMemoryMapInfo->offset, pMemoryMapInfo->size);
     }
     return skip;
 }
@@ -868,9 +851,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
     if (mem_info && !mem_info->mapped_range.size) {
-        // Valid Usage: memory must currently be mapped
-        skip |= LogError(mem, "VUID-vkUnmapMemory-memory-00689", "Invalid memory unmapping: %s.",
-                         report_data->FormatHandle(mem).c_str());
+        skip |= LogError(mem, "VUID-vkUnmapMemory-memory-00689", "vkUnmapMemory(): Unmapping Memory without memory being mapped.");
     }
     return skip;
 }
@@ -879,10 +860,8 @@ bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryU
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
     if (mem_info && !mem_info->mapped_range.size) {
-        // Valid Usage: memory must currently be mapped
-        skip |= LogError(pMemoryUnmapInfo->memory,
-                         "VUID-VkMemoryUnmapInfoKHR-memory-07964", "Unmapping Memory without memory being mapped: %s.",
-                         report_data->FormatHandle(pMemoryUnmapInfo->memory).c_str());
+        skip |= LogError(pMemoryUnmapInfo->memory, "VUID-VkMemoryUnmapInfoKHR-memory-07964",
+                         "vkUnmapMemory2KHR(): Unmapping Memory without memory being mapped.");
     }
     return skip;
 }
