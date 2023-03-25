@@ -179,23 +179,25 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
 
     const auto &rp_state = pipeline.RenderPassState();
     if (pipeline.IsRenderPassStateRequired()) {
-        if (!rp_state) {
-            const char *vuid = nullptr;
-            if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                if (api_version >= VK_API_VERSION_1_3) {
-                    vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575";
-                } else {
-                    vuid = "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574";
-                }
-            } else if (!enabled_features.core13.dynamicRendering) {
-                vuid = "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576";
-            }
-            if (vuid) {
+        if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            if (!enabled_features.core13.dynamicRendering) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)
+                                       ? "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576"
+                                       : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574";
                 skip |= LogError(device, vuid,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] requires a valid renderPass, but one was not provided",
+                                 "].renderPass is null but dynamicRendering is not enabled",
                                  pipeline.create_index);
             }
+        } else if (!rp_state) {
+            // not a valid Render Pass Object
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)
+                                   ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575"
+                                   : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574";
+            skip |= LogError(device, vuid,
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] requires a valid renderPass, but one was not provided",
+                             pipeline.create_index);
         }
     }
 
