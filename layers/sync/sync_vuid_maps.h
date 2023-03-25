@@ -75,6 +75,8 @@ enum class ImageError {
     kNotDepthOrStencilAspect,
     kNotDepthAndStencilAspect,
     kNotSeparateDepthAndStencilAspect,
+    kSeparateDepthWithStencilLayout,
+    kSeparateStencilhWithDepthLayout,
     kRenderPassMismatch,
     kRenderPassLayoutChange,
 };
