@@ -1586,11 +1586,13 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         const VkImageCreateInfo &image_create_info = image_state->createInfo;
         const VkFormat image_format = image_create_info.format;
         const VkImageAspectFlags aspect_mask = img_barrier.subresourceRange.aspectMask;
+        const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+        const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
         // For a Depth/Stencil image both aspects MUST be set
         auto image_loc = loc.dot(Field::image);
         if (FormatIsDepthAndStencil(image_format)) {
             if (enabled_features.core12.separateDepthStencilLayouts) {
-                if (!(aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                if (!has_depth_mask && !has_stencil_mask) {
                     auto vuid = GetImageBarrierVUID(loc, ImageError::kNotDepthOrStencilAspect);
                     skip |= LogError(img_barrier.image, vuid,
                                      "%s references %s of format %s that must have either the depth or stencil "
@@ -1599,8 +1601,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                                      string_VkFormat(image_format), aspect_mask);
                 }
             } else {
-                auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-                if ((aspect_mask & ds_mask) != (ds_mask)) {
+                if (!has_depth_mask || !has_stencil_mask) {
                     auto error = IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)
                                      ? ImageError::kNotSeparateDepthAndStencilAspect
                                      : ImageError::kNotDepthAndStencilAspect;
@@ -1611,6 +1612,35 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                                      image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
                                      string_VkFormat(image_format), aspect_mask);
                 }
+            }
+        }
+
+        if (has_depth_mask) {
+            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
+                img_barrier.oldLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL ||
+                img_barrier.newLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
+                img_barrier.newLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+                auto vuid = GetImageBarrierVUID(loc, ImageError::kSeparateDepthWithStencilLayout);
+                skip |= LogError(
+                    img_barrier.image, vuid,
+                    "%s references %s of format %s has depth aspect with stencil only layouts, oldLayout = %s and newLayout = %s.",
+                    image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                    string_VkFormat(image_format), string_VkImageLayout(img_barrier.oldLayout),
+                    string_VkImageLayout(img_barrier.newLayout));
+            }
+        }
+        if (has_stencil_mask) {
+            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                img_barrier.oldLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                img_barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                img_barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                auto vuid = GetImageBarrierVUID(loc, ImageError::kSeparateStencilhWithDepthLayout);
+                skip |= LogError(
+                    img_barrier.image, vuid,
+                    "%s references %s of format %s has stencil aspect with depth only layouts, oldLayout = %s and newLayout = %s.",
+                    image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                    string_VkFormat(image_format), string_VkImageLayout(img_barrier.oldLayout),
+                    string_VkImageLayout(img_barrier.newLayout));
             }
         }
 

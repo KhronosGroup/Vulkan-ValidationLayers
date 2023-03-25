@@ -413,6 +413,18 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         conc_test(vuid);
     }
 
+    if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+        conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+        conc_test("VUID-VkImageMemoryBarrier-aspectMask-08702");
+
+        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        conc_test("VUID-VkImageMemoryBarrier-aspectMask-08703");
+
+        conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
+
     // Having anything other than DEPTH and STENCIL is an error
     conc_test.image_barrier_.subresourceRange.aspectMask =
         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
