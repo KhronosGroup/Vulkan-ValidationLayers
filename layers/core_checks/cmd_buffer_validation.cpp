@@ -706,10 +706,10 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                     state_name = "viewport";
                     format_index = true;
                     break;
-                case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT:
+                case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT:
                     state_name = "dynamic viewport count";
                     break;
-                case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT:
+                case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT:
                     state_name = "dynamic scissor count";
                     break;
                 default:
@@ -745,7 +745,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state->usedDynamicViewportCount) {
             if (viewport_count_to_inherit_ == 0 || viewport_count_trashed_by_ != kNotTrashed) {
                 skip |= check_missing_inherit(viewport_count_to_inherit_, viewport_count_trashed_by_,
-                                              VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+                                              VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
             } else {
                 check_viewport_count = viewport_count_to_inherit_;
             }
@@ -753,7 +753,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state->usedDynamicScissorCount) {
             if (scissor_count_to_inherit_ == 0 || scissor_count_trashed_by_ != kNotTrashed) {
                 skip |= check_missing_inherit(scissor_count_to_inherit_, scissor_count_trashed_by_,
-                                              VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+                                              VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
             } else {
                 check_scissor_count = scissor_count_to_inherit_;
             }

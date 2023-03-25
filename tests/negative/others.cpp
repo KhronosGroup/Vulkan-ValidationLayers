@@ -5341,8 +5341,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {
         VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
-        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
+        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,      VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
         VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
         VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
         VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
@@ -5453,8 +5453,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         CreatePipelineHelper pipe(*this);
         pipe.InitInfo();
         const VkDynamicState dyn_states[] = {
-            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,
         };
         VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -5472,8 +5472,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         CreatePipelineHelper pipe(*this);
         pipe.InitInfo();
         const VkDynamicState dyn_states[] = {
-            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, VK_DYNAMIC_STATE_VIEWPORT,  // viewports
-            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT, VK_DYNAMIC_STATE_SCISSOR     // scissors
+            VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_VIEWPORT,  // viewports
+            VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR     // scissors
         };
         VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         dyn_state_ci.dynamicStateCount = 2;
@@ -5497,8 +5497,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     const VkDynamicState dyn_states[] = {
         VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
-        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT,  VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
+        VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,  VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
+        VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,      VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT,
         VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
         VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
         VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
@@ -5513,10 +5513,10 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
         dyn_state_ci.pDynamicStates = dyn_state_dupes;
         pipe.dyn_state_ci_ = dyn_state_ci;
-        if (dyn_states[i] == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) {
+        if (dyn_states[i] == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) {
             pipe.vp_state_ci_.viewportCount = 0;
         }
-        if (dyn_states[i] == VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) {
+        if (dyn_states[i] == VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) {
             pipe.vp_state_ci_.scissorCount = 0;
         }
         pipe.InitState();
@@ -5634,7 +5634,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     pipe2.InitInfo();
     VkPipelineDynamicStateCreateInfo dyn_state_ci2 = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci2.dynamicStateCount = 1;
-    VkDynamicState dynamic_state2 = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT;
+    VkDynamicState dynamic_state2 = VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT;
     dyn_state_ci2.pDynamicStates = &dynamic_state2;
     pipe2.dyn_state_ci_ = dyn_state_ci2;
     pipe2.vp_state_ci_.viewportCount = 0;
@@ -5650,7 +5650,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     pipe3.InitInfo();
     VkPipelineDynamicStateCreateInfo dyn_state_ci3 = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci3.dynamicStateCount = 1;
-    VkDynamicState dynamic_state3 = VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT;
+    VkDynamicState dynamic_state3 = VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT;
     dyn_state_ci3.pDynamicStates = &dynamic_state3;
     pipe3.dyn_state_ci_ = dyn_state_ci3;
     pipe3.vp_state_ci_.scissorCount = 0;
