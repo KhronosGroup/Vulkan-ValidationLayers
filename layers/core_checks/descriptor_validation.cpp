@@ -302,12 +302,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 }
             }
             if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
-                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616",
+                const LogObjectList objlist(pDescriptorSets[set_idx], descriptor_set->GetPoolState()->Handle());
+                skip |= LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616",
                                  "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32
                                  "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.",
                                  set_idx);
             }
             if (descriptor_set->GetLayout()->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                const LogObjectList objlist(pDescriptorSets[set_idx], descriptor_set->GetLayout()->Handle());
                 skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010",
                                  "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32
                                  "] was allocated with a VkDescriptorSetLayout created with the flag "
@@ -465,10 +467,10 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
 
             if (binding_info.descriptorCount > 1) {
                 skip |= LogError(device, "VUID-VkDescriptorSetLayoutBinding-flags-08006",
-                                 "vkCreateDescriptorSetLayout(): pBindings[%u] has descriptorCount "
-                                 "greater than 1 but the "
+                                 "vkCreateDescriptorSetLayout(): pBindings[%u] descriptorCount is %" PRIu32
+                                 " but the "
                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT flag is set.",
-                                 i);
+                                 i, binding_info.descriptorCount);
             }
 
             if ((binding_info.descriptorCount == 1) && (binding_info.pImmutableSamplers == nullptr)) {
@@ -4525,7 +4527,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                                                         const VkWriteDescriptorSet *pDescriptorWrites) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    const char *func_name = "vkCmdPushDescriptorSetKHR()";
     bool skip = false;
     skip |= ValidateCmd(*cb_state, CMD_PUSHDESCRIPTORSETKHR);
 
@@ -4534,7 +4535,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
         std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363"),
         std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363")};
 
-    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, func_name, bind_errors);
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, "vkCmdPushDescriptorSetKHR()", bind_errors);
     auto layout_data = Get<PIPELINE_LAYOUT_STATE>(layout);
 
     // Validate the set index points to a push descriptor set and is in range
@@ -4545,20 +4546,22 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
             if (dsl) {
                 if (!dsl->IsPushDescriptor()) {
                     skip = LogError(layout, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
-                                    "%s: Set index %" PRIu32 " does not match push descriptor set layout index for %s.", func_name,
+                                    "vkCmdPushDescriptorSetKHR(): Set index %" PRIu32
+                                    " does not match push descriptor set layout index for %s.",
                                     set, report_data->FormatHandle(layout).c_str());
                 } else {
                     // Create an empty proxy in order to use the existing descriptor set update validation
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
                     cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
-                    skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites, func_name);
+                    skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites,
+                                                          "vkCmdPushDescriptorSetKHR()");
                 }
             }
         } else {
             skip = LogError(layout, "VUID-vkCmdPushDescriptorSetKHR-set-00364",
-                            "%s: Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", func_name, set,
-                            report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+                            "vkCmdPushDescriptorSetKHR(): Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").",
+                            set, report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
         }
     }
 
@@ -4681,7 +4684,6 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                                                                     const void *pData) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    const char *const func_name = "vkCmdPushDescriptorSetWithTemplateKHR()";
     bool skip = false;
     skip |= ValidateCmd(*cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR);
 
@@ -4691,13 +4693,15 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
             skip = LogError(layout, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305",
-                            "%s: Set index %" PRIu32 " does not match push descriptor set layout index for %s.", func_name, set,
-                            report_data->FormatHandle(layout).c_str());
+                            "vkCmdPushDescriptorSetWithTemplateKHR(): Set index %" PRIu32
+                            " does not match push descriptor set layout index for %s.",
+                            set, report_data->FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
         skip = LogError(layout, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304",
-                        "%s: Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", func_name, set,
-                        report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
+                        "vkCmdPushDescriptorSetWithTemplateKHR(): Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32
+                        ").",
+                        set, report_data->FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
     auto template_state = Get<UPDATE_TEMPLATE_STATE>(descriptorUpdateTemplate);
@@ -4708,27 +4712,29 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
             std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366"),
             std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
                            "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366")};
-        skip |= ValidatePipelineBindPoint(cb_state.get(), template_ci.pipelineBindPoint, func_name, bind_errors);
+        skip |= ValidatePipelineBindPoint(cb_state.get(), template_ci.pipelineBindPoint, "vkCmdPushDescriptorSetWithTemplateKHR()",
+                                          bind_errors);
 
         if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994",
-                             "%s: descriptorUpdateTemplate %s was not created with flag "
+                             "vkCmdPushDescriptorSetWithTemplateKHR(): descriptorUpdateTemplate %s was not created with flag "
                              "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR.",
-                             func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str());
+                             report_data->FormatHandle(descriptorUpdateTemplate).c_str());
         }
         if (template_ci.set != set) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995",
-                             "%s: descriptorUpdateTemplate %s created with set %" PRIu32
+                             "vkCmdPushDescriptorSetWithTemplateKHR(): descriptorUpdateTemplate %s created with set %" PRIu32
                              " does not match command parameter set %" PRIu32 ".",
-                             func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
+                             report_data->FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
         auto template_layout = Get<PIPELINE_LAYOUT_STATE>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(cb_state->commandBuffer(), descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
             skip |= LogError(objlist, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993",
-                             "%s: descriptorUpdateTemplate %s created with %s is incompatible with command parameter "
+                             "vkCmdPushDescriptorSetWithTemplateKHR(): descriptorUpdateTemplate %s created with %s is incompatible "
+                             "with command parameter "
                              "%s for set %" PRIu32,
-                             func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(),
+                             report_data->FormatHandle(descriptorUpdateTemplate).c_str(),
                              report_data->FormatHandle(template_ci.pipelineLayout).c_str(),
                              report_data->FormatHandle(layout).c_str(), set);
         }
@@ -4742,7 +4748,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                                                                 dsl->GetDescriptorSetLayout());
         // Validate the decoded update against the proxy_ds
         skip |= ValidatePushDescriptorsUpdate(&proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                              decoded_template.desc_writes.data(), func_name);
+                                              decoded_template.desc_writes.data(), "vkCmdPushDescriptorSetWithTemplateKHR()");
     }
 
     return skip;
