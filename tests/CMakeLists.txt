@@ -66,32 +66,45 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/amd_best_practices.cpp
     negative/android_hardware_buffer.cpp
     negative/arm_best_practices.cpp
+    negative/atomics.cpp
     negative/best_practices.cpp
     negative/buffer.cpp
     negative/command.cpp
     negative/debug_printf.cpp
-    negative/descriptor_renderpass_framebuffer.cpp
+    negative/descriptor_buffer.cpp
+    negative/descriptors.cpp
     negative/dynamic_rendering.cpp
+    negative/dynamic_state.cpp
     negative/external_memory_sync.cpp
+    negative/fragment_shading_rate.cpp
+    negative/geometry_tessellation.cpp
     negative/gpu_av.cpp
     negative/graphics_library.cpp
     negative/image.cpp
     negative/imageless_framebuffer.cpp
     negative/instanceless.cpp
     negative/memory.cpp
+    negative/mesh.cpp
+    negative/multiview.cpp
     negative/nvidia_best_practices.cpp
     negative/object_lifetime.cpp
     negative/others.cpp
     negative/pipeline_shader.cpp
     negative/portability_subset.cpp
+    negative/protected_memory.cpp
     negative/query.cpp
     negative/ray_tracing.cpp
     negative/ray_tracing_gpu.cpp
     negative/ray_tracing_pipeline.cpp
+    negative/renderpass.cpp
     negative/sampler.cpp
     negative/sparse.cpp
+    negative/subgroups.cpp
+    negative/subpass.cpp
     negative/sync_object.cpp
     negative/sync_val.cpp
+    negative/transform_feedback.cpp
+    negative/vertex_input.cpp
     negative/video.cpp
     negative/viewport_inheritance.cpp
     negative/wsi.cpp

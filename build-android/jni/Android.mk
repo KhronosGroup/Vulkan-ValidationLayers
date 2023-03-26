@@ -133,8 +133,21 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/ycbcr.cpp \
                    $(SRC_DIR)/tests/negative/others.cpp \
                    $(SRC_DIR)/tests/negative/query.cpp \
-                   $(SRC_DIR)/tests/negative/descriptor_renderpass_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/atomics.cpp \
+                   $(SRC_DIR)/tests/negative/descriptor_buffer.cpp \
+                   $(SRC_DIR)/tests/negative/descriptors.cpp \
+                   $(SRC_DIR)/tests/negative/renderpass.cpp \
                    $(SRC_DIR)/tests/negative/command.cpp \
+                   $(SRC_DIR)/tests/negative/dynamic_state.cpp \
+                   $(SRC_DIR)/tests/negative/fragment_shading_rate.cpp \
+                   $(SRC_DIR)/tests/negative/multiview.cpp \
+                   $(SRC_DIR)/tests/negative/transform_feedback.cpp \
+                   $(SRC_DIR)/tests/negative/subgroups.cpp \
+                   $(SRC_DIR)/tests/negative/subpass.cpp \
+                   $(SRC_DIR)/tests/negative/mesh.cpp \
+                   $(SRC_DIR)/tests/negative/protected_memory.cpp \
+                   $(SRC_DIR)/tests/negative/geometry_tessellation.cpp \
+                   $(SRC_DIR)/tests/negative/vertex_input.cpp \
                    $(SRC_DIR)/tests/negative/gpu_av.cpp \
                    $(SRC_DIR)/tests/negative/debug_printf.cpp \
                    $(SRC_DIR)/tests/negative/best_practices.cpp \
@@ -199,8 +212,21 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/ycbcr.cpp \
                    $(SRC_DIR)/tests/negative/others.cpp \
                    $(SRC_DIR)/tests/negative/query.cpp \
-                   $(SRC_DIR)/tests/negative/descriptor_renderpass_framebuffer.cpp \
+                   $(SRC_DIR)/tests/negative/atomics.cpp \
+                   $(SRC_DIR)/tests/negative/descriptor_buffer.cpp \
+                   $(SRC_DIR)/tests/negative/descriptors.cpp \
+                   $(SRC_DIR)/tests/negative/renderpass.cpp \
                    $(SRC_DIR)/tests/negative/command.cpp \
+                   $(SRC_DIR)/tests/negative/dynamic_state.cpp \
+                   $(SRC_DIR)/tests/negative/fragment_shading_rate.cpp \
+                   $(SRC_DIR)/tests/negative/multiview.cpp \
+                   $(SRC_DIR)/tests/negative/transform_feedback.cpp \
+                   $(SRC_DIR)/tests/negative/subgroups.cpp \
+                   $(SRC_DIR)/tests/negative/subpass.cpp \
+                   $(SRC_DIR)/tests/negative/mesh.cpp \
+                   $(SRC_DIR)/tests/negative/protected_memory.cpp \
+                   $(SRC_DIR)/tests/negative/geometry_tessellation.cpp \
+                   $(SRC_DIR)/tests/negative/vertex_input.cpp \
                    $(SRC_DIR)/tests/negative/gpu_av.cpp \
                    $(SRC_DIR)/tests/negative/debug_printf.cpp \
                    $(SRC_DIR)/tests/negative/best_practices.cpp \
