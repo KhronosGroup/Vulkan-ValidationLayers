@@ -2779,42 +2779,42 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     const auto &last_bound = cb_state.lastBound[lv_bind_point];
     const auto *last_pipeline = last_bound.pipeline_state;
 
-    if (nullptr == last_pipeline) {
+    if (!last_pipeline || !last_pipeline->pipeline()) {
         return LogError(cb_state.commandBuffer(), vuid.pipeline_bound_02700,
-                        "Must not call %s on this command buffer while there is no %s pipeline bound.", function,
+                        "%s: A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.", function,
                         string_VkPipelineBindPoint(bind_point));
     }
     const PIPELINE_STATE &pipeline = *last_pipeline;
 
-    bool result = false;
+    bool skip = false;
 
     for (const auto &ds : last_bound.per_set) {
         if (pipeline.descriptor_buffer_mode) {
             if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
-                result |= LogError(objlist, vuid.descriptor_buffer_set_offset_missing_08117,
-                                   "%s: pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
-                                   function, string_VkPipelineBindPoint(bind_point),
-                                   report_data->FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
+                skip |= LogError(objlist, vuid.descriptor_buffer_set_offset_missing_08117,
+                                 "%s: pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
+                                 function, string_VkPipelineBindPoint(bind_point),
+                                 report_data->FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
                 break;
             }
 
         } else {
             if (ds.bound_descriptor_buffer.has_value()) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                result |= LogError(objlist, vuid.descriptor_buffer_bit_not_set_08115,
-                                   "%s: pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
-                                   " (index=%" PRIu32 " offset=%" PRIu64 ")",
-                                   function, string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
-                                   ds.bound_descriptor_buffer->offset);
+                skip |= LogError(objlist, vuid.descriptor_buffer_bit_not_set_08115,
+                                 "%s: pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
+                                 " (index=%" PRIu32 " offset=%" PRIu64 ")",
+                                 function, string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
+                                 ds.bound_descriptor_buffer->offset);
                 break;
             }
         }
     }
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        result |= ValidateDrawDynamicState(cb_state, pipeline, cmd_type);
-        result |= ValidatePipelineDrawtimeState(last_bound, cb_state, cmd_type, pipeline);
+        skip |= ValidateDrawDynamicState(cb_state, pipeline, cmd_type);
+        skip |= ValidatePipelineDrawtimeState(last_bound, cb_state, cmd_type, pipeline);
 
         if (indexed && !cb_state.index_buffer_binding.bound()) {
             return LogError(cb_state.commandBuffer(), vuid.index_binding_07312,
@@ -2834,11 +2834,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                         // Some CMD_TYPE could not be protected. See VUID 02711.
                         if (subpass.usage != VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT &&
                             vuid.protected_command_buffer_02712 != kVUIDUndefined) {
-                            result |= ValidateUnprotectedImage(cb_state, *view_state->image_state, function,
-                                                               vuid.protected_command_buffer_02712, image_desc.c_str());
+                            skip |= ValidateUnprotectedImage(cb_state, *view_state->image_state, function,
+                                                             vuid.protected_command_buffer_02712, image_desc.c_str());
                         }
-                        result |= ValidateProtectedImage(cb_state, *view_state->image_state, function,
-                                                         vuid.unprotected_command_buffer_02707, image_desc.c_str());
+                        skip |= ValidateProtectedImage(cb_state, *view_state->image_state, function,
+                                                       vuid.unprotected_command_buffer_02707, image_desc.c_str());
                     }
                     ++i;
                 }
@@ -2866,29 +2866,29 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                 pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
             }
             objlist.add(last_bound.pipeline_layout);
-            result |= LogError(objlist, vuid.compatible_pipeline_02697,
-                               "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
-                               ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
-                               function, report_data->FormatHandle(pipeline.pipeline()).c_str(), pipe_layouts_log.str().c_str(),
-                               pipeline.max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
+            skip |= LogError(objlist, vuid.compatible_pipeline_02697,
+                             "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
+                             ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
+                             function, report_data->FormatHandle(pipeline.pipeline()).c_str(), pipe_layouts_log.str().c_str(),
+                             pipeline.max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
             for (const auto &set_binding_pair : pipeline.active_slots) {
                 uint32_t set_index = set_binding_pair.first;
                 const auto set_info = last_bound.per_set[set_index];
                 if (!set_info.bound_descriptor_set) {
-                    result |= LogError(cb_state.commandBuffer(), vuid.compatible_pipeline_02697,
-                                       "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
-                                       report_data->FormatHandle(pipeline.pipeline()).c_str(), set_index);
+                    skip |= LogError(cb_state.commandBuffer(), vuid.compatible_pipeline_02697,
+                                     "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
+                                     report_data->FormatHandle(pipeline.pipeline()).c_str(), set_index);
                 } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index,
                                                          error_string)) {
                     // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                     VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
                     const LogObjectList objlist(set_handle, pipeline_layout->layout());
-                    result |= LogError(objlist, vuid.compatible_pipeline_02697,
-                                       "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
-                                       report_data->FormatHandle(set_handle).c_str(), set_index,
-                                       report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
+                    skip |= LogError(objlist, vuid.compatible_pipeline_02697,
+                                     "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
+                                     report_data->FormatHandle(set_handle).c_str(), set_index,
+                                     report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
                 } else {  // Valid set is bound and layout compatible, validate that it's updated
                     // Pull the set node
                     const auto *descriptor_set = set_info.bound_descriptor_set.get();
@@ -2930,11 +2930,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                                                 set_info.validated_set_binding_req_map.begin(),
                                                 set_info.validated_set_binding_req_map.end(),
                                                 vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
-                            result |=
+                            skip |=
                                 ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function, vuid);
                         } else {
-                            result |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state,
-                                                        function, vuid);
+                            skip |= ValidateDrawState(*descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_state, function,
+                                                      vuid);
                         }
                     }
                 }
@@ -2957,11 +2957,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
             // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
             if (!cb_state.push_constant_data_ranges && !enabled_features.core13.maintenance4) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline_layout->layout(), pipeline.pipeline());
-                result |= LogError(objlist, vuid.push_constants_set_06425,
-                                   "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
-                                   "pipeline layout %s.",
-                                   function, string_VkShaderStageFlags(stage.create_info->stage).c_str(),
-                                   report_data->FormatHandle(pipeline_layout->layout()).c_str());
+                skip |= LogError(objlist, vuid.push_constants_set_06425,
+                                 "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
+                                 "pipeline layout %s.",
+                                 function, string_VkShaderStageFlags(stage.create_info->stage).c_str(),
+                                 report_data->FormatHandle(pipeline_layout->layout()).c_str());
             }
 
             const auto it = cb_state.push_constant_data_update.find(stage.create_info->stage);
@@ -2972,7 +2972,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
         }
     }
 
-    return result;
+    return skip;
 }
 
 bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
