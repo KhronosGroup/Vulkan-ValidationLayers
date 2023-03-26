@@ -3093,9 +3093,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     const auto rendering_fragment_shading_rate_attachment_info =
         LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
     // Upcasting to handle overflow
-    const auto x_adjusted_extent =
+    const int64_t x_adjusted_extent =
         static_cast<int64_t>(pRenderingInfo->renderArea.offset.x) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.width);
-    const auto y_adjusted_extent =
+    const int64_t y_adjusted_extent =
         static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
     if (rendering_fragment_shading_rate_attachment_info &&
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
@@ -3332,18 +3332,37 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     }
 
     if (!non_zero_device_render_area) {
-        if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
-            if (pRenderingInfo->renderArea.offset.x < 0) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06077",
-                                 "%s(): renderArea.offset.x is %d and must be greater than 0.", func_name,
-                                 pRenderingInfo->renderArea.offset.x);
-            }
-
-            if (pRenderingInfo->renderArea.offset.y < 0) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06078",
-                                 "%s(): renderArea.offset.y is %d and must be greater than 0.", func_name,
-                                 pRenderingInfo->renderArea.offset.y);
-            }
+        if (pRenderingInfo->renderArea.offset.x < 0) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06077"
+                                                                                   : "VUID-VkRenderingInfo-renderArea-06071";
+            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32 ") must not be negative.",
+                             func_name, pRenderingInfo->renderArea.offset.x);
+        }
+        if (pRenderingInfo->renderArea.offset.y < 0) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06078"
+                                                                                   : "VUID-VkRenderingInfo-renderArea-06072";
+            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.",
+                             func_name, pRenderingInfo->renderArea.offset.y);
+        }
+        if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07815"
+                                                                                   : "VUID-VkRenderingInfo-renderArea-06073";
+            skip |= LogError(commandBuffer, vuid,
+                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
+                             ") is not less than maxFramebufferWidth (%" PRIu32 ").",
+                             func_name, pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width,
+                             phys_dev_props.limits.maxFramebufferWidth);
+        }
+        if (y_adjusted_extent > phys_dev_props.limits.maxFramebufferHeight) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07816"
+                                                                                   : "VUID-VkRenderingInfo-renderArea-06074";
+            skip |= LogError(commandBuffer, vuid,
+                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32
+                             ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
+                             ") is not less than maxFramebufferHeight (%" PRIu32 ").",
+                             func_name, pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height,
+                             phys_dev_props.limits.maxFramebufferHeight);
         }
 
         if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
@@ -3599,35 +3618,6 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     "a stencil aspect.",
                     func_name, string_VkFormat(stencil_view_state->create_info.format));
             }
-        }
-    }
-
-    if (!IsExtEnabled(device_extensions.vk_khr_device_group)) {
-        if (pRenderingInfo->renderArea.offset.x < 0) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06071",
-                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32 ") must not be negative.", func_name,
-                             pRenderingInfo->renderArea.offset.x);
-        }
-        if (pRenderingInfo->renderArea.offset.y < 0) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06072",
-                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.", func_name,
-                             pRenderingInfo->renderArea.offset.y);
-        }
-        if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06073",
-                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32
-                             ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
-                             ") is not less than maxFramebufferWidth (%" PRIu32 ").",
-                             func_name, pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width,
-                             phys_dev_props.limits.maxFramebufferWidth);
-        }
-        if (y_adjusted_extent > phys_dev_props.limits.maxFramebufferHeight) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06074",
-                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32
-                             ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
-                             ") is not less than maxFramebufferHeight (%" PRIu32 ").",
-                             func_name, pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height,
-                             phys_dev_props.limits.maxFramebufferHeight);
         }
     }
 
