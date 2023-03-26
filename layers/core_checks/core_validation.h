@@ -1341,7 +1341,7 @@ class CoreChecks : public ValidationStateTracker {
                                               const char* vuid_single_device_memory, const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table,
                                               const char* binding_table_name) const;
-    bool ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer commandBuffer,
+    bool ValidateCmdTraceRaysKHR(const CMD_TYPE cmd_type, const CMD_BUFFER_STATE& cb_state,
                                  const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                  const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                  const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,

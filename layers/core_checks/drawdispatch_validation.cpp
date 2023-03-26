@@ -2520,116 +2520,99 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                          " must be less than the size of raygenShaderBindingTableBuffer %" PRIu64 " .",
                          raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
     }
-
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
-    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-None-02700",
-                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
-    }
     return skip;
 }
 
-bool CoreChecks::ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer commandBuffer,
+bool CoreChecks::ValidateCmdTraceRaysKHR(const CMD_TYPE cmd_type, const CMD_BUFFER_STATE &cb_state,
                                          const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
                                          const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                          const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                          const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR);
+    bool skip = false;
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    const char *rt_func_name = isIndirect ? "vkCmdTraceRaysIndirectKHR()" : "vkCmdTraceRaysKHR()";
+    const PIPELINE_STATE *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
+    const bool is_indirect = cmd_type == CMD_TRACERAYSINDIRECTKHR;
+    const char *rt_func_name = CommandTypeString(cmd_type);
 
     if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
-        const char *vuid = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-None-02700" : "VUID-vkCmdTraceRaysKHR-None-02700";
-        skip |= LogError(device, vuid,
-                         "vkCmdTraceRaysKHR: A valid pipeline must be bound to the pipeline bind point used by this command.");
-    } else {  // bound to valid RT pipeline
-        if (pHitShaderBindingTable) {
-            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
-                if (pHitShaderBindingTable->deviceAddress == 0) {
-                    const char *vuid =
-                        isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03697" : "VUID-vkCmdTraceRaysKHR-flags-03697";
-                    skip |= LogError(device, vuid, "%s: pHitShaderBindingTable->deviceAddress (0).", rt_func_name);
-                }
-                if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
-                    const char *vuid =
-                        isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03514" : "VUID-vkCmdTraceRaysKHR-flags-03514";
-                    skip |=
-                        LogError(device, vuid,
+        return skip;
+    }
+    if (pHitShaderBindingTable) {
+        if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+            if (pHitShaderBindingTable->deviceAddress == 0) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03697" : "VUID-vkCmdTraceRaysKHR-flags-03697";
+                skip |= LogError(cb_state.commandBuffer(), vuid, "%s: pHitShaderBindingTable->deviceAddress (0).", rt_func_name);
+            }
+            if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03514" : "VUID-vkCmdTraceRaysKHR-flags-03514";
+                skip |= LogError(cb_state.commandBuffer(), vuid,
                                  "%s: pHitShaderBindingTable->size (%" PRIu64 ") and pHitShaderBindingTable->stride (%" PRIu64 ").",
                                  rt_func_name, pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
-                }
             }
-            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
-                if (pHitShaderBindingTable->deviceAddress == 0) {
-                    const char *vuid =
-                        isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03696" : "VUID-vkCmdTraceRaysKHR-flags-03696";
-                    skip |= LogError(device, vuid, "pHitShaderBindingTable->deviceAddress = 0");
-                }
-                if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
-                    const char *vuid =
-                        isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03513" : "VUID-vkCmdTraceRaysKHR-flags-03513";
-                    skip |=
-                        LogError(device, vuid,
+        }
+        if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+            if (pHitShaderBindingTable->deviceAddress == 0) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03696" : "VUID-vkCmdTraceRaysKHR-flags-03696";
+                skip |= LogError(cb_state.commandBuffer(), vuid, "pHitShaderBindingTable->deviceAddress = 0");
+            }
+            if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03513" : "VUID-vkCmdTraceRaysKHR-flags-03513";
+                skip |= LogError(cb_state.commandBuffer(), vuid,
                                  "%s: pHitShaderBindingTable->size (%" PRIu64 ") and pHitShaderBindingTable->stride (%" PRIu64 ").",
                                  rt_func_name, pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
-                }
             }
-            if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
-                // No vuid to check for pHitShaderBindingTable->deviceAddress == 0 with this flag
+        }
+        if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+            // No vuid to check for pHitShaderBindingTable->deviceAddress == 0 with this flag
 
-                if (pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
-                    const char *vuid =
-                        isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03512" : "VUID-vkCmdTraceRaysKHR-flags-03512";
-                    skip |=
-                        LogError(device, vuid,
+            if (pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
+                const char *vuid =
+                    is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03512" : "VUID-vkCmdTraceRaysKHR-flags-03512";
+                skip |= LogError(cb_state.commandBuffer(), vuid,
                                  "%s: pHitShaderBindingTable->size (%" PRIu64 ") and pHitShaderBindingTable->stride (%" PRIu64 ").",
                                  rt_func_name, pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
-                }
             }
         }
 
-        if (pRaygenShaderBindingTable) {
-            const char *vuid_single_device_memory = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03680"
-                                                               : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03680";
-            const char *vuid_binding_table_flag = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03681"
-                                                             : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681";
-            skip |= ValidateRaytracingShaderBindingTable(commandBuffer, rt_func_name, vuid_single_device_memory,
-                                                         vuid_binding_table_flag, *pRaygenShaderBindingTable,
-                                                         "pRaygenShaderBindingTable");
-        }
-
-        if (pMissShaderBindingTable) {
-            const char *vuid_single_device_memory = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03683"
-                                                               : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03683";
-            const char *vuid_binding_table_flag = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03684"
-                                                             : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684";
-            skip |=
-                ValidateRaytracingShaderBindingTable(commandBuffer, rt_func_name, vuid_single_device_memory,
-                                                     vuid_binding_table_flag, *pMissShaderBindingTable, "pMissShaderBindingTable");
-        }
-
-        if (pHitShaderBindingTable) {
-            const char *vuid_single_device_memory = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03687"
-                                                               : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03687";
-            const char *vuid_binding_table_flag = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03688"
-                                                             : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03688";
-            skip |=
-                ValidateRaytracingShaderBindingTable(commandBuffer, rt_func_name, vuid_single_device_memory,
+        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03687"
+                                                            : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03687";
+        const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03688"
+                                                          : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03688";
+        skip |= ValidateRaytracingShaderBindingTable(cb_state.commandBuffer(), rt_func_name, vuid_single_device_memory,
                                                      vuid_binding_table_flag, *pHitShaderBindingTable, "pHitShaderBindingTable");
-        }
+    }
 
-        if (pCallableShaderBindingTable) {
-            const char *vuid_single_device_memory = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03691"
-                                                               : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03691";
-            const char *vuid_binding_table_flag = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03692"
-                                                             : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03692";
-            skip |= ValidateRaytracingShaderBindingTable(commandBuffer, rt_func_name, vuid_single_device_memory,
-                                                         vuid_binding_table_flag, *pCallableShaderBindingTable,
-                                                         "pCallableShaderBindingTable");
-        }
+    if (pRaygenShaderBindingTable) {
+        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03680"
+                                                            : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03680";
+        const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03681"
+                                                          : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681";
+        skip |=
+            ValidateRaytracingShaderBindingTable(cb_state.commandBuffer(), rt_func_name, vuid_single_device_memory,
+                                                 vuid_binding_table_flag, *pRaygenShaderBindingTable, "pRaygenShaderBindingTable");
+    }
+
+    if (pMissShaderBindingTable) {
+        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03683"
+                                                            : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03683";
+        const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03684"
+                                                          : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684";
+        skip |= ValidateRaytracingShaderBindingTable(cb_state.commandBuffer(), rt_func_name, vuid_single_device_memory,
+                                                     vuid_binding_table_flag, *pMissShaderBindingTable, "pMissShaderBindingTable");
+    }
+
+    if (pCallableShaderBindingTable) {
+        const char *vuid_single_device_memory = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03691"
+                                                            : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03691";
+        const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03692"
+                                                          : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03692";
+        skip |= ValidateRaytracingShaderBindingTable(cb_state.commandBuffer(), rt_func_name, vuid_single_device_memory,
+                                                     vuid_binding_table_flag, *pCallableShaderBindingTable,
+                                                     "pCallableShaderBindingTable");
     }
     return skip;
 }
@@ -2640,8 +2623,12 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                                 uint32_t height, uint32_t depth) const {
-    return ValidateCmdTraceRaysKHR(false, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
-                                   pCallableShaderBindingTable);
+    bool skip = false;
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateActionCmd(*cb_state, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR);
+    skip |= ValidateCmdTraceRaysKHR(CMD_TRACERAYSKHR, *cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
+                                    pHitShaderBindingTable, pCallableShaderBindingTable);
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
@@ -2650,8 +2637,12 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
                                                         VkDeviceAddress indirectDeviceAddress) const {
-    return ValidateCmdTraceRaysKHR(true, commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable,
-                                   pCallableShaderBindingTable);
+    bool skip = false;
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip |= ValidateActionCmd(*cb_state, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSINDIRECTKHR);
+    skip |= ValidateCmdTraceRaysKHR(CMD_TRACERAYSINDIRECTKHR, *cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
+                                    pHitShaderBindingTable, pCallableShaderBindingTable);
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
