@@ -3076,6 +3076,12 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                          func_name);
     }
 
+    if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
+        skip |= LogError(device, " VUID-VkRenderingInfo-layerCount-07817",
+                         "vkCmdBeginRenderingKHR(): layerCount (%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").",
+                         pRenderingInfo->layerCount, phys_dev_props.limits.maxFramebufferLayers);
+    }
+
     if ((cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) &&
         ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0)) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBeginRendering-commandBuffer-06068",

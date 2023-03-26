@@ -6818,6 +6818,43 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidDeviceGroupRenderArea) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, DynamicRenderingMaxFramebufferLayers) {
+    TEST_DESCRIPTION("Go over maxFramebufferLayers");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = m_device->props.limits.maxFramebufferLayers + 1;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-layerCount-07817");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, DynamicRenderingEndRenderingWithIncorrectlyStartedRenderpassInstance) {
     TEST_DESCRIPTION(
         "Test EndRendering without starting the instance with BeginRendering, in the same command buffer or in a different once");
