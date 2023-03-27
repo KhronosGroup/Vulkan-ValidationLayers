@@ -1503,3 +1503,74 @@ TEST_F(VkLayerTest, InvalidD3D12FenceSubmitInfo) {
     }
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(VkLayerTest, GetMemoryFdHandle) {
+    TEST_DESCRIPTION("Validate VkMemoryGetFdInfoKHR passed to vkGetMemoryFdKHR");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto vkGetMemoryFdKHR = GetInstanceProcAddr<PFN_vkGetMemoryFdKHR>("vkGetMemoryFdKHR");
+    int fd = -1;
+
+    // Allocate memory without VkExportMemoryAllocateInfo in the pNext chain
+    {
+        auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        alloc_info.allocationSize = 32;
+        alloc_info.memoryTypeIndex = 0;
+        vk_testing::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+
+        auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00671");
+        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        m_errorMonitor->VerifyFound();
+    }
+    // VkExportMemoryAllocateInfo::handleTypes does not include requested handle type
+    {
+        auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+        export_info.handleTypes = 0;
+
+        auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_info);
+        alloc_info.allocationSize = 1024;
+        alloc_info.memoryTypeIndex = 0;
+        vk_testing::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+
+        auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00671");
+        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        m_errorMonitor->VerifyFound();
+    }
+    // Request handle of the wrong type
+    {
+        auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+        export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+
+        auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_info);
+        alloc_info.allocationSize = 1024;
+        alloc_info.memoryTypeIndex = 0;
+
+        vk_testing::DeviceMemory memory;
+        memory.init(*m_device, alloc_info);
+        auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+        get_handle_info.memory = memory;
+        get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00672");
+        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        m_errorMonitor->VerifyFound();
+    }
+}
