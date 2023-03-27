@@ -1055,11 +1055,11 @@
                     ]
                 },
                 "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT": {
-                    "advancedBlendMaxColorAttachments": 4294967000,
-                    "advancedBlendIndependentBlend": true,
-                    "advancedBlendNonPremultipliedSrcColor": true,
-                    "advancedBlendNonPremultipliedDstColor": true,
-                    "advancedBlendCorrelatedOverlap": true,
+                    "advancedBlendMaxColorAttachments": 2,
+                    "advancedBlendIndependentBlend": false,
+                    "advancedBlendNonPremultipliedSrcColor": false,
+                    "advancedBlendNonPremultipliedDstColor": false,
+                    "advancedBlendCorrelatedOverlap": false,
                     "advancedBlendAllOperations": false
                 },
                 "VkPhysicalDeviceInlineUniformBlockProperties": {
@@ -2028,8 +2028,7 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT"
                         ],
                         "optimalTilingFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2051,8 +2050,7 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2074,8 +2072,7 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT"
                         ]
                     }
                 },
@@ -2230,7 +2227,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -2253,7 +2249,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -2276,7 +2271,6 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT",
@@ -2802,7 +2796,6 @@
                         "linearTilingFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
@@ -2829,7 +2822,6 @@
                         "optimalTilingFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
@@ -2856,7 +2848,6 @@
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT",
-                            "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT",
                             "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT",
@@ -5359,7 +5350,6 @@
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
@@ -5379,7 +5369,6 @@
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
@@ -5399,7 +5388,6 @@
                             "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
                             "VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT",
                             "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT",
-                            "VK_FORMAT_FEATURE_2_BLIT_DST_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT",
                             "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT",
