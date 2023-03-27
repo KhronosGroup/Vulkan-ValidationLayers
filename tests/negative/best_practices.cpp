@@ -73,7 +73,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     }
 
     if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD because will always return VK_SUCCESS";
     }
 
     // Force a non-success success code by only asking for a subset of query results
@@ -105,10 +105,11 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    // TODO - Currently not working on MockICD with Profiles
+
     if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD - currently can't create 2 concurrent instances";
     }
+
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1

@@ -11515,9 +11515,6 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendInvalidBlendOps) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD because need real advancedBlendMaxColorAttachments value";
-    }
 
     auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced);
@@ -11569,20 +11566,8 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendMaxBlendAttachment) {
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    PFN_VkSetPhysicalDeviceProperties2EXT fpvkSetPhysicalDeviceProperties2EXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceProperties2EXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    auto set_blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    // Other values in struct don't matter for the test
-    set_blend_operation_advanced.advancedBlendMaxColorAttachments = 1;
-    set_blend_operation_advanced.advancedBlendIndependentBlend = VK_TRUE;
-    VkPhysicalDeviceProperties2 set_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&set_blend_operation_advanced);
-    fpvkSetPhysicalDeviceProperties2EXT(gpu(), set_props);
-
     ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(3));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -11590,20 +11575,25 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendMaxBlendAttachment) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
+    auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+    GetPhysicalDeviceProperties2(blend_operation_advanced_props);
+    if (blend_operation_advanced_props.advancedBlendMaxColorAttachments > 2) {
+        GTEST_SKIP() << "advancedBlendMaxColorAttachments is too high";
+    }
+
     VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-    VkPipelineColorBlendAttachmentState attachment_states[2];
-    memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
+    VkPipelineColorBlendAttachmentState attachment_states[3];
+    memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 3);
 
     // over max blend color attachment count
     const auto set_info = [&](CreatePipelineHelper &helper) {
         attachment_states[0].blendEnable = VK_TRUE;
-        attachment_states[0].colorBlendOp = VK_BLEND_OP_MIN;
-        attachment_states[0].alphaBlendOp = VK_BLEND_OP_MIN;
-        attachment_states[1].blendEnable = VK_TRUE;
-        attachment_states[1].colorBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-        attachment_states[1].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
+        attachment_states[0].colorBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
+        attachment_states[0].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
+        attachment_states[1] = attachment_states[0];
+        attachment_states[2] = attachment_states[0];
 
-        color_blend_state.attachmentCount = 2;
+        color_blend_state.attachmentCount = 3;
         color_blend_state.pAttachments = attachment_states;
         helper.gp_ci_.pColorBlendState = &color_blend_state;
     };
@@ -12545,8 +12535,7 @@ TEST_F(VkLayerTest, ColorBlendAdvanced) {
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&blend_operation_advanced_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
+    GetPhysicalDeviceProperties2(blend_operation_advanced_props);
 
     if (blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
         blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&

@@ -2332,19 +2332,14 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     TEST_DESCRIPTION("Image-related tests that don't belong elsewhere");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
 
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R16G16B16A16_UINT, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R16G16B16A16_UINT, formatProps);
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8_UNORM, &formatProps);
-    formatProps.optimalTilingFeatures |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8_UNORM, formatProps);
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R16G16B16A16_UINT features not supported";
+    } else if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                                VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R8G8_UNORM features not supported";
+    }
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 64bpp
@@ -3380,21 +3375,13 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R8_UNORM features not supported";
+    } else if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R8_UINT features not supported";
     }
-
-    // Set transfer for all potential used formats
-    VkFormatProperties format_props;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UNORM, &format_props);
-    format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UNORM, format_props);
-
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UINT, &format_props);
-    format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UINT, format_props);
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3417,11 +3404,8 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     image_8b_uint.init(&image_create_info);
 
     // First try to test two single plane mismatch
-    {
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_props);
-        format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8B8A8_UNORM, format_props);
-
+    if (ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                        VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
         VkImageObj image_32b_unorm(m_device);
         image_32b_unorm.init(&image_create_info);
@@ -3470,11 +3454,8 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     // DstImage is a mismatched plane of a multi-planar format
     if (!mp_features.samplerYcbcrConversion) {
         printf("No multi-planar support; section of tests skipped.\n");
-    } else {
-        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &format_props);
-        format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-        fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, format_props);
-
+    } else if (ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                               VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
         VkImageObj image_8b_16b_420_unorm(m_device);
         image_8b_16b_420_unorm.init(&image_create_info);
@@ -3690,25 +3671,19 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
-    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
     auto ds_format = FindSupportedDepthStencilFormat(gpu());
 
     // Add Transfer support for all used formats
-    VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32_SFLOAT, &formatProps);
-    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32_SFLOAT, formatProps);
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_D32_SFLOAT, &formatProps);
-    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32_SFLOAT, formatProps);
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), ds_format, &formatProps);
-    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), ds_format, formatProps);
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R32_SFLOAT features not supported";
+    } else if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+                                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_D32_SFLOAT features not supported";
+    } else if (!ImageFormatAndFeaturesSupported(gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
+                                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required Depth/Stencil Format features not supported";
+    }
 
     VkImageObj color_image(m_device), ds_image(m_device), depth_image(m_device);
     color_image.Init(128, 128, 1, VK_FORMAT_R32_SFLOAT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -5929,8 +5904,8 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (m_device->phy().properties().limits.maxViewports) {
-        GTEST_SKIP() << "Device doesn't support the necessary number of viewports";
+    if (m_device->phy().properties().limits.maxViewports <= 1) {
+        GTEST_SKIP() << "Device doesn't support multiple viewports";
     }
 
     // Based on PSOViewportStateTests
@@ -6005,8 +5980,7 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
         m_errorMonitor->VerifyFound();
 
@@ -6014,9 +5988,8 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        // This VU gets triggered before VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
         m_errorMonitor->VerifyFound();
 

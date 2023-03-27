@@ -3452,6 +3452,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                             i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp),
                                             color_attachment_count,
                                             phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
+                                        break;  // if this fails once, will fail every iteration
                                     }
                                 }
                             }
