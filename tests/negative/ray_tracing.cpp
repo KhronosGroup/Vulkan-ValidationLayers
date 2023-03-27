@@ -808,21 +808,31 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
 
         const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
-        std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-        VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
-        stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-        stage_create_info.module = chit_shader.handle();
-        stage_create_info.pName = "main";
-        shader_stages.emplace_back(stage_create_info);
+        std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
+        shader_stages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        shader_stages[0].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        shader_stages[0].module = chit_shader.handle();
+        shader_stages[0].pName = "main";
 
-        stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        stage_create_info.module = rgen_shader.handle();
-        shader_stages.emplace_back(stage_create_info);
+        shader_stages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        shader_stages[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        shader_stages[1].module = rgen_shader.handle();
+        shader_stages[1].pName = "main";
+
+        std::array<VkRayTracingShaderGroupCreateInfoKHR, 1> shader_groups;
+        shader_groups[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+        shader_groups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        shader_groups[0].generalShader = 1;
+        shader_groups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_groups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
+        shader_groups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 
         VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
         raytracing_pipeline_ci.flags = 0;
         raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
         raytracing_pipeline_ci.pStages = shader_stages.data();
+        raytracing_pipeline_ci.pGroups = shader_groups.data();
+        raytracing_pipeline_ci.groupCount = shader_groups.size();
         raytracing_pipeline_ci.layout = pipeline_layout.handle();
 
         const VkResult result = vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,

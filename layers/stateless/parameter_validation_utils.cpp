@@ -7117,24 +7117,22 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                              "pLibraryInfo and pLibraryInterface must be NULL.");
         }
         if (pCreateInfos[i].pLibraryInfo) {
-            if (pCreateInfos[i].pLibraryInfo->libraryCount == 0) {
-                if (pCreateInfos[i].stageCount == 0) {
-                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03600",
-                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount is 0, "
-                                     "stageCount must not be 0.");
-                }
-                if (pCreateInfos[i].groupCount == 0) {
-                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03601",
-                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount is 0, "
-                                     "groupCount must not be 0.");
-                }
-            } else {
-                if (pCreateInfos[i].pLibraryInterface == NULL) {
-                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590",
-                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount member "
-                                     "is greater than 0, its "
-                                     "pLibraryInterface member must not be NULL.");
-                }
+            if ((pCreateInfos[i].pLibraryInfo->libraryCount > 0) && (pCreateInfos[i].pLibraryInterface == nullptr)) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590",
+                                 "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount member "
+                                 "is greater than 0, its pLibraryInterface member must not be NULL.");
+            }
+        }
+        if ((pCreateInfos[i].pLibraryInfo == nullptr) || (pCreateInfos[i].pLibraryInfo->libraryCount == 0)) {
+            if (pCreateInfos[i].stageCount == 0) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999",
+                                 "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is NULL or its libraryCount is 0, "
+                                 "stageCount must not be 0.");
+            }
+            if (((pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) && (pCreateInfos[i].groupCount == 0)) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700",
+                                 "vkCreateRayTracingPipelinesKHR(): VK_PIPELINE_CREATE_LIBRARY_BIT_KHR is not set, pLibraryInfo is "
+                                 "NULL or its libraryCount is 0, but groupCount is 0.");
             }
         }
         if (pCreateInfos[i].pLibraryInterface) {
