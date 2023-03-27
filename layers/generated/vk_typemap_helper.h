@@ -6264,6 +6264,39 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLE
     typedef VkAccelerationStructureTrianglesOpacityMicromapEXT Type;
 };
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkPhysicalDeviceDisplacementMicromapFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceDisplacementMicromapFeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV> {
+    typedef VkPhysicalDeviceDisplacementMicromapFeaturesNV Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkPhysicalDeviceDisplacementMicromapPropertiesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceDisplacementMicromapPropertiesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV> {
+    typedef VkPhysicalDeviceDisplacementMicromapPropertiesNV Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+// Map type VkAccelerationStructureTrianglesDisplacementMicromapNV to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV
+template <> struct LvlTypeMap<VkAccelerationStructureTrianglesDisplacementMicromapNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV> {
+    typedef VkAccelerationStructureTrianglesDisplacementMicromapNV Type;
+};
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI
 template <> struct LvlTypeMap<VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI;

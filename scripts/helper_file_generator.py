@@ -1412,30 +1412,6 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '            }\n'
                     '        }\n'
                     '    }\n',
-                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
-                    '    if (usageCountsCount) {\n'
-                    '        if ( in_struct->ppUsageCounts) {\n'
-                    '            ppUsageCounts = new VkMicromapUsageEXT *[usageCountsCount];\n'
-                    '            for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
-                    '                memcpy ((void *)ppUsageCounts[i], (void *)in_struct->ppUsageCounts[i], sizeof(VkMicromapUsageEXT));'
-                    '            }\n'
-                    '        } else {\n'
-                    '            pUsageCounts = new VkMicromapUsageEXT[usageCountsCount];\n'
-                    '            memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*usageCountsCount);'
-                    '        }\n'
-                    '    }\n',
-                'VkMicromapBuildInfoEXT':
-                    '    if (usageCountsCount) {\n'
-                    '        if ( in_struct->ppUsageCounts) {\n'
-                    '            ppUsageCounts = new VkMicromapUsageEXT *[usageCountsCount];\n'
-                    '            for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
-                    '                memcpy ((void *)ppUsageCounts[i], (void *)in_struct->ppUsageCounts[i], sizeof(VkMicromapUsageEXT));'
-                    '            }\n'
-                    '        } else {\n'
-                    '            pUsageCounts = new VkMicromapUsageEXT[usageCountsCount];\n'
-                    '            memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*usageCountsCount);'
-                    '        }\n'
-                    '    }\n',
                 'VkAccelerationStructureGeometryKHR':
                     '    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {\n'
                     '        if (geometry.instances.arrayOfPointers) {\n'
@@ -1464,31 +1440,41 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        }\n'
                     '    }\n',
                 'VkMicromapBuildInfoEXT':
-                    '   pNext = SafePnextCopy(in_struct->pNext);\n'
-                    '   if (in_struct->pUsageCounts) {\n'
-                    '       pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
-                    '       memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
-                    '   }\n'
-                    '   if (in_struct->ppUsageCounts) {\n'
-                    '       VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
-                    '       for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
-                    '           pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
-                    '       }\n'
-                    '       ppUsageCounts = pointer_array;\n'
-                    '   }\n',
+                    '    if (in_struct->pUsageCounts) {\n'
+                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
+                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
+                    '    }\n'
+                    '    if (in_struct->ppUsageCounts) {\n'
+                    '        VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
+                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
+                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
+                    '        }\n'
+                    '        ppUsageCounts = pointer_array;\n'
+                    '    }\n',
                 'VkAccelerationStructureTrianglesOpacityMicromapEXT':
-                    '   pNext = SafePnextCopy(in_struct->pNext);\n'
-                    '   if (in_struct->pUsageCounts) {\n'
-                    '       pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
-                    '       memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
-                    '   }\n'
-                    '   if (in_struct->ppUsageCounts) {\n'
-                    '       VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
-                    '       for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
-                    '           pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
-                    '       }\n'
-                    '       ppUsageCounts = pointer_array;\n'
-                    '   }\n',
+                    '    if (in_struct->pUsageCounts) {\n'
+                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
+                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
+                    '    }\n'
+                    '    if (in_struct->ppUsageCounts) {\n'
+                    '        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
+                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
+                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
+                    '        }\n'
+                    '        ppUsageCounts = pointer_array;\n'
+                    '    }\n',
+                'VkAccelerationStructureTrianglesDisplacementMicromapNV':
+                    '    if (in_struct->pUsageCounts) {\n'
+                    '        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
+                    '        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
+                    '    }\n'
+                    '    if (in_struct->ppUsageCounts) {\n'
+                    '        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
+                    '        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
+                    '            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
+                    '        }\n'
+                    '        ppUsageCounts = pointer_array;\n'
+                    '    }\n',
                 'VkDescriptorDataEXT' :
                     '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
                     '\n'
@@ -1688,9 +1674,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '             delete ppUsageCounts[i];\n'
                     '        }\n'
                     '        delete[] ppUsageCounts;\n'
-                    '    }\n'
-                    '    if (pNext)\n'
-                    '        FreePnextChain(pNext);\n',
+                    '    }\n',
                 'VkAccelerationStructureTrianglesOpacityMicromapEXT':
                     '    if (pUsageCounts)\n'
                     '        delete[] pUsageCounts;\n'
@@ -1699,9 +1683,16 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '             delete ppUsageCounts[i];\n'
                     '        }\n'
                     '        delete[] ppUsageCounts;\n'
-                    '    }\n'
-                    '    if (pNext)\n'
-                    '        FreePnextChain(pNext);\n',
+                    '    }\n',
+                'VkAccelerationStructureTrianglesDisplacementMicromapNV':
+                    '    if (pUsageCounts)\n'
+                    '        delete[] pUsageCounts;\n'
+                    '    if (ppUsageCounts) {\n'
+                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
+                    '             delete ppUsageCounts[i];\n'
+                    '        }\n'
+                    '        delete[] ppUsageCounts;\n'
+                    '    }\n',
                 'VkDescriptorDataEXT' :
                     '\n'
                     '    VkDescriptorType& thisType = *(VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'

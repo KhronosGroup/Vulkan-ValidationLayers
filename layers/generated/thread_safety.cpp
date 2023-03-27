@@ -9434,6 +9434,9 @@ void ThreadSafety::PostCallRecordGetMicromapBuildSizesEXT(
     FinishReadObjectParentInstance(device, "vkGetMicromapBuildSizesEXT");
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 void ThreadSafety::PreCallRecordCmdDrawClusterHUAWEI(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,

@@ -3445,6 +3445,9 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(
     const VkMicromapBuildInfoEXT*               pBuildInfo,
     VkMicromapBuildSizesInfoEXT*                pSizeInfo);
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(

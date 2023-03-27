@@ -1964,6 +1964,7 @@ std::vector<VkMicromapTypeEXT> ValidationObject::ValidParamValues() const {
     //      devices over the lifespan of the project (e.g., VLT).
     constexpr std::array CoreVkMicromapTypeEXTEnums = { VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT,  };
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkMicromapTypeEXT>> ExtendedVkMicromapTypeEXTEnums = {
+        { &DeviceExtensions::vk_nv_displacement_micromap, { VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV,  } },
     };
     std::vector<VkMicromapTypeEXT> values(CoreVkMicromapTypeEXTEnums.cbegin(), CoreVkMicromapTypeEXTEnums.cend());
     std::set<VkMicromapTypeEXT> unique_exts;

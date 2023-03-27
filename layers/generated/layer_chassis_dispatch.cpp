@@ -279,6 +279,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS 
+            case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV: {
+                    safe_VkAccelerationStructureTrianglesDisplacementMicromapNV *safe_struct = reinterpret_cast<safe_VkAccelerationStructureTrianglesDisplacementMicromapNV *>(cur_pnext);
+                    if (safe_struct->micromap) {
+                        safe_struct->micromap = layer_data->Unwrap(safe_struct->micromap);
+                    }
+                } break;
+#endif // VK_ENABLE_BETA_EXTENSIONS 
+
             case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT: {
                     safe_VkAccelerationStructureTrianglesOpacityMicromapEXT *safe_struct = reinterpret_cast<safe_VkAccelerationStructureTrianglesOpacityMicromapEXT *>(cur_pnext);
                     if (safe_struct->micromap) {
