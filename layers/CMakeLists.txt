@@ -114,29 +114,17 @@ else()
     message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
 endif()
 
-find_package(PythonInterp 3 QUIET)
-
-if (PYTHONINTERP_FOUND)
-    # Get the include directory of the SPIRV-Headers
-    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
-
-    set(spirv_unified_include_dir "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/")
-    if (NOT IS_DIRECTORY ${spirv_unified_include_dir})
-        message(FATAL_ERROR "Unable to find spirv/unified1")
-    endif()
-
-    set(generate_source_py "${VVL_SOURCE_DIR}/scripts/generate_source.py")
-    if (NOT EXISTS ${generate_source_py})
-        message(FATAL_ERROR "Unable to find generate_source.py!")
-    endif()
-
-    add_custom_target(VulkanVL_generated_source
-        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir}
+# NOTE: Our custom code generation target isn't desirable for system package managers or add_subdirectory users.
+# So this target needs to be off by default to avoid obtuse build errors or patches.
+option(VVL_CODEGEN "Enable vulkan validation layer code generation")
+if (VVL_CODEGEN)
+    find_package(PythonInterp 3 REQUIRED)
+    add_custom_target(vvl_codegen
+        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${PYTHON_EXECUTABLE} "${VVL_SOURCE_DIR}/scripts/generate_source.py"
+            ${VULKAN_HEADERS_REGISTRY_DIRECTORY} "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
             --incremental --generated-version ${VulkanHeaders_VERSION}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
     )
-else()
-    message(NOTICE "VulkanVL_generated_source target requires python 3")
 endif()
 
 add_library(VkLayer_khronos_validation MODULE)
