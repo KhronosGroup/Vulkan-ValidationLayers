@@ -21,6 +21,24 @@
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 
+bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd) const {
+    bool skip = false;
+    if (const auto memory_state = Get<DEVICE_MEMORY_STATE>(pGetFdInfo->memory)) {
+        const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(memory_state->alloc_info.pNext);
+        if (!export_info) {
+            skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00671",
+                             "vkGetMemoryFdKHR(): memory's pNext chain does not include a VkExportMemoryAllocateInfo structure.");
+        } else if ((export_info->handleTypes & pGetFdInfo->handleType) == 0) {
+            skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00671",
+                             "vkGetMemoryFdKHR(): the requested handle type (%s) is not included in the memory's "
+                             "VkExportMemoryAllocateInfo::handleTypes (%s).",
+                             string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType),
+                             string_VkExternalMemoryHandleTypeFlags(export_info->handleTypes).c_str());
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info) const {
     bool skip = false;
     const char *func_name = "vkImportSemaphoreFdKHR";

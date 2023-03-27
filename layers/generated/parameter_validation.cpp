@@ -12215,6 +12215,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdKHR(
         skip |= ValidateFlags("vkGetMemoryFdKHR", "pGetFdInfo->handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, pGetFdInfo->handleType, kRequiredSingleBit, "VUID-VkMemoryGetFdInfoKHR-handleType-parameter", "VUID-VkMemoryGetFdInfoKHR-handleType-parameter");
     }
     skip |= ValidateRequiredPointer("vkGetMemoryFdKHR", "pFd", pFd, "VUID-vkGetMemoryFdKHR-pFd-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetMemoryFdKHR(device, pGetFdInfo, pFd);
     return skip;
 }
 

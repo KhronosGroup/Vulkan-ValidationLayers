@@ -1369,6 +1369,7 @@ class StatelessValidation : public ValidationObject {
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion) const;
 
+    bool manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd) const;
     bool ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
                                              VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                              VkExternalSemaphoreHandleTypeFlags allowed_types) const;
