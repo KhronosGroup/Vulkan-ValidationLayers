@@ -12199,6 +12199,72 @@ struct safe_VkAccelerationStructureTrianglesOpacityMicromapEXT {
     VkAccelerationStructureTrianglesOpacityMicromapEXT const *ptr() const { return reinterpret_cast<VkAccelerationStructureTrianglesOpacityMicromapEXT const *>(this); }
 };
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 displacementMicromap;
+    safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct);
+    safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& operator=(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV();
+    ~safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV();
+    void initialize(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV* copy_src);
+    VkPhysicalDeviceDisplacementMicromapFeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceDisplacementMicromapFeaturesNV *>(this); }
+    VkPhysicalDeviceDisplacementMicromapFeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDisplacementMicromapFeaturesNV const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t maxDisplacementMicromapSubdivisionLevel;
+    safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct);
+    safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src);
+    safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& operator=(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src);
+    safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV();
+    ~safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV();
+    void initialize(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV* copy_src);
+    VkPhysicalDeviceDisplacementMicromapPropertiesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceDisplacementMicromapPropertiesNV *>(this); }
+    VkPhysicalDeviceDisplacementMicromapPropertiesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDisplacementMicromapPropertiesNV const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+struct safe_VkAccelerationStructureTrianglesDisplacementMicromapNV {
+    VkStructureType sType;
+    void* pNext{};
+    VkFormat displacementBiasAndScaleFormat;
+    VkFormat displacementVectorFormat;
+    safe_VkDeviceOrHostAddressConstKHR displacementBiasAndScaleBuffer;
+    VkDeviceSize displacementBiasAndScaleStride;
+    safe_VkDeviceOrHostAddressConstKHR displacementVectorBuffer;
+    VkDeviceSize displacementVectorStride;
+    safe_VkDeviceOrHostAddressConstKHR displacedMicromapPrimitiveFlags;
+    VkDeviceSize displacedMicromapPrimitiveFlagsStride;
+    VkIndexType indexType;
+    safe_VkDeviceOrHostAddressConstKHR indexBuffer;
+    VkDeviceSize indexStride;
+    uint32_t baseTriangle;
+    uint32_t usageCountsCount;
+    const VkMicromapUsageEXT* pUsageCounts{};
+    const VkMicromapUsageEXT* const* ppUsageCounts{};
+    VkMicromapEXT micromap;
+    safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct);
+    safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& copy_src);
+    safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& operator=(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& copy_src);
+    safe_VkAccelerationStructureTrianglesDisplacementMicromapNV();
+    ~safe_VkAccelerationStructureTrianglesDisplacementMicromapNV();
+    void initialize(const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct);
+    void initialize(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV* copy_src);
+    VkAccelerationStructureTrianglesDisplacementMicromapNV *ptr() { return reinterpret_cast<VkAccelerationStructureTrianglesDisplacementMicromapNV *>(this); }
+    VkAccelerationStructureTrianglesDisplacementMicromapNV const *ptr() const { return reinterpret_cast<VkAccelerationStructureTrianglesDisplacementMicromapNV const *>(this); }
+};
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 struct safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI {
     VkStructureType sType;
     void* pNext{};

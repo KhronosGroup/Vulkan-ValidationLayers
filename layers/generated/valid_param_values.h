@@ -138,6 +138,9 @@ template<> std::vector<VkOpacityMicromapFormatEXT> ValidationObject::ValidParamV
 template<> std::vector<VkOpacityMicromapSpecialIndexEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkAccelerationStructureCompatibilityKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkAccelerationStructureBuildTypeKHR> ValidationObject::ValidParamValues() const;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+template<> std::vector<VkDisplacementMicromapFormatNV> ValidationObject::ValidParamValues() const;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkSubpassMergeStatusEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDirectDriverLoadingModeLUNARG> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkOpticalFlowPerformanceLevelNV> ValidationObject::ValidParamValues() const;
