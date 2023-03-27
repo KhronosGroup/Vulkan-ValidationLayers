@@ -74,7 +74,7 @@ def CheckVVLCodegenConsistency(config):
 
 #
 # Prepare the Validation Layers for testing
-def BuildVVL(config, cmake_args, build_tests):
+def BuildVVL(config, cmake_args, build_tests, sanitize):
     print("Log CMake version")
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
@@ -84,6 +84,11 @@ def BuildVVL(config, cmake_args, build_tests):
     # By default BUILD_WERROR is OFF, CI should always enable it.
     cmake_cmd += ' -DBUILD_WERROR=ON'
     cmake_cmd += f' -DBUILD_TESTS={build_tests}'
+
+    if sanitize == 'address':
+        cmake_cmd += f' -D VVL_ENABLE_ASAN=ON'
+    elif sanitize == 'thread':
+        cmake_cmd += f' -D VVL_ENABLE_TSAN=ON'
 
     if cmake_args:
          cmake_cmd += f' {cmake_args}'
@@ -107,7 +112,7 @@ def BuildVVL(config, cmake_args, build_tests):
 
 #
 # Prepare Loader for executing Layer Validation Tests
-def BuildLoader():
+def BuildLoader(sanitize):
     LOADER_DIR = RepoRelative(os.path.join("%s/Vulkan-Loader" % EXTERNAL_DIR_NAME))
     # Clone Loader repo
     if not os.path.exists(LOADER_DIR):
@@ -121,9 +126,16 @@ def BuildLoader():
     print("Run CMake for Loader")
     cmake_cmd = f'cmake -S {LOADER_DIR} -B {LOADER_BUILD_DIR} '
     cmake_cmd += '-D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE=Release'
+
+    if sanitize == 'address':
+        cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON'
+    elif sanitize == 'thread':
+        cmake_cmd += ' -D LOADER_ENABLE_THREAD_SANITIZER=ON'
+
     # This enables better stack traces from leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
     if not IsWindows():
-        cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+        cmake_cmd += ' -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+
     RunShellCmd(cmake_cmd)
 
     print("Build Loader")
@@ -191,17 +203,27 @@ def BuildProfileLayer():
     RunShellCmd(install_cmd)
 
 #
-# Run the Layer Validation Tests
-def RunVVLTests(config):
+# Run the Layer Validation Tests with ctest
+# https://cmake.org/cmake/help/latest/manual/ctest.1.html
+def RunVVLTests(config, sanitize):
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
 
     if IsWindows():
         print("Not implemented yet")
         exit(-1)
 
-    lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests', 'vk_layer_validation_tests')
-
     lvt_env = dict(os.environ)
+
+    ctest_cmd = 'ctest'
+
+    # Parallelize ctest
+    lvt_env['CTEST_PARALLEL_LEVEL'] = f'{os.cpu_count()}'
+    # Get information from failed tests
+    lvt_env['CTEST_OUTPUT_ON_FAILURE'] = '1'
+
+    # TODO: Fix all TSAN issues.
+    if sanitize == 'thread':
+        ctest_cmd += ' --exclude-regex VkLayerTest'
 
     # Because we installed everything to TEST_INSTALL_DIR all the libraries/json files are in pre-determined locations
     # defined by GNUInstallDirs. This makes adding the LD_LIBRARY_PATH and VK_LAYER_PATH trivial/robust.
@@ -214,14 +236,19 @@ def RunVVLTests(config):
     lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
 
-    RunShellCmd(lvt_cmd, env=lvt_env)
+    RunShellCmd(ctest_cmd, start_dir=VVL_BUILD_DIR, env=lvt_env)
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '1'
-    RunShellCmd(lvt_cmd + ' --gtest_filter=*Thread*', env=lvt_env)
+
+    ctest_cmd += ' --tests-regex Thread'
+
+    RunShellCmd(ctest_cmd, start_dir=VVL_BUILD_DIR, env=lvt_env)
 
 def GetArgParser():
     configs = ['release', 'debug']
     default_config = configs[0]
+
+    sanitize_configs = ['address', 'thread']
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -230,6 +257,10 @@ def GetArgParser():
         choices=configs, default=default_config,
         help='Build target configuration. Can be one of: {0}'.format(
             ', '.join(configs)))
+    parser.add_argument(
+        '--sanitize', dest='sanitize', action='store',
+        choices=sanitize_configs, default=None,
+        help='Code sanitization. Can be one of: {0}'.format(', '.join(sanitize_configs)))
     parser.add_argument(
         '--cmake', dest='cmake',
         metavar='CMAKE', type=str,

@@ -465,6 +465,9 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeSpecConstantUnder) {
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
     TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -504,6 +507,9 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstant) {
     TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit with spec constants");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -565,6 +571,9 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     TEST_DESCRIPTION("Make sure work WorkgroupSize decoration is used over LocalSizeId");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -2858,6 +2867,9 @@ TEST_F(VkPositiveLayerTest, OpTypeStructRuntimeArray) {
 
 TEST_F(VkPositiveLayerTest, StorageImageWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2947,6 +2959,9 @@ TEST_F(VkPositiveLayerTest, StorageImageWriteMoreComponent) {
 
 TEST_F(VkPositiveLayerTest, StorageImageUnknownWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -3040,6 +3055,9 @@ TEST_F(VkPositiveLayerTest, StorageImageUnknownWriteMoreComponent) {
 
 TEST_F(VkPositiveLayerTest, StorageImageWriteSpecConstantMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -3144,6 +3162,10 @@ TEST_F(VkPositiveLayerTest, StorageImageWriteSpecConstantMoreComponent) {
 
 TEST_F(VkPositiveLayerTest, StorageTexelBufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
+
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

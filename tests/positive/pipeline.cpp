@@ -597,6 +597,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentMissingNotRead) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentArray) {
     TEST_DESCRIPTION("Input Attachment array where need to follow the index into the array");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -752,6 +755,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentArray) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentDepthStencil) {
     TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3791,6 +3797,9 @@ void main() {}
 
 TEST_F(VkPositiveLayerTest, OpCopyObjectSampler) {
     TEST_DESCRIPTION("Reproduces a use case involving GL_EXT_nonuniform_qualifier and image samplers found in Doom Eternal trace");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
 

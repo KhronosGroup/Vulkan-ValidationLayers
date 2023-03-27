@@ -32,7 +32,7 @@ def main():
     config = args.configuration
 
     try:
-        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF")
+        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF", sanitize = args.sanitize)
         common_ci.CheckVVLCodegenConsistency(config = config)
 
     except subprocess.CalledProcessError as proc_error:
@@ -41,6 +41,9 @@ def main():
     except Exception as unknown_error:
         print('An unkown error occured: %s', unknown_error)
         sys.exit(1)
+
+    if args.sanitize is not None:
+        print(f"Code Sanitization: {args.sanitize}")
 
     sys.exit(0)
 

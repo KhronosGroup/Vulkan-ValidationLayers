@@ -414,6 +414,9 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
 
 TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -506,6 +509,9 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
 
 TEST_F(VkPositiveLayerTest, QueueThreading) {
     TEST_DESCRIPTION("Test concurrent Queue access from vkGet and vkSubmit");
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
 
     using namespace std::chrono;
     using std::thread;

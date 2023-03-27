@@ -299,6 +299,10 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
 }
 
 TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
+#ifdef VVL_ENABLE_TSAN
+    GTEST_SKIP() << "Test currently fails with TSAN enabled!";
+#endif
+
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 

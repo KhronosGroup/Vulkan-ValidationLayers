@@ -29,8 +29,8 @@ def Build(args):
     config = args.configuration
 
     try:
-        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON")
-        common_ci.BuildLoader()
+        common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON", sanitize = args.sanitize)
+        common_ci.BuildLoader(sanitize = args.sanitize)
         common_ci.BuildProfileLayer()
         common_ci.BuildMockICD()
         common_ci.CheckVVLCodegenConsistency(config = config)
@@ -42,13 +42,16 @@ def Build(args):
         print('An unkown error occured: %s', unknown_error)
         sys.exit(1)
 
+    if args.sanitize is not None:
+        print(f"Code Sanitization: {args.sanitize}")
+
     sys.exit(0)
 
 def Test(args):
     config = args.configuration
 
     try:
-        common_ci.RunVVLTests(config = config)
+        common_ci.RunVVLTests(config = config, sanitize = args.sanitize)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))

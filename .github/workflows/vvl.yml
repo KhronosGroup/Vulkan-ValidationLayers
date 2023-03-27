@@ -37,6 +37,7 @@ jobs:
         cc: [gcc, clang]
         cxx: [g++, clang++]
         config: [debug, release]
+        sanitize: [address, thread]
         exclude:
           - cc: gcc
             cxx: clang++
@@ -56,7 +57,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.cc }}-${{ matrix.cxx }}
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.sanitize }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
@@ -73,24 +74,24 @@ jobs:
       - name: Build Vulkan-ValidationLayers
         run: |
           echo "PYTHONPATH = $PYTHONPATH"
-          python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON'
+          python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --sanitize=${{ matrix.sanitize }}
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test --config release --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
       - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test --config release --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
       - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test --config release --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
       - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test --config release --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
@@ -98,6 +99,8 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+      matrix:
+        sanitize: [address, thread]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -114,7 +117,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-release-cpp20
+          key: ${{ runner.os }}-${{ matrix.sanitize }}-release-cpp20
       # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
       # PATH changes need to be done in an action before any action that needs it
       - name: Add ccache to PATH
@@ -122,24 +125,24 @@ jobs:
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/release/Vulkan-Headers/build/install/share/vulkan/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20 -DVVL_ENABLE_ASAN=ON'
+        run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20' --sanitize=${{ matrix.sanitize }}
         env:
           CC: clang
           CXX: clang++
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20' --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
       - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20' --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
       - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20' --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
       - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20' --sanitize=${{ matrix.sanitize }}
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
