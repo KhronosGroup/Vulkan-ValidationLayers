@@ -60,14 +60,12 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         pipeline_ci.pGroups = &group_create_info;
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.stageCount = 0;
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03600");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999");
         vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.stageCount = 1;
         pipeline_ci.groupCount = 0;
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03601");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700");
         vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.groupCount = 1;
@@ -1100,10 +1098,19 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
 
+    auto shader_group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    shader_group.generalShader = 0;
+    shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+    shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
+    shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+
     VkRayTracingPipelineCreateInfoKHR create_info = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     create_info.layout = pipeline_layout.handle();
     create_info.stageCount = 1;
     create_info.pStages = &stage_create_info;
+    create_info.groupCount = 1;
+    create_info.pGroups = &shader_group;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03428");
     VkPipeline pipeline;
@@ -1144,11 +1151,20 @@ TEST_F(VkLayerTest, RayTracingInvalidPipelineFlags) {
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
 
+    auto shader_group = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+    shader_group.generalShader = 0;
+    shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+    shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
+    shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+
     VkRayTracingPipelineCreateInfoKHR create_info = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     create_info.flags = VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR;
     create_info.layout = empty_pipeline_layout.handle();
     create_info.stageCount = 1;
     create_info.pStages = &stage_create_info;
+    create_info.groupCount = 1;
+    create_info.pGroups = &shader_group;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-06546");
     VkPipeline pipeline;
