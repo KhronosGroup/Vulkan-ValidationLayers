@@ -14,16 +14,18 @@ When making change to the `scripts/` folder, make sure to run `generate_source.p
 
 Note the addition of the Vulkan registry directory to `PYTHONPATH`. This is because the generation scripts depend on modules within the Vulkan registry.
 
-## Cmake helper
+## CMake helper
 
-A helper CMake target `VulkanVL_generated_source` is also provided to simplify
-the invocation of `scripts/generate_source.py` from the build directory:
+A helper CMake target `vvl_codegen` is also provided to simplify the invocation of `scripts/generate_source.py` from the build directory:
 
 ```bash
-cmake --build . --target VulkanVL_generated_source
+cmake -S . -B build -D VVL_CODEGEN=ON
+cmake --build build --target vvl_codegen
 ```
 
-Using the cmake target will also set `PYTHONPATH` properly, assuming a standard cmake invokation was made.
+Using the CMake target will also set `PYTHONPATH` properly, assuming a standard cmake invokation was made.
+
+NOTE: `VVL_CODEGEN` is `OFF` by default to allow users to build `VVL` via `add_subdirectory` and to avoid potential issues for system/language package managers.
 
 ## How it works
 
