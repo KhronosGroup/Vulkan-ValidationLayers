@@ -234,6 +234,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawIndirectByteCountEXT',
             'vkCreateSamplerYcbcrConversion',
             'vkCreateSamplerYcbcrConversionKHR',
+            'vkGetMemoryFdKHR',
             'vkImportSemaphoreFdKHR',
             'vkGetSemaphoreFdKHR',
             'vkImportFenceFdKHR',

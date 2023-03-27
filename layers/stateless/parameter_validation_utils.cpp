@@ -7620,6 +7620,18 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
                                                 "vkCreateSamplerYcbcrConversionKHR");
 }
 
+bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo,
+                                                               int *pFd) const {
+    constexpr auto allowed_types = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+    bool skip = false;
+    if (0 == (pGetFdInfo->handleType & allowed_types)) {
+        skip |= LogError(pGetFdInfo->memory, "VUID-VkMemoryGetFdInfoKHR-handleType-00672",
+                         "vkGetMemoryFdKHR(): handle type %s is not one of the supported handle types.",
+                         string_VkExternalMemoryHandleTypeFlagBits(pGetFdInfo->handleType));
+    }
+    return skip;
+}
+
 bool StatelessValidation::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
                                                               VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                                               VkExternalSemaphoreHandleTypeFlags allowed_types) const {
