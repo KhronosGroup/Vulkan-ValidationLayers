@@ -2855,7 +2855,7 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
         if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
             if (!x_extent_valid) {
                 skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06079",
-                                 "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
+                                 "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                                  func_name, attachment, image_view->image_state->createInfo.extent.width,
                                  pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
@@ -2863,7 +2863,7 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
 
             if (!y_extent_valid) {
                 skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
-                                 "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
+                                 "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                                  func_name, attachment, image_view->image_state->createInfo.extent.height,
                                  pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
@@ -2872,14 +2872,14 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
     } else {
         if (!x_extent_valid) {
             skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06075",
-                             "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
+                             "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.width,
                              pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
         }
         if (!y_extent_valid) {
             skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06076",
-                             "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
+                             "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.height,
                              pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
@@ -3131,7 +3131,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                                                                        : "VUID-VkRenderingInfo-imageView-06117";
                 skip |= LogError(commandBuffer, vuid,
                                  "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
-                                 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIu32
+                                 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                                  ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
                                  func_name, view_state->image_state->createInfo.extent.width, pRenderingInfo->renderArea.offset.x,
@@ -3147,7 +3147,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                                                                        : "VUID-VkRenderingInfo-imageView-06118";
                 skip |= LogError(commandBuffer, vuid,
                                  "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
-                                 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIu32
+                                 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                                  ") ) / shadingRateAttachmentTexelSize.height (%" PRIu32 ").",
                                  func_name, view_state->image_state->createInfo.extent.height, pRenderingInfo->renderArea.offset.y,
@@ -3342,9 +3342,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07815"
                                                                                    : "VUID-VkRenderingInfo-renderArea-06073";
             skip |= LogError(commandBuffer, vuid,
-                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32
+                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
-                             ") is not less than maxFramebufferWidth (%" PRIu32 ").",
+                             ") is not less than or equal to maxFramebufferWidth (%" PRIu32 ").",
                              func_name, pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width,
                              phys_dev_props.limits.maxFramebufferWidth);
         }
@@ -3354,7 +3354,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             skip |= LogError(commandBuffer, vuid,
                              "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
-                             ") is not less than maxFramebufferHeight (%" PRIu32 ").",
+                             ") is not less than or equal to maxFramebufferHeight (%" PRIu32 ").",
                              func_name, pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height,
                              phys_dev_props.limits.maxFramebufferHeight);
         }
