@@ -2747,6 +2747,73 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, RasterizerDiscardWithFragmentShader) {
+    TEST_DESCRIPTION("Create Graphics Pipeline with fragment shader and rasterizer discard");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    const VkPipelineShaderStageCreateInfo stages[] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+
+    const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr};
+
+    const VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+
+    const VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        nullptr,
+        0,
+        VK_FALSE,
+        VK_TRUE,
+        VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE,
+        VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        VK_FALSE,
+        0.0f,
+        0.0f,
+        0.0f,
+        1.0f};
+
+    VkPipelineLayout pipeline_layout;
+    auto pipeline_layout_create_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
+    ASSERT_VK_SUCCESS(err);
+
+    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                                                               nullptr,
+                                                               0,
+                                                               2,
+                                                               stages,
+                                                               &pipeline_vertex_input_state_create_info,
+                                                               &pipeline_input_assembly_state_create_info,
+                                                               nullptr,
+                                                               nullptr,
+                                                               &pipeline_rasterization_state_create_info,
+                                                               nullptr,
+                                                               nullptr,
+                                                               nullptr,
+                                                               nullptr,
+                                                               pipeline_layout,
+                                                               m_renderPass,
+                                                               0,
+                                                               VK_NULL_HANDLE,
+                                                               -1};
+
+    VkPipeline pipeline;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
+    vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+}
+
 TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
 
