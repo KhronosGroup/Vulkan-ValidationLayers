@@ -3164,10 +3164,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (chained_device_group_struct) {
                 for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < chained_device_group_struct->deviceRenderAreaCount;
                      ++deviceRenderAreaIndex) {
-                    auto offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
-                    auto width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
-                    auto offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
-                    auto height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
+                    const int32_t offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
+                    const uint32_t width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
+                    const int32_t offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
+                    const uint32_t height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
 
                     IMAGE_STATE *image_state = view_state->image_state.get();
                     if (image_state->createInfo.extent.width <
@@ -3177,7 +3177,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06120",
                                          "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                          ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
-                                         "].offset.x (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].offset.x (%" PRIi32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                                          "].extent.width (%" PRIu32 ") ) / shadingRateAttachmentTexelSize.width (%" PRIu32 ").",
                                          func_name, image_state->createInfo.extent.width, deviceRenderAreaIndex, offset_x,
                                          deviceRenderAreaIndex, width,
@@ -3190,7 +3190,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06122",
                                          "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                          ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
-                                         "].offset.y (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                                         "].offset.y (%" PRIi32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                                          "].extent.height (%" PRIu32
                                          ") ) / shadingRateAttachmentTexelSize.height "
                                          "(%" PRIu32 ").",
@@ -3335,13 +3335,13 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         if (pRenderingInfo->renderArea.offset.x < 0) {
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06077"
                                                                                    : "VUID-VkRenderingInfo-renderArea-06071";
-            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32 ") must not be negative.",
+            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.x (%" PRIi32 ") must not be negative.",
                              func_name, pRenderingInfo->renderArea.offset.x);
         }
         if (pRenderingInfo->renderArea.offset.y < 0) {
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06078"
                                                                                    : "VUID-VkRenderingInfo-renderArea-06072";
-            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.",
+            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32 ") must not be negative.",
                              func_name, pRenderingInfo->renderArea.offset.y);
         }
         if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
@@ -3358,7 +3358,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07816"
                                                                                    : "VUID-VkRenderingInfo-renderArea-06074";
             skip |= LogError(commandBuffer, vuid,
-                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32
+                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                              ") is not less than maxFramebufferHeight (%" PRIu32 ").",
                              func_name, pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height,
@@ -3377,7 +3377,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 skip |= LogError(
                     commandBuffer, vuid,
                     "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
-                    ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIu32
+                    ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIi32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
                     func_name, image_state->createInfo.extent.width, pRenderingInfo->renderArea.offset.x,
@@ -3393,7 +3393,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 skip |= LogError(
                     commandBuffer, vuid,
                     "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
-                    ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIu32
+                    ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIi32
                     ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                     ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
                     func_name, image_state->createInfo.extent.height, pRenderingInfo->renderArea.offset.y,
@@ -3406,8 +3406,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     if (chained_device_group_struct) {
         for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < chained_device_group_struct->deviceRenderAreaCount;
              ++deviceRenderAreaIndex) {
-            auto offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
-            auto width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
+            const int32_t offset_x = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
+            const uint32_t width = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
             if (offset_x < 0) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166",
                                  "%s(): pDeviceRenderAreas[%u].offset.x: %d must be greater than or equal to 0.", func_name,
@@ -3415,12 +3415,12 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             if ((offset_x + width) > phys_dev_props.limits.maxFramebufferWidth) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168",
-                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.x (%" PRId32
+                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.x (%" PRIi32
                                  ") and extent.width (%" PRIu32 ") is greater than maxFramebufferWidth (%" PRIu32 ").",
                                  deviceRenderAreaIndex, offset_x, width, phys_dev_props.limits.maxFramebufferWidth);
             }
-            auto offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
-            auto height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
+            const int32_t offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
+            const uint32_t height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
             if (offset_y < 0) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167",
                                  "%s(): pDeviceRenderAreas[%u].offset.y: %d must be greater than or equal to 0.", func_name,
@@ -3428,7 +3428,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             if ((offset_y + height) > phys_dev_props.limits.maxFramebufferHeight) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169",
-                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.y (%" PRId32
+                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.y (%" PRIi32
                                  ") and extent.height (%" PRIu32 ") is greater than maxFramebufferHeight (%" PRIu32 ").",
                                  deviceRenderAreaIndex, offset_y, height, phys_dev_props.limits.maxFramebufferHeight);
             }
@@ -3441,14 +3441,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                          "%s(): width of the pColorAttachments[%" PRIu32 "].imageView: %" PRIu32
                                          " must be greater than or equal to"
-                                         "renderArea.offset.x (%" PRIu32 ") + renderArea.extent.width (%" PRIu32 ").",
+                                         "renderArea.offset.x (%" PRIi32 ") + renderArea.extent.width (%" PRIu32 ").",
                                          func_name, j, image_state->createInfo.extent.width, offset_x, width);
                     }
                     if (image_state->createInfo.extent.height < offset_y + height) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                          "%s(): height of the pColorAttachments[%" PRIu32 "].imageView: %" PRIu32
                                          " must be greater than or equal to"
-                                         "renderArea.offset.y (%" PRIu32 ") + renderArea.extent.height (%" PRIu32 ").",
+                                         "renderArea.offset.y (%" PRIi32 ") + renderArea.extent.height (%" PRIu32 ").",
                                          func_name, j, image_state->createInfo.extent.height, offset_y, height);
                     }
                 }
@@ -3461,14 +3461,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                      "%s(): width of the pDepthAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
-                                     "renderArea.offset.x (%" PRIu32 ") + renderArea.extent.width (%" PRIu32 ").",
+                                     "renderArea.offset.x (%" PRIi32 ") + renderArea.extent.width (%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.width, offset_x, width);
                 }
                 if (image_state->createInfo.extent.height < offset_y + height) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                      "%s(): height of the pDepthAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
-                                     "renderArea.offset.y (%" PRIu32 ") + renderArea.extent.height (%" PRIu32 ").",
+                                     "renderArea.offset.y (%" PRIi32 ") + renderArea.extent.height (%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.height, offset_y, height);
                 }
             }
@@ -3480,14 +3480,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06083",
                                      "%s(): width of the pStencilAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
-                                     "renderArea.offset.x (%" PRIu32 ") +  renderArea.extent.width (%" PRIu32 ").",
+                                     "renderArea.offset.x (%" PRIi32 ") +  renderArea.extent.width (%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.width, offset_x, width);
                 }
                 if (image_state->createInfo.extent.height < offset_y + height) {
                     skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06084",
                                      "%s(): height of the pStencilAttachment->imageView: %" PRIu32
                                      " must be greater than or equal to"
-                                     "renderArea.offset.y (%" PRIu32 ") +  renderArea.extent.height(%" PRIu32 ").",
+                                     "renderArea.offset.y (%" PRIi32 ") +  renderArea.extent.height(%" PRIu32 ").",
                                      func_name, image_state->createInfo.extent.height, offset_y, height);
                 }
             }
@@ -3502,7 +3502,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06113",
                         "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                         ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
-                        "].offset.x (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].offset.x (%" PRIi32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].extent.width (%" PRIu32
                         ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.width (%" PRIu32 ").",
                         func_name, image_state->createInfo.extent.width, deviceRenderAreaIndex, offset_x, deviceRenderAreaIndex,
@@ -3515,7 +3515,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06115",
                         "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                         ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
-                        "].offset.y (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
+                        "].offset.y (%" PRIi32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                         "].extent.height (%" PRIu32
                         ") ) / VkPhysicalDeviceFragmentDensityMapPropertiesEXT::maxFragmentDensityTexelSize.height (%" PRIu32 ").",
                         func_name, image_state->createInfo.extent.height, deviceRenderAreaIndex, offset_y, deviceRenderAreaIndex,
