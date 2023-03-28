@@ -178,9 +178,6 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
         location_map[location].output = &output_it.second;
     }
 
-    const auto ms_state = pipeline.MultisampleState();
-    const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
-
     for (uint32_t location = 0; location < location_map.size(); ++location) {
         const auto output = location_map[location].output;
 
@@ -205,16 +202,6 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
                     pipeline.create_index, location, string_VkFormat(format), module_state.DescribeType(output->type_id).c_str());
             }
         }
-    }
-
-    const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
-    const bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
-                                         module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
-    if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
-        skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.",
-                         pipeline.create_index);
     }
 
     return skip;
@@ -401,16 +388,6 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
                 assert(false);  // at least one exists in the map
             }
         }
-    }
-
-    const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
-    const bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
-                                         module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
-    if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
-        skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.",
-                         pipeline.create_index);
     }
 
     return skip;
