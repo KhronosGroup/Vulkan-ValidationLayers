@@ -4473,7 +4473,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
-TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEnabled) {
+// Currently need to clarify the VU - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5520
+TEST_F(VkLayerTest, DISABLED_CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION("Test that an error is produced when alpha to coverage is enabled but no output at location 0 is declared.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4493,7 +4494,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEna
                                       "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage");
 }
 
-TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnabled) {
+// Currently need to clarify the VU - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5520
+TEST_F(VkLayerTest, DISABLED_CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION(
         "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha component.");
 
