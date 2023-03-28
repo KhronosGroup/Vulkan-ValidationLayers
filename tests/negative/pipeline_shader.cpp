@@ -5524,8 +5524,6 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
 }
 
 TEST_F(VkLayerTest, ViewportSwizzleNV) {
-    TEST_DESCRIPTION("Verify VK_NV_viewprot_swizzle.");
-
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -5535,60 +5533,56 @@ TEST_F(VkLayerTest, ViewportSwizzleNV) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkViewportSwizzleNV invalid_swizzles = {
-        VkViewportCoordinateSwizzleNV(-1),
-        VkViewportCoordinateSwizzleNV(-1),
-        VkViewportCoordinateSwizzleNV(-1),
-        VkViewportCoordinateSwizzleNV(-1),
-    };
+    auto vp_swizzle_state = LvlInitStruct<VkPipelineViewportSwizzleStateCreateInfoNV>();
 
-    VkPipelineViewportSwizzleStateCreateInfoNV vp_swizzle_state = {
-        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV};
-    vp_swizzle_state.viewportCount = 1;
-    vp_swizzle_state.pViewportSwizzles = &invalid_swizzles;
-
-    const std::vector<std::string> expected_vuids = {"VUID-VkViewportSwizzleNV-x-parameter", "VUID-VkViewportSwizzleNV-y-parameter",
-                                                     "VUID-VkViewportSwizzleNV-z-parameter",
-                                                     "VUID-VkViewportSwizzleNV-w-parameter"};
-
-    auto break_swizzles = [&vp_swizzle_state](CreatePipelineHelper &helper) { helper.vp_state_ci_.pNext = &vp_swizzle_state; };
-
-    CreatePipelineHelper::OneshotTest(*this, break_swizzles, kErrorBit, expected_vuids);
-
-    struct TestCase {
-        VkBool32 rasterizerDiscardEnable;
-        uint32_t vp_count;
-        uint32_t swizzel_vp_count;
-        bool positive;
-    };
-
-    const std::array<TestCase, 3> test_cases = {{{VK_TRUE, 1, 2, true}, {VK_FALSE, 1, 1, true}, {VK_FALSE, 1, 2, false}}};
-
-    std::array<VkViewportSwizzleNV, 2> swizzles = {
-        {{VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
-          VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV},
-         {VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
-          VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV}}};
-
-    for (const auto &test_case : test_cases) {
-        assert(test_case.vp_count <= swizzles.size());
-
-        vp_swizzle_state.viewportCount = test_case.swizzel_vp_count;
-        vp_swizzle_state.pViewportSwizzles = swizzles.data();
-
-        auto break_vp_count = [&vp_swizzle_state, &test_case](CreatePipelineHelper &helper) {
-            helper.rs_state_ci_.rasterizerDiscardEnable = test_case.rasterizerDiscardEnable;
-            helper.vp_state_ci_.viewportCount = test_case.vp_count;
-
-            helper.vp_state_ci_.pNext = &vp_swizzle_state;
+    // Test invalid VkViewportSwizzleNV
+    {
+        const VkViewportSwizzleNV invalid_swizzles = {
+            static_cast<VkViewportCoordinateSwizzleNV>(-1),
+            static_cast<VkViewportCoordinateSwizzleNV>(-1),
+            static_cast<VkViewportCoordinateSwizzleNV>(-1),
+            static_cast<VkViewportCoordinateSwizzleNV>(-1),
         };
 
-        if (!test_case.positive) {
-            CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit,
-                                              "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215");
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit);
-        }
+        vp_swizzle_state.viewportCount = 1;
+        vp_swizzle_state.pViewportSwizzles = &invalid_swizzles;
+
+        const std::vector<std::string> expected_vuids = {
+            "VUID-VkViewportSwizzleNV-x-parameter", "VUID-VkViewportSwizzleNV-y-parameter", "VUID-VkViewportSwizzleNV-z-parameter",
+            "VUID-VkViewportSwizzleNV-w-parameter"};
+
+        auto break_swizzles = [&vp_swizzle_state](CreatePipelineHelper &helper) { helper.vp_state_ci_.pNext = &vp_swizzle_state; };
+
+        CreatePipelineHelper::OneshotTest(*this, break_swizzles, kErrorBit, expected_vuids);
+    }
+
+    // Test case where VkPipelineViewportSwizzleStateCreateInfoNV::viewportCount is LESS THAN viewportCount set in
+    // VkPipelineViewportStateCreateInfo
+    {
+        const VkViewportSwizzleNV swizzle = {
+            VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+            VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV};
+
+        vp_swizzle_state.viewportCount = 1;
+        vp_swizzle_state.pViewportSwizzles = &swizzle;
+
+        std::array<VkViewport, 2> viewports = {};
+        std::array<VkRect2D, 2> scissors = {};
+
+        viewports.fill({0, 0, 16, 16, 0, 1});
+        scissors.fill({{0, 0}, {16, 16}});
+
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = size32(viewports);
+            helper.vp_state_ci_.pViewports = viewports.data();
+            helper.vp_state_ci_.scissorCount = size32(scissors);
+            helper.vp_state_ci_.pScissors = scissors.data();
+            helper.vp_state_ci_.pNext = &vp_swizzle_state;
+            ASSERT_TRUE(vp_swizzle_state.viewportCount < helper.vp_state_ci_.viewportCount);
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit,
+                                          "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215");
     }
 }
 

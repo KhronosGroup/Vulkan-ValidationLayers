@@ -2983,12 +2983,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
 
                     if (vp_swizzle_struct) {
-                        if (vp_swizzle_struct->viewportCount != viewport_state.viewportCount) {
+                        const auto swizzle_viewport_count = vp_swizzle_struct->viewportCount;
+                        const auto viewport_count = viewport_state.viewportCount;
+                        if (swizzle_viewport_count < viewport_count) {
                             skip |= LogError(device, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215",
-                                             "vkCreateGraphicsPipelines: The viewport swizzle state vieport count of %" PRIu32
-                                             " does "
-                                             "not match the viewport count of %" PRIu32 " in VkPipelineViewportStateCreateInfo.",
-                                             vp_swizzle_struct->viewportCount, viewport_state.viewportCount);
+                                             "vkCreateGraphicsPipelines: SwizzleState viewportCount (%" PRIu32
+                                             ") less than ViewportState viewportCount (%" PRIu32 ")!",
+                                             swizzle_viewport_count, viewport_count);
                         }
                     }
 
