@@ -65,11 +65,27 @@ def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
 def IsWindows(): return 'windows' == platform.system().lower()
 
 #
-# Verify consistency of generated source code
-def CheckVVLCodegenConsistency(config):
-    print("Check Generated Source Code Consistency")
+# Run VVL scripts
+def CheckVVL(config):
     ext_dir = externalDir(config)
-    gen_check_cmd = f'python3 scripts/generate_source.py --verify {ext_dir}/Vulkan-Headers/registry {ext_dir}/SPIRV-Headers/include/spirv/unified1/'
+    vulkan_registry = ext_dir + "/Vulkan-Headers/registry"
+    spirv_unified = ext_dir + "/SPIRV-Headers/include/spirv/unified1/"
+
+    # Scripts depend on modules within the Vulkan registry.
+    if "PYTHONPATH" in os.environ:
+        print(f"Using provided PYTHONPATH {os.environ['PYTHONPATH']}")
+    else:
+        os.environ['PYTHONPATH'] = vulkan_registry
+
+    # Verify consistency of generated source code
+    print("Check Generated Source Code Consistency")
+    gen_check_cmd = f'python3 scripts/generate_source.py --verify {vulkan_registry} {spirv_unified}'
+    RunShellCmd(gen_check_cmd)
+
+    print('Run vk_validation_stats.py')
+    valid_usage_json = vulkan_registry + "/validusage.json"
+    text_file = RepoRelative(f'{VVL_BUILD_DIR}/layers/vuid_coverage_database.txt')
+    gen_check_cmd = f'python3 scripts/vk_validation_stats.py {valid_usage_json} -text {text_file}'
     RunShellCmd(gen_check_cmd)
 
 #
@@ -97,13 +113,6 @@ def BuildVVL(config, cmake_args, build_tests):
     print("Install Validation Layers")
     install_cmd = f'cmake --install {VVL_BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
     RunShellCmd(install_cmd)
-
-    print('Run vk_validation_stats.py')
-    ext_dir = externalDir(config)
-    stats_script = RepoRelative('scripts/vk_validation_stats.py')
-    validusage = os.path.join(ext_dir, 'Vulkan-Headers', 'registry', 'validusage.json')
-    outfile = os.path.join('layers', 'vuid_coverage_database.txt')
-    RunShellCmd(f'{sys.executable} {stats_script} {validusage} -text {outfile}', VVL_BUILD_DIR)
 
 #
 # Prepare Loader for executing Layer Validation Tests
@@ -192,7 +201,7 @@ def BuildProfileLayer():
 
 #
 # Run the Layer Validation Tests
-def RunVVLTests(config):
+def RunVVLTests():
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
 
     if IsWindows():
