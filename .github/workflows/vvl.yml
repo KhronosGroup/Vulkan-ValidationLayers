@@ -61,9 +61,7 @@ jobs:
         run: |
           python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
-                                libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                libxcb-randr0-dev
+          sudo apt-get install -y libwayland-dev xorg-dev
       # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
       # PATH changes need to be done in an action before any action that needs it
       - name: Add ccache to PATH
@@ -104,9 +102,7 @@ jobs:
         run: |
           python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
-                                libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                libxcb-randr0-dev
+          sudo apt-get install -y libwayland-dev xorg-dev
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -166,9 +162,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get -qq update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev libxrandr-dev \
-                                  libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                  libxcb-randr0-dev
+          sudo apt-get install -y libwayland-dev xorg-dev
       - name: Build Vulkan-ValidationLayers Using Ninja
         run: python3 scripts/github_ci_gn.py
 
