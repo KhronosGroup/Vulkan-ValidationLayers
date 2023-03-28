@@ -243,9 +243,10 @@ repository to other Linux distributions.
 [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.tar.gz) is recommended.
 
 ```bash
-sudo apt-get install git build-essential libx11-xcb-dev \
-        libxkbcommon-dev libwayland-dev libxrandr-dev \
-        libegl1-mesa-dev python3-distutils
+sudo apt-get install git build-essential python3
+
+# Linux WSI system libraries
+sudo apt-get libwayland-dev xorg-dev
 ```
 
 ### WSI Support Build Options
