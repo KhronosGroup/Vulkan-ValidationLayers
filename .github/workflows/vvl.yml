@@ -68,29 +68,25 @@ jobs:
       # PATH changes need to be done in an action before any action that needs it
       - name: Add ccache to PATH
         run: echo "/usr/lib/ccache" >> $GITHUB_PATH
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/${{ matrix.config }}/Vulkan-Headers/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
-        run: |
-          echo "PYTHONPATH = $PYTHONPATH"
-          python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON'
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON'
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
       - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
       - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
       - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
@@ -119,27 +115,25 @@ jobs:
       # PATH changes need to be done in an action before any action that needs it
       - name: Add ccache to PATH
         run: echo "/usr/lib/ccache" >> $GITHUB_PATH
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/external/release/Vulkan-Headers/build/install/share/vulkan/registry:$PYTHONPATH" >> $GITHUB_ENV
       - name: Build Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20 -DVVL_ENABLE_ASAN=ON'
         env:
           CC: clang
           CXX: clang++
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
       - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
       - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
       - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/max_profile.json
 
@@ -224,12 +218,8 @@ jobs:
             external/${{ matrix.config }}/SPIRV-Headers/include
             external/${{ matrix.config }}/mimalloc/build/install
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$env:GITHUB_WORKSPACE\\external\\${{ matrix.config }}\\Vulkan-Headers\\registry;$env:PYTHONPATH" >> $env:GITHUB_ENV
       - name: Build and Test Vulkan-ValidationLayers
-        run: |
-          echo "PYTHONPATH = $env:PYTHONPATH"
-          python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+        run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
   android:
       runs-on: ubuntu-20.04
