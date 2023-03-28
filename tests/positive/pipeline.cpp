@@ -6408,3 +6408,63 @@ TEST_F(VkPositiveLayerTest, ShaderModuleIdentifierGPL) {
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     vk_testing::Pipeline exe_pipe(*m_device, pipe_ci);
 }
+
+TEST_F(VkPositiveLayerTest, ViewportSwizzleNV) {
+    AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::array<VkViewportSwizzleNV, 2> swizzle = {};
+
+    swizzle.fill({VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+                  VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV});
+
+    std::array<VkViewport, 2> viewports = {};
+    std::array<VkRect2D, 2> scissors = {};
+
+    viewports.fill({0, 0, 16, 16, 0, 1});
+    scissors.fill({{0, 0}, {16, 16}});
+
+    // Test case where VkPipelineViewportSwizzleStateCreateInfoNV::viewportCount is EQUAL TO viewportCount set in
+    // VkPipelineViewportStateCreateInfo
+    {
+        auto vp_swizzle_state = LvlInitStruct<VkPipelineViewportSwizzleStateCreateInfoNV>();
+        vp_swizzle_state.viewportCount = size32(viewports);
+        vp_swizzle_state.pViewportSwizzles = swizzle.data();
+
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = size32(viewports);
+            helper.vp_state_ci_.pViewports = viewports.data();
+            helper.vp_state_ci_.scissorCount = size32(scissors);
+            helper.vp_state_ci_.pScissors = scissors.data();
+            helper.vp_state_ci_.pNext = &vp_swizzle_state;
+            ASSERT_TRUE(vp_swizzle_state.viewportCount == helper.vp_state_ci_.viewportCount);
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit);
+    }
+
+    // Test case where VkPipelineViewportSwizzleStateCreateInfoNV::viewportCount is GREATER THAN viewportCount set in
+    // VkPipelineViewportStateCreateInfo
+    {
+        auto vp_swizzle_state = LvlInitStruct<VkPipelineViewportSwizzleStateCreateInfoNV>();
+        vp_swizzle_state.viewportCount = size32(viewports);
+        vp_swizzle_state.pViewportSwizzles = swizzle.data();
+
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = 1;
+            helper.vp_state_ci_.pViewports = viewports.data();
+            helper.vp_state_ci_.scissorCount = 1;
+            helper.vp_state_ci_.pScissors = scissors.data();
+            helper.vp_state_ci_.pNext = &vp_swizzle_state;
+            ASSERT_TRUE(vp_swizzle_state.viewportCount > helper.vp_state_ci_.viewportCount);
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit);
+    }
+}
