@@ -1096,6 +1096,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     buffer_info.pNext = &external_buffer_info;
     VkBufferObj buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
+    const VkMemoryRequirements buffer_export_reqs = buffer_export.memory_requirements();
 
     auto importable_buffer_types =
         FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
@@ -1107,9 +1108,15 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 
     VkBufferObj buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
+    const VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
+    assert(buffer_import_reqs.memoryTypeBits != 0);  // according to spec at least one bit is set
+    if ((buffer_import_reqs.memoryTypeBits & buffer_export_reqs.memoryTypeBits) == 0) {
+        // required by VU 01743
+        GTEST_SKIP() << "Cannot find memory type that supports both export and import";
+    }
 
     // Allocation info
-    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export_reqs, mem_flags);
 
     // Add export allocation info to pNext chain
     auto export_info = LvlInitStruct<VkExportMemoryAllocateInfoKHR>();
@@ -1215,10 +1222,6 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 #endif
 
     // Import memory
-    VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
-    if (buffer_import_reqs.memoryTypeBits == 0) {
-        GTEST_SKIP() << "no suitable memory found, skipping test";
-    }
     alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
     vk_testing::DeviceMemory memory_buffer_import;
