@@ -194,6 +194,7 @@ void ThreadTimeoutHelper::OnThreadDone() {
     {
         std::lock_guard lock(mutex_);
         active_threads_--;
+        assert(active_threads_ >= 0);
         if (!active_threads_) last_worker = true;
     }
     if (last_worker) cv_.notify_one();
