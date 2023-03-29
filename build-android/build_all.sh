@@ -45,9 +45,7 @@ findtool apksigner
 set -ev
 
 LAYER_BUILD_DIR=$PWD
-DEMO_BUILD_DIR=$PWD/../demos/android
 echo LAYER_BUILD_DIR="${LAYER_BUILD_DIR}"
-echo DEMO_BUILD_DIR="${DEMO_BUILD_DIR}"
 
 #
 # Android builds and c++ libraries:

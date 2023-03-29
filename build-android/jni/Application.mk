@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# To save time, modify the following line to exclude unnessary ABIs
 APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
-# APP_ABI := arm64-v8a   # just build for pixel2  (don't check in)
+
 APP_PLATFORM := android-26
 # if specified, build with static c++ library
 ifeq ($(ANDROID_STL_TYPE),STATIC)
@@ -23,5 +24,6 @@ ifeq ($(ANDROID_STL_TYPE),STATIC)
 else
   APP_STL := c++_shared
 endif
+
 NDK_TOOLCHAIN_VERSION := clang
 NDK_MODULE_PATH := .
