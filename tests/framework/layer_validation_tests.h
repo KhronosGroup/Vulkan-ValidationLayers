@@ -860,9 +860,16 @@ class ThreadTimeoutHelper {
 
     struct Guard {
         Guard(ThreadTimeoutHelper &timeout_helper) : timeout_helper_(timeout_helper) {}
+        Guard(const Guard &) = delete;
+        Guard &operator=(const Guard &) = delete;
+
         ~Guard() { timeout_helper_.OnThreadDone(); }
+
         ThreadTimeoutHelper &timeout_helper_;
     };
+    // Mandatory elision of copy/move operations guarantees the destructor is not called
+    // (even in the presence of copy/move constructor) and the object is constructed directly
+    // into the destination storage: https://en.cppreference.com/w/cpp/language/copy_elision
     Guard ThreadGuard() { return Guard(*this); }
 
   private:
