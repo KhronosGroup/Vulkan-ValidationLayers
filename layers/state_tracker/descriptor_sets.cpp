@@ -859,8 +859,9 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
                                                                   const Descriptor *src, bool is_bindless) {
     if (src->GetClass() == Mutable) {
         auto acc_desc = static_cast<const MutableDescriptor *>(src);
+        is_khr_ = acc_desc->IsAccelerationStructureKHR();
         if (is_khr_) {
-            acc_ = acc_desc->GetAccelerationStructure();
+            acc_ = acc_desc->GetAccelerationStructureKHR();
             ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
                             is_bindless);
         } else {
@@ -1031,7 +1032,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, co
             } break;
             case AccelerationStructure: {
                 if (is_khr_) {
-                    acc_ = mutable_src->GetAccelerationStructure();
+                    acc_ = mutable_src->GetAccelerationStructureKHR();
                     ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
                                     is_bindless);
                 } else {
