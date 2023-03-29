@@ -12,7 +12,9 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+
 #include "vk_extension_helper.h"
+#include "../framework/ray_tracing_objects.h"
 
 #include <algorithm>
 #include <array>
@@ -1023,6 +1025,112 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = &buffer_info;
+
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    auto copy_set = LvlInitStruct<VkCopyDescriptorSet>();
+    copy_set.srcSet = descriptor_sets[0];
+    copy_set.srcBinding = 0;
+    copy_set.dstSet = descriptor_sets[1];
+    copy_set.dstBinding = 1;
+    copy_set.descriptorCount = 1;
+
+    vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
+}
+
+TEST_F(VkPositiveLayerTest, CopyAccelerationStructureMutableDescriptors) {
+    TEST_DESCRIPTION("Copy acceleration structure descriptor in a mutable descriptor.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
+    auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&mutable_descriptor_type_features);
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
+    auto features2 = GetPhysicalDeviceFeatures2(bda_features);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        GTEST_SKIP() << "mutableDescriptorType feature not supported";
+    }
+    if (acc_struct_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    std::array descriptor_types = {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR};
+
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
+    mutable_descriptor_type_list.descriptorTypeCount = descriptor_types.size();
+    mutable_descriptor_type_list.pDescriptorTypes = descriptor_types.data();
+
+    auto mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
+    mdtci.mutableDescriptorTypeListCount = 1;
+    mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
+
+    std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    pool_sizes[0].descriptorCount = 1;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+    pool_sizes[1].descriptorCount = 1;
+
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = pool_sizes.size();
+    ds_pool_ci.pPoolSizes = pool_sizes.data();
+
+    vk_testing::DescriptorPool pool;
+    pool.init(*m_device, ds_pool_ci);
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {};
+    bindings[0].binding = 0;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+    bindings[0].pImmutableSamplers = nullptr;
+    bindings[1].binding = 1;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    bindings[1].descriptorCount = 1;
+    bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
+    bindings[1].pImmutableSamplers = nullptr;
+
+    auto create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+    create_info.bindingCount = bindings.size();
+    create_info.pBindings = bindings.data();
+
+    vk_testing::DescriptorSetLayout set_layout;
+    set_layout.init(*m_device, create_info);
+
+    std::array<VkDescriptorSetLayout, 2> layouts = {set_layout.handle(), set_layout.handle()};
+
+    auto allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorSetCount = layouts.size();
+    allocate_info.pSetLayouts = layouts.data();
+
+    std::array<VkDescriptorSet, layouts.size()> descriptor_sets;
+    vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());
+
+    auto tlas = rt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(DeviceValidationVersion(), 4096);
+    tlas->Build(*m_device);
+
+    auto blas_descriptor = LvlInitStruct<VkWriteDescriptorSetAccelerationStructureKHR>();
+    blas_descriptor.accelerationStructureCount = 1;
+    blas_descriptor.pAccelerationStructures = &tlas->handle();
+
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptor_sets[0];
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = blas_descriptor.accelerationStructureCount;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    descriptor_write.pNext = &blas_descriptor;
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
