@@ -656,12 +656,19 @@ class MutableDescriptor : public Descriptor {
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
     std::shared_ptr<BUFFER_VIEW_STATE> GetSharedBufferViewState() const { return buffer_view_state_; }
-    VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
+    VkAccelerationStructureKHR GetAccelerationStructureKHR() const { return acc_; }
     const ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     ACCELERATION_STRUCTURE_STATE_KHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
     const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
     ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+    // Returns true if there is a stored KHR acceleration structure and false if there is a stored NV acceleration structure.
+    // Asserts that there is only one of the two.
+    bool IsAccelerationStructureKHR() const {
+        auto acc_khr = GetAccelerationStructureKHR();
+        assert((acc_khr != VK_NULL_HANDLE) ^ (GetAccelerationStructureNV() != VK_NULL_HANDLE));
+        return acc_khr != VK_NULL_HANDLE;
+    }
 
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state);
 
