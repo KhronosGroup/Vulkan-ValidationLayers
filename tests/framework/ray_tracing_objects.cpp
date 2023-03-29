@@ -743,6 +743,18 @@ std::shared_ptr<rt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottomL
     return as;
 }
 
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(uint32_t vk_api_version, VkDeviceSize size) {
+    auto as = std::make_shared<AccelerationStructureKHR>(vk_api_version);
+    as->SetSize(size);
+    as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    as->SetDeviceBufferInitNoMem(false);
+    return as;
+}
+
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(uint32_t vk_api_version, const vk_testing::Device &device,
                                                                 GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     BuildGeometryInfoKHR out_build_info(vk_api_version);

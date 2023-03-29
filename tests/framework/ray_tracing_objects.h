@@ -224,6 +224,7 @@ GeometryKHR GeometrySimpleHostInstance(uint32_t vk_api_version, VkAccelerationSt
 std::shared_ptr<AccelerationStructureKHR> AccelStructNull(uint32_t vk_api_version);
 std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(uint32_t vk_api_version, VkDeviceSize size);
 std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(uint32_t vk_api_version, VkDeviceSize size);
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(uint32_t vk_api_version, VkDeviceSize size);
 
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(uint32_t vk_api_version, const vk_testing::Device& device,
                                                                 GeometryKHR::Type geometry_type = GeometryKHR::Type::Triangle);
