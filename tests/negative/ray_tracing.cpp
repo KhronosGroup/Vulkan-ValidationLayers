@@ -1075,6 +1075,52 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirect2KHR) {
+    TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirect2KHR.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    auto maintenance1_features = LvlInitStruct<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&maintenance1_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << "not supported, skipping test";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported";
+    }
+    if (maintenance1_features.rayTracingPipelineTraceRaysIndirect2 == VK_FALSE) {
+        GTEST_SKIP() << "rayTracingPipelineTraceRaysIndirect2 not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdTraceRaysIndirect2KHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirect2KHR>("vkCmdTraceRaysIndirect2KHR");
+
+    VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    buffer_info.size = 4096;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBufferObj buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+
+    const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
+
+    m_commandBuffer->begin();
+    // indirectDeviceAddress is not a multiple of 4
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634");
+        vkCmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address + 1);
+        m_errorMonitor->VerifyFound();
+    }
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
     TEST_DESCRIPTION("Validate VkAccelerationStructureVersionInfoKHR.");
 
