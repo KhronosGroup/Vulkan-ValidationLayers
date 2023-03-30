@@ -1345,6 +1345,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.pipeline_protected_access_features = *pipeline_protected_access_features;
         }
 
+        const auto shader_image_proc_features = LvlFindInChain<VkPhysicalDeviceImageProcessingFeaturesQCOM>(pCreateInfo->pNext);
+        if (shader_image_proc_features) {
+            enabled_features.image_processing_features = *shader_image_proc_features;
+        }
+
         const auto linear_color_attachment_features =
             LvlFindInChain<VkPhysicalDeviceLinearColorAttachmentFeaturesNV>(pCreateInfo->pNext);
         if (linear_color_attachment_features) {
@@ -1576,6 +1581,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                                    &phys_dev_props->conservative_rasterization_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control,
                                    &phys_dev_props->subgroup_size_control_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer_density,
                                    &phys_dev_props->descriptor_buffer_density_props);

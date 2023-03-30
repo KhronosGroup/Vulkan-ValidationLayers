@@ -429,6 +429,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const char* cmd_name,
                                    const char* vuid, const char* more_message = "") const;
 
+    bool ValidateImageViewSampleWeightQCOM(const VkImageViewCreateInfo* pCreateInfo, const IMAGE_STATE& image_state) const;
+
     bool ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInputStateCreateInfo& input_state,
                                         const std::vector<VkVertexInputBindingDescription>& binding_descriptions,
                                         const uint32_t pipe_index) const;
