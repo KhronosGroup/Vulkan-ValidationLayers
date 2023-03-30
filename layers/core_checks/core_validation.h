@@ -207,6 +207,7 @@ struct ValidateBeginQueryVuids {
 struct ValidateEndQueryVuids {
     const char* vuid_active_queries = kVUIDUndefined;
     const char* vuid_protected_cb = kVUIDUndefined;
+    const char* vuid_multiview_query = kVUIDUndefined;
 };
 
 struct SubresourceRangeErrorCodes {
