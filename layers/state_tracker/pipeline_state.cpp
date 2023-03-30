@@ -19,7 +19,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "enum_flag_bits.h"
+#include "generated/enum_flag_bits.h"
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,

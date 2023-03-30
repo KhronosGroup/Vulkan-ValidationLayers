@@ -19,18 +19,18 @@
  */
 
 #pragma once
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "error_message/validation_error_enums.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/video_session_state.h"
-#include "command_validation.h"
-#include "layer_chassis_dispatch.h"
+#include "generated/command_validation.h"
+#include "generated/layer_chassis_dispatch.h"
 #include "error_message/logging.h"
 #include "vulkan/vk_layer.h"
-#include "vk_typemap_helper.h"
+#include "generated/vk_typemap_helper.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
 #include "containers/range_vector.h"

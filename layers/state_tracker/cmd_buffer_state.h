@@ -21,7 +21,7 @@
 #include "state_tracker/base_node.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/video_session_state.h"
-#include "command_validation.h"
+#include "generated/command_validation.h"
 #include "utils/hash_vk_types.h"
 #include "containers/subresource_adapter.h"
 #include "state_tracker/image_layout_map.h"

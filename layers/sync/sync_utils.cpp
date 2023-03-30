@@ -16,8 +16,8 @@
  */
 #include "sync/sync_utils.h"
 #include "state_tracker/state_tracker.h"
-#include "sync_validation_types.h"
-#include "enum_flag_bits.h"
+#include "generated/sync_validation_types.h"
+#include "generated/enum_flag_bits.h"
 
 namespace sync_utils {
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KHR) * 8;

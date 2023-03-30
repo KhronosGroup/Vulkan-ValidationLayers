@@ -27,9 +27,9 @@
 
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
-#include "vk_layer_dispatch_table.h"
-#include "vk_object_types.h"
-#include "vk_typemap_helper.h"
+#include "generated/vk_layer_dispatch_table.h"
+#include "generated/vk_object_types.h"
+#include "generated/vk_typemap_helper.h"
 
 #if defined __ANDROID__
 #include <android/log.h>

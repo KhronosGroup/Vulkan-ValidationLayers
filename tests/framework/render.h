@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "lvt_function_pointers.h"
+#include "generated/lvt_function_pointers.h"
 #include "error_monitor.h"
 
 #ifdef ANDROID

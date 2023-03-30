@@ -26,11 +26,11 @@
 #include <vector>
 
 #include <spirv/unified1/spirv.hpp>
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
-#include "spirv_grammar_helper.h"
-#include "xxhash.h"
+#include "generated/spirv_grammar_helper.h"
+#include "external/xxhash.h"
 
 static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
     switch (format) {

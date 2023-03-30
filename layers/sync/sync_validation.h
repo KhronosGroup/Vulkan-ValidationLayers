@@ -22,7 +22,7 @@
 #include <set>
 #include <vulkan/vulkan.h>
 
-#include "sync_validation_types.h"
+#include "generated/sync_validation_types.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"

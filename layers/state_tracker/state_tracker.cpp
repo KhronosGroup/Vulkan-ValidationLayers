@@ -20,12 +20,12 @@
 
 #include <algorithm>
 
-#include "vk_format_utils.h"
+#include "generated/vk_format_utils.h"
 #include "containers/custom_containers.h"
 #include "utils/vk_layer_utils.h"
-#include "vk_typemap_helper.h"
+#include "generated/vk_typemap_helper.h"
 
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "state_tracker/state_tracker.h"
 #include "core_checks/shader_validation.h"
 #include "sync/sync_utils.h"

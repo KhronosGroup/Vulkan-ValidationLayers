@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "containers/custom_containers.h"
-#include "vk_dispatch_table_helper.h"
+#include "generated/vk_dispatch_table_helper.h"
 #include "utils/vk_layer_utils.h"
 #include "vk_lunarg_device_profile_api_layer.h"
 

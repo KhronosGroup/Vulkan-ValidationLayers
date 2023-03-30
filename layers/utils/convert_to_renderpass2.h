@@ -17,6 +17,6 @@
  */
 
 #pragma once
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 
 safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info);

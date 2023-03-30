@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/base_node.h"
-#include "layer_chassis_dispatch.h"
+#include "generated/layer_chassis_dispatch.h"
 #include <vector>
 
 struct DeviceFeatures {

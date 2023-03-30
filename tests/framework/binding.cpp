@@ -24,8 +24,8 @@
 #include <iostream>
 #include <vector>
 
-#include "vk_typemap_helper.h"
-#include "vk_format_utils.h"
+#include "generated/vk_typemap_helper.h"
+#include "generated/vk_format_utils.h"
 
 namespace {
 

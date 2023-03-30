@@ -55,10 +55,7 @@ target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
-target_include_directories(VkLayer_utils PUBLIC
-    .
-    generated # Needed otherwise VkLayer_utils won't install properly.
-)
+target_include_directories(VkLayer_utils PUBLIC .)
 
 find_package(robin_hood CONFIG)
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})

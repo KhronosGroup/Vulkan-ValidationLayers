@@ -10,7 +10,7 @@
  */
 
 #include "../framework/video_objects.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_extension_helper.h"
 
 #include <algorithm>
 #include <chrono>

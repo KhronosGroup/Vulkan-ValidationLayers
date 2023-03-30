@@ -12,7 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_extension_helper.h"
 
 #include "utils/android_ndk_types.h"
 #ifdef AHB_VALIDATION_SUPPORT

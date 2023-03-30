@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/base_node.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 
 class IMAGE_VIEW_STATE;
 

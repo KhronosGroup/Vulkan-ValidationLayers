@@ -22,10 +22,10 @@
 #include <debugapi.h>
 #endif
 
-#include "vk_enum_string_helper.h"
-#include "vk_safe_struct.h"
-#include "vk_validation_error_messages.h"
-#include "xxhash.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/vk_safe_struct.h"
+#include "generated/vk_validation_error_messages.h"
+#include "external/xxhash.h"
 
 VKAPI_ATTR void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes

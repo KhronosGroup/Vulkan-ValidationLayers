@@ -21,13 +21,13 @@
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
-#include "layer_chassis_dispatch.h"
+#include "generated/layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 // Generated shaders
 #include "gpu_shaders/gpu_shaders_constants.h"
-#include "gpu_pre_draw_vert.h"
-#include "gpu_pre_dispatch_comp.h"
-#include "gpu_as_inspection_comp.h"
+#include "generated/gpu_pre_draw_vert.h"
+#include "generated/gpu_pre_dispatch_comp.h"
+#include "generated/gpu_as_inspection_comp.h"
 
 // Keep in sync with the GLSL shader below.
 struct GpuAccelerationStructureBuildValidationBuffer {

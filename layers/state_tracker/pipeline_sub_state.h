@@ -18,7 +18,7 @@
 #pragma once
 
 #include "state_tracker/pipeline_layout_state.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
 //

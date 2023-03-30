@@ -18,11 +18,11 @@
 
 #include <cmath>
 
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "stateless/stateless_validation.h"
-#include "layer_chassis_dispatch.h"
+#include "generated/layer_chassis_dispatch.h"
 #include "error_message/validation_error_enums.h"
-#include "enum_flag_bits.h"
+#include "generated/enum_flag_bits.h"
 #include "containers/custom_containers.h"
 #include "utils/convert_to_renderpass2.h"
 

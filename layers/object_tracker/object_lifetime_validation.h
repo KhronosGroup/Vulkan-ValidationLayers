@@ -264,5 +264,5 @@ class ObjectLifetimes : public ValidationObject {
         return skip;
     }
 
-#include "object_tracker.h"
+#include "generated/object_tracker.h"
 };

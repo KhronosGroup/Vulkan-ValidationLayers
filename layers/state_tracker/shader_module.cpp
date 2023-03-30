@@ -20,7 +20,7 @@
 
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
-#include "spirv_grammar_helper.h"
+#include "generated/spirv_grammar_helper.h"
 
 void DecorationBase::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {

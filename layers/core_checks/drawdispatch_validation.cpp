@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 #include "buffer_address_validation.h"
 

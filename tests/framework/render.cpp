@@ -25,8 +25,8 @@
 #include <utility>
 #include <vector>
 
-#include "vk_format_utils.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_format_utils.h"
+#include "generated/vk_extension_helper.h"
 #include "vk_layer_settings_ext.h"
 #include "layer_validation_tests.h"
 

@@ -11,7 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 #include "utils/cast_utils.h"
-#include "enum_flag_bits.h"
+#include "generated/enum_flag_bits.h"
 #include "layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 

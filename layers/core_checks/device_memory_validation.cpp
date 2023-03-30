@@ -19,8 +19,8 @@
 
 #include <assert.h>
 
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.

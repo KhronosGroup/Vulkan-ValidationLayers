@@ -17,8 +17,8 @@
 #include <assert.h>
 #include <vector>
 
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 // Flags validation error if the associated call is made inside a video coding block.

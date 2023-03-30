@@ -20,8 +20,8 @@
 #include "hash_util.h"
 
 #include <vulkan/vulkan.h>
-#include "vk_extension_helper.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_extension_helper.h"
+#include "generated/vk_safe_struct.h"
 #include <vector>
 
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)

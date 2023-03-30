@@ -19,7 +19,7 @@
 #pragma once
 
 #include "parameter_name.h"
-#include "vk_typemap_helper.h"
+#include "generated/vk_typemap_helper.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
 
@@ -1582,5 +1582,5 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#include "parameter_validation.h"
+#include "generated/parameter_validation.h"
 };  // Class StatelessValidation

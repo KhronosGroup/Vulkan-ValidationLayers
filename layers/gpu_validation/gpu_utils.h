@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "core_checks/shader_validation.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/state_tracker.h"
