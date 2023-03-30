@@ -28,7 +28,7 @@ static std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTimeout() {
     return std::chrono::steady_clock::now() + std::chrono::seconds(10);
 }
 
-void CB_SUBMISSION::BeginUse() {
+void QueueSubmission::BeginUse() {
     for (auto &wait : wait_semaphores) {
         wait.semaphore->BeginUse();
     }
@@ -43,22 +43,80 @@ void CB_SUBMISSION::BeginUse() {
     }
 }
 
-void CB_SUBMISSION::EndUse() {
+void QueueSubmission::EndUse() {
+    // This is called by QUEUE_STATE::ThreadFunc after the
+    // submission is std::moved to its final location
+    // Now that that's happened, hook up the Location::prev's
+    // for better error messages. This can't be done earlier
+    // because std::move() will invalidate the prev pointers.
     for (auto &wait : wait_semaphores) {
         wait.semaphore->EndUse();
+        wait.loc.prev = &loc;
     }
     for (auto &cb_state : cbs) {
         cb_state->EndUse();
     }
     for (auto &signal : signal_semaphores) {
         signal.semaphore->EndUse();
+        signal.loc.prev = &loc;
     }
     if (fence) {
         fence->EndUse();
     }
 }
+void QueueSubmission::AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_node) { cbs.emplace_back(std::move(cb_node)); }
 
-uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
+void QueueSubmission::AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
+    using namespace core_error;
+    Field sem_field = Field::Empty;
+    switch (loc.function) {
+        case Func::vkQueueSubmit:
+            sem_field = Field::pSignalSemaphores;
+            break;
+        case Func::vkQueueSubmit2:
+            sem_field = Field::pSignalSemaphoreInfos;
+            break;
+        case Func::vkQueueBindSparse:
+            sem_field = Field::pSignalSemaphores;
+            break;
+        // vkQueuePresentKHR only has waits
+        default:
+            assert(false);
+            break;
+    }
+    auto i = static_cast<uint32_t>(signal_semaphores.size());
+
+    signal_semaphores.emplace_back(std::move(semaphore_state), value, Location(loc.function, loc.structure, sem_field, i));
+}
+
+void QueueSubmission::AddWaitSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
+    using namespace core_error;
+    Field sem_field = Field::Empty;
+    switch (loc.function) {
+        case Func::vkQueueSubmit:
+            sem_field = Field::pWaitSemaphores;
+            break;
+        case Func::vkQueueSubmit2:
+            sem_field = Field::pWaitSemaphoreInfos;
+            break;
+        case Func::vkQueueBindSparse:
+            sem_field = Field::pWaitSemaphores;
+            break;
+        case Func::vkQueuePresentKHR:
+            sem_field = Field::pWaitSemaphores;
+            break;
+        default:
+            assert(false);
+            break;
+    }
+    auto i = static_cast<uint32_t>(wait_semaphores.size());
+
+    wait_semaphores.emplace_back(std::move(semaphore_state), value, Location(loc.function, loc.structure, sem_field, i));
+}
+
+void QueueSubmission::AddFence(std::shared_ptr<FENCE_STATE> &&fence_state) { fence = std::move(fence_state); }
+
+uint64_t QUEUE_STATE::Submit(QueueSubmission &&submission) {
     for (auto &cb_state : submission.cbs) {
         auto cb_guard = cb_state->WriteLock();
         for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
@@ -154,8 +212,8 @@ void QUEUE_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-CB_SUBMISSION *QUEUE_STATE::NextSubmission() {
-    CB_SUBMISSION *result = nullptr;
+QueueSubmission *QUEUE_STATE::NextSubmission() {
+    QueueSubmission *result = nullptr;
     // Find if the next submission is ready so that the thread function doesn't need to worry
     // about locking.
     auto guard = Lock();
@@ -172,7 +230,7 @@ CB_SUBMISSION *QUEUE_STATE::NextSubmission() {
 }
 
 void QUEUE_STATE::ThreadFunc() {
-    CB_SUBMISSION *submission = nullptr;
+    QueueSubmission *submission = nullptr;
 
     auto is_query_updated_after = [this](const QueryObject &query_object) {
         auto guard = this->Lock();
@@ -199,7 +257,7 @@ void QUEUE_STATE::ThreadFunc() {
     while ((submission = NextSubmission())) {
         submission->EndUse();
         for (auto &wait : submission->wait_semaphores) {
-            wait.semaphore->Retire(this, wait.payload);
+            wait.semaphore->Retire(wait.loc, this, wait.payload);
         }
         for (auto &cb_state : submission->cbs) {
             auto cb_guard = cb_state->WriteLock();
@@ -210,7 +268,7 @@ void QUEUE_STATE::ThreadFunc() {
             cb_state->Retire(submission->perf_submit_pass, is_query_updated_after);
         }
         for (auto &signal : submission->signal_semaphores) {
-            signal.semaphore->Retire(this, signal.payload);
+            signal.semaphore->Retire(signal.loc, this, signal.payload);
         }
         if (submission->fence) {
             submission->fence->Retire();
@@ -425,7 +483,14 @@ void SEMAPHORE_STATE::Notify(uint64_t payload) {
     }
 }
 
-void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
+void SEMAPHORE_STATE::Record(const core_error::Location &, const SemOp &op) {
+    // make sure completed doesn't go backwards for timeline semaphores
+    if (completed_.payload <= op.payload) {
+        completed_ = op;
+    }
+}
+
+void SEMAPHORE_STATE::Retire(const core_error::Location &loc, QUEUE_STATE *current_queue, uint64_t payload) {
     auto guard = WriteLock();
     if (payload <= completed_.payload) {
         return;
@@ -451,6 +516,8 @@ void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
         }
     }
 
+    // TODO: Validate(loc, op);  // Note that it is far too late here to skip on error
+    // TODO:     Record(loc, op);
     if (retire_here) {
         if (timepoint.signal_op) {
             completed_ = *timepoint.signal_op;
@@ -509,10 +576,12 @@ void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
                                completed_.payload, payload);
         }
     } else {
+        using namespace core_error;
         // For external timeline semaphores we should bump the completed payload to whatever the driver
         // tells us.
         EnqueueSignal(nullptr, 0, payload);
-        Retire(nullptr, payload);
+	//TODO: validate?
+        Retire(Location(Func::vkQueueSubmit), nullptr, payload);  // TODO: this is wrong location
     }
 }
 

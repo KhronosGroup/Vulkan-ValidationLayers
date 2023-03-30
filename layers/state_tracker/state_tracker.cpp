@@ -1693,19 +1693,19 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
 
 void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                       VkFence fence) {
+    using namespace core_error;
     auto queue_state = Get<QUEUE_STATE>(queue);
 
     uint64_t early_retire_seq = 0;
-
     if (submitCount == 0) {
-        CB_SUBMISSION submission;
+        QueueSubmission submission(Func::vkQueueSubmit);
         submission.AddFence(Get<FENCE_STATE>(fence));
         early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
     // Now process each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        CB_SUBMISSION submission;
+        QueueSubmission submission(Func::vkQueueSubmit, Struct::VkSubmitInfo, Field::pSubmits, submit_idx);
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *timeline_semaphore_submit = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
@@ -1749,16 +1749,18 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
 
 void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                 VkFence fence) {
+    using namespace core_error;
+
     auto queue_state = Get<QUEUE_STATE>(queue);
     uint64_t early_retire_seq = 0;
     if (submitCount == 0) {
-        CB_SUBMISSION submission;
+        QueueSubmission submission(Func::vkQueueSubmit2);
         submission.AddFence(Get<FENCE_STATE>(fence));
         early_retire_seq = queue_state->Submit(std::move(submission));
     }
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        CB_SUBMISSION submission;
+        QueueSubmission submission(Func::vkQueueSubmit2, Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
             const auto &sem_info = submit->pWaitSemaphoreInfos[i];
@@ -1840,11 +1842,14 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
 
 void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                           VkFence fence) {
+    using namespace core_error;
+    Location loc(Func::vkQueueBindSparse);
     auto queue_state = Get<QUEUE_STATE>(queue);
 
     uint64_t early_retire_seq = 0;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
+        QueueSubmission submission(Func::vkQueueBindSparse, Struct::VkBindSparseInfo, Field::pBindInfo, bind_idx);
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
         // Track objects tied to memory
         for (uint32_t j = 0; j < bind_info.bufferBindCount; j++) {
@@ -1895,7 +1900,6 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
             }
         }
         auto timeline_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
-        CB_SUBMISSION submission;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
             uint64_t payload = 0;
             if (timeline_info && i < timeline_info->waitSemaphoreValueCount) {
@@ -1922,11 +1926,16 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
     }
 }
 
+std::shared_ptr<SEMAPHORE_STATE> ValidationStateTracker::CreateSemaphore(VkSemaphore semaphore,
+                                                                         const VkSemaphoreCreateInfo *pCreateInfo) {
+    return std::make_shared<SEMAPHORE_STATE>(*this, semaphore, pCreateInfo);
+}
+
 void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                            const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    Add(std::make_shared<SEMAPHORE_STATE>(*this, *pSemaphore, pCreateInfo));
+    Add(CreateSemaphore(*pSemaphore, pCreateInfo));
 }
 
 void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
@@ -1953,9 +1962,11 @@ void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, cons
                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
 
+    using namespace core_error;
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
     if (semaphore_state) {
-        semaphore_state->Retire(nullptr, pSignalInfo->value);
+        Location loc(Func::vkSignalSemaphore, Struct::VkSemaphoreSignalInfo);
+        semaphore_state->Retire(loc, nullptr, pSignalInfo->value);
     }
 }
 
@@ -3987,7 +3998,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         return;
     }
     auto queue_state = Get<QUEUE_STATE>(queue);
-    CB_SUBMISSION submission;
+    using namespace core_error;
+    QueueSubmission submission(Func::vkQueuePresentKHR);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {

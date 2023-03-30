@@ -822,6 +822,7 @@ class ValidationStateTracker : public ValidationObject {
                                                        VkSamplerYcbcrConversion* pYcbcrConversion, VkResult result) override;
     void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                         const VkAllocationCallbacks* pAllocator) override;
+    virtual std::shared_ptr<SEMAPHORE_STATE> CreateSemaphore(VkSemaphore semaphore, const VkSemaphoreCreateInfo* pCreateInfo);
     void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore, VkResult result) override;
     void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) override;

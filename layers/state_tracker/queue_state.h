@@ -25,6 +25,7 @@
 #include <thread>
 #include <vector>
 #include "utils/vk_layer_utils.h"
+#include "error_message/core_error_location.h"
 
 class CMD_BUFFER_STATE;
 class QUEUE_STATE;
@@ -96,8 +97,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     // possible payload values for binary semaphore
     enum OpType {
         kNone,
-        kWait,
         kSignal,
+        kWait,
         kBinaryAcquire,
     };
     static inline const char *OpTypeName(OpType t) {
@@ -123,7 +124,12 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         uint64_t seq;
         uint64_t payload;
 
-        bool operator<(const SemOp &rhs) const { return payload < rhs.payload; }
+        bool operator<(const SemOp &rhs) const {
+            if (payload != rhs.payload) {
+                return payload < rhs.payload;
+            }
+            return op_type < rhs.op_type;
+        }
 
         bool IsWait() const { return op_type == kWait; }
         bool IsSignal() const { return op_type == kSignal; }
@@ -220,7 +226,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void NotifyAndWait(uint64_t payload);
 
     // Remove completed operations and signal any waiters. This should only be called by QUEUE_STATE
-    void Retire(QUEUE_STATE *current_queue, uint64_t payload);
+    void Retire(const core_error::Location &location, QUEUE_STATE *current_queue, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
@@ -240,9 +246,14 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     const VkSemaphoreType type;
     const VkExternalSemaphoreHandleTypeFlags exportHandleTypes;
 
-  private:
+  protected:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+    // Execute-time validation hook, returns 'skip' like other validation code. Called with write lock held
+    virtual bool Validate(const core_error::Location &location, const SemOp &op) const { return false; }
+    // Execute-time state record hook. Called with write lock held
+    virtual void Record(const core_error::Location &location, const SemOp &op);
 
     SyncScope scope_{kSyncScopeInternal};
     // the most recently completed operation
@@ -258,14 +269,23 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     ValidationStateTracker &dev_data_;
 };
 
-struct CB_SUBMISSION {
+struct QueueSubmission {
+    using Func = core_error::Func;
+    using Struct = core_error::Struct;
+    using Field = core_error::Field;
+    using Location = core_error::Location;
+
     struct SemaphoreInfo {
-        SemaphoreInfo(std::shared_ptr<SEMAPHORE_STATE> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
+        SemaphoreInfo(std::shared_ptr<SEMAPHORE_STATE> &&sem, uint64_t pl, const Location &loc_)
+            : semaphore(std::move(sem)), payload(pl), loc(loc_) {}
         std::shared_ptr<SEMAPHORE_STATE> semaphore;
         uint64_t payload{0};
+        Location loc;
     };
-    CB_SUBMISSION() : completed(), waiter(completed.get_future()) {}
+    QueueSubmission(Func func, Struct struct_name = Struct::Empty, Field field = Field::Empty, uint32_t i = 0)
+        : loc(func, struct_name, field, i), completed(), waiter(completed.get_future()) {}
 
+    Location loc;
     std::vector<std::shared_ptr<CMD_BUFFER_STATE>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
@@ -275,17 +295,10 @@ struct CB_SUBMISSION {
     std::promise<void> completed;
     std::shared_future<void> waiter;
 
-    void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
-
-    void AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
-        signal_semaphores.emplace_back(std::move(semaphore_state), value);
-    }
-
-    void AddWaitSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
-        wait_semaphores.emplace_back(std::move(semaphore_state), value);
-    }
-
-    void AddFence(std::shared_ptr<FENCE_STATE> &&fence_state) { fence = std::move(fence_state); }
+    void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_state);
+    void AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value);
+    void AddWaitSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value);
+    void AddFence(std::shared_ptr<FENCE_STATE> &&fence_state);
 
     void EndUse();
     void BeginUse();
@@ -306,7 +319,7 @@ class QUEUE_STATE : public BASE_NODE {
 
     VkQueue Queue() const { return handle_.Cast<VkQueue>(); }
 
-    uint64_t Submit(CB_SUBMISSION &&submission);
+    uint64_t Submit(QueueSubmission &&submission);
 
     // Tell the queue thread that submissions up to the submission with sequence number until_seq have finished
     uint64_t Notify(uint64_t until_seq = vvl::kU64Max);
@@ -316,6 +329,9 @@ class QUEUE_STATE : public BASE_NODE {
     void NotifyAndWait(uint64_t until_seq = vvl::kU64Max);
     std::shared_future<void> Wait(uint64_t until_seq = vvl::kU64Max);
 
+    const ValidationStateTracker &Device() const { return dev_data_; }
+    ValidationStateTracker &Device() { return dev_data_; }
+
     const uint32_t queueFamilyIndex;
     const VkDeviceQueueCreateFlags flags;
     const VkQueueFamilyProperties queueFamilyProperties;
@@ -323,7 +339,7 @@ class QUEUE_STATE : public BASE_NODE {
   private:
     using LockGuard = std::unique_lock<std::mutex>;
     void ThreadFunc();
-    CB_SUBMISSION *NextSubmission();
+    QueueSubmission *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
     ValidationStateTracker &dev_data_;
@@ -331,7 +347,7 @@ class QUEUE_STATE : public BASE_NODE {
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held
     std::unique_ptr<std::thread> thread_;
-    std::deque<CB_SUBMISSION> submissions_;
+    std::deque<QueueSubmission> submissions_;
     std::atomic<uint64_t> seq_{0};
     uint64_t request_seq_{0};
     bool exit_thread_{false};

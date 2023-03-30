@@ -240,8 +240,18 @@ class CommandBuffer: public CMD_BUFFER_STATE {
     void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
+
+class Semaphore : public SEMAPHORE_STATE {
+  public:
+    Semaphore(ValidationStateTracker& dev, VkSemaphore sem, const VkSemaphoreCreateInfo* pCreateInfo)
+        : SEMAPHORE_STATE(dev, sem, pCreateInfo) {}
+
+  protected:
+    bool Validate(const core_error::Location& loc, const SemOp& op) const override;
+};
 }
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, core_state::CommandBuffer, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSemaphore, core_state::Semaphore, SEMAPHORE_STATE);
 
 struct TimelineMaxDiffCheck {
     TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
@@ -1404,6 +1414,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkFence* pFence) const override;
+    std::shared_ptr<SEMAPHORE_STATE> CreateSemaphore(VkSemaphore semaphore, const VkSemaphoreCreateInfo* pCreateInfo) override;
     bool PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const override;
     bool PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout) const override;

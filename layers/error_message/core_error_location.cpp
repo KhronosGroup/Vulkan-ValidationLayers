@@ -104,6 +104,7 @@ const std::string& String(Field field) {
         FIELD_ENTRY(value),
         FIELD_ENTRY(pCommandBuffers),
         FIELD_ENTRY(pSubmits),
+        FIELD_ENTRY(pBindInfo),
         FIELD_ENTRY(pCommandBufferInfos),
         FIELD_ENTRY(semaphore),
         FIELD_ENTRY(commandBuffer),

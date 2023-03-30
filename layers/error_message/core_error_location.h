@@ -112,6 +112,7 @@ enum class Field {
     value,
     pCommandBuffers,
     pSubmits,
+    pBindInfo,
     pCommandBufferInfos,
     semaphore,
     commandBuffer,

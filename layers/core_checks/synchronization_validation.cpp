@@ -186,6 +186,8 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const core_error::Location &l
             break;
         }
         case VK_SEMAPHORE_TYPE_TIMELINE: {
+            // Submit-time check that the signal value is greater than any previously completed values.
+            // Pending values are checked below in core_state::Semaphore::Validate.
             uint64_t bad_value = 0;
             std::string where;
             auto must_be_greater = [value](const SEMAPHORE_STATE::SemOp &op, bool is_pending) {
@@ -443,6 +445,30 @@ bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreate
                              "vkCreateFence(): VkFenceCreateInfo pNext chain contains VkExportFenceCreateInfo with handleTypes "
                              "flags (%s) that are not reported as compatible by vkGetPhysicalDeviceExternalFenceProperties.",
                              string_VkExternalFenceHandleTypeFlags(fence_export_info->handleTypes).c_str());
+        }
+    }
+    return skip;
+}
+
+std::shared_ptr<SEMAPHORE_STATE> CoreChecks::CreateSemaphore(VkSemaphore semaphore, const VkSemaphoreCreateInfo *pCreateInfo) {
+    return std::static_pointer_cast<SEMAPHORE_STATE>(std::make_shared<core_state::Semaphore>(*this, semaphore, pCreateInfo));
+}
+
+bool core_state::Semaphore::Validate(const core_error::Location &loc, const SEMAPHORE_STATE::SemOp &next_op) const {
+    bool skip = false;
+    // Execution time validation of a semaphore signal operation on a queue.
+    if (type == VK_SEMAPHORE_TYPE_TIMELINE && next_op.op_type == kSignal && next_op.queue) {
+        if (next_op.payload <= completed_.payload) {
+            const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, sync_vuid_maps::SubmitError::kTimelineSemSmallValue);
+            const auto &dev = next_op.queue->Device();
+            LogObjectList objlist(Handle());
+            objlist.add(next_op.queue->Handle());
+
+            skip |= dev.LogError(objlist, vuid,
+                                 "At execution time, %s signal value (0x%" PRIx64
+                                 ") in %s must be greater than current timeline semaphore %s value (0x%" PRIx64 ")",
+                                 "somewhere:", next_op.payload, dev.report_data->FormatHandle(next_op.queue->Handle()).c_str(),
+                                 dev.report_data->FormatHandle(Handle()).c_str(), completed_.payload);
         }
     }
     return skip;
