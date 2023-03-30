@@ -2387,3 +2387,158 @@ TEST_F(VkLayerQueryTest, CommandBufferMissingOcclusionQueryEnabled) {
 
     vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
+
+TEST_F(VkLayerTest, EndQueryWithMultiview) {
+    TEST_DESCRIPTION("Test CmdEndQuery in subpass with multiview");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    const bool indexed_queries = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
+    if (multiview_features.multiview == VK_FALSE) {
+        GTEST_SKIP() << "multiview feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkAttachmentDescription attach = {};
+    attach.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference color_att = {};
+    color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpasses[2] = {};
+    subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[0].colorAttachmentCount = 1;
+    subpasses[0].pColorAttachments = &color_att;
+    subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpasses[1].colorAttachmentCount = 1;
+    subpasses[1].pColorAttachments = &color_att;
+
+    uint32_t viewMasks[2] = {0x1u, 0x3u};
+    uint32_t correlationMasks[] = {0x1u};
+    auto rpmv_ci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    rpmv_ci.subpassCount = 2;
+    rpmv_ci.pViewMasks = viewMasks;
+    rpmv_ci.correlationMaskCount = 1;
+    rpmv_ci.pCorrelationMasks = correlationMasks;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = 0;
+    dependency.dstSubpass = 1;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmv_ci);
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attach;
+    rp_ci.subpassCount = 2;
+    rp_ci.pSubpasses = subpasses;
+    rp_ci.dependencyCount = 1;
+    rp_ci.pDependencies = &dependency;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, rp_ci);
+
+    VkImageObj image(m_device);
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 64;
+    image_ci.extent.height = 64;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 4;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image.init(&image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    vk_testing::ImageView image_view;
+    VkImageViewCreateInfo iv_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    iv_ci.image = image.handle();
+    iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    iv_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    iv_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    iv_ci.subresourceRange.baseMipLevel = 0;
+    iv_ci.subresourceRange.levelCount = 1;
+    iv_ci.subresourceRange.baseArrayLayer = 0;
+    iv_ci.subresourceRange.layerCount = 4;
+    image_view.init(*m_device, iv_ci);
+
+    VkImageView image_view_handle = image_view.handle();
+
+    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_ci.renderPass = render_pass.handle();
+    fb_ci.attachmentCount = 1;
+    fb_ci.pAttachments = &image_view_handle;
+    fb_ci.width = 64;
+    fb_ci.height = 64;
+    fb_ci.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fb_ci);
+
+    VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+    qpci.queryCount = 2;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, qpci);
+
+    auto rp_begin = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin.renderPass = render_pass.handle();
+    rp_begin.framebuffer = framebuffer.handle();
+    rp_begin.renderArea.extent = {64, 64};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_begin);
+
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
+
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-query-00812");
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
+    m_commandBuffer->end();
+
+    if (indexed_queries) {
+        auto vkCmdBeginQueryIndexedEXT =
+            reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
+        auto vkCmdEndQueryIndexedEXT =
+            reinterpret_cast<PFN_vkCmdEndQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndQueryIndexedEXT"));
+
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(rp_begin);
+        vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 1, 0, 0);
+        vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQueryIndexedEXT-query-02345");
+        vkCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->EndRenderPass();
+        vkCmdEndQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
+        m_commandBuffer->end();
+    }
+}
