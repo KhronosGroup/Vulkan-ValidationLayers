@@ -224,8 +224,9 @@ def RunVVLTests():
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
 
     RunShellCmd(lvt_cmd, env=lvt_env)
-    print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
-    lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '1'
+
+    print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled")
+    lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'
     RunShellCmd(lvt_cmd + ' --gtest_filter=*Thread*', env=lvt_env)
 
 def GetArgParser():
