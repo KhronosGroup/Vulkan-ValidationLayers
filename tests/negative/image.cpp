@@ -6341,3 +6341,198 @@ TEST_F(VkLayerTest, SlicedCreateInfoInvalidUsage) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkLayerTest, ImageViewTextureSampleWeighted) {
+    TEST_DESCRIPTION("Checks for image view texture sample weighted.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
+
+    auto image_proc_features = LvlInitStruct<VkPhysicalDeviceImageProcessingFeaturesQCOM>();
+    GetPhysicalDeviceFeatures2(image_proc_features);
+
+    if (image_proc_features.textureSampleWeighted == VK_FALSE) {
+        GTEST_SKIP() << "TextureSampleWeighted feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_proc_features));
+
+    auto image_proc_properties = LvlInitStruct<VkPhysicalDeviceImageProcessingPropertiesQCOM>();
+    GetPhysicalDeviceProperties2(image_proc_properties);
+
+    // check the format feature flags
+    auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+    auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8_UNORM, &fmt_props);
+    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM) == 0) {
+        GTEST_SKIP() << "Required VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM bit not supported for R8_UNORM";
+    }
+    fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
+    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM) == 0) {
+        GTEST_SKIP() << "Required VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM bit not supported for VK_FORMAT_R8G8B8A8_UNORM";
+    }
+
+    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
+    sci.maxLod = 0.0f;
+    sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sci.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+    sci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
+
+    // vkCreateSampler - expect success
+    CreateSamplerTest(*this, &sci, "");
+    auto sci_bad = sci;
+
+    // vkCreateSampler - expect failure
+    sci_bad.minFilter = VK_FILTER_LINEAR;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06964");
+    sci_bad.minFilter = sci.minFilter;
+
+    sci_bad.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06965");
+    sci_bad.mipmapMode = sci.mipmapMode;
+
+    sci_bad.maxLod = 1.0f;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06966");
+    sci_bad.maxLod = sci.maxLod;
+
+    sci_bad.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06967");
+    sci_bad.addressModeU = sci.addressModeU;
+
+    sci_bad.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06968");
+    sci_bad.borderColor = sci.borderColor;
+
+    sci_bad.compareEnable = VK_TRUE;  // disallowed
+    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06970");
+    sci_bad.compareEnable = sci.compareEnable;
+
+    vk_testing::Sampler sampler(*m_device, sci);
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 512;
+    image_create_info.extent.height = 512;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 64;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj sampled_image2D(m_device);
+    sampled_image2D.init(&image_create_info);
+    ASSERT_TRUE(sampled_image2D.initialized());
+
+    image_create_info.arrayLayers = 1;
+    image_create_info.format = VK_FORMAT_R8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.arrayLayers = 64;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM;
+
+    VkImageObj weight_image2D(m_device);
+    weight_image2D.init(&image_create_info);
+    ASSERT_TRUE(weight_image2D.initialized());
+
+    const VkComponentMapping identity = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+
+    auto ivswci = LvlInitStruct<VkImageViewSampleWeightCreateInfoQCOM>();
+    ivswci.filterCenter.x = 32;
+    ivswci.filterCenter.y = 32;
+    ivswci.filterSize.height = 64;
+    ivswci.filterSize.width = 64;
+    ivswci.numPhases = 64;  // 8 vert * 8 horiz
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.pNext = &ivswci;
+    ivci.image = weight_image2D.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    ivci.format = VK_FORMAT_R8_UNORM;
+    ivci.components = identity;
+    ivci.subresourceRange.layerCount = 64;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // vkCreateImageView - expect success
+    auto ivswci_bad = ivswci;
+    auto ivci_bad = ivci;
+    ivci_bad.pNext = &ivswci_bad;
+    ivswci_bad.filterSize.height = image_proc_properties.maxWeightFilterDimension.height + 1;
+
+    // vkCreateImage - expect failure
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06956 ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06957 ");
+    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06959");
+    ivswci_bad.filterSize.height = ivswci.filterSize.height;
+
+    ivswci_bad.filterSize.width = image_proc_properties.maxWeightFilterDimension.width + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06955");
+    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06958");
+    ivswci_bad.filterSize.width = ivswci.filterSize.width;
+
+    ivswci_bad.filterCenter.x = ivswci.filterSize.width;
+    ivswci_bad.filterCenter.y = ivswci.filterSize.height;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06960");
+    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961");
+    ivswci_bad.filterCenter.x = ivswci.filterCenter.x;
+    ivswci_bad.filterCenter.y = ivswci.filterCenter.y;
+
+    ivswci_bad.numPhases = image_proc_properties.maxWeightFilterPhases + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06962");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06954");
+    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06963");
+    ivswci_bad.filterSize.width = ivswci.filterSize.width;
+
+    vk_testing::ImageView weight_image_view(*m_device, ivci);
+
+    ivci.pNext = nullptr;
+    ivci.image = sampled_image2D.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.components = identity;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk_testing::ImageView sampled_image_view(*m_device, ivci);
+
+    // vkUpdateDescriptorSets - expect success
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                      {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                      {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                      {3, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+    descriptor_set.WriteDescriptorImageInfo(0, weight_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+    descriptor_set.WriteDescriptorImageInfo(1, sampled_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    descriptor_set.WriteDescriptorImageInfo(2, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.UpdateDescriptorSets();
+
+    // vkUpdateDescriptorSets - expect failure
+    OneOffDescriptorSet descriptor_set_bad(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                      {3, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+    descriptor_set.WriteDescriptorImageInfo(0, sampled_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM);
+    descriptor_set.WriteDescriptorImageInfo(3, weight_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-06942");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-06943");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
