@@ -32,6 +32,10 @@
 
 std::string GetEnvironment(const char *variable);
 
+#if defined(__ANDROID__)
+VK_LAYER_EXPORT int GetAndroidProperty(const char *prop, char *out);
+#endif  // defined(__ANDROID__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,7 +96,6 @@ const vvl::unordered_map<std::string, VkFlags> log_msg_type_option_definitions =
                                                                                   {std::string("debug"), kDebugBit}};
 
 const char *getLayerOption(const char *option);
-const char *GetLayerEnvVar(const char *option);
 const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 FILE *getLayerLogOutput(const char *option, const char *layer_name);

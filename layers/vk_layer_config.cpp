@@ -60,6 +60,7 @@ class ConfigFile {
 
 static ConfigFile layer_config;
 
+// Note: Android doesn't use environment and instead uses properties values
 std::string GetEnvironment(const char *variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     const char *output = getenv(variable);
@@ -74,38 +75,22 @@ std::string GetEnvironment(const char *variable) {
     string output = buffer;
     delete[] buffer;
     return output;
-#elif defined(__ANDROID__)
-    string command = "getprop " + string(variable);
-    FILE *pPipe = popen(command.c_str(), "r");
-    if (pPipe != nullptr) {
-        char value[256];
-        fgets(value, 256, pPipe);
-        pclose(pPipe);
-
-        // Make sure its not an empty line and does not end in a newline
-        const auto str_len = strcspn(value, "\r\n");
-        if (str_len == 0) {
-            return "";
-        } else {
-            value[str_len] = '\0';
-            return string(value);
-        }
-    } else {
-        return "";
-    }
 #else
     return "";
 #endif
 }
 
 const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
-const char *GetLayerEnvVar(const char *option) {
-    // NOTE: new code should use GetEnvironment directly. This is a workaround for the problem
-    // described in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3048
-    static std::string result;
-    result = GetEnvironment(option);
-    return result.c_str();
+#if defined(__ANDROID__)
+#include <sys/system_properties.h>
+VK_LAYER_EXPORT int GetAndroidProperty(const char *prop, char *out) {
+    // __system_property_get deprecated from Android O, but still using
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4605
+    return __system_property_get(prop, out);
 }
+#endif  // defined(__ANDROID__)
+
+VK_LAYER_EXPORT const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
 
 const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
 
@@ -417,16 +402,18 @@ void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
 void __attribute__((constructor)) CheckAndroidVersion();
 void CheckAndroidVersion() {
 #ifdef AHB_VALIDATION_SUPPORT
-    string version_env = GetEnvironment("ro.build.version.sdk");
-    int target_version = atoi(version_env.c_str());
-
-    // atoi returns 0 if GetEnvironment fails and don't want false positive errors
-    if ((target_version != 0) && (target_version < 26)) {
-        LOGCONSOLE(
-            "ERROR - Targeted Android version is %d and needs to be 26 or above. Please read "
-            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/BUILD.md for how to build the Validation Layers "
-            "for Android 25 and below",
-            target_version);
+    char version[8];
+    if (GetAndroidProperty("ro.build.version.sdk", version) > 0) {
+        int target_version = atoi(version);
+        // atoi returns 0 if it fails and don't want false positive errors
+        if ((target_version != 0) && (target_version < 26)) {
+            LOGCONSOLE(
+                "ERROR - Targeted Android version is %d and needs to be 26 or above. Please read "
+                "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md for how to build the Validation "
+                "Layers "
+                "for Android 25 and below",
+                target_version);
+        }
     }
 #endif  // AHB_VALIDATION_SUPPORT
 }

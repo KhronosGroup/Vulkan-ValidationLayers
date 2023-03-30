@@ -249,10 +249,11 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, debug_
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     // On Android, if the default callback system property is set, force the default callback to be printed
-    std::string forceLayerLog = GetEnvironment(kForceDefaultCallbackKey);
-    int forceDefaultCallback = atoi(forceLayerLog.c_str());
-    if (forceDefaultCallback == 1) {
-        debug_data->forceDefaultLogCallback = true;
+    char force_layer_log[8];
+    if (GetAndroidProperty(kForceDefaultCallbackKey, force_layer_log) > 0) {
+        if (atoi(force_layer_log) == 1) {
+            debug_data->forceDefaultLogCallback = true;
+        }
     }
 #endif
 
