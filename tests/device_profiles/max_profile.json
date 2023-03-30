@@ -1606,7 +1606,19 @@
                 },
                 "VkPhysicalDevicePipelineRobustnessPropertiesEXT": {},
                 "VkPhysicalDeviceImageProcessingPropertiesQCOM": {
-                    "maxWeightFilterPhases": 4294967000
+                    "maxWeightFilterPhases": 1024,
+                    "maxWeightFilterDimension": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "maxBlockMatchRegion": {
+                        "width": 64,
+                        "height": 64
+                    },
+                    "maxBoxFilterBlockSize": {
+                        "width": 64,
+                        "height": 64
+                    }
                 },
                 "VkPhysicalDeviceOpticalFlowPropertiesNV": {},
                 "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM": {
@@ -2263,7 +2275,8 @@
                             "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT",
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT",
                             "VK_FORMAT_FEATURE_2_FRAGMENT_DENSITY_MAP_BIT_EXT",
-                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_WEIGHT_IMAGE_BIT_QCOM"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
@@ -2843,7 +2856,8 @@
                             "VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR",
                             "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_INPUT_BIT_KHR",
-                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR"
+                            "VK_FORMAT_FEATURE_2_VIDEO_ENCODE_DPB_BIT_KHR",
+                            "VK_FORMAT_FEATURE_2_WEIGHT_SAMPLED_IMAGE_BIT_QCOM"
                         ],
                         "bufferFeatures": [
                             "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT",
