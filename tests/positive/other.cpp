@@ -998,3 +998,19 @@ TEST_F(VkPositiveLayerTest, SafeVoidPointerCopies) {
         ASSERT_TRUE(copied_bytes[10] == std::byte{0b01001001});
     }
 }
+
+TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
+    // https://github.com/KhronosGroup/Vulkan-Profiles/pull/392
+    TEST_DESCRIPTION("Make sure VkFormatProperties3KHR is overwritten correctly in Profiles layer");
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+    auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8_UNORM, &fmt_props);
+    vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
+}
