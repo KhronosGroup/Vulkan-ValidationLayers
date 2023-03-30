@@ -8347,17 +8347,22 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
 bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
                                                                          VkDeviceAddress indirectDeviceAddress) const {
     bool skip = false;
-    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
-    if (!raytracing_features || raytracing_features->rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
+    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637",
+                         "vkCmdTraceRaysIndirect2KHR(): no VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR structure was found "
+                         "in device create info pNext chain.");
+    } else if (!raytracing_features->rayTracingPipelineTraceRaysIndirect2) {
         skip |= LogError(
             device, "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637",
-            "vkCmdTraceRaysIndirect2KHR: the VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipelineTraceRaysIndirect "
-            "feature must be enabled.");
+            "vkCmdTraceRaysIndirect2KHR(): VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR::rayTracingPipelineTraceRaysIndirect2 "
+            "found in device create info pNext chain is VK_FALSE");
     }
 
     if (SafeModulo(indirectDeviceAddress, 4) != 0) {
         skip |= LogError(device, "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634",
-                         "vkCmdTraceRaysIndirect2KHR: indirectDeviceAddress must be a multiple of 4.");
+                         "vkCmdTraceRaysIndirect2KHR: indirectDeviceAddress (0x%" PRIx64 ") must be a multiple of 4.",
+                         indirectDeviceAddress);
     }
     return skip;
 }
