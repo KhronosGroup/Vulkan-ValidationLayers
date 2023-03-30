@@ -19,7 +19,7 @@
 #pragma once
 #include "state_tracker/base_node.h"
 #include "containers/range_vector.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 
 struct MemRange {
     VkDeviceSize offset = 0;

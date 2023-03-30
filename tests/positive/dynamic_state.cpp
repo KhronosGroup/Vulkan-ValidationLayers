@@ -12,7 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_extension_helper.h"
 
 TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");

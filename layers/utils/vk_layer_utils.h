@@ -27,7 +27,7 @@
 #include <bitset>
 #include <iomanip>
 #include "cast_utils.h"
-#include "vk_format_utils.h"
+#include "generated/vk_format_utils.h"
 #include "error_message/logging.h"
 
 #ifndef WIN32

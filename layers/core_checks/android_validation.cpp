@@ -18,7 +18,7 @@
  */
 
 #include "utils/vk_layer_utils.h"
-#include "vk_enum_string_helper.h"
+#include "generated/vk_enum_string_helper.h"
 #include "core_checks/core_validation.h"
 
 #ifdef AHB_VALIDATION_SUPPORT

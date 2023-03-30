@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -897,7 +897,7 @@ class BestPractices : public ValidationStateTracker {
         const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) const override;
 
 // Include code-generated functions
-#include "best_practices.h"
+#include "generated/best_practices.h"
   protected:
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;

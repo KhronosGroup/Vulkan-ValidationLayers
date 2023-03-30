@@ -13,7 +13,7 @@
  */
 
 #include "utils/cast_utils.h"
-#include "enum_flag_bits.h"
+#include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
 TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {

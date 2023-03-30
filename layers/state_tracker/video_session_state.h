@@ -17,7 +17,7 @@
 
 #include "state_tracker/base_node.h"
 #include "utils/hash_util.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 #include <memory>
 #include <mutex>
 #include <vector>

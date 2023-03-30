@@ -21,8 +21,8 @@
 #include <sstream>
 #include <vector>
 
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 struct CommandBufferSubmitState {

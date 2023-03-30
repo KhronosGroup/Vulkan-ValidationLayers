@@ -19,7 +19,7 @@
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
-#include "layer_chassis_dispatch.h"
+#include "generated/layer_chassis_dispatch.h"
 
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {

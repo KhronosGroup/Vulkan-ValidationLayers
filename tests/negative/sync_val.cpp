@@ -14,7 +14,7 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
-#include "vk_enum_string_helper.h"
+#include "generated/vk_enum_string_helper.h"
 
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     AddOptionalExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);

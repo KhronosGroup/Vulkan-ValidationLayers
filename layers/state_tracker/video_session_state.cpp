@@ -16,7 +16,7 @@
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/state_tracker.h"
-#include "layer_chassis_dispatch.h"
+#include "generated/layer_chassis_dispatch.h"
 
 VideoProfileDesc::VideoProfileDesc(const ValidationStateTracker *dev_data, VkVideoProfileInfoKHR const *profile)
     : std::enable_shared_from_this<VideoProfileDesc>(), profile_(), capabilities_(), cache_(nullptr) {

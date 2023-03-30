@@ -21,7 +21,7 @@
 
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_layout_map.h"
-#include "vk_format_utils.h"
+#include "generated/vk_format_utils.h"
 #include "utils/vk_layer_utils.h"
 
 class ValidationStateTracker;

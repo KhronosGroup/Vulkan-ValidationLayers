@@ -19,7 +19,7 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-#include "vk_object_types.h"
+#include "generated/vk_object_types.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
 #include "utils/vk_layer_utils.h"

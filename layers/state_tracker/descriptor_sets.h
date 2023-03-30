@@ -27,10 +27,10 @@
 #include "utils/hash_vk_types.h"
 #include "error_message/logging.h"
 #include "utils/vk_layer_utils.h"
-#include "vk_safe_struct.h"
+#include "generated/vk_safe_struct.h"
 #include "vulkan/vk_layer.h"
-#include "vk_object_types.h"
-#include "command_validation.h"
+#include "generated/vk_object_types.h"
+#include "generated/command_validation.h"
 #include <map>
 #include <memory>
 #include <set>

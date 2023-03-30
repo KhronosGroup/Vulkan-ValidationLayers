@@ -23,8 +23,8 @@
 #include <string>
 #include <vector>
 
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) {

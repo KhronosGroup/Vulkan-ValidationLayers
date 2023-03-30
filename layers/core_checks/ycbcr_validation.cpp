@@ -19,7 +19,7 @@
  *
  */
 
-#include "chassis.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 // There is a table in the Vulkan spec to list all formats that implicitly require YCbCr conversion,

@@ -13,7 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_safe_struct.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_extension_helper.h"
 
 #include <algorithm>
 #include <array>

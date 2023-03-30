@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "vk_enum_string_helper.h"
-#include "chassis.h"
+#include "generated/vk_enum_string_helper.h"
+#include "generated/chassis.h"
 #include "core_checks/core_validation.h"
 
 // Returns true if [x, xoffset] and [y, yoffset] overlap

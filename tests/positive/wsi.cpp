@@ -9,7 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 #include "../framework/layer_validation_tests.h"
-#include "vk_extension_helper.h"
+#include "generated/vk_extension_helper.h"
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"
