@@ -99,6 +99,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_subgroup_uniform_control_flow_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_maintenance1_features.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceImageProcessingFeaturesQCOM::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.image_processing_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_core_builtins_features.*ptr; }) {}
 };

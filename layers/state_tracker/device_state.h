@@ -94,6 +94,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_identifier_features;
     VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT attachment_feedback_loop_layout_features;
     VkPhysicalDevicePipelineProtectedAccessFeaturesEXT pipeline_protected_access_features;
+    VkPhysicalDeviceImageProcessingFeaturesQCOM image_processing_features;
     VkPhysicalDeviceLinearColorAttachmentFeaturesNV linear_color_attachment_features;
     VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM shader_core_builtins_features;
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features;

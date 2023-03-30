@@ -5300,6 +5300,8 @@ safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet(const VkWriteDescriptorSet*
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         if (descriptorCount && in_struct->pImageInfo) {
             pImageInfo = new VkDescriptorImageInfo[descriptorCount];
             for (uint32_t i = 0; i < descriptorCount; ++i) {
@@ -5363,6 +5365,8 @@ safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet(const safe_VkWriteDescripto
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         if (descriptorCount && copy_src.pImageInfo) {
             pImageInfo = new VkDescriptorImageInfo[descriptorCount];
             for (uint32_t i = 0; i < descriptorCount; ++i) {
@@ -5424,6 +5428,8 @@ safe_VkWriteDescriptorSet& safe_VkWriteDescriptorSet::operator=(const safe_VkWri
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         if (descriptorCount && copy_src.pImageInfo) {
             pImageInfo = new VkDescriptorImageInfo[descriptorCount];
             for (uint32_t i = 0; i < descriptorCount; ++i) {
@@ -5496,6 +5502,8 @@ void safe_VkWriteDescriptorSet::initialize(const VkWriteDescriptorSet* in_struct
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         if (descriptorCount && in_struct->pImageInfo) {
             pImageInfo = new VkDescriptorImageInfo[descriptorCount];
             for (uint32_t i = 0; i < descriptorCount; ++i) {
@@ -5546,6 +5554,8 @@ void safe_VkWriteDescriptorSet::initialize(const safe_VkWriteDescriptorSet* copy
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         if (descriptorCount && copy_src->pImageInfo) {
             pImageInfo = new VkDescriptorImageInfo[descriptorCount];
             for (uint32_t i = 0; i < descriptorCount; ++i) {

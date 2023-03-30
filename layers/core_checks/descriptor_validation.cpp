@@ -2303,6 +2303,20 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             }
             break;
         }
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM: {
+            if (!(usage & VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM)) {
+                error_usage_bit = "VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-06942";
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM: {
+            if (!(usage & VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM)) {
+                error_usage_bit = "VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-06943";
+            }
+            break;
+        }
         default:
             break;
     }
@@ -3352,7 +3366,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         }
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
                 auto image_view = update->pImageInfo[di].imageView;
                 auto image_layout = update->pImageInfo[di].imageLayout;
@@ -4826,6 +4842,8 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
                             break;
                         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
                         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+                        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
                             stage_sum[DSL_TYPE_SAMPLED_IMAGES] += binding->descriptorCount;
                             break;
                         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
