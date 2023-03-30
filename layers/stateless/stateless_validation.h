@@ -1069,6 +1069,8 @@ class StatelessValidation : public ValidationObject {
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkPipelineLayout *pPipelineLayout) const;
 
+    bool ValidatePipelineRobustnessCreateInfo(const char *func_name, const char *parameter_name,
+                                              const VkPipelineRobustnessCreateInfoEXT &create_info) const;
     bool ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
                                                const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
     bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo &info, uint32_t index) const;
