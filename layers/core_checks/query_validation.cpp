@@ -713,6 +713,21 @@ bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE &cb_state, const Que
         skip |= LogError(cb_state.commandBuffer(), vuids->vuid_protected_cb,
                          "%s: command can't be used in protected command buffers.", cmd_name);
     }
+    if (cb_state.activeRenderPass) {
+        const auto *render_pass_info = cb_state.activeRenderPass->createInfo.ptr();
+        if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
+            const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
+            if (subpass_desc) {
+                const uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
+                if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
+                    skip |= LogError(cb_state.commandBuffer(), vuids->vuid_multiview_query,
+                                     "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
+                                     ") is greater than the number of queries in queryPool (%" PRIu32 ").",
+                                     cmd_name, query_obj.query, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
+                }
+            }
+        }
+    }
     return skip;
 }
 
@@ -736,6 +751,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
                 EndQueryVuids() : ValidateEndQueryVuids() {
                     vuid_active_queries = "VUID-vkCmdEndQuery-None-01923";
                     vuid_protected_cb = "VUID-vkCmdEndQuery-commandBuffer-01886";
+                    vuid_multiview_query = "VUID-vkCmdEndQuery-query-00812";
                 }
             };
             EndQueryVuids vuids;
@@ -1175,6 +1191,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
         EndQueryIndexedVuids() : ValidateEndQueryVuids() {
             vuid_active_queries = "VUID-vkCmdEndQueryIndexedEXT-None-02342";
             vuid_protected_cb = "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344";
+            vuid_multiview_query = "VUID-vkCmdEndQueryIndexedEXT-query-02345";
         }
     };
     EndQueryIndexedVuids vuids;
