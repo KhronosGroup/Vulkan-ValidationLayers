@@ -39,6 +39,7 @@ build-android/third_party
 .editorconfig
 scripts/.vs
 .*.sw[op]
+*~
 # BUILD.gn artifacts
 .cipd/
 .gclient
