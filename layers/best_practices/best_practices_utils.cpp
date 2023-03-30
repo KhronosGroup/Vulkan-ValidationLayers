@@ -3012,6 +3012,7 @@ void BestPractices::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuf
 
 void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     ValidationStateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
+    RecordCmdNextSubpass(commandBuffer);
 
     auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto rp = cmd_state->activeRenderPass.get();
@@ -3033,6 +3034,66 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
             RecordBindZcullScope(*cmd_state, depth_image, subresource_range);
         } else {
             RecordUnbindZcullScope(*cmd_state);
+        }
+    }
+}
+
+void BestPractices::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                                     const VkSubpassEndInfo* pSubpassEndInfo) {
+    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    RecordCmdNextSubpass(commandBuffer);
+}
+
+void BestPractices::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
+                                                  const VkSubpassEndInfo* pSubpassEndInfo) {
+    StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    RecordCmdNextSubpass(commandBuffer);
+}
+
+void BestPractices::RecordCmdNextSubpass(VkCommandBuffer commandBuffer) {
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb) {
+        if (cb->activeRenderPass) {
+            // Spec states that after NextSubpass all resources should be rebound
+            if (cb->activeRenderPass->has_multiview_enabled) {
+                cb->UnbindResources();
+            }
+        }
+    }
+}
+
+bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const char* caller) const {
+    bool skip = false;
+
+    const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
+    for (size_t i = 0; i < cb_state->push_constant_data_set.size(); ++i) {
+        if (!cb_state->push_constant_data_set[i]) {
+            skip |= LogWarning(cmd_buffer, kVUID_BestPractices_PushConstants,
+                               "%s: pipeline uses push constants with %" PRIu32 " bytes, but byte %" PRIu32
+                               " was never set with vkCmdPushConstants.",
+                               caller, static_cast<uint32_t>(cb_state->push_constant_data_set.size()), static_cast<uint32_t>(i));
+            break;
+        }
+    }
+
+    return skip;
+}
+
+void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                   VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                   const void* pValues) {
+    StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb_state) {
+        uint32_t size_needed = 0;
+        if (cb_state->push_constant_data_ranges) {
+            for (const auto& push_constant_range : *cb_state->push_constant_data_ranges) {
+                auto size = push_constant_range.offset + push_constant_range.size;
+                size_needed = std::max(size_needed, size);
+            }
+            cb_state->push_constant_data_set.resize(size_needed, 0);
+            std::fill(cb_state->push_constant_data_set.begin() + offset,
+                      cb_state->push_constant_data_set.begin() + offset + size_needed, 1);
         }
     }
 }
@@ -3191,6 +3252,12 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
         if (rp_state->createInfo.pSubpasses[i].pDepthStencilAttachment != nullptr) render_pass_state.depthAttachment = true;
 
         if (rp_state->createInfo.pSubpasses[i].colorAttachmentCount > 0) render_pass_state.colorAttachment = true;
+        if (cb->activeRenderPass) {
+            // Spec states that after BeginRenderPass all resources should be rebound
+            if (cb->activeRenderPass->has_multiview_enabled) {
+                cb->UnbindResources();
+            }
+        }
     }
 }
 
@@ -3252,6 +3319,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
             }
         }
     }
+    skip |= ValidatePushConstants(cmd_buffer, caller);
     return skip;
 }
 
