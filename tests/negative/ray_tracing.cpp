@@ -1001,35 +1001,20 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
         GTEST_SKIP() << "rayTracingIndirectTraceRays not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    VkBuffer buffer;
+
     VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
-
-    VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-
-    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
-    alloc_info.allocationSize = 4096;
-    VkDeviceMemory mem;
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
-    vk::BindBufferMemory(device(), buffer, mem, 0);
+    VkBufferObj buffer(*m_device, buf_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     GetPhysicalDeviceProperties2(properties2);
 
     const auto vkCmdTraceRaysIndirectKHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirectKHR>("vkCmdTraceRaysIndirectKHR");
-    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
 
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer};
-    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(device(), &device_address_info);
+    const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
     stridebufregion.deviceAddress = device_address;
@@ -1088,8 +1073,6 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
         }
     }
     m_commandBuffer->end();
-    vk::DestroyBuffer(device(), buffer, nullptr);
-    vk::FreeMemory(device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
