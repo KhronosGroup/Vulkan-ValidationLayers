@@ -2231,7 +2231,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_
         if (FormatPlaneCount(image_format) == 2) {
             if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
                 const char *vuid =
-                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-01581" : "VUID-vkGetImageSubresourceLayout-format-01581";
+                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
                 skip |= LogError(image_state.image(), vuid,
                                  "%s: plane count of image format (%s) is 2 but VkImageSubresource.aspectMask is %s", caller,
                                  string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
@@ -2242,7 +2242,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_
             if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                 (aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                 const char *vuid =
-                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-01582" : "VUID-vkGetImageSubresourceLayout-format-01582";
+                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
                 skip |= LogError(image_state.image(), vuid,
                                  "%s: plane count of image format (%s) is 3 but VkImageSubresource.aspectMask is %s", caller,
                                  string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());

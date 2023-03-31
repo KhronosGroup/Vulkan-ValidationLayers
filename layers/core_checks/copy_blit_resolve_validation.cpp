@@ -1392,7 +1392,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
                 if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
                     const LogObjectList objlist(commandBuffer, srcImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01552" : "VUID-vkCmdCopyImage-srcImage-01552";
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for 2-plane format.",
                                      func_name, i, aspect);
@@ -1400,7 +1400,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                     (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                     const LogObjectList objlist(commandBuffer, srcImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01553" : "VUID-vkCmdCopyImage-srcImage-01553";
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for 3-plane format.",
                                      func_name, i, aspect);
@@ -1420,7 +1420,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 aspect = region.dstSubresource.aspectMask;
                 if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
                     const LogObjectList objlist(commandBuffer, dstImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01554" : "VUID-vkCmdCopyImage-dstImage-01554";
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for 2-plane format.",
                                      func_name, i, aspect);
@@ -1428,7 +1428,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                     (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                     const LogObjectList objlist(commandBuffer, dstImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01555" : "VUID-vkCmdCopyImage-dstImage-01555";
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for 3-plane format.",
                                      func_name, i, aspect);

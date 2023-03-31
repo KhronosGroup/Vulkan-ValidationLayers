@@ -1678,7 +1678,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         }
 
         if ((FormatPlaneCount(image_format) == 2) && ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) != 0)) {
-            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadPlaneCount);
+            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
             skip |= LogError(img_barrier.image, vuid,
                              "%s references %s of format %s has only two planes but included "
                              "VK_IMAGE_ASPECT_PLANE_2_BIT in its aspectMask (0x%" PRIx32 ").",
