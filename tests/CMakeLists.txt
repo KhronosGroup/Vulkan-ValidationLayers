@@ -98,6 +98,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/ray_tracing_gpu.cpp
     negative/ray_tracing_pipeline.cpp
     negative/renderpass.cpp
+    negative/robustness.cpp
     negative/sampler.cpp
     negative/sparse.cpp
     negative/subgroups.cpp
