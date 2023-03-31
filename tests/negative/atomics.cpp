@@ -1060,9 +1060,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     image.Init(image_ci);
     VkImageView image_view = image.targetView(image_format);
 
-    VkSampler sampler = VK_NULL_HANDLE;
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkBufferObj buffer;
     buffer.init(*m_device, 64, 0, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
@@ -1071,8 +1069,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     bvci.buffer = buffer.handle();
     bvci.format = buffer_view_format;
     bvci.range = VK_WHOLE_SIZE;
-    VkBufferView buffer_view;
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    vk_testing::BufferView buffer_view(*m_device, bvci);
 
     char const *fsSource = R"glsl(
         #version 450
@@ -1103,12 +1100,12 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(3, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_GENERAL);
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(2, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                      VK_IMAGE_LAYOUT_GENERAL, 0, 2);
-    g_pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view);
-    g_pipe.descriptor_set_->WriteDescriptorBufferView(0, buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0, 2);
+    g_pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle());
+    g_pipe.descriptor_set_->WriteDescriptorBufferView(0, buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0, 2);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -1126,6 +1123,4 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
-    vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }

@@ -188,7 +188,6 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
         printf("Failed to create private data slot, VkResult %d.\n", err);
     }
 
-    VkSampler sampler;
     VkSamplerCreateInfo sampler_info = LvlInitStruct<VkSamplerCreateInfo>();
     sampler_info.flags = 0;
     sampler_info.magFilter = VK_FILTER_LINEAR;
@@ -206,20 +205,19 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     sampler_info.maxLod = 0.0f;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
-    vk::CreateSampler(m_device->handle(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
     static const uint64_t data_value = 0x70AD;
-    err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, data_value);
+    err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
     if (err != VK_SUCCESS) {
         printf("Failed to set private data. VkResult = %d\n", err);
     }
     uint64_t data;
-    pfn_vkGetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, data_slot, &data);
+    pfn_vkGetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
     pfn_vkDestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
-    vk::DestroySampler(m_device->handle(), sampler, NULL);
 }
 
 TEST_F(VkLayerTest, PrivateDataFeature) {
@@ -281,15 +279,11 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
-    VkBufferView buffer_view;
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
-
-    vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
+    vk_testing::BufferView buffer_view(*m_device, bvci);
 }
 
 TEST_F(VkLayerTest, CustomStypeStructArray) {
@@ -329,15 +323,11 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
-    VkBufferView buffer_view;
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
-
-    vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
+    vk_testing::BufferView buffer_view(*m_device, bvci);
 }
 
 TEST_F(VkLayerTest, DuplicateMessageLimit) {
@@ -876,16 +866,14 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 
     VkCommandBuffer commandBuffer;
     std::string commandBuffer_name = "command_buffer_name";
-    VkCommandPool commandpool_1;
-    VkCommandPool commandpool_2;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
-    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
+    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
+    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    command_buffer_allocate_info.commandPool = commandpool_1;
+    command_buffer_allocate_info.commandPool = command_pool_1.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
@@ -909,11 +897,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 
     // Test object_tracker layer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, commandBuffer_name);
-    vk::FreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
+    vk::FreeCommandBuffers(device(), command_pool_2.handle(), 1, &commandBuffer);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyCommandPool(device(), commandpool_1, NULL);
-    vk::DestroyCommandPool(device(), commandpool_2, NULL);
 }
 
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
@@ -1022,16 +1007,14 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
 
     VkCommandBuffer commandBuffer;
     std::string commandBuffer_name = "command_buffer_name";
-    VkCommandPool commandpool_1;
-    VkCommandPool commandpool_2;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
-    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
+    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
+    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    command_buffer_allocate_info.commandPool = commandpool_1;
+    command_buffer_allocate_info.commandPool = command_pool_1.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
@@ -1078,11 +1061,9 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
 
     // Test object_tracker layer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, commandBuffer_name);
-    vk::FreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
+    vk::FreeCommandBuffers(device(), command_pool_2.handle(), 1, &commandBuffer);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyCommandPool(device(), commandpool_1, NULL);
-    vk::DestroyCommandPool(device(), commandpool_2, NULL);
     vkDestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }
 
@@ -1745,27 +1726,24 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 5;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 5);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 5);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-01922");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
     // Attempt to begin a query that has the same type as an active query
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 3, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 3, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00061");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, StageMaskHost) {
@@ -1835,18 +1813,15 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     commandBuffer.begin();
 
     VkEventCreateInfo event_info = LvlInitStruct<VkEventCreateInfo>();
-    VkEvent event;
+    vk_testing::Event event(*m_device, event_info);
     VkResult err;
 
-    err = vk::CreateEvent(device(), &event_info, NULL, &event);
-    ASSERT_VK_SUCCESS(err);
-
-    err = vk::ResetEvent(device(), event);
+    err = vk::ResetEvent(device(), event.handle());
     ASSERT_VK_SUCCESS(err);
 
     ThreadTestData data;
     data.commandBuffer = commandBuffer.handle();
-    data.event = event;
+    data.event = event.handle();
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -1873,8 +1848,6 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     m_errorMonitor->SetBailout(NULL);
 
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyEvent(device(), event, NULL);
 }
 
 TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
@@ -2090,19 +2063,17 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
     TEST_DESCRIPTION("Reset an event then set it after the reset has been submitted.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
-    VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    command_buffer_allocate_info.commandPool = command_pool;
+    command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
@@ -2114,7 +2085,7 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
         VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         vk::BeginCommandBuffer(command_buffer, &begin_info);
 
-        vk::CmdResetEvent(command_buffer, event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        vk::CmdResetEvent(command_buffer, event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         vk::EndCommandBuffer(command_buffer);
     }
     {
@@ -2127,15 +2098,13 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
     }
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "that is already in use by a command buffer.");
-        vk::SetEvent(m_device->device(), event);
+        vk::SetEvent(m_device->device(), event.handle());
         m_errorMonitor->VerifyFound();
     }
 
     vk::QueueWaitIdle(queue);
 
-    vk::DestroyEvent(m_device->device(), event, nullptr);
-    vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
 }
 
 TEST_F(VkLayerTest, ValidateStride) {
@@ -2156,15 +2125,14 @@ TEST_F(VkLayerTest, ValidateStride) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
     m_commandBuffer->end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -2175,19 +2143,21 @@ TEST_F(VkLayerTest, ValidateStride) {
 
     char data_space;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02827");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
+                            VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-00815");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1,
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyFound();
 
     char data_space4[4] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space4), &data_space4, 4,
+                            VK_QUERY_RESULT_WAIT_BIT);
 
     char data_space8[8] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space8), &data_space8, 8,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
 
     uint32_t qfi = 0;
@@ -2203,16 +2173,18 @@ TEST_F(VkLayerTest, ValidateStride) {
     m_commandBuffer->reset();
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-flags-00822");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-flags-00823");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, VK_QUERY_RESULT_64_BIT);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1,
+                                VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 4, 4, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 4, 4, 0);
 
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 8, 8, VK_QUERY_RESULT_64_BIT);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 8, 8,
+                                VK_QUERY_RESULT_64_BIT);
 
     if (m_device->phy().features().multiDrawIndirect) {
         auto buffer_memory_barrier = buffer.buffer_memory_barrier(
@@ -2264,7 +2236,6 @@ TEST_F(VkLayerTest, ValidateStride) {
     } else {
         printf("Test requires unsupported multiDrawIndirect feature. Skipped.\n");
     }
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
 TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
@@ -2370,13 +2341,11 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     descriptor_set_obj.CreateVKDescriptorSet(m_commandBuffer);
     VkDescriptorSet descriptor_set = descriptor_set_obj.GetDescriptorSetHandle();
 
-    VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
-    vk::CreateFence(device(), &fence_create_info, nullptr, &fence);
+    vk_testing::Fence fence(*m_device, fence_create_info);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {
@@ -2413,11 +2382,11 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetFences-fenceCount-arraylength");
-    vk::ResetFences(device(), 0, &fence);
+    vk::ResetFences(device(), 0, &fence.handle());
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForFences-fenceCount-arraylength");
-    vk::WaitForFences(device(), 0, &fence, true, 1);
+    vk::WaitForFences(device(), 0, &fence.handle(), true, 1);
     m_errorMonitor->VerifyFound();
 
     VkCommandBufferObj command_buffer(m_device, m_commandPool);
@@ -2433,14 +2402,11 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-eventCount-arraylength");
-    vk::CmdWaitEvents(command_buffer.handle(), 0, &event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                      nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(command_buffer.handle(), 0, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     command_buffer.end();
-
-    vk::DestroyFence(device(), fence, nullptr);
-    vk::DestroyEvent(device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidSpirvExtension) {

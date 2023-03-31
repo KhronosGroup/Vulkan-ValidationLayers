@@ -73,10 +73,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -91,12 +88,11 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     VkDescriptorSetAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_VK_SUCCESS(err);
-    vk::FreeDescriptorSets(m_device->device(), ds_pool, 3, descriptor_sets);
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 3, descriptor_sets);
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
 }

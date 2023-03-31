@@ -3242,15 +3242,14 @@ TEST_F(VkPositiveLayerTest, StorageTexelBufferWriteMoreComponent) {
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buffer_view;
-    vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
+    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
 
     VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view;
+    descriptor_write.pTexelBufferView = &buffer_view.handle();
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
@@ -3266,8 +3265,6 @@ TEST_F(VkPositiveLayerTest, StorageTexelBufferWriteMoreComponent) {
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
-
-    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, UnnormalizedCoordinatesNotSampled) {

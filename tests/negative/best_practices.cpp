@@ -511,14 +511,13 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
         GTEST_SKIP() << "No queue family found without support for secondary command buffers";
     }
 
-    VkCommandPool command_pool = VK_NULL_HANDLE;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = queue_family_index;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    alloc_info.commandPool = command_pool;
+    alloc_info.commandPool = command_pool.handle();
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     alloc_info.commandBufferCount = 1;
 
@@ -526,8 +525,7 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     vk::AllocateCommandBuffers(m_device->device(), &alloc_info, &command_buffer);
     m_errorMonitor->VerifyFound();
 
-    vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
+    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
 }
 
 TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
@@ -675,15 +673,12 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
 
     VkSubpassDescription sd{};
 
-    VkRenderPassCreateInfo rp_info{};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &sd;
-
-    VkRenderPass rp = VK_NULL_HANDLE;
-    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
+    vk_testing::RenderPass rp(*m_device, rp_info);
 
     VkImageCreateInfo image_info{};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -707,25 +702,19 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     iv_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     iv_info.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
 
-    VkImageView image_view = VK_NULL_HANDLE;
-    vk::CreateImageView(m_device->device(), &iv_info, nullptr, &image_view);
+    vk_testing::ImageView image_view(*m_device, iv_info);
 
     VkFramebufferCreateInfo fb_info{};
     fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.renderPass = rp;
+    fb_info.renderPass = rp.handle();
     fb_info.layers = 1;
     fb_info.width = 1920;
     fb_info.height = 1080;
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &image_view;
-
-    VkFramebuffer fb = VK_NULL_HANDLE;
-    vk::CreateFramebuffer(m_device->device(), &fb_info, nullptr, &fb);
+    fb_info.pAttachments = &image_view.handle();
+    vk_testing::Framebuffer fb(*m_device, fb_info);
 
     m_errorMonitor->VerifyFound();
-    vk::DestroyImageView(m_device->device(), image_view, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {

@@ -21,30 +21,23 @@ TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkCommandPool command_pool_one;
-    VkCommandPool command_pool_two;
 
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool_one);
-
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool_two);
+    vk_testing::CommandPool command_pool_1(*m_device, pool_create_info);
+    vk_testing::CommandPool command_pool_2(*m_device, pool_create_info);
 
     VkCommandBuffer cb;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    command_buffer_allocate_info.commandPool = command_pool_one;
+    command_buffer_allocate_info.commandPool = command_pool_1.handle();
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &cb);
 
-    vk::FreeCommandBuffers(m_device->device(), command_pool_two, 1, &cb);
-
+    vk::FreeCommandBuffers(m_device->device(), command_pool_2.handle(), 1, &cb);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyCommandPool(m_device->device(), command_pool_one, NULL);
-    vk::DestroyCommandPool(m_device->device(), command_pool_two, NULL);
 }
 
 TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
@@ -69,10 +62,7 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    VkRenderPass rp;
-
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -82,13 +72,12 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -126,9 +115,6 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-image-04073");
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkLayerTest, IndexBufferNotBound) {
@@ -5627,9 +5613,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
-
-    VkPipelineLayout pipeline_layout;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -5639,8 +5623,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
     pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
-    VkPipelineLayout pipeline_layout_small;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout_small);
+    vk_testing::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe_small_range(*this);
     g_pipe_small_range.InitInfo();
@@ -5680,15 +5663,12 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     // vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     // m_errorMonitor->VerifyFound();
 
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32,
-                         68, dummy_values);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32, 68, dummy_values);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout_small, nullptr);
 }
 
 TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
@@ -6297,30 +6277,24 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
     };
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
-    VkRenderPass render_pass_1;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass_1);
-    ASSERT_VK_SUCCESS(err);
-
-    VkRenderPassCreateInfo rpci_2 = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
-    VkRenderPass render_pass_2;
-    vk::CreateRenderPass(m_device->device(), &rpci_2, nullptr, &render_pass_2);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass render_pass_1(*m_device, rpci);
+    rpci.subpassCount = 2;
+    vk_testing::RenderPass render_pass_2(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1, 1, &imageView, 32, 32, 1};
-    VkFramebuffer framebuffer;
-    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &framebuffer);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass_1.handle(), 1, &imageView, 32, 32, 1};
+    vk_testing::Framebuffer framebuffer(*m_device, fbci);
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     const VkCommandBufferInheritanceInfo cmdbuff_ii = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
         nullptr,  // pNext
-        render_pass_2,
+        render_pass_2.handle(),
         0,  // subpass
         VK_NULL_HANDLE,
     };
@@ -6332,8 +6306,8 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
     secondary.begin(&cmdbuff__bi);
     secondary.end();
 
-    const VkRenderPassBeginInfo rp_bi =
-        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass_1, framebuffer, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    const VkRenderPassBeginInfo rp_bi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass_1.handle(), framebuffer.handle(),
+                                                                             VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
@@ -6343,10 +6317,6 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
-    vk::DestroyRenderPass(m_device->device(), render_pass_2, nullptr);
-    vk::DestroyRenderPass(m_device->device(), render_pass_1, nullptr);
 }
 
 TEST_F(VkLayerTest, CopyCommands2V13) {

@@ -713,11 +713,10 @@ TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -738,20 +737,18 @@ TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
     m_commandBuffer->EndRenderPass();
 
     // Query should be outside renderpass
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-commandBuffer-01885");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-commandBuffer-01886");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndQuery-None-01923");
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
@@ -922,12 +919,10 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
                                       VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo render_pass_create_info = {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dependency};
-    VkRenderPass render_pass;
-    ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &render_pass_create_info, nullptr, &render_pass));
+    vk_testing::RenderPass render_pass(*m_device, render_pass_create_info);
     VkFramebufferCreateInfo framebuffer_create_info = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, render_pass, 2, image_views, 8, 8, 1};
-    VkFramebuffer framebuffer;
-    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &framebuffer_create_info, nullptr, &framebuffer));
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_create_info);
 
     // Various structs used for commands
     VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -957,7 +952,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkRect2D render_area = {{0, 0}, {8, 8}};
     VkRenderPassBeginInfo render_pass_begin =
-        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass, framebuffer, render_area, 0u, nullptr);
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(), render_area, 0u, nullptr);
     VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
     VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
@@ -976,22 +971,19 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
 
     CreatePipelineHelper g_pipe(*this, 2u);
     g_pipe.InitInfo();
-    g_pipe.gp_ci_.renderPass = render_pass;
+    g_pipe.gp_ci_.renderPass = render_pass.handle();
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    VkSampler sampler;
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     // Use protected resources in unprotected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 0, 1024);
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[0], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                     VK_IMAGE_LAYOUT_GENERAL);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[0], sampler.handle(),
+                                                     VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -1087,8 +1079,8 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
 
     // Use unprotected resources in protected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 0, 1024);
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[1], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                     VK_IMAGE_LAYOUT_GENERAL);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[1], sampler.handle(),
+                                                     VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     protectedCommandBuffer.begin();
@@ -1181,7 +1173,4 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
     vk::FreeMemory(device(), memory_protected, nullptr);
     vk::FreeMemory(device(), memory_unprotected, nullptr);
-    vk::DestroyFramebuffer(device(), framebuffer, nullptr);
-    vk::DestroyRenderPass(device(), render_pass, nullptr);
-    vk::DestroySampler(device(), sampler, nullptr);
 }

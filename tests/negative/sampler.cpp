@@ -67,15 +67,8 @@ TEST_F(VkLayerTest, AnisotropyFeatureDisabled) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     // With the samplerAnisotropy disable, the sampler must not enable it.
     sampler_info.anisotropyEnable = VK_TRUE;
-    VkSampler sampler = VK_NULL_HANDLE;
-
-    VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
     m_errorMonitor->VerifyFound();
-    if (VK_SUCCESS == err) {
-        vk::DestroySampler(m_device->device(), sampler, NULL);
-    }
-    sampler = VK_NULL_HANDLE;
 }
 
 TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
@@ -411,9 +404,7 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
             }
         }
 
-        VkSampler sampler;
-        VkResult err = vk::CreateSampler(m_device->device(), &sci, nullptr, &sampler);
-        ASSERT_VK_SUCCESS(err);
+        vk_testing::Sampler sampler(*m_device, sci);
 
         VkImageObj mpimage(m_device);
         mpimage.Init(128, 128, 1, test_struct.format, VK_IMAGE_USAGE_SAMPLED_BIT, test_struct.tiling);
@@ -445,7 +436,7 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
         pipe.dyn_state_ci_.pDynamicStates = &dyn_state;
         ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline());
 
-        pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         pipe.descriptor_set_->UpdateDescriptorSets();
 
         m_commandBuffer->begin();
@@ -467,7 +458,6 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
         m_commandBuffer->end();
 
         delete fs;
-        vk::DestroySampler(m_device->device(), sampler, nullptr);
     }
 }
 
@@ -878,13 +868,13 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &border_color_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkSampler sampler;
+
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     sampler_info.pNext = &custom_color_cinfo;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -899,7 +889,7 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     view.init(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler;
+    img_info.sampler = sampler.handle();
     img_info.imageView = view.handle();
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -941,8 +931,6 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     m_errorMonitor->VerifyFound();
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, UnnormalizedCoordinatesCombinedSampler) {
@@ -1488,12 +1476,8 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
     VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
     sampler_create_info.pNext = &border_color_component_mapping;
 
-    VkSampler sampler = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437");
-    vk::CreateSampler(device(), &sampler_create_info, nullptr, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_create_info);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySampler(device(), sampler, nullptr);
 }

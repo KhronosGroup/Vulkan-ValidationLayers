@@ -789,15 +789,12 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Check for error for trying to wait on pipeline stage not supported by this queue. Specifically since our queue is not a
     // compute queue, vk::CmdWaitEvents cannot have it's source stage mask be VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcStageMask-06459");
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
-    vk::CmdWaitEvents(bad_command_buffer.handle(), 1, &event, /*source stage mask*/ VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    vk_testing::Event event(*m_device, event_create_info);
+    vk::CmdWaitEvents(bad_command_buffer.handle(), 1, &event.handle(), /*source stage mask*/ VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
     bad_command_buffer.end();
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, Sync2InvalidBarriers) {
@@ -1508,10 +1505,8 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
     m_commandBuffer->begin();
     // try for vk::CmdWaitEvents
     {
-        VkEvent event;
         VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
-        VkResult err = vk::CreateEvent(m_device->handle(), &eci, nullptr, &event);
-        ASSERT_VK_SUCCESS(err);
+        vk_testing::Event event(*m_device, eci);
 
         // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
         {
@@ -1519,7 +1514,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1531,7 +1526,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1542,7 +1537,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1553,7 +1548,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1564,7 +1559,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1576,7 +1571,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1587,7 +1582,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
@@ -1598,12 +1593,10 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
-            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
             m_errorMonitor->VerifyFound();
         }
-
-        vk::DestroyEvent(m_device->handle(), event, nullptr);
     }
     // clang-format on
 }
@@ -2146,9 +2139,8 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     VkBufferObj buffer;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -2181,18 +2173,16 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     image_memory_barrier.subresourceRange.levelCount = 1;
 
     m_commandBuffer->begin();
-    vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    vk::CmdSetEvent(m_commandBuffer->handle(), event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
-    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-                      nullptr, 1, &buffer_memory_barrier, 0, nullptr);
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
-    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-                      nullptr, 0, nullptr, 1, &image_memory_barrier);
+    vk::CmdWaitEvents(m_commandBuffer->handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 1, &image_memory_barrier);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
-
-    vk::DestroyEvent(m_device->handle(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoCore) {
@@ -3428,13 +3418,12 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     commandBuffer1.begin();
-    vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    vk::CmdWaitEvents(commandBuffer1.handle(), 1, &event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdWaitEvents(commandBuffer1.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer1.end();
 
@@ -3443,8 +3432,6 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
     submit_info.pCommandBuffers = &commandBuffer1.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
@@ -3454,15 +3441,14 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     commandBuffer1.begin();
-    vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     // wrong srcStageMask
-    vk::CmdWaitEvents(commandBuffer1.handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(commandBuffer1.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer1.end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -3472,8 +3458,6 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
@@ -3483,12 +3467,11 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     commandBuffer1.begin();
-    vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     commandBuffer1.end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -3497,15 +3480,13 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     commandBuffer2.begin();
-    vk::CmdWaitEvents(commandBuffer2.handle(), 1, &event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    vk::CmdWaitEvents(commandBuffer2.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer2.end();
 
     submit_info.pCommandBuffers = &commandBuffer2.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
@@ -3515,12 +3496,11 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
     VkCommandBufferObj commandBuffer1(m_device, m_commandPool);
     VkCommandBufferObj commandBuffer2(m_device, m_commandPool);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     commandBuffer1.begin();
-    vk::CmdSetEvent(commandBuffer1.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdSetEvent(commandBuffer1.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     commandBuffer1.end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -3530,8 +3510,8 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
 
     commandBuffer2.begin();
     // wrong srcStageMask
-    vk::CmdWaitEvents(commandBuffer2.handle(), 1, &event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(commandBuffer2.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer2.end();
 
     submit_info.pCommandBuffers = &commandBuffer2.handle();
@@ -3539,8 +3519,6 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {

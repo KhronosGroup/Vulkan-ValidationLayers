@@ -816,9 +816,7 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
     rpci.pAttachments = &attach;
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
-
-    VkRenderPass renderPass;
-    vk::CreateRenderPass(device(), &rpci, nullptr, &renderPass);
+    vk_testing::RenderPass render_pass(*m_device, rpci);
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -839,7 +837,7 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
         image.targetView(VK_FORMAT_R8G8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 4, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
-    fb_info.renderPass = renderPass;
+    fb_info.renderPass = render_pass.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView;
     fb_info.width = 32;
@@ -850,8 +848,6 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02744");
     vk::CreateFramebuffer(device(), &fb_info, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyRenderPass(device(), renderPass, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
@@ -2380,7 +2376,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Test shading rate image creation
-    VkResult result = VK_RESULT_MAX_ENUM;
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8_UINT;
@@ -2422,7 +2417,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     image.init(&image_create_info);
 
     // Test image view creation
-    VkImageView view;
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -2433,31 +2427,27 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // view type must be 2D or 2D_ARRAY
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-    ivci.subresourceRange.layerCount = 6;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02086");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01003");
-    result = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-    m_errorMonitor->VerifyFound();
-    if (VK_SUCCESS == result) {
-        vk::DestroyImageView(m_device->device(), view, NULL);
-        view = VK_NULL_HANDLE;
+    {
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        ivci.subresourceRange.layerCount = 6;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02086");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01003");
+        vk_testing::ImageView view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.subresourceRange.layerCount = 1;
     }
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.subresourceRange.layerCount = 1;
 
     // format must be R8_UINT
-    ivci.format = VK_FORMAT_R8_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02087");
-    result = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-    m_errorMonitor->VerifyFound();
-    if (VK_SUCCESS == result) {
-        vk::DestroyImageView(m_device->device(), view, NULL);
-        view = VK_NULL_HANDLE;
+    {
+        ivci.format = VK_FORMAT_R8_UNORM;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02087");
+        vk_testing::ImageView view(*m_device, ivci);
+        m_errorMonitor->VerifyFound();
+        ivci.format = VK_FORMAT_R8_UINT;
     }
-    ivci.format = VK_FORMAT_R8_UINT;
 
-    vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
+    vk_testing::ImageView view(*m_device, ivci);
 
     // Test pipeline creation
     VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
@@ -2667,6 +2657,4 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     }
 
     m_commandBuffer->end();
-
-    vk::DestroyImageView(m_device->device(), view, NULL);
 }

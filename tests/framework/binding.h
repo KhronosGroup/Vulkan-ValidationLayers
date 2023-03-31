@@ -326,12 +326,12 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     // vkUnmapMemory()
     void unmap() const;
 	const auto &get_memory_allocate_info() { return memory_allocate_info_; }
-	
-	static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
-                                                        VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
-                                                        
-  private:
-    VkMemoryAllocateInfo memory_allocate_info_{};
+
+        static VkMemoryAllocateInfo get_resource_alloc_info(const vk_testing::Device &dev, const VkMemoryRequirements &reqs,
+                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
+
+      private:
+        VkMemoryAllocateInfo memory_allocate_info_{};
 };
 
 class Fence : public internal::NonDispHandle<VkFence> {
@@ -965,10 +965,10 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
 class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConversion> {
   public:
     SamplerYcbcrConversion() = default;
-    SamplerYcbcrConversion(const Device &dev, VkFormat format, bool khr) : khr_(khr) {
+    SamplerYcbcrConversion(const Device &dev, VkFormat format, bool khr = false) : khr_(khr) {
         init(dev, DefaultConversionInfo(format), khr);
     }
-    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr) : khr_(khr) {
+    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr = false) : khr_(khr) {
         init(dev, info, khr);
     }
     ~SamplerYcbcrConversion() noexcept;
