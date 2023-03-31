@@ -661,12 +661,10 @@ bool CoreChecks::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevic
         const auto &as_info = as_state->build_info_khr;
         if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
             if (!(as_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
-                skip |= LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431",
-                                 "vkWriteAccelerationStructuresPropertiesKHR: All acceleration structures (%s) in "
-                                 "pAccelerationStructures must have been built with"
-                                 "VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR if queryType is "
-                                 "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR.",
-                                 report_data->FormatHandle(as_state->acceleration_structure()).c_str());
+                const LogObjectList objlist(device, pAccelerationStructures[i]);
+                skip |= LogError(objlist, "VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431",
+                                 "vkWriteAccelerationStructuresPropertiesKHR(): pAccelerationStructures[%" PRIu32 "] has flags %s.",
+                                 i, string_VkBuildAccelerationStructureFlagsKHR(as_info.flags).c_str());
             }
         }
         if (as_state) {
