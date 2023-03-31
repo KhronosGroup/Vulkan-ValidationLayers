@@ -1923,10 +1923,10 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
 
     // On host query with invalid query type
     if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
-        rt::as::BuildGeometryInfoKHR as_build_info =
+        rt::as::BuildGeometryInfoKHR blas_build_info =
             rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
-        as_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+        blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
         VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
         query_pool_ci.queryCount = 1;
@@ -1936,24 +1936,90 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
         ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
-        as_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+        blas_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
         m_commandBuffer->end();
 
-        constexpr size_t stride = 1;
-        constexpr size_t data_size = sizeof(uint32_t) * stride;
+        constexpr size_t stride = sizeof(VkDeviceSize);
+        constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
         uint8_t data[data_size];
         // Incorrect query type
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742");
-        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &as_build_info.GetDstAS()->handle(),
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas_build_info.GetDstAS()->handle(),
                                                    VK_QUERY_TYPE_OCCLUSION, data_size, data, stride);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // On host query type with missing BLAS flag
+    if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
+        rt::as::BuildGeometryInfoKHR blas_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        // missing flag
+        // blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
+
+        m_commandBuffer->begin();
+        blas_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        constexpr size_t stride = sizeof(VkDeviceSize);
+        constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
+        uint8_t data[data_size];
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
+                                                   stride);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // On host query type with invalid stride
+    if (accel_features.accelerationStructureHostCommands == VK_TRUE) {
+        rt::as::BuildGeometryInfoKHR blas_build_info =
+            rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
+        blas_build_info.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+
+        VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+        query_pool_ci.queryCount = 1;
+
+        query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
+
+        m_commandBuffer->begin();
+        blas_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        constexpr size_t stride = 1;
+        constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
+        uint8_t data[data_size];
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03448");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
+                                                   stride);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03450");
+        vkWriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas_build_info.GetDstAS()->handle(),
+                                                   VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, data_size, data,
+                                                   stride);
         m_errorMonitor->VerifyFound();
     }
 
     // On device query with invalid query type
     {
-        rt::as::BuildGeometryInfoKHR as_build_info =
+        rt::as::BuildGeometryInfoKHR blas_build_info =
             rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(VK_API_VERSION_1_1, *m_device);
-        as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
+        blas_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 
         VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
         query_pool_ci.queryCount = 1;
@@ -1964,10 +2030,10 @@ TEST_F(VkLayerTest, WriteAccelerationStructuresPropertiesMaintenance1) {
 
         m_commandBuffer->begin();
 
-        as_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+        blas_build_info.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
         // Incorrect query type
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-06742");
-        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &as_build_info.GetDstAS()->handle(),
+        vkCmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas_build_info.GetDstAS()->handle(),
                                                       VK_QUERY_TYPE_OCCLUSION, query_pool.handle(), 0);
         m_errorMonitor->VerifyFound();
 
