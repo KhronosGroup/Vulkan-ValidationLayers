@@ -929,7 +929,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
                         LogObjectList objlist(videoSession);
                         objlist.add(mem_state->Handle());
                         skip |= LogError(objlist, "VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07198",
-                                         "vkBindVideoSessionMemoryKHR(): memoryTypeBits (0x%X) for memory binding "
+                                         "vkBindVideoSessionMemoryKHR(): memoryTypeBits (0x%x) for memory binding "
                                          "with index %u of %s are not compatible with the memory type index (%u) of "
                                          "%s specified in pBindSessionMemoryInfos[%u].memory",
                                          mem_binding_info->requirements.memoryTypeBits, bind_info.memoryBindIndex,

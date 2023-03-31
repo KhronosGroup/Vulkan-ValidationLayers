@@ -771,7 +771,7 @@ struct RenderPassDepState {
             std::stringstream self_dep_ss;
             stream_join(self_dep_ss, ", ", self_dependencies);
             core->LogError(rp_handle, vuid,
-                           "%s: dependencyFlags param (0x%X) does not equal VkSubpassDependency dependencyFlags value for any "
+                           "%s: dependencyFlags param (0x%x) does not equal VkSubpassDependency dependencyFlags value for any "
                            "self-dependency of subpass %d of %s. Candidate VkSubpassDependency are pDependencies entries [%s].",
                            func_name.c_str(), dependency_flags, active_subpass, core->report_data->FormatHandle(rp_handle).c_str(),
                            self_dep_ss.str().c_str());

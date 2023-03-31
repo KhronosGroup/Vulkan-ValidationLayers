@@ -456,7 +456,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         if (dst_as_state->create_infoNV.info.flags != pInfo->flags) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-dst-02488",
                              "vkCmdBuildAccelerationStructureNV(): create info VkAccelerationStructureInfoNV::flags"
-                             "[0x%X] must be identical to build info VkAccelerationStructureInfoNV::flags [0x%X].",
+                             "[0x%x] must be identical to build info VkAccelerationStructureInfoNV::flags [0x%x].",
                              dst_as_state->create_infoNV.info.flags, pInfo->flags);
         }
         if (dst_as_state->create_infoNV.info.instanceCount < pInfo->instanceCount) {

@@ -952,8 +952,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
                     if (framebuffer_attachment_image_info->flags != image_create_info->flags) {
                         skip |= LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03209",
-                                         "%s: Image view #%u created from an image with flags set as 0x%X, "
-                                         "but image info #%u used to create the framebuffer had flags set as 0x%X",
+                                         "%s: Image view #%u created from an image with flags set as 0x%x, "
+                                         "but image info #%u used to create the framebuffer had flags set as 0x%x",
                                          func_name, i, image_create_info->flags, i, framebuffer_attachment_image_info->flags);
                     }
 
