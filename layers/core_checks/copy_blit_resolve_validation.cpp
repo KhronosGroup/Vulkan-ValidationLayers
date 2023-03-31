@@ -332,12 +332,6 @@ static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool ima
             "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-00204",
             "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-00204",
         }},
-        {"07977", {
-            "VUID-vkCmdCopyBufferToImage-dstImage-07977",
-            "VUID-vkCmdCopyImageToBuffer-srcImage-07977",
-            "VUID-VkCopyBufferToImageInfo2-dstImage-07977",
-            "VUID-VkCopyImageToBufferInfo2-srcImage-07977",
-        }},
         {"07274", {
             "VUID-vkCmdCopyBufferToImage-pRegions-07274",
             "VUID-vkCmdCopyImageToBuffer-pRegions-07274",
@@ -652,15 +646,6 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
                              ") must be a multiple of the blocked image's texel "
                              "depth (%" PRIu32 ").",
                              function, i, region.imageOffset.z, block_size.depth);
-        }
-
-        // bufferOffset must be a multiple of block size (linear bytes)
-        if (SafeModulo(bufferOffset, element_size) != 0) {
-            const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
-            skip |= LogError(objlist, GetBufferImageCopyCommandVUID("07977", image_to_buffer, is_2),
-                             "%s: pRegion[%d] bufferOffset (0x%" PRIxLEAST64
-                             ") must be a multiple of the blocked image's texel block size (%" PRIu32 ").",
-                             function, i, bufferOffset, element_size);
         }
 
         // imageExtent width must be a multiple of block width, or extent+offset width must equal subresource width
