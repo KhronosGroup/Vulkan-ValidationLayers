@@ -91,6 +91,26 @@ That said, please ensure that the repository compiles and passes tests without e
 that to be accepted into the repository, the pull request must [pass all tests](#testing your changes) on all supported platforms
 -- the continuous integration features will assist in enforcing this requirement.
 
+### **Writing good error messages**
+
+When writing an error message for `LogError` it is important to
+
+1. Print values related to the error message
+2. Explain the logic that got to that error
+
+Example of a good error message
+
+```cpp
+if (render_pass == VK_NULL_HANDLE) {
+    // ...
+} else if (value != 0 && HasDepthFlag(flag)) {
+    // print Render Pass object
+    // Value is given value, no need to bring
+    // list flag users used
+    skip |= LogError(render_pass, "value is 0 but flag (%s) is missing VK_FLAG_DEPTH.", string_VkFlag(flag));
+}
+```
+
 #### **Testing Your Changes**
 * Run the included layer validation tests (`vk_layer_validation_tests`) in the repository before and after each of your commits to check for any regressions.
 
