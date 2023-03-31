@@ -4016,7 +4016,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                  (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
                 skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06967",
                                  "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
-                                 "pCreateInfo->addressModeU (%s) and pCreateInfo->addressModeU (%s) must be either "
+                                 "pCreateInfo->addressModeU (%s) and pCreateInfo->addressModeV (%s) must be either "
                                  "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER.",
                                  string_VkSamplerAddressMode(pCreateInfo->addressModeU),
                                  string_VkSamplerAddressMode(pCreateInfo->addressModeV));
