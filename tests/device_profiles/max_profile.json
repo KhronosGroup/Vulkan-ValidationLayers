@@ -463,7 +463,7 @@
                     "subgroupBroadcastDynamicId": true
                 },
                 "VkPhysicalDeviceVulkan13Features": {
-                    "robustImageAccess": true,
+                    "robustImageAccess": false,
                     "inlineUniformBlock": true,
                     "descriptorBindingInlineUniformBlockUpdateAfterBind": true,
                     "pipelineCreationCacheControl": true,
@@ -541,12 +541,12 @@
                     "shaderSubgroupUniformControlFlow": true
                 },
                 "VkPhysicalDeviceRobustness2FeaturesEXT": {
-                    "robustBufferAccess2": true,
-                    "robustImageAccess2": true,
+                    "robustBufferAccess2": false,
+                    "robustImageAccess2": false,
                     "nullDescriptor": true
                 },
                 "VkPhysicalDeviceImageRobustnessFeatures": {
-                    "robustImageAccess": true
+                    "robustImageAccess": false
                 },
                 "VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR": {
                     "workgroupMemoryExplicitLayout": true,

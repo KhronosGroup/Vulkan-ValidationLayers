@@ -137,6 +137,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/descriptor_buffer.cpp \
                    $(SRC_DIR)/tests/negative/descriptors.cpp \
                    $(SRC_DIR)/tests/negative/renderpass.cpp \
+                   $(SRC_DIR)/tests/negative/robustness.cpp \
                    $(SRC_DIR)/tests/negative/command.cpp \
                    $(SRC_DIR)/tests/negative/dynamic_state.cpp \
                    $(SRC_DIR)/tests/negative/fragment_shading_rate.cpp \
@@ -217,6 +218,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/descriptor_buffer.cpp \
                    $(SRC_DIR)/tests/negative/descriptors.cpp \
                    $(SRC_DIR)/tests/negative/renderpass.cpp \
+                   $(SRC_DIR)/tests/negative/robustness.cpp \
                    $(SRC_DIR)/tests/negative/command.cpp \
                    $(SRC_DIR)/tests/negative/dynamic_state.cpp \
                    $(SRC_DIR)/tests/negative/fragment_shading_rate.cpp \
