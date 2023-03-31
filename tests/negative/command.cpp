@@ -2004,8 +2004,6 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
             region.imageOffset = {0, 0, 0};
 
             // buffer offset must be a multiple of texel block size (16)
-            // 07974/07975 and 07977 are the same
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-srcImage-07977");
             vuid = mp_extensions ? "VUID-vkCmdCopyImageToBuffer-srcImage-07975" : "VUID-vkCmdCopyImageToBuffer-srcImage-07974";
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
             region.imageExtent = {64, 64, 1};
@@ -2086,7 +2084,6 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
             // buffer offset must be a multiple of texel block size for VK_FORMAT_R8G8_UNORM (2)
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07976");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07977");
             mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
             mp_region.bufferOffset = 5;
             mp_region.imageExtent = {8, 8, 1};
@@ -2160,9 +2157,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     // BufferOffset must be a multiple of the calling command's VkImage parameter's texel size
     // Introduce failure by setting bufferOffset to 1 and 1/2 texels
     region.bufferOffset = 4;
-    // 07974 and 07977 are the same
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07974");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07977");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();
@@ -4436,9 +4431,7 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
 
-    // 07974 and 07977 are the same
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07974");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-dstImage-07977");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-07737");
     vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
