@@ -186,6 +186,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentMixedAttachmentSamplesAMD) {
     pipe.InitState();
     pipe.gp_ci_.pRasterizationState = nullptr;
 
+    pipe.gp_ci_.pRasterizationState = nullptr;
+
     // Ensure validation runs with pRasterizationState being nullptr.
     // It's legal for this fragment library to not have a raster state defined.
     ASSERT_TRUE(pipe.gp_ci_.pRasterizationState == nullptr);
