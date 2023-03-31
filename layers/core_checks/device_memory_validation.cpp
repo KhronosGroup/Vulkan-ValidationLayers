@@ -420,11 +420,11 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
                                      const char *msgCode) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
-        skip = LogError(mem_info->mem(), msgCode,
-                        "%s(): MemoryRequirements->memoryTypeBits (0x%X) for this object type are not compatible with the memory "
-                        "type (0x%X) of %s.",
-                        funcName, memory_type_bits, mem_info->alloc_info.memoryTypeIndex,
-                        report_data->FormatHandle(mem_info->mem()).c_str());
+        skip = LogError(
+            mem_info->mem(), msgCode,
+            "%s(): MemoryRequirements->memoryTypeBits (0x%x) for this object type are not compatible with the memory type (%" PRIu32
+            ") of %s.",
+            funcName, memory_type_bits, mem_info->alloc_info.memoryTypeIndex, report_data->FormatHandle(mem_info->mem()).c_str());
     }
     return skip;
 }

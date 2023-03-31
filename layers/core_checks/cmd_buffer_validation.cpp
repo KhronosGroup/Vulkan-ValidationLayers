@@ -1268,7 +1268,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         skip |=
                             LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                     "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%X array layer %u, "
+                                     "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%x array layer %u, "
                                      "mip level %u) which expects layout %s--instead, image %s layout is %s.",
                                      "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
                                      subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
