@@ -346,6 +346,7 @@ public:
     counter<VkSampler> c_VkSampler;
     counter<VkSamplerYcbcrConversion> c_VkSamplerYcbcrConversion;
     counter<VkSemaphore> c_VkSemaphore;
+    counter<VkShaderEXT> c_VkShaderEXT;
     counter<VkShaderModule> c_VkShaderModule;
     counter<VkSurfaceKHR> c_VkSurfaceKHR;
     counter<VkSwapchainKHR> c_VkSwapchainKHR;
@@ -412,6 +413,7 @@ public:
           c_VkSampler("VkSampler", kVulkanObjectTypeSampler, this),
           c_VkSamplerYcbcrConversion("VkSamplerYcbcrConversion", kVulkanObjectTypeSamplerYcbcrConversion, this),
           c_VkSemaphore("VkSemaphore", kVulkanObjectTypeSemaphore, this),
+          c_VkShaderEXT("VkShaderEXT", kVulkanObjectTypeShaderEXT, this),
           c_VkShaderModule("VkShaderModule", kVulkanObjectTypeShaderModule, this),
           c_VkSurfaceKHR("VkSurfaceKHR", kVulkanObjectTypeSurfaceKHR, this),
           c_VkSwapchainKHR("VkSwapchainKHR", kVulkanObjectTypeSwapchainKHR, this),
@@ -512,6 +514,7 @@ WRAPPER(VkRenderPass)
 WRAPPER(VkSampler)
 WRAPPER(VkSamplerYcbcrConversion)
 WRAPPER(VkSemaphore)
+WRAPPER(VkShaderEXT)
 WRAPPER(VkShaderModule)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
@@ -6728,6 +6731,56 @@ void PostCallRecordCmdOpticalFlowExecuteNV(
     VkCommandBuffer                             commandBuffer,
     VkOpticalFlowSessionNV                      session,
     const VkOpticalFlowExecuteInfoNV*           pExecuteInfo) override;
+
+void PreCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders) override;
+
+void PostCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders,
+    VkResult                                    result) override;
+
+void PreCallRecordDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PostCallRecordDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PreCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData) override;
+
+void PostCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+void PreCallRecordCmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) override;
+
+void PostCallRecordCmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) override;
 
 void PreCallRecordGetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,

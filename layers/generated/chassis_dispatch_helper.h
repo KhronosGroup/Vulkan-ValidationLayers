@@ -1481,6 +1481,18 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdOpticalFlowExecuteNV,
     InterceptIdPreCallRecordCmdOpticalFlowExecuteNV,
     InterceptIdPostCallRecordCmdOpticalFlowExecuteNV,
+    InterceptIdPreCallValidateCreateShadersEXT,
+    InterceptIdPreCallRecordCreateShadersEXT,
+    InterceptIdPostCallRecordCreateShadersEXT,
+    InterceptIdPreCallValidateDestroyShaderEXT,
+    InterceptIdPreCallRecordDestroyShaderEXT,
+    InterceptIdPostCallRecordDestroyShaderEXT,
+    InterceptIdPreCallValidateGetShaderBinaryDataEXT,
+    InterceptIdPreCallRecordGetShaderBinaryDataEXT,
+    InterceptIdPostCallRecordGetShaderBinaryDataEXT,
+    InterceptIdPreCallValidateCmdBindShadersEXT,
+    InterceptIdPreCallRecordCmdBindShadersEXT,
+    InterceptIdPostCallRecordCmdBindShadersEXT,
     InterceptIdPreCallValidateGetFramebufferTilePropertiesQCOM,
     InterceptIdPreCallRecordGetFramebufferTilePropertiesQCOM,
     InterceptIdPostCallRecordGetFramebufferTilePropertiesQCOM,
@@ -3171,6 +3183,18 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdOpticalFlowExecuteNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdOpticalFlowExecuteNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdOpticalFlowExecuteNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateShadersEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateShadersEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateShadersEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyShaderEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyShaderEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyShaderEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderBinaryDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderBinaryDataEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderBinaryDataEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindShadersEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindShadersEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindShadersEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetFramebufferTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetFramebufferTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetFramebufferTilePropertiesQCOM);

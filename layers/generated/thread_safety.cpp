@@ -10160,6 +10160,103 @@ void ThreadSafety::PostCallRecordCmdOpticalFlowExecuteNV(
     FinishReadObject(session, "vkCmdOpticalFlowExecuteNV");
 }
 
+void ThreadSafety::PreCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders) {
+    StartReadObjectParentInstance(device, "vkCreateShadersEXT");
+    if (pShaders) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            StartReadObject(pShaders[index], "vkCreateShadersEXT");
+        }
+    }
+}
+
+void ThreadSafety::PostCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreateShadersEXT");
+    if (result == VK_SUCCESS) {
+        if (pShaders) {
+            for (uint32_t index = 0; index < createInfoCount; index++) {
+                CreateObject(pShaders[index]);
+            }
+        }
+    }
+}
+
+void ThreadSafety::PreCallRecordDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) {
+    StartReadObjectParentInstance(device, "vkDestroyShaderEXT");
+    StartWriteObject(shader, "vkDestroyShaderEXT");
+    // Host access to shader must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) {
+    FinishReadObjectParentInstance(device, "vkDestroyShaderEXT");
+    FinishWriteObject(shader, "vkDestroyShaderEXT");
+    DestroyObject(shader);
+    // Host access to shader must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData) {
+    StartReadObjectParentInstance(device, "vkGetShaderBinaryDataEXT");
+    StartReadObject(shader, "vkGetShaderBinaryDataEXT");
+}
+
+void ThreadSafety::PostCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetShaderBinaryDataEXT");
+    FinishReadObject(shader, "vkGetShaderBinaryDataEXT");
+}
+
+void ThreadSafety::PreCallRecordCmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) {
+    StartWriteObject(commandBuffer, "vkCmdBindShadersEXT");
+    if (pShaders) {
+        for (uint32_t index = 0; index < stageCount; index++) {
+            StartReadObject(pShaders[index], "vkCmdBindShadersEXT");
+        }
+    }
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) {
+    FinishWriteObject(commandBuffer, "vkCmdBindShadersEXT");
+    if (pShaders) {
+        for (uint32_t index = 0; index < stageCount; index++) {
+            FinishReadObject(pShaders[index], "vkCmdBindShadersEXT");
+        }
+    }
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,

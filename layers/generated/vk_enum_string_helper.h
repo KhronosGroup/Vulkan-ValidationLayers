@@ -58,6 +58,8 @@ static inline const char* string_VkResult(VkResult input_value)
             return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
         case VK_ERROR_INCOMPATIBLE_DRIVER:
             return "VK_ERROR_INCOMPATIBLE_DRIVER";
+        case VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT:
+            return "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
         case VK_ERROR_INITIALIZATION_FAILED:
             return "VK_ERROR_INITIALIZATION_FAILED";
         case VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT:
@@ -1147,6 +1149,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV:
@@ -1157,6 +1163,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV:
@@ -1451,6 +1461,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO";
+        case VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT:
@@ -2018,6 +2030,8 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
             return "VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION";
         case VK_OBJECT_TYPE_SEMAPHORE:
             return "VK_OBJECT_TYPE_SEMAPHORE";
+        case VK_OBJECT_TYPE_SHADER_EXT:
+            return "VK_OBJECT_TYPE_SHADER_EXT";
         case VK_OBJECT_TYPE_SHADER_MODULE:
             return "VK_OBJECT_TYPE_SHADER_MODULE";
         case VK_OBJECT_TYPE_SURFACE_KHR:
@@ -10627,6 +10641,58 @@ static inline std::string string_VkOpticalFlowExecuteFlagsNV(VkOpticalFlowExecut
     }
     if (ret.empty()) ret.append("VkOpticalFlowExecuteFlagsNV(0)");
     return ret;
+}
+
+static inline const char* string_VkShaderCreateFlagBitsEXT(VkShaderCreateFlagBitsEXT input_value)
+{
+    switch (input_value)
+    {
+        case VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT:
+            return "VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT";
+        case VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT:
+            return "VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT";
+        case VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT:
+            return "VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT";
+        case VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT:
+            return "VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT";
+        case VK_SHADER_CREATE_LINK_STAGE_BIT_EXT:
+            return "VK_SHADER_CREATE_LINK_STAGE_BIT_EXT";
+        case VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT:
+            return "VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT";
+        case VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT:
+            return "VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT";
+        default:
+            return "Unhandled VkShaderCreateFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkShaderCreateFlagsEXT(VkShaderCreateFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkShaderCreateFlagBitsEXT(static_cast<VkShaderCreateFlagBitsEXT>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if (ret.empty()) ret.append("VkShaderCreateFlagsEXT(0)");
+    return ret;
+}
+
+static inline const char* string_VkShaderCodeTypeEXT(VkShaderCodeTypeEXT input_value)
+{
+    switch (input_value)
+    {
+        case VK_SHADER_CODE_TYPE_BINARY_EXT:
+            return "VK_SHADER_CODE_TYPE_BINARY_EXT";
+        case VK_SHADER_CODE_TYPE_SPIRV_EXT:
+            return "VK_SHADER_CODE_TYPE_SPIRV_EXT";
+        default:
+            return "Unhandled VkShaderCodeTypeEXT";
+    }
 }
 
 static inline const char* string_VkRayTracingInvocationReorderModeNV(VkRayTracingInvocationReorderModeNV input_value)

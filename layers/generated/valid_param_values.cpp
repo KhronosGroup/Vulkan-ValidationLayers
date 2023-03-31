@@ -104,6 +104,7 @@ std::vector<VkObjectType> ValidationObject::ValidParamValues() const {
         { &DeviceExtensions::vk_fuchsia_buffer_collection, { VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA,  } },
         { &DeviceExtensions::vk_ext_opacity_micromap, { VK_OBJECT_TYPE_MICROMAP_EXT,  } },
         { &DeviceExtensions::vk_nv_optical_flow, { VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,  } },
+        { &DeviceExtensions::vk_ext_shader_object, { VK_OBJECT_TYPE_SHADER_EXT,  } },
     };
     std::vector<VkObjectType> values(CoreVkObjectTypeEnums.cbegin(), CoreVkObjectTypeEnums.cend());
     std::set<VkObjectType> unique_exts;
@@ -2074,6 +2075,27 @@ std::vector<VkOpticalFlowSessionBindingPointNV> ValidationObject::ValidParamValu
     std::vector<VkOpticalFlowSessionBindingPointNV> values(CoreVkOpticalFlowSessionBindingPointNVEnums.cbegin(), CoreVkOpticalFlowSessionBindingPointNVEnums.cend());
     std::set<VkOpticalFlowSessionBindingPointNV> unique_exts;
     for (const auto& [extension, enums]: ExtendedVkOpticalFlowSessionBindingPointNVEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+
+template<>
+std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const {
+    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
+    //      Ideally "values" would be something like a static variable that is built once and this function returns
+    //      a span of the container. This does not work for applications which create and destroy many instances and
+    //      devices over the lifespan of the project (e.g., VLT).
+    constexpr std::array CoreVkShaderCodeTypeEXTEnums = { VK_SHADER_CODE_TYPE_BINARY_EXT, VK_SHADER_CODE_TYPE_SPIRV_EXT,  };
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkShaderCodeTypeEXT>> ExtendedVkShaderCodeTypeEXTEnums = {
+    };
+    std::vector<VkShaderCodeTypeEXT> values(CoreVkShaderCodeTypeEXTEnums.cbegin(), CoreVkShaderCodeTypeEXTEnums.cend());
+    std::set<VkShaderCodeTypeEXT> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkShaderCodeTypeEXTEnums) {
         if (IsExtEnabled(device_extensions.*extension)) {
             unique_exts.insert(enums.cbegin(), enums.cend());
         }

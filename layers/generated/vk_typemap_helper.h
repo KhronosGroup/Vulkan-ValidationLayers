@@ -6174,6 +6174,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_O
     typedef VkPhysicalDeviceImage2DViewOf3DFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDeviceShaderTileImageFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderTileImageFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT> {
+    typedef VkPhysicalDeviceShaderTileImageFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceShaderTileImagePropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderTileImagePropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceShaderTileImagePropertiesEXT Type;
+};
+
 // Map type VkMicromapBuildInfoEXT to id VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT
 template <> struct LvlTypeMap<VkMicromapBuildInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT;
@@ -6709,6 +6727,33 @@ template <> struct LvlTypeMap<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT> {
     typedef VkPhysicalDevicePipelineProtectedAccessFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceShaderObjectFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderObjectFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT> {
+    typedef VkPhysicalDeviceShaderObjectFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceShaderObjectPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderObjectPropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceShaderObjectPropertiesEXT Type;
+};
+
+// Map type VkShaderCreateInfoEXT to id VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkShaderCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT> {
+    typedef VkShaderCreateInfoEXT Type;
 };
 
 // Map type VkPhysicalDeviceTilePropertiesFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM

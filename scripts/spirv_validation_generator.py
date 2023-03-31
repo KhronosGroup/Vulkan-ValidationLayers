@@ -94,10 +94,10 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         # These 2 arrays SHOULD be empty when possible and when the SPIR-V Headers are updated these
         # should be attempted to be cleared
         self.capabilityExcludeList = [
-            'TextureBlockMatchQCOM',
-            'TextureBoxFilterQCOM',
-            'TextureSampleWeightedQCOM',
             'ClusterCullingShadingHUAWEI',
+            'TileImageColorReadAccessEXT',
+            'TileImageDepthReadAccessEXT',
+            'TileImageStencilReadAccessEXT',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.

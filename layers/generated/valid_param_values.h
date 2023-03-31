@@ -145,6 +145,7 @@ template<> std::vector<VkSubpassMergeStatusEXT> ValidationObject::ValidParamValu
 template<> std::vector<VkDirectDriverLoadingModeLUNARG> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkOpticalFlowPerformanceLevelNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkOpticalFlowSessionBindingPointNV> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkShaderCodeTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkRayTracingInvocationReorderModeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkBuildAccelerationStructureModeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkShaderGroupShaderKHR> ValidationObject::ValidParamValues() const;

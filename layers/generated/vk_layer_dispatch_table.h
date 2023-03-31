@@ -1019,6 +1019,12 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkBindOpticalFlowSessionImageNV BindOpticalFlowSessionImageNV;
     PFN_vkCmdOpticalFlowExecuteNV CmdOpticalFlowExecuteNV;
 
+    // ---- VK_EXT_shader_object extension commands
+    PFN_vkCreateShadersEXT CreateShadersEXT;
+    PFN_vkDestroyShaderEXT DestroyShaderEXT;
+    PFN_vkGetShaderBinaryDataEXT GetShaderBinaryDataEXT;
+    PFN_vkCmdBindShadersEXT CmdBindShadersEXT;
+
     // ---- VK_QCOM_tile_properties extension commands
     PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
     PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;

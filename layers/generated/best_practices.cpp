@@ -3148,6 +3148,34 @@ void BestPractices::PostCallRecordBindOpticalFlowSessionImageNV(
     }
 }
 
+void BestPractices::PostCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result);
+    if (result != VK_SUCCESS) {
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INITIALIZATION_FAILED,VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT};
+        ValidateReturnCodes("vkCreateShadersEXT", result, error_codes, {});
+    }
+}
+
+void BestPractices::PostCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, result);
+    if (result != VK_SUCCESS) {
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
+        constexpr std::array success_codes = {VK_INCOMPLETE};
+        ValidateReturnCodes("vkGetShaderBinaryDataEXT", result, error_codes, success_codes);
+    }
+}
+
 void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
