@@ -5749,7 +5749,7 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
     if (multi_plane_extensions) {
         VkImageObj image(m_device);
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-01581");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0};
 
@@ -5766,7 +5766,7 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
     if (multi_plane_extensions) {
         VkImageObj image(m_device);
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-01582");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
 

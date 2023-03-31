@@ -941,11 +941,6 @@ static const std::map<ImageError, std::vector<Entry>> kImageErrors{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-01672"},
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-01672"},
      }},
-    {ImageError::kBadPlaneCount,
-     {
-         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-01673"},
-         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-image-01673"},
-     }},
     {ImageError::kNotDepthOrStencilAspect,
      {
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-03319"},

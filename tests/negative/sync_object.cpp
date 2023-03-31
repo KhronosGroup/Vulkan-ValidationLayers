@@ -574,7 +574,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
             conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-            conc_test("VUID-VkImageMemoryBarrier-image-01673");
+            conc_test("VUID-VkImageMemoryBarrier-image-01672");
 
             vk::FreeMemory(device(), plane_0_memory, NULL);
             vk::FreeMemory(device(), plane_1_memory, NULL);
