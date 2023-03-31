@@ -81,6 +81,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBufferCollectionFUCHSIA, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeMicromapEXT, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeOpticalFlowSessionNV, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeShaderEXT, error_code);
     return skip;
 }
 
@@ -130,6 +131,7 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA);
     DestroyUndestroyedObjects(kVulkanObjectTypeMicromapEXT);
     DestroyUndestroyedObjects(kVulkanObjectTypeOpticalFlowSessionNV);
+    DestroyUndestroyedObjects(kVulkanObjectTypeShaderEXT);
 }
 
 
@@ -8233,6 +8235,91 @@ bool ObjectLifetimes::PreCallValidateCmdOpticalFlowExecuteNV(
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdOpticalFlowExecuteNV-commandBuffer-parameter", "VUID-vkCmdOpticalFlowExecuteNV-commonparent");
     skip |= ValidateObject(session, kVulkanObjectTypeOpticalFlowSessionNV, false, "VUID-vkCmdOpticalFlowExecuteNV-session-parameter", "VUID-vkCmdOpticalFlowExecuteNV-commonparent");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateShadersEXT-device-parameter", kVUIDUndefined);
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
+                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
+                    skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, false, "VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter", kVUIDUndefined);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS) return;
+    if (pShaders) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            CreateObject(pShaders[index], kVulkanObjectTypeShaderEXT, pAllocator);
+        }
+    }
+
+}
+
+bool ObjectLifetimes::PreCallValidateDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyShaderEXT-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(shader, kVulkanObjectTypeShaderEXT, false, "VUID-vkDestroyShaderEXT-shader-parameter", "VUID-vkDestroyShaderEXT-shader-parent");
+    skip |= ValidateDestroyObject(shader, kVulkanObjectTypeShaderEXT, pAllocator, kVUIDUndefined, kVUIDUndefined);
+
+    return skip;
+}
+
+void ObjectLifetimes::PreCallRecordDestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) {
+    RecordDestroyObject(shader, kVulkanObjectTypeShaderEXT);
+
+}
+
+bool ObjectLifetimes::PreCallValidateGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetShaderBinaryDataEXT-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(shader, kVulkanObjectTypeShaderEXT, false, "VUID-vkGetShaderBinaryDataEXT-shader-parameter", "VUID-vkGetShaderBinaryDataEXT-shader-parent");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdBindShadersEXT-commandBuffer-parameter", "VUID-vkCmdBindShadersEXT-commonparent");
+    if ((stageCount > 0) && (pShaders)) {
+        for (uint32_t index0 = 0; index0 < stageCount; ++index0) {
+            skip |= ValidateObject(pShaders[index0], kVulkanObjectTypeShaderEXT, true, "VUID-vkCmdBindShadersEXT-pShaders-parameter", "VUID-vkCmdBindShadersEXT-commonparent");
+        }
+    }
 
     return skip;
 }

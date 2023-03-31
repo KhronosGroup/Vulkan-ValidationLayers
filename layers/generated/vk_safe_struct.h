@@ -12002,6 +12002,40 @@ struct safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT {
     VkPhysicalDeviceImage2DViewOf3DFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderTileImageFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderTileImageColorReadAccess;
+    VkBool32 shaderTileImageDepthReadAccess;
+    VkBool32 shaderTileImageStencilReadAccess;
+    safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const VkPhysicalDeviceShaderTileImageFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderTileImageFeaturesEXT();
+    ~safe_VkPhysicalDeviceShaderTileImageFeaturesEXT();
+    void initialize(const VkPhysicalDeviceShaderTileImageFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT* copy_src);
+    VkPhysicalDeviceShaderTileImageFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderTileImageFeaturesEXT *>(this); }
+    VkPhysicalDeviceShaderTileImageFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderTileImageFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderTileImagePropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderTileImageCoherentReadAccelerated;
+    VkBool32 shaderTileImageReadSampleFromPixelRateInvocation;
+    VkBool32 shaderTileImageReadFromHelperInvocation;
+    safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const VkPhysicalDeviceShaderTileImagePropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& operator=(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderTileImagePropertiesEXT();
+    ~safe_VkPhysicalDeviceShaderTileImagePropertiesEXT();
+    void initialize(const VkPhysicalDeviceShaderTileImagePropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT* copy_src);
+    VkPhysicalDeviceShaderTileImagePropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderTileImagePropertiesEXT *>(this); }
+    VkPhysicalDeviceShaderTileImagePropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderTileImagePropertiesEXT const *>(this); }
+};
+
 union safe_VkDeviceOrHostAddressKHR {
     VkDeviceAddress deviceAddress;
     void* hostAddress{};
@@ -13030,6 +13064,63 @@ struct safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT {
     void initialize(const safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT* copy_src);
     VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *>(this); }
     VkPhysicalDevicePipelineProtectedAccessFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderObjectFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderObject;
+    safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const VkPhysicalDeviceShaderObjectFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderObjectFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderObjectFeaturesEXT();
+    ~safe_VkPhysicalDeviceShaderObjectFeaturesEXT();
+    void initialize(const VkPhysicalDeviceShaderObjectFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT* copy_src);
+    VkPhysicalDeviceShaderObjectFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderObjectFeaturesEXT *>(this); }
+    VkPhysicalDeviceShaderObjectFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderObjectFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderObjectPropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    uint8_t shaderBinaryUUID[VK_UUID_SIZE];
+    uint32_t shaderBinaryVersion;
+    safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderObjectPropertiesEXT& operator=(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderObjectPropertiesEXT();
+    ~safe_VkPhysicalDeviceShaderObjectPropertiesEXT();
+    void initialize(const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT* copy_src);
+    VkPhysicalDeviceShaderObjectPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderObjectPropertiesEXT *>(this); }
+    VkPhysicalDeviceShaderObjectPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderObjectPropertiesEXT const *>(this); }
+};
+
+struct safe_VkShaderCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkShaderCreateFlagsEXT flags;
+    VkShaderStageFlagBits stage;
+    VkShaderStageFlags nextStage;
+    VkShaderCodeTypeEXT codeType;
+    size_t codeSize;
+    const void* pCode{};
+    const char* pName{};
+    uint32_t setLayoutCount;
+    VkDescriptorSetLayout* pSetLayouts{};
+    uint32_t pushConstantRangeCount;
+    const VkPushConstantRange* pPushConstantRanges{};
+    safe_VkSpecializationInfo* pSpecializationInfo{};
+    safe_VkShaderCreateInfoEXT(const VkShaderCreateInfoEXT* in_struct);
+    safe_VkShaderCreateInfoEXT(const safe_VkShaderCreateInfoEXT& copy_src);
+    safe_VkShaderCreateInfoEXT& operator=(const safe_VkShaderCreateInfoEXT& copy_src);
+    safe_VkShaderCreateInfoEXT();
+    ~safe_VkShaderCreateInfoEXT();
+    void initialize(const VkShaderCreateInfoEXT* in_struct);
+    void initialize(const safe_VkShaderCreateInfoEXT* copy_src);
+    VkShaderCreateInfoEXT *ptr() { return reinterpret_cast<VkShaderCreateInfoEXT *>(this); }
+    VkShaderCreateInfoEXT const *ptr() const { return reinterpret_cast<VkShaderCreateInfoEXT const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM {

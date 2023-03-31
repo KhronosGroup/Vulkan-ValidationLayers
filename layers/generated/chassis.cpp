@@ -13203,6 +13203,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMultiIndexedEXT(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateMicromapEXT(
     VkDevice                                    device,
     const VkMicromapCreateInfoEXT*              pCreateInfo,
@@ -14581,6 +14582,101 @@ VKAPI_ATTR void VKAPI_CALL CmdOpticalFlowExecuteNV(
 
 
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateShadersEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateShadersEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+    }
+    VkResult result = DispatchCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateShadersEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyShaderEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    const VkAllocationCallbacks*                pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateDestroyShaderEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateDestroyShaderEXT(device, shader, pAllocator);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroyShaderEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroyShaderEXT(device, shader, pAllocator);
+    }
+    DispatchDestroyShaderEXT(device, shader, pAllocator);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroyShaderEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordDestroyShaderEXT(device, shader, pAllocator);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetShaderBinaryDataEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetShaderBinaryDataEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
+    }
+    VkResult result = DispatchGetShaderBinaryDataEXT(device, shader, pDataSize, pData);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetShaderBinaryDataEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    stageCount,
+    const VkShaderStageFlagBits*                pStages,
+    const VkShaderEXT*                          pShaders) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdBindShadersEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdBindShadersEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+    }
+    DispatchCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdBindShadersEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdBindShadersEXT(commandBuffer, stageCount, pStages, pShaders);
+    }
+}
+
+
 VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
@@ -15908,6 +16004,10 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkDestroyOpticalFlowSessionNV", {kFuncTypeDev, (void*)DestroyOpticalFlowSessionNV}},
     {"vkBindOpticalFlowSessionImageNV", {kFuncTypeDev, (void*)BindOpticalFlowSessionImageNV}},
     {"vkCmdOpticalFlowExecuteNV", {kFuncTypeDev, (void*)CmdOpticalFlowExecuteNV}},
+    {"vkCreateShadersEXT", {kFuncTypeDev, (void*)CreateShadersEXT}},
+    {"vkDestroyShaderEXT", {kFuncTypeDev, (void*)DestroyShaderEXT}},
+    {"vkGetShaderBinaryDataEXT", {kFuncTypeDev, (void*)GetShaderBinaryDataEXT}},
+    {"vkCmdBindShadersEXT", {kFuncTypeDev, (void*)CmdBindShadersEXT}},
     {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
     {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},

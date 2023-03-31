@@ -1910,6 +1910,23 @@ void PostCallRecordBindOpticalFlowSessionImageNV(
     VkResult                                    result) override;
 
 
+void PostCallRecordCreateShadersEXT(
+    VkDevice                                    device,
+    uint32_t                                    createInfoCount,
+    const VkShaderCreateInfoEXT*                pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderEXT*                                pShaders,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetShaderBinaryDataEXT(
+    VkDevice                                    device,
+    VkShaderEXT                                 shader,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
 void PostCallRecordGetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,

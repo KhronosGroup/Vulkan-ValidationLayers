@@ -586,6 +586,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateOpticalFlowSessionNV(VkDevice de
 static VKAPI_ATTR void VKAPI_CALL StubDestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session, const VkAllocationCallbacks* pAllocator) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session, VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view, VkImageLayout layout) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session, const VkOpticalFlowExecuteInfoNV* pExecuteInfo) {  };
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) { return VK_SUCCESS; };
+static VKAPI_ATTR void VKAPI_CALL StubDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {  };
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) { return VK_SUCCESS; };
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo, VkTilePropertiesQCOM* pProperties) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) { return VK_SUCCESS; };
@@ -644,6 +648,7 @@ const vvl::unordered_map<std::string, std::string> api_extension_map {
     {"vkCmdBindDescriptorBuffersEXT", "VK_EXT_descriptor_buffer"},
     {"vkCmdBindInvocationMaskHUAWEI", "VK_HUAWEI_invocation_mask"},
     {"vkCmdBindPipelineShaderGroupNV", "VK_NV_device_generated_commands"},
+    {"vkCmdBindShadersEXT", "VK_EXT_shader_object"},
     {"vkCmdBindShadingRateImageNV", "VK_NV_shading_rate_image"},
     {"vkCmdBindTransformFeedbackBuffersEXT", "VK_EXT_transform_feedback"},
     {"vkCmdBindVertexBuffers2", "VK_VERSION_1_3"},
@@ -847,6 +852,7 @@ const vvl::unordered_map<std::string, std::string> api_extension_map {
     {"vkCreateRenderPass2KHR", "VK_KHR_create_renderpass2"},
     {"vkCreateSamplerYcbcrConversion", "VK_VERSION_1_1"},
     {"vkCreateSamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion"},
+    {"vkCreateShadersEXT", "VK_EXT_shader_object"},
     {"vkCreateSharedSwapchainsKHR", "VK_KHR_display_swapchain"},
     {"vkCreateSwapchainKHR", "VK_KHR_swapchain"},
     {"vkCreateValidationCacheEXT", "VK_EXT_validation_cache"},
@@ -870,6 +876,7 @@ const vvl::unordered_map<std::string, std::string> api_extension_map {
     {"vkDestroyPrivateDataSlotEXT", "VK_EXT_private_data"},
     {"vkDestroySamplerYcbcrConversion", "VK_VERSION_1_1"},
     {"vkDestroySamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion"},
+    {"vkDestroyShaderEXT", "VK_EXT_shader_object"},
     {"vkDestroySwapchainKHR", "VK_KHR_swapchain"},
     {"vkDestroyValidationCacheEXT", "VK_EXT_validation_cache"},
     {"vkDestroyVideoSessionKHR", "VK_KHR_video_queue"},
@@ -966,6 +973,7 @@ const vvl::unordered_map<std::string, std::string> api_extension_map {
     {"vkGetSemaphoreFdKHR", "VK_KHR_external_semaphore_fd"},
     {"vkGetSemaphoreWin32HandleKHR", "VK_KHR_external_semaphore_win32"},
     {"vkGetSemaphoreZirconHandleFUCHSIA", "VK_FUCHSIA_external_semaphore"},
+    {"vkGetShaderBinaryDataEXT", "VK_EXT_shader_object"},
     {"vkGetShaderInfoAMD", "VK_AMD_shader_info"},
     {"vkGetShaderModuleCreateInfoIdentifierEXT", "VK_EXT_shader_module_identifier"},
     {"vkGetShaderModuleIdentifierEXT", "VK_EXT_shader_module_identifier"},
@@ -1970,6 +1978,14 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->BindOpticalFlowSessionImageNV == nullptr) { table->BindOpticalFlowSessionImageNV = (PFN_vkBindOpticalFlowSessionImageNV)StubBindOpticalFlowSessionImageNV; }
     table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV) gpa(device, "vkCmdOpticalFlowExecuteNV");
     if (table->CmdOpticalFlowExecuteNV == nullptr) { table->CmdOpticalFlowExecuteNV = (PFN_vkCmdOpticalFlowExecuteNV)StubCmdOpticalFlowExecuteNV; }
+    table->CreateShadersEXT = (PFN_vkCreateShadersEXT) gpa(device, "vkCreateShadersEXT");
+    if (table->CreateShadersEXT == nullptr) { table->CreateShadersEXT = (PFN_vkCreateShadersEXT)StubCreateShadersEXT; }
+    table->DestroyShaderEXT = (PFN_vkDestroyShaderEXT) gpa(device, "vkDestroyShaderEXT");
+    if (table->DestroyShaderEXT == nullptr) { table->DestroyShaderEXT = (PFN_vkDestroyShaderEXT)StubDestroyShaderEXT; }
+    table->GetShaderBinaryDataEXT = (PFN_vkGetShaderBinaryDataEXT) gpa(device, "vkGetShaderBinaryDataEXT");
+    if (table->GetShaderBinaryDataEXT == nullptr) { table->GetShaderBinaryDataEXT = (PFN_vkGetShaderBinaryDataEXT)StubGetShaderBinaryDataEXT; }
+    table->CmdBindShadersEXT = (PFN_vkCmdBindShadersEXT) gpa(device, "vkCmdBindShadersEXT");
+    if (table->CmdBindShadersEXT == nullptr) { table->CmdBindShadersEXT = (PFN_vkCmdBindShadersEXT)StubCmdBindShadersEXT; }
     table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM) gpa(device, "vkGetFramebufferTilePropertiesQCOM");
     if (table->GetFramebufferTilePropertiesQCOM == nullptr) { table->GetFramebufferTilePropertiesQCOM = (PFN_vkGetFramebufferTilePropertiesQCOM)StubGetFramebufferTilePropertiesQCOM; }
     table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM) gpa(device, "vkGetDynamicRenderingTilePropertiesQCOM");

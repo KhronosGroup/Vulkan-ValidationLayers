@@ -279,12 +279,15 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilitySubgroupVoteKHR, {0, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote, ""}},
     {spv::CapabilityTessellation, {0, &VkPhysicalDeviceFeatures::tessellationShader, nullptr, ""}},
     {spv::CapabilityTessellationPointSize, {0, &VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize, nullptr, ""}},
+    {spv::CapabilityTextureBlockMatchQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBlockMatch, nullptr, ""}},
+    {spv::CapabilityTextureBoxFilterQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBoxFilter, nullptr, ""}},
+    {spv::CapabilityTextureSampleWeightedQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureSampleWeighted, nullptr, ""}},
     // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTextureBlockMatchQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBlockMatch, nullptr, ""}},
+    //    {spv::CapabilityTileImageColorReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess, nullptr, ""}},
     // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTextureBoxFilterQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBoxFilter, nullptr, ""}},
+    //    {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
     // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTextureSampleWeightedQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureSampleWeighted, nullptr, ""}},
+    //    {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
     {spv::CapabilityTransformFeedback, {0, &VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback, nullptr, ""}},
     {spv::CapabilityUniformAndStorageBuffer16BitAccess, {0, &VkPhysicalDeviceVulkan11Features::uniformAndStorageBuffer16BitAccess, nullptr, ""}},
     {spv::CapabilityUniformAndStorageBuffer8BitAccess, {0, &VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess, nullptr, ""}},
@@ -328,6 +331,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_EXT_shader_atomic_float_min_max", {0, nullptr, &DeviceExtensions::vk_ext_shader_atomic_float2, ""}},
     {"SPV_EXT_shader_image_int64", {0, nullptr, &DeviceExtensions::vk_ext_shader_image_atomic_int64, ""}},
     {"SPV_EXT_shader_stencil_export", {0, nullptr, &DeviceExtensions::vk_ext_shader_stencil_export, ""}},
+    {"SPV_EXT_shader_tile_image", {0, nullptr, &DeviceExtensions::vk_ext_shader_tile_image, ""}},
     {"SPV_EXT_shader_viewport_index_layer", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_EXT_shader_viewport_index_layer", {0, nullptr, &DeviceExtensions::vk_ext_shader_viewport_index_layer, ""}},
     {"SPV_GOOGLE_decorate_string", {0, nullptr, &DeviceExtensions::vk_google_decorate_string, ""}},
@@ -634,6 +638,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Tessellation";
          case spv::CapabilityTessellationPointSize:
             return "TessellationPointSize";
+         case spv::CapabilityTextureBlockMatchQCOM:
+            return "TextureBlockMatchQCOM";
+         case spv::CapabilityTextureBoxFilterQCOM:
+            return "TextureBoxFilterQCOM";
+         case spv::CapabilityTextureSampleWeightedQCOM:
+            return "TextureSampleWeightedQCOM";
          case spv::CapabilityTransformFeedback:
             return "TransformFeedback";
          case spv::CapabilityUniformAndStorageBuffer16BitAccess:

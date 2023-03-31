@@ -55176,6 +55176,142 @@ void safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT::initialize(const safe_VkPh
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const VkPhysicalDeviceShaderTileImageFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderTileImageColorReadAccess(in_struct->shaderTileImageColorReadAccess),
+    shaderTileImageDepthReadAccess(in_struct->shaderTileImageDepthReadAccess),
+    shaderTileImageStencilReadAccess(in_struct->shaderTileImageStencilReadAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::safe_VkPhysicalDeviceShaderTileImageFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT),
+    pNext(nullptr),
+    shaderTileImageColorReadAccess(),
+    shaderTileImageDepthReadAccess(),
+    shaderTileImageStencilReadAccess()
+{}
+
+safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderTileImageColorReadAccess = copy_src.shaderTileImageColorReadAccess;
+    shaderTileImageDepthReadAccess = copy_src.shaderTileImageDepthReadAccess;
+    shaderTileImageStencilReadAccess = copy_src.shaderTileImageStencilReadAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::operator=(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderTileImageColorReadAccess = copy_src.shaderTileImageColorReadAccess;
+    shaderTileImageDepthReadAccess = copy_src.shaderTileImageDepthReadAccess;
+    shaderTileImageStencilReadAccess = copy_src.shaderTileImageStencilReadAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::~safe_VkPhysicalDeviceShaderTileImageFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::initialize(const VkPhysicalDeviceShaderTileImageFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderTileImageColorReadAccess = in_struct->shaderTileImageColorReadAccess;
+    shaderTileImageDepthReadAccess = in_struct->shaderTileImageDepthReadAccess;
+    shaderTileImageStencilReadAccess = in_struct->shaderTileImageStencilReadAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTileImageFeaturesEXT::initialize(const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderTileImageColorReadAccess = copy_src->shaderTileImageColorReadAccess;
+    shaderTileImageDepthReadAccess = copy_src->shaderTileImageDepthReadAccess;
+    shaderTileImageStencilReadAccess = copy_src->shaderTileImageStencilReadAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const VkPhysicalDeviceShaderTileImagePropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderTileImageCoherentReadAccelerated(in_struct->shaderTileImageCoherentReadAccelerated),
+    shaderTileImageReadSampleFromPixelRateInvocation(in_struct->shaderTileImageReadSampleFromPixelRateInvocation),
+    shaderTileImageReadFromHelperInvocation(in_struct->shaderTileImageReadFromHelperInvocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::safe_VkPhysicalDeviceShaderTileImagePropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT),
+    pNext(nullptr),
+    shaderTileImageCoherentReadAccelerated(),
+    shaderTileImageReadSampleFromPixelRateInvocation(),
+    shaderTileImageReadFromHelperInvocation()
+{}
+
+safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderTileImageCoherentReadAccelerated = copy_src.shaderTileImageCoherentReadAccelerated;
+    shaderTileImageReadSampleFromPixelRateInvocation = copy_src.shaderTileImageReadSampleFromPixelRateInvocation;
+    shaderTileImageReadFromHelperInvocation = copy_src.shaderTileImageReadFromHelperInvocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::operator=(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderTileImageCoherentReadAccelerated = copy_src.shaderTileImageCoherentReadAccelerated;
+    shaderTileImageReadSampleFromPixelRateInvocation = copy_src.shaderTileImageReadSampleFromPixelRateInvocation;
+    shaderTileImageReadFromHelperInvocation = copy_src.shaderTileImageReadFromHelperInvocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::~safe_VkPhysicalDeviceShaderTileImagePropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::initialize(const VkPhysicalDeviceShaderTileImagePropertiesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderTileImageCoherentReadAccelerated = in_struct->shaderTileImageCoherentReadAccelerated;
+    shaderTileImageReadSampleFromPixelRateInvocation = in_struct->shaderTileImageReadSampleFromPixelRateInvocation;
+    shaderTileImageReadFromHelperInvocation = in_struct->shaderTileImageReadFromHelperInvocation;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderTileImagePropertiesEXT::initialize(const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderTileImageCoherentReadAccelerated = copy_src->shaderTileImageCoherentReadAccelerated;
+    shaderTileImageReadSampleFromPixelRateInvocation = copy_src->shaderTileImageReadSampleFromPixelRateInvocation;
+    shaderTileImageReadFromHelperInvocation = copy_src->shaderTileImageReadFromHelperInvocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
     initialize(in_struct);
@@ -59729,6 +59865,336 @@ void safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT::initialize(const s
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderObjectFeaturesEXT::safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const VkPhysicalDeviceShaderObjectFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderObject(in_struct->shaderObject)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderObjectFeaturesEXT::safe_VkPhysicalDeviceShaderObjectFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT),
+    pNext(nullptr),
+    shaderObject()
+{}
+
+safe_VkPhysicalDeviceShaderObjectFeaturesEXT::safe_VkPhysicalDeviceShaderObjectFeaturesEXT(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderObject = copy_src.shaderObject;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderObjectFeaturesEXT& safe_VkPhysicalDeviceShaderObjectFeaturesEXT::operator=(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderObject = copy_src.shaderObject;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderObjectFeaturesEXT::~safe_VkPhysicalDeviceShaderObjectFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderObjectFeaturesEXT::initialize(const VkPhysicalDeviceShaderObjectFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderObject = in_struct->shaderObject;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderObjectFeaturesEXT::initialize(const safe_VkPhysicalDeviceShaderObjectFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderObject = copy_src->shaderObject;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderObjectPropertiesEXT::safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderBinaryVersion(in_struct->shaderBinaryVersion)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        shaderBinaryUUID[i] = in_struct->shaderBinaryUUID[i];
+    }
+}
+
+safe_VkPhysicalDeviceShaderObjectPropertiesEXT::safe_VkPhysicalDeviceShaderObjectPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT),
+    pNext(nullptr),
+    shaderBinaryVersion()
+{}
+
+safe_VkPhysicalDeviceShaderObjectPropertiesEXT::safe_VkPhysicalDeviceShaderObjectPropertiesEXT(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderBinaryVersion = copy_src.shaderBinaryVersion;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        shaderBinaryUUID[i] = copy_src.shaderBinaryUUID[i];
+    }
+}
+
+safe_VkPhysicalDeviceShaderObjectPropertiesEXT& safe_VkPhysicalDeviceShaderObjectPropertiesEXT::operator=(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderBinaryVersion = copy_src.shaderBinaryVersion;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        shaderBinaryUUID[i] = copy_src.shaderBinaryUUID[i];
+    }
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderObjectPropertiesEXT::~safe_VkPhysicalDeviceShaderObjectPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderObjectPropertiesEXT::initialize(const VkPhysicalDeviceShaderObjectPropertiesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderBinaryVersion = in_struct->shaderBinaryVersion;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        shaderBinaryUUID[i] = in_struct->shaderBinaryUUID[i];
+    }
+}
+
+void safe_VkPhysicalDeviceShaderObjectPropertiesEXT::initialize(const safe_VkPhysicalDeviceShaderObjectPropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderBinaryVersion = copy_src->shaderBinaryVersion;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        shaderBinaryUUID[i] = copy_src->shaderBinaryUUID[i];
+    }
+}
+
+safe_VkShaderCreateInfoEXT::safe_VkShaderCreateInfoEXT(const VkShaderCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    stage(in_struct->stage),
+    nextStage(in_struct->nextStage),
+    codeType(in_struct->codeType),
+    codeSize(in_struct->codeSize),
+    pCode(in_struct->pCode),
+    setLayoutCount(in_struct->setLayoutCount),
+    pSetLayouts(nullptr),
+    pushConstantRangeCount(in_struct->pushConstantRangeCount),
+    pPushConstantRanges(nullptr),
+    pSpecializationInfo(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+    if (setLayoutCount && in_struct->pSetLayouts) {
+        pSetLayouts = new VkDescriptorSetLayout[setLayoutCount];
+        for (uint32_t i = 0; i < setLayoutCount; ++i) {
+            pSetLayouts[i] = in_struct->pSetLayouts[i];
+        }
+    }
+    if (in_struct->pPushConstantRanges) {
+        pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
+        memcpy ((void *)pPushConstantRanges, (void *)in_struct->pPushConstantRanges, sizeof(VkPushConstantRange)*in_struct->pushConstantRangeCount);
+    }
+    if (in_struct->pSpecializationInfo)
+        pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
+}
+
+safe_VkShaderCreateInfoEXT::safe_VkShaderCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT),
+    pNext(nullptr),
+    flags(),
+    stage(),
+    nextStage(),
+    codeType(),
+    codeSize(),
+    pCode(nullptr),
+    pName(nullptr),
+    setLayoutCount(),
+    pSetLayouts(nullptr),
+    pushConstantRangeCount(),
+    pPushConstantRanges(nullptr),
+    pSpecializationInfo(nullptr)
+{}
+
+safe_VkShaderCreateInfoEXT::safe_VkShaderCreateInfoEXT(const safe_VkShaderCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stage = copy_src.stage;
+    nextStage = copy_src.nextStage;
+    codeType = copy_src.codeType;
+    codeSize = copy_src.codeSize;
+    pCode = copy_src.pCode;
+    setLayoutCount = copy_src.setLayoutCount;
+    pSetLayouts = nullptr;
+    pushConstantRangeCount = copy_src.pushConstantRangeCount;
+    pPushConstantRanges = nullptr;
+    pSpecializationInfo = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+    if (setLayoutCount && copy_src.pSetLayouts) {
+        pSetLayouts = new VkDescriptorSetLayout[setLayoutCount];
+        for (uint32_t i = 0; i < setLayoutCount; ++i) {
+            pSetLayouts[i] = copy_src.pSetLayouts[i];
+        }
+    }
+    if (copy_src.pPushConstantRanges) {
+        pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
+        memcpy ((void *)pPushConstantRanges, (void *)copy_src.pPushConstantRanges, sizeof(VkPushConstantRange)*copy_src.pushConstantRangeCount);
+    }
+    if (copy_src.pSpecializationInfo)
+        pSpecializationInfo = new safe_VkSpecializationInfo(*copy_src.pSpecializationInfo);
+}
+
+safe_VkShaderCreateInfoEXT& safe_VkShaderCreateInfoEXT::operator=(const safe_VkShaderCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pName) delete [] pName;
+    if (pSetLayouts)
+        delete[] pSetLayouts;
+    if (pPushConstantRanges)
+        delete[] pPushConstantRanges;
+    if (pSpecializationInfo)
+        delete pSpecializationInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stage = copy_src.stage;
+    nextStage = copy_src.nextStage;
+    codeType = copy_src.codeType;
+    codeSize = copy_src.codeSize;
+    pCode = copy_src.pCode;
+    setLayoutCount = copy_src.setLayoutCount;
+    pSetLayouts = nullptr;
+    pushConstantRangeCount = copy_src.pushConstantRangeCount;
+    pPushConstantRanges = nullptr;
+    pSpecializationInfo = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+    if (setLayoutCount && copy_src.pSetLayouts) {
+        pSetLayouts = new VkDescriptorSetLayout[setLayoutCount];
+        for (uint32_t i = 0; i < setLayoutCount; ++i) {
+            pSetLayouts[i] = copy_src.pSetLayouts[i];
+        }
+    }
+    if (copy_src.pPushConstantRanges) {
+        pPushConstantRanges = new VkPushConstantRange[copy_src.pushConstantRangeCount];
+        memcpy ((void *)pPushConstantRanges, (void *)copy_src.pPushConstantRanges, sizeof(VkPushConstantRange)*copy_src.pushConstantRangeCount);
+    }
+    if (copy_src.pSpecializationInfo)
+        pSpecializationInfo = new safe_VkSpecializationInfo(*copy_src.pSpecializationInfo);
+
+    return *this;
+}
+
+safe_VkShaderCreateInfoEXT::~safe_VkShaderCreateInfoEXT()
+{
+    if (pName) delete [] pName;
+    if (pSetLayouts)
+        delete[] pSetLayouts;
+    if (pPushConstantRanges)
+        delete[] pPushConstantRanges;
+    if (pSpecializationInfo)
+        delete pSpecializationInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkShaderCreateInfoEXT::initialize(const VkShaderCreateInfoEXT* in_struct)
+{
+    if (pName) delete [] pName;
+    if (pSetLayouts)
+        delete[] pSetLayouts;
+    if (pPushConstantRanges)
+        delete[] pPushConstantRanges;
+    if (pSpecializationInfo)
+        delete pSpecializationInfo;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    stage = in_struct->stage;
+    nextStage = in_struct->nextStage;
+    codeType = in_struct->codeType;
+    codeSize = in_struct->codeSize;
+    pCode = in_struct->pCode;
+    setLayoutCount = in_struct->setLayoutCount;
+    pSetLayouts = nullptr;
+    pushConstantRangeCount = in_struct->pushConstantRangeCount;
+    pPushConstantRanges = nullptr;
+    pSpecializationInfo = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+    if (setLayoutCount && in_struct->pSetLayouts) {
+        pSetLayouts = new VkDescriptorSetLayout[setLayoutCount];
+        for (uint32_t i = 0; i < setLayoutCount; ++i) {
+            pSetLayouts[i] = in_struct->pSetLayouts[i];
+        }
+    }
+    if (in_struct->pPushConstantRanges) {
+        pPushConstantRanges = new VkPushConstantRange[in_struct->pushConstantRangeCount];
+        memcpy ((void *)pPushConstantRanges, (void *)in_struct->pPushConstantRanges, sizeof(VkPushConstantRange)*in_struct->pushConstantRangeCount);
+    }
+    if (in_struct->pSpecializationInfo)
+        pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
+}
+
+void safe_VkShaderCreateInfoEXT::initialize(const safe_VkShaderCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    stage = copy_src->stage;
+    nextStage = copy_src->nextStage;
+    codeType = copy_src->codeType;
+    codeSize = copy_src->codeSize;
+    pCode = copy_src->pCode;
+    setLayoutCount = copy_src->setLayoutCount;
+    pSetLayouts = nullptr;
+    pushConstantRangeCount = copy_src->pushConstantRangeCount;
+    pPushConstantRanges = nullptr;
+    pSpecializationInfo = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    pName = SafeStringCopy(copy_src->pName);
+    if (setLayoutCount && copy_src->pSetLayouts) {
+        pSetLayouts = new VkDescriptorSetLayout[setLayoutCount];
+        for (uint32_t i = 0; i < setLayoutCount; ++i) {
+            pSetLayouts[i] = copy_src->pSetLayouts[i];
+        }
+    }
+    if (copy_src->pPushConstantRanges) {
+        pPushConstantRanges = new VkPushConstantRange[copy_src->pushConstantRangeCount];
+        memcpy ((void *)pPushConstantRanges, (void *)copy_src->pPushConstantRanges, sizeof(VkPushConstantRange)*copy_src->pushConstantRangeCount);
+    }
+    if (copy_src->pSpecializationInfo)
+        pSpecializationInfo = new safe_VkSpecializationInfo(*copy_src->pSpecializationInfo);
+}
+
 safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct) :
     sType(in_struct->sType),
     tileProperties(in_struct->tileProperties)
@@ -63888,6 +64354,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImage2DViewOf3DFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderTileImageFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderTileImageFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderTileImagePropertiesEXT(reinterpret_cast<const VkPhysicalDeviceShaderTileImagePropertiesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceOpacityMicromapFeaturesEXT *>(pNext));
             break;
@@ -64013,6 +64485,12 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderObjectFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderObjectFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderObjectPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceShaderObjectPropertiesEXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
             safe_pNext = new safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(pNext));
@@ -65360,6 +65838,12 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceImage2DViewOf3DFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderTileImageFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TILE_IMAGE_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderTileImagePropertiesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceOpacityMicromapFeaturesEXT *>(header);
             break;
@@ -65485,6 +65969,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineProtectedAccessFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderObjectFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderObjectPropertiesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(header);

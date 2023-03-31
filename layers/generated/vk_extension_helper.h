@@ -474,9 +474,11 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_shader_demote_to_helper_invocation{kNotEnabled};
     ExtEnabled vk_ext_shader_image_atomic_int64{kNotEnabled};
     ExtEnabled vk_ext_shader_module_identifier{kNotEnabled};
+    ExtEnabled vk_ext_shader_object{kNotEnabled};
     ExtEnabled vk_ext_shader_stencil_export{kNotEnabled};
     ExtEnabled vk_ext_shader_subgroup_ballot{kNotEnabled};
     ExtEnabled vk_ext_shader_subgroup_vote{kNotEnabled};
+    ExtEnabled vk_ext_shader_tile_image{kNotEnabled};
     ExtEnabled vk_ext_shader_viewport_index_layer{kNotEnabled};
     ExtEnabled vk_ext_subgroup_size_control{kNotEnabled};
     ExtEnabled vk_ext_subpass_merge_feedback{kNotEnabled};
@@ -897,9 +899,14 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_module_identifier, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_ext_pipeline_creation_cache_control, VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME}}})},
+            {VK_EXT_SHADER_OBJECT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_object, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
             {VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_stencil_export, {})},
             {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})},
             {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_vote, {})},
+            {VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_tile_image, {{
+                           {&DeviceExtensions::vk_feature_version_1_3, VK_VERSION_1_3_NAME}}})},
             {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_viewport_index_layer, {})},
             {VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
@@ -1538,9 +1545,11 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
     VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME,
     VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,
+    VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
     VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
+    VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME,
     VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME,
