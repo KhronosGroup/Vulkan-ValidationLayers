@@ -249,8 +249,7 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
 
     rpci.pAttachments = &attach_desc;
 
-    VkRenderPass rp;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    vk_testing::RenderPass rp(*m_device, rpci);
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipeline.AddShader(&vs);
@@ -260,10 +259,9 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     att_state.blendEnable = VK_TRUE;
     pipeline.AddColorAttachment(0, att_state);
-    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp);
+    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp.handle());
 
     m_errorMonitor->VerifyFound();
-    vk::DestroyRenderPass(m_device->device(), rp, NULL);
 }
 
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
@@ -439,13 +437,11 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
-    VkDescriptorSetLayout ds_layout = {};
-    VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     // Create an array of DSLs, one larger than the physical limit
     const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
-    std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout);
+    std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout.handle());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = excess_layouts;
@@ -453,11 +449,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286");
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-
-    // Clean up
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
 }
 
 TEST_F(VkLayerTest, CreatePipelineExcessSubsampledPerStageDescriptors) {
@@ -2216,9 +2209,8 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buffer_view;
-    VkResult err = vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
-    if (err != VK_SUCCESS) {
+    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
+    if (!buffer_view.initialized()) {
         // device profile layer might hide fact this is not a supported buffer view format
         GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
     }
@@ -2228,7 +2220,7 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view;
+    descriptor_write.pTexelBufferView = &buffer_view.handle();
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
     m_commandBuffer->reset();
@@ -2241,8 +2233,6 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
-
-    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
 }
 
 TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
@@ -4421,15 +4411,11 @@ TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
     };
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp);
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp.handle());
 
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
@@ -5156,12 +5142,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         rpi.pAttachments = att;
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
-
-        VkRenderPass rp;
-
-        VkResult err = vk::CreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
-
-        ASSERT_VK_SUCCESS(err);
+        vk_testing::RenderPass rp(*m_device, rpi);
 
         auto ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
         auto cmi = LvlInitStruct<VkPipelineCoverageModulationStateCreateInfoNV>();
@@ -5184,7 +5165,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
             helper.pipe_ms_state_ci_.sampleShadingEnable = test_case.sample_shading;
 
-            helper.gp_ci_.renderPass = rp;
+            helper.gp_ci_.renderPass = rp.handle();
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -5193,8 +5174,6 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         } else {
             CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
         }
-
-        vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     }
 }
 
@@ -5249,14 +5228,11 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         rpi.subpassCount = 1;
         rpi.pSubpasses = &sp;
 
-        VkRenderPass rp;
-
         if (test_case.color_samples == test_case.depth_samples) {
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pDepthStencilAttachment-01418");
         }
-
-        VkResult err = vk::CreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
+        vk_testing::RenderPass rp(*m_device, rpi);
 
         if (test_case.color_samples == test_case.depth_samples) {
         } else {
@@ -5264,14 +5240,12 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
             continue;
         }
 
-        ASSERT_VK_SUCCESS(err);
-
         VkPipelineDepthStencilStateCreateInfo ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
         const auto break_samples = [&rp, &ds, &test_case](CreatePipelineHelper &helper) {
             helper.pipe_ms_state_ci_.rasterizationSamples = test_case.raster_samples;
 
-            helper.gp_ci_.renderPass = rp;
+            helper.gp_ci_.renderPass = rp.handle();
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -5281,8 +5255,6 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         } else {
             CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
         }
-
-        vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     }
 }
 
@@ -6539,7 +6511,6 @@ TEST_F(VkLayerTest, LimitsMaxSampleMaskWords) {
 
 TEST_F(VkLayerTest, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
-    VkResult err;
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -6662,18 +6633,15 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
-    VkSampler sampler_filter;
-    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler_filter);
+    vk_testing::Sampler sampler_filter(*m_device, sampler_ci);
 
     sampler_ci.minFilter = VK_FILTER_NEAREST;
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // turned off feature bit for test
-    VkSampler sampler_mipmap;
-    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler_mipmap);
+    vk_testing::Sampler sampler_mipmap(*m_device, sampler_ci);
 
-    ASSERT_VK_SUCCESS(err);
-    VkDescriptorImageInfo combined_sampler_info = {sampler_filter, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkDescriptorImageInfo combined_sampler_info = {sampler_filter.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkDescriptorImageInfo seperate_sampled_image_info = {VK_NULL_HANDLE, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkDescriptorImageInfo seperate_sampler_info = {sampler_filter, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+    VkDescriptorImageInfo seperate_sampler_info = {sampler_filter.handle(), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
 
     // first item is combined, second/third item are seperate
     VkWriteDescriptorSet descriptor_writes[3] = {};
@@ -6734,8 +6702,8 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
 
     // Same test but for mipmap, so need to update descriptors
     {
-        combined_sampler_info.sampler = sampler_mipmap;
-        seperate_sampler_info.sampler = sampler_mipmap;
+        combined_sampler_info.sampler = sampler_mipmap.handle();
+        seperate_sampler_info.sampler = sampler_mipmap.handle();
         vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0,
                                   1, &combined_descriptor_set.set_, 0, nullptr);
@@ -6760,10 +6728,6 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
         m_commandBuffer->Draw(1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
     }
-
-    // cleanup
-    vk::DestroySampler(device(), sampler_filter, nullptr);
-    vk::DestroySampler(device(), sampler_mipmap, nullptr);
 }
 
 TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled10) {
@@ -11180,15 +11144,14 @@ TEST_F(VkLayerTest, StorageTexelBufferUnkownWriteLessComponent) {
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = format;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buffer_view;
-    vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
+    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
 
     VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view;
+    descriptor_write.pTexelBufferView = &buffer_view.handle();
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
@@ -11206,8 +11169,6 @@ TEST_F(VkLayerTest, StorageTexelBufferUnkownWriteLessComponent) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
-
-    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
 }
 
 TEST_F(VkLayerTest, ConservativeRasterizationPostDepthCoverage) {

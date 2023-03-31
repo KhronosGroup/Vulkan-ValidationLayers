@@ -264,15 +264,9 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_view_ci.buffer = buffer;
     buff_view_ci.format = VK_FORMAT_R8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buff_view;
-    err = vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buff_view);
-
+    vk_testing::BufferView buffer_view(*m_device, buff_view_ci);
     m_errorMonitor->VerifyFound();
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    // If last error is success, it still created the view, so delete it.
-    if (err == VK_SUCCESS) {
-        vk::DestroyBufferView(m_device->device(), buff_view, NULL);
-    }
 }
 
 TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {

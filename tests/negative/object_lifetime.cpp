@@ -517,61 +517,55 @@ TEST_F(VkLayerTest, FramebufferAttachmentMemoryFreed) {
     TEST_DESCRIPTION("Attempt to create framebuffer with attachment which memory was freed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
-    VkResult err = VK_SUCCESS;
     vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         GTEST_SKIP() << "Image format doesn't support required features";
     }
     VkFramebuffer fb;
-    VkImageView view;
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    {
-        VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
-        image_ci.imageType = VK_IMAGE_TYPE_2D;
-        image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-        image_ci.extent.width = 32;
-        image_ci.extent.height = 32;
-        image_ci.extent.depth = 1;
-        image_ci.mipLevels = 1;
-        image_ci.arrayLayers = 1;
-        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image_ci.flags = 0;
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.flags = 0;
 
-        vk_testing::Image image;
-        image.init_no_mem(*m_device, image_ci);
+    vk_testing::Image image;
+    image.init_no_mem(*m_device, image_ci);
 
-        vk_testing::DeviceMemory *image_memory = new vk_testing::DeviceMemory;
-        image_memory->init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
-        image.bind_memory(*image_memory, 0);
+    vk_testing::DeviceMemory *image_memory = new vk_testing::DeviceMemory;
+    image_memory->init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
+    image.bind_memory(*image_memory, 0);
 
-        VkImageViewCreateInfo ivci = {
-            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            nullptr,
-            0,
-            image.handle(),
-            VK_IMAGE_VIEW_TYPE_2D,
-            VK_FORMAT_B8G8R8A8_UNORM,
-            {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-        };
-        err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-        ASSERT_VK_SUCCESS(err);
+    VkImageViewCreateInfo ivci = {
+        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        nullptr,
+        0,
+        image.handle(),
+        VK_IMAGE_VIEW_TYPE_2D,
+        VK_FORMAT_B8G8R8A8_UNORM,
+        {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+    };
+    vk_testing::ImageView view(*m_device, ivci);
 
-        VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1};
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 32, 32, 1};
 
-        // Introduce error:
-        // Free the attachment image memory, then create framebuffer.
-        delete image_memory;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
-        err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vk::DestroyImageView(m_device->device(), view, nullptr);
+    // Introduce error:
+    // Free the attachment image memory, then create framebuffer.
+    delete image_memory;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
@@ -586,12 +580,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     ASSERT_TRUE(image.initialized());
 
     VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
-    // Create Sampler
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    VkSampler sampler;
-    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-    ASSERT_VK_SUCCESS(err);
-
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // Create PSO to be used for draw-time errors below
     VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -610,7 +599,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     pipe.CreateGraphicsPipeline();
 
     // Update descriptor with image and sampler
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -637,8 +626,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     vk::DestroyDescriptorPool(m_device->device(), pipe.descriptor_set_->pool_, NULL);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
-    // Cleanup
-    vk::DestroySampler(m_device->device(), sampler, NULL);
+
     m_errorMonitor->SetUnexpectedError(
         "If descriptorPool is not VK_NULL_HANDLE, descriptorPool must be a valid VkDescriptorPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove DescriptorPool obj");

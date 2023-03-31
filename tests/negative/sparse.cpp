@@ -778,8 +778,7 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
     }
 
     auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore = VK_NULL_HANDLE;
-    vk::CreateSemaphore(m_device->handle(), &s_info, nullptr, &semaphore);
+    vk_testing::Semaphore semaphore(*m_device, s_info);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
@@ -820,7 +819,7 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
     bind_info.bufferBindCount = 2;
     bind_info.pBufferBinds = buffer_memory_bind_infos;
     bind_info.signalSemaphoreCount = 1;
-    bind_info.pSignalSemaphores = &semaphore;
+    bind_info.pSignalSemaphores = &semaphore.handle();
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -841,7 +840,7 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
@@ -852,6 +851,4 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
 
     // Wait for operations to finish before destroying anything
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroySemaphore(m_device->handle(), semaphore, nullptr);
 }

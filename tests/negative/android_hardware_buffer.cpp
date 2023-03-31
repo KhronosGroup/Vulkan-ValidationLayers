@@ -890,8 +890,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
     // Spec says if we use VkExternalFormatANDROID value of components is ignored.
     sycci.components = {VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO};
-    vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
-    vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {

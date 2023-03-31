@@ -288,11 +288,9 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature) {
         GTEST_SKIP() << "Test requires Vulkan 1.1 exactly";
     }
 
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 }
 
 TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
@@ -311,11 +309,9 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 }
 
 TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
@@ -340,11 +336,9 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 }
 
 TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
@@ -476,7 +470,6 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
-    VkImageView imageView;
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -486,8 +479,7 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vk::CreateImageView(m_device->device(), &ivci, NULL, &imageView);
-    vk::DestroyImageView(m_device->device(), imageView, NULL);
+    vk_testing::ImageView view(*m_device, ivci);
 }
 
 // This is a positive test. No failures are expected.
@@ -1486,7 +1478,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     // by changing the image's layout then using a view of that image
     vk_testing::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR, is_khr);
     auto conversion_info = conversion.ConversionInfo();
-    VkImageView view;
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&conversion_info);
     ivci.image = mpimage.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1495,23 +1486,19 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
+    vk_testing::ImageView view(*m_device, ivci);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &conversion_info;
-    VkSampler sampler;
-
-    VkResult err;
-    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet descriptor_set(
         m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler},
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
                   });
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+    descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1557,8 +1544,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyImageView(m_device->device(), view, NULL);
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, TestFormatCompatibility) {
@@ -1635,21 +1620,16 @@ TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
     dsvci.subresourceRange.layerCount = 4;
     dsvci.subresourceRange.baseArrayLayer = 0;
     dsvci.subresourceRange.levelCount = 1;
-    VkImageView view;
-    vk::CreateImageView(m_device->device(), &dsvci, nullptr, &view);
+    vk_testing::ImageView view(*m_device, dsvci);
 
     VkFramebufferCreateInfo fci = LvlInitStruct<VkFramebufferCreateInfo>();
     fci.renderPass = m_renderPass;
     fci.attachmentCount = 1;
-    fci.pAttachments = &view;
+    fci.pAttachments = &view.handle();
     fci.width = 32;
     fci.height = 32;
     fci.layers = 4;
-    VkFramebuffer framebuffer;
-    vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
-
-    vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
-    vk::DestroyImageView(m_device->handle(), view, nullptr);
+    vk_testing::Framebuffer fb(*m_device, fci);
 }
 
 TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
@@ -2127,8 +2107,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     };
     VkRenderPassCreateInfo renderPassCreateInfo = {
         VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachmentDescription, 1, subpasses, 0, nullptr};
-    VkRenderPass renderPass;
-    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, NULL, &renderPass);
+    vk_testing::RenderPass renderPass(*m_device, renderPassCreateInfo);
 
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
@@ -2176,9 +2155,8 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
     uint32_t current_buffer;
-    VkSemaphore image_acquired;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
+    vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
     VkImageView imageView = image.targetView(attachmentFormat);
@@ -2197,19 +2175,18 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                                      &framebufferAttachmentsCreateInfo,
                                                      VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR,
-                                                     renderPass,
+                                                     renderPass.handle(),
                                                      1,
                                                      reinterpret_cast<const VkImageView *>(1),
                                                      attachmentWidth,
                                                      attachmentHeight,
                                                      1};
-    VkFramebuffer framebuffer;
-    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
                                                                         nullptr, 1, &imageView};
     VkRenderPassBeginInfo renderPassBeginInfo =
-        LvlInitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, renderPass, framebuffer,
+        LvlInitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, renderPass.handle(), framebuffer.handle(),
                                              VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);
 
     // RenderPass should change the image layout of both the swapchain image and the aliased image to PRESENT_SRC_KHR
@@ -2224,16 +2201,12 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
 
     VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &image_acquired;
+    present.pWaitSemaphores = &image_acquired.handle();
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
     vk::QueuePresentKHR(m_device->m_queue, &present);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
-    vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, ValidExtendedUsageWithDifferentFormatViews) {
@@ -2410,10 +2383,8 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
 
     // 2 semaphores needed since we need to bind twice before copying
     auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore = VK_NULL_HANDLE;
-    VkSemaphore semaphore2 = VK_NULL_HANDLE;
-    vk::CreateSemaphore(m_device->handle(), &s_info, nullptr, &semaphore);
-    vk::CreateSemaphore(m_device->handle(), &s_info, nullptr, &semaphore2);
+    vk_testing::Semaphore semaphore(*m_device, s_info);
+    vk_testing::Semaphore semaphore2(*m_device, s_info);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;
@@ -2454,7 +2425,7 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
     bind_info.bufferBindCount = 2;
     bind_info.pBufferBinds = buffer_memory_bind_infos;
     bind_info.signalSemaphoreCount = 1;
-    bind_info.pSignalSemaphores = &semaphore;
+    bind_info.pSignalSemaphores = &semaphore.handle();
 
     const std::optional<uint32_t> sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     if (!sparse_index) {
@@ -2475,15 +2446,15 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
     buffer_memory_bind.memory = buffer_mem2.handle();
     bind_info.bufferBindCount = 1;
     bind_info.waitSemaphoreCount = 1;
-    bind_info.pWaitSemaphores = &semaphore;
-    bind_info.pSignalSemaphores = &semaphore2;
+    bind_info.pWaitSemaphores = &semaphore.handle();
+    bind_info.pSignalSemaphores = &semaphore2.handle();
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
 
     // Submitting copy command with non overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore2;
+    submit_info.pWaitSemaphores = &semaphore2.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
@@ -2491,9 +2462,6 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
 
     // Wait for operations to finish before destroying anything
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroySemaphore(m_device->handle(), semaphore2, nullptr);
-    vk::DestroySemaphore(m_device->handle(), semaphore, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {

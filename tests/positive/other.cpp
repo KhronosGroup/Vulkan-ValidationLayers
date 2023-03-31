@@ -43,11 +43,9 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
 
     // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
     // validation was disabled via the features extension, so no errors should be forthcoming.
-    VkEvent event_handle = VK_NULL_HANDLE;
     VkEventCreateInfo event_info = LvlInitStruct<VkEventCreateInfo>();
     event_info.flags = 1;
-    vk::CreateEvent(device(), &event_info, NULL, &event_handle);
-    vk::DestroyEvent(device(), event_handle, NULL);
+    vk_testing::Event event(*m_device, event_info);
 }
 
 // This is a positive test. No failures are expected.
@@ -101,10 +99,7 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -118,12 +113,11 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_VK_SUCCESS(err);
-    vk::FreeDescriptorSets(m_device->device(), ds_pool, 3, descriptor_sets);
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 3, descriptor_sets);
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
 }
@@ -365,13 +359,11 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
-    fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
 }
 
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
@@ -590,10 +582,8 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     }
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore acquire_semaphore;
-    VkSemaphore submit_semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &acquire_semaphore));
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &submit_semaphore));
+    vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore submit_semaphore(*m_device, semaphore_create_info);
 
     uint32_t swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
@@ -602,7 +592,7 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
     uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     m_commandBuffer->begin();
 
@@ -630,25 +620,22 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &acquire_semaphore;
+    submit_info.pWaitSemaphores = &acquire_semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_mask;
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore;
+    submit_info.pSignalSemaphores = &submit_semaphore.handle();
 
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore;
+    present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
     vk::QueuePresentKHR(m_device->m_queue, &present);
 
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroySemaphore(device(), submit_semaphore, nullptr);
-    vk::DestroySemaphore(device(), acquire_semaphore, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {

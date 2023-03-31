@@ -5410,16 +5410,14 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkSampler sampler = VK_NULL_HANDLE;
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     binding.descriptorCount = 1;
     binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = &sampler;
+    binding.pImmutableSamplers = &sampler.handle();
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
@@ -5440,8 +5438,6 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
     vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {

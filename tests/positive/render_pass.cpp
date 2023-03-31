@@ -38,10 +38,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentUsedTwiceOK) {
     };
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
-    VkRenderPass rp;
-
-    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
+    vk_testing::RenderPass rp(*m_device, rpci);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
@@ -67,10 +64,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
-
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
@@ -88,19 +82,18 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
          VK_COMPONENT_SWIZZLE_IDENTITY},
         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
     };
-    VkImageView view;
-    err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-    ASSERT_VK_SUCCESS(err);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::ImageView view(*m_device, ivci);
+
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view.handle(), 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     // Record a single command buffer which uses this renderpass twice. The
     // bug is triggered at the beginning of the second renderpass, when the
     // command buffer already has a layout recorded for the attachment.
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
@@ -108,10 +101,6 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    vk::DestroyImageView(m_device->device(), view, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOnly) {
@@ -148,10 +137,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOn
     rpci.pSubpasses = subpasses;
 
     // Now create RenderPass and verify no errors
-    VkRenderPass rp;
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
-
-    vk::DestroyRenderPass(m_device->device(), rp, NULL);
+    vk_testing::RenderPass rp(*m_device, rpci);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
@@ -183,11 +169,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
                                VK_DEPENDENCY_BY_REGION_BIT};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 1, &dep};
-
-    VkResult err;
-    VkRenderPass rp;
-    err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
@@ -196,16 +178,15 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
 
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     // Record a single command buffer which issues a pipeline barrier w/
     // image memory barrier for the attachment. This detects the previously
     // missing tracking of the subpass layout by throwing a validation error
     // if it doesn't occur.
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -215,9 +196,6 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassBeginTransitionsAttachmentUnused) {
@@ -235,32 +213,24 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginTransitionsAttachmentUnused) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &subpass, 0, nullptr};
-
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 0, nullptr, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 0, nullptr, 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     // Record a command buffer which just begins and ends the renderpass. The
     // bug manifests in BeginRenderPass.
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     TEST_DESCRIPTION("Create a stencil-only attachment with a LOAD_OP set to CLEAR. stencil[Load|Store]Op used to be ignored.");
-    VkResult result = VK_SUCCESS;
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     VkImageFormatProperties formatProps;
@@ -303,36 +273,32 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = NULL;
 
-    VkRenderPass rp;
     VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &att;
     rp_info.subpassCount = 1;
     rp_info.pSubpasses = &subpass;
-    result = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
-    ASSERT_VK_SUCCESS(result);
+    vk_testing::RenderPass rp(*m_device, rp_info);
 
     VkImageView *depthView = m_depthStencil->BindInfo();
     VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
-    fb_info.renderPass = rp;
+    fb_info.renderPass = rp.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = depthView;
     fb_info.width = 100;
     fb_info.height = 100;
     fb_info.layers = 1;
-    VkFramebuffer fb;
-    result = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
-    ASSERT_VK_SUCCESS(result);
+    vk_testing::Framebuffer fb(*m_device, fb_info);
 
     VkRenderPassBeginInfo rpbinfo = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = &clear;
-    rpbinfo.renderPass = rp;
+    rpbinfo.renderPass = rp.handle();
     rpbinfo.renderArea.extent.width = 100;
     rpbinfo.renderArea.extent.height = 100;
     rpbinfo.renderArea.offset.x = 0;
     rpbinfo.renderArea.offset.y = 0;
-    rpbinfo.framebuffer = fb;
+    rpbinfo.framebuffer = fb.handle();
 
     VkFenceObj fence;
     fence.init(*m_device, VkFenceObj::create_info());
@@ -393,8 +359,6 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassBeginInlineAndSecondaryCommandBuffers) {
@@ -443,10 +407,8 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, &att_ref, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
+    vk_testing::RenderPass rp(*m_device, rpci);
 
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
     // A compatible ds image.
     VkImageObj image(m_device);
     image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -463,26 +425,19 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
          VK_COMPONENT_SWIZZLE_IDENTITY},
         {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1},
     };
-    VkImageView view;
-    err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::ImageView view(*m_device, ivci);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view.handle(), 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
-
-    // Cleanup
-    vk::DestroyImageView(m_device->device(), view, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
 }
 
 TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
@@ -770,11 +725,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
                                VK_DEPENDENCY_BY_REGION_BIT};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 1, &dep};
-
-    VkResult err;
-    VkRenderPass rp;
-    err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     // Create Framebuffer.
 
@@ -818,10 +769,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     VkImageView fullViews[] = {fullView0.handle(), fullView1.handle()};
 
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 2, baseViews, 32, 32, 1};
-
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     // Create shader modules
 
@@ -838,11 +786,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create descriptor set and friends.
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    VkSampler sampler = VK_NULL_HANDLE;
-    err = vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet::Bindings binding_defs = {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     const VkDescriptorSetLayoutObj pipeline_dsl(m_device, binding_defs);
@@ -850,7 +794,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     OneOffDescriptorSet descriptor_set(m_device, binding_defs);
 
     VkDescriptorImageInfo image_info = {
-        sampler,
+        sampler.handle(),
         fullViews[1],
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
     };
@@ -881,11 +825,12 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     pipe.AddDefaultColorAttachment();
     pipe.SetDepthStencil(&ds_ci);
 
-    pipe.CreateVKPipeline(pipeline_layout.handle(), rp);
+    pipe.CreateVKPipeline(pipeline_layout.handle(), rp.handle());
 
     // Start pushing commands.
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -919,10 +864,6 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {

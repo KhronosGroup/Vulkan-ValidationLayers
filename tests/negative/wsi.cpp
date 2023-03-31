@@ -2414,11 +2414,10 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsAcquire) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
     auto semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore acquire_semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &acquire_semaphore));
+    vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
 
     uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     vk::QueueWaitIdle(m_device->m_queue);
 
@@ -2435,8 +2434,6 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsAcquire) {
         vkReleaseSwapchainImagesEXT(m_device->device(), &release_info);
         m_errorMonitor->VerifyFound();
     }
-
-    vk::DestroySemaphore(m_device->device(), acquire_semaphore, nullptr);
 }
 
 TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsCaps) {
@@ -2645,10 +2642,8 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore acquire_semaphore;
-    VkSemaphore submit_semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &acquire_semaphore));
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &submit_semaphore));
+    vk_testing::Semaphore acquire_semaphore(*m_device, semaphore_create_info);
+    vk_testing::Semaphore submit_semaphore(*m_device, semaphore_create_info);
 
     uint32_t swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
@@ -2657,7 +2652,7 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
     uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
 
     m_commandBuffer->begin();
 
@@ -2685,16 +2680,16 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &acquire_semaphore;
+    submit_info.pWaitSemaphores = &acquire_semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_mask;
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &submit_semaphore;
+    submit_info.pSignalSemaphores = &submit_semaphore.handle();
 
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>();
     present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore;
+    present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &image_index;
@@ -2760,9 +2755,6 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
     }
 
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroySemaphore(device(), submit_semaphore, nullptr);
-    vk::DestroySemaphore(device(), acquire_semaphore, nullptr);
 }
 
 #ifdef VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN

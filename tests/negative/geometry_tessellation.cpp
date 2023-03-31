@@ -960,11 +960,7 @@ TEST_F(VkLayerTest, InvalidPatchControlPoints)
     VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
         ds_pool_ci.poolSizeCount = 1;
         ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    err = vk::CreateDescriptorPool(m_device->device(),
-VK_DESCRIPTOR_POOL_USAGE_NON_FREE, 1, &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
         dsl_binding.binding = 0;
@@ -977,24 +973,18 @@ VK_DESCRIPTOR_POOL_USAGE_NON_FREE, 1, &ds_pool_ci, NULL, &ds_pool);
         ds_layout_ci.bindingCount = 1;
         ds_layout_ci.pBindings = &dsl_binding;
 
-    VkDescriptorSetLayout ds_layout;
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL,
-&ds_layout);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
 
     VkDescriptorSet descriptorSet;
-    err = vk::AllocateDescriptorSets(m_device->device(), ds_pool,
-VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout, &descriptorSet);
+    err = vk::AllocateDescriptorSets(m_device->device(), ds_pool.handle(),
+VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     ASSERT_VK_SUCCESS(err);
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_ci.pNext = NULL;
         pipeline_layout_ci.setLayoutCount = 1;
-        pipeline_layout_ci.pSetLayouts = &ds_layout;
-
-    VkPipelineLayout pipeline_layout;
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL,
-&pipeline_layout);
+        pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     ASSERT_VK_SUCCESS(err);
 
     VkPipelineShaderStageCreateInfo shaderStages[3];
@@ -1033,7 +1023,7 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout, &descriptorSet);
         gp_ci.pDepthStencilState = NULL;
         gp_ci.pColorBlendState = NULL;
         gp_ci.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        gp_ci.layout = pipeline_layout;
+        gp_ci.layout = pipeline_layout.handle();
         gp_ci.renderPass = renderPass();
 
     VkPipelineCacheCreateInfo pc_ci = LvlInitStruct<VkPipelineCacheCreateInfo>();
@@ -1053,8 +1043,5 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout, &descriptorSet);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPipelineCache(m_device->device(), pipelineCache, NULL);
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-    vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 }
 */

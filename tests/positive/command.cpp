@@ -47,22 +47,18 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
-    VkRenderPass rp;
-
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Framebuffer fb(*m_device, fbci);
 
     m_commandBuffer->begin();
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -70,7 +66,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
                                            nullptr,
-                                           rp,
+                                           rp.handle(),
                                            0,
                                            VK_NULL_HANDLE,  // Set to NULL FB handle intentionally to flesh out any errors
                                            VK_FALSE,
@@ -100,9 +96,6 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
@@ -110,11 +103,10 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
@@ -127,12 +119,12 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
         VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
 
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
-        vk::CmdResetQueryPool(command_buffer[0], query_pool, 0, 1);
+        vk::CmdResetQueryPool(command_buffer[0], query_pool.handle(), 0, 1);
         vk::EndCommandBuffer(command_buffer[0]);
 
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
-        vk::CmdBeginQuery(command_buffer[1], query_pool, 0, 0);
-        vk::CmdEndQuery(command_buffer[1], query_pool, 0);
+        vk::CmdBeginQuery(command_buffer[1], query_pool.handle(), 0, 0);
+        vk::CmdEndQuery(command_buffer[1], query_pool.handle(), 0);
         vk::EndCommandBuffer(command_buffer[1]);
     }
     {
@@ -154,7 +146,6 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
 }
 
@@ -175,15 +166,12 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer.init(*m_device, bci, mem_props);
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_info.flags = 0;
     query_pool_info.queryCount = 2;
     query_pool_info.pipelineStatistics = 0;
-
-    VkResult res = vk::CreateQueryPool(m_device->handle(), &query_pool_info, NULL, &query_pool);
-    ASSERT_VK_SUCCESS(res);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -191,16 +179,16 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 2);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 2);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 2, buffer.handle(), 0, sizeof(uint64_t),
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, sizeof(uint64_t),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
     m_commandBuffer->end();
 
@@ -211,25 +199,23 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
 
     vk::QueueWaitIdle(m_device->m_queue);
     uint64_t samples_passed[4];
-    res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
-                                  VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-    ASSERT_VK_SUCCESS(res);
+    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
+                            VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
     // Now reset query pool in a different command buffer than the BeginQuery
     vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_device->m_queue);
     vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
     m_commandBuffer->begin();
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_device->m_queue);
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
 TEST_F(VkPositiveLayerTest, DestroyQueryPoolBasedOnQueryPoolResults) {
@@ -738,10 +724,7 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
-
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
     VkImageObj image(m_device);
@@ -750,10 +733,8 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
 
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     // Explicitly create a command buffer to bind the FB to so that we can then
     //  destroy the command pool in order to implicitly free command buffer
@@ -771,7 +752,8 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
 
     // Begin our cmd buffer with renderpass using our framebuffer
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     vk::BeginCommandBuffer(command_buffer, &begin_info);
 
@@ -780,8 +762,6 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     vk::EndCommandBuffer(command_buffer);
     // Destroy command pool to implicitly free command buffer
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDepthOnlyImageView) {
@@ -819,11 +799,7 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
                                VK_DEPENDENCY_BY_REGION_BIT};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 1, &dep};
-
-    VkResult err;
-    VkRenderPass rp;
-    err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -834,10 +810,8 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
 
     VkImageView view = image.targetView(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
 
     m_commandBuffer->begin();
 
@@ -860,9 +834,6 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
-
-    vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
@@ -883,11 +854,10 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj primary_buffer(m_device, &command_pool);
@@ -918,20 +888,19 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
         VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         begin_info.pInheritanceInfo = &hinfo;
         secondary_buffer.begin(&begin_info);
-        vk::CmdResetQueryPool(secondary_buffer.handle(), query_pool, 0, 1);
-        vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+        vk::CmdResetQueryPool(secondary_buffer.handle(), query_pool.handle(), 0, 1);
+        vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
         secondary_buffer.end();
 
         primary_buffer.begin();
         vk::CmdExecuteCommands(primary_buffer.handle(), 1, &secondary_buffer.handle());
-        vk::CmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
+        vk::CmdCopyQueryPoolResults(primary_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, 0,
+                                    VK_QUERY_RESULT_WAIT_BIT);
         primary_buffer.end();
     }
 
     primary_buffer.QueueCommandBuffer();
     vk::QueueWaitIdle(queue);
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 // This is a positive test.  No errors should be generated.
@@ -953,21 +922,19 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
-    VkCommandPool command_pool;
     VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+    vk_testing::CommandPool command_pool(*m_device, pool_create_info);
 
     VkCommandBuffer command_buffer[2];
     VkCommandBufferAllocateInfo command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    command_buffer_allocate_info.commandPool = command_pool;
+    command_buffer_allocate_info.commandPool = command_pool.handle();
     command_buffer_allocate_info.commandBufferCount = 2;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
@@ -989,14 +956,14 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
         VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         vk::BeginCommandBuffer(command_buffer[0], &begin_info);
 
-        vk::CmdResetQueryPool(command_buffer[0], query_pool, 0, 1);
-        vk::CmdWriteTimestamp(command_buffer[0], VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+        vk::CmdResetQueryPool(command_buffer[0], query_pool.handle(), 0, 1);
+        vk::CmdWriteTimestamp(command_buffer[0], VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
 
         vk::EndCommandBuffer(command_buffer[0]);
 
         vk::BeginCommandBuffer(command_buffer[1], &begin_info);
 
-        vk::CmdCopyQueryPoolResults(command_buffer[1], query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
+        vk::CmdCopyQueryPoolResults(command_buffer[1], query_pool.handle(), 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
 
         vk::EndCommandBuffer(command_buffer[1]);
     }
@@ -1011,9 +978,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
 
     vk::QueueWaitIdle(queue);
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
-    vk::FreeCommandBuffers(m_device->device(), command_pool, 2, command_buffer);
-    vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
+    vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, command_buffer);
 }
 
 TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
@@ -1032,7 +997,6 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-
     vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
@@ -1202,18 +1166,17 @@ TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
 
     secondary.begin();
-    vk::CmdSetEvent(secondary.handle(), event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    vk::CmdSetEvent(secondary.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     secondary.end();
 
     commandBuffer.begin();
     vk::CmdExecuteCommands(commandBuffer.handle(), 1, &secondary.handle());
-    vk::CmdWaitEvents(commandBuffer.handle(), 1, &event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(commandBuffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     commandBuffer.end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -1222,8 +1185,6 @@ TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
     submit_info.pCommandBuffers = handles;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, EventsInSecondaryCommandBuffers) {

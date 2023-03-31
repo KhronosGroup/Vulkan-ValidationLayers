@@ -73,10 +73,11 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCreation) {
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
 
+    vk_testing::QueryPool query_pool;
+
     // Missing pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-queryType-03222");
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    query_pool.init(*m_device, query_pool_ci);
     m_errorMonitor->VerifyFound();
 
     query_pool_ci.pNext = &perf_query_pool_ci;
@@ -85,13 +86,13 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCreation) {
     counterIndices.push_back(counters.size());
     perf_query_pool_ci.counterIndexCount++;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321");
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    query_pool.init(*m_device, query_pool_ci);
     m_errorMonitor->VerifyFound();
     perf_query_pool_ci.counterIndexCount--;
     counterIndices.pop_back();
 
     // Success
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    query_pool.init(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
 
@@ -103,8 +104,6 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCreation) {
     }
 
     m_commandBuffer->end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
@@ -175,9 +174,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
@@ -216,11 +213,11 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
         m_commandBuffer->begin();
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-03224");
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();
@@ -262,9 +259,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
 
         m_commandBuffer->begin();
 
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
 
-        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
 
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
 
@@ -285,8 +282,6 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterCommandbufferScope) {
         vk::DestroyBuffer(device(), buffer, nullptr);
         vk::FreeMemory(device(), mem, NULL);
     }
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 
     vkReleaseProfilingLockKHR(device());
 }
@@ -362,9 +357,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterRenderPassScope) {
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
@@ -388,7 +381,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterRenderPassScope) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-03225");
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->EndRenderPass();
@@ -407,8 +400,6 @@ TEST_F(VkLayerQueryTest, QueryPerformanceCounterRenderPassScope) {
     }
 
     vkReleaseProfilingLockKHR(device());
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
@@ -482,9 +473,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
@@ -505,7 +494,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     {
         m_commandBuffer->reset();
         m_commandBuffer->begin();
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
         m_commandBuffer->end();
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -543,7 +532,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         m_commandBuffer->reset();
         m_commandBuffer->begin();
 
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
 
         // Release while recording.
         vkReleaseProfilingLockKHR(device());
@@ -553,7 +542,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
             ASSERT_TRUE(result == VK_SUCCESS);
         }
 
-        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
 
         m_commandBuffer->end();
 
@@ -577,8 +566,6 @@ TEST_F(VkLayerQueryTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     }
 
     vkReleaseProfilingLockKHR(device());
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
@@ -670,9 +657,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
@@ -714,12 +699,12 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
         VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
+        fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
 
         m_commandBuffer->begin(&command_buffer_begin_info);
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
         vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
-        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
         m_commandBuffer->end();
 
         // Invalid pass index
@@ -762,8 +747,8 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
         results.resize(counterIndices.size());
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03231");
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
+        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
         m_errorMonitor->VerifyFound();
 
         // submit the last pass
@@ -787,8 +772,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
         // The stride is too small to return the data
         if (counterIndices.size() > 2) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-04519");
-            vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                    &results[0], sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1), 0);
+            vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1,
+                                    sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                    sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1), 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -798,7 +784,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
             results_invalid_stride.resize(counterIndices.size() * 2);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03229");
             vk::GetQueryPoolResults(
-                device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
+                device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
                 &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size() + 4,
                 VK_QUERY_RESULT_WAIT_BIT);
             m_errorMonitor->VerifyFound();
@@ -806,28 +792,27 @@ TEST_F(VkLayerQueryTest, QueryPerformanceIncompletePasses) {
 
         // Invalid flags
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
+        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-03230");
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
+        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
 
-        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
-                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
+        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
+                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
 
         vk::DestroyBuffer(device(), buffer, nullptr);
         vk::FreeMemory(device(), mem, NULL);
     }
 
     vkReleaseProfilingLockKHR(device());
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, QueryPerformanceResetAndBegin) {
@@ -905,9 +890,7 @@ TEST_F(VkLayerQueryTest, QueryPerformanceResetAndBegin) {
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>(&perf_query_pool_ci);
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
     query_pool_ci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
@@ -951,9 +934,9 @@ TEST_F(VkLayerQueryTest, QueryPerformanceResetAndBegin) {
 
         m_commandBuffer->reset();
         m_commandBuffer->begin(&command_buffer_begin_info);
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
         m_commandBuffer->end();
 
         {
@@ -979,8 +962,6 @@ TEST_F(VkLayerQueryTest, QueryPerformanceResetAndBegin) {
     }
 
     vkReleaseProfilingLockKHR(device());
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, HostQueryResetNotEnabled) {
@@ -996,17 +977,14 @@ TEST_F(VkLayerQueryTest, HostQueryResetNotEnabled) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-None-02665");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, HostQueryResetBadFirstQuery) {
@@ -1030,14 +1008,13 @@ TEST_F(VkLayerQueryTest, HostQueryResetBadFirstQuery) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02666");
-    fpvkResetQueryPoolEXT(m_device->device(), query_pool, 1, 0);
+    fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 1, 0);
     m_errorMonitor->VerifyFound();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
@@ -1046,12 +1023,10 @@ TEST_F(VkLayerQueryTest, HostQueryResetBadFirstQuery) {
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkResetQueryPool");
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02666");
-            fpvkResetQueryPool(m_device->device(), query_pool, 1, 0);
+            fpvkResetQueryPool(m_device->device(), query_pool.handle(), 1, 0);
             m_errorMonitor->VerifyFound();
         }
     }
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, HostQueryResetBadRange) {
@@ -1074,17 +1049,14 @@ TEST_F(VkLayerQueryTest, HostQueryResetBadRange) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-firstQuery-02667");
-    fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 2);
+    fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 2);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, HostQueryResetInvalidQueryPool) {
@@ -1143,11 +1115,10 @@ TEST_F(VkLayerQueryTest, HostQueryResetWrongDevice) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     // Create a second device with the feature enabled.
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
@@ -1165,10 +1136,9 @@ TEST_F(VkLayerQueryTest, HostQueryResetWrongDevice) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetQueryPool-queryPool-parent");
     // Run vk::ResetQueryPoolExt on the wrong device.
-    fpvkResetQueryPoolEXT(second_device, query_pool, 0, 1);
+    fpvkResetQueryPoolEXT(second_device, query_pool.handle(), 0, 1);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
     vk::DestroyDevice(second_device, nullptr);
 }
 
@@ -1204,22 +1174,19 @@ TEST_F(VkLayerQueryTest, BeginQueryOnTimestampPool) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-02804");
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
 
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &begin_info);
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, InvalidQueryPoolCreate) {
@@ -1284,56 +1251,59 @@ TEST_F(VkLayerQueryTest, InvalidQuerySizes) {
     const VkDeviceSize buffer_size = mem_reqs.size;
 
     const uint32_t query_pool_size = 4;
-    VkQueryPool occlusion_query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = query_pool_size;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &occlusion_query_pool);
+    vk_testing::QueryPool occlusion_query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
 
     // FirstQuery is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00796");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00797");
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool, query_pool_size, 1);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool.handle(), query_pool_size, 1);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetQueryPool-firstQuery-00797");
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool, 1, query_pool_size);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool.handle(), 1, query_pool_size);
     m_errorMonitor->VerifyFound();
 
     // Actually reset all queries so they can be used
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool, 0, query_pool_size);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, query_pool_size);
 
-    vk::CmdBeginQuery(m_commandBuffer->handle(), occlusion_query_pool, 0, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, 0);
 
     // Query index to large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndQuery-query-00810");
-    vk::CmdEndQuery(m_commandBuffer->handle(), occlusion_query_pool, query_pool_size);
+    vk::CmdEndQuery(m_commandBuffer->handle(), occlusion_query_pool.handle(), query_pool_size);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndQuery(m_commandBuffer->handle(), occlusion_query_pool, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0);
 
     // FirstQuery is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00820");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool, query_pool_size, 1, buffer.handle(), 0, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), query_pool_size, 1, buffer.handle(), 0, 0,
+                                0);
     m_errorMonitor->VerifyFound();
 
     // sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-firstQuery-00821");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool, 1, query_pool_size, buffer.handle(), 0, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), 1, query_pool_size, buffer.handle(), 0, 0,
+                                0);
     m_errorMonitor->VerifyFound();
 
     // Offset larger than buffer size
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-dstOffset-00819");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool, 0, 1, buffer.handle(), buffer_size + 4, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, 1, buffer.handle(), buffer_size + 4, 0,
+                                0);
     m_errorMonitor->VerifyFound();
 
     // Buffer does not have enough storage from offset to contain result of each query
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824");
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool, 0, 2, buffer.handle(), buffer_size - 4, 4, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, 2, buffer.handle(), buffer_size - 4, 4,
+                                0);
     m_errorMonitor->VerifyFound();
 
     // Query is not a timestamp type
@@ -1341,7 +1311,7 @@ TEST_F(VkLayerQueryTest, InvalidQuerySizes) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-timestampValidBits-00829");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-queryPool-01416");
-    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool, 0);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -1352,15 +1322,13 @@ TEST_F(VkLayerQueryTest, InvalidQuerySizes) {
     // FirstQuery is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00813");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00816");
-    vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool, query_pool_size, 1, out_data_size, &data, 4, 0);
+    vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool.handle(), query_pool_size, 1, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-firstQuery-00816");
-    vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool, 1, query_pool_size, out_data_size, &data, 4, 0);
+    vk::GetQueryPoolResults(m_device->device(), occlusion_query_pool.handle(), 1, query_pool_size, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), occlusion_query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, QueryPreciseBit) {
@@ -1379,24 +1347,22 @@ TEST_F(VkLayerQueryTest, QueryPreciseBit) {
 
     // Test for precise bit when query type is not OCCLUSION
     if (features.occlusionQueryPrecise) {
-        VkEvent event;
         VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-        vk::CreateEvent(m_device->handle(), &event_create_info, nullptr, &event);
+        vk_testing::Event event(*m_device, event_create_info);
 
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-00800");
 
-        VkQueryPool query_pool;
         VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
         query_pool_create_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
         query_pool_create_info.queryCount = 3;
         query_pool_create_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
                                                     VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
                                                     VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT;
-        vk::CreateQueryPool(m_device->handle(), &query_pool_create_info, nullptr, &query_pool);
+        vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
         m_errorMonitor->VerifyFound();
         // vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
         m_commandBuffer->end();
@@ -1405,11 +1371,8 @@ TEST_F(VkLayerQueryTest, QueryPreciseBit) {
         uint8_t data[out_data_size];
         // The dataSize is too small to return the data
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 3, 8, &data, 12, 0);
+        vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 3, 8, &data, 12, 0);
         m_errorMonitor->VerifyFound();
-
-        vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
-        vk::DestroyEvent(m_device->handle(), event, nullptr);
     }
 
     // Test for precise bit when precise feature is not available
@@ -1535,20 +1498,16 @@ TEST_F(VkLayerQueryTest, PerformanceQueryIntel) {
     VkBufferObj buffer;
     buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL;
     query_pool_ci.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-02734");
     m_commandBuffer->begin();
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 0, 8, 0);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, 8, 0);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
-
-    // Destroy query pool.
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, QueryPoolInUseDestroyedSignaled) {
@@ -1789,20 +1748,17 @@ TEST_F(VkLayerQueryTest, BeginQueryTypeTransformFeedbackStream) {
         GTEST_SKIP() << "Transform feedback queries are supported";
     }
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT;
     query_pool_create_info.queryCount = 1;
-    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-02328");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerQueryTest, GetQueryPoolResultsFlags) {
@@ -1848,22 +1804,19 @@ TEST_F(VkLayerQueryTest, QueryPoolResultStatusOnly) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     query_pool_ci.queryCount = 1;
-    VkResult err = vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
-    if (err != VK_SUCCESS) {
+    vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+    if (!query_pool.initialized()) {
         GTEST_SKIP() << "Required query not supported";
     }
 
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-04810");
-    vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
+    vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
 TEST_F(VkLayerQueryTest, DestroyActiveQueryPool) {
@@ -2172,8 +2125,7 @@ TEST_F(VkLayerQueryTest, PrimitivesGeneratedQuery) {
 
     query_pool_ci.queryType = VK_QUERY_TYPE_OCCLUSION;
 
-    vk_testing::QueryPool occlusion_query_pool;
-    occlusion_query_pool.init(*m_device, query_pool_ci);
+    vk_testing::QueryPool occlusion_query_pool(*m_device, query_pool_ci);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-06692");
     fpvkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), occlusion_query_pool.handle(), 0, 0, 1);
     m_errorMonitor->VerifyFound();
@@ -2359,9 +2311,7 @@ TEST_F(VkLayerQueryTest, CommandBufferMissingOcclusionQueryEnabled) {
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
     qpci.queryCount = 1;
-
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &qpci, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, qpci);
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -2379,13 +2329,11 @@ TEST_F(VkLayerQueryTest, CommandBufferMissingOcclusionQueryEnabled) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-commandBuffer-00102");
     m_commandBuffer->begin();
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(device(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, EndQueryWithMultiview) {

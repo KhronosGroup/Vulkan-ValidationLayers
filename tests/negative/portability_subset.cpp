@@ -476,10 +476,9 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkSampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -494,7 +493,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     view.init(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler;
+    img_info.sampler = sampler.handle();
     img_info.imageView = view.handle();
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -509,8 +508,6 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450");
     vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkPortabilitySubsetTest, ShaderValidation) {

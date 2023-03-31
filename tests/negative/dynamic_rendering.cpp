@@ -512,15 +512,12 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     renderpass_ci.pSubpasses = subpass_descs.data();
     renderpass_ci.dependencyCount = 1;
     renderpass_ci.pDependencies = &subpass_dependency;
-
-    VkRenderPass renderpass = VK_NULL_HANDLE;
-    VkResult err = vk::CreateRenderPass(m_device->handle(), &renderpass_ci, nullptr, &renderpass);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass renderpass(*m_device, renderpass_ci);
 
     std::array<VkImageView, 2> renderpass_image_views = {depth_stencil_image_view.handle(), color_image_view.handle()};
 
     auto framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
-    framebuffer_ci.renderPass = renderpass;
+    framebuffer_ci.renderPass = renderpass.handle();
     framebuffer_ci.attachmentCount = 2;
     framebuffer_ci.pAttachments = renderpass_image_views.data();
     framebuffer_ci.width = 32;
@@ -528,7 +525,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     framebuffer_ci.layers = 1;
 
     auto renderpass_bi = LvlInitStruct<VkRenderPassBeginInfo>();
-    renderpass_bi.renderPass = renderpass;
+    renderpass_bi.renderPass = renderpass.handle();
     renderpass_bi.renderArea = rect;
     renderpass_bi.clearValueCount = 2;
     std::array<VkClearValue, 2> renderpass_clear_values;
@@ -717,7 +714,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[3]);
                 ASSERT_VK_SUCCESS(err);
                 renderpass_bi.framebuffer = framebuffers[3];
-                cmd_buffer_inheritance_info.renderPass = renderpass;
+                cmd_buffer_inheritance_info.renderPass = renderpass.handle();
                 cmd_buffer_inheritance_info.subpass = 0;
                 cmd_buffer_inheritance_info.framebuffer = framebuffers[3];
             }
@@ -777,8 +774,6 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     delete m_commandBuffer;
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
     clear_cmd_test(false);
-
-    vk::DestroyRenderPass(m_device->handle(), renderpass, nullptr);
 }
 
 TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
@@ -5974,9 +5969,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     };
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 2, subpasses, 0, nullptr};
-    VkRenderPass render_pass;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass render_pass(*m_device, rpci);
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -6000,7 +5993,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     const VkCommandBufferInheritanceInfo cmdbuff_ii = {
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
         &inheritance_rendering_info,  // pNext
-        render_pass,
+        render_pass.handle(),
         0,  // subpass
         VK_NULL_HANDLE,
     };
@@ -6022,8 +6015,6 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
-
-    vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
 }
 
 TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {

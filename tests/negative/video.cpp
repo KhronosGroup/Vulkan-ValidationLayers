@@ -2231,8 +2231,6 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
-    VkImageView image_view = VK_NULL_HANDLE;
-
     VkVideoPictureResourceInfoKHR res = context.Dpb()->Picture(0);
 
     auto view_usage_ci = LvlInitStruct<VkImageViewUsageCreateInfo>();
@@ -2245,7 +2243,7 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
     image_view_ci.components = config.DpbFormatProps()->componentMapping;
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    ASSERT_VK_SUCCESS(vk::CreateImageView(m_device->device(), &image_view_ci, nullptr, &image_view));
+    vk_testing::ImageView image_view(*m_device, image_view_ci);
 
     res.imageViewBinding = image_view;
 
@@ -2256,8 +2254,6 @@ TEST_F(VkVideoLayerTest, BeginCodingMissingDecodeDpbUsage) {
     m_errorMonitor->VerifyFound();
 
     cb.end();
-
-    vk::DestroyImageView(m_device->device(), image_view, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, EndCodingActiveQueriesNotAllowed) {
@@ -3085,8 +3081,6 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
-    VkImageView image_view = VK_NULL_HANDLE;
-
     auto view_usage_ci = LvlInitStruct<VkImageViewUsageCreateInfo>();
     view_usage_ci.usage = config.PictureFormatProps()->imageUsageFlags ^ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
 
@@ -3097,7 +3091,7 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
     image_view_ci.components = config.PictureFormatProps()->componentMapping;
     image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    ASSERT_VK_SUCCESS(vk::CreateImageView(m_device->device(), &image_view_ci, nullptr, &image_view));
+    vk_testing::ImageView image_view(*m_device, image_view_ci);
 
     VkVideoPictureResourceInfoKHR dst_res = context.DecodeOutput()->Picture();
     dst_res.imageViewBinding = image_view;
@@ -3111,8 +3105,6 @@ TEST_F(VkVideoLayerTest, DecodeOutputMissingDecodeDstUsage) {
 
     cb.EndVideoCoding(context.End());
     cb.end();
-
-    vk::DestroyImageView(m_device->device(), image_view, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, DecodeOutputCodedOffsetExtent) {
@@ -4162,9 +4154,7 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     auto create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-
-    VkQueryPool query_pool;
-    ASSERT_VK_SUCCESS(vk::CreateQueryPool(m_device->device(), &create_info, nullptr, &query_pool));
+    vk_testing::QueryPool query_pool(*m_device, create_info);
 
     VkCommandPoolObj cmd_pool(m_device, queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cb(m_device, &cmd_pool);
@@ -4172,12 +4162,10 @@ TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {
     cb.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-07126");
-    vk::CmdBeginQuery(cb.handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(cb.handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeQueryAlreadyActive) {
@@ -4262,9 +4250,7 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     auto create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     create_info.queryCount = 1;
-
-    VkQueryPool query_pool;
-    ASSERT_VK_SUCCESS(vk::CreateQueryPool(m_device->device(), &create_info, nullptr, &query_pool));
+    vk_testing::QueryPool query_pool(*m_device, create_info);
 
     VkCommandBufferObj& cb = context.CmdBuffer();
 
@@ -4274,13 +4260,11 @@ TEST_F(VkVideoLayerTest, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-00803");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-07128");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-07132");
-    vk::CmdBeginQuery(cb.handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(cb.handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
     cb.end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
@@ -4295,24 +4279,20 @@ TEST_F(VkVideoLayerTest, GetQueryPoolResultsStatusBit) {
     auto create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-
-    VkQueryPool query_pool;
-    ASSERT_VK_SUCCESS(vk::CreateQueryPool(m_device->device(), &create_info, nullptr, &query_pool));
+    vk_testing::QueryPool query_pool(*m_device, create_info);
 
     uint32_t status;
     VkQueryResultFlags flags;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-queryType-04810");
     flags = 0;
-    vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, sizeof(status), &status, sizeof(status), flags);
+    vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, sizeof(status), &status, sizeof(status), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-04811");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, sizeof(status), &status, sizeof(status), flags);
+    vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, sizeof(status), &status, sizeof(status), flags);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
@@ -4327,9 +4307,7 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
     auto create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
     create_info.queryCount = 1;
-
-    VkQueryPool query_pool;
-    ASSERT_VK_SUCCESS(vk::CreateQueryPool(m_device->device(), &create_info, nullptr, &query_pool));
+    vk_testing::QueryPool query_pool(*m_device, create_info);
 
     VkQueryResultFlags flags;
 
@@ -4342,17 +4320,15 @@ TEST_F(VkVideoLayerTest, CopyQueryPoolResultsStatusBit) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-06901");
     flags = 0;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-flags-06902");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
-
-    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
 TEST_F(VkVideoLayerTest, ImageLayoutUsageMismatch) {

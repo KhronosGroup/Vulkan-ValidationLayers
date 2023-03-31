@@ -2366,17 +2366,13 @@ TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
     ASSERT_TRUE(image2.initialized());
     image_view_create_info.image = image2.handle();
 
-    VkImageView view = VK_NULL_HANDLE;
     // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in
     // VkImageStencilUsageCreateInfo::stencilUsage
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-02663");
     // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-02664");
-    VkResult err = vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &view);
+    vk_testing::ImageView view(*m_device, image_view_create_info);
     m_errorMonitor->VerifyFound();
-    if (VK_SUCCESS == err) {
-        vk::DestroyImageView(m_device->device(), view, nullptr);
-    }
 }
 
 TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
@@ -4824,11 +4820,10 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
 
-    VkSamplerYcbcrConversion conversion;
-    vk::CreateSamplerYcbcrConversion(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
-    ycbcr_info.conversion = conversion;
+    ycbcr_info.conversion = conversion.handle();
 
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
     ivci.image = image.handle();
@@ -4841,7 +4836,6 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT;
 
     CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-01670");
-    vk::DestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
 }
 
 TEST_F(VkLayerTest, CreateImageSharingModeConcurrentInvalidQueueFamilies) {
@@ -5207,10 +5201,8 @@ TEST_F(VkLayerTest, ImageViewMinLod) {
     ivci.pNext = &ivml;
 
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456");
-    VkImageView image_view = {};
     ivml.minLod = 1.0;
-    VkResult res = vk::CreateImageView(m_device->device(), &ivci, nullptr, &image_view);
-    ASSERT_TRUE(res == VK_SUCCESS);
+    vk_testing::ImageView image_view(*m_device, ivci);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -5220,8 +5212,6 @@ TEST_F(VkLayerTest, ImageViewMinLod) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-06450");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyImageView(m_device->device(), image_view, NULL);
 }
 
 TEST_F(VkLayerTest, ImageViewMinLodFeature) {

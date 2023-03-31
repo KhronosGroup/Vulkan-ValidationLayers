@@ -664,15 +664,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     uniform_texel_buffer.init(*m_device, buffer_create_info, reqs);
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     storage_texel_buffer.init(*m_device, buffer_create_info, reqs);
-    VkBufferView uniform_buffer_view;
-    VkBufferView storage_buffer_view;
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
     bvci.buffer = uniform_texel_buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &uniform_buffer_view);
+    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
     bvci.buffer = storage_texel_buffer.handle();
-    vk::CreateBufferView(m_device->device(), &bvci, NULL, &storage_buffer_view);
+    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -684,8 +682,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     static const char vertshader[] =
         "#version 450\n"
@@ -819,9 +817,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         m_commandBuffer->QueueCommandBuffer();
         m_errorMonitor->VerifyFound();
     }
-
-    vk::DestroyBufferView(m_device->handle(), uniform_buffer_view, nullptr);
-    vk::DestroyBufferView(m_device->handle(), storage_buffer_view, nullptr);
 }
 
 void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
@@ -1532,17 +1527,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     count_buffer.init(*m_device, count_buffer_create_info,
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.DisableRasterization();
-    err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-03122");
@@ -1647,8 +1640,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
@@ -1689,17 +1680,15 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     }
     draw_buffer.memory().unmap();
 
-    VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    VkResult err = vk::CreatePipelineLayout(m_device->handle(), &pipelineLayoutCreateInfo, NULL, &pipeline_layout);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
     pipe.DisableRasterization();
-    err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawIndirectCommand-firstInstance-00501");
@@ -1755,8 +1744,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
@@ -2102,15 +2089,13 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    VkSampler sampler;
-    vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
-    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler);
+    descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
     VkBufferObj indirect_buffer;
@@ -2144,8 +2129,6 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroySampler(device(), sampler, nullptr);
 }
 
 TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
