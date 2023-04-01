@@ -2412,6 +2412,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
     if (pCreateInfos != nullptr) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
+            bool has_pre_raster_state = true;
             // Create a copy of create_info and set non-included sub-state to null
             auto create_info = pCreateInfos[i];
             const auto *graphics_lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
@@ -2421,6 +2422,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     create_info.pInputAssemblyState = nullptr;
                 }
                 if (!(graphics_lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
+                    has_pre_raster_state = false;
                     create_info.pViewportState = nullptr;
                     create_info.pRasterizationState = nullptr;
                     create_info.pTessellationState = nullptr;
@@ -2578,7 +2580,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, dynamic_state_map[VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR]);
             }
 
-            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
+            if (has_pre_raster_state && vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
                 vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT and "
@@ -2589,7 +2591,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  dynamic_state_map[VK_DYNAMIC_STATE_VIEWPORT]);
             }
 
-            if (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) &&
+            if (has_pre_raster_state && vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) &&
                 vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR)) {
                 skip |= LogError(
                     device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
@@ -2672,7 +2674,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+            if (has_pre_raster_state && (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
                 (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
                 if (create_info.pTessellationState == nullptr) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
@@ -2830,6 +2832,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             // pViewportState, pMultisampleState, pDepthStencilState, and pColorBlendState ignored when rasterization is disabled
             if ((create_info.pRasterizationState != nullptr) &&
                 (create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
+                // Everything in here has a pre-rasterization shader state
                 if (create_info.pViewportState == nullptr) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00750",
                                      "vkCreateGraphicsPipelines: Rasterization is enabled (pCreateInfos[%" PRIu32
