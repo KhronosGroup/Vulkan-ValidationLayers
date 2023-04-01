@@ -3777,21 +3777,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
                 VkDeviceSize plane_index = 0u;
                 if (image_state->disjoint && image_state->IsExternalAHB() == false) {
                     auto plane_info = LvlFindInChain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
-                    const VkImageAspectFlagBits aspect = plane_info->planeAspect;
-                    switch (aspect) {
-                        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                            plane_index = 0;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                            plane_index = 1;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                            plane_index = 2;
-                            break;
-                        default:
-                            assert(false);  // parameter validation should have caught this
-                            break;
-                    }
+                    plane_index = GetPlaneIndex(plane_info->planeAspect);
                 }
                 image_state->BindMemory(
                     image_state.get(), mem_info, bindInfo.memoryOffset, plane_index,
