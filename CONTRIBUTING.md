@@ -105,9 +105,9 @@ if (render_pass == VK_NULL_HANDLE) {
     // ...
 } else if (value != 0 && HasDepthFlag(flag)) {
     // print Render Pass object
-    // Value is given value, no need to bring
-    // list flag users used
-    skip |= LogError(render_pass, "value is 0 but flag (%s) is missing VK_FLAG_DEPTH.", string_VkFlag(flag));
+    // Value is not the expected one, log it
+    // List flag users used
+    skip |= LogError(render_pass, "value is %" PRIu32 " but flag (%s) is missing VK_FLAG_DEPTH.", value, string_VkFlag(flag));
 }
 ```
 
