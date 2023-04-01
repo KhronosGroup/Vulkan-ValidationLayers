@@ -162,6 +162,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/synchronization_validation.cpp
     core_checks/video_validation.cpp
     core_checks/wsi_validation.cpp
+    core_checks/ycbcr_validation.cpp
     error_message/core_error_location.cpp
     error_message/core_error_location.h
     error_message/validation_error_enums.h

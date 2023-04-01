@@ -94,6 +94,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/query_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/queue_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/ray_tracing_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/wsi_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/ycbcr_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp

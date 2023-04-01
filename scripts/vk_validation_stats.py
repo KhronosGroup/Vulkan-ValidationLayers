@@ -68,6 +68,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/sync/sync_vuid_maps.cpp',
     'layers/core_checks/video_validation.cpp',
     'layers/core_checks/wsi_validation.cpp',
+    'layers/core_checks/ycbcr_validation.cpp',
     'layers/generated/parameter_validation.cpp',
     'layers/generated/object_tracker.cpp',
     'layers/generated/spirv_validation_helper.cpp',
