@@ -25,17 +25,6 @@
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 
-// There is a table in the Vulkan spec to list all formats that implicitly require YCbCr conversion,
-// but some features/extensions can explicitly turn that restriction off
-// The implicit check is done in format utils, while feature checks are done here in CoreChecks
-bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const {
-    if (format == VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16 &&
-        enabled_features.rgba10x6_formats_features.formatRgba10x6WithoutYCbCrSampler) {
-        return false;
-    }
-    return FormatRequiresYcbcrConversion(format);
-}
-
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo) const {
     bool skip = false;
 

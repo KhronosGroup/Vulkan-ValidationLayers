@@ -136,6 +136,7 @@ core_validation_sources = [
   "layers/core_checks/synchronization_validation.cpp",
   "layers/core_checks/video_validation.cpp",
   "layers/core_checks/wsi_validation.cpp",
+  "layers/core_checks/ycbcr_validation.cpp",
   "layers/error_message/core_error_location.cpp",
   "layers/error_message/core_error_location.h",
   "layers/error_message/validation_error_enums.h",

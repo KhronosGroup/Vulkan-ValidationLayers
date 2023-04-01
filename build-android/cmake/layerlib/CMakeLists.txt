@@ -122,6 +122,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/queue_validation.cpp
         ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
         ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
+        ${SRC_DIR}/layers/core_checks/ycbcr_validation.cpp
         ${SRC_DIR}/layers/external/vma/vma.cpp)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
