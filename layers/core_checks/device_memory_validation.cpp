@@ -1098,20 +1098,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // All validation using the image_state->plane*_requirements for external AHB is check in android only section
                 if (image_state->IsExternalAHB() == false) {
                     const VkImageAspectFlagBits aspect = plane_info->planeAspect;
-                    switch (aspect) {
-                        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                            plane = 0;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                            plane = 1;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                            plane = 2;
-                            break;
-                        default:
-                            assert(false);  // parameter validation should have caught this
-                            break;
-                    }
+                    plane = GetPlaneIndex(aspect);
                     const VkMemoryRequirements &disjoint_mem_req = image_state->requirements[plane];
 
                     // Validate memory requirements alignment
