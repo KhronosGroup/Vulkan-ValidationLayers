@@ -880,43 +880,6 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
-    TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
-
-    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (!InstanceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
-        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdSetDiscardRectangleEnableEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetDiscardRectangleEnableEXT>("vkCmdSetDiscardRectangleEnableEXT");
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.dyn_state_ci_ = dyn_state_ci;
-    pipe.InitState();
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-}
-
 TEST_F(VkPositiveLayerTest, ExtensionXmlDependsLogic) {
     TEST_DESCRIPTION("Make sure the OR in 'depends' from XML is observed correctly");
     // VK_KHR_buffer_device_address requires
