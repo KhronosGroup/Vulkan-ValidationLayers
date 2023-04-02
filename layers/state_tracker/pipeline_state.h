@@ -717,3 +717,39 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point)
     }
     return BindPoint_Count;
 }
+
+static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlagBits stage) {
+    switch (stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return VK_PIPELINE_BIND_POINT_COMPUTE;
+        default:
+            return static_cast<VkPipelineBindPoint>(stage);
+    }
+    return VK_PIPELINE_BIND_POINT_MAX_ENUM;
+}
+
+static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
+    switch (stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return BindPoint_Graphics;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return BindPoint_Compute;
+        default:
+            return static_cast<LvlBindPoint>(stage);
+    }
+    return BindPoint_Count;
+}

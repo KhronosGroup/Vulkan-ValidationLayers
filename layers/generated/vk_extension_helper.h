@@ -39,6 +39,7 @@ enum ExtEnabled : unsigned char {
     kNotEnabled,
     kEnabledByCreateinfo,
     kEnabledByApiLevel,
+    kEnabledByInteraction,
 };
 
 [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
@@ -1420,6 +1421,28 @@ struct DeviceExtensions : public InstanceExtensions {
                 if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                 auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);
                 if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            }
+        }
+        // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
+        // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
+        {
+            constexpr std::array shader_object_interactions = {
+                VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+                VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
+                VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+                VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
+            };
+            auto info = get_info(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+            if (info.state) {
+                if (this->*(info.state) != kNotEnabled) {
+                    for (auto interaction_ext : shader_object_interactions) {
+                        info = get_info(interaction_ext);
+                        assert(info.state);
+                        if (this->*(info.state) != kEnabledByCreateinfo) {
+                            this->*(info.state) = kEnabledByInteraction;
+                        }
+                    }
+                }
             }
         }
         return api_version;

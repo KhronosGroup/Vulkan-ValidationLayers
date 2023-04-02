@@ -277,7 +277,7 @@ static inline bool ApiParentExtensionEnabled(const std::string api_name, const D
         for (const auto& ext : has_ext->second) {
             auto info = device_extension_info->get_info(ext.c_str());
             if (info.state) {
-                return device_extension_info->*(info.state) == kEnabledByCreateinfo;
+                return device_extension_info->*(info.state) == kEnabledByCreateinfo || device_extension_info->*(info.state) == kEnabledByInteraction;
             }
         }
 
@@ -286,7 +286,7 @@ static inline bool ApiParentExtensionEnabled(const std::string api_name, const D
         for (const auto& ext : has_ext->second) {
             auto inst_info = instance_extension_info->get_info(ext.c_str());
             if (inst_info.state) {
-                return instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo;
+                return instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo || device_extension_info->*(inst_info.state) == kEnabledByInteraction;
             }
         }
         return false;

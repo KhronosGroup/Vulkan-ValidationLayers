@@ -1078,7 +1078,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto &last_bound = lastBound[lv_bind_point];
     PIPELINE_STATE *pipe = last_bound.pipeline_state;
-    if (VK_NULL_HANDLE != last_bound.pipeline_layout) {
+    if (pipe && VK_NULL_HANDLE != last_bound.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
             if (set_index >= last_bound.per_set.size()) {
