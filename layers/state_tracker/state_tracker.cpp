@@ -1372,6 +1372,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             slice_feature) {
             enabled_features.sliced_3d_features = *slice_feature;
         }
+
+        if (const auto shader_object_feature = LvlFindInChain<VkPhysicalDeviceShaderObjectFeaturesEXT>(pCreateInfo->pNext);
+            shader_object_feature) {
+            enabled_features.shader_object_features = *shader_object_feature;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -5682,6 +5687,16 @@ void ValidationStateTracker::PostCallRecordGetShaderModuleCreateInfoIdentifierEX
                                                                                   VkShaderModuleIdentifierEXT *pIdentifier) {
     WriteLockGuard guard(shader_identifier_map_lock_);
     shader_identifier_map_.emplace(*pIdentifier, CreateShaderModuleState(*pCreateInfo, 0, VK_NULL_HANDLE));
+}
+
+void ValidationStateTracker::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
+                                                            const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    if (pStages) {
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            cb_state->BindPipeline(ConvertToLvlBindPoint(pStages[i]), nullptr);
+        }
+    }
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,

@@ -10167,11 +10167,6 @@ void ThreadSafety::PreCallRecordCreateShadersEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkShaderEXT*                                pShaders) {
     StartReadObjectParentInstance(device, "vkCreateShadersEXT");
-    if (pShaders) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
-            StartReadObject(pShaders[index], "vkCreateShadersEXT");
-        }
-    }
 }
 
 void ThreadSafety::PostCallRecordCreateShadersEXT(
@@ -10182,11 +10177,10 @@ void ThreadSafety::PostCallRecordCreateShadersEXT(
     VkShaderEXT*                                pShaders,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCreateShadersEXT");
-    if (result == VK_SUCCESS) {
-        if (pShaders) {
-            for (uint32_t index = 0; index < createInfoCount; index++) {
-                CreateObject(pShaders[index]);
-            }
+    if (pShaders) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pShaders[index]) continue;
+            CreateObject(pShaders[index]);
         }
     }
 }

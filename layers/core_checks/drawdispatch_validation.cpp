@@ -2774,6 +2774,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     const auto *last_pipeline = last_bound.pipeline_state;
 
     if (!last_pipeline || !last_pipeline->pipeline()) {
+        // For now, don't validate anything and just return
+        // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5580
+        if (enabled_features.shader_object_features.shaderObject) {
+            return false;
+        }
         return LogError(cb_state.commandBuffer(), vuid.pipeline_bound_02700,
                         "%s: A valid %s pipeline must be bound with vkCmdBindPipeline before calling this command.", function,
                         string_VkPipelineBindPoint(bind_point));

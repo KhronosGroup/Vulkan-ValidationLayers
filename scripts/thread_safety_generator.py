@@ -1570,8 +1570,13 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
                     if paramtype in self.handle_types:
                         indent = ''
                         create_pipelines_call = True
-                        # The CreateXxxPipelines APIs can return a list of partly created pipelines upon failure
+                        create_shaders_call = True
+                        # The CreateXxxPipelines/CreateShaders APIs can return a list of partly created pipelines/shaders upon failure
                         if not ('Create' in name and 'Pipelines' in name):
+                            create_pipelines_call = False
+                        if not ('Create' in name and 'Shaders' in name):
+                            create_shaders_call = False
+                        if not (create_pipelines_call or create_shaders_call):
                             paramdecl += 'if (result == VK_SUCCESS) {\n'
                             create_pipelines_call = False
                             indent = '    '
@@ -1587,12 +1592,14 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
                             paramdecl += indent + '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
                             if create_pipelines_call:
                                 paramdecl += indent + '        if (!pPipelines[index]) continue;\n'
+                            if create_shaders_call:
+                                paramdecl += indent + '        if (!pShaders[index]) continue;\n'
                             paramdecl += indent + '        CreateObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index]);\n'
                             paramdecl += indent + '    }\n'
                             paramdecl += indent + '}\n'
                         else:
                             paramdecl += '    CreateObject' + self.paramSuffix(param.find('type')) + '(*' + paramname.text + ');\n'
-                        if not create_pipelines_call:
+                        if not create_pipelines_call and not create_shaders_call:
                             paramdecl += '}\n'
                 else:
                     paramtype = param.find('type')
@@ -1601,7 +1608,7 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
                     else:
                         paramtype = 'None'
                     if paramtype in self.handle_types and paramtype != 'VkPhysicalDevice':
-                        if self.paramIsArray(param) and ('pPipelines' != paramname.text):
+                        if self.paramIsArray(param) and ('pPipelines' != paramname.text) and ('pShaders' != paramname.text or not 'Create' in name):
                             # Add pointer dereference for array counts that are pointer values
                             dereference = ''
                             for candidate in params:
