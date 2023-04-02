@@ -828,3 +828,56 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, LinkingInputAttachment) {
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, TessellationWithoutPreRasterization) {
+    TEST_DESCRIPTION("have Tessellation stages with null pTessellationState but not Pre-Rasterization");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    if (!m_device->phy().features().tessellationShader) {
+        GTEST_SKIP() << "Device does not support tessellation shaders";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitVertexInputLibInfo();
+    pipe.InitState();
+
+    VkPipelineShaderStageCreateInfo stages[2];
+
+    const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, bindStateTscShaderText);
+    auto tcs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    tcs_ci.codeSize = tcs_spv.size() * sizeof(decltype(tcs_spv)::value_type);
+    tcs_ci.pCode = tcs_spv.data();
+    stages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&tcs_ci);
+    stages[0].stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    stages[0].module = VK_NULL_HANDLE;
+    stages[0].pName = "main";
+
+    const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, bindStateTeshaderText);
+    auto tes_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    tes_ci.codeSize = tes_spv.size() * sizeof(decltype(tes_spv)::value_type);
+    tes_ci.pCode = tes_spv.data();
+    stages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&tes_ci);
+    stages[1].stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    stages[1].module = VK_NULL_HANDLE;
+    stages[1].pName = "main";
+
+    pipe.gp_ci_.stageCount = 2;
+    pipe.gp_ci_.pStages = stages;
+    ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
+}
