@@ -163,6 +163,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
+                   $(SRC_DIR)/tests/positive/dynamic_state.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
                    $(SRC_DIR)/tests/positive/instance.cpp \
                    $(SRC_DIR)/tests/positive/other.cpp \
@@ -244,6 +245,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
+                   $(SRC_DIR)/tests/positive/dynamic_state.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
                    $(SRC_DIR)/tests/positive/gpu_av.cpp \
                    $(SRC_DIR)/tests/positive/instance.cpp \
