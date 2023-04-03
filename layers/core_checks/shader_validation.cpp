@@ -286,17 +286,7 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
         return skip;
     }
 
-    bool fully_covered = false;
-    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
-        const Instruction *insn = module_state.FindDef(id);
-        const auto decorations = module_state.GetDecorationSet(insn->Word(2));
-        if (decorations.builtin == spv::BuiltInFullyCoveredEXT) {
-            fully_covered = true;
-            break;
-        }
-    }
-
-    if (fully_covered) {
+    if (module_state.static_data_.has_builtin_fully_covered) {
         const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
         skip |= LogError(objlist, "VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32

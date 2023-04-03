@@ -282,6 +282,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<const Instruction *> builtin_decoration_inst;
         // BuiltIn we just care about existing or not, don't have to be written to
         bool has_builtin_layer{false};
+        bool has_builtin_fully_covered{false};
         bool has_builtin_workgroup_size{false};
         uint32_t builtin_workgroup_size_id = 0;
 
@@ -365,8 +366,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const vvl::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
     }
-
-    const std::vector<const Instruction *> &GetBuiltinDecorationList() const { return static_data_.builtin_decoration_inst; }
 
     const vvl::unordered_map<uint32_t, uint32_t> &GetSpecConstMap() const { return static_data_.spec_const_map; }
 
