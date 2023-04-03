@@ -1,13 +1,11 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See helper_file_generator.py for modifications
+// See sync_validation_generator.py for modifications
 
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
  * Copyright (c) 2015-2023 Valve Corporation
  * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +28,6 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
-using SyncStageAccessFlags = std::bitset<128>;
-
-// clang-format off
 
 // Fake stages and accesses for acquire present support
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000040000000000ULL;
@@ -148,13 +143,19 @@ enum SyncStageAccessIndex {
     SYNC_INDEX_INPUT_INDEX_READ = 104,
     SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ = 105,
     SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ = 106,
-    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL = 107,
-    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL = 108,
-    SYNC_IMAGE_LAYOUT_TRANSITION = 109,
-    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 110,
+    SYNC_INVOCATION_MASK_HUAWEI_INVOCATION_MASK_READ_HUAWEI = 107,
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_DESCRIPTOR_BUFFER_READ_EXT = 108,
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_SAMPLED_READ = 109,
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_READ = 110,
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_WRITE = 111,
+    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL = 112,
+    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL = 113,
+    SYNC_IMAGE_LAYOUT_TRANSITION = 114,
+    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 115,
 };
 
-// Unique bit for each  stage/access combination
+using SyncStageAccessFlags = std::bitset<128>;
+// Unique bit for each stage/access combination
 static const SyncStageAccessFlags SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT = (SyncStageAccessFlags(1) << SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ);
 static const SyncStageAccessFlags SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT = (SyncStageAccessFlags(1) << SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT);
 static const SyncStageAccessFlags SYNC_VERTEX_SHADER_ACCELERATION_STRUCTURE_READ_BIT = (SyncStageAccessFlags(1) << SYNC_VERTEX_SHADER_ACCELERATION_STRUCTURE_READ);
@@ -261,6 +262,11 @@ static const SyncStageAccessFlags SYNC_CLEAR_TRANSFER_WRITE_BIT = (SyncStageAcce
 static const SyncStageAccessFlags SYNC_INDEX_INPUT_INDEX_READ_BIT = (SyncStageAccessFlags(1) << SYNC_INDEX_INPUT_INDEX_READ);
 static const SyncStageAccessFlags SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ_BIT = (SyncStageAccessFlags(1) << SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ);
 static const SyncStageAccessFlags SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ_BIT = (SyncStageAccessFlags(1) << SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ);
+static const SyncStageAccessFlags SYNC_INVOCATION_MASK_HUAWEI_INVOCATION_MASK_READ_HUAWEI_BIT = (SyncStageAccessFlags(1) << SYNC_INVOCATION_MASK_HUAWEI_INVOCATION_MASK_READ_HUAWEI);
+static const SyncStageAccessFlags SYNC_CLUSTER_CULLING_SHADER_HUAWEI_DESCRIPTOR_BUFFER_READ_BIT_EXT = (SyncStageAccessFlags(1) << SYNC_CLUSTER_CULLING_SHADER_HUAWEI_DESCRIPTOR_BUFFER_READ_EXT);
+static const SyncStageAccessFlags SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_SAMPLED_READ_BIT = (SyncStageAccessFlags(1) << SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_SAMPLED_READ);
+static const SyncStageAccessFlags SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_READ_BIT = (SyncStageAccessFlags(1) << SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_READ);
+static const SyncStageAccessFlags SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_WRITE_BIT = (SyncStageAccessFlags(1) << SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_WRITE);
 static const SyncStageAccessFlags SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = (SyncStageAccessFlags(1) << SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL);
 static const SyncStageAccessFlags SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL = (SyncStageAccessFlags(1) << SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
 static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageAccessFlags(1) << SYNC_IMAGE_LAYOUT_TRANSITION);
@@ -275,7 +281,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-const std::array<SyncStageAccessInfoType, 111>& syncStageAccessInfoByStageAccessIndex();
+const std::array<SyncStageAccessInfoType, 116>& syncStageAccessInfoByStageAccessIndex();
 
 // Constants defining the mask of all read and write stage_access states
 static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
@@ -357,6 +363,10 @@ static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all re
     SYNC_INDEX_INPUT_INDEX_READ_BIT |
     SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ_BIT |
     SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ_BIT |
+    SYNC_INVOCATION_MASK_HUAWEI_INVOCATION_MASK_READ_HUAWEI_BIT |
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_DESCRIPTOR_BUFFER_READ_BIT_EXT |
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_SAMPLED_READ_BIT |
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_READ_BIT |
     SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_ACQUIRE_READ_BIT_SYNCVAL
 );
 
@@ -389,6 +399,7 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
     SYNC_RESOLVE_TRANSFER_WRITE_BIT |
     SYNC_BLIT_TRANSFER_WRITE_BIT |
     SYNC_CLEAR_TRANSFER_WRITE_BIT |
+    SYNC_CLUSTER_CULLING_SHADER_HUAWEI_SHADER_STORAGE_WRITE_BIT |
     SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL |
     SYNC_IMAGE_LAYOUT_TRANSITION_BIT |
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT
@@ -412,5 +423,3 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarli
 // Masks of logically later stage flags for a given stage flag
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 
-// Lookup table of stage orderings
-const std::map<VkPipelineStageFlags2, int>& syncStageOrder();

@@ -332,19 +332,17 @@ def makeGenOpts(args):
 # the requested target and command line options.
     # Helper file generator options for sync_validation_types.h
     genOpts['sync_validation_types.h'] = [
-          HelperFileOutputGenerator,
+          SyncValidationOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'sync_validation_types.h',
-            helper_file_type  = 'sync_helper_header',
-            valid_usage_path  = args.scripts)
+            mergeApiNames     = mergeApiNames)
         ]
 
     genOpts['sync_validation_types.cpp'] = [
-          HelperFileOutputGenerator,
+          SyncValidationOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'sync_validation_types.cpp',
-            helper_file_type  = 'sync_helper_source',
-            valid_usage_path  = args.scripts)
+            mergeApiNames     = mergeApiNames)
         ]
 
     # Options for spirv_validation_helper code-generated header
@@ -530,6 +528,7 @@ if __name__ == '__main__':
     from generators.command_validation_generator import CommandValidationOutputGenerator
     from generators.format_utils_generator import FormatUtilsOutputGenerator
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
+    from generators.sync_validation_generator import SyncValidationOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):
