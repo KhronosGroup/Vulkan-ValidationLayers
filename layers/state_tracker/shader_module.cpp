@@ -22,7 +22,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include "spirv_grammar_helper.h"
 
-void DecorationSet::Add(uint32_t decoration, uint32_t value) {
+void DecorationBase::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
         case spv::DecorationLocation:
             location = value;
@@ -39,17 +39,11 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationComponent:
             component = value;
             break;
-        case spv::DecorationDescriptorSet:
-            set = value;
-            break;
-        case spv::DecorationBinding:
-            binding = value;
-            break;
         case spv::DecorationNonWritable:
             flags |= nonwritable_bit;
             break;
         case spv::DecorationBuiltIn:
-            flags |= builtin_bit;
+            assert(builtin == kInvalidValue);  // being over written - not valid
             builtin = value;
             break;
         case spv::DecorationNonReadable:
@@ -58,17 +52,52 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationPerVertexNV:
             flags |= per_vertex_bit;
             break;
-        case spv::DecorationPassthroughNV:
+        case spv::DecorationPassthroughNV:  // VK_NV_geometry_shader_passthrough
             flags |= passthrough_bit;
             break;
         case spv::DecorationAliased:
             flags |= aliased_bit;
             break;
+        case spv::DecorationPerTaskNV:
+            flags |= per_task_nv;
+            break;
+        case spv::DecorationPerPrimitiveEXT:
+            flags |= per_primitive_ext;
+            break;
+        default:
+            break;
+    }
+}
+
+// Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
+void DecorationSet::Add(uint32_t decoration, uint32_t value) {
+    switch (decoration) {
+        case spv::DecorationDescriptorSet:
+            set = value;
+            break;
+        case spv::DecorationBinding:
+            binding = value;
+            break;
         case spv::DecorationInputAttachmentIndex:
             flags |= input_attachment_bit;
             input_attachment_index_start = value;
             break;
+        default:
+            DecorationBase::Add(decoration, value);
     }
+}
+
+bool DecorationSet::HasBuiltIn() const {
+    if (kInvalidValue != builtin) {
+        return true;
+    } else if (!member_decorations.empty()) {
+        for (const auto& member : member_decorations) {
+            if (kInvalidValue != member.second.builtin) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {

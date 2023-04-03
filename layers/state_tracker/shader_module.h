@@ -31,19 +31,21 @@
 
 class PIPELINE_STATE;
 
+// This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
-struct DecorationSet {
+struct DecorationBase {
     enum FlagBit {
         patch_bit = 1 << 0,
         block_bit = 1 << 1,
         buffer_block_bit = 1 << 2,
         nonwritable_bit = 1 << 3,
-        builtin_bit = 1 << 4,
-        nonreadable_bit = 1 << 5,
-        per_vertex_bit = 1 << 6,
-        passthrough_bit = 1 << 7,
-        aliased_bit = 1 << 8,
-        input_attachment_bit = 1 << 9,
+        nonreadable_bit = 1 << 4,
+        per_vertex_bit = 1 << 5,
+        passthrough_bit = 1 << 6,
+        aliased_bit = 1 << 7,
+        input_attachment_bit = 1 << 8,
+        per_task_nv = 1 << 9,
+        per_primitive_ext = 1 << 10,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
@@ -54,17 +56,28 @@ struct DecorationSet {
     uint32_t location = kInvalidValue;
     uint32_t component = 0;
 
+    // A given object can only have a single BuiltIn OpDecoration
+    uint32_t builtin = kInvalidValue;
+
+    void Add(uint32_t decoration, uint32_t value);
+    bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
+};
+
+// subset only for OpDecorate
+// Can't have nested structs with OpMemberDecorate, this class prevents accidently creating a 2nd level of member decorations,
+struct DecorationSet : public DecorationBase {
     // For descriptors
     uint32_t set = 0;
     uint32_t binding = 0;
 
-    uint32_t builtin = kInvalidValue;
-
     // Value of InputAttachmentIndex the variable starts
     uint32_t input_attachment_index_start = kInvalidValue;
 
+    // <index into struct, DecorationBase>
+    vvl::unordered_map<uint32_t, DecorationBase> member_decorations;
+
     void Add(uint32_t decoration, uint32_t value);
-    bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
+    bool HasBuiltIn() const;
 };
 
 // vkspec.html#interfaces-iointerfaces-user describes 'User-defined Variable Interface'
