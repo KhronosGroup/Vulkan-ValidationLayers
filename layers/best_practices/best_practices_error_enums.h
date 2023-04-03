@@ -262,6 +262,8 @@
     "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores";
 [[maybe_unused]] static const char *kVUID_BestPractices_DynamicRendering_NotSupported =
     "UNASSIGNED-BestPractices-DynamicRendering-NotSupported";
+[[maybe_unused]] static const char *kVUID_BestPractices_LocalWorkgroup_Multiple64 =
+    "UNASSIGNED-BestPractices-LocalWorkgroup-Multiple64";
 
 // Imagination Technologies best practices
 [[maybe_unused]] static const char *kVUID_BestPractices_Texture_Format_PVRTC_Outdated =

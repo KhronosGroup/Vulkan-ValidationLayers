@@ -789,3 +789,57 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkAmdBestPracticesLayerTest, ComputeWorkgroupSize) {
+    TEST_DESCRIPTION("On AMD make the workgroup size a multiple of 64 to obtain best performance across all GPU generations.");
+
+    InitBestPracticesFramework(kEnableAMDValidation);
+    InitState();
+
+    CreateComputePipelineHelper pipe(*this);
+
+    auto make_pipeline_with_shader = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage) {
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.cp_ci_.stage = stage;
+        pipe.dsl_bindings_ = {};
+        pipe.cp_ci_.layout = pipe.pipeline_layout_.handle();
+        pipe.CreateComputePipeline(true, false);
+    };
+
+    // workgroup size = 4
+    {
+        VkShaderObj compute_4_1_1(this,
+                                  "#version 320 es\n"
+                                  "\n"
+                                  "layout(local_size_x = 4, local_size_y = 1, local_size_z = 1) in;\n\n"
+                                  "void main() {}\n",
+                                  VK_SHADER_STAGE_COMPUTE_BIT);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-LocalWorkgroup-Multiple64");
+        make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
+        m_errorMonitor->VerifyFound();
+    }
+
+    // workgroup size = 64
+    {
+        VkShaderObj compute_8_8_1(this,
+                                  "#version 320 es\n"
+                                  "\n"
+                                  "layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;\n\n"
+                                  "void main() {}\n",
+                                  VK_SHADER_STAGE_COMPUTE_BIT);
+        make_pipeline_with_shader(pipe, compute_8_8_1.GetStageCreateInfo());
+    }
+
+    // workgroup size = 128
+    {
+        VkShaderObj compute_16_8_1(this,
+                                   "#version 320 es\n"
+                                   "\n"
+                                   "layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;\n\n"
+                                   "void main() {}\n",
+                                   VK_SHADER_STAGE_COMPUTE_BIT);
+        make_pipeline_with_shader(pipe, compute_16_8_1.GetStageCreateInfo());
+    }
+}

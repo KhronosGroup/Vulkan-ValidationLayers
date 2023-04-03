@@ -1341,6 +1341,10 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             skip |= ValidateCreateComputePipelineArm(createInfo);
         }
 
+        if (VendorCheckEnabled(kBPVendorAMD)) {
+            skip |= ValidateCreateComputePipelineAmd(createInfo);
+        }
+
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
             auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
             if (module_state &&
@@ -1426,6 +1430,39 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                   "exhibiting poor spatial locality with respect to one or more shader resources.",
                                   VendorSpecificTag(kBPVendorArm), x, y, z);
         }
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo) const {
+    bool skip = false;
+    auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
+    if (!module_state) {
+        return false;
+    }
+    auto entrypoint_optional = module_state->FindEntrypointInstruction(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint_optional) {
+        return false;
+    }
+
+    const Instruction& entrypoint = *entrypoint_optional;
+    uint32_t x = {}, y = {}, z = {};
+    if (!module_state->FindLocalSize(entrypoint, x, y, z)) {
+        return false;
+    }
+
+    const uint32_t thread_count = x * y * z;
+
+    const bool multiple_64 = ((thread_count % 64) == 0);
+
+    if (!multiple_64) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_LocalWorkgroup_Multiple64,
+                                      "%s vkCreateComputePipelines(): compute shader with work group dimensions (%" PRIu32
+                                      ", %" PRIu32 ", %" PRIu32 "), workgroup size (%" PRIu32
+                                      "), is not a multiple of 64. Make the workgroup size a multiple of 64 to obtain best "
+                                      "performance across all AMD GPU generations.",
+                                      VendorSpecificTag(kBPVendorAMD), x, y, z, thread_count);
     }
 
     return skip;

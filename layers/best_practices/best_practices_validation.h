@@ -454,7 +454,10 @@ class BestPractices : public ValidationStateTracker {
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                void* pipe_state) const override;
+
     bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& createInfo) const;
+
+    bool ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& createInfo) const;
 
     bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags flags) const;
     bool CheckPipelineStageFlags(const std::string& api_name, VkPipelineStageFlags2KHR flags) const;
