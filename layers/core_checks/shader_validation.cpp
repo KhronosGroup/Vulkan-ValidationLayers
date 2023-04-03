@@ -102,10 +102,10 @@ static uint32_t GetFormatType(VkFormat fmt) {
 }
 
 bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                           const Instruction &entrypoint) const {
+                                           const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
-    const auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput);
+    const auto inputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassInput);
 
     // Build index by location
     std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
@@ -162,7 +162,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE &module_state,
-                                                                    const Instruction &entrypoint,
+                                                                    const SHADER_MODULE_STATE::EntryPoint &entrypoint,
                                                                     const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -172,7 +172,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     std::map<uint32_t, Attachment> location_map;
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
+    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
         auto const location = output_it.first.first;
         location_map[location].output = &output_it.second;
@@ -298,7 +298,8 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     return skip;
 }
 
-bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state,
+                                                    const SHADER_MODULE_STATE::EntryPoint &entrypoint,
                                                     const PIPELINE_STATE &pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
@@ -325,7 +326,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
 
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
+    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassOutput);
     for (const auto &output_it : outputs) {
         auto const location = output_it.first.first;
         location_map[location].output = &output_it.second;
@@ -799,7 +800,8 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
 }
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                      const PIPELINE_STATE &pipeline, const Instruction &entrypoint) const {
+                                                      const PIPELINE_STATE &pipeline,
+                                                      const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
@@ -821,7 +823,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     bool is_point_mode = false;
     bool is_xfb_execution_mode = false;
 
-    auto entrypoint_variables = FindEntrypointInterfaces(entrypoint);
+    auto entrypoint_variables = FindEntrypointInterfaces(entrypoint.entrypoint_insn);
 
     for (const Instruction &insn : module_state.GetInstructions()) {
         switch (insn.Opcode()) {
@@ -854,9 +856,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         }
     }
 
-    const uint32_t entrypoint_id = entrypoint.Word(2);
     const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
-    auto it = execution_mode_inst.find(entrypoint_id);
+    auto it = execution_mode_inst.find(entrypoint.id);
     if (it != execution_mode_inst.end()) {
         for (const Instruction *insn : it->second) {
             switch (insn->Word(2)) {
@@ -895,8 +896,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     uint32_t max_comp_in = 0;
     uint32_t max_comp_out = 0;
 
-    auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput);
-    auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput);
+    auto inputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassInput);
+    auto outputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassOutput);
 
     // Find max component location used for input variables.
     for (auto &var : inputs) {
@@ -1121,8 +1122,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         case VK_SHADER_STAGE_TASK_BIT_EXT:
             break;
 
+        // Shader stage is an alias, but the ExecutionModel is not
         case VK_SHADER_STAGE_MESH_BIT_EXT:
-            if (entrypoint.Word(1) == spv::ExecutionModelMeshNV) {
+            if (entrypoint.entrypoint_insn.Word(1) == spv::ExecutionModelMeshNV) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -1139,7 +1141,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                      pipeline.create_index, phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives);
                 }
-            } else if (entrypoint.Word(1) == spv::ExecutionModelMeshEXT) {
+            } else if (entrypoint.entrypoint_insn.Word(1) == spv::ExecutionModelMeshEXT) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07115",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -3239,7 +3241,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     }
 
     skip |= ValidateTransformFeedback(module_state, pipeline);
-    skip |= ValidateShaderStageInputOutputLimits(module_state, stage, pipeline, entrypoint);
+    skip |= ValidateShaderStageInputOutputLimits(module_state, stage, pipeline, *stage_state.entrypoint);
     skip |= ValidateShaderStageMaxResources(module_state, stage, pipeline);
     skip |= ValidateAtomicsTypes(module_state);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
@@ -3289,14 +3291,15 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer, const Instruction &producer_entrypoint,
+bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer,
+                                                const SHADER_MODULE_STATE::EntryPoint &producer_entrypoint,
                                                 VkShaderStageFlagBits producer_stage, const SHADER_MODULE_STATE &consumer,
-                                                const Instruction &consumer_entrypoint, VkShaderStageFlagBits consumer_stage,
-                                                uint32_t pipe_index) const {
+                                                const SHADER_MODULE_STATE::EntryPoint &consumer_entrypoint,
+                                                VkShaderStageFlagBits consumer_stage, uint32_t pipe_index) const {
     bool skip = false;
 
-    auto outputs = producer.CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput);
-    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput);
+    auto outputs = producer.CollectInterfaceByLocation(producer_entrypoint.entrypoint_insn, spv::StorageClassOutput);
+    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint.entrypoint_insn, spv::StorageClassInput);
 
     auto output_it = outputs.begin();
     auto input_it = inputs.begin();
@@ -3402,8 +3405,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     }
 
     if (consumer_stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto builtins_producer = producer.CollectBuiltinBlockMembers(producer_entrypoint, spv::StorageClassOutput);
-        auto builtins_consumer = consumer.CollectBuiltinBlockMembers(consumer_entrypoint, spv::StorageClassInput);
+        auto builtins_producer = producer.CollectBuiltinBlockMembers(producer_entrypoint.entrypoint_insn, spv::StorageClassOutput);
+        auto builtins_consumer = consumer.CollectBuiltinBlockMembers(consumer_entrypoint.entrypoint_insn, spv::StorageClassInput);
 
         if (!builtins_producer.empty() && !builtins_consumer.empty()) {
             if (builtins_producer.size() != builtins_consumer.size()) {
@@ -3465,7 +3468,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
 
     if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), vertex_stage->entrypoint->entrypoint_insn);
+        skip |= ValidateViAgainstVsInputs(pipeline, *vertex_stage->module_state.get(), *vertex_stage->entrypoint);
     }
 
     for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
@@ -3478,10 +3481,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         if (consumer.module_state) {
             if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
                 producer.entrypoint) {
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), producer.entrypoint->entrypoint_insn,
+                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *producer.entrypoint,
                                                        producer.create_info->stage, *consumer.module_state.get(),
-                                                       consumer.entrypoint->entrypoint_insn, consumer.create_info->stage,
-                                                       pipeline.create_index);
+                                                       *consumer.entrypoint, consumer.create_info->stage, pipeline.create_index);
             }
         }
     }
@@ -3490,10 +3492,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
         const auto &rp_state = pipeline.RenderPassState();
         if (rp_state && rp_state->UsesDynamicRendering()) {
             skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state.get(),
-                                                                       fragment_stage->entrypoint->entrypoint_insn, pipeline);
+                                                                       *fragment_stage->entrypoint, pipeline);
         } else {
-            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(),
-                                                       fragment_stage->entrypoint->entrypoint_insn, pipeline, pipeline.Subpass());
+            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(), *fragment_stage->entrypoint, pipeline,
+                                                       pipeline.Subpass());
         }
     }
 
