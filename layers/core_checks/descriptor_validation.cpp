@@ -4782,6 +4782,14 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     }
+    if (enabled_features->ray_tracing_pipeline_features.rayTracingPipeline) {
+        stage_flags.push_back(VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        stage_flags.push_back(VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
+        stage_flags.push_back(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        stage_flags.push_back(VK_SHADER_STAGE_MISS_BIT_KHR);
+        stage_flags.push_back(VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
+        stage_flags.push_back(VK_SHADER_STAGE_CALLABLE_BIT_KHR);
+    }
 
     // Allow iteration over enum values
     std::vector<DSL_DESCRIPTOR_GROUPS> dsl_groups = {
@@ -5016,14 +5024,16 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],
                          phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
     }
+
+    // Acceleration structures
     if (max_descriptors_per_stage[DSL_TYPE_ACCELERATION_STRUCTURE] >
-        phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572",
+        phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorAccelerationStructures) {
+        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03571",
                          "vkCreatePipelineLayout(): max per-stage acceleration structure bindings count (%" PRIu32
                          ") exceeds device "
-                         "maxPerStageDescriptorInlineUniformBlocks limit (%" PRIu32 ").",
+                         "maxPerStageDescriptorAccelerationStructures limit (%" PRIu32 ").",
                          max_descriptors_per_stage[DSL_TYPE_ACCELERATION_STRUCTURE],
-                         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
+                         phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorAccelerationStructures);
     }
 
     // Total descriptors by type
@@ -5137,6 +5147,17 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
     }
 
+    // Acceleration structures
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR] >
+        phys_dev_ext_props.acc_structure_props.maxDescriptorSetAccelerationStructures) {
+        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03573",
+                         "vkCreatePipelineLayout(): sum of acceleration structures bindings among all stages (%" PRIu32
+                         ") exceeds device "
+                         "maxDescriptorSetAccelerationStructures limit (%" PRIu32 ").",
+                         sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR],
+                         phys_dev_ext_props.acc_structure_props.maxDescriptorSetAccelerationStructures);
+    }
+
     // Acceleration structures NV
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV] >
         phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures) {
@@ -5222,6 +5243,16 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks limit (%d).",
                              max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK],
                              phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
+        }
+
+        // Acceleration structures
+        if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_ACCELERATION_STRUCTURE] >
+            phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures) {
+            skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572",
+                             "vkCreatePipelineLayout(): max per-stage acceleration structure bindings count (%d) exceeds device "
+                             "maxPerStageDescriptorUpdateAfterBindAccelerationStructures limit (%d).",
+                             max_descriptors_per_stage_update_after_bind[DSL_TYPE_ACCELERATION_STRUCTURE],
+                             phys_dev_ext_props.acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures);
         }
 
         // Total descriptors by type, summed across all pipeline stages
@@ -5318,6 +5349,17 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%d).",
                              sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
                              phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
+        }
+
+        // Acceleration structures
+        if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR] >
+            phys_dev_ext_props.acc_structure_props.maxDescriptorSetUpdateAfterBindAccelerationStructures) {
+            skip |=
+                LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03574",
+                         "vkCreatePipelineLayout(): sum of acceleration structures bindings among all stages (%d) exceeds device "
+                         "maxDescriptorSetUpdateAfterBindAccelerationStructures limit (%d).",
+                         sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR],
+                         phys_dev_ext_props.acc_structure_props.maxDescriptorSetUpdateAfterBindAccelerationStructures);
         }
     }
 
