@@ -290,7 +290,7 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         const Instruction *insn = module_state.FindDef(id);
         const auto decorations = module_state.GetDecorationSet(insn->Word(2));
-        if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInFullyCoveredEXT)) {
+        if (decorations.builtin == spv::BuiltInFullyCoveredEXT) {
             fully_covered = true;
             break;
         }
@@ -518,7 +518,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
         const auto decorations = module_state.GetDecorationSet(insn->Word(2));
 
         // Currently don't need to search in structs
-        if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInSampleMask)) {
+        if (decorations.builtin == spv::BuiltInSampleMask) {
             const Instruction *type_pointer = module_state.FindDef(insn->Word(1));
             assert(type_pointer->Opcode() == spv::OpTypePointer);
 
