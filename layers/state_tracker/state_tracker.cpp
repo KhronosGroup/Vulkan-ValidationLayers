@@ -4890,9 +4890,29 @@ std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleS
                                                                                      uint32_t unique_shader_id,
                                                                                      VkShaderModule handle) const {
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    const bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
-    return is_spirv ? std::make_shared<SHADER_MODULE_STATE>(create_info, handle, spirv_environment, unique_shader_id)
-                    : std::make_shared<SHADER_MODULE_STATE>();
+    if ((create_info.pCode[0] != spv::MagicNumber)) {
+        return std::make_shared<SHADER_MODULE_STATE>();  // not valid SPIR-V
+    }
+    const auto module_state = std::make_shared<SHADER_MODULE_STATE>(create_info, handle, unique_shader_id);
+    if (module_state->static_data_.has_group_decoration) {
+        spvtools::Optimizer optimizer(spirv_environment);
+        optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
+        std::vector<uint32_t> optimized_binary;
+        // Run optimizer to flatten decorations only, set skip_validation so as to not re-run validator
+        auto result = optimizer.Run(module_state->words_.data(), module_state->words_.size(), &optimized_binary,
+                                    spvtools::ValidatorOptions(), true);
+
+        if (result) {
+            // Easier to just re-create the ShaderModule as StaticData uses itself when building itself up
+            // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
+            // raised an issue for a bug that would crash the layers that was around for many releases
+            VkShaderModuleCreateInfo new_create_info = create_info;
+            new_create_info.pCode = optimized_binary.data();
+            new_create_info.codeSize = optimized_binary.size() * sizeof(uint32_t);
+            return std::make_shared<SHADER_MODULE_STATE>(new_create_info, handle, unique_shader_id);
+        }
+    }
+    return module_state;
 }
 
 void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,

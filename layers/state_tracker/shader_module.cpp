@@ -567,28 +567,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
 }
 
-void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
-    if (static_data_.has_group_decoration) {
-        spvtools::Optimizer optimizer(env);
-        optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
-        std::vector<uint32_t> optimized_binary;
-        // Run optimizer to flatten decorations only, set skip_validation so as to not re-run validator
-        auto result = optimizer.Run(words_.data(), words_.size(), &optimized_binary, spvtools::ValidatorOptions(), true);
-
-        if (result) {
-            // NOTE: We need to update words with the result from the spirv-tools optimizer.
-            // **THIS ONLY HAPPENS ON INITIALIZATION**. words should remain const for the lifetime
-            // of the SHADER_MODULE_STATE instance.
-            *const_cast<std::vector<uint32_t>*>(&words_) = std::move(optimized_binary);
-            // Will need to update static data now the words have changed or else the def_index will not align
-            // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
-            // raised an issue for a bug that would crash the layers that was around for many releases
-            StaticData new_static_data(*this);
-            *const_cast<StaticData*>(&static_data_) = std::move(new_static_data);
-        }
-    }
-}
-
 void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
     const Instruction* insn = FindDef(type);
     for (uint32_t i = 0; i < indent; i++) {
