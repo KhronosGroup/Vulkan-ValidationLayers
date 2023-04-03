@@ -234,11 +234,7 @@ cmake --build . --config Release
 
 ### Linux Build Requirements
 
-This repository has been built and tested on the two most recent Ubuntu LTS
-versions. Currently, the oldest supported version is Ubuntu 18.04, meaning
-that the minimum officially supported C++17 compiler version is GCC 7.3.0,
-although earlier versions may work. It should be straightforward to adapt this
-repository to other Linux distributions.
+This repository is regularly built and tested on the two most recent Ubuntu LTS versions.
 
 [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.tar.gz) is recommended.
 
