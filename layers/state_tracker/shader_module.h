@@ -379,7 +379,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
     const EntryPoint *FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     std::optional<Instruction> FindEntrypointInstruction(char const *name, VkShaderStageFlagBits stageBits) const;
-    bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
+    [[nodiscard]] bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y,
+                                     uint32_t &local_size_z) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
