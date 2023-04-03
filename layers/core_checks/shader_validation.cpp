@@ -900,10 +900,6 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                          pipeline.create_index);
     }
 
-    bool strip_output_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT);
-    bool strip_input_array_level = (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
-                                    stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT);
-
     uint32_t num_comp_in = 0;
     uint32_t num_comp_out = 0;
     uint32_t max_comp_in = 0;
@@ -923,7 +919,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             continue;
         }
 
-        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id, strip_input_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id);
         max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
@@ -938,7 +934,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             continue;
         }
 
-        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id, strip_output_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id);
         max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
@@ -947,15 +943,10 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     // When rewritten, using the CreatePipelineExceedVertexMaxComponentsWithBuiltins test it would be nice to also let the user know
     // how many components were from builtins as it might not be obvious
     for (auto &var : variables) {
-        // Check if the variable is a patch. Patches can also be members of blocks,
-        // but if they are then the top-level arrayness has already been stripped
-        // by the time GetComponentsConsumedByType gets to it.
-        const bool is_patch = patch_i_ds.find(var.ID) != patch_i_ds.end();
-
         if (var.storageClass == spv::StorageClassInput) {
-            num_comp_in += module_state.GetComponentsConsumedByType(var.baseTypePtrID, strip_input_array_level && !is_patch);
+            num_comp_in += module_state.GetComponentsConsumedByType(var.baseTypePtrID);
         } else {  // var.storageClass == spv::StorageClassOutput
-            num_comp_out += module_state.GetComponentsConsumedByType(var.baseTypePtrID, strip_output_array_level && !is_patch);
+            num_comp_out += module_state.GetComponentsConsumedByType(var.baseTypePtrID);
         }
     }
 

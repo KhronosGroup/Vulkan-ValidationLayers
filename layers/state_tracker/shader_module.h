@@ -385,8 +385,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
     spv::Dim GetShaderResourceDimensionality(const ResourceInterfaceVariable &resource) const;
-    uint32_t GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const;
-    uint32_t GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const;
+    uint32_t GetLocationsConsumedByType(uint32_t type) const;
+    uint32_t GetComponentsConsumedByType(uint32_t type) const;
     uint32_t GetFundamentalType(uint32_t type) const;
     const Instruction *GetStructType(const Instruction *insn, bool is_array_of_verts) const;
 
