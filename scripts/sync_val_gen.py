@@ -72,7 +72,7 @@ def ParseAccessMasks(valid_usage_path, all_stages):
         sys.exit(1)
     # every synchronization2 access mask bit has a VUID enumerating all pipeline stages it is compatible with. It looks like this:
     # {
-    #   "vuid": "VUID-VkMemoryBarrier2KHR-srcAccessMask-03900",
+    #   "vuid": "VUID-VkMemoryBarrier2-srcAccessMask-03900",
     #   "text": " If pname:srcAccessMask includes <code>access_mask</code>,
     #             pname:srcStageMask <strong class=\"purple\">must</strong> include <code>stage_1</code>,
     #             <code>stage_2</code>, <code>VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR</code>,
@@ -455,7 +455,7 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
         print('STAGE_ORDER touchups found', touchup)
         exit(-1)
 
-    return { 'stages': all_stages, 'stage_lists':stage_lists, 'prior': prior, 'subseq':subseq, 'touchups':touchup }
+    return { 'prior': prior, 'subseq':subseq }
 
 # Note: there should be a machine readable merged order, but there isn't... so we'll need some built-in consistency checks
 # Pipeline stages in rough order, merge sorted.  When

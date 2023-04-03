@@ -462,10 +462,27 @@ def makeGenOpts(args):
 # the requested target and command line options.
     # Helper file generator options for sync_validation_types.h
     genOpts['sync_validation_types.h'] = [
+          SyncValidationOutputGenerator,
+          SyncValidationOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'sync_validation_types.h',
+            directory         = directory)
+        ]
+
+    genOpts['sync_validation_types.cpp'] = [
+          SyncValidationOutputGenerator,
+          SyncValidationOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'sync_validation_types.cpp',
+            directory         = directory)
+        ]
+
+    # Left here to help debug how original scripts ran
+    genOpts['sync_validation_types_good.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
-            filename          = 'sync_validation_types.h',
+            filename          = 'sync_validation_types_good.h',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -476,11 +493,11 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
-    genOpts['sync_validation_types.cpp'] = [
+    genOpts['sync_validation_types_good.cpp'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
-            filename          = 'sync_validation_types.cpp',
+            filename          = 'sync_validation_types_good.cpp',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
@@ -490,6 +507,7 @@ def makeGenOpts(args):
             helper_file_type  = 'sync_helper_source',
             valid_usage_path  = args.scripts)
         ]
+
 
     # Options for spirv_validation_helper code-generated header
     genOpts['spirv_validation_helper.cpp'] = [
@@ -720,6 +738,7 @@ if __name__ == '__main__':
     from spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
     from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
     from format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
+    from sync_validation_generator import SyncValidationOutputGenerator, SyncValidationOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
