@@ -402,17 +402,6 @@ static const ResourceUsageTag kInvalidTag(ResourceUsageRecord::kMaxIndex);
 
 static VkDeviceSize ResourceBaseAddress(const BINDABLE &bindable) { return bindable.GetFakeBaseAddress(); }
 
-VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
-    if (size == VK_WHOLE_SIZE) {
-        return (whole_size - offset);
-    }
-    return size;
-}
-
-static inline VkDeviceSize GetBufferWholeSize(const BUFFER_STATE &buf_state, VkDeviceSize offset, VkDeviceSize size) {
-    return GetRealWholeSize(offset, size, buf_state.createInfo.size);
-}
-
 template <typename T>
 static ResourceAccessRange MakeRange(const T &has_offset_and_size) {
     return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.size));
@@ -420,12 +409,26 @@ static ResourceAccessRange MakeRange(const T &has_offset_and_size) {
 
 static ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, (start + size)); }
 
-static inline ResourceAccessRange MakeRange(const BUFFER_STATE &buffer, VkDeviceSize offset, VkDeviceSize size) {
-    return MakeRange(offset, GetBufferWholeSize(buffer, offset, size));
+static ResourceAccessRange MakeRange(const BUFFER_STATE &buffer, VkDeviceSize offset, VkDeviceSize size) {
+    return MakeRange(offset, buffer.ComputeSize(offset, size));
 }
 
-static inline ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE &buf_view_state) {
+static ResourceAccessRange MakeRange(const BUFFER_VIEW_STATE &buf_view_state) {
     return MakeRange(*buf_view_state.buffer_state.get(), buf_view_state.create_info.offset, buf_view_state.create_info.range);
+}
+
+static ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride) {
+    const VkDeviceSize range_start = offset + (first_index * stride);
+    const VkDeviceSize range_size = count * stride;
+    return MakeRange(range_start, range_size);
+}
+
+static ResourceAccessRange MakeRange(const BufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
+                                     uint32_t stride) {
+    if (count) {
+        return MakeRange(binding.offset, first_index, count.value(), stride);
+    }
+    return MakeRange(binding);
 }
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
@@ -614,18 +617,6 @@ class FilteredGeneratorGenerator {
 };
 
 using EventImageRangeGenerator = FilteredGeneratorGenerator<SyncEventState::ScopeMap, subresource_adapter::ImageRangeGenerator>;
-
-ResourceAccessRange GetBufferRange(VkDeviceSize offset, VkDeviceSize buf_whole_size, uint32_t first_index, uint32_t count,
-                                   uint32_t stride) {
-    VkDeviceSize range_start = offset + (first_index * stride);
-    VkDeviceSize range_size = 0;
-    if (count == vvl::kU32Max) {
-        range_size = buf_whole_size - range_start;
-    } else {
-        range_size = count * stride;
-    }
-    return MakeRange(range_start, range_size);
-}
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
                                                              const ResourceInterfaceVariable &variable,
@@ -2261,7 +2252,8 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, CMD_TYPE cmd_type) const {
+bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+                                                    CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
@@ -2276,11 +2268,10 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
         const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->Destroyed()) continue;
+            if (!binding_buffer.bound()) continue;
 
             auto *buf_state = binding_buffer.buffer_state.get();
-            const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
-                                                             vertexCount, binding_description.stride);
+            const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.hazard) {
                 skip |= sync_state_->LogError(
@@ -2294,7 +2285,8 @@ bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag tag) {
+void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+                                                  const ResourceUsageTag tag) {
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
         return;
@@ -2307,27 +2299,28 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
         const auto &binding_description = pipe->vertex_input_state->binding_descriptions[i];
         if (binding_description.binding < binding_buffers_size) {
             const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer_state == nullptr || binding_buffer.buffer_state->Destroyed()) continue;
+            if (!binding_buffer.bound()) continue;
 
             auto *buf_state = binding_buffer.buffer_state.get();
-            const ResourceAccessRange range = GetBufferRange(binding_buffer.offset, buf_state->createInfo.size, firstVertex,
-                                                             vertexCount, binding_description.stride);
+            const ResourceAccessRange range = MakeRange(binding_buffer, firstVertex, vertexCount, binding_description.stride);
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
                                                 SyncOrdering::kNonAttachment, range, tag);
         }
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, CMD_TYPE cmd_type) const {
+bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uint32_t> &index_count, uint32_t firstIndex,
+                                                         CMD_TYPE cmd_type) const {
     bool skip = false;
     if (!cb_state_->index_buffer_binding.bound()) {
         return skip;
     }
 
-    auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
-    const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
-    const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
-                                                     firstIndex, indexCount, index_size);
+    const auto &index_binding = cb_state_->index_buffer_binding;
+    auto *index_buf_state = index_binding.buffer_state.get();
+    const auto index_size = GetIndexAlignment(index_binding.index_type);
+    const ResourceAccessRange range = MakeRange(index_binding, firstIndex, index_count, index_size);
+
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.hazard) {
         skip |= sync_state_->LogError(
@@ -2339,22 +2332,23 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    skip |= ValidateDrawVertex(vvl::kU32Max, 0, cmd_type);
+    skip |= ValidateDrawVertex(std::optional<uint32_t>(), 0, cmd_type);
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
+void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex,
+                                                       const ResourceUsageTag tag) {
     if (!cb_state_->index_buffer_binding.bound()) return;
 
-    auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
-    const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
-    const ResourceAccessRange range = GetBufferRange(cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size,
-                                                     firstIndex, indexCount, index_size);
+    const auto &index_binding = cb_state_->index_buffer_binding;
+    auto *index_buf_state = index_binding.buffer_state.get();
+    const auto index_size = GetIndexAlignment(index_binding.index_type);
+    const ResourceAccessRange range = MakeRange(index_binding, firstIndex, indexCount, index_size);
     current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag);
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    RecordDrawVertex(vvl::kU32Max, 0, tag);
+    RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
 }
 
 bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(CMD_TYPE cmd_type) const {
@@ -5612,7 +5606,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(vvl::kU32Max, 0, CMD_DRAWINDIRECT);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, CMD_DRAWINDIRECT);
     return skip;
 }
 
@@ -5634,7 +5628,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(vvl::kU32Max, 0, tag);
+    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5658,7 +5652,7 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(vvl::kU32Max, 0, CMD_DRAWINDEXEDINDIRECT);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, CMD_DRAWINDEXEDINDIRECT);
     return skip;
 }
 
@@ -5680,7 +5674,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(vvl::kU32Max, 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
 }
 
 bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5705,7 +5699,7 @@ bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(vvl::kU32Max, 0, cmd_type);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, cmd_type);
     return skip;
 }
 
@@ -5735,7 +5729,7 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(vvl::kU32Max, 0, tag);
+    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -5800,7 +5794,7 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(vvl::kU32Max, 0, cmd_type);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, cmd_type);
     return skip;
 }
 
@@ -5830,7 +5824,7 @@ void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuf
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will update the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(vvl::kU32Max, 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -6852,8 +6846,7 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
         const auto &barrier = barriers[index];
         auto buffer = sync_state.Get<BUFFER_STATE>(barrier.buffer);
         if (buffer) {
-            const auto barrier_size = GetBufferWholeSize(*buffer, barrier.offset, barrier.size);
-            const auto range = MakeRange(barrier.offset, barrier_size);
+            const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
             const SyncBarrier sync_barrier(barrier, src, dst);
             buffer_memory_barriers.emplace_back(buffer, sync_barrier, range);
         } else {
@@ -6885,8 +6878,7 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         auto buffer = sync_state.Get<BUFFER_STATE>(barrier.buffer);
         if (buffer) {
-            const auto barrier_size = GetBufferWholeSize(*buffer, barrier.offset, barrier.size);
-            const auto range = MakeRange(barrier.offset, barrier_size);
+            const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
             const SyncBarrier sync_barrier(barrier, src, dst);
             buffer_memory_barriers.emplace_back(buffer, sync_barrier, range);
         } else {

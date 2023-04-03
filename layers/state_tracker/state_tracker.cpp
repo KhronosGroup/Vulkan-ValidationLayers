@@ -3217,10 +3217,8 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
                                                              VkIndexType indexType) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->index_buffer_binding.buffer_state = Get<BUFFER_STATE>(buffer);
-    cb_state->index_buffer_binding.size = cb_state->index_buffer_binding.buffer_state->createInfo.size;
-    cb_state->index_buffer_binding.offset = offset;
-    cb_state->index_buffer_binding.index_type = indexType;
+    cb_state->index_buffer_binding = IndexBufferBinding(Get<BUFFER_STATE>(buffer), offset, indexType);
+
     // Add binding for this index buffer to this commandbuffer
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(cb_state->index_buffer_binding.buffer_state);
@@ -3240,10 +3238,8 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
-        vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.size = VK_WHOLE_SIZE;
-        vertex_buffer_binding.stride = 0;
+        vertex_buffer_binding = BufferBinding(Get<BUFFER_STATE>(pBuffers[i]), pOffsets[i]);
+
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i] && !disabled[command_buffer_state]) {
             cb_state->AddChild(vertex_buffer_binding.buffer_state);
@@ -5117,10 +5113,10 @@ void ValidationStateTracker::RecordCmdBindVertexBuffers2(VkCommandBuffer command
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer_state = Get<BUFFER_STATE>(pBuffers[i]);
-        vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
-        vertex_buffer_binding.stride = (pStrides) ? pStrides[i] : 0;
+        const VkDeviceSize binding_size = (pSizes) ? pSizes[i] : VK_WHOLE_SIZE;
+        const VkDeviceSize binding_stride = (pStrides) ? pStrides[i] : 0;
+        vertex_buffer_binding = BufferBinding(Get<BUFFER_STATE>(pBuffers[i]), binding_size, pOffsets[i], binding_stride);
+
         // Add binding for this vertex buffer to this commandbuffer
         if (!disabled[command_buffer_state] && pBuffers[i]) {
             cb_state->AddChild(vertex_buffer_binding.buffer_state);
