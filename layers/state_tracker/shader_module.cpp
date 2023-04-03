@@ -260,11 +260,11 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
 
         // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
         for (const auto& accessible_id : accessible_ids) {
-            const Instruction* insn = module_state.FindDef(accessible_id);
-            if (insn->Opcode() != spv::OpVariable) {
+            const Instruction& insn = *module_state.FindDef(accessible_id);
+            if (insn.Opcode() != spv::OpVariable) {
                 continue;
             }
-            const uint32_t storage_class = insn->StorageClass();
+            const uint32_t storage_class = insn.StorageClass();
             // These are the only storage classes that interface with a descriptor
             // see vkspec.html#interfaces-resources-descset
             if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
@@ -1279,13 +1279,19 @@ const std::vector<const Instruction*> SHADER_MODULE_STATE::FindVariableAccesses(
     return accessed_instructions;
 }
 
-ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction* insn,
+VariableBase::VariableBase(const SHADER_MODULE_STATE& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
+    : id(insn.Word(2)),
+      type_id(insn.Word(1)),
+      storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
+      decorations(module_state.GetDecorationSet(id)),
+      struct_type(module_state.GetStructType(module_state.FindDef(type_id))),
+      stage(stage) {
+    assert(insn.Opcode() == spv::OpVariable);
+}
+
+ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
                                                      VkShaderStageFlagBits stage)
-    : id(insn->Word(2)),
-      type_id(insn->Word(1)),
-      storage_class(static_cast<spv::StorageClass>(insn->Word(3))),
-      stage(stage),
-      decorations(module_state.GetDecorationSet(id)) {
+    : VariableBase(module_state, insn, stage) {
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
     const Instruction* type = module_state.FindDef(type_id);

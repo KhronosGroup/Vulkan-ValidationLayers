@@ -80,6 +80,19 @@ struct DecorationSet : public DecorationBase {
     bool HasBuiltIn() const;
 };
 
+// Common info needed for all OpVariable
+struct VariableBase {
+    const uint32_t id;
+    const uint32_t type_id;
+    const spv::StorageClass storage_class;
+    const DecorationSet &decorations;
+    const Instruction *struct_type;  // null if no struct type
+    // If variable is accessed from mulitple entrypoint, create a seperate VariableBase object as info about it being access will be
+    // different
+    VkShaderStageFlagBits stage;
+    VariableBase(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+};
+
 // vkspec.html#interfaces-iointerfaces-user describes 'User-defined Variable Interface'
 // These are Input/Output OpVariable that go in-between stages
 // (also for example the input to a Vertex and output of the Fragment).
@@ -105,14 +118,7 @@ struct UserDefinedInterfaceVariable {
 // not known until the descriptors are bound.
 // The main purpose of this struct is to track what operations are statically done so
 // at draw/submit time we can cross reference with the last bound descriptor.
-struct ResourceInterfaceVariable {
-    uint32_t id;
-    uint32_t type_id;
-    spv::StorageClass storage_class;
-
-    VkShaderStageFlagBits stage;
-    const DecorationSet &decorations;
-
+struct ResourceInterfaceVariable : public VariableBase {
     // If the type is a OpTypeArray save the length
     uint32_t array_length = 0;
     bool runtime_array = false;  // OpTypeRuntimeArray - can't validate length until run time
@@ -152,7 +158,7 @@ struct ResourceInterfaceVariable {
     bool is_write_without_format{false};  // For storage images
     bool is_dref_operation{false};
 
-    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction *insn, VkShaderStageFlagBits stage);
+    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 };
 
 std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
