@@ -748,85 +748,85 @@ spv::Dim SHADER_MODULE_STATE::GetShaderResourceDimensionality(const ResourceInte
 }
 
 // Returns the number of Location slots used for a given ID reference to a OpType*
-uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const {
+uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
         case spv::OpTypePointer:
             // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
             // pointers around.
-            return GetLocationsConsumedByType(insn->Word(3), strip_array_level);
+            return GetLocationsConsumedByType(insn->Word(3));
         case spv::OpTypeArray: {
-            uint32_t locations = GetLocationsConsumedByType(insn->Word(2), false);
-            if (!strip_array_level) {
-                locations *= GetConstantValueById(insn->Word(3));
-            }
-            return locations;
+            // Spec: "If an array of size n and each element takes m locations,
+            // it will be assigned m × n consecutive locations starting with the location specified"
+            const uint32_t locations = GetLocationsConsumedByType(insn->Word(2));
+            const uint32_t array_size = GetConstantValueById(insn->Word(3));
+            return locations * array_size;
         }
-        case spv::OpTypeMatrix:
-            // Num locations is the dimension * element size
-            return insn->Word(3) * GetLocationsConsumedByType(insn->Word(2), false);
+        case spv::OpTypeMatrix: {
+            // Spec: "if n × m matrix, the number of locations assigned for each matrix will be the same as for an n-element array
+            // of m-component vectors"
+            const uint32_t column_type = insn->Word(2);
+            const uint32_t column_count = insn->Word(3);
+            return column_count * GetLocationsConsumedByType(column_type);
+        }
         case spv::OpTypeVector: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
-            auto bit_width =
-                (scalar_type->Opcode() == spv::OpTypeInt || scalar_type->Opcode() == spv::OpTypeFloat) ? scalar_type->Word(2) : 32;
-
-            // Locations are 128-bit wide; 3- and 4-component vectors of 64 bit types require two.
-            return (bit_width * insn->Word(3) + 127) / 128;
+            const uint32_t width = scalar_type->GetByteWidth();
+            const uint32_t vector_length = insn->Word(3);
+            const uint32_t components = width * vector_length;
+            // Locations are 128-bit wide (4 components)
+            // 3- and 4-component vectors of 64 bit types require two.
+            return (components / 5) + 1;
+        }
+        case spv::OpTypeStruct: {
+            uint32_t sum = 0;
+            // first 2 words of struct are not the elements to check
+            for (uint32_t i = 2; i < insn->Length(); i++) {
+                sum += GetLocationsConsumedByType(insn->Word(i));
+            }
+            return sum;
         }
         default:
-            // Everything else is just 1.
+            // Scalars (Int, Float, Bool, etc) are are just 1.
             return 1;
-
-            // TODO: extend to handle 64bit scalar types, whose vectors may need multiple locations.
     }
 }
 
 // Returns the number of Components slots used for a given ID reference to a OpType*
-uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const {
+uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
         case spv::OpTypePointer:
             // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
             // pointers around.
-            return GetComponentsConsumedByType(insn->Word(3), strip_array_level);
+            return GetComponentsConsumedByType(insn->Word(3));
+        case spv::OpTypeArray:
+            // Skip array as each array element is a whole new Location and we care only about the base type
+            return GetComponentsConsumedByType(insn->Word(2));
+        case spv::OpTypeMatrix: {
+            const uint32_t column_type = insn->Word(2);
+            const uint32_t column_count = insn->Word(3);
+            return column_count * GetComponentsConsumedByType(column_type);
+        }
+        case spv::OpTypeVector: {
+            const Instruction* scalar_type = FindDef(insn->Word(2));
+            const uint32_t width = scalar_type->GetByteWidth();
+            const uint32_t vector_length = insn->Word(3);
+            return width * vector_length;  // One component is 32-bit
+        }
         case spv::OpTypeStruct: {
             uint32_t sum = 0;
-            for (uint32_t i = 2; i < insn->Length(); i++) {  // i=2 to skip Word(0) and Word(1)=ID of struct
-                sum += GetComponentsConsumedByType(insn->Word(i), false);
+            // first 2 words of struct are not the elements to check
+            for (uint32_t i = 2; i < insn->Length(); i++) {
+                sum += GetComponentsConsumedByType(insn->Word(i));
             }
             return sum;
         }
-        case spv::OpTypeArray: {
-            uint32_t components = GetComponentsConsumedByType(insn->Word(2), false);
-            if (!strip_array_level) {
-                components *= GetConstantValueById(insn->Word(3));
-            }
-            return components;
-        }
-        case spv::OpTypeMatrix:
-            // Num locations is the dimension * element size
-            return insn->Word(3) * GetComponentsConsumedByType(insn->Word(2), false);
-        case spv::OpTypeVector: {
-            const Instruction* scalar_type = FindDef(insn->Word(2));
-            auto bit_width =
-                (scalar_type->Opcode() == spv::OpTypeInt || scalar_type->Opcode() == spv::OpTypeFloat) ? scalar_type->Word(2) : 32;
-            // One component is 32-bit
-            return (bit_width * insn->Word(3) + 31) / 32;
-        }
-        case spv::OpTypeFloat: {
-            auto bit_width = insn->Word(2);
-            return (bit_width + 31) / 32;
-        }
-        case spv::OpTypeInt: {
-            auto bit_width = insn->Word(2);
-            return (bit_width + 31) / 32;
-        }
-        case spv::OpConstant:
-            return GetComponentsConsumedByType(insn->Word(1), false);
         default:
-            return 0;
+            // Int, Float, Bool, etc
+            return insn->GetByteWidth();
     }
 }
 
@@ -1568,7 +1568,7 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
 
             if (insn->Word(3) == spv::DecorationLocation) {
                 const uint32_t location = insn->Word(4);
-                const uint32_t num_locations = GetLocationsConsumedByType(member_type_id, false);
+                const uint32_t num_locations = GetLocationsConsumedByType(member_type_id);
                 const auto component_it = member_components.find(member_index);
                 const uint32_t component = component_it == member_components.end() ? 0 : component_it->second;
                 const bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
@@ -1614,14 +1614,13 @@ std::map<location_t, UserDefinedInterfaceVariable> SHADER_MODULE_STATE::CollectI
             const uint32_t component = decoration_set.component;
             const uint32_t location = decoration_set.location;
             const bool is_patch = decoration_set.Has(DecorationSet::patch_bit);
-            const bool is_per_vertex = decoration_set.Has(DecorationSet::per_vertex_bit);
             if (builtin != DecorationSet::kInvalidValue) {
                 continue;
             } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, is_patch, insn) ||
                        decoration_set.location != DecorationSet::kInvalidValue) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
-                const uint32_t num_locations = GetLocationsConsumedByType(insn->Word(1), is_array_of_verts || is_per_vertex);
+                const uint32_t num_locations = GetLocationsConsumedByType(insn->Word(1));
                 for (uint32_t offset = 0; offset < num_locations; offset++) {
                     UserDefinedInterfaceVariable variable(insn);
                     variable.offset = offset;
