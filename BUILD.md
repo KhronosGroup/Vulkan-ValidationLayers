@@ -28,11 +28,11 @@ git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 cd Vulkan-ValidationLayers
 
 cmake -S . -B build -D UPDATE_DEPS=ON -D BUILD_WERROR=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=Debug
-cmake --build . --config Debug
+cmake --build build --config Debug
 
 # CMake 3.21+
 cmake -S . -B build --preset dev
-cmake --build . --config Debug
+cmake --build build --config Debug
 ```
 
 ## Generated source code
@@ -246,7 +246,7 @@ repository to other Linux distributions.
 sudo apt-get install git build-essential python3
 
 # Linux WSI system libraries
-sudo apt-get libwayland-dev xorg-dev
+sudo apt-get install libwayland-dev xorg-dev
 ```
 
 ### WSI Support Build Options
