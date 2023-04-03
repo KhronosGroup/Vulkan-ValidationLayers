@@ -80,12 +80,6 @@ if (VVL_ENABLE_ASAN)
     add_link_options(-fsanitize=address)
 endif()
 
-option(VVL_ENABLE_TSAN "Use thread sanitizer")
-if (VVL_ENABLE_TSAN)
-    add_compile_options(-fsanitize=thread)
-    add_link_options(-fsanitize=thread)
-endif()
-
 option(VVL_CLANG_TIDY "Use clang-tidy")
 if (VVL_CLANG_TIDY)
     find_program(CLANG_TIDY NAMES clang-tidy)
