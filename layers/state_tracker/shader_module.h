@@ -322,22 +322,17 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
-    explicit SHADER_MODULE_STATE(vvl::span<const uint32_t> code, spv_target_env env = SPV_ENV_VULKAN_1_0)
+    explicit SHADER_MODULE_STATE(vvl::span<const uint32_t> code)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
           words_(code.begin(), code.end()),
-          static_data_(*this) {
-        PreprocessShaderBinary(env);
-    }
+          static_data_(*this) {}
 
-    SHADER_MODULE_STATE(const VkShaderModuleCreateInfo &create_info, VkShaderModule shaderModule, spv_target_env env,
-                        uint32_t unique_shader_id)
+    SHADER_MODULE_STATE(const VkShaderModuleCreateInfo &create_info, VkShaderModule shaderModule, uint32_t unique_shader_id)
         : BASE_NODE(shaderModule, kVulkanObjectTypeShaderModule),
           words_(create_info.pCode, create_info.pCode + create_info.codeSize / sizeof(uint32_t)),
           has_valid_spirv(true),
           static_data_(*this),
-          gpu_validation_shader_id(unique_shader_id) {
-        PreprocessShaderBinary(env);
-    }
+          gpu_validation_shader_id(unique_shader_id) {}
 
     SHADER_MODULE_STATE() : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule) {}
 
@@ -432,10 +427,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                                             std::vector<SHADER_MODULE_STATE::EntryPoint> &entry_points);
 
   private:
-    // Functions used for initialization only
-    // Used to populate the shader module object
-    void PreprocessShaderBinary(spv_target_env env);
-
     // The following are all helper functions to set the push constants values by tracking if the values are accessed in the entry
     // point functions and which offset in the structs are used
     uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const StructInfo &data) const;
