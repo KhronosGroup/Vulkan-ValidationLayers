@@ -354,7 +354,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
                 assert(has_group_decoration == false);  // if assert, spirv-opt didn't flatten it
                 has_group_decoration = true;
-                break;  // no need to continue parsing
+                return;  // no need to continue parsing
             }
 
             instructions.push_back(insn);
@@ -385,22 +385,19 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
 
             // Decorations
             case spv::OpDecorate: {
-                auto target_id = insn.Word(1);
+                const uint32_t target_id = insn.Word(1);
                 decorations[target_id].Add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
-                    has_builtin_layer |= (insn.Word(3) == spv::BuiltInLayer);
-                    if (insn.Word(3) == spv::BuiltInWorkgroupSize) {
-                        has_builtin_workgroup_size = true;
-                        builtin_workgroup_size_id = target_id;
-                    }
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
                     spec_const_map[insn.Word(3)] = target_id;
                 }
-
             } break;
             case spv::OpMemberDecorate: {
+                const uint32_t target_id = insn.Word(1);
+                const uint32_t member_index = insn.Word(2);
+                decorations[target_id].member_decorations[member_index].Add(insn.Word(3), insn.Length() > 4u ? insn.Word(4) : 0u);
                 member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
@@ -548,6 +545,17 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 }
                 // We don't care about any other defs for now.
                 break;
+        }
+    }
+
+    for (const Instruction* decoration_inst : builtin_decoration_inst) {
+        if (decoration_inst->GetBuiltIn() == spv::BuiltInLayer) {
+            has_builtin_layer = true;
+        } else if (decoration_inst->GetBuiltIn() == spv::BuiltInFullyCoveredEXT) {
+            has_builtin_fully_covered = true;
+        } else if (decoration_inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
+            has_builtin_workgroup_size = true;
+            builtin_workgroup_size_id = decoration_inst->Word(1);
         }
     }
 
@@ -1685,16 +1693,10 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
 
         // Now find all members belonging to the struct defining the IO block
         if (def->Opcode() == spv::OpTypeStruct) {
-            for (const Instruction* insn : static_data_.builtin_decoration_inst) {
-                if (def->Word(1) == insn->Word(1)) {
-                    // Start with undefined builtin for each struct member.
-                    // But only when confirmed the struct is the built-in inteface block (can only be one per shader)
-                    if (builtin_block_members.size() == 0) {
-                        builtin_block_members.resize(def->Length() - 2, spv::BuiltInMax);
-                    }
-                    auto struct_index = insn->Word(2);
-                    assert(struct_index < builtin_block_members.size());
-                    builtin_block_members[struct_index] = insn->Word(4);
+            const auto& decoration_set = GetDecorationSet(def->TypeId());
+            for (const auto& member_decoration_set : decoration_set.member_decorations) {
+                if (member_decoration_set.second.builtin != DecorationSet::kInvalidValue) {
+                    builtin_block_members.push_back(member_decoration_set.second.builtin);
                 }
             }
         }
