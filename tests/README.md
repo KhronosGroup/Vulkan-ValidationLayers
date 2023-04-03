@@ -176,7 +176,13 @@ to ensure high quality code.
 
 WIP (Not yet part of our CI process)
 
-`-D VVL_ENABLE_TSAN=ON` will enable TSAN in the build which is `OFF` by default.
+```bash
+# NOTE: ThreadSanitizer generally requires all code to be compiled with -fsanitize=thread to prevent false positives.
+# https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual#non-instrumented-code
+export CFLAGS=-fsanitize=thread
+export CXXFLAGS=-fsanitize=thread
+export LDFLAGS=-fsanitize=thread
+```
 
 - https://clang.llvm.org/docs/ThreadSanitizer.html
 - https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
