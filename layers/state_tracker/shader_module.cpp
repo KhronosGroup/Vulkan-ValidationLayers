@@ -883,11 +883,11 @@ uint32_t SHADER_MODULE_STATE::GetFundamentalType(uint32_t type) const {
     }
 }
 
-const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn, bool is_array_of_verts) const {
+const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn) const {
     while (true) {
         if (insn->Opcode() == spv::OpTypePointer) {
             insn = FindDef(insn->Word(3));
-        } else if (insn->Opcode() == spv::OpTypeArray && is_array_of_verts) {
+        } else if (insn->Opcode() == spv::OpTypeArray) {
             insn = FindDef(insn->Word(2));
         } else if (insn->Opcode() == spv::OpTypeStruct) {
             return insn;
@@ -898,7 +898,7 @@ const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn, b
 }
 
 void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, StructInfo& data) const {
-    const Instruction* struct_type = GetStructType(insn, false);
+    const Instruction* struct_type = GetStructType(insn);
     data.size = 0;
 
     StructInfo data1;
@@ -1562,7 +1562,7 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, User
                                                        bool is_array_of_verts, bool is_patch,
                                                        const Instruction* variable_insn) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
-    const Instruction* struct_type = GetStructType(FindDef(variable_insn->Word(1)), is_array_of_verts && !is_patch);
+    const Instruction* struct_type = GetStructType(FindDef(variable_insn->Word(1)));
     if (!struct_type || !(GetDecorationSet(struct_type->Word(1)).Has(DecorationSet::block_bit))) {
         // This isn't an interface block.
         return false;
