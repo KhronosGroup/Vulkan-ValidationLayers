@@ -1368,10 +1368,12 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     if (!entrypoint_optional) return false;
 
     const Instruction& entrypoint = *entrypoint_optional;
-    uint32_t x = 1, y = 1, z = 1;
-    module_state->FindLocalSize(entrypoint, x, y, z);
+    uint32_t x = {}, y = {}, z = {};
+    if (!module_state->FindLocalSize(entrypoint, x, y, z)) {
+        return false;
+    }
 
-    uint32_t thread_count = x * y * z;
+    const uint32_t thread_count = x * y * z;
 
     // Generate a priori warnings about work group sizes.
     if (thread_count > kMaxEfficientWorkGroupThreadCountArm) {
