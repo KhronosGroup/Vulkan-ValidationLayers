@@ -112,51 +112,209 @@ TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-    GetPhysicalDeviceProperties2(acc_structure_props);
+    auto accel_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto ray_tracing_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&accel_struct_features);
+    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_pipeline_features);
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t maxBlocks = acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
-    if (maxBlocks > 4096) {
-        GTEST_SKIP() << "Too large of a maximum number of per stage descriptor update after bind for acceleration structures, "
-                        "skipping tests";
+    if (!accel_struct_features.accelerationStructure) {
+        GTEST_SKIP() << "accelerationStructure not supported, skipping test";
     }
-    if (maxBlocks < 1) {
-        GTEST_SKIP() << "Test requires maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1";
+    if (!ray_tracing_pipeline_features.rayTracingPipeline) {
+        GTEST_SKIP() << "rayTracingPipeline not supported, skipping test";
     }
 
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    dslb_vec.reserve(maxBlocks);
-    VkDescriptorSetLayoutBinding dslb = {};
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    dslb.descriptorCount = 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    auto accel_struct_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
+    GetPhysicalDeviceProperties2(accel_struct_props);
 
-    for (uint32_t i = 0; i < maxBlocks + 1; ++i) {
-        dslb.binding = i;
-        dslb_vec.push_back(dslb);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    // Create one descriptor set layout holding (maxPerStageDescriptorAccelerationStructures + 1) bindings
+    // for the same shader stage
+    {
+        const uint32_t max_accel_structs = accel_struct_props.maxPerStageDescriptorAccelerationStructures;
+        if (max_accel_structs > 4096) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03571 requires a small maximum number of per stage "
+                "descriptor update after bind for acceleration structures, "
+                "skipping test");
+        } else if (max_accel_structs < 1) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03571 requires "
+                "maxPerStageDescriptorAccelerationStructures >= 1, skipping test");
+        } else {
+            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+            dslb_vec.reserve(max_accel_structs);
+
+            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+                VkDescriptorSetLayoutBinding dslb = {};
+                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                dslb.descriptorCount = 1;
+                dslb.stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+                dslb.binding = i;
+                dslb_vec.push_back(dslb);
+            }
+
+            VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+            ds_layout_ci.bindingCount = dslb_vec.size();
+            ds_layout_ci.pBindings = dslb_vec.data();
+
+            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            ASSERT_TRUE(ds_layout.initialized());
+
+            VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+            pipeline_layout_ci.setLayoutCount = 1;
+            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
+    // Create one descriptor set layout with flag VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT holding
+    // (maxPerStageDescriptorUpdateAfterBindAccelerationStructures + 1) bindings for the same shader stage
+    {
+        const uint32_t max_accel_structs = accel_struct_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+        if (max_accel_structs > 4096) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03572 requires a small maximum number of per stage "
+                "descriptor update after bind for acceleration structures, "
+                "skipping test");
+        } else if (max_accel_structs < 1) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03572 requires "
+                "maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1, skipping test");
+        } else {
+            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+            dslb_vec.reserve(max_accel_structs);
 
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-    ASSERT_TRUE(ds_layout.initialized());
+            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+                VkDescriptorSetLayoutBinding dslb = {};
+                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                dslb.descriptorCount = 1;
+                dslb.stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+                dslb.binding = i;
+                dslb_vec.push_back(dslb);
+            }
 
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+            VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+            ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+            ds_layout_ci.bindingCount = dslb_vec.size();
+            ds_layout_ci.pBindings = dslb_vec.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-    m_errorMonitor->VerifyFound();
+            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            ASSERT_TRUE(ds_layout.initialized());
+
+            VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+            pipeline_layout_ci.setLayoutCount = 1;
+            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Create one descriptor set layout holding (maxDescriptorSetAccelerationStructures + 1) bindings
+    // in total for two different shader stage
+    {
+        const uint32_t max_accel_structs = accel_struct_props.maxDescriptorSetAccelerationStructures;
+        if (max_accel_structs > 4096) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03573 requires a small maximum number of per stage "
+                "descriptor update after bind for acceleration structures, "
+                "skipping test");
+        } else if (max_accel_structs < 1) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03573 requires "
+                "maxDescriptorSetAccelerationStructures >= 1, skipping test");
+        } else {
+            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+            dslb_vec.reserve(max_accel_structs);
+
+            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+                VkDescriptorSetLayoutBinding dslb = {};
+                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                dslb.descriptorCount = 1;
+                dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+                dslb.binding = i;
+                dslb_vec.push_back(dslb);
+            }
+
+            VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+            ds_layout_ci.bindingCount = dslb_vec.size();
+            ds_layout_ci.pBindings = dslb_vec.data();
+
+            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            ASSERT_TRUE(ds_layout.initialized());
+
+            VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+            pipeline_layout_ci.setLayoutCount = 1;
+            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03573");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03571");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Create one descriptor set layout with flag VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT holding
+    // (maxDescriptorSetUpdateAfterBindAccelerationStructures + 1) bindings in total for two different shader stage
+    {
+        const uint32_t max_accel_structs = accel_struct_props.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+        if (max_accel_structs > 4096) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03574 requires a small maximum number of per stage "
+                "descriptor update after bind for acceleration structures, "
+                "skipping test");
+        } else if (max_accel_structs < 1) {
+            printf(
+                "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03574 requires "
+                "maxDescriptorSetUpdateAfterBindAccelerationStructures >= 1, skipping test");
+        } else {
+            std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+            dslb_vec.reserve(max_accel_structs);
+
+            for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+                VkDescriptorSetLayoutBinding dslb = {};
+                dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                dslb.descriptorCount = 1;
+                dslb.stageFlags = (i % 2) ? VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR : VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+                dslb.binding = i;
+                dslb_vec.push_back(dslb);
+            }
+
+            VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+            ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+            ds_layout_ci.bindingCount = dslb_vec.size();
+            ds_layout_ci.pBindings = dslb_vec.data();
+
+            vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+            ASSERT_TRUE(ds_layout.initialized());
+
+            VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+            pipeline_layout_ci.setLayoutCount = 1;
+            pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03574");
+            m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
+            vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+            m_errorMonitor->VerifyFound();
+        }
+    }
 }
 
 TEST_F(VkLayerTest, RayTracingValidateBeginQueryQueryPoolType) {
