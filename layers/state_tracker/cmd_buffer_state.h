@@ -122,6 +122,11 @@ struct BufferBinding {
     VkDeviceSize stride;
 
     BufferBinding() : buffer_state(), size(0), offset(0), stride(0) {}
+    BufferBinding(const std::shared_ptr<BUFFER_STATE> &buffer_state_, VkDeviceSize size_, VkDeviceSize offset_,
+                  VkDeviceSize stride_)
+        : buffer_state(buffer_state_), size(size_), offset(offset_), stride(stride_) {}
+    BufferBinding(const std::shared_ptr<BUFFER_STATE> &buffer_state_, VkDeviceSize offset_)
+        : BufferBinding(buffer_state_, BUFFER_STATE::ComputeSize(buffer_state_, offset_, VK_WHOLE_SIZE), offset_, 0U) {}
     virtual ~BufferBinding() {}
 
     virtual void reset() { *this = BufferBinding(); }
@@ -132,6 +137,8 @@ struct IndexBufferBinding : BufferBinding {
     VkIndexType index_type;
 
     IndexBufferBinding() : BufferBinding(), index_type(static_cast<VkIndexType>(0)) {}
+    IndexBufferBinding(const std::shared_ptr<BUFFER_STATE> &buffer_state_, VkDeviceSize offset_, VkIndexType index_type_)
+        : BufferBinding(buffer_state_, offset_), index_type(index_type_) {}
     virtual ~IndexBufferBinding() {}
 
     virtual void reset() override { *this = IndexBufferBinding(); }
