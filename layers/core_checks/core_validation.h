@@ -853,8 +853,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
 
-    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage, const PIPELINE_STATE& pipeline,
-                                              const Instruction& entrypoint) const;
+    bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+                                              const PIPELINE_STATE& pipeline,
+                                              const SHADER_MODULE_STATE::EntryPoint& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE& module_state, const Instruction* insn) const;
     bool ValidateShaderStageMaxResources(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                          const PIPELINE_STATE& pipeline) const;
@@ -871,10 +872,12 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE& pipeline) const;
     bool ValidateViAgainstVsInputs(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                   const Instruction& entrypoint) const;
-    bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
-                                            const PIPELINE_STATE& pipeline, uint32_t subpass_index) const;
-    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+                                   const SHADER_MODULE_STATE::EntryPoint& entrypoint) const;
+    bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state,
+                                            const SHADER_MODULE_STATE::EntryPoint& entrypoint, const PIPELINE_STATE& pipeline,
+                                            uint32_t subpass_index) const;
+    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state,
+                                                            const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                                             const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderInputAttachment(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable) const;
@@ -893,10 +896,11 @@ class CoreChecks : public ValidationStateTracker {
                              const char* vuid) const;
     bool RequireFeature(const SHADER_MODULE_STATE& module_state, VkBool32 feature, char const* feature_name,
                         const char* vuid) const;
-    bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, const Instruction& producer_entrypoint,
+    bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer,
+                                        const SHADER_MODULE_STATE::EntryPoint& producer_entrypoint,
                                         VkShaderStageFlagBits producer_stage, const SHADER_MODULE_STATE& consumer,
-                                        const Instruction& consumer_entrypoint, VkShaderStageFlagBits consumer_stage,
-                                        uint32_t pipe_index) const;
+                                        const SHADER_MODULE_STATE::EntryPoint& consumer_entrypoint,
+                                        VkShaderStageFlagBits consumer_stage, uint32_t pipe_index) const;
     bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
