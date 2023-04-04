@@ -105,7 +105,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedTypes) {
     image_create_info.queueFamilyIndexCount = 0;
     image_create_info.pQueueFamilyIndices = NULL;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 1D image w/ sparse residency is an error
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00970");
@@ -156,7 +156,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
     image_create_info.queueFamilyIndexCount = 0;
     image_create_info.pQueueFamilyIndices = NULL;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 2D image w/ sparse residency and linear tiling is an error
     CreateImageTest(*this, &image_create_info,
