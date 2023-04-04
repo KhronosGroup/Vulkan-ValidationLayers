@@ -81,7 +81,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(VkLayer_utils PRIVATE
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
-        -Wno-enum-enum-conversion
     )
 endif()
 
@@ -267,7 +266,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         target_compile_options(VkLayer_khronos_validation PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
-            -Wno-enum-enum-conversion
         )
     endif()
 endif()

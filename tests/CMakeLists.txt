@@ -142,7 +142,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         target_compile_options(vk_layer_validation_tests PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
-            -Wno-enum-enum-conversion
         )
     endif()
 elseif(MSVC)

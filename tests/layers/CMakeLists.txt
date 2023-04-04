@@ -43,7 +43,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         target_compile_options(VkLayer_device_profile_api PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
-            -Wno-enum-enum-conversion
         )
     endif()
 endif()
