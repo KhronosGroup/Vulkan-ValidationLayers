@@ -3250,148 +3250,178 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
 bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer,
                                                 const SHADER_MODULE_STATE::EntryPoint &producer_entrypoint,
-                                                VkShaderStageFlagBits producer_stage, const SHADER_MODULE_STATE &consumer,
+                                                const SHADER_MODULE_STATE &consumer,
                                                 const SHADER_MODULE_STATE::EntryPoint &consumer_entrypoint,
-                                                VkShaderStageFlagBits consumer_stage, uint32_t pipe_index) const {
+                                                uint32_t pipe_index) const {
     bool skip = false;
 
-    auto outputs = producer.CollectInterfaceByLocation(producer_entrypoint.entrypoint_insn, spv::StorageClassOutput);
-    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint.entrypoint_insn, spv::StorageClassInput);
-
-    auto output_it = outputs.begin();
-    auto input_it = inputs.begin();
-
-    uint32_t output_component = 0;
-    uint32_t input_component = 0;
-
-    // Maps sorted by key (location); walk them together to find mismatches
-    while ((outputs.size() > 0 && output_it != outputs.end()) || (inputs.size() && input_it != inputs.end())) {
-        const bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
-        const bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
-        auto output_first = output_at_end ? std::make_pair(0u, 0u) : output_it->first;
-        auto input_first = input_at_end ? std::make_pair(0u, 0u) : input_it->first;
-
-        output_first.second += output_component;
-        input_first.second += input_component;
-
-        const auto output_length =
-            output_at_end ? 0 : producer.GetNumComponentsInBaseType(producer.FindDef(output_it->second.type_id));
-        const auto input_length =
-            input_at_end ? 0 : consumer.GetNumComponentsInBaseType(consumer.FindDef(input_it->second.type_id));
-        assert(output_at_end || output_component < output_length);
-        assert(input_at_end || input_component < input_length);
-
-        if (input_at_end || ((!output_at_end) && (output_first < input_first))) {
-            if (!enabled_features.core13.maintenance4) {
-                // It is not an error if a stage does not consume all outputs from the previous stage
-                skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
-                                              "%s writes to output location %" PRIu32 ".%" PRIu32
-                                              " which is not consumed by %s. Enable VK_KHR_maintenance4 device extension to allow "
-                                              "relaxed interface matching between input and output vectors.",
-                                              string_VkShaderStageFlagBits(producer_stage), output_first.first, output_first.second,
-                                              string_VkShaderStageFlagBits(consumer_stage));
-            }
-            if ((input_first.first > output_first.first) || input_at_end || (output_component + 1 == output_length)) {
-                output_it++;
-                output_component = 0;
-            } else {
-                output_component++;
-            }
-        } else if (output_at_end || output_first > input_first) {
-            skip |= LogError(consumer.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s consumes input location %" PRIu32
-                             ".%" PRIu32 " which is not written by %s",
-                             pipe_index, string_VkShaderStageFlagBits(consumer_stage), input_first.first, input_first.second,
-                             string_VkShaderStageFlagBits(producer_stage));
-            if ((output_first.first > input_first.first) || output_at_end || (input_component + 1 == input_length)) {
-                input_it++;
-                input_component = 0;
-            } else {
-                input_component++;
-            }
-        } else {
-            // subtleties of arrayed interfaces:
-            // - if is_patch, then the member is not arrayed, even though the interface may be.
-            // - if is_block_member, then the extra array level of an arrayed interface is not
-            //   expressed in the member type -- it's expressed in the block type.
-            if (!TypesMatch(producer, consumer, output_it->second.type_id, input_it->second.type_id)) {
-                skip |=
-                    LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on location %" PRIu32 ".%" PRIu32
-                             ", between\n%s stage:\n%s\n%s stage:\n%s",
-                             pipe_index, output_first.first, output_first.second, string_VkShaderStageFlagBits(producer_stage),
-                             producer.DescribeType(output_it->second.type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
-                             consumer.DescribeType(input_it->second.type_id).c_str());
-                output_it++;
-                input_it++;
-                continue;
-            }
-            if (output_it->second.is_patch != input_it->second.is_patch) {
-                skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Decoration mismatch on location %" PRIu32
-                                 ".%" PRIu32 ": is per-%s in %s stage but per-%s in %s stage",
-                                 pipe_index, output_first.first, output_first.second,
-                                 output_it->second.is_patch ? "patch" : "vertex", string_VkShaderStageFlagBits(producer_stage),
-                                 input_it->second.is_patch ? "patch" : "vertex", string_VkShaderStageFlagBits(consumer_stage));
-            }
-            uint32_t output_remaining = output_length - output_component;
-            uint32_t input_remaining = input_length - input_component;
-            if (output_remaining == input_remaining) {  // Sizes match so we can advance both output_it and input_it
-                output_it++;
-                input_it++;
-                output_component = 0;
-                input_component = 0;
-            } else if (output_remaining > input_remaining) {  // a has more components remaining
-                output_component += input_remaining;
-                input_component = 0;
-                input_it++;
-            } else if (input_remaining > output_remaining) {  // b has more components remaining
-                input_component += output_remaining;
-                output_component = 0;
-                output_it++;
-            }
-            if (output_component == 4) {
-                output_component = 0;
-                output_it++;
-            }
-            if (input_component == 4) {
-                input_component = 0;
-                input_it++;
-            }
-        }
+    if (producer_entrypoint.has_passthrough) {
+        return skip;  // PassthroughNV doesn't have to do Location matching
     }
 
-    if (consumer_stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto builtins_producer = producer.CollectBuiltinBlockMembers(producer_entrypoint.entrypoint_insn, spv::StorageClassOutput);
-        auto builtins_consumer = consumer.CollectBuiltinBlockMembers(consumer_entrypoint.entrypoint_insn, spv::StorageClassInput);
+    const VkShaderStageFlagBits producer_stage = producer_entrypoint.stage;
+    const VkShaderStageFlagBits consumer_stage = consumer_entrypoint.stage;
 
-        if (!builtins_producer.empty() && !builtins_consumer.empty()) {
-            if (builtins_producer.size() != builtins_consumer.size()) {
-                skip |=
-                    LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] Number of elements inside builtin block differ between stages (%s %d vs %s %d).",
-                             pipe_index, string_VkShaderStageFlagBits(producer_stage), static_cast<int>(builtins_producer.size()),
-                             string_VkShaderStageFlagBits(consumer_stage), static_cast<int>(builtins_consumer.size()));
-            } else {
-                auto it_producer = builtins_producer.begin();
-                auto it_consumer = builtins_consumer.begin();
-                while (it_producer != builtins_producer.end() && it_consumer != builtins_consumer.end()) {
-                    if (*it_producer != *it_consumer) {
-                        skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] Builtin variable inside block doesn't match between %s and %s.",
-                                         pipe_index, string_VkShaderStageFlagBits(producer_stage),
-                                         string_VkShaderStageFlagBits(consumer_stage));
-                        break;
-                    }
-                    it_producer++;
-                    it_consumer++;
+    // build up a mapping of which slots are used and then go through it and look for gaps
+    struct ComponentInfo {
+        const StageInteraceVariable *output = nullptr;
+        uint32_t output_type = 0;
+        uint32_t output_width = 0;
+        const StageInteraceVariable *input = nullptr;
+        uint32_t input_type = 0;
+        uint32_t input_width = 0;
+    };
+    // <Location, Components[4]> (only 4 componets in a Location)
+    vvl::unordered_map<uint32_t, std::array<ComponentInfo, 4>> slot_map;
+
+    for (const auto &interface_slot : producer_entrypoint.output_interface_slots) {
+        auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
+        slot.output = interface_slot.second;
+        slot.output_type = interface_slot.first.type;
+        slot.output_width = interface_slot.first.bit_width;
+    }
+    for (const auto &interface_slot : consumer_entrypoint.input_interface_slots) {
+        auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
+        slot.input = interface_slot.second;
+        slot.input_type = interface_slot.first.type;
+        slot.input_width = interface_slot.first.bit_width;
+    }
+
+    for (const auto &slot : slot_map) {
+        // Found that sometimes there is a big mismatch and printing out EVERY slot adds a lot of noise
+        if (skip) break;
+
+        const uint32_t location = slot.first;
+        for (uint32_t component = 0; component < 4; component++) {
+            const auto &component_info = slot.second[component];
+            const auto *input_var = component_info.input;
+            const auto *output_var = component_info.output;
+
+            if ((input_var == nullptr) && (output_var == nullptr)) {
+                continue;  // both empty
+            } else if ((input_var != nullptr) && (output_var != nullptr)) {
+                // if matched, need to check type
+                // Only the OpType has to match, signed vs unsigned in not important
+                if ((component_info.output_type != component_info.input_type) ||
+                    (component_info.output_width != component_info.input_width)) {
+                    const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                    skip |=
+                        LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-07754",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Type mismatch on Location %" PRIu32
+                                 " Component %" PRIu32 ", between\n%s stage:\n%s\n%s stage:\n%s",
+                                 pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage),
+                                 producer.DescribeType(output_var->type_id).c_str(), string_VkShaderStageFlagBits(consumer_stage),
+                                 consumer.DescribeType(input_var->type_id).c_str());
                 }
+
+                // Tessellation needs to match Patch vs Vertex
+                if ((producer_stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+                    (consumer_stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
+                    (input_var->is_patch != output_var->is_patch)) {
+                    const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                    skip |= LogError(objlist, kVUID_Core_Shader_InterfacePatchVertex,
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] at Location %" PRIu32
+                                     " Comonent %" PRIu32 " Tessellation Control is %s while Tessellation Evalutaion is %s",
+                                     pipe_index, location, component, input_var->is_patch ? "patch" : "vertex",
+                                     output_var->is_patch ? "patch" : "vertex");
+                }
+
+                // If using maintenance4 need to check Vectors incase different sizes
+                if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() == spv::OpTypeVector) &&
+                    (input_var->base_type.Opcode() == spv::OpTypeVector)) {
+                    // Note the "Component Count" in the VU refers to OpTypeVector's operand and NOT the "Component slot"
+                    const uint32_t output_vec_size = output_var->base_type.Word(3);
+                    const uint32_t input_vec_size = input_var->base_type.Word(3);
+                    if (output_vec_size > input_vec_size) {
+                        const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                        skip |=
+                            LogError(objlist, "VUID-RuntimeSpirv-maintenance4-06817",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] starting at Location %" PRIu32
+                                     " Comonent %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
+                                     " Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
+                                     "between input and output vectors",
+                                     pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
+                                     string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
+                    }
+                }
+            } else if ((input_var == nullptr) && (output_var != nullptr)) {
+                // Missing input slot
+                // It is not an error if a stage does not consume all outputs from the previous stage
+                // The values will be undefined, but still legal
+                // Don't give any warning if maintenance4 with vectors
+                if (!enabled_features.core13.maintenance4 && (output_var->base_type.Opcode() != spv::OpTypeVector)) {
+                    const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                    skip |= LogPerformanceWarning(objlist, kVUID_Core_Shader_OutputNotConsumed,
+                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                                  "] %s declared to output location %" PRIu32 " Comonent %" PRIu32
+                                                  " but is not an Input declared by %s.",
+                                                  pipe_index, string_VkShaderStageFlagBits(producer_stage), location, component,
+                                                  string_VkShaderStageFlagBits(consumer_stage));
+                }
+            } else if ((input_var != nullptr) && (output_var == nullptr)) {
+                // Missing output slot
+                if ((consumer_stage & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) &&
+                    (input_var->base_type.Opcode() == spv::OpTypeArray)) {
+                    break;  // When going inbetween Tessellation or Geometry, array size can be different
+                }
+                const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                skip |= LogError(objlist, kVUID_Core_Shader_InputNotProduced,
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s declared input at Location %" PRIu32
+                                 " Comonent %" PRIu32 " but it is not an Output declared in %s",
+                                 pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
+                                 string_VkShaderStageFlagBits(producer_stage));
             }
         }
     }
 
+    // Need to check the BuiltIn interface (if not going into Fragment)
+    if (consumer_stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        return skip;
+    }
+
+    std::vector<uint32_t> input_builtins_block;
+    std::vector<uint32_t> output_builtins_block;
+    for (const auto *variable : producer_entrypoint.built_in_variables) {
+        if (variable->storage_class == spv::StorageClassOutput && !variable->builtin_block.empty()) {
+            output_builtins_block = variable->builtin_block;
+            break;
+        }
+    }
+    for (const auto *variable : consumer_entrypoint.built_in_variables) {
+        if (variable->storage_class == spv::StorageClassInput && !variable->builtin_block.empty()) {
+            input_builtins_block = variable->builtin_block;
+            break;
+        }
+    }
+
+    bool mismatch = false;
+    if (input_builtins_block.empty() || output_builtins_block.empty()) {
+        // TODO - Nothing about this in spec, need to add language to confirm this is correct
+        return skip;
+    } else if (input_builtins_block.size() != output_builtins_block.size()) {
+        mismatch = true;
+    } else {
+        for (size_t i = 0; i < input_builtins_block.size(); i++) {
+            const uint32_t input_builtin = input_builtins_block[i];
+            const uint32_t output_builtin = output_builtins_block[i];
+            if (input_builtin == DecorationSet::kInvalidValue || output_builtin == DecorationSet::kInvalidValue) {
+                continue;  // some stages (TessControl -> TessEval) can have legal block vs non-block mistmatch
+            } else if (input_builtin != output_builtin) {
+                mismatch = true;
+            }
+        }
+    }
+
+    if (mismatch) {
+        // TODO - create a string_SpvDecoration so we can print which builtin is the issue. Also give better error message showing
+        // each slot
+        const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+        skip |= LogError(objlist, kVUID_Core_Shader_BuiltinMismatch,
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] %s has output BuiltIn variables that don't align with %s input BuiltIn Variable",
+                         pipe_index, string_VkShaderStageFlagBits(producer_stage), string_VkShaderStageFlagBits(consumer_stage));
+    }
     return skip;
 }
 
@@ -3439,8 +3469,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
             if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
                 producer.entrypoint) {
                 skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *producer.entrypoint,
-                                                       producer.create_info->stage, *consumer.module_state.get(),
-                                                       *consumer.entrypoint, consumer.create_info->stage, pipeline.create_index);
+                                                       *consumer.module_state.get(), *consumer.entrypoint, pipeline.create_index);
             }
         }
     }
