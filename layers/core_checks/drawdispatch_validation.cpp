@@ -2211,14 +2211,17 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_sta
     if (!enabled_features.robustness2_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
         const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
-        VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount)) + index_buffer_binding.offset;
+        // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
+        // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
+        // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
+        VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
         if (end_offset > index_buffer_binding.size) {
             skip |= LogError(index_buffer_binding.buffer_state->buffer(), first_index_vuid,
                              "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
                              "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
                              " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                             caller, index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset,
-                             index_buffer_binding.size);
+                             caller, index_size, firstIndex, indexCount, index_buffer_binding.offset,
+                             end_offset + index_buffer_binding.offset, index_buffer_binding.size + index_buffer_binding.offset);
         }
     }
     return skip;
