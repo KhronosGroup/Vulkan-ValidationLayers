@@ -221,6 +221,10 @@ def RunVVLTests():
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
     lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT'
 
+    # By default use the max_profile.json
+    if "VK_KHRONOS_PROFILES_PROFILE_FILE" not in os.environ:
+        lvt_env['VK_KHRONOS_PROFILES_PROFILE_FILE'] = RepoRelative('tests/device_profiles/max_profile.json')
+
     # By default set portability to false
     if "VK_KHRONOS_PROFILES_EMULATE_PORTABILITY" not in os.environ:
         lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
