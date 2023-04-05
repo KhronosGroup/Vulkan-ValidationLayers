@@ -898,9 +898,8 @@ class CoreChecks : public ValidationStateTracker {
                         const char* vuid) const;
     bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer,
                                         const SHADER_MODULE_STATE::EntryPoint& producer_entrypoint,
-                                        VkShaderStageFlagBits producer_stage, const SHADER_MODULE_STATE& consumer,
-                                        const SHADER_MODULE_STATE::EntryPoint& consumer_entrypoint,
-                                        VkShaderStageFlagBits consumer_stage, uint32_t pipe_index) const;
+                                        const SHADER_MODULE_STATE& consumer,
+                                        const SHADER_MODULE_STATE::EntryPoint& consumer_entrypoint, uint32_t pipe_index) const;
     bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
