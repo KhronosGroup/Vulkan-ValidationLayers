@@ -1982,8 +1982,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
                 layout(location = 4, component = 0) in vec2 xy;
                 layout(location = 4, component = 2) in vec2 zw;
 
-                layout(location = 5, component = 0) in vec2 st;
-                layout(location = 5, component = 2) in vec2 pq;
+                layout(location = 5, component = 0) in vec4 st;
 
                 layout(location = 6, component = 0) in vec4 cdef;
 
@@ -1999,7 +1998,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
                             vec4(r1, g1, 1.0f, a1) *
                             vec4(inBlock.zero_red, inBlock.zero_green, inBlock.zero_blue, inBlock.zero_alpha) *
                             vec4(inBlock.one_red, inBlock.one_green, inBlock.one_blue, inBlock.one_alpha) *
-                            vec4(xy, zw) * vec4(st, pq) * cdef * vec4(ar1, ar2, ar3, ar4);
+                            vec4(xy, zw) * st * cdef * vec4(ar1, ar2, ar3, ar4);
                 }
             )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);

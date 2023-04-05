@@ -23,7 +23,7 @@
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
-                                       const SHADER_MODULE_STATE::EntryPoint *entrypoint)
+                                       std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> &entrypoint)
     : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {
     if (entrypoint) {
         descriptor_variables = module_state->GetResourceInterfaceVariable((*entrypoint).entrypoint_insn);
@@ -63,7 +63,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                     }
                 }
 
-                const auto *entrypoint = module->FindEntrypoint(stage_ci.pName, stage_ci.stage);
+                auto entrypoint = module->FindEntrypoint(stage_ci.pName, stage_ci.stage);
                 stage_states.emplace_back(&stage_ci, module, entrypoint);
                 stage_found = true;
             }
@@ -122,7 +122,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
             if (!stage_ci) {
                 continue;
             }
-            const auto *entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+            auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
             stage_states.emplace_back(stage_ci, module_state, entrypoint);
         }
     }

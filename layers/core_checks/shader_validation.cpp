@@ -108,7 +108,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
 
             // Type checking
             if (!(attrib_type & input_type)) {
-                skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
+                skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_VertexInputMismatch,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
                                  pipeline.create_index, string_VkFormat(attrib->format), location,
@@ -160,7 +160,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
             // Type checking
             if (!(output_type & attachment_type)) {
                 skip |= LogWarning(
-                    module_state.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
+                    module_state.vk_shader_module(), kVUID_Core_Shader_FragmentOutputMismatch,
                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attachment %" PRIu32
                     " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
                     pipeline.create_index, location, string_VkFormat(format), module_state.DescribeType(output->type_id).c_str());
@@ -335,7 +335,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
                 // Type checking
                 if (!(output_type & attachment_type)) {
                     skip |= LogWarning(
-                        module_state.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
+                        module_state.vk_shader_module(), kVUID_Core_Shader_FragmentOutputMismatch,
                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attachment %" PRIu32
                         " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
                         pipeline.create_index, location, string_VkFormat(attachment->format),

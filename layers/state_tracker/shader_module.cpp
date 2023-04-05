@@ -49,7 +49,7 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationNonReadable:
             flags |= nonreadable_bit;
             break;
-        case spv::DecorationPerVertexNV:
+        case spv::DecorationPerVertexKHR:  // VK_KHR_fragment_shader_barycentric
             flags |= per_vertex_bit;
             break;
         case spv::DecorationPassthroughNV:  // VK_NV_geometry_shader_passthrough
@@ -58,10 +58,10 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationAliased:
             flags |= aliased_bit;
             break;
-        case spv::DecorationPerTaskNV:
+        case spv::DecorationPerTaskNV:  // VK_NV_mesh_shader
             flags |= per_task_nv;
             break;
-        case spv::DecorationPerPrimitiveEXT:
+        case spv::DecorationPerPrimitiveEXT:  // VK_EXT_mesh_shader
             flags |= per_primitive_ext;
             break;
         default:
@@ -626,7 +626,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
     for (const auto& insn : entry_point_instructions) {
-        entry_points.emplace_back(EntryPoint{module_state, *insn});
+        entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn));
     }
 
     SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
@@ -711,18 +711,18 @@ std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
 const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushConstant(char const* name,
                                                                                        VkShaderStageFlagBits stageBits) const {
     for (const auto& entry_point : static_data_.entry_points) {
-        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
-            return &(entry_point.push_constant_used_in_shader);
+        if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
+            return &(entry_point->push_constant_used_in_shader);
         }
     }
     return nullptr;
 }
 
-const SHADER_MODULE_STATE::EntryPoint* SHADER_MODULE_STATE::FindEntrypoint(char const* name,
-                                                                           VkShaderStageFlagBits stageBits) const {
+std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> SHADER_MODULE_STATE::FindEntrypoint(char const* name,
+                                                                                           VkShaderStageFlagBits stageBits) const {
     for (const auto& entry_point : static_data_.entry_points) {
-        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
-            return &entry_point;
+        if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
+            return entry_point;
         }
     }
     return nullptr;
@@ -731,8 +731,8 @@ const SHADER_MODULE_STATE::EntryPoint* SHADER_MODULE_STATE::FindEntrypoint(char 
 std::optional<Instruction> SHADER_MODULE_STATE::FindEntrypointInstruction(char const* name, VkShaderStageFlagBits stageBits) const {
     std::optional<Instruction> result;
     for (const auto& entry_point : static_data_.entry_points) {
-        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
-            result.emplace(entry_point.entrypoint_insn);
+        if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
+            result.emplace(entry_point->entrypoint_insn);
         }
     }
     return result;
@@ -1115,15 +1115,15 @@ void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, vvl::u
 }
 
 void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE& module_state,
-                                                      std::vector<SHADER_MODULE_STATE::EntryPoint>& entry_points) {
+                                                      std::vector<std::shared_ptr<SHADER_MODULE_STATE::EntryPoint>>& entry_points) {
     for (auto& entrypoint : entry_points) {
         for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
             if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
                 const Instruction* type = module_state.FindDef(var_insn->Word(1));
-                entrypoint.push_constant_used_in_shader.root = &entrypoint.push_constant_used_in_shader;
-                module_state.DefineStructMember(type, entrypoint.push_constant_used_in_shader);
-                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.accessible_ids,
-                                                 entrypoint.push_constant_used_in_shader);
+                entrypoint->push_constant_used_in_shader.root = &entrypoint->push_constant_used_in_shader;
+                module_state.DefineStructMember(type, entrypoint->push_constant_used_in_shader);
+                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint->accessible_ids,
+                                                 entrypoint->push_constant_used_in_shader);
             }
         }
     }
@@ -1403,7 +1403,7 @@ bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, con
     return decoration_set.HasBuiltIn() || base_decoration_set.HasBuiltIn();
 }
 
-std::vector<InterfaceSlot> StageInteraceVariable::GetBuiltinBlock(const StageInteraceVariable& variable,
+std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(const StageInteraceVariable& variable,
                                                                   const SHADER_MODULE_STATE& module_state) {
     std::vector<InterfaceSlot> slots;
     if (variable.is_builtin) {
@@ -1485,7 +1485,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetBuiltinBlock(const StageInt
     return slots;
 }
 
-std::vector<uint32_t> StageInteraceVariable::GetBuiltinSlots(StageInteraceVariable& variable,
+std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInteraceVariable& variable,
                                                              const SHADER_MODULE_STATE& module_state) {
     // Built-in Location slot will always be [zero, size]
     std::vector<uint32_t> slots;
@@ -1500,14 +1500,29 @@ std::vector<uint32_t> StageInteraceVariable::GetBuiltinSlots(StageInteraceVariab
         const uint32_t struct_length = variable.struct_type->Length() - 2;  // number of elements in struct
         for (uint32_t i = 0; i < struct_length; i++) {
             slots.push_back(decoration_set.member_decorations.at(i).builtin);
-
-            // All components are packed in builtin for sake of tracking limit
-            uint32_t member_id = variable.struct_type->Word(2 + i);
-            const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
-            variable.total_builtin_components += components;
         }
     }
     return slots;
+}
+
+uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable& variable,
+                                                     const SHADER_MODULE_STATE& module_state) {
+    uint32_t count = 0;
+    if (!variable.is_builtin) {
+        return count;
+    }
+    if (variable.struct_type) {
+        const uint32_t struct_length = variable.struct_type->Length() - 2;  // number of elements in struct
+        for (uint32_t i = 0; i < struct_length; i++) {
+            // All components are packed in builtin for sake of tracking limit
+            uint32_t member_id = variable.struct_type->Word(2 + i);
+            count += module_state.GetComponentsConsumedByType(member_id);
+        }
+    } else {
+        const uint32_t base_type_id = variable.base_type.Word(variable.base_type.ResultId());
+        count += module_state.GetComponentsConsumedByType(base_type_id);
+    }
+    return count;
 }
 
 StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
@@ -1520,7 +1535,8 @@ StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_s
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
       interface_slots(GetInterfaceSlots(*this, module_state)),
-      builtin_block(GetBuiltinBlock(*this, module_state)) {}
+      builtin_block(GetBuiltinBlock(*this, module_state)),
+      total_builtin_components(GetBuiltinComponents(*this, module_state)) {}
 
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
                                                      VkShaderStageFlagBits stage)
