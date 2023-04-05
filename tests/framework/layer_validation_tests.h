@@ -173,6 +173,14 @@ static char const bindStateFragSubpassLoadInputText[] = R"glsl(
     }
 )glsl";
 
+static char const bindStateFragColorOutputText[] = R"glsl(
+    #version 460
+    layout(location=0) out vec4 color;
+    void main() {
+        color = vec4(1.0f);
+    }
+)glsl";
+
 [[maybe_unused]] static const char *bindStateRTShaderText = R"glsl(
     #version 460
     #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)

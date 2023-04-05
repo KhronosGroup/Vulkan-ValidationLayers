@@ -18,6 +18,42 @@
 #include <array>
 #include <chrono>
 
+TEST_F(VkPositiveLayerTest, DynamicRenderingSimple) {
+    TEST_DESCRIPTION("Most simple way to use dynamic rendering");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
@@ -43,16 +79,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    char const* fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -120,16 +148,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDrawMultiBind) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    char const* fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto depth_format = FindSupportedDepthOnlyFormat(gpu());
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
@@ -464,16 +484,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    char const* fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -793,16 +805,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendPrimaryResumeInSecondary) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    char const* fsSource = R"glsl(
-        #version 450
-        layout(location=0) out vec4 color;
-        void main() {
-           color = vec4(1.0f);
-        }
-    )glsl";
-
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
