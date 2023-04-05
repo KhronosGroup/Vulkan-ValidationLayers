@@ -303,7 +303,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     pipe.CreateVKPipeline(pl.handle(), render_pass, &create_info);
 }
 
-
 TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
     TEST_DESCRIPTION("Use stencil attachment with integer format and depth stencil resolve extension");
 

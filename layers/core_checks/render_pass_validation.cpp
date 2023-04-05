@@ -3067,6 +3067,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     if (!cb_state) return false;
     bool skip = false;
     const char *func_name = CommandTypeString(cmd_type);
+    skip |= ValidateCmd(*cb_state, cmd_type);
 
     const auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     const bool non_zero_device_render_area = chained_device_group_struct && chained_device_group_struct->deviceRenderAreaCount != 0;
@@ -3078,7 +3079,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     if (pRenderingInfo->layerCount > phys_dev_props.limits.maxFramebufferLayers) {
         skip |= LogError(device, " VUID-VkRenderingInfo-layerCount-07817",
-                         "vkCmdBeginRenderingKHR(): layerCount (%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").",
+                         "%s(): layerCount (%" PRIu32 ") is greater than maxFramebufferLayers (%" PRIu32 ").", func_name,
                          pRenderingInfo->layerCount, phys_dev_props.limits.maxFramebufferLayers);
     }
 
@@ -3415,9 +3416,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             if ((offset_x + width) > phys_dev_props.limits.maxFramebufferWidth) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06168",
-                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.x (%" PRIi32
-                                 ") and extent.width (%" PRIu32 ") is greater than maxFramebufferWidth (%" PRIu32 ").",
-                                 deviceRenderAreaIndex, offset_x, width, phys_dev_props.limits.maxFramebufferWidth);
+                                 "%s(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.x (%" PRIi32 ") and extent.width (%" PRIu32
+                                 ") is greater than maxFramebufferWidth (%" PRIu32 ").",
+                                 func_name, deviceRenderAreaIndex, offset_x, width, phys_dev_props.limits.maxFramebufferWidth);
             }
             const int32_t offset_y = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
             const uint32_t height = chained_device_group_struct->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
@@ -3428,9 +3429,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             if ((offset_y + height) > phys_dev_props.limits.maxFramebufferHeight) {
                 skip |= LogError(commandBuffer, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06169",
-                                 "vkCmdBeginRenderingKHR(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.y (%" PRIi32
-                                 ") and extent.height (%" PRIu32 ") is greater than maxFramebufferHeight (%" PRIu32 ").",
-                                 deviceRenderAreaIndex, offset_y, height, phys_dev_props.limits.maxFramebufferHeight);
+                                 "%s(): pDeviceRenderAreas[%" PRIu32 "] sum of offset.y (%" PRIi32 ") and extent.height (%" PRIu32
+                                 ") is greater than maxFramebufferHeight (%" PRIu32 ").",
+                                 func_name, deviceRenderAreaIndex, offset_y, height, phys_dev_props.limits.maxFramebufferHeight);
             }
 
             for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
@@ -3684,42 +3685,32 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE &cb_state, const char 
     return outside;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const {
+bool CoreChecks::ValidateCmdEndRendering(VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
+    const char *func_name = CommandTypeString(cmd_type);
+    skip |= ValidateCmd(*cb_state, cmd_type);
 
     if (cb_state->activeRenderPass) {
         if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
-            skip |= LogError(
-                commandBuffer, "VUID-vkCmdEndRendering-None-06161",
-                "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun with vkCmdBeginRenderingKHR().");
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-None-06161",
+                             "%s(): in a render pass instance that was not begun with vkCmdBeginRendering().", func_name);
         }
         if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
             skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-commandBuffer-06162",
-                             "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun in this command buffer.");
+                             "%s(): in a render pass instance that was not begun in this command buffer.", func_name);
         }
     }
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    if (!cb_state) return false;
-    bool skip = false;
+bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const {
+    return ValidateCmdEndRendering(commandBuffer, CMD_ENDRENDERINGKHR);
+}
 
-    if (cb_state->activeRenderPass) {
-        if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
-            skip |=
-                LogError(commandBuffer, "VUID-vkCmdEndRendering-None-06161",
-                         "Calling vkCmdEndRendering() in a render pass instance that was not begun with vkCmdBeginRendering().");
-        }
-        if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdEndRendering-commandBuffer-06162",
-                             "Calling vkCmdEndRendering() in a render pass instance that was not begun in this command buffer.");
-        }
-    }
-    return skip;
+bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const {
+    return ValidateCmdEndRendering(commandBuffer, CMD_ENDRENDERING);
 }
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
@@ -3785,7 +3776,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
 bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cmd_type) const {
-    if (!cb_state.activeRenderPass) return false;
+    if (!cb_state.activeRenderPass || cb_state.activeRenderPass->UsesDynamicRendering()) return false;
     bool skip = false;
     if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY &&
         cb_state.activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&

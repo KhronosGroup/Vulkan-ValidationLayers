@@ -1478,6 +1478,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
     bool ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                          const VkRenderingAttachmentInfo* pAttachments, const char* func_name) const;
+    bool ValidateCmdEndRendering(VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) const override;
