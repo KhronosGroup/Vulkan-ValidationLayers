@@ -80,6 +80,39 @@ struct DecorationSet : public DecorationBase {
     bool HasBuiltIn() const;
 };
 
+// A slot is a <Location, Component> mapping
+struct InterfaceSlot {
+    // A Location is made up of 4 Components
+    // Example: Location 2, Component 1
+    // L0 : [ C0, C1, C2, C3 ]
+    // L1 : [ C0, C1, C2, C3 ]
+    // L2 : [ C0, C1, C2, C3 ]
+    //            ^
+    // index == 9 == (Location * 4) + Component
+    const uint32_t slot = 0;  // default
+
+    // Information about the variable type
+    // Easier to find this information once then re-look each time (mainly for structs)
+    const uint32_t type = 0;  // Opcode of OpType*
+    const uint32_t bit_width = 0;
+
+    uint32_t Location() const { return slot / 4; }
+    uint32_t Component() const { return slot % 4; }
+    std::string Describe() const;
+    // Having a single uint32_t slot allows a 64-bit Vec3 to pass in (Loc 0, Comp 5) and have it automatically mean (Loc 1, Comp 1)
+    InterfaceSlot(uint32_t location, uint32_t component, uint32_t type, uint32_t bit_width)
+        : slot(GetSlotValue(location, component)), type(type), bit_width(bit_width) {}
+    InterfaceSlot(uint32_t slot, uint32_t type, uint32_t bit_width) : slot(slot), type(type), bit_width(bit_width) {}
+
+    bool operator<(const InterfaceSlot &rhs) const { return slot < rhs.slot; }
+    bool operator==(const InterfaceSlot &rhs) const { return slot == rhs.slot; }
+    struct Hash {
+        std::size_t operator()(const InterfaceSlot &object) const { return object.slot; }
+    };
+
+    uint32_t GetSlotValue(uint32_t location, uint32_t component) { return (location * 4) + component; }
+};
+
 // Common info needed for all OpVariable
 struct VariableBase {
     const uint32_t id;
@@ -89,27 +122,40 @@ struct VariableBase {
     const Instruction *struct_type;  // null if no struct type
     // If variable is accessed from mulitple entrypoint, create a seperate VariableBase object as info about it being access will be
     // different
-    VkShaderStageFlagBits stage;
+    const VkShaderStageFlagBits stage;
     VariableBase(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 };
 
-// vkspec.html#interfaces-iointerfaces-user describes 'User-defined Variable Interface'
 // These are Input/Output OpVariable that go in-between stages
 // (also for example the input to a Vertex and output of the Fragment).
 // These are always ints/floats (not images or samplers).
 // Besides the input vertex binding, all of these are fully known at pipeline creation time
-struct UserDefinedInterfaceVariable {
-    uint32_t id;
-    uint32_t type_id;
+//
+// These include both BuiltIns and User Defined, while there are difference in member variables, the variables are needed for the
+// common logic so its easier using the same object in the end
+struct StageInteraceVariable : public VariableBase {
+    // Only will be true in BuiltIns
+    const bool is_patch;
+    const bool is_per_vertex;   // VK_KHR_fragment_shader_barycentric
+    const bool is_per_task_nv;  // VK_NV_mesh_shader
 
-    // if a block with multiple location, track which offset to only check the first
-    uint32_t offset;
+    const bool is_array_interface;
+    const Instruction &base_type;
+    const bool is_builtin;
 
-    bool is_patch{false};
+    const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
+    const std::vector<uint32_t> builtin_block;
+    uint32_t total_builtin_components = 0;
 
-    UserDefinedInterfaceVariable() : id(0), type_id(0), offset(0) {}
+    StageInteraceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 
-    UserDefinedInterfaceVariable(const Instruction *insn) : id(insn->Word(2)), type_id(insn->Word(1)), offset(0) {}
+  protected:
+    static bool IsArrayInterface(const StageInteraceVariable &variable);
+    static const Instruction &FindBaseType(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static bool IsBuiltin(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static std::vector<InterfaceSlot> GetInterfaceSlots(const StageInteraceVariable &variable,
+                                                        const SHADER_MODULE_STATE &module_state);
+    static std::vector<uint32_t> GetBuiltinBlock(StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
 };
 
 // vkspec.html#interfaces-resources describes 'Shader Resource Interface'
@@ -161,16 +207,11 @@ struct ResourceInterfaceVariable : public VariableBase {
     ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 };
 
-std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
-
 enum FORMAT_TYPE {
     FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
     FORMAT_TYPE_SINT = 2,
     FORMAT_TYPE_UINT = 4,
 };
-
-// <Location, Component>
-typedef std::pair<uint32_t, uint32_t> location_t;
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     // Contains all the details for a OpTypeStruct
@@ -241,8 +282,25 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // All ids that can be accessed from the entry point
         vvl::unordered_set<uint32_t> accessible_ids;
 
-        std::vector<UserDefinedInterfaceVariable> user_defined_interface_variables;
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
+        std::vector<StageInteraceVariable> stage_interface_variables;
+        // Easier to lookup without having to check for the is_builtin bool
+        // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
+        std::vector<const StageInteraceVariable *> built_in_variables;
+        // "User-defined Variable Interface" - vkspec.html#interfaces-iointerfaces-user
+        std::vector<const StageInteraceVariable *> user_defined_interface_variables;
+
+        // Lookup map from Interface slot to the variable in that spot
+        // spirv-val guarantees no overlap so 2 variables won't have same slot
+        std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
+        std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
+        // Uesd for limit check
+        const StageInteraceVariable *max_input_slot_variable = nullptr;
+        const StageInteraceVariable *max_output_slot_variable = nullptr;
+        const InterfaceSlot *max_input_slot = nullptr;
+        const InterfaceSlot *max_output_slot = nullptr;
+        uint32_t builtin_input_components = 0;
+        uint32_t builtin_output_components = 0;
 
         StructInfo push_constant_used_in_shader;
 
@@ -253,6 +311,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         bool written_builtin_primitive_shading_rate_khr{false};
         bool written_builtin_viewport_index{false};
         bool written_builtin_viewport_mask_nv{false};
+
+        bool has_passthrough{false};
 
         EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint);
     };
@@ -406,14 +466,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
-
-    // State tracking helpers for collecting interface information
-    vvl::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
-    bool CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
-                                      bool is_patch, const Instruction *variable_insn) const;
-    std::map<location_t, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
-                                                                                  spv::StorageClass sinterface) const;
-    std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
