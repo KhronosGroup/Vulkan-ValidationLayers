@@ -32,51 +32,6 @@
 #include "spirv_grammar_helper.h"
 #include "xxhash.h"
 
-static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, const Instruction *a_base_insn,
-                           const Instruction *b_base_insn) {
-    if (!a_base_insn || !b_base_insn) {
-        return false;
-    }
-    const uint32_t a_opcode = a_base_insn->Opcode();
-    const uint32_t b_opcode = b_base_insn->Opcode();
-    if (a_opcode == b_opcode) {
-        if (a_opcode == spv::OpTypeInt) {
-            // Match width and signedness
-            return a_base_insn->Word(2) == b_base_insn->Word(2) && a_base_insn->Word(3) == b_base_insn->Word(3);
-        } else if (a_opcode == spv::OpTypeFloat) {
-            // Match width
-            return a_base_insn->Word(2) == b_base_insn->Word(2);
-        } else if (a_opcode == spv::OpTypeBool) {
-            return true;
-        } else if (a_opcode == spv::OpTypeStruct) {
-            // Match on all element types
-            if (a_base_insn->Length() != b_base_insn->Length()) {
-                return false;  // Structs cannot match if member counts differ
-            }
-
-            for (uint32_t i = 2; i < a_base_insn->Length(); i++) {
-                const Instruction *c_base_insn = a.GetBaseTypeInstruction(a_base_insn->Word(i));
-                const Instruction *d_base_insn = b.GetBaseTypeInstruction(b_base_insn->Word(i));
-                if (!BaseTypesMatch(a, b, c_base_insn, d_base_insn)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool TypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, uint32_t a_type, uint32_t b_type) {
-    const Instruction *a_base_insn = a.GetBaseTypeInstruction(a_type);
-    const Instruction *b_base_insn = b.GetBaseTypeInstruction(b_type);
-
-    if (nullptr == a_base_insn && nullptr == b_base_insn) return true;
-
-    return BaseTypesMatch(a, b, a_base_insn, b_base_insn);
-}
-
 static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
     switch (format) {
         case VK_FORMAT_R64G64B64A64_SFLOAT:
@@ -105,7 +60,6 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                            const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
-    const auto inputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassInput);
 
     // Build index by location
     std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
@@ -120,11 +74,18 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
 
     struct AttribInputPair {
         const VkVertexInputAttributeDescription *attrib = nullptr;
-        const UserDefinedInterfaceVariable *input = nullptr;
+        const StageInteraceVariable *input = nullptr;
     };
     std::map<uint32_t, AttribInputPair> location_map;
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
-    for (const auto &input_it : inputs) location_map[input_it.first.first].input = &input_it.second;
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassInput)) {
+            continue;  // not an input interface
+        }
+        for (const auto &slot : variable->interface_slots) {
+            location_map[slot.Location()].input = variable;
+        }
+    }
 
     for (const auto &location_it : location_map) {
         const auto location = location_it.first;
@@ -167,15 +128,18 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     bool skip = false;
 
     struct Attachment {
-        const UserDefinedInterfaceVariable *output = nullptr;
+        const StageInteraceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassOutput);
-    for (const auto &output_it : outputs) {
-        auto const location = output_it.first.first;
-        location_map[location].output = &output_it.second;
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+            continue;  // not an output interface
+        }
+        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+        // This means all Locations in slots will be the same
+        location_map[variable->interface_slots[0].Location()].output = variable;
     }
 
     for (uint32_t location = 0; location < location_map.size(); ++location) {
@@ -306,7 +270,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
-        const UserDefinedInterfaceVariable *output = nullptr;
+        const StageInteraceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -325,11 +289,13 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     }
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
-
-    const auto outputs = module_state.CollectInterfaceByLocation(entrypoint.entrypoint_insn, spv::StorageClassOutput);
-    for (const auto &output_it : outputs) {
-        auto const location = output_it.first.first;
-        location_map[location].output = &output_it.second;
+    for (const auto *variable : entrypoint.user_defined_interface_variables) {
+        if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+            continue;  // not an output interface
+        }
+        // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+        // This means all Locations in slots will be the same
+        location_map[variable->interface_slots[0].Location()].output = variable;
     }
 
     const auto *ms_state = pipeline.MultisampleState();

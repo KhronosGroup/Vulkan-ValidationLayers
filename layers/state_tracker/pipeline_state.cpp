@@ -243,8 +243,15 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::S
             continue;
         }
         if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            result = stage_state.module_state->CollectWritableOutputLocationinFS(stage_state.entrypoint->entrypoint_insn);
-            break;
+            for (const auto *variable : stage_state.entrypoint->user_defined_interface_variables) {
+                if ((variable->storage_class != spv::StorageClassOutput) || variable->interface_slots.empty()) {
+                    continue;  // not an output interface
+                }
+                // It is not allowed to have Block Fragment or 64-bit vectors output in Frag shader
+                // This means all Locations in slots will be the same
+                result.insert(variable->interface_slots[0].Location());
+            }
+            break;  // found
         }
     }
     return result;
