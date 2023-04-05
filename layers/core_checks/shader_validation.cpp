@@ -459,29 +459,20 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
+bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const SHADER_MODULE_STATE::EntryPoint &entrypoint,
                                        const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
-    if (entrypoint.Word(1) != spv::ExecutionModelFragment) {
+    if (entrypoint.entrypoint_insn.Word(1) != spv::ExecutionModelFragment) {
         return skip;
     }
 
-    // Find all builtin from just the interface variables
-    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
-        const Instruction *insn = module_state.FindDef(id);
-        assert(insn->Opcode() == spv::OpVariable);
-        const auto decorations = module_state.GetDecorationSet(insn->Word(2));
-
+    for (const auto *variable : entrypoint.built_in_variables) {
         // Currently don't need to search in structs
-        if (decorations.builtin == spv::BuiltInSampleMask) {
-            const Instruction *type_pointer = module_state.FindDef(insn->Word(1));
-            assert(type_pointer->Opcode() == spv::OpTypePointer);
-
-            const Instruction *type = module_state.FindDef(type_pointer->Word(3));
-            if (type->Opcode() == spv::OpTypeArray) {
-                uint32_t length = module_state.GetConstantValueById(type->Word(3));
+        if (variable->decorations.builtin == spv::BuiltInSampleMask) {
+            if (variable->base_type.Opcode() == spv::OpTypeArray) {
+                uint32_t length = module_state.GetConstantValueById(variable->base_type.Word(3));
                 // Handles both the input and output sampleMask
                 if (length > phys_dev_props.limits.maxSampleMaskWords) {
                     skip |=
@@ -3215,7 +3206,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateDecorations(module_state, pipeline);
     skip |= ValidateVariables(module_state);
     skip |= ValidatePointSizeShaderState(pipeline, module_state, *stage_state.entrypoint, stage);
-    skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline);
+    skip |= ValidateBuiltinLimits(module_state, *stage_state.entrypoint, pipeline);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, create_info);
     }
