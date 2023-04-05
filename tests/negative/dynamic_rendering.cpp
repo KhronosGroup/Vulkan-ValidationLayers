@@ -2033,9 +2033,11 @@ TEST_F(VkLayerTest, DynamicRenderingInfoMismatchedSamples) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
 
+    m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRate) {
@@ -2186,6 +2188,7 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupRenderPassBeginInfo) {
     m_commandBuffer->begin();
 
     m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->EndRendering();
 
     render_area.offset.x = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06083");
@@ -2197,6 +2200,7 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupRenderPassBeginInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06084");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidFragmentShadingRateImage) {
@@ -2351,9 +2355,11 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidDepthAttachmentFormat) 
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
 
+    m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06547");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
@@ -2462,6 +2468,7 @@ TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06115");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
@@ -2627,9 +2634,11 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingInvalidStencilAttachmentFormat
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.pStencilAttachment = &stencil_attachment;
 
+    m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pStencilAttachment-06548");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingInheritanceRenderingInfoStencilAttachmentFormat) {
@@ -7414,5 +7423,83 @@ TEST_F(VkLayerTest, DynamicRenderingDynamicColorBlendAttchment) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingBeginTwice) {
+    TEST_DESCRIPTION("Call vkCmdBeginRendering twice in a row");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-renderpass");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->EndRendering();
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DynamicRenderingEndTwice) {
+    TEST_DESCRIPTION("Call vkCmdEndRendering twice in a row");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_commandBuffer->EndRendering();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRendering-renderpass");
+    m_commandBuffer->EndRendering();
+    m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
