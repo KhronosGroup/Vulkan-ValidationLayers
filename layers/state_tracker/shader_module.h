@@ -155,7 +155,8 @@ struct StageInteraceVariable : public VariableBase {
     static bool IsBuiltin(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static std::vector<InterfaceSlot> GetInterfaceSlots(const StageInteraceVariable &variable,
                                                         const SHADER_MODULE_STATE &module_state);
-    static std::vector<uint32_t> GetBuiltinBlock(StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static uint32_t GetBuiltinComponents(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
 };
 
 // vkspec.html#interfaces-resources describes 'Shader Resource Interface'
@@ -358,7 +359,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};
 
-        std::vector<EntryPoint> entry_points;
+        // EntryPoint has pointer references inside it that need to be preserved
+        std::vector<std::shared_ptr<EntryPoint>> entry_points;
 
         bool has_group_decoration{false};
 
@@ -414,8 +416,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
     const std::vector<ResourceInterfaceVariable> *GetResourceInterfaceVariable(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
-            if (entry_point.entrypoint_insn == entrypoint) {
-                return &entry_point.resource_interface_variables;
+            if (entry_point->entrypoint_insn == entrypoint) {
+                return &entry_point->resource_interface_variables;
             }
         }
         return nullptr;
@@ -450,7 +452,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
 
     const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
-    const EntryPoint *FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
+    std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     std::optional<Instruction> FindEntrypointInstruction(char const *name, VkShaderStageFlagBits stageBits) const;
     [[nodiscard]] bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y,
                                      uint32_t &local_size_z) const;
@@ -482,7 +484,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // Used to set push constants values at shader module initialization time
     static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
-                                            std::vector<SHADER_MODULE_STATE::EntryPoint> &entry_points);
+                                            std::vector<std::shared_ptr<SHADER_MODULE_STATE::EntryPoint>> &entry_points);
 
   private:
     // The following are all helper functions to set the push constants values by tracking if the values are accessed in the entry

@@ -117,6 +117,10 @@ static char const bindStateGeomPointSizeShaderText[] = R"glsl(
     layout (points) in;
     layout (points) out;
     layout (max_vertices = 1) out;
+    in gl_PerVertex {
+        vec4 gl_Position;
+        float gl_PointSize;
+    };
     void main() {
        gl_Position = vec4(1);
        gl_PointSize = 1.0;

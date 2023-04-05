@@ -347,7 +347,7 @@ TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Builtin variable inside block doesn't match between");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-BuiltinMismatch");
 }
 
 TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
@@ -388,7 +388,7 @@ TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Number of elements inside builtin block differ between stages");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-BuiltinMismatch");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
@@ -492,9 +492,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
                 break;
             }
             case 1: {
-                // (in and out component limit) and (in and out location limit)
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
@@ -614,9 +613,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
                 break;
             }
             case 1: {
-                // (in and out component limit) and (in and out location limit)
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
@@ -724,10 +722,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
                 break;
             }
             case 1: {
-                // (in and out component limit) and (in and out location limit) and maxGeometryTotalOutputComponents
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                              "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
@@ -848,7 +844,7 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
         helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InterfacePatchVertex");
 }
 
 TEST_F(VkLayerTest, CreatePipelineTessErrors) {

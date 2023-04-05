@@ -4200,7 +4200,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Type mismatch on location 0");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
@@ -4234,7 +4234,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Type mismatch on location 0");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
@@ -4530,7 +4530,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-CoreValidation-Shader-FragmentOutputMismatch");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
@@ -4738,8 +4738,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
             }
             case 1: {
                 // component and location limit (maxVertexOutputComponents)
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             }
             case 2: {
@@ -4808,8 +4807,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxComponentsBlocks) {
 
     // 1 for maxVertexOutputComponents and 1 for maxFragmentInputComponents
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                                     "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
@@ -4863,13 +4861,12 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
                 break;
             }
             case 1: {
-                // component and location limit (maxFragmentInputComponents)
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                // (maxFragmentInputComponents)
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             }
             case 2:
-                // just component limit (maxFragmentInputComponents)
+                // (maxFragmentInputComponents)
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             default: {
@@ -8854,7 +8851,9 @@ TEST_F(VkLayerTest, ComputeSharedMemorySpecConstantSet) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
 }
 
-TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
+// Spec doesn't clarify if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/3293
+TEST_F(VkLayerTest, DISABLED_TestInvalidShaderInputAndOutputComponents) {
     TEST_DESCRIPTION("Test invalid shader layout in and out with different components.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -10697,7 +10696,7 @@ TEST_F(VkLayerTest, TestShaderInputOutputMismatch) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -10986,7 +10985,7 @@ TEST_F(VkLayerTest, StorageTexelBufferWriteLessComponent) {
 }
 
 TEST_F(VkLayerTest, StorageImageUnknownWriteLessComponent) {
-    TEST_DESCRIPTION("Test writing to image unknown format with less compoents.");
+    TEST_DESCRIPTION("Test writing to image unknown format with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -11071,7 +11070,7 @@ TEST_F(VkLayerTest, StorageImageUnknownWriteLessComponent) {
 }
 
 TEST_F(VkLayerTest, StorageTexelBufferUnkownWriteLessComponent) {
-    TEST_DESCRIPTION("Test writing to texel buffer unknown format with less compoents.");
+    TEST_DESCRIPTION("Test writing to texel buffer unknown format with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);

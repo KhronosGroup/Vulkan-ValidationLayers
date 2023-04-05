@@ -5691,7 +5691,9 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch2) {
+// Spec doesn't clarify if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/3445
+TEST_F(VkPositiveLayerTest, DISABLED_TestShaderInputOutputMatch2) {
     TEST_DESCRIPTION("Test matching vertex shader output with fragment shader input.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
