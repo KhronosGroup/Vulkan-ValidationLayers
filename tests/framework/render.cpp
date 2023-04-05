@@ -277,10 +277,16 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
+    // Beginning with the 1.3.216 Vulkan SDK, the VK_KHR_PORTABILITY_subset extension is mandatory.
 #ifdef VK_USE_PLATFORM_METAL_EXT
     AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    // Beginning with the 1.3.216 Vulkan SDK, the VK_KHR_PORTABILITY_subset extension is mandatory.
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+#else
+    // Note by default VK_KHRONOS_PROFILES_EMULATE_PORTABILITY is true.
+    if (auto str = GetEnvironment("VK_KHRONOS_PROFILES_EMULATE_PORTABILITY"); !str.empty() && str != "false") {
+        AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
 #endif
 
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
