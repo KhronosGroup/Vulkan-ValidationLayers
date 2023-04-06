@@ -6811,6 +6811,13 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&shader_float_control);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
+    if (shader_float_control.denormBehaviorIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE) {
+        GTEST_SKIP() << "denormBehaviorIndependence is NONE";
+    }
+    if (shader_float_control.roundingModeIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE) {
+        GTEST_SKIP() << "roundingModeIndependence is NONE";
+    }
+
     // Check for support of 32-bit properties, but only will test if they are not supported
     // in case all 16/32/64 version are not supported will set SetUnexpectedError for capability check
     bool signed_zero_inf_nan_preserve = (shader_float_control.shaderSignedZeroInfNanPreserveFloat32 == VK_TRUE);
