@@ -1489,3 +1489,88 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
     }
 }
+
+TEST_F(VkLayerTest, MultiplaneAspectBits) {
+    TEST_DESCRIPTION("Attempt to update descriptor sets for images that do not have correct aspect bits sets.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    GetPhysicalDeviceFeatures2(ycbcr_features);
+    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
+        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
+    VkImageObj image_obj(m_device);
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_props);
+    if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
+        GTEST_SKIP() << "multi-planar format cannot be sampled for optimalTiling.";
+    }
+
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>(
+        nullptr, VkImageCreateFlags{VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT},  // need for multi-planar
+        VK_IMAGE_TYPE_2D, mp_format, VkExtent3D{64, 64, 1}, 1u, 1u, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
+        VkImageUsageFlags{VK_IMAGE_USAGE_SAMPLED_BIT}, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr, VK_IMAGE_LAYOUT_UNDEFINED);
+    image_obj.init(&image_ci);
+    ASSERT_TRUE(image_obj.initialized());
+
+    auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = mp_format;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
+
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, true);
+
+    auto ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    ycbcr_info.conversion = conversion.handle();
+
+    auto image_view_ci = image_obj.TargetViewCI(mp_format);
+    image_view_ci.pNext = &ycbcr_info;
+    auto image_view = image_obj.targetView(image_view_ci);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.pNext = &ycbcr_info;
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    OneOffDescriptorSet descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
+                  });
+
+    if (descriptor_set.set_ == VK_NULL_HANDLE) {
+        GTEST_SKIP() << "Couldn't create descriptor set";
+    }
+
+    // TODO - 01564 appears to be impossible to hit due to the following check in descriptor_validation.cpp:
+    // if (sampler && !desc->IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) ...
+    //   - !desc->IsImmutableSampler() will cause 02738; IOW, multi-plane conversion _requires_ an immutable sampler
+    //   - !desc->IsImmutableSampler() must be removed for 01564 to get hit, but it's not clear whether or not this is
+    //   correct based on the comments in the code
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-sampler-01564");
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptor_set.UpdateDescriptorSets();
+    // m_errorMonitor->VerifyFound();
+}
