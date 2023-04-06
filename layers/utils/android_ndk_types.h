@@ -49,7 +49,7 @@
 #if __ANDROID_API__ < 24
 #error "Vulkan not supported on Android 23 and below"
 #elif __ANDROID_API__ < 26
-#pragma message("Building for Android without Android Hardward Buffer support")
+#warning "Building for Android without Android Hardware Buffer support"
 #else
 // This is used to allow building for Android without AHB support
 #define AHB_VALIDATION_SUPPORT
