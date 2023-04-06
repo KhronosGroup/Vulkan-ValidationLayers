@@ -76,7 +76,7 @@ std::vector<std::shared_ptr<const IMAGE_VIEW_STATE>> ValidationStateTracker::Get
 
 template <typename CreateInfo>
 VkFormatFeatureFlags2KHR ValidationStateTracker::GetExternalFormatFeaturesANDROID(const CreateInfo *create_info) const {
-    VkFormatFeatureFlags format_features = 0;
+    VkFormatFeatureFlags2KHR format_features = 0;
     const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         // VUID 01894 will catch if not found in map
