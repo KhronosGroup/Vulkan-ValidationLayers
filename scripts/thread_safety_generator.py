@@ -161,6 +161,7 @@ class ThreadOutputGenerator(OutputGenerator):
 #include <string>
 #include <thread>
 #include <vector>
+#include "utils/vk_layer_utils.h"
 
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)
 // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
@@ -184,25 +185,20 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
 [[maybe_unused]] static const char *kVUID_Threading_SingleThreadReuse = "UNASSIGNED-Threading-SingleThreadReuse";
 // clang-format on
 
-class ObjectUseData
+class alignas(get_hardware_destructive_interference_size()) ObjectUseData
 {
 public:
     class WriteReadCount
     {
     public:
-        WriteReadCount(int64_t v) : count(v) {}
+        explicit WriteReadCount(int64_t v) : count(v) {}
 
-        int32_t GetReadCount() const { return (int32_t)(count & 0xFFFFFFFF); }
-        int32_t GetWriteCount() const { return (int32_t)(count >> 32); }
+        int32_t GetReadCount() const { return static_cast<int32_t>(count & 0xFFFFFFFF); }
+        int32_t GetWriteCount() const { return static_cast<int32_t>(count >> 32); }
 
     private:
-        int64_t count;
+        int64_t count{};
     };
-
-    ObjectUseData() : thread(), writer_reader_count(0) {
-        // silence -Wunused-private-field warning
-        padding[0] = 0;
-    }
 
     WriteReadCount AddWriter() {
         int64_t prev = writer_reader_count.fetch_add(1ULL << 32);
@@ -231,17 +227,12 @@ public:
         }
     }
 
-    std::atomic<std::thread::id> thread;
+    std::atomic<std::thread::id> thread{};
 
 private:
-    // need to update write and read counts atomically. Writer in high
-    // 32 bits, reader in low 32 bits.
-    std::atomic<int64_t> writer_reader_count;
-
-    // Put each lock on its own cache line to avoid false cache line sharing.
-    char padding[(-int(sizeof(std::atomic<std::thread::id>) + sizeof(std::atomic<int64_t>))) & 63];
+    // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
+    std::atomic<int64_t> writer_reader_count{};
 };
-
 
 template <typename T>
 class counter {

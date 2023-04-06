@@ -497,6 +497,11 @@ class LockedSharedPtr : public std::shared_ptr<T> {
     Guard guard_;
 };
 
+// https://en.cppreference.com/w/cpp/thread/hardware_destructive_interference_size
+// https://en.wikipedia.org/wiki/False_sharing
+// TODO use C++20 to check for std::hardware_destructive_interference_size feature support.
+constexpr std::size_t get_hardware_destructive_interference_size() { return 64; }
+
 // Limited concurrent_unordered_map that supports internally-synchronized
 // insert/erase/access. Splits locking across N buckets and uses shared_mutex
 // for read/write locking. Iterators are not supported. The following
@@ -652,11 +657,10 @@ class vl_concurrent_unordered_map {
     static const int BUCKETS = (1 << BUCKETSLOG2);
 
     vvl::unordered_map<Key, T, Hash> maps[BUCKETS];
-    struct {
-        mutable std::shared_mutex lock;
-        // Put each lock on its own cache line to avoid false cache line sharing.
-        char padding[(-int(sizeof(std::shared_mutex))) & 63];
-    } locks[BUCKETS];
+    struct alignas(get_hardware_destructive_interference_size()) AlignedSharedMutex {
+        std::shared_mutex lock;
+    };
+    mutable std::array<AlignedSharedMutex, BUCKETS> locks;
 
     uint32_t ConcurrentMapHashObject(const Key &object) const {
         uint64_t u64 = (uint64_t)(uintptr_t)object;
