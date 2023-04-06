@@ -215,6 +215,30 @@ jobs:
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
+  android_cmake:
+      runs-on: ubuntu-22.04
+      strategy:
+        fail-fast: false
+      steps:
+        - uses: actions/checkout@v3
+        - uses: lukka/get-cmake@latest
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: ${{ runner.os }}-android-cmake
+        - name: Add ccache to PATH
+          run: echo "/usr/lib/ccache" >> $GITHUB_PATH
+        - name: Configure
+          run: |
+            cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+            -D ANDROID_PLATFORM=26 \
+            -D CMAKE_BUILD_TYPE=Debug \
+            -D UPDATE_DEPS=ON \
+            -D BUILD_WERROR=ON \
+            -G "Ninja"
+        - name: Build
+          run: cmake --build build/
+
   android:
       runs-on: ubuntu-20.04
       strategy:
