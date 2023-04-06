@@ -872,8 +872,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state, VkPipelineShaderStageCreateFlags flags) const;
     bool ValidateComputeSharedMemory(const SHADER_MODULE_STATE& module_state, uint32_t total_shared_size) const;
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
-    bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint, VkShaderStageFlagBits stage,
-                                const PIPELINE_STATE& pipeline) const;
+    bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
+                                VkShaderStageFlagBits stage, const PIPELINE_STATE& pipeline) const;
     bool ValidateViAgainstVsInputs(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    const SHADER_MODULE_STATE::EntryPoint& entrypoint) const;
     bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state,
@@ -884,8 +884,8 @@ class CoreChecks : public ValidationStateTracker {
                                                             const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderInputAttachment(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable) const;
-    bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
-                                           const PIPELINE_STATE& pipeline) const;
+    bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state,
+                                           const SHADER_MODULE_STATE::EntryPoint& entrypoint, const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* create_info) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
@@ -1954,10 +1954,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue, const char* apiName) const;
     bool PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore sempahore, uint64_t* pValue) const override;
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue) const override;
-    bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+    bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                        const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                        uint32_t local_size_z) const;
-    bool ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+    bool ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                         const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                         uint32_t local_size_z) const;
 

@@ -26,7 +26,7 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
                                        std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> &entrypoint)
     : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {
     if (entrypoint) {
-        descriptor_variables = module_state->GetResourceInterfaceVariable((*entrypoint).entrypoint_insn);
+        descriptor_variables = &(*entrypoint).resource_interface_variables;
     }
 }
 
@@ -265,7 +265,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE &pipelin
         if (!stage.entrypoint) {
             continue;
         }
-        auto stage_topo = stage.module_state->GetTopology(stage.entrypoint->entrypoint_insn);
+        auto stage_topo = stage.module_state->GetTopology(*stage.entrypoint);
         if (stage_topo) {
             result = *stage_topo;
         }

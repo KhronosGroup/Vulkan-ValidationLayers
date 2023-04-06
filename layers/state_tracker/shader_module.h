@@ -315,7 +315,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         bool has_passthrough{false};
 
-        EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint);
+        EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn);
     };
 
     // Static/const data extracted from a SPIRV module at initialization time
@@ -411,29 +411,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     }
 
     const std::vector<Instruction> &GetInstructions() const { return static_data_.instructions; }
-    const std::vector<const Instruction *> &GetDecorationInstructions() const { return static_data_.decoration_inst; }
-    const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
-    const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
-    const std::vector<ResourceInterfaceVariable> *GetResourceInterfaceVariable(const Instruction &entrypoint) const {
-        for (const auto &entry_point : static_data_.entry_points) {
-            if (entry_point->entrypoint_insn == entrypoint) {
-                return &entry_point->resource_interface_variables;
-            }
-        }
-        return nullptr;
-    }
 
     const std::vector<const Instruction *> FindVariableAccesses(uint32_t variable_id, const std::vector<uint32_t> &access_ids,
                                                                 bool atomic) const;
 
-    const vvl::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
-        return static_data_.execution_mode_inst;
+    const std::vector<const Instruction *> GetExecutionModeInstructions(uint32_t entrypoint_id) const {
+        auto it = static_data_.execution_mode_inst.find(entrypoint_id);
+        return (it != static_data_.execution_mode_inst.end()) ? it->second : std::vector<const Instruction *>();
     }
-
-    const vvl::unordered_map<uint32_t, uint32_t> &GetSpecConstMap() const { return static_data_.spec_const_map; }
-
-    bool HasSpecConstants() const { return static_data_.has_specialization_constants; }
-    bool HasInvocationRepackInstruction() const { return static_data_.has_invocation_repack_instruction; }
 
     bool HasMultipleEntryPoints() const { return static_data_.entry_points.size() > 1; }
 
@@ -449,12 +434,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type, uint32_t indent) const;
     std::string DescribeType(uint32_t type) const;
 
-    std::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
+    std::optional<VkPrimitiveTopology> GetTopology(const EntryPoint &entrypoint) const;
 
     const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
     std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
-    std::optional<Instruction> FindEntrypointInstruction(char const *name, VkShaderStageFlagBits stageBits) const;
-    [[nodiscard]] bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y,
+    [[nodiscard]] bool FindLocalSize(const EntryPoint &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y,
                                      uint32_t &local_size_z) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
@@ -467,8 +451,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
-    bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
+    bool IsBuiltInWritten(const Instruction *builtin_insn, const EntryPoint &entrypoint) const;
 
+    // Instruction helpers that need the knowledge of the whole SPIR-V module
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
