@@ -80,6 +80,55 @@ struct DecorationSet : public DecorationBase {
     bool HasBuiltIn() const;
 };
 
+// Tracking of OpExecutionMode / OpExecutionModeId values
+struct ExecutionModeSet {
+    enum FlagBit {
+        output_points_bit = 1 << 0,
+        point_mode_bit = 1 << 1,
+        post_depth_coverage_bit = 1 << 2,
+        local_size_bit = 1 << 3,
+        local_size_id_bit = 1 << 4,
+        iso_lines_bit = 1 << 5,
+        xfb_bit = 1 << 6,
+        early_fragment_test_bit = 1 << 7,
+        subgroup_uniform_control_flow_bit = 1 << 8,
+
+        signed_zero_inf_nan_preserve_width_16 = 1 << 9,
+        signed_zero_inf_nan_preserve_width_32 = 1 << 10,
+        signed_zero_inf_nan_preserve_width_64 = 1 << 11,
+        denorm_preserve_width_16 = 1 << 12,
+        denorm_preserve_width_32 = 1 << 13,
+        denorm_preserve_width_64 = 1 << 14,
+        denorm_flush_to_zero_width_16 = 1 << 15,
+        denorm_flush_to_zero_width_32 = 1 << 16,
+        denorm_flush_to_zero_width_64 = 1 << 17,
+        rounding_mode_rte_width_16 = 1 << 18,
+        rounding_mode_rte_width_32 = 1 << 19,
+        rounding_mode_rte_width_64 = 1 << 20,
+        rounding_mode_rtz_width_16 = 1 << 21,
+        rounding_mode_rtz_width_32 = 1 << 22,
+        rounding_mode_rtz_width_64 = 1 << 23,
+    };
+    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
+
+    // bits to know if things have been set or not by a Decoration
+    uint32_t flags = 0;
+
+    VkPrimitiveTopology primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+
+    // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
+    uint32_t local_size_x = kInvalidValue;
+    uint32_t local_size_y = kInvalidValue;
+    uint32_t local_size_z = kInvalidValue;
+
+    uint32_t output_vertices = 0;
+    uint32_t output_primitives = 0;
+    uint32_t invocations = 0;
+
+    void Add(const Instruction &insn);
+    bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
+};
+
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
     // A Location is made up of 4 Components
@@ -283,6 +332,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // All ids that can be accessed from the entry point
         vvl::unordered_set<uint32_t> accessible_ids;
 
+        const ExecutionModeSet &execution_mode;
+
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
         std::vector<StageInteraceVariable> stage_interface_variables;
         // Easier to lookup without having to check for the is_builtin bool
@@ -335,6 +386,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         vvl::unordered_map<uint32_t, DecorationSet> decorations;
         DecorationSet empty_decoration;  // all zero values, allows use to return a reference and not a copy each time
+
+        // Execution Modes are tied to a Function <id>, multiple EntryPoints can point to the same Funciton <id>
+        // Keep a mapping so each EntryPoint can grab a reference to it
+        vvl::unordered_map<uint32_t, ExecutionModeSet> execution_modes;
+        ExecutionModeSet empty_execution_mode;  // all zero values, allows use to return a reference and not a copy each time
+
         // <Specialization constant ID -> target ID> mapping
         vvl::unordered_map<uint32_t, uint32_t> spec_const_map;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
@@ -342,11 +399,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<const Instruction *> member_decoration_inst;
         // Find all variable instructions to prevent relookping module later
         std::vector<const Instruction *> variable_inst;
-        // Execution are not tied to an entry point and are their own mapping tied to entry point function
-        // [OpEntryPoint function <id> operand] : [Execution Mode Instruction list]
-        vvl::unordered_map<uint32_t, std::vector<const Instruction *>> execution_mode_inst;
         // both OpDecorate and OpMemberDecorate builtin instructions
         std::vector<const Instruction *> builtin_decoration_inst;
+        // OpEmitStreamVertex/OpEndStreamPrimitive
+        std::vector<const Instruction *> transform_feedback_stream_inst;
         // BuiltIn we just care about existing or not, don't have to be written to
         bool has_builtin_layer{false};
         bool has_builtin_fully_covered{false};
@@ -415,11 +471,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const std::vector<const Instruction *> FindVariableAccesses(uint32_t variable_id, const std::vector<uint32_t> &access_ids,
                                                                 bool atomic) const;
 
-    const std::vector<const Instruction *> GetExecutionModeInstructions(uint32_t entrypoint_id) const {
-        auto it = static_data_.execution_mode_inst.find(entrypoint_id);
-        return (it != static_data_.execution_mode_inst.end()) ? it->second : std::vector<const Instruction *>();
-    }
-
     bool HasMultipleEntryPoints() const { return static_data_.entry_points.size() > 1; }
 
     VkShaderModule vk_shader_module() const { return handle_.Cast<VkShaderModule>(); }
@@ -428,6 +479,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // return the actual decorations for this id, or a default empty set.
         const auto it = static_data_.decorations.find(id);
         return (it != static_data_.decorations.end()) ? it->second : static_data_.empty_decoration;
+    }
+
+    const ExecutionModeSet &GetExecutionModeSet(uint32_t function_id) const {
+        // return the actual execution modes for this id, or a default empty set.
+        const auto it = static_data_.execution_modes.find(function_id);
+        return (it != static_data_.execution_modes.end()) ? it->second : static_data_.empty_execution_mode;
     }
 
     // Used to get human readable strings for error messages

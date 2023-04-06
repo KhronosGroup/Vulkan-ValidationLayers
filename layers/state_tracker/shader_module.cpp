@@ -100,6 +100,114 @@ bool DecorationSet::HasBuiltIn() const {
     return false;
 }
 
+void ExecutionModeSet::Add(const Instruction& insn) {
+    const uint32_t execution_mode = insn.Word(2);
+    const uint32_t value = insn.Length() > 3u ? insn.Word(3) : 0u;
+    switch (execution_mode) {
+        case spv::ExecutionModeOutputPoints:  // for geometry shaders
+            flags |= output_points_bit;
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        case spv::ExecutionModePointMode:  // for tessellation shaders
+            flags |= point_mode_bit;
+            break;
+        case spv::ExecutionModePostDepthCoverage:  // VK_EXT_post_depth_coverage
+            flags |= post_depth_coverage_bit;
+            break;
+        case spv::ExecutionModeIsolines:  // Tessellation
+            flags |= iso_lines_bit;
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            break;
+        case spv::ExecutionModeOutputLineStrip:
+        case spv::ExecutionModeOutputLinesNV:
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            break;
+        case spv::ExecutionModeTriangles:
+        case spv::ExecutionModeQuads:
+        case spv::ExecutionModeOutputTriangleStrip:
+        case spv::ExecutionModeOutputTrianglesNV:
+            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            break;
+        case spv::ExecutionModeLocalSizeId:
+            flags |= local_size_id_bit;
+            local_size_x = insn.Word(3);
+            local_size_y = insn.Word(4);
+            local_size_z = insn.Word(5);
+            break;
+        case spv::ExecutionModeLocalSize:
+            flags |= local_size_bit;
+            local_size_x = insn.Word(3);
+            local_size_y = insn.Word(4);
+            local_size_z = insn.Word(5);
+            break;
+        case spv::ExecutionModeOutputVertices:
+            output_vertices = value;
+            break;
+        case spv::ExecutionModeOutputPrimitivesEXT:  // alias ExecutionModeOutputPrimitivesNV
+            output_primitives = value;
+            break;
+        case spv::ExecutionModeXfb:  // TransformFeedback
+            flags |= xfb_bit;
+            break;
+        case spv::ExecutionModeInvocations:
+            invocations = value;
+            break;
+        case spv::ExecutionModeSignedZeroInfNanPreserve:  // VK_KHR_shader_float_controls
+            if (value == 16) {
+                flags |= signed_zero_inf_nan_preserve_width_16;
+            } else if (value == 32) {
+                flags |= signed_zero_inf_nan_preserve_width_32;
+            } else if (value == 64) {
+                flags |= signed_zero_inf_nan_preserve_width_64;
+            }
+            break;
+        case spv::ExecutionModeDenormPreserve:  // VK_KHR_shader_float_controls
+            if (value == 16) {
+                flags |= denorm_preserve_width_16;
+            } else if (value == 32) {
+                flags |= denorm_preserve_width_32;
+            } else if (value == 64) {
+                flags |= denorm_preserve_width_64;
+            }
+            break;
+        case spv::ExecutionModeDenormFlushToZero:  // VK_KHR_shader_float_controls
+            if (value == 16) {
+                flags |= denorm_flush_to_zero_width_16;
+            } else if (value == 32) {
+                flags |= denorm_flush_to_zero_width_32;
+            } else if (value == 64) {
+                flags |= denorm_flush_to_zero_width_64;
+            }
+            break;
+        case spv::ExecutionModeRoundingModeRTE:  // VK_KHR_shader_float_controls
+            if (value == 16) {
+                flags |= rounding_mode_rte_width_16;
+            } else if (value == 32) {
+                flags |= rounding_mode_rte_width_32;
+            } else if (value == 64) {
+                flags |= rounding_mode_rte_width_64;
+            }
+            break;
+        case spv::ExecutionModeRoundingModeRTZ:  // VK_KHR_shader_float_controls
+            if (value == 16) {
+                flags |= rounding_mode_rtz_width_16;
+            } else if (value == 32) {
+                flags |= rounding_mode_rtz_width_32;
+            } else if (value == 64) {
+                flags |= rounding_mode_rtz_width_64;
+            }
+            break;
+        case spv::ExecutionModeEarlyFragmentTests:
+            flags |= early_fragment_test_bit;
+            break;
+        case spv::ExecutionModeSubgroupUniformControlFlowKHR:  // VK_KHR_shader_subgroup_uniform_control_flow
+            flags |= subgroup_uniform_control_flow_bit;
+            break;
+        default:
+            break;
+    }
+}
+
 static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     switch (mode) {
         case spv::ExecutionModelVertex:
@@ -143,7 +251,8 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
     : entrypoint_insn(entrypoint_insn),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint_insn.Word(1)))),
       id(entrypoint_insn.Word(2)),
-      name(entrypoint_insn.GetAsString(3)) {
+      name(entrypoint_insn.GetAsString(3)),
+      execution_mode(module_state.GetExecutionModeSet(id)) {
     if (module_state.has_valid_spirv) {
         // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
         // important for identifying the set of shader resources actually used by an entrypoint, for example.
@@ -361,36 +470,11 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
 std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const EntryPoint& entrypoint) const {
     std::optional<VkPrimitiveTopology> result;
 
-    bool is_point_mode = false;
-
-    for (const Instruction* insn : GetExecutionModeInstructions(entrypoint.id)) {
-        switch (insn->Word(2)) {
-            case spv::ExecutionModePointMode:
-                // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
-                is_point_mode = true;
-                break;
-
-            case spv::ExecutionModeOutputPoints:
-                result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-                break;
-
-            case spv::ExecutionModeIsolines:
-            case spv::ExecutionModeOutputLineStrip:
-            case spv::ExecutionModeOutputLinesNV:
-                result.emplace(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
-                break;
-
-            case spv::ExecutionModeTriangles:
-            case spv::ExecutionModeQuads:
-            case spv::ExecutionModeOutputTriangleStrip:
-            case spv::ExecutionModeOutputTrianglesNV:
-                result.emplace(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-                break;
-        }
-    }
-
-    if (is_point_mode) {
+    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
+    if (entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit)) {
         result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    } else if (entrypoint.execution_mode.primitive_topology != VK_PRIMITIVE_TOPOLOGY_MAX_ENUM) {
+        result.emplace(entrypoint.execution_mode.primitive_topology);
     }
 
     return result;
@@ -472,10 +556,15 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 variable_inst.push_back(&insn);
                 break;
 
+            case spv::OpEmitStreamVertex:
+            case spv::OpEndStreamPrimitive:
+                transform_feedback_stream_inst.push_back(&insn);
+                break;
+
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
-                execution_mode_inst[insn.Word(1)].push_back(&insn);
+                execution_modes[insn.Word(1)].Add(insn);
             } break;
             // Listed from vkspec.html#ray-tracing-repack
             case spv::OpTraceRayKHR:
@@ -742,19 +831,19 @@ bool SHADER_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& 
         }
     }
 
-    for (const Instruction* insn : GetExecutionModeInstructions(entrypoint.id)) {
-        if (insn->Opcode() == spv::OpExecutionMode && insn->Word(2) == spv::ExecutionModeLocalSize) {
-            local_size_x = insn->Word(3);
-            local_size_y = insn->Word(4);
-            local_size_z = insn->Word(5);
-            return true;
-        } else if (insn->Opcode() == spv::OpExecutionModeId && insn->Word(2) == spv::ExecutionModeLocalSizeId) {
-            local_size_x = GetConstantValueById(insn->Word(3));
-            local_size_y = GetConstantValueById(insn->Word(4));
-            local_size_z = GetConstantValueById(insn->Word(5));
-            return true;
-        }
+    if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_bit)) {
+        local_size_x = entrypoint.execution_mode.local_size_x;
+        local_size_y = entrypoint.execution_mode.local_size_y;
+        local_size_z = entrypoint.execution_mode.local_size_z;
+        return true;
+    } else if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_id_bit)) {
+        // Uses ExecutionModeLocalSizeId so need to resolve ID value
+        local_size_x = GetConstantValueById(entrypoint.execution_mode.local_size_x);
+        local_size_y = GetConstantValueById(entrypoint.execution_mode.local_size_y);
+        local_size_z = GetConstantValueById(entrypoint.execution_mode.local_size_z);
+        return true;
     }
+
     return false;  // not found
 }
 
