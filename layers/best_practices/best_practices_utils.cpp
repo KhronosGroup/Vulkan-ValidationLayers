@@ -1368,12 +1368,11 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
         return false;
     }
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint_optional = module_state->FindEntrypointInstruction(createInfo.stage.pName, createInfo.stage.stage);
-    if (!entrypoint_optional) return false;
+    auto entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint) return false;
 
-    const Instruction& entrypoint = *entrypoint_optional;
     uint32_t x = {}, y = {}, z = {};
-    if (!module_state->FindLocalSize(entrypoint, x, y, z)) {
+    if (!module_state->FindLocalSize(*entrypoint, x, y, z)) {
         return false;
     }
 
@@ -1402,34 +1401,31 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto variables = module_state->GetResourceInterfaceVariable(entrypoint);
-    if (variables) {
-        unsigned dimensions = 0;
-        if (x > 1) dimensions++;
-        if (y > 1) dimensions++;
-        if (z > 1) dimensions++;
-        // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
-        dimensions = std::max(dimensions, 1u);
+    unsigned dimensions = 0;
+    if (x > 1) dimensions++;
+    if (y > 1) dimensions++;
+    if (z > 1) dimensions++;
+    // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
+    dimensions = std::max(dimensions, 1u);
 
-        // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
-        // There are some false positives here. We could simply have a shader that does this within a 1D grid,
-        // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
-        bool accesses_2d = false;
-        for (const auto& variable : *variables) {
-            auto dim = module_state->GetShaderResourceDimensionality(variable);
-            if (dim != spv::Dim1D && dim != spv::DimBuffer) {
-                accesses_2d = true;
-                break;
-            }
+    // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
+    // There are some false positives here. We could simply have a shader that does this within a 1D grid,
+    // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
+    bool accesses_2d = false;
+    for (const auto& variable : entrypoint->resource_interface_variables) {
+        auto dim = module_state->GetShaderResourceDimensionality(variable);
+        if (dim != spv::Dim1D && dim != spv::DimBuffer) {
+            accesses_2d = true;
+            break;
         }
+    }
 
-        if (accesses_2d && dimensions < 2) {
-            LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality,
-                                  "%s vkCreateComputePipelines(): compute shader has work group dimensions (%u, %u, %u), which "
-                                  "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
-                                  "exhibiting poor spatial locality with respect to one or more shader resources.",
-                                  VendorSpecificTag(kBPVendorArm), x, y, z);
-        }
+    if (accesses_2d && dimensions < 2) {
+        LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality,
+                              "%s vkCreateComputePipelines(): compute shader has work group dimensions (%u, %u, %u), which "
+                              "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
+                              "exhibiting poor spatial locality with respect to one or more shader resources.",
+                              VendorSpecificTag(kBPVendorArm), x, y, z);
     }
 
     return skip;
@@ -1441,14 +1437,13 @@ bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCrea
     if (!module_state) {
         return false;
     }
-    auto entrypoint_optional = module_state->FindEntrypointInstruction(createInfo.stage.pName, createInfo.stage.stage);
-    if (!entrypoint_optional) {
+    auto entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint) {
         return false;
     }
 
-    const Instruction& entrypoint = *entrypoint_optional;
     uint32_t x = {}, y = {}, z = {};
-    if (!module_state->FindLocalSize(entrypoint, x, y, z)) {
+    if (!module_state->FindLocalSize(*entrypoint, x, y, z)) {
         return false;
     }
 

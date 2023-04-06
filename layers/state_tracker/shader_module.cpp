@@ -139,11 +139,11 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     }
 }
 
-SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint)
-    : entrypoint_insn(entrypoint),
-      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)))),
+SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
+    : entrypoint_insn(entrypoint_insn),
+      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint_insn.Word(1)))),
       id(entrypoint_insn.Word(2)),
-      name(entrypoint.GetAsString(3)) {
+      name(entrypoint_insn.GetAsString(3)) {
     if (module_state.has_valid_spirv) {
         // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
         // important for identifying the set of shader resources actually used by an entrypoint, for example.
@@ -339,58 +339,53 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         }
 
         for (const Instruction* decoration_inst : module_state.static_data_.builtin_decoration_inst) {
-            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) &&
-                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+            if ((decoration_inst->GetBuiltIn() == spv::BuiltInPointSize) && module_state.IsBuiltInWritten(decoration_inst, *this)) {
                 written_builtin_point_size = true;
             }
             if ((decoration_inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) &&
-                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                module_state.IsBuiltInWritten(decoration_inst, *this)) {
                 written_builtin_primitive_shading_rate_khr = true;
             }
             if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportIndex) &&
-                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                module_state.IsBuiltInWritten(decoration_inst, *this)) {
                 written_builtin_viewport_index = true;
             }
             if ((decoration_inst->GetBuiltIn() == spv::BuiltInViewportMaskNV) &&
-                module_state.IsBuiltInWritten(decoration_inst, entrypoint)) {
+                module_state.IsBuiltInWritten(decoration_inst, *this)) {
                 written_builtin_viewport_mask_nv = true;
             }
         }
     }
 }
 
-std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction& entrypoint) const {
+std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const EntryPoint& entrypoint) const {
     std::optional<VkPrimitiveTopology> result;
 
-    auto entrypoint_id = entrypoint.Word(2);
     bool is_point_mode = false;
 
-    auto it = static_data_.execution_mode_inst.find(entrypoint_id);
-    if (it != static_data_.execution_mode_inst.end()) {
-        for (const Instruction* insn : it->second) {
-            switch (insn->Word(2)) {
-                case spv::ExecutionModePointMode:
-                    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
-                    is_point_mode = true;
-                    break;
+    for (const Instruction* insn : GetExecutionModeInstructions(entrypoint.id)) {
+        switch (insn->Word(2)) {
+            case spv::ExecutionModePointMode:
+                // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
+                is_point_mode = true;
+                break;
 
-                case spv::ExecutionModeOutputPoints:
-                    result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-                    break;
+            case spv::ExecutionModeOutputPoints:
+                result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+                break;
 
-                case spv::ExecutionModeIsolines:
-                case spv::ExecutionModeOutputLineStrip:
-                case spv::ExecutionModeOutputLinesNV:
-                    result.emplace(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
-                    break;
+            case spv::ExecutionModeIsolines:
+            case spv::ExecutionModeOutputLineStrip:
+            case spv::ExecutionModeOutputLinesNV:
+                result.emplace(VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
+                break;
 
-                case spv::ExecutionModeTriangles:
-                case spv::ExecutionModeQuads:
-                case spv::ExecutionModeOutputTriangleStrip:
-                case spv::ExecutionModeOutputTrianglesNV:
-                    result.emplace(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-                    break;
-            }
+            case spv::ExecutionModeTriangles:
+            case spv::ExecutionModeQuads:
+            case spv::ExecutionModeOutputTriangleStrip:
+            case spv::ExecutionModeOutputTrianglesNV:
+                result.emplace(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+                break;
         }
     }
 
@@ -728,21 +723,11 @@ std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> SHADER_MODULE_STATE::Find
     return nullptr;
 }
 
-std::optional<Instruction> SHADER_MODULE_STATE::FindEntrypointInstruction(char const* name, VkShaderStageFlagBits stageBits) const {
-    std::optional<Instruction> result;
-    for (const auto& entry_point : static_data_.entry_points) {
-        if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
-            result.emplace(entry_point->entrypoint_insn);
-        }
-    }
-    return result;
-}
-
 // Because the following is legal, need the entry point
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
 // Assumes shader module contains no spec constants used to set the local size values
-bool SHADER_MODULE_STATE::FindLocalSize(const Instruction& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
+bool SHADER_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
                                         uint32_t& local_size_z) const {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
@@ -757,21 +742,17 @@ bool SHADER_MODULE_STATE::FindLocalSize(const Instruction& entrypoint, uint32_t&
         }
     }
 
-    auto entrypoint_id = entrypoint.Word(2);
-    auto it = static_data_.execution_mode_inst.find(entrypoint_id);
-    if (it != static_data_.execution_mode_inst.end()) {
-        for (const Instruction* insn : it->second) {
-            if (insn->Opcode() == spv::OpExecutionMode && insn->Word(2) == spv::ExecutionModeLocalSize) {
-                local_size_x = insn->Word(3);
-                local_size_y = insn->Word(4);
-                local_size_z = insn->Word(5);
-                return true;
-            } else if (insn->Opcode() == spv::OpExecutionModeId && insn->Word(2) == spv::ExecutionModeLocalSizeId) {
-                local_size_x = GetConstantValueById(insn->Word(3));
-                local_size_y = GetConstantValueById(insn->Word(4));
-                local_size_z = GetConstantValueById(insn->Word(5));
-                return true;
-            }
+    for (const Instruction* insn : GetExecutionModeInstructions(entrypoint.id)) {
+        if (insn->Opcode() == spv::OpExecutionMode && insn->Word(2) == spv::ExecutionModeLocalSize) {
+            local_size_x = insn->Word(3);
+            local_size_y = insn->Word(4);
+            local_size_z = insn->Word(5);
+            return true;
+        } else if (insn->Opcode() == spv::OpExecutionModeId && insn->Word(2) == spv::ExecutionModeLocalSizeId) {
+            local_size_x = GetConstantValueById(insn->Word(3));
+            local_size_y = GetConstantValueById(insn->Word(4));
+            local_size_z = GetConstantValueById(insn->Word(5));
+            return true;
         }
     }
     return false;  // not found
@@ -1117,7 +1098,7 @@ void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, vvl::u
 void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE& module_state,
                                                       std::vector<std::shared_ptr<SHADER_MODULE_STATE::EntryPoint>>& entry_points) {
     for (auto& entrypoint : entry_points) {
-        for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
+        for (const Instruction* var_insn : module_state.static_data_.variable_inst) {
             if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
                 const Instruction* type = module_state.FindDef(var_insn->Word(1));
                 entrypoint->push_constant_used_in_shader.root = &entrypoint->push_constant_used_in_shader;
@@ -1191,7 +1172,7 @@ uint32_t SHADER_MODULE_STATE::DescriptorTypeToReqs(uint32_t type_id) const {
 
 // For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
-bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const Instruction& entrypoint) const {
+bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const EntryPoint& entrypoint) const {
     auto type = builtin_insn->Opcode();
     uint32_t target_id = builtin_insn->Word(1);
     bool init_complete = false;
@@ -1233,7 +1214,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
 
     bool found_write = false;
     vvl::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.Word(2));
+    worklist.insert(entrypoint.id);
 
     // Follow instructions in call graph looking for writes to target
     while (!worklist.empty() && !found_write) {
