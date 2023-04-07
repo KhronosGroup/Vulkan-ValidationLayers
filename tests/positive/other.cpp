@@ -964,3 +964,37 @@ TEST_F(VkPositiveLayerTest, FormatProperties3FromProfiles) {
     vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8_UNORM, &fmt_props);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 }
+
+TEST_F(VkPositiveLayerTest, GDPAWithMultiCmdExt) {
+    TEST_DESCRIPTION("Use GetDeviceProcAddr on a function which is provided by multiple extensions");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkCmdSetColorBlendAdvancedEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendAdvancedEXT>("vkCmdSetColorBlendAdvancedEXT");
+    ASSERT_NE(vkCmdSetColorBlendAdvancedEXT, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, UseInteractionApi) {
+    TEST_DESCRIPTION("Use an API that is provided by multiple extensions");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkGetDeviceGroupPresentCapabilitiesKHR =
+        GetDeviceProcAddr<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>("vkGetDeviceGroupPresentCapabilitiesKHR");
+    ASSERT_NE(vkGetDeviceGroupPresentCapabilitiesKHR, nullptr);
+
+    auto device_group_present_caps = LvlInitStruct<VkDeviceGroupPresentCapabilitiesKHR>();
+    vkGetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
+}
