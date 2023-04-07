@@ -35,7 +35,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/external \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden
-LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
+LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -112,7 +112,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -frtti -fvisibility=hidden
-LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
+LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 LOCAL_LDLIBS    := -llog -landroid
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
@@ -192,7 +192,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
-LOCAL_CPPFLAGS += -std=c++17 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -fvisibility=hidden
 LOCAL_LDLIBS := -llog -landroid -ldl
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
@@ -275,7 +275,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
-LOCAL_CPPFLAGS += -std=c++17 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
+LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK -DUSE_ROBIN_HOOD_HASHING
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
 LOCAL_LDLIBS := -llog -landroid -ldl

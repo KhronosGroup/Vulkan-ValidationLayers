@@ -10,7 +10,7 @@ if (CMAKE_CURRENT_SOURCE_DIR MATCHES "sources/third_party/vulkan/src")
 endif()
 
 # Enable beta Vulkan extensions
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DXXH_NO_LONG_LONG -DVK_PROTOTYPES)
+add_definitions(-DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DXXH_NO_LONG_LONG)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Werror \
         -Wno-unused-function -Wno-unused-const-variable \
