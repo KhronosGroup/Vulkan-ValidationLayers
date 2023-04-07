@@ -34,6 +34,7 @@ struct CommandBufferSubmitState {
     GlobalImageLayoutMap overlay_image_layout_map;
     QueryMap local_query_to_state_map;
     EventToStageMap local_event_to_stage_map;
+    vvl::unordered_map<VkVideoSessionKHR, VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
 
@@ -96,11 +97,15 @@ struct CommandBufferSubmitState {
             skip |= function(const_cast<CMD_BUFFER_STATE &>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,
                              &local_query_to_state_map);
         }
+
         for (const auto &it : cb_state.video_session_updates) {
             auto video_session_state = core->Get<VIDEO_SESSION_STATE>(it.first);
-            VideoSessionDeviceState local_state = video_session_state->DeviceStateCopy();
+            auto local_state_it = local_video_session_state.find(it.first);
+            if (local_state_it == local_video_session_state.end()) {
+                local_state_it = local_video_session_state.insert({it.first, video_session_state->DeviceStateCopy()}).first;
+            }
             for (const auto &function : it.second) {
-                skip |= function(core, video_session_state.get(), local_state, /*do_validate*/ true);
+                skip |= function(core, video_session_state.get(), local_state_it->second, /*do_validate*/ true);
             }
         }
         return skip;
