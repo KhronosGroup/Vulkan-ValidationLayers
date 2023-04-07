@@ -226,8 +226,8 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     def OutputExtEnabledFunction(self):
         ext_fcn = ''
         # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
-        ext_fcn += 'const vvl::unordered_map<std::string, std::string> api_extension_map {\n'
         api_ext = dict()
+        max_ext_len = 1
         handles = GetHandleTypes(self.registry.tree)
         features = self.registry.tree.findall('feature') + self.registry.tree.findall('extensions/extension')
         for feature in features:
@@ -252,33 +252,48 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                     if 'VkInstance' != disp_obj.text and 'VkPhysicalDevice' != disp_obj.text:
                         # Ensure APIs belonging to multiple extensions match the existing order
                         if command_name not in api_ext:
-                            api_ext[command_name] = feature_name
+                            api_ext[command_name] = [feature_name]
+                        elif feature_name not in api_ext[command_name]:
+                            api_ext[command_name].append(feature_name)
+                        if (ml := len(api_ext[command_name])) > max_ext_len:
+                            max_ext_len = ml
+        ext_fcn += f'const vvl::unordered_map<std::string, small_vector<std::string, {max_ext_len}, size_t>> api_extension_map {{\n'
         for api in sorted(api_ext):
-            ext_fcn += '    {"%s", "%s"},\n' % (api, api_ext[api])
-        ext_fcn += '};\n\n'
-        ext_fcn += '// Using the above code-generated map of APINames-to-parent extension names, this function will:\n'
-        ext_fcn += '//   o  Determine if the API has an associated extension\n'
-        ext_fcn += '//   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names\n'
-        ext_fcn += '//   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE\n'
-        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {\n'
-        ext_fcn += '    auto has_ext = api_extension_map.find(api_name);\n'
-        ext_fcn += '    // Is this API part of an extension or feature group?\n'
-        ext_fcn += '    if (has_ext != api_extension_map.end()) {\n'
-        ext_fcn += '        // Was the extension for this API enabled in the CreateDevice call?\n'
-        ext_fcn += '        auto info = device_extension_info->get_info(has_ext->second.c_str());\n'
-        ext_fcn += '        if (info.state) {\n'
-        ext_fcn += '            return device_extension_info->*(info.state) == kEnabledByCreateinfo;\n'
-        ext_fcn += '        }\n'
-        ext_fcn += '        // Was the extension for this API enabled in the CreateInstance call?\n'
-        ext_fcn += '        auto instance_extension_info = static_cast<const InstanceExtensions*>(device_extension_info);\n'
-        ext_fcn += '        auto inst_info = instance_extension_info->get_info(has_ext->second.c_str());\n'
-        ext_fcn += '        if (inst_info.state) {\n'
-        ext_fcn += '            return instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo;\n'
-        ext_fcn += '        }\n'
-        ext_fcn += '        return false;\n'
-        ext_fcn += '    }\n'
-        ext_fcn += '    return true;\n'
-        ext_fcn += '}\n'
+            api_exts_formatted = ', '.join([f'"{e}"' for e in api_ext[api]])
+            ext_fcn += f'    {{ "{api}", {{ {api_exts_formatted} }} }},\n'
+        ext_fcn += '''};
+
+
+// Using the above code-generated map of APINames-to-parent extension names, this function will:
+//   o  Determine if the API has an associated extension
+//   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
+//   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
+static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {
+    auto has_ext = api_extension_map.find(api_name);
+    // Is this API part of an extension or feature group?
+    if (has_ext != api_extension_map.end()) {
+
+        // Was the extension for this API enabled in the CreateDevice call?
+        for (const auto& ext : has_ext->second) {
+            auto info = device_extension_info->get_info(ext.c_str());
+            if (info.state) {
+                return device_extension_info->*(info.state) == kEnabledByCreateinfo;
+            }
+        }
+
+        // Was the extension for this API enabled in the CreateInstance call?
+        auto instance_extension_info = static_cast<const InstanceExtensions*>(device_extension_info);
+        for (const auto& ext : has_ext->second) {
+            auto inst_info = instance_extension_info->get_info(ext.c_str());
+            if (inst_info.state) {
+                return instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo;
+            }
+        }
+        return false;
+    }
+    return true;
+}
+'''
         return ext_fcn
     #
     # Create a dispatch table from the appropriate list and return it as a string
