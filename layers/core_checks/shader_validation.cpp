@@ -3092,13 +3092,21 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     }
 
     if (mismatch) {
-        // TODO - create a string_SpvDecoration so we can print which builtin is the issue. Also give better error message showing
-        // each slot
+        std::stringstream msg;
+        msg << string_VkShaderStageFlagBits(producer_stage) << " Output Block {\n";
+        for (size_t i = 0; i < output_builtins_block.size(); i++) {
+            msg << "\t" << i << ": " << string_SpvDecoration(output_builtins_block[i]) << "\n";
+        }
+        msg << "}\n";
+        msg << string_VkShaderStageFlagBits(consumer_stage) << " Input Block {\n";
+        for (size_t i = 0; i < input_builtins_block.size(); i++) {
+            msg << "\t" << i << ": " << string_SpvDecoration(input_builtins_block[i]) << "\n";
+        }
+        msg << "}\n";
         const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
         skip |= LogError(objlist, kVUID_Core_Shader_BuiltinMismatch,
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] %s has output BuiltIn variables that don't align with %s input BuiltIn Variable",
-                         pipe_index, string_VkShaderStageFlagBits(producer_stage), string_VkShaderStageFlagBits(consumer_stage));
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Mistmatch in BuiltIn blocks:\n %s", pipe_index,
+                         msg.str().c_str());
     }
     return skip;
 }
