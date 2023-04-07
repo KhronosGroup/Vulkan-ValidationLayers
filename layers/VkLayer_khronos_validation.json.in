@@ -1368,6 +1368,16 @@
                                 "LINUX",
                                 "ANDROID"
                             ]
+                        },
+                        {
+                            "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL",
+                            "label": "Hardware specific best practices",
+                            "description": "Activating this feature enables all vendor specific best practices.",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "ANDROID"
+                            ]
                         }
                     ],
                     "default": []
