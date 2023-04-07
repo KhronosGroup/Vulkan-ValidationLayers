@@ -746,7 +746,7 @@ const char* string_SpvOpcode(uint32_t opcode) {
     if (format_info != kInstructionTable.end()) {
         return format_info->second.name;
     } else {
-        return "Unhandled Opcode";
+        return "Unknown Opcode";
     }
 };
 
@@ -803,7 +803,7 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
         case spv::StorageClassHostOnlyINTEL:
             return "HostOnlyINTEL";
         default:
-            return "unknown";
+            return "Unknown Storage Class";
     }
 };
 
@@ -844,7 +844,260 @@ const char* string_SpvExecutionModel(uint32_t execution_model) {
         case spv::ExecutionModelMeshEXT:
             return "MeshEXT";
         default:
-            return "unknown";
+            return "Unknown Execution Model";
+    }
+};
+
+const char* string_SpvDecoration(uint32_t decoration) {
+    switch(decoration) {
+        case spv::DecorationRelaxedPrecision:
+            return "RelaxedPrecision";
+        case spv::DecorationSpecId:
+            return "SpecId";
+        case spv::DecorationBlock:
+            return "Block";
+        case spv::DecorationBufferBlock:
+            return "BufferBlock";
+        case spv::DecorationRowMajor:
+            return "RowMajor";
+        case spv::DecorationColMajor:
+            return "ColMajor";
+        case spv::DecorationArrayStride:
+            return "ArrayStride";
+        case spv::DecorationMatrixStride:
+            return "MatrixStride";
+        case spv::DecorationGLSLShared:
+            return "GLSLShared";
+        case spv::DecorationGLSLPacked:
+            return "GLSLPacked";
+        case spv::DecorationCPacked:
+            return "CPacked";
+        case spv::DecorationBuiltIn:
+            return "BuiltIn";
+        case spv::DecorationNoPerspective:
+            return "NoPerspective";
+        case spv::DecorationFlat:
+            return "Flat";
+        case spv::DecorationPatch:
+            return "Patch";
+        case spv::DecorationCentroid:
+            return "Centroid";
+        case spv::DecorationSample:
+            return "Sample";
+        case spv::DecorationInvariant:
+            return "Invariant";
+        case spv::DecorationRestrict:
+            return "Restrict";
+        case spv::DecorationAliased:
+            return "Aliased";
+        case spv::DecorationVolatile:
+            return "Volatile";
+        case spv::DecorationConstant:
+            return "Constant";
+        case spv::DecorationCoherent:
+            return "Coherent";
+        case spv::DecorationNonWritable:
+            return "NonWritable";
+        case spv::DecorationNonReadable:
+            return "NonReadable";
+        case spv::DecorationUniform:
+            return "Uniform";
+        case spv::DecorationUniformId:
+            return "UniformId";
+        case spv::DecorationSaturatedConversion:
+            return "SaturatedConversion";
+        case spv::DecorationStream:
+            return "Stream";
+        case spv::DecorationLocation:
+            return "Location";
+        case spv::DecorationComponent:
+            return "Component";
+        case spv::DecorationIndex:
+            return "Index";
+        case spv::DecorationBinding:
+            return "Binding";
+        case spv::DecorationDescriptorSet:
+            return "DescriptorSet";
+        case spv::DecorationOffset:
+            return "Offset";
+        case spv::DecorationXfbBuffer:
+            return "XfbBuffer";
+        case spv::DecorationXfbStride:
+            return "XfbStride";
+        case spv::DecorationFuncParamAttr:
+            return "FuncParamAttr";
+        case spv::DecorationFPRoundingMode:
+            return "FPRoundingMode";
+        case spv::DecorationFPFastMathMode:
+            return "FPFastMathMode";
+        case spv::DecorationLinkageAttributes:
+            return "LinkageAttributes";
+        case spv::DecorationNoContraction:
+            return "NoContraction";
+        case spv::DecorationInputAttachmentIndex:
+            return "InputAttachmentIndex";
+        case spv::DecorationAlignment:
+            return "Alignment";
+        case spv::DecorationMaxByteOffset:
+            return "MaxByteOffset";
+        case spv::DecorationAlignmentId:
+            return "AlignmentId";
+        case spv::DecorationMaxByteOffsetId:
+            return "MaxByteOffsetId";
+        case spv::DecorationNoSignedWrap:
+            return "NoSignedWrap";
+        case spv::DecorationNoUnsignedWrap:
+            return "NoUnsignedWrap";
+        case spv::DecorationWeightTextureQCOM:
+            return "WeightTextureQCOM";
+        case spv::DecorationBlockMatchTextureQCOM:
+            return "BlockMatchTextureQCOM";
+        case spv::DecorationExplicitInterpAMD:
+            return "ExplicitInterpAMD";
+        case spv::DecorationOverrideCoverageNV:
+            return "OverrideCoverageNV";
+        case spv::DecorationPassthroughNV:
+            return "PassthroughNV";
+        case spv::DecorationViewportRelativeNV:
+            return "ViewportRelativeNV";
+        case spv::DecorationSecondaryViewportRelativeNV:
+            return "SecondaryViewportRelativeNV";
+        case spv::DecorationPerPrimitiveNV:
+            return "PerPrimitiveNV";
+        case spv::DecorationPerViewNV:
+            return "PerViewNV";
+        case spv::DecorationPerTaskNV:
+            return "PerTaskNV";
+        case spv::DecorationPerVertexKHR:
+            return "PerVertexKHR";
+        case spv::DecorationNonUniform:
+            return "NonUniform";
+        case spv::DecorationRestrictPointer:
+            return "RestrictPointer";
+        case spv::DecorationAliasedPointer:
+            return "AliasedPointer";
+        case spv::DecorationHitObjectShaderRecordBufferNV:
+            return "HitObjectShaderRecordBufferNV";
+        case spv::DecorationBindlessSamplerNV:
+            return "BindlessSamplerNV";
+        case spv::DecorationBindlessImageNV:
+            return "BindlessImageNV";
+        case spv::DecorationBoundSamplerNV:
+            return "BoundSamplerNV";
+        case spv::DecorationBoundImageNV:
+            return "BoundImageNV";
+        case spv::DecorationSIMTCallINTEL:
+            return "SIMTCallINTEL";
+        case spv::DecorationReferencedIndirectlyINTEL:
+            return "ReferencedIndirectlyINTEL";
+        case spv::DecorationClobberINTEL:
+            return "ClobberINTEL";
+        case spv::DecorationSideEffectsINTEL:
+            return "SideEffectsINTEL";
+        case spv::DecorationVectorComputeVariableINTEL:
+            return "VectorComputeVariableINTEL";
+        case spv::DecorationFuncParamIOKindINTEL:
+            return "FuncParamIOKindINTEL";
+        case spv::DecorationVectorComputeFunctionINTEL:
+            return "VectorComputeFunctionINTEL";
+        case spv::DecorationStackCallINTEL:
+            return "StackCallINTEL";
+        case spv::DecorationGlobalVariableOffsetINTEL:
+            return "GlobalVariableOffsetINTEL";
+        case spv::DecorationCounterBuffer:
+            return "CounterBuffer";
+        case spv::DecorationUserSemantic:
+            return "UserSemantic";
+        case spv::DecorationUserTypeGOOGLE:
+            return "UserTypeGOOGLE";
+        case spv::DecorationFunctionRoundingModeINTEL:
+            return "FunctionRoundingModeINTEL";
+        case spv::DecorationFunctionDenormModeINTEL:
+            return "FunctionDenormModeINTEL";
+        case spv::DecorationRegisterINTEL:
+            return "RegisterINTEL";
+        case spv::DecorationMemoryINTEL:
+            return "MemoryINTEL";
+        case spv::DecorationNumbanksINTEL:
+            return "NumbanksINTEL";
+        case spv::DecorationBankwidthINTEL:
+            return "BankwidthINTEL";
+        case spv::DecorationMaxPrivateCopiesINTEL:
+            return "MaxPrivateCopiesINTEL";
+        case spv::DecorationSinglepumpINTEL:
+            return "SinglepumpINTEL";
+        case spv::DecorationDoublepumpINTEL:
+            return "DoublepumpINTEL";
+        case spv::DecorationMaxReplicatesINTEL:
+            return "MaxReplicatesINTEL";
+        case spv::DecorationSimpleDualPortINTEL:
+            return "SimpleDualPortINTEL";
+        case spv::DecorationMergeINTEL:
+            return "MergeINTEL";
+        case spv::DecorationBankBitsINTEL:
+            return "BankBitsINTEL";
+        case spv::DecorationForcePow2DepthINTEL:
+            return "ForcePow2DepthINTEL";
+        case spv::DecorationBurstCoalesceINTEL:
+            return "BurstCoalesceINTEL";
+        case spv::DecorationCacheSizeINTEL:
+            return "CacheSizeINTEL";
+        case spv::DecorationDontStaticallyCoalesceINTEL:
+            return "DontStaticallyCoalesceINTEL";
+        case spv::DecorationPrefetchINTEL:
+            return "PrefetchINTEL";
+        case spv::DecorationStallEnableINTEL:
+            return "StallEnableINTEL";
+        case spv::DecorationFuseLoopsInFunctionINTEL:
+            return "FuseLoopsInFunctionINTEL";
+        case spv::DecorationMathOpDSPModeINTEL:
+            return "MathOpDSPModeINTEL";
+        case spv::DecorationAliasScopeINTEL:
+            return "AliasScopeINTEL";
+        case spv::DecorationNoAliasINTEL:
+            return "NoAliasINTEL";
+        case spv::DecorationInitiationIntervalINTEL:
+            return "InitiationIntervalINTEL";
+        case spv::DecorationMaxConcurrencyINTEL:
+            return "MaxConcurrencyINTEL";
+        case spv::DecorationPipelineEnableINTEL:
+            return "PipelineEnableINTEL";
+        case spv::DecorationBufferLocationINTEL:
+            return "BufferLocationINTEL";
+        case spv::DecorationIOPipeStorageINTEL:
+            return "IOPipeStorageINTEL";
+        case spv::DecorationFunctionFloatingPointModeINTEL:
+            return "FunctionFloatingPointModeINTEL";
+        case spv::DecorationSingleElementVectorINTEL:
+            return "SingleElementVectorINTEL";
+        case spv::DecorationVectorComputeCallableFunctionINTEL:
+            return "VectorComputeCallableFunctionINTEL";
+        case spv::DecorationMediaBlockIOINTEL:
+            return "MediaBlockIOINTEL";
+        case spv::DecorationLatencyControlLabelINTEL:
+            return "LatencyControlLabelINTEL";
+        case spv::DecorationLatencyControlConstraintINTEL:
+            return "LatencyControlConstraintINTEL";
+        case spv::DecorationConduitKernelArgumentINTEL:
+            return "ConduitKernelArgumentINTEL";
+        case spv::DecorationRegisterMapKernelArgumentINTEL:
+            return "RegisterMapKernelArgumentINTEL";
+        case spv::DecorationMMHostInterfaceAddressWidthINTEL:
+            return "MMHostInterfaceAddressWidthINTEL";
+        case spv::DecorationMMHostInterfaceDataWidthINTEL:
+            return "MMHostInterfaceDataWidthINTEL";
+        case spv::DecorationMMHostInterfaceLatencyINTEL:
+            return "MMHostInterfaceLatencyINTEL";
+        case spv::DecorationMMHostInterfaceReadWriteModeINTEL:
+            return "MMHostInterfaceReadWriteModeINTEL";
+        case spv::DecorationMMHostInterfaceMaxBurstINTEL:
+            return "MMHostInterfaceMaxBurstINTEL";
+        case spv::DecorationMMHostInterfaceWaitRequestINTEL:
+            return "MMHostInterfaceWaitRequestINTEL";
+        case spv::DecorationStableKernelArgumentINTEL:
+            return "StableKernelArgumentINTEL";
+        default:
+            return "Unknown Decoration";
     }
 };
 
