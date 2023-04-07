@@ -54,6 +54,7 @@ struct DecorationBase {
 
     // When being used as an User-defined Variable (input, output, rtx)
     uint32_t location = kInvalidValue;
+    // Component is optional and spec says it is 0 if not defined
     uint32_t component = 0;
 
     // A given object can only have a single BuiltIn OpDecoration
@@ -78,6 +79,7 @@ struct DecorationSet : public DecorationBase {
 
     void Add(uint32_t decoration, uint32_t value);
     bool HasBuiltIn() const;
+    bool AllMemberHave(FlagBit flag_bit) const;
 };
 
 // Tracking of OpExecutionMode / OpExecutionModeId values
@@ -129,6 +131,16 @@ struct ExecutionModeSet {
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
+// Contains all the details for a OpTypeStruct
+struct TypeStructInfo {
+    const uint32_t id;
+    const uint32_t length;  // number of elements
+    const DecorationSet &decorations;
+    std::vector<uint32_t> member_ids;
+
+    TypeStructInfo(const SHADER_MODULE_STATE &module_state, const Instruction &struct_insn);
+};
+
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
     // A Location is made up of 4 Components
@@ -168,7 +180,7 @@ struct VariableBase {
     const uint32_t type_id;
     const spv::StorageClass storage_class;
     const DecorationSet &decorations;
-    const Instruction *struct_type;  // null if no struct type
+    std::shared_ptr<const TypeStructInfo> type_struct_info;  // null if no struct type
     // If variable is accessed from mulitple entrypoint, create a seperate VariableBase object as info about it being access will be
     // different
     const VkShaderStageFlagBits stage;
@@ -418,6 +430,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // EntryPoint has pointer references inside it that need to be preserved
         std::vector<std::shared_ptr<EntryPoint>> entry_points;
 
+        std::vector<std::shared_ptr<TypeStructInfo>> type_structs;  // All OpTypeStruct objects
+        // <OpTypeStruct ID, info> - used for faster lookup as there can many structs
+        vvl::unordered_map<uint32_t, std::shared_ptr<const TypeStructInfo>> type_struct_map;
+
         bool has_group_decoration{false};
 
         // Tracks accesses (load, store, atomic) to the instruction calling them
@@ -485,6 +501,28 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // return the actual execution modes for this id, or a default empty set.
         const auto it = static_data_.execution_modes.find(function_id);
         return (it != static_data_.execution_modes.end()) ? it->second : static_data_.empty_execution_mode;
+    }
+
+    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(uint32_t struct_id) const {
+        // return the actual execution modes for this id, or a default empty set.
+        const auto it = static_data_.type_struct_map.find(struct_id);
+        return (it != static_data_.type_struct_map.end()) ? it->second : nullptr;
+    }
+    // Overload to walk down and find the OpTypeStruct
+    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(const Instruction *insn) const {
+        while (true) {
+            if (insn->Opcode() == spv::OpVariable) {
+                insn = FindDef(insn->Word(1));
+            } else if (insn->Opcode() == spv::OpTypePointer) {
+                insn = FindDef(insn->Word(3));
+            } else if (insn->Opcode() == spv::OpTypeArray || insn->Opcode() == spv::OpTypeRuntimeArray) {
+                insn = FindDef(insn->Word(2));
+            } else if (insn->Opcode() == spv::OpTypeStruct) {
+                return GetTypeStructInfo(insn->Word(1));
+            } else {
+                return nullptr;
+            }
+        }
     }
 
     // Used to get human readable strings for error messages

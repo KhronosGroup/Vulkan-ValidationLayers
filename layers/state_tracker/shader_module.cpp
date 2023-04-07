@@ -100,6 +100,15 @@ bool DecorationSet::HasBuiltIn() const {
     return false;
 }
 
+bool DecorationSet::AllMemberHave(FlagBit flag_bit) const {
+    for (const auto& decoration : member_decorations) {
+        if (!decoration.second.Has(flag_bit)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void ExecutionModeSet::Add(const Instruction& insn) {
     const uint32_t execution_mode = insn.Word(2);
     const uint32_t value = insn.Length() > 3u ? insn.Word(3) : 0u;
@@ -507,7 +516,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         instructions.shrink_to_fit();
     }
 
+    // These have their own object class, but need entire module parsed first
     std::vector<const Instruction*> entry_point_instructions;
+    std::vector<const Instruction*> type_struct_instructions;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -681,6 +692,10 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 image_texel_pointer_members.emplace(insn.Word(2), insn.Word(3));
                 break;
             }
+            case spv::OpTypeStruct: {
+                type_struct_instructions.push_back(&insn);
+                break;
+            }
 
             default:
                 if (AtomicOperation(insn.Opcode()) == true) {
@@ -706,6 +721,12 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             has_builtin_workgroup_size = true;
             builtin_workgroup_size_id = decoration_inst->Word(1);
         }
+    }
+
+    // Need to get struct first and EntryPoint's variables depend on it
+    for (const auto& insn : type_struct_instructions) {
+        auto new_struct = type_structs.emplace_back(std::make_shared<TypeStructInfo>(module_state, *insn));
+        type_struct_map[new_struct->id] = new_struct;
     }
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
@@ -1426,7 +1447,7 @@ VariableBase::VariableBase(const SHADER_MODULE_STATE& module_state, const Instru
       type_id(insn.Word(1)),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
-      struct_type(module_state.GetStructType(module_state.FindDef(type_id))),
+      type_struct_info(module_state.GetTypeStructInfo(&insn)),
       stage(stage) {
     assert(insn.Opcode() == spv::OpVariable);
 }
@@ -1469,8 +1490,7 @@ const Instruction& StageInteraceVariable::FindBaseType(const StageInteraceVariab
 bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, const SHADER_MODULE_STATE& module_state) {
     const auto decoration_set = module_state.GetDecorationSet(variable.id);
     // If OpTypeStruct, will grab it's own decoration set
-    const auto base_decoration_set = module_state.GetDecorationSet(variable.base_type.Word(1));
-    return decoration_set.HasBuiltIn() || base_decoration_set.HasBuiltIn();
+    return decoration_set.HasBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasBuiltIn());
 }
 
 std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(const StageInteraceVariable& variable,
@@ -1480,8 +1500,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(const StageI
         return slots;
     }
 
-    // TODO - This could be moved to StructInfo - currently need to move Push Constant logic over to Entrypoint first
-    if (variable.struct_type) {
+    if (variable.type_struct_info) {
         // <Struct member index, Location/Component value>
         vvl::unordered_map<uint32_t, uint32_t> member_components;
         vvl::unordered_map<uint32_t, uint32_t> member_locations;
@@ -1491,28 +1510,19 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(const StageI
         const bool block_decorated_with_location = variable.decorations.location != DecorationSet::kInvalidValue;
         if (!block_decorated_with_location) {
             // Option 2
-            for (const Instruction* member_decorate : module_state.static_data_.member_decoration_inst) {
-                if (member_decorate->Word(1) == variable.struct_type->Word(1)) {
-                    const uint32_t member_index = member_decorate->Word(2);
-                    const uint32_t decoration = member_decorate->Word(3);
-                    if (decoration == spv::DecorationLocation) {
-                        member_locations[member_index] = member_decorate->Word(4);
-                    } else if (decoration == spv::DecorationComponent) {
-                        member_components[member_index] = member_decorate->Word(4);
-                    }
-                }
+            for (const auto& member_decoration : variable.type_struct_info->decorations.member_decorations) {
+                member_locations[member_decoration.first] = member_decoration.second.location;
+                member_components[member_decoration.first] = member_decoration.second.component;
             }
         }
         // In case of option 1, need to keep track as we go
         uint32_t base_location = variable.decorations.location;
 
         // Location/Components cant be decorated in nested structs, so no need to keep checking further
-        const uint32_t struct_length = variable.struct_type->Length() - 2;  // number of elements in struct
-        for (uint32_t i = 0; i < struct_length; i++) {
-            const uint32_t location = block_decorated_with_location ? base_location : member_locations[i];
-            const uint32_t starting_componet = block_decorated_with_location ? 0 : member_components[i];
+        for (const uint32_t member_id : variable.type_struct_info->member_ids) {
+            const uint32_t location = block_decorated_with_location ? base_location : member_locations[0];
+            const uint32_t starting_componet = block_decorated_with_location ? 0 : member_components[0];
 
-            const uint32_t member_id = variable.struct_type->Word(2 + i);
             const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
 
             // Info needed to test type matching later
@@ -1560,15 +1570,13 @@ std::vector<uint32_t> StageInteraceVariable::GetBuiltinBlock(const StageInterace
     // Built-in Location slot will always be [zero, size]
     std::vector<uint32_t> slots;
     // Only check block built-ins - many builtin are non-block and not used between shaders
-    if (!variable.is_builtin || !variable.struct_type) {
+    if (!variable.is_builtin || !variable.type_struct_info) {
         return slots;
     }
 
-    const uint32_t struct_type_id = variable.struct_type->Word(variable.struct_type->ResultId());
-    const auto& decoration_set = module_state.GetDecorationSet(struct_type_id);
+    const auto& decoration_set = variable.type_struct_info->decorations;
     if (decoration_set.Has(DecorationSet::block_bit)) {
-        const uint32_t struct_length = variable.struct_type->Length() - 2;  // number of elements in struct
-        for (uint32_t i = 0; i < struct_length; i++) {
+        for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
             slots.push_back(decoration_set.member_decorations.at(i).builtin);
         }
     }
@@ -1581,11 +1589,8 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
     if (!variable.is_builtin) {
         return count;
     }
-    if (variable.struct_type) {
-        const uint32_t struct_length = variable.struct_type->Length() - 2;  // number of elements in struct
-        for (uint32_t i = 0; i < struct_length; i++) {
-            // All components are packed in builtin for sake of tracking limit
-            uint32_t member_id = variable.struct_type->Word(2 + i);
+    if (variable.type_struct_info) {
+        for (const uint32_t member_id : variable.type_struct_info->member_ids) {
             count += module_state.GetComponentsConsumedByType(member_id);
         }
     } else {
@@ -1786,16 +1791,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
         }
 
         case spv::OpTypeStruct: {
-            vvl::unordered_set<uint32_t> nonwritable_members;
-            for (const Instruction* insn : static_data_.member_decoration_inst) {
-                if (insn->Word(1) == type->Word(1) && insn->Word(3) == spv::DecorationNonWritable) {
-                    nonwritable_members.insert(insn->Word(2));
-                }
-            }
-
+            const auto type_struct_info = module_state.GetTypeStructInfo(type);
             // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
             // as nonwritable.
-            if (is_storage_buffer && nonwritable_members.size() != type->Length() - 2) {
+            if (is_storage_buffer && !type_struct_info->decorations.AllMemberHave(DecorationSet::nonwritable_bit)) {
                 if (!module_state.FindVariableAccesses(id, static_data_.store_pointer_ids, false).empty()) {
                     is_written_to = true;
                     break;
@@ -1805,6 +1804,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     break;
                 }
             }
+
             break;
         }
         default:
@@ -1814,6 +1814,14 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     // Type independent checks
     if (!module_state.FindVariableAccesses(id, static_data_.atomic_pointer_ids, true).empty()) {
         is_atomic_operation = true;
+    }
+}
+
+TypeStructInfo::TypeStructInfo(const SHADER_MODULE_STATE& module_state, const Instruction& struct_insn)
+    : id(struct_insn.Word(1)), length(struct_insn.Length() - 2), decorations(module_state.GetDecorationSet(id)) {
+    member_ids.resize(length);
+    for (uint32_t i = 0; i < length; i++) {
+        member_ids[i] = struct_insn.Word(2 + i);
     }
 }
 
