@@ -409,7 +409,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
         pipeline_layout_ci.pPushConstantRanges = iter.ranges;
         pipeline_layout_ci.pushConstantRangeCount = ranges_per_test;
         std::for_each(iter.msg.begin(), iter.msg.end(),
-                      [=](const char *vuid) { m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid); });
+                      [&](const char *vuid) { m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid); });
         vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
         m_errorMonitor->VerifyFound();
     }
