@@ -30,20 +30,28 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        cc: [gcc, clang]
-        cxx: [g++, clang++]
+        os: [ubuntu-20.04, ubuntu-22.04]
+        cc: [gcc]
+        cxx: [g++]
         config: [debug, release]
-        exclude:
-          - cc: gcc
-            cxx: clang++
-          - cc: clang
+        cpp_std: [17]
+        include:
+          # Test C++ 20 support
+          - os: ubuntu-22.04
+            cc: gcc
             cxx: g++
-          - cc: clang
-            config: debug
+            config: release
+            cpp_std: 20
+          # Test clang support
+          - os: ubuntu-22.04
+            cc: clang
+            cxx: clang++
+            config: release
+            cpp_std: 17
 
     steps:
       - uses: actions/checkout@v3
@@ -56,7 +64,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.cc }}-${{ matrix.cxx }}
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.cc }}-${{ matrix.cpp_std }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
@@ -67,55 +75,10 @@ jobs:
       - name: Add ccache to PATH
         run: echo "/usr/lib/ccache" >> $GITHUB_PATH
       - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_ENABLE_ASAN=ON'
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DVVL_ENABLE_ASAN=ON'
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-      - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
-        run: python3 scripts/github_ci_win_linux.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_adreno.json
-      - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
-        run: python3 scripts/github_ci_win_linux.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/pixel_6_mali.json
-      - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
-        run: python3 scripts/github_ci_win_linux.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/nvidia_tegra_x1.json
-      - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
-
-  linux-cpp20:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-      - uses: lukka/get-cmake@latest
-      - name: Install build dependencies
-        run: |
-          python3 -m pip install jsonschema pyparsing
-          sudo apt-get -qq update
-          sudo apt-get install -y libwayland-dev xorg-dev
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: ${{ runner.os }}-release-cpp20
-      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
-      # PATH changes need to be done in an action before any action that needs it
-      - name: Add ccache to PATH
-        run: echo "/usr/lib/ccache" >> $GITHUB_PATH
-      - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20 -DVVL_ENABLE_ASAN=ON'
-        env:
-          CC: clang
-          CXX: clang++
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
         run: python3 scripts/github_ci_win_linux.py --test
         env:
