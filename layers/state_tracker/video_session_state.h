@@ -261,7 +261,7 @@ struct VideoReferenceSlot {
 
 class VideoSessionDeviceState {
   public:
-    VideoSessionDeviceState(uint32_t reference_slot_count)
+    VideoSessionDeviceState(uint32_t reference_slot_count = 0)
         : initialized_(false),
           is_active_(reference_slot_count, false),
           all_pictures_(reference_slot_count),
