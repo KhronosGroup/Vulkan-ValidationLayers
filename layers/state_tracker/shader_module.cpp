@@ -1493,47 +1493,59 @@ bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, con
     return decoration_set.HasBuiltIn() || (variable.type_struct_info && variable.type_struct_info->decorations.HasBuiltIn());
 }
 
-std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(const StageInteraceVariable& variable,
-                                                                  const SHADER_MODULE_STATE& module_state) {
+std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable,
+                                                                    const SHADER_MODULE_STATE& module_state) {
     std::vector<InterfaceSlot> slots;
     if (variable.is_builtin) {
         return slots;
     }
 
     if (variable.type_struct_info) {
-        // <Struct member index, Location/Component value>
-        vvl::unordered_map<uint32_t, uint32_t> member_components;
-        vvl::unordered_map<uint32_t, uint32_t> member_locations;
         // Structs has two options being labeled
         // 1. The block is given a Location, need to walk though and add up starting for that value
         // 2. The block is NOT given a Location, each member has dedicated decoration
         const bool block_decorated_with_location = variable.decorations.location != DecorationSet::kInvalidValue;
-        if (!block_decorated_with_location) {
+        if (block_decorated_with_location) {
+            // In case of option 1, need to keep track as we go
+            uint32_t base_location = variable.decorations.location;
+            for (const uint32_t member_id : variable.type_struct_info->member_ids) {
+                const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+
+                // Info needed to test type matching later
+                const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                const uint32_t numerical_type_opcode = numerical_type->Opcode();
+                // TODO - Handle nested structs
+                if (numerical_type_opcode == spv::OpTypeStruct) {
+                    variable.nested_struct = true;
+                    break;
+                }
+                const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+
+                for (uint32_t j = 0; j < components; j++) {
+                    slots.emplace_back(base_location, j, numerical_type_opcode, numerical_type_width);
+                }
+                base_location++;  // If using, each members starts a new Location
+            }
+        } else {
             // Option 2
-            for (const auto& member_decoration : variable.type_struct_info->decorations.member_decorations) {
-                member_locations[member_decoration.first] = member_decoration.second.location;
-                member_components[member_decoration.first] = member_decoration.second.component;
+            for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
+                const uint32_t member_id = variable.type_struct_info->member_ids[i];
+                // Location/Components cant be decorated in nested structs, so no need to keep checking further
+                // The spec says all or non of the member variables must have Location
+                const auto member_decoration = variable.type_struct_info->decorations.member_decorations.at(i);
+                const uint32_t location = member_decoration.location;
+                const uint32_t starting_componet = member_decoration.component;
+                const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+
+                // Info needed to test type matching later
+                const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
+                const uint32_t numerical_type_opcode = numerical_type->Opcode();
+                const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+
+                for (uint32_t j = 0; j < components; j++) {
+                    slots.emplace_back(location, starting_componet + j, numerical_type_opcode, numerical_type_width);
+                }
             }
-        }
-        // In case of option 1, need to keep track as we go
-        uint32_t base_location = variable.decorations.location;
-
-        // Location/Components cant be decorated in nested structs, so no need to keep checking further
-        for (const uint32_t member_id : variable.type_struct_info->member_ids) {
-            const uint32_t location = block_decorated_with_location ? base_location : member_locations[0];
-            const uint32_t starting_componet = block_decorated_with_location ? 0 : member_components[0];
-
-            const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
-
-            // Info needed to test type matching later
-            const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
-            const uint32_t numerical_type_opcode = numerical_type->Opcode();
-            const uint32_t numerical_type_width = numerical_type->GetBitWidth();
-
-            for (uint32_t j = 0; j < components; j++) {
-                slots.emplace_back(location, starting_componet + j, numerical_type_opcode, numerical_type_width);
-            }
-            base_location++;  // If using, each members starts a new Location
         }
     } else {
         uint32_t array_size = 1;
@@ -1609,6 +1621,7 @@ StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_s
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
+      nested_struct(false),
       interface_slots(GetInterfaceSlots(*this, module_state)),
       builtin_block(GetBuiltinBlock(*this, module_state)),
       total_builtin_components(GetBuiltinComponents(*this, module_state)) {}

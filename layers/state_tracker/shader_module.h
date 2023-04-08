@@ -203,6 +203,7 @@ struct StageInteraceVariable : public VariableBase {
     const bool is_array_interface;
     const Instruction &base_type;
     const bool is_builtin;
+    bool nested_struct;
 
     const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
     const std::vector<uint32_t> builtin_block;
@@ -214,8 +215,7 @@ struct StageInteraceVariable : public VariableBase {
     static bool IsArrayInterface(const StageInteraceVariable &variable);
     static const Instruction &FindBaseType(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static bool IsBuiltin(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
-    static std::vector<InterfaceSlot> GetInterfaceSlots(const StageInteraceVariable &variable,
-                                                        const SHADER_MODULE_STATE &module_state);
+    static std::vector<InterfaceSlot> GetInterfaceSlots(StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static std::vector<uint32_t> GetBuiltinBlock(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static uint32_t GetBuiltinComponents(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
 };

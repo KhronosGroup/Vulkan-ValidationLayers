@@ -5534,6 +5534,47 @@ TEST_F(VkPositiveLayerTest, DISABLED_TestShaderInputOutputMatch2) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(VkPositiveLayerTest, NestedStructInterface) {
+    TEST_DESCRIPTION("Use nested structs between shaders.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vsSource[] = R"glsl(
+        #version 450
+        struct TestStruct {
+            vec2 dummy;
+            vec4 variableInStruct;
+        };
+        layout(location = 0) out block {
+            vec2 dummy;
+            TestStruct structInBlock;
+        } testBlock;
+        void main(void) {}
+    )glsl";
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 color;
+        struct TestStruct {
+            vec2 dummy;
+            vec4 variableInStruct;
+        };
+        layout(location = 0) in block {
+            vec2 dummy;
+            noperspective TestStruct structInBlock;
+        } testBlock;
+        void main(void) {}
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
 TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
     TEST_DESCRIPTION("Test drawing with dual source blending with too many fragment output attachments.");
 
