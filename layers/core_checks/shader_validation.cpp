@@ -2955,12 +2955,18 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 
     for (const auto &interface_slot : producer_entrypoint.output_interface_slots) {
         auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
+        if (interface_slot.second->nested_struct) {
+            return skip;  // TODO workaround
+        }
         slot.output = interface_slot.second;
         slot.output_type = interface_slot.first.type;
         slot.output_width = interface_slot.first.bit_width;
     }
     for (const auto &interface_slot : consumer_entrypoint.input_interface_slots) {
         auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
+        if (interface_slot.second->nested_struct) {
+            return skip;  // TODO workaround
+        }
         slot.input = interface_slot.second;
         slot.input_type = interface_slot.first.type;
         slot.input_width = interface_slot.first.bit_width;
