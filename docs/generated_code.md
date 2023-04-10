@@ -5,8 +5,19 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 How to generate the code:
 
+- Linux:
 ```bash
 PYTHONPATH=$PYTHONPATH:$PWD/external/Vulkan-Headers/registry python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
+```
+
+- Windows Powershell:
+```powershell
+pwsh -Command { $env:PYTHONPATH+=";$PWD/external/Vulkan-Headers/registry"; python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ }
+```
+
+- Windows Command:
+```cmd
+cmd /C "set PYTHONPATH=%PYTHONPATH%;%cd%/external/Vulkan-Headers/registry && python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/"
 ```
 
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
