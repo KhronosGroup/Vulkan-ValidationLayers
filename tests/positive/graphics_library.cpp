@@ -884,3 +884,64 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, TessellationWithoutPreRasterization) 
     pipe.gp_ci_.pStages = stages;
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
 }
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) {
+    TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper fs_lib(*this);
+    {
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        ds_ci.stencilTestEnable = VK_TRUE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        // Pass rendering info with null pointers that should be ignored
+        auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+        pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
+
+        fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci, &pipeline_rendering_info);
+        fs_lib.InitState();
+        fs_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        fs_lib.gp_ci_.pDepthStencilState = &ds_ci;
+        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
+    }
+}
