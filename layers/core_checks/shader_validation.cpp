@@ -2594,12 +2594,12 @@ bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state) co
     return skip;
 }
 
-bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, const Instruction &insn) const {
+bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state) const {
     bool skip = false;
-
-    if (insn.Opcode() == spv::OpImageWrite) {
+    for (const auto &image_write : module_state.static_data_.image_write_load_id_map) {
+        const Instruction &insn = *image_write.first;
         // guaranteed by spirv-val to be an OpTypeImage
-        const uint32_t image = module_state.GetTypeId(insn.Word(1));
+        const uint32_t image = module_state.GetTypeId(image_write.second);
         const Instruction *image_def = module_state.FindDef(image);
         const uint32_t image_format = image_def->Word(8);
         // If format is 'Unknown' then need to wait until a descriptor is bound to it
@@ -2861,7 +2861,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
         skip |= ValidateMemoryScope(module_state, insn);
-        skip |= ValidateImageWrite(module_state, insn);
     }
 
     skip |= ValidateTransformFeedback(module_state, entrypoint, pipeline);
@@ -2870,6 +2869,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateAtomicsTypes(module_state);
     skip |= ValidateShaderStageGroupNonUniform(module_state, stage);
     skip |= ValidateShaderClock(module_state);
+    skip |= ValidateImageWrite(module_state);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);
     skip |= ValidateDecorations(module_state, pipeline);

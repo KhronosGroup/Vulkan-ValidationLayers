@@ -911,7 +911,7 @@ class CoreChecks : public ValidationStateTracker {
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state) const;
-    bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
+    bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state) const;
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* src_img,
