@@ -964,6 +964,8 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
                                                             const Instruction *insn) const {
     bool skip = false;
     // Go through all variables for images and check decorations
+    // Note: Tried to move to ResourceInterfaceVariable but the issue is the variables don't need to be accessed in the entrypoint
+    // to trigger the error.
     assert(insn->Opcode() == spv::OpVariable);
     // spirv-val validates this is an OpTypePointer
     const Instruction *pointer_def = module_state.FindDef(insn->Word(1));
