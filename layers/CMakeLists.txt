@@ -88,7 +88,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_object_types.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_extension_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_typemap_helper.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/generated)
     install(FILES ${CMAKE_SOURCE_DIR}/layers/utils/cast_utils.h
                   ${CMAKE_SOURCE_DIR}/layers/utils/hash_util.h
                   ${CMAKE_SOURCE_DIR}/layers/utils/hash_vk_types.h
