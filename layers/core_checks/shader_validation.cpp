@@ -2573,24 +2573,22 @@ bool CoreChecks::ValidateTexelOffsetLimits(const SHADER_MODULE_STATE &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state, const Instruction &insn) const {
+bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state) const {
     bool skip = false;
 
-    switch (insn.Opcode()) {
-        case spv::OpReadClockKHR: {
-            const Instruction *scope_id = module_state.FindDef(insn.Word(3));
-            auto scope_type = scope_id->Word(3);
-            // if scope isn't Subgroup or Device, spirv-val will catch
-            if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
-                skip |= LogError(device, "VUID-RuntimeSpirv-shaderSubgroupClock-06267",
-                                 "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.\n%s",
-                                 report_data->FormatHandle(module_state.vk_shader_module()).c_str(), insn.Describe().c_str());
-            } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_features.shaderDeviceClock == VK_FALSE)) {
-                skip |= LogError(device, "VUID-RuntimeSpirv-shaderDeviceClock-06268",
-                                 "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.\n%s",
-                                 report_data->FormatHandle(module_state.vk_shader_module()).c_str(), insn.Describe().c_str());
-            }
-            break;
+    for (const Instruction *group_inst : module_state.static_data_.read_clock_inst) {
+        const Instruction &insn = *group_inst;
+        const Instruction *scope_id = module_state.FindDef(insn.Word(3));
+        auto scope_type = scope_id->Word(3);
+        // if scope isn't Subgroup or Device, spirv-val will catch
+        if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
+            skip |= LogError(device, "VUID-RuntimeSpirv-shaderSubgroupClock-06267",
+                             "%s: OpReadClockKHR is used with a Subgroup scope but shaderSubgroupClock was not enabled.\n%s",
+                             report_data->FormatHandle(module_state.vk_shader_module()).c_str(), insn.Describe().c_str());
+        } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shader_clock_features.shaderDeviceClock == VK_FALSE)) {
+            skip |= LogError(device, "VUID-RuntimeSpirv-shaderDeviceClock-06268",
+                             "%s: OpReadClockKHR is used with a Device scope but shaderDeviceClock was not enabled.\n%s",
+                             report_data->FormatHandle(module_state.vk_shader_module()).c_str(), insn.Describe().c_str());
         }
     }
     return skip;
@@ -2862,7 +2860,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     for (const Instruction &insn : module_state.GetInstructions()) {
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
-        skip |= ValidateShaderClock(module_state, insn);
         skip |= ValidateMemoryScope(module_state, insn);
         skip |= ValidateImageWrite(module_state, insn);
     }
@@ -2872,6 +2869,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateShaderStageMaxResources(module_state, stage, pipeline);
     skip |= ValidateAtomicsTypes(module_state);
     skip |= ValidateShaderStageGroupNonUniform(module_state, stage);
+    skip |= ValidateShaderClock(module_state);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);
     skip |= ValidateDecorations(module_state, pipeline);
