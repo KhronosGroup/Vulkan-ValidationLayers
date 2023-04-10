@@ -2329,7 +2329,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
 
 bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                   const PIPELINE_STATE &pipeline,
-                                                  const std::vector<ResourceInterfaceVariable> &descriptor_variables) const {
+                                                  const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
     bool skip = false;
 
     std::string vuid_07988;
@@ -2366,7 +2366,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
             break;
     }
 
-    for (const auto &variable : descriptor_variables) {
+    for (const auto &variable : entrypoint.resource_interface_variables) {
         const auto &binding =
             GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
         uint32_t required_descriptor_count;
@@ -2905,7 +2905,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     // Validate Push Constants use
     skip |= ValidatePushConstantUsage(pipeline, module_state, create_info);
     // can dereference because entrypoint is validated by here
-    skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, *stage_state.descriptor_variables);
+    skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, entrypoint);
 
     if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
