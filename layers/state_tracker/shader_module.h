@@ -249,7 +249,7 @@ struct ResourceInterfaceVariable : public VariableBase {
 
     // Type once array/pointer are stripped
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
-    spv::Op base_type;
+    const Instruction &base_type;
 
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
@@ -257,7 +257,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     bool is_storage_image{false};
     bool is_storage_texel_buffer{false};
-    bool is_storage_buffer{false};
+    const bool is_storage_buffer;
     bool is_input_attachment{false};
 
     bool is_atomic_operation{false};
@@ -269,6 +269,10 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_dref_operation{false};
 
     ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+
+  protected:
+    static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
 };
 
 enum FORMAT_TYPE {
