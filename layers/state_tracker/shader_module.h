@@ -431,6 +431,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
         std::vector<const Instruction *> atomic_inst;
         std::vector<const Instruction *> group_inst;
+        std::vector<const Instruction *> read_clock_inst;
         std::vector<spv::Capability> capability_list;
 
         bool has_specialization_constants{false};

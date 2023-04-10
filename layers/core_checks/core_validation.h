@@ -910,7 +910,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
-    bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
+    bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
 
     template <typename RegionType>

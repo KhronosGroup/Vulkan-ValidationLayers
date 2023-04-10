@@ -709,6 +709,10 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 type_struct_instructions.push_back(&insn);
                 break;
             }
+            case spv::OpReadClockKHR: {
+                read_clock_inst.push_back(&insn);
+                break;
+            }
 
             default:
                 if (AtomicOperation(insn.Opcode())) {
