@@ -905,8 +905,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                          const PIPELINE_STATE& pipeline,
-                                          const std::vector<ResourceInterfaceVariable>& descriptor_variables) const;
+                                          const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE::EntryPoint& entrypoint) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
