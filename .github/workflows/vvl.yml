@@ -182,19 +182,26 @@ jobs:
       runs-on: ubuntu-22.04
       strategy:
         fail-fast: false
+        matrix:
+          android_abi: [ arm64-v8a, armeabi-v7a ]
+
       steps:
         - uses: actions/checkout@v3
         - uses: lukka/get-cmake@latest
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
-            key: ${{ runner.os }}-android-cmake
+            key: ${{ runner.os }}-android-${{ matrix.abi }}-cmake
         - name: Add ccache to PATH
           run: echo "/usr/lib/ccache" >> $GITHUB_PATH
         - name: Configure
           run: |
             cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
             -D ANDROID_PLATFORM=26 \
+            -D CMAKE_ANDROID_ARCH_ABI=${{ matrix.abi }} \
+            -D CMAKE_ANDROID_STL_TYPE=c++_static \
+            -D CMAKE_ANDROID_RTTI=YES \
+            -D CMAKE_ANDROID_EXCEPTIONS= YES \
             -D CMAKE_BUILD_TYPE=Debug \
             -D UPDATE_DEPS=ON \
             -D BUILD_WERROR=ON \
