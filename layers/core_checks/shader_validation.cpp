@@ -1345,26 +1345,16 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
 
     // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // then the fragment shader must not enable the SPIRV SampleRateShading capability.
-    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        for (const Instruction &insn : module_state.GetInstructions()) {
-            switch (insn.Opcode()) {
-                case spv::OpCapability:
-                    if (insn.Word(1) == spv::CapabilitySampleRateShading) {
-                        const auto &rp_state = pipeline.RenderPassState();
-                        auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline.Subpass()].flags;
-                        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
-                            const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
-                            skip |= LogError(objlist, "VUID-RuntimeSpirv-SampleRateShading-06378",
-                                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                             "]: fragment shader enables SampleRateShading capability "
-                                             "and the subpass flags includes VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM.",
-                                             pipeline.create_index);
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && module_state.HasCapability(spv::CapabilitySampleRateShading)) {
+        const auto &rp_state = pipeline.RenderPassState();
+        auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline.Subpass()].flags;
+        if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
+            const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
+            skip |= LogError(objlist, "VUID-RuntimeSpirv-SampleRateShading-06378",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "]: fragment shader enables SampleRateShading capability "
+                             "and the subpass flags includes VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM.",
+                             pipeline.create_index);
         }
     }
 
