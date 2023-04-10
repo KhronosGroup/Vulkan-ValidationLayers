@@ -660,12 +660,12 @@ bool CoreChecks::RequireFeature(const SHADER_MODULE_STATE &module_state, VkBool3
     return false;
 }
 
-bool CoreChecks::ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                    const Instruction &insn) const {
+bool CoreChecks::ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     // Check anything using a group operation (which currently is only OpGroupNonUnifrom* operations)
-    if (GroupOperation(insn.Opcode()) == true) {
+    for (const Instruction *group_inst : module_state.static_data_.group_inst) {
+        const Instruction &insn = *group_inst;
         // Check the quad operations.
         if ((insn.Opcode() == spv::OpGroupNonUniformQuadBroadcast) || (insn.Opcode() == spv::OpGroupNonUniformQuadSwap)) {
             if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
@@ -2871,7 +2871,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
         skip |= ValidateShaderClock(module_state, insn);
-        skip |= ValidateShaderStageGroupNonUniform(module_state, stage, insn);
         skip |= ValidateMemoryScope(module_state, insn);
         skip |= ValidateImageWrite(module_state, insn);
     }
@@ -2880,6 +2879,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateShaderStageInputOutputLimits(module_state, stage, pipeline, entrypoint);
     skip |= ValidateShaderStageMaxResources(module_state, stage, pipeline);
     skip |= ValidateAtomicsTypes(module_state);
+    skip |= ValidateShaderStageGroupNonUniform(module_state, stage);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);
     skip |= ValidateDecorations(module_state, pipeline);

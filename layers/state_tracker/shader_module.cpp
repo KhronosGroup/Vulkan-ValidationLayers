@@ -711,7 +711,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             }
 
             default:
-                if (AtomicOperation(insn.Opcode()) == true) {
+                if (AtomicOperation(insn.Opcode())) {
                     atomic_inst.push_back(&insn);
                     if (insn.Opcode() == spv::OpAtomicStore) {
                         atomic_store_pointer_ids.emplace_back(insn.Word(1));
@@ -719,6 +719,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                     } else {
                         atomic_pointer_ids.emplace_back(insn.Word(3));
                     }
+                }
+                if (GroupOperation(insn.Opcode())) {
+                    group_inst.push_back(&insn);
                 }
                 // We don't care about any other defs for now.
                 break;

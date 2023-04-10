@@ -426,6 +426,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         uint32_t builtin_workgroup_size_id = 0;
 
         std::vector<const Instruction *> atomic_inst;
+        std::vector<const Instruction *> group_inst;
         std::vector<spv::Capability> capability_list;
 
         bool has_specialization_constants{false};
