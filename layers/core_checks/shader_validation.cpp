@@ -152,7 +152,8 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
                                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attachment %" PRIu32
                                " not written by fragment shader; undefined values will be written to attachment",
                                pipeline.create_index, location);
-        } else if (output && (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
+        } else if (pipeline.fragment_output_state && output &&
+                   (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
             auto format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
             const auto attachment_type = GetFormatType(format);
             const auto output_type = module_state.GetFundamentalType(output->type_id);
