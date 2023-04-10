@@ -7271,13 +7271,13 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 }
             }
             if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
-                if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
-                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985",
-                                     "vkCreateRayTracingPipelinesKHR(): if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
-                                     "basePipelineHandle is VK_NULL_HANDLE, basePipelineIndex (%" PRId32
-                                     ") must be a valid into the calling"
-                                     "commands pCreateInfos parameter %" PRIu32 ".",
-                                     pCreateInfos[i].basePipelineIndex, createInfoCount);
+                if (pCreateInfos[i].basePipelineIndex < 0 ||
+                    static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                    skip |= LogError(
+                        device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985",
+                        "vkCreateRayTracingPipelinesKHR(): pCreateInfos[%" PRIu32 "].flags is %s but pCreateInfos[%" PRIu32
+                        "].basePipelineIndex has invalid index value %" PRId32 ".",
+                        i, string_VkPipelineCacheCreateFlags(pCreateInfos[i].flags).c_str(), i, pCreateInfos[i].basePipelineIndex);
                 }
             }
         }
