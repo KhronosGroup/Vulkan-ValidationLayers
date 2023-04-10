@@ -1629,12 +1629,11 @@ StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_s
       builtin_block(GetBuiltinBlock(*this, module_state)),
       total_builtin_components(GetBuiltinComponents(*this, module_state)) {}
 
-ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
-                                                     VkShaderStageFlagBits stage)
-    : VariableBase(module_state, insn, stage) {
+const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVariable& variable,
+                                                           const SHADER_MODULE_STATE& module_state) {
     // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable,
     // image atomic operation, matching images to samplers, etc
-    const Instruction* type = module_state.FindDef(type_id);
+    const Instruction* type = module_state.FindDef(variable.type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypePointer ||
@@ -1642,11 +1641,11 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
         if (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypeRuntimeArray ||
             type->Opcode() == spv::OpTypeSampledImage) {
             // currently just tracks 1D arrays
-            if (type->Opcode() == spv::OpTypeArray && array_length == 0) {
-                array_length = module_state.GetConstantValueById(type->Word(3));
+            if (type->Opcode() == spv::OpTypeArray && variable.array_length == 0) {
+                variable.array_length = module_state.GetConstantValueById(type->Word(3));
             }
             if (type->Opcode() == spv::OpTypeRuntimeArray) {
-                runtime_array = true;
+                variable.runtime_array = true;
             }
 
             type = module_state.FindDef(type->Word(2));  // Element type
@@ -1654,28 +1653,32 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             type = module_state.FindDef(type->Word(3));  // Pointer type
         }
     }
-    base_type = spv::Op(type->Opcode());
+    return *type;
+}
 
+bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable& variable) {
     // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
-    {
-        const bool physical_storage_buffer = storage_class == spv::StorageClassPhysicalStorageBuffer;
-        const bool storage_buffer = storage_class == spv::StorageClassStorageBuffer;
-        const bool uniform = storage_class == spv::StorageClassUniform;
-        const bool buffer_block = decorations.Has(DecorationSet::buffer_block_bit);
-        const bool block = decorations.Has(DecorationSet::block_bit);
-        if ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block)) {
-            is_storage_buffer = true;
-        }
-    }
+    const bool physical_storage_buffer = variable.storage_class == spv::StorageClassPhysicalStorageBuffer;
+    const bool storage_buffer = variable.storage_class == spv::StorageClassStorageBuffer;
+    const bool uniform = variable.storage_class == spv::StorageClassUniform;
+    const bool buffer_block = variable.decorations.Has(DecorationSet::buffer_block_bit);
+    const bool block = variable.decorations.Has(DecorationSet::block_bit);
+    return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
+}
 
+ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
+                                                     VkShaderStageFlagBits stage)
+    : VariableBase(module_state, insn, stage),
+      base_type(FindBaseType(*this, module_state)),
+      is_storage_buffer(IsStorageBuffer(*this)) {
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type
-    switch (base_type) {
+    switch (base_type.Opcode()) {
         case spv::OpTypeImage: {
-            image_sampled_type_width = module_state.GetTypeBitsSize(type);
+            image_sampled_type_width = module_state.GetTypeBitsSize(&base_type);
 
-            const bool is_sampled_without_sampler = type->Word(7) == 2;  // Word(7) == Sampled
-            const spv::Dim image_dim = spv::Dim(type->Word(3));
+            const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
+            const spv::Dim image_dim = spv::Dim(base_type.Word(3));
             if (is_sampled_without_sampler) {
                 if (image_dim == spv::DimSubpassData) {
                     is_input_attachment = true;
@@ -1687,7 +1690,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 }
             }
 
-            const bool is_image_without_format = ((is_sampled_without_sampler) && (type->Word(8) == spv::ImageFormatUnknown));
+            const bool is_image_without_format = ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
 
             auto image_write_loads = module_state.FindVariableAccesses(id, static_data_.image_write_load_ids, false);
             if (!image_write_loads.empty()) {
@@ -1807,7 +1810,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
         }
 
         case spv::OpTypeStruct: {
-            const auto type_struct_info = module_state.GetTypeStructInfo(type);
             // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
             // as nonwritable.
             if (is_storage_buffer && !type_struct_info->decorations.AllMemberHave(DecorationSet::nonwritable_bit)) {
