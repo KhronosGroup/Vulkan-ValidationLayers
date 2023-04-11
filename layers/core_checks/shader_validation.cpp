@@ -98,7 +98,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                           "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader",
                                           pipeline.create_index, location);
         } else if (!attrib && input) {
-            skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-07905",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Vertex shader consumes input at location %" PRIu32 " but not provided",
                              pipeline.create_index, location);
@@ -3051,7 +3051,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     break;  // When going inbetween Tessellation or Geometry, array size can be different
                 }
                 const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
-                skip |= LogError(objlist, kVUID_Core_Shader_InputNotProduced,
+                skip |= LogError(objlist, kVUID_Core_Shader_MissingOutput,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s declared input at Location %" PRIu32
                                  " Comonent %" PRIu32 " but it is not an Output declared in %s",
                                  pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
