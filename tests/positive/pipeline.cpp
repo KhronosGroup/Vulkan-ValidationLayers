@@ -4131,61 +4131,6 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance, nullptr));
 }
 
-TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
-    TEST_DESCRIPTION("Test using a mesh shader without a vertex shader.");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    // Create a device that enables mesh_shader
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    if (mesh_shader_features.meshShader != VK_TRUE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    static const char meshShaderText[] = R"glsl(
-        #version 450
-        #extension GL_NV_mesh_shader : require
-        layout(local_size_x = 1) in;
-        layout(max_vertices = 3) out;
-        layout(max_primitives = 1) out;
-        layout(triangles) out;
-        void main() {
-              gl_MeshVerticesNV[0].gl_Position = vec4(-1.0, -1.0, 0, 1);
-              gl_MeshVerticesNV[1].gl_Position = vec4( 1.0, -1.0, 0, 1);
-              gl_MeshVerticesNV[2].gl_Position = vec4( 0.0,  1.0, 0, 1);
-              gl_PrimitiveIndicesNV[0] = 0;
-              gl_PrimitiveIndicesNV[1] = 1;
-              gl_PrimitiveIndicesNV[2] = 2;
-              gl_PrimitiveCountNV = 1;
-        }
-    )glsl";
-
-    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    CreatePipelineHelper helper(*this);
-    helper.InitInfo();
-    helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-
-    // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
-    helper.gp_ci_.pVertexInputState = nullptr;
-    helper.gp_ci_.pInputAssemblyState = nullptr;
-
-    helper.InitState();
-
-    helper.CreateGraphicsPipeline();
-}
-
 TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
