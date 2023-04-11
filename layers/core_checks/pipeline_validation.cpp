@@ -374,6 +374,15 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
         full_pipeline_state_msg += "<fragment output> ";
     }
 
+    // It is possible to have no FS state in a complete pipeline whether or not GPL is used
+    if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
+        ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
+                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                         "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
+                         pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
+    }
+
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         if (!pipeline.HasFullState()) {
             skip |=
@@ -419,15 +428,6 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             }
         }
 
-        // The only time we shouldn't have a sub stage is if using GPL
-        if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
-            ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
-                             "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                             "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
-                             pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
-        }
-
         if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
             ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895",
@@ -461,8 +461,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
             // graphics_lib_type effectively tracks which parts of the pipeline are defined by graphics libraries.
             // If the complete state is defined by libraries, we need to check for compatibility with each library's layout
             const bool from_libraries_only = pipeline.graphics_lib_type == AllVkGraphicsPipelineLibraryFlagBitsEXT;
-            const bool no_independent_sets = ((pipeline.pre_raster_state->PipelineLayoutCreateFlags() &
-                                               pipeline.fragment_shader_state->PipelineLayoutCreateFlags()) &
+            // NOTE: it is possible for an executable pipeline to not contain FS state
+            const auto fs_layout_flags = (pipeline.fragment_shader_state)
+                                             ? pipeline.fragment_shader_state->PipelineLayoutCreateFlags()
+                                             : static_cast<VkPipelineLayoutCreateFlags>(0);
+            const bool no_independent_sets = ((pipeline.pre_raster_state->PipelineLayoutCreateFlags() & fs_layout_flags) &
                                               VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) == 0;
             if (from_libraries_only && no_independent_sets) {
                 // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
@@ -512,7 +515,11 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
         if (gpl_info) {
             if ((gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                                     VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0) {
-                if (!pipeline.PipelineLayoutState()) {
+                // NOTE: 06642 only refers to the create flags, not the sub-state, so look at the "raw layout" rather than the
+                // layout
+                //       associated with the sub-state
+                const auto layout_state = Get<PIPELINE_LAYOUT_STATE>(pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().layout);
+                if (!layout_state) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06642",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                      "] is a graphics library created with %s state, but does not have a valid layout specified.",

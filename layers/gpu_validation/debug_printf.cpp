@@ -326,6 +326,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             pipeline_handle = it->second.pipeline;
             pgm = it->second.pgm;
         }
+        assert(pgm.size() != 0);
         // Search through the shader source for the printf format string for this invocation
         const auto format_string = FindFormatString(pgm, debug_record->format_string_id);
         // Break the format string into strings with 1 or 0 value
