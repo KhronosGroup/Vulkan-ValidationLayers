@@ -790,6 +790,11 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     vk_testing::Device test_device(gpu());
     test_device.init(device_create_info);
 
+    // Initialize extensions manually because we don't use InitState() in this test
+    for (const char *device_ext_name : m_device_extension_names) {
+        vk::InitDeviceExtension(instance(), test_device, device_ext_name);
+    }
+
     // try creating a swapchain, using surface info queried from the default device
     auto swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_create_info.flags = 0;

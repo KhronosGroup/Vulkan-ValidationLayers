@@ -28,7 +28,7 @@ void VkTestFramework::Finish() {}
 void TestEnvironment::SetUp() {
     vk_testing::set_error_callback(test_error_callback);
 
-    vk::InitDispatchTable();
+    vk::InitCore();
 }
 
 void TestEnvironment::TearDown() {}

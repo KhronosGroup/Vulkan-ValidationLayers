@@ -313,6 +313,11 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
+    vk::ResetAllExtensions();
+    for (const char *instance_ext_name : m_instance_extension_names) {
+        vk::InitInstanceExtension(instance_, instance_ext_name);
+    }
+
     // Choose a physical device
     uint32_t gpu_count = 0;
     const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, nullptr);
@@ -538,6 +543,7 @@ void VkRenderFramework::ShutdownFramework() {
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
+    vk::ResetAllExtensions();
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
@@ -598,6 +604,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
 
     m_device = new VkDeviceObj(0, gpu_, m_device_extension_names, features, create_device_pnext);
+
+    for (const char *device_ext_name : m_device_extension_names) {
+        vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
+    }
+
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);

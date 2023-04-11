@@ -27,6 +27,9 @@ funcptr_source_preamble = '''
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
+#include <string>
+#include "containers/custom_containers.h"
 
 #ifdef _WIN32
 // Dynamic Loading:
@@ -153,7 +156,11 @@ class LvtFileOutputGenerator(OutputGenerator):
                  diagFile = sys.stdout):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
-        self.dispatch_list = []               # List of entries for dispatch list
+        self.coreInfo = []
+        self.ExtensionInfo = namedtuple('ExtensionInfo', ['type', 'protection_macro', 'commands'])
+        self.ExtensionCommand = namedtuple('ExtensionCommand', ['name', 'dispatch_param_type'])
+        self.extensionInfo = dict() # extension name -> ExtensionInfo
+
     #
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
@@ -204,6 +211,8 @@ class LvtFileOutputGenerator(OutputGenerator):
     # Processing at beginning of each feature or extension
     def beginFeature(self, interface, emit):
         OutputGenerator.beginFeature(self, interface, emit)
+        self.featureName = interface.get('name')
+        self.extensionType = interface.get('type')
         self.featureExtraProtect = GetFeatureProtect(interface)
 
     #
@@ -212,25 +221,20 @@ class LvtFileOutputGenerator(OutputGenerator):
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
         # Get first param type
         params = cmdinfo.elem.findall('param')
-        info = self.getTypeNameTuple(params[0])
-        self.AddCommandToDispatchList(name, info[0], self.featureExtraProtect, cmdinfo)
+        dispatch_param_type = self.getTypeNameTuple(params[0])[0]
+        self.AddCommandToDispatchList(name, dispatch_param_type)
 
     #
     # Determine if this API should be ignored or added to the funcptr list
-    def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
-        WSI_mandatory_extensions = [
-            'VK_KHR_win32_surface',
-            'VK_KHR_xcb_surface',
-            'VK_KHR_xlib_surface',
-            'VK_KHR_wayland_surface',
-            'VK_MVK_macos_surface',
-            'VK_KHR_surface',
-            'VK_KHR_swapchain',
-            'VK_KHR_display',
-            'VK_KHR_android_surface',
-            ]
-        if 'VK_VERSION' in self.featureName or self.featureName in WSI_mandatory_extensions:
-            self.dispatch_list.append((name, self.featureExtraProtect))
+    def AddCommandToDispatchList(self, name, dispatch_param_type):
+        if 'VK_VERSION' in self.featureName:
+            self.coreInfo.append((name, self.featureExtraProtect))
+        else:
+            if self.featureName not in self.extensionInfo:
+                self.extensionInfo[self.featureName] = \
+                    self.ExtensionInfo(type=self.extensionType, protection_macro=self.featureExtraProtect, commands=[])
+            self.extensionInfo[self.featureName].commands.append(\
+                self.ExtensionCommand(name=name, dispatch_param_type=dispatch_param_type))
         return
     #
     # Retrieve the type and name for a parameter
@@ -246,22 +250,31 @@ class LvtFileOutputGenerator(OutputGenerator):
     #
     # Create the test function pointer source and return it as a string
     def GenerateFunctionPointerSource(self):
-        entries = []
         table = funcptr_source_preamble
-        entries = self.dispatch_list
 
-        for item in entries:
+        for item in self.coreInfo:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
             if item[1] is not None:
-                table += '#ifdef %s\n' % item[1]
-            table += 'PFN_%s %s;\n' % (item[0], base_name)
+                table += f'#ifdef {item[1]}\n'
+            table += f'PFN_{item[0]} {base_name};\n'
             if item[1] is not None:
-                table += '#endif // %s\n' % item[1]
+                table += f'#endif // {item[1]}\n'
+
+        table += '\n// Extension function pointers\n'
+        for name in sorted(self.extensionInfo.keys()):
+            table += f'// {name}\n'
+            ext = self.extensionInfo[name]
+            if ext.protection_macro is not None:
+                table += f'#ifdef {ext.protection_macro}\n'
+            for cmd in ext.commands:
+                table += f'PFN_{cmd.name} {cmd.name[2:]};\n'
+            if ext.protection_macro is not None:
+                table += f'#endif // {ext.protection_macro}\n'
 
         table += '''
 
-void InitDispatchTable() {
+void InitCore() {
 
 #if(WIN32)
     const char filename[] = "vulkan-1.dll";
@@ -284,36 +297,115 @@ void InitDispatchTable() {
     }
 
 '''
-
-        for item in entries:
+        # Core functions
+        for item in self.coreInfo:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
 
             if item[1] is not None:
-                table += '#ifdef %s\n' % item[1]
-            table += '    %s = reinterpret_cast<PFN_%s>(get_proc_address(lib_handle, "%s"));\n' % (base_name, item[0], item[0])
+                table += f'#ifdef {item[1]}\n'
+            table += f'    {base_name} = reinterpret_cast<PFN_{item[0]}>(get_proc_address(lib_handle, "{item[0]}"));\n'
             if item[1] is not None:
-                table += '#endif // %s\n' % item[1]
+                table += f'#endif // {item[1]}\n'
         table += '}\n\n'
+
+        # Instance extension functions
+        table += 'void InitInstanceExtension(VkInstance instance, const char* extension_name) {\n'
+        table += '    static const vvl::unordered_map<std::string, std::function<void(VkInstance)>> initializers = {\n'
+        for name in sorted(self.extensionInfo.keys()):
+            ext = self.extensionInfo[name]
+            if ext.type != 'instance':
+                continue
+            if ext.protection_macro is not None:
+                table += f'#ifdef {ext.protection_macro}\n'
+            table += ' ' * 8 + '{\n'
+            table += ' ' * 12 +  f'"{name}", [](VkInstance instance) {{\n'
+            for cmd in ext.commands:
+                table += ' ' * 16 + f'{cmd.name[2:]} = reinterpret_cast<PFN_{cmd.name}>(GetInstanceProcAddr(instance, "{cmd.name}"));\n'
+            table += ' ' * 12 +  '}\n'
+            table += ' ' * 8 +  '},\n'
+            if ext.protection_macro is not None:
+                table += f'#endif // {ext.protection_macro}\n'
+        table += '    };\n\n'
+        table += '    if (auto it = initializers.find(extension_name); it != initializers.end())\n'
+        table += '        (it->second)(instance);\n'
+        table += '}\n\n'
+
+        # Device extension functions
+        table += 'void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name) {\n'
+        table += '    static const vvl::unordered_map<std::string, std::function<void(VkInstance, VkDevice)>> initializers = {\n'
+        for name in sorted(self.extensionInfo.keys()):
+            ext = self.extensionInfo[name]
+            if ext.type != 'device':
+                continue
+            if ext.protection_macro is not None:
+                table += f'#ifdef {ext.protection_macro}\n'
+            table += ' ' * 8 + '{\n'
+            table += ' ' * 12 +  f'"{name}", [](VkInstance instance, VkDevice device) {{\n'
+            for cmd in ext.commands:
+                # NOTE: On Android GDPA does not work for physical-device-level functionality but GIPA works.
+                # It's stated in the spec that GIPA _can_ be used to get physical-device-level functionality.
+                # Use GIPA to get physical-device-level functionality on all platforms.
+                physical_device_level = (cmd.dispatch_param_type == 'VkPhysicalDevice')
+                if physical_device_level:
+                    table += ' ' * 16 + f'{cmd.name[2:]} = reinterpret_cast<PFN_{cmd.name}>(GetInstanceProcAddr(instance, "{cmd.name}"));\n'
+                else:
+                    table += ' ' * 16 + f'{cmd.name[2:]} = reinterpret_cast<PFN_{cmd.name}>(GetDeviceProcAddr(device, "{cmd.name}"));\n'
+            table += ' ' * 12 + '}\n'
+            table += ' ' * 8 + '},\n'
+            if ext.protection_macro is not None:
+                table += f'#endif // {ext.protection_macro}\n'
+        table += '    };\n\n'
+        table += '    if (auto it = initializers.find(extension_name); it != initializers.end())\n'
+        table += '        (it->second)(instance, device);\n'
+        table += '}\n\n'
+
+        # Zero all extension pointers
+        table += 'void ResetAllExtensions() {\n'
+        for name in sorted(self.extensionInfo.keys()):
+            table += f'    // {name}\n'
+            ext = self.extensionInfo[name]
+            if ext.protection_macro is not None:
+                table += f'#ifdef {ext.protection_macro}\n'
+            for cmd in ext.commands:
+                table += f'    {cmd.name[2:]} = nullptr;\n'
+            if ext.protection_macro is not None:
+                table += f'#endif // {ext.protection_macro}\n'
+        table += '}\n\n'
+
         table += '} // namespace vk'
         return table
     #
     # Create the test function pointer source and return it as a string
     def GenerateFunctionPointerHeader(self):
-        entries = []
         table = funcptr_header_preamble
-        entries = self.dispatch_list
 
-        for item in entries:
+        for item in self.coreInfo:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
             if item[1] is not None:
-                table += '#ifdef %s\n' % item[1]
-            table += 'extern PFN_%s %s;\n' % (item[0], base_name)
+                table += f'#ifdef {item[1]}\n'
+            table += f'extern PFN_{item[0]} {base_name};\n'
             if item[1] is not None:
-                table += '#endif // %s\n' % item[1]
+                table += f'#endif // {item[1]}\n'
+
+        table += '\n// Extension function pointers\n'
+        for name in sorted(self.extensionInfo.keys()):
+            table += f'// {name}\n'
+            ext = self.extensionInfo[name]
+            if ext.protection_macro is not None:
+                table += f'#ifdef {ext.protection_macro}\n'
+            for cmd in ext.commands:
+                table += f'extern PFN_{cmd.name} {cmd.name[2:]};\n'
+            if ext.protection_macro is not None:
+                table += f'#endif // {ext.protection_macro}\n'
+
         table += '\n'
-        table += 'void InitDispatchTable();\n\n'
+        table += 'void InitCore();\n'
+        table += 'void InitInstanceExtension(VkInstance instance, const char* extension_name);\n'
+        table += 'void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name);\n'
+        table += 'void ResetAllExtensions();\n'
+        table += '\n'
         table += '} // namespace vk'
         return table
 
@@ -324,4 +416,4 @@ void InitDispatchTable() {
         elif self.lvt_file_type == 'function_pointer_source':
             return self.GenerateFunctionPointerSource()
         else:
-            return 'Bad LVT File Generator Option %s' % self.lvt_file_type
+            return f'Bad LVT File Generator Option {self.lvt_file_type}'
