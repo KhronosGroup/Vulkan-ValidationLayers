@@ -453,7 +453,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
-    if (entrypoint.entrypoint_insn.Word(1) != spv::ExecutionModelFragment) {
+    if (entrypoint.execution_model != spv::ExecutionModelFragment) {
         return skip;
     }
 
@@ -917,7 +917,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
 
         // Shader stage is an alias, but the ExecutionModel is not
         case VK_SHADER_STAGE_MESH_BIT_EXT:
-            if (entrypoint.entrypoint_insn.Word(1) == spv::ExecutionModelMeshNV) {
+            if (entrypoint.execution_model == spv::ExecutionModelMeshNV) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -934,7 +934,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                      pipeline.create_index, phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives);
                 }
-            } else if (entrypoint.entrypoint_insn.Word(1) == spv::ExecutionModelMeshEXT) {
+            } else if (entrypoint.execution_model == spv::ExecutionModelMeshEXT) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07115",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -3498,9 +3498,8 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
     const char *y_vuid;
     const char *z_vuid;
     const char *workgroup_size_vuid;
-    const uint32_t execution_model = entrypoint.entrypoint_insn.Word(1);
 
-    switch (execution_model) {
+    switch (entrypoint.execution_model) {
         case spv::ExecutionModelTaskEXT: {
             x_vuid = "VUID-RuntimeSpirv-TaskEXT-07291";
             y_vuid = "VUID-RuntimeSpirv-TaskEXT-07292";
@@ -3536,21 +3535,21 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
         skip |= LogError(module_state.vk_shader_module(), x_vuid,
                          "%s shader local workgroup size in X dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
-                         string_SpvExecutionModel(execution_model), local_size_x, max_local_size_x);
+                         string_SpvExecutionModel(entrypoint.execution_model), local_size_x, max_local_size_x);
     }
 
     if (local_size_y > max_local_size_y) {
         skip |= LogError(module_state.vk_shader_module(), y_vuid,
                          "%s shader local workgroup size in Y dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
-                         string_SpvExecutionModel(execution_model), local_size_y, max_local_size_y);
+                         string_SpvExecutionModel(entrypoint.execution_model), local_size_y, max_local_size_y);
     }
 
     if (local_size_z > max_local_size_z) {
         skip |= LogError(module_state.vk_shader_module(), z_vuid,
                          "%s shader local workgroup size in Z dimension (%" PRIu32
                          ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
-                         string_SpvExecutionModel(execution_model), local_size_z, max_local_size_z);
+                         string_SpvExecutionModel(entrypoint.execution_model), local_size_z, max_local_size_z);
     }
 
     uint64_t invocations = local_size_x * local_size_y;
@@ -3569,7 +3568,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
         skip |= LogError(module_state.vk_shader_module(), workgroup_size_vuid,
                          "%s shader total invocation size (%" PRIu32 "* %" PRIu32 "* %" PRIu32 " = %" PRIu32
                          ") must be less than or equal to max workgroup invocations (%" PRIu32 ").",
-                         string_SpvExecutionModel(execution_model), local_size_x, local_size_y, local_size_z,
+                         string_SpvExecutionModel(entrypoint.execution_model), local_size_x, local_size_y, local_size_z,
                          local_size_x * local_size_y * local_size_z, max_workgroup_size);
     }
     return skip;

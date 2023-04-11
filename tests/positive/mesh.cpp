@@ -214,3 +214,65 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit);
 }
+
+TEST_F(VkPositiveLayerTest, MeshPerTaskNV) {
+    TEST_DESCRIPTION("Make sure PerTaskNV in handled");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
+        GTEST_SKIP() << "Test requires (unsupported) meshShader and taskShader features, skipping test.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    static const char taskShaderText[] = R"glsl(
+        #version 450
+        #extension GL_NV_mesh_shader : require
+        layout(local_size_x = 32) in;
+        taskNV out Task {
+            uint baseID;
+        } OUT;
+        void main() {}
+    )glsl";
+
+    static const char meshShaderText[] = R"glsl(
+        #version 460
+        #extension GL_NV_mesh_shader : enable
+
+        layout(local_size_x=2) in;
+        layout(triangles) out;
+        layout(max_vertices=4, max_primitives=2) out;
+
+        struct NestStruct {
+            uint z;
+        };
+        struct FirstStruct {
+            float a;
+            NestStruct b;
+        };
+
+        in taskNV TaskData {
+            uint x;
+            FirstStruct y;
+        } td;
+
+        void main () {}
+    )glsl";
+
+    VkShaderObj ts(this, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, SPV_ENV_VULKAN_1_2);
+    VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_2);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}

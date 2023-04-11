@@ -100,6 +100,15 @@ bool DecorationSet::HasBuiltIn() const {
     return false;
 }
 
+bool DecorationSet::HasInMember(FlagBit flag_bit) const {
+    for (const auto& decoration : member_decorations) {
+        if (decoration.second.Has(flag_bit)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool DecorationSet::AllMemberHave(FlagBit flag_bit) const {
     for (const auto& decoration : member_decorations) {
         if (!decoration.second.Has(flag_bit)) {
@@ -258,7 +267,8 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 
 SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
     : entrypoint_insn(entrypoint_insn),
-      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint_insn.Word(1)))),
+      execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
+      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
       id(entrypoint_insn.Word(2)),
       name(entrypoint_insn.GetAsString(3)),
       execution_mode(module_state.GetExecutionModeSet(id)) {
@@ -406,6 +416,9 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
         // After all variables are made, can get references from them
         // Also can set per-Entrypoint values now
         for (const auto& variable : stage_interface_variables) {
+            if (variable.is_per_task_nv) {
+                continue;  // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
+            }
             has_passthrough |= variable.decorations.Has(DecorationSet::passthrough_bit);
 
             if (variable.is_builtin) {
@@ -1452,6 +1465,15 @@ VariableBase::VariableBase(const SHADER_MODULE_STATE& module_state, const Instru
     assert(insn.Opcode() == spv::OpVariable);
 }
 
+bool StageInteraceVariable::IsPerTaskNV(const StageInteraceVariable& variable) {
+    // will always be in a struct member
+    if (variable.type_struct_info &&
+        (variable.stage == VK_SHADER_STAGE_MESH_BIT_EXT || variable.stage == VK_SHADER_STAGE_TASK_BIT_EXT)) {
+        return variable.type_struct_info->decorations.HasInMember(DecorationSet::per_task_nv);
+    }
+    return false;
+}
+
 // Some cases there is an array that is there to be "per-vertex" (or related)
 // We want to remove this as it is not part of the Location caluclation or true type of variable
 bool StageInteraceVariable::IsArrayInterface(const StageInteraceVariable& variable) {
@@ -1496,7 +1518,8 @@ bool StageInteraceVariable::IsBuiltin(const StageInteraceVariable& variable, con
 std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInteraceVariable& variable,
                                                                     const SHADER_MODULE_STATE& module_state) {
     std::vector<InterfaceSlot> slots;
-    if (variable.is_builtin) {
+    if (variable.is_builtin || variable.is_per_task_nv) {
+        // SPV_NV_mesh_shader has a PerTaskNV which is not a builtin or interface
         return slots;
     }
 
@@ -1617,7 +1640,7 @@ StageInteraceVariable::StageInteraceVariable(const SHADER_MODULE_STATE& module_s
     : VariableBase(module_state, insn, stage),
       is_patch(decorations.Has(DecorationSet::patch_bit)),
       is_per_vertex(decorations.Has(DecorationSet::per_vertex_bit)),
-      is_per_task_nv(decorations.Has(DecorationSet::per_task_nv)),
+      is_per_task_nv(IsPerTaskNV(*this)),
       is_array_interface(IsArrayInterface(*this)),
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
