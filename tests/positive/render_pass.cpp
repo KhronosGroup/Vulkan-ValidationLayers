@@ -930,7 +930,7 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
@@ -943,8 +943,7 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    std::array<VkSubpassDescription2, 2> subpasses = {LvlInitStruct<VkSubpassDescription2>(),
-                                                      LvlInitStruct<VkSubpassDescription2>()};
+    std::array subpasses = {LvlInitStruct<VkSubpassDescription2>(), LvlInitStruct<VkSubpassDescription2>()};
     subpasses[0].viewMask = 0x1;
     subpasses[1].viewMask = 0x1;
 
@@ -1030,6 +1029,105 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
                               &descriptor_write);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, BeginRenderPassDedicatedStencilLayout) {
+    TEST_DESCRIPTION("Render pass using a dedicated stencil layout, different from depth layout");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto vulkan_12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    GetPhysicalDeviceFeatures2(vulkan_12_features);
+    if (vulkan_12_features.separateDepthStencilLayouts == VK_FALSE) {
+        GTEST_SKIP() << "separateDepthStencilLayouts feature not supported, skipping test.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &vulkan_12_features));
+
+    // Create depth stencil image
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj ds_image(m_device);
+    ds_image.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                  VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(ds_image.initialized());
+
+    VkImageView ds_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    // Create depth stencil attachment
+    auto attachment_desc_stencil_layout = LvlInitStruct<VkAttachmentDescriptionStencilLayoutKHR>();
+    attachment_desc_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_desc_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    auto ds_attachment_desc = LvlInitStruct<VkAttachmentDescription2>(&attachment_desc_stencil_layout);
+    ds_attachment_desc.format = ds_format;
+    ds_attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    ds_attachment_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ds_attachment_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    ds_attachment_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    ds_attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    auto attachment_ref_stencil_layout = LvlInitStruct<VkAttachmentReferenceStencilLayoutKHR>();
+    attachment_ref_stencil_layout.stencilLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    auto ds_attachment_ref = LvlInitStruct<VkAttachmentReference2>(&attachment_ref_stencil_layout);
+    ds_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    // Create render pass
+    auto subpass = LvlInitStruct<VkSubpassDescription2>();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.pDepthStencilAttachment = &ds_attachment_ref;
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &ds_attachment_desc;
+
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+
+    // Create framebuffer
+    auto fci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fci.renderPass = render_pass.handle();
+    fci.attachmentCount = 1;
+    fci.pAttachments = &ds_view;
+    fci.width = ds_image.width();
+    fci.height = ds_image.height();
+    fci.layers = 1;
+    vk_testing::Framebuffer fb(*m_device, fci);
+
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = render_pass.handle();
+    rpbi.framebuffer = fb.handle();
+    rpbi.renderArea = {{0, 0}, {fci.width, fci.height}};
+
+    // Use helper to create graphics pipeline
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    // One stencil op is not OP_KEEP, both write mask are not 0
+    ds_state.front.failOp = VK_STENCIL_OP_ZERO;
+    ds_state.front.writeMask = 0x1;
+    ds_state.back.writeMask = 0x1;
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.InitState();
+    helper.gp_ci_.pDepthStencilState = &ds_state;
+    helper.gp_ci_.renderPass = render_pass.handle();
+    helper.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
+    // and used in the validation code, 06887 would trigger with the following draw call
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
@@ -1205,7 +1303,7 @@ TEST_F(VkPositiveLayerTest, FragmentShadingRateAttachment) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;

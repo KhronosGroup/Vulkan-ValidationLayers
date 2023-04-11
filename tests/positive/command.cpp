@@ -835,7 +835,7 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
 }
-// This is a positive test.  No errors should be generated.
+
 TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
@@ -903,7 +903,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     vk::QueueWaitIdle(queue);
 }
 
-// This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
