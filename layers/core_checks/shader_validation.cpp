@@ -1970,7 +1970,8 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
     return skip;
 }
 
-bool CoreChecks::ValidateDecorations(const SHADER_MODULE_STATE &module_state, const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidateTransformFeedbackDecorations(const SHADER_MODULE_STATE &module_state,
+                                                      const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
     std::vector<const Instruction *> xfb_streams;
@@ -2445,10 +2446,13 @@ bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_sta
                                            const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
-    // Temp workaround to prevent false positive errors
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
-    if (module_state.HasMultipleEntryPoints()) {
-        return skip;
+    if (!enabled_features.transform_feedback_features.transformFeedback) {
+        return skip;  // most apps will not use transform feedback, so only check if enabled
+    }
+    skip |= ValidateTransformFeedbackDecorations(module_state, pipeline);
+
+    if (entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+        return skip;  // GeometryStreams are only used in Geomtry Shaders
     }
 
     vvl::unordered_set<uint32_t> emitted_streams;
@@ -2872,7 +2876,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateImageWrite(module_state);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);
-    skip |= ValidateDecorations(module_state, pipeline);
     skip |= ValidateVariables(module_state);
     skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, stage);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline);

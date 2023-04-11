@@ -903,12 +903,12 @@ class CoreChecks : public ValidationStateTracker {
                                         const SHADER_MODULE_STATE::EntryPoint& producer_entrypoint,
                                         const SHADER_MODULE_STATE& consumer,
                                         const SHADER_MODULE_STATE::EntryPoint& consumer_entrypoint, uint32_t pipe_index) const;
-    bool ValidateDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                           const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE::EntryPoint& entrypoint) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state, const SHADER_MODULE_STATE::EntryPoint& entrypoint,
                                    const PIPELINE_STATE& pipeline) const;
+    bool ValidateTransformFeedbackDecorations(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderModuleId(const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state) const;
