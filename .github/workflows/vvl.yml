@@ -201,7 +201,7 @@ jobs:
             -D CMAKE_ANDROID_ARCH_ABI=${{ matrix.abi }} \
             -D CMAKE_ANDROID_STL_TYPE=c++_static \
             -D CMAKE_ANDROID_RTTI=YES \
-            -D CMAKE_ANDROID_EXCEPTIONS= YES \
+            -D CMAKE_ANDROID_EXCEPTIONS=YES \
             -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO \
             -D CMAKE_BUILD_TYPE=Debug \
             -D UPDATE_DEPS=ON \
