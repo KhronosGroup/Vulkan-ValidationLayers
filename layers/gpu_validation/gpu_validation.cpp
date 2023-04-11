@@ -133,6 +133,11 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                               IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
                              shaderInt64 && enabled_features.core12.bufferDeviceAddress);
 
+    if (IsExtEnabled(device_extensions.vk_ext_shader_object)) {
+        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+                   "VK_EXT_shader_Object is enabled, but GPU-AV does not currently support validation of shader objects");
+    }
+
     output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
 
     if (validate_descriptor_indexing) {
@@ -1990,6 +1995,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     const auto *pipeline_state = last_bound.pipeline_state;
     bool uses_robustness = false;
 
+    if (!pipeline_state) {
+        ReportSetupProblem(device, "Pipeline state not found, aborting GPU-AV");
+        aborted = true;
+        return;
+    }
+
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout, &desc_sets);
@@ -2239,39 +2250,32 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     desc_writes[0].dstSet = desc_sets[0];
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
-    if (pipeline_state) {
-        const auto pipeline_layout = pipeline_state->PipelineLayoutState();
-        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
-        // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
-        // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
-        // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
-        // null handle.
-        VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
-        if (last_bound.pipeline_layout) {
-            pipeline_layout_handle = last_bound.pipeline_layout;
-        } else if (!pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
-            pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->layout();
-        }
-        if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && pipeline_layout_handle != VK_NULL_HANDLE) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
-                                          0, nullptr);
-        }
-        if (pipeline_layout_handle == VK_NULL_HANDLE) {
-            ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
-            aborted = true;
-        } else {
-            // Record buffer and memory info in CB state tracking
-            cb_node->per_draw_buffer_list.emplace_back(output_block, bda_input_block, pre_draw_resources, pre_dispatch_resources,
-                                                       desc_sets[0], desc_pool, bind_point, uses_robustness, cmd_type);
-        }
-    } else {
-        ReportSetupProblem(device, "Unable to find pipeline state");
-        aborted = true;
+
+    const auto pipeline_layout = pipeline_state->PipelineLayoutState();
+    // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
+    // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
+    // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
+    // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
+    // null handle.
+    VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
+    if (last_bound.pipeline_layout) {
+        pipeline_layout_handle = last_bound.pipeline_layout;
+    } else if (!pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
+        pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->layout();
     }
-    if (aborted) {
+    if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && pipeline_layout_handle != VK_NULL_HANDLE) {
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(), 0,
+                                      nullptr);
+    }
+    if (pipeline_layout_handle == VK_NULL_HANDLE) {
+        ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
+        aborted = true;
         vmaDestroyBuffer(vmaAllocator, bda_input_block.buffer, bda_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
-        return;
+    } else {
+        // Record buffer and memory info in CB state tracking
+        cb_node->per_draw_buffer_list.emplace_back(output_block, bda_input_block, pre_draw_resources, pre_dispatch_resources,
+                                                   desc_sets[0], desc_pool, bind_point, uses_robustness, cmd_type);
     }
 }
 
