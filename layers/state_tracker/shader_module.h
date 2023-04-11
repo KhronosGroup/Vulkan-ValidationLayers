@@ -79,6 +79,7 @@ struct DecorationSet : public DecorationBase {
 
     void Add(uint32_t decoration, uint32_t value);
     bool HasBuiltIn() const;
+    bool HasInMember(FlagBit flag_bit) const;
     bool AllMemberHave(FlagBit flag_bit) const;
 };
 
@@ -212,6 +213,7 @@ struct StageInteraceVariable : public VariableBase {
     StageInteraceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
 
   protected:
+    static bool IsPerTaskNV(const StageInteraceVariable &variable);
     static bool IsArrayInterface(const StageInteraceVariable &variable);
     static const Instruction &FindBaseType(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
     static bool IsBuiltin(const StageInteraceVariable &variable, const SHADER_MODULE_STATE &module_state);
@@ -338,6 +340,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
         // There is no single unique item for a single entry point
         const Instruction &entrypoint_insn;  // OpEntryPoint instruction
+        // For things like MeshNV vs MeshEXT, we need the execution_model
+        const spv::ExecutionModel execution_model;
         const VkShaderStageFlagBits stage;
         const uint32_t id;
         const std::string name;
