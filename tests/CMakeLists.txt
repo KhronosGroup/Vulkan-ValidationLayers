@@ -54,6 +54,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/image_buffer.cpp
     positive/instance.cpp
     positive/memory.cpp
+    positive/mesh.cpp
     positive/other.cpp
     positive/pipeline.cpp
     positive/ray_tracing.cpp
