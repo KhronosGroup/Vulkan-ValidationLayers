@@ -344,6 +344,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkAttachmentReference color_ref{};
     color_ref.attachment = 0;
@@ -426,15 +427,11 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
     auto features2 = GetPhysicalDeviceFeatures2(portability_feature);
     portability_feature.constantAlphaColorBlendFactors = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cb_attachments_[0].srcColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
-    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,

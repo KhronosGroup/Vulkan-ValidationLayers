@@ -2196,6 +2196,8 @@ TEST_F(VkLayerQueryTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.rs_state_ci_ = rs_ci;
+    // Rasterization discard enable prohibits fragment shader.
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
