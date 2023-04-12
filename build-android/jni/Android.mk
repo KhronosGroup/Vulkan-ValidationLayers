@@ -275,9 +275,9 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
+LOCAL_WHOLE_STATIC_LIBRARIES += cpufeatures android_native_app_glue ndk_helper
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK -DUSE_ROBIN_HOOD_HASHING
-LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
+LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DUSE_ROBIN_HOOD_HASHING
 LOCAL_LDLIBS := -llog -landroid -ldl
 LOCAL_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
