@@ -1010,10 +1010,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         // Verify Sample counts
         if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
             auto set = context.descriptor_set.GetSet();
-            auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
-                                 ? context.vuids.descriptor_buffer_bit_set_08114
-                                 : context.vuids.descriptor_valid_02699;
-            return LogError(set, vuid_text,
+            return LogError(set, " VUID-RuntimeSpirv-samples-08725",
                             "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                             " requires bound image to have VK_SAMPLE_COUNT_1_BIT but got %s.",
                             context.caller, report_data->FormatHandle(set).c_str(), binding, index,
@@ -1021,10 +1018,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
         if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
             auto set = context.descriptor_set.GetSet();
-            auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
-                                 ? context.vuids.descriptor_buffer_bit_set_08114
-                                 : context.vuids.descriptor_valid_02699;
-            return LogError(set, vuid_text,
+            return LogError(set, "VUID-RuntimeSpirv-samples-08726",
                             "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                             " requires bound image to have multiple samples, but got VK_SAMPLE_COUNT_1_BIT.",
                             context.caller, report_data->FormatHandle(set).c_str(), binding, index);

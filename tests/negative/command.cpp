@@ -1031,8 +1031,6 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
         "Test that an error is produced when a multisampled images are consumed via singlesample images types in the shader, or "
         "vice versa.");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "requires bound image to have multiple samples");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -1073,9 +1071,8 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
     VkRect2D scissor = {{0, 0}, {16, 16}};
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
-    // error produced here.
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-samples-08726");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
