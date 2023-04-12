@@ -332,3 +332,28 @@ jobs:
         run: cmake --build build
       - name: Install
         run: cmake --install build --prefix build/install
+
+  # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, or Vulkan-Profiles
+  # If we do intentionally want to break them, we just need to update the integration test code to account for that.
+  integration_test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: lukka/get-cmake@latest
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-integration_test
+      - name: Add ccache to PATH
+        run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
+      - name: Install WSI dependencies
+        run: sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Configure Integration Test
+        run: cmake -S tests/integration -B tests/integration/build -D CMAKE_BUILD_TYPE=Debug -G "Ninja"
+      - name: Build Integration Test
+        run: cmake --build tests/integration/build
