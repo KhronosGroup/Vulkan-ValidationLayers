@@ -1763,8 +1763,8 @@ void CreatePipelineHelper::InitGraphicsPipelineInfo() {
     gp_ci_.pInputAssemblyState = &ia_ci_;
     gp_ci_.pTessellationState = nullptr;
     gp_ci_.pViewportState = &vp_state_ci_;
-    gp_ci_.pRasterizationState = &rs_state_ci_;
     gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pRasterizationState = &rs_state_ci_;
     gp_ci_.pDepthStencilState = nullptr;
     gp_ci_.pColorBlendState = &cb_ci_;
     gp_ci_.pDynamicState = nullptr;
@@ -1896,6 +1896,7 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
     gp_ci_.pColorBlendState = &cb_ci_;
     gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
+    gp_ci_.pRasterizationState = &rs_state_ci_;
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
 

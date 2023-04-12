@@ -3544,6 +3544,8 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryRenderPass) {
     pipe.InitFragmentLibInfo(1, &fs_stage_ci, &library_create_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
+    // If not Frag Output with frag shader, need depth/stencil struct
+    pipe.ds_ci_ = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06625");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

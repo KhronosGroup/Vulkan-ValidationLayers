@@ -1055,11 +1055,12 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             pipeline_rasterization_state_create_info_template;
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
 
+        // If rasterizer is disabled, fragment shader state must not be present.
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,                              // pNext
-            0,                                    // flags
-            static_cast<uint32_t>(size(stages)),  // stageCount
+            nullptr,  // pNext
+            0,        // flags
+            1,        // stageCount
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
@@ -1615,6 +1616,9 @@ TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
     pipe.gp_ci_.pDepthStencilState = nullptr;
     pipe.gp_ci_.pColorBlendState = nullptr;
     pipe.gp_ci_.renderPass = rp.handle();
+
+    // When rasterizer discard is enabled, fragment shader state must not be present.
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
 
     // Skip the test in NexusPlayer. The driver crashes when pViewportState, pMultisampleState, pDepthStencilState, pColorBlendState
     // are NULL.
@@ -5365,22 +5369,17 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
 
 TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
     TEST_DESCRIPTION(
-        "Create a pipeline with rasterization disabled, containing a valid pColorBlendState and color attachments, but a fragment "
-        "shader that does not have any outputs");
+        "Create a pipeline with rasterization disabled, containing a valid pColorBlendState and color attachments, "
+        "without a fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *fs_src = R"glsl(
-        #version 450
-        void main(){ }
-    )glsl";
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.fs_ = std::make_unique<VkShaderObj>(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    // Rasterization discard enable prohibits fragment shader.
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
