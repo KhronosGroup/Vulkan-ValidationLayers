@@ -549,7 +549,8 @@ class CoreChecks : public ValidationStateTracker {
     const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawInstance(const CMD_BUFFER_STATE& cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                  CMD_TYPE cmd_type) const;
-    bool ValidateActionCmd(const CMD_BUFFER_STATE& cb_state, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
+    bool ValidateActionCmd(const CMD_BUFFER_STATE& cb_state, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type) const;
+    bool ValidateGraphicsIndexedCmd(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
                                    VkDeviceSize memoryOffset, const char* api_name) const;
@@ -719,8 +720,7 @@ class CoreChecks : public ValidationStateTracker {
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type,
                                        const PIPELINE_STATE& pipeline) const;
-    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const bool indexed,
-                                 const VkPipelineBindPoint bind_point) const;
+    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
     bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
     static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
                                        VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
