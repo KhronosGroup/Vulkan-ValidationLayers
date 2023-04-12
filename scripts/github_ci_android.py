@@ -30,15 +30,19 @@ DEFAULT_ABI = SUPPORTED_ABIS[0]
 #
 # Fetch Android components, build Android VVL
 def BuildAndroid(target_abi):
-    print("Fetching NDK\n")
-    wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
-    common_ci.RunShellCmd(wget_cmd)
+    # GitHub actions already comes with NDK pre-installed. We should avoid downloading unless we have to.
+    # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#environment-variables-2
+    if "ANDROID_NDK_HOME" not in os.environ:
+        print("Fetching NDK\n")
+        wget_cmd = 'wget http://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip'
+        common_ci.RunShellCmd(wget_cmd)
 
-    print("Extracting NDK components\n")
-    unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
-    common_ci.RunShellCmd(unzip_cmd)
-    # Add NDK to path
-    os.environ['ANDROID_NDK_HOME'] = common_ci.RepoRelative('android-ndk-r21d')
+        print("Extracting NDK components\n")
+        unzip_cmd = 'unzip -u -q android-ndk-r21d-linux-x86_64.zip'
+        common_ci.RunShellCmd(unzip_cmd)
+
+        os.environ['ANDROID_NDK_HOME'] = common_ci.RepoRelative('android-ndk-r21d')
+
     os.environ['PATH'] = os.environ.get('ANDROID_NDK_HOME') + os.pathsep + os.environ.get('PATH')
 
     print("Preparing Android Dependencies\n")

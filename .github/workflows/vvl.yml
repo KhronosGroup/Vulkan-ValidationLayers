@@ -210,20 +210,17 @@ jobs:
         - name: Build
           run: cmake --build build/
 
-  android:
-      runs-on: ubuntu-20.04
+  android_mk:
+      runs-on: ubuntu-22.04
       strategy:
         fail-fast: false
-        matrix:
-          abi: [ arm64-v8a, armeabi-v7a ]
-
       steps:
         - uses: actions/checkout@v3
         - uses: actions/setup-python@v4
           with:
             python-version: '3.8'
-        - name: Build ValidationLayers
-          run: python3 scripts/github_ci_android.py --abi ${{ matrix.abi }}
+        - name: Build
+          run: python3 scripts/github_ci_android.py --abi arm64-v8a
 
   macos-12:
     runs-on: macos-12
