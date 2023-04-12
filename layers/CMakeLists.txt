@@ -28,8 +28,6 @@ target_sources(VkLayer_utils PRIVATE
     generated/vk_dispatch_table_helper.h
     generated/vk_safe_struct.h
     generated/vk_safe_struct.cpp
-    # NOTE: This header file is installed by the LunarG SDK and treated as part of VulkanHeaders
-    # IE: This header file is also a deliverable of VVL.
     generated/vk_enum_string_helper.h
     generated/vk_object_types.h
     generated/vk_extension_helper.h
@@ -64,9 +62,9 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
-# NOTE: We need to install header/source files for Android
 # TODO: This should be removed once the official "Vulkan-Utility-Libraries" library is available for consumption
 if(BUILD_LAYER_SUPPORT_FILES)
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
     install(FILES ${CMAKE_SOURCE_DIR}/layers/containers/custom_containers.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/containers)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/error_message
@@ -82,8 +80,6 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_dispatch_table_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
-                  # NOTE: This header file is installed by the LunarG SDK and treated as part of VulkanHeaders
-                  # IE: This header file is also a deliverable of VVL.
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_object_types.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_extension_helper.h
@@ -110,7 +106,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     )
 endif()
 
-# NOTE: LunarG/VulkanTools disables BUILD_LAYERS and BUILD_TESTS to minimize dependencies.
 if (NOT BUILD_LAYERS)
     return()
 endif()
