@@ -3362,6 +3362,339 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
     return skip;
 }
 
+// Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
+bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
+                                                const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller = CommandTypeString(cmd_type);
+
+    const auto &rp_state = pipeline.RenderPassState();
+    // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
+    if (cb_state.activeRenderPass->renderPass() != rp_state->renderPass()) {
+        // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
+        skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
+                                                *rp_state.get(), caller, vuid.render_pass_compatible_02684);
+    }
+    const auto subpass = pipeline.Subpass();
+    if (subpass != cb_state.GetActiveSubpass()) {
+        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+        skip |= LogError(objlist, vuid.subpass_index_02685, "%s: Pipeline was built for subpass %u but used in subpass %u.", caller,
+                         subpass, cb_state.GetActiveSubpass());
+    }
+    const safe_VkAttachmentReference2 *ds_attachment =
+        cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
+    if (ds_attachment != nullptr) {
+        // Check if depth stencil attachment was created with sample location compatible bit
+        if (pipeline.SampleLocationEnabled() == VK_TRUE) {
+            const uint32_t attachment = ds_attachment->attachment;
+            if (attachment != VK_ATTACHMENT_UNUSED) {
+                const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
+                if (imageview_state != nullptr) {
+                    const auto *image_state = imageview_state->image_state.get();
+                    if (image_state != nullptr) {
+                        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+                            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                        cb_state.activeRenderPass->renderPass());
+                            skip |= LogError(objlist, vuid.sample_location_02689,
+                                             "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
+                                             "stencil attachment's VkImage was not created with "
+                                             "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
+                                             caller, cb_state.GetActiveSubpass());
+                        }
+                    }
+                }
+            }
+        }
+        const auto ds_state = pipeline.DepthStencilState();
+        if (ds_state) {
+            const auto &dynamic_state_value = cb_state.dynamic_state_value;
+            // Set with static values and update for anything dynamically set
+            const bool depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
+                                                ? dynamic_state_value.depth_write_enable
+                                                : ds_state->depthWriteEnable;
+            VkStencilOpState front = ds_state->front;
+            VkStencilOpState back = ds_state->back;
+
+            if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+                front.writeMask = dynamic_state_value.write_mask_front;
+                back.writeMask = dynamic_state_value.write_mask_back;
+            }
+            if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
+                front.failOp = dynamic_state_value.fail_op_front;
+                front.passOp = dynamic_state_value.pass_op_front;
+                front.depthFailOp = dynamic_state_value.depth_fail_op_front;
+                back.failOp = dynamic_state_value.fail_op_back;
+                back.passOp = dynamic_state_value.pass_op_back;
+                back.depthFailOp = dynamic_state_value.depth_fail_op_back;
+            }
+
+            if (depth_write_enable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
+                const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(), cb_state.commandBuffer());
+                skip |= LogError(objlist, vuid.depth_read_only_06886,
+                                 "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
+                                 "the depth aspect of the depth/stencil attachment in the render pass is read only.",
+                                 caller, string_VkImageLayout(ds_attachment->layout));
+            }
+
+            const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&
+                                      (front.depthFailOp == VK_STENCIL_OP_KEEP) && (back.failOp == VK_STENCIL_OP_KEEP) &&
+                                      (back.passOp == VK_STENCIL_OP_KEEP) && (back.depthFailOp == VK_STENCIL_OP_KEEP));
+
+            const bool write_mask_enabled = (front.writeMask != 0) && (back.writeMask != 0);
+
+            if (!all_keep_op && write_mask_enabled) {
+                const bool is_stencil_layout_read_only = [&]() {
+                    // Look for potential dedicated stencil layout
+                    if (const auto *stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(ds_attachment->pNext);
+                        stencil_layout)
+                        return IsImageLayoutStencilReadOnly(stencil_layout->stencilLayout);
+                    // Else depth and stencil share same layout
+                    return IsImageLayoutStencilReadOnly(ds_attachment->layout);
+                }();
+
+                if (is_stencil_layout_read_only) {
+                    const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
+                                                cb_state.commandBuffer());
+                    skip |= LogError(objlist, vuid.stencil_read_only_06887,
+                                     "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
+                                     "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
+                                     "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
+                                     "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
+                                     caller, string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(front.failOp),
+                                     string_VkStencilOp(front.passOp), string_VkStencilOp(front.depthFailOp),
+                                     string_VkStencilOp(back.failOp), string_VkStencilOp(back.passOp),
+                                     string_VkStencilOp(back.depthFailOp));
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state,
+                                                       CMD_TYPE cmd_type, const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller = CommandTypeString(cmd_type);
+    const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
+    const auto &rp_state = pipeline.RenderPassState();
+    if (rp_state) {
+        const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
+        if (rp_state->renderPass() != VK_NULL_HANDLE) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), rp_state->renderPass());
+            skip |= LogError(objlist, vuid.dynamic_rendering_06198,
+                             "%s: Currently bound pipeline %s must have been created with a "
+                             "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
+                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+        }
+
+        const auto pipeline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
+
+        if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+            skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
+                             "%s: Currently bound pipeline %s viewMask ([%" PRIu32
+                             ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
+                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                             pipeline_rendering_ci.viewMask, rendering_view_mask);
+        }
+
+        const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
+        const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+        if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+            skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
+                             "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
+                             ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
+                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                             pipeline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
+        }
+
+        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+            if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+            if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
+                view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_06180,
+                                 "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                                 "].imageView format (%s) must match corresponding format in "
+                                 "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                                 caller, i, string_VkFormat(view_state->create_info.format), i,
+                                 string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+            }
+        }
+
+        if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
+            auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+            if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_depth_format_06181,
+                                 "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                                 "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
+                                 caller, string_VkFormat(view_state->create_info.format),
+                                 string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+            }
+        }
+
+        if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
+            auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+            if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_06182,
+                                 "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                                 "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
+                                 caller, string_VkFormat(view_state->create_info.format),
+                                 string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+            }
+        }
+
+        auto rendering_fragment_shading_rate_attachment_info =
+            LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
+        if (rendering_fragment_shading_rate_attachment_info &&
+            (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+            if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
+                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            }
+        }
+
+        auto rendering_fragment_shading_rate_density_map =
+            LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
+        if (rendering_fragment_shading_rate_density_map &&
+            (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
+            if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
+                                 "%s: Currently bound graphics pipeline %s must have been created with "
+                                 "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+            }
+        }
+    }
+
+    // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+    auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
+
+    if (p_attachment_sample_count_info) {
+        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+            if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+            auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
+
+            if (p_attachment_sample_count_info &&
+                (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_color_sample_06185,
+                                 "%s: Color attachment (%" PRIu32
+                                 ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
+                                 "sample count (%s)",
+                                 caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                 string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
+            }
+        }
+
+        if (rendering_info.pDepthAttachment != nullptr) {
+            auto depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+            auto depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
+
+            if (p_attachment_sample_count_info) {
+                if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
+                    skip |= LogError(
+                        objlist, vuid.dynamic_rendering_depth_sample_06186,
+                        "%s: Depth attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample "
+                        "count (%s)",
+                        caller, string_VkSampleCountFlagBits(depth_image_samples),
+                        string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
+                }
+            }
+        }
+
+        if (rendering_info.pStencilAttachment != nullptr) {
+            auto stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+            auto stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
+
+            if (p_attachment_sample_count_info) {
+                if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
+                    skip |=
+                        LogError(objlist, vuid.dynamic_rendering_stencil_sample_06187,
+                                 "%s: Stencil attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
+                                 "sample count (%s)",
+                                 caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                                 string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
+                }
+            }
+        }
+    } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
+        const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
+        for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+            if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                continue;
+            }
+            auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+            auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
+
+            if (samples != rasterization_samples) {
+                const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                              ? vuid.dynamic_rendering_07285
+                                              : vuid.dynamic_rendering_multi_sample_06188;
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |=
+                    LogError(objlist, vuid_string,
+                             "%s: Color attachment (%" PRIu32
+                             ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
+                             "sample count (%s)",
+                             caller, i, string_VkSampleCountFlagBits(samples), string_VkSampleCountFlagBits(rasterization_samples));
+            }
+        }
+
+        if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
+            const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+            const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
+            if (depth_image_samples != rasterization_samples) {
+                const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                              ? vuid.dynamic_rendering_07286
+                                              : vuid.dynamic_rendering_06189;
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid_string,
+                                 "%s: Depth attachment sample count (%s) must match corresponding "
+                                 "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
+                                 caller, string_VkSampleCountFlagBits(depth_image_samples),
+                                 string_VkSampleCountFlagBits(rasterization_samples));
+            }
+        }
+
+        if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
+            const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+            const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
+            if (stencil_image_samples != rasterization_samples) {
+                const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                              ? vuid.dynamic_rendering_07287
+                                              : vuid.dynamic_rendering_06190;
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid_string,
+                                 "%s: Stencil attachment sample count (%s) must match corresponding "
+                                 "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
+                                 caller, string_VkSampleCountFlagBits(stencil_image_samples),
+                                 string_VkSampleCountFlagBits(rasterization_samples));
+            }
+        }
+    }
+    return skip;
+}
+
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
                                                const PIPELINE_STATE &pipeline) const {
@@ -3369,232 +3702,26 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
-    const auto &dynamic_state_value = cb_state.dynamic_state_value;
 
-    if (cb_state.activeRenderPass && cb_state.activeRenderPass->UsesDynamicRendering()) {
-        const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
-        const auto &rp_state = pipeline.RenderPassState();
-        if (rp_state) {
-            const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
-            if (rp_state->renderPass() != VK_NULL_HANDLE) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), rp_state->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_06198,
-                                 "%s: Currently bound pipeline %s must have been created with a "
-                                 "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
-            }
-
-            const auto pipeline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
-
-            if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
-                                 "%s: Currently bound pipeline %s viewMask ([%" PRIu32
-                                 ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 pipeline_rendering_ci.viewMask, rendering_view_mask);
-            }
-
-            const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
-            const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
-            if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
-                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-                skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
-                                 "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
-                                 ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 pipeline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
-            }
-
-            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                    continue;
-                }
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
-                    view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_06180,
-                                     "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
-                                     "].imageView format (%s) must match corresponding format in "
-                                     "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                     caller, i, string_VkFormat(view_state->create_info.format), i,
-                                     string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
-                }
-            }
-
-            if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
-                if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_format_06181,
-                                     "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
-                                     "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
-                }
-            }
-
-            if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
-                if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_06182,
-                                     "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
-                                     "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
-                }
-            }
-
-            auto rendering_fragment_shading_rate_attachment_info =
-                LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
-            if (rendering_fragment_shading_rate_attachment_info &&
-                (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
-                if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
-                                     "%s: Currently bound graphics pipeline %s must have been created with "
-                                     "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                     caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
-                }
-            }
-
-            auto rendering_fragment_shading_rate_density_map =
-                LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
-            if (rendering_fragment_shading_rate_density_map &&
-                (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
-                if (!(pipeline.create_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
-                                     "%s: Currently bound graphics pipeline %s must have been created with "
-                                     "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                     caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
-                }
-            }
+    if (cb_state.activeRenderPass) {
+        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
+            ValidatePipelineDynamicRenderpassDraw(state, cb_state, cmd_type, pipeline);
+        } else {
+            ValidatePipelineRenderpassDraw(state, cb_state, cmd_type, pipeline);
         }
 
-        // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-        auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
-
-        if (p_attachment_sample_count_info) {
-            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                    continue;
-                }
-                auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
-
-                if (p_attachment_sample_count_info &&
-                    (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_color_sample_06185,
-                                     "%s: Color attachment (%" PRIu32
-                                     ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
-                                     "sample count (%s)",
-                                     caller, i, string_VkSampleCountFlagBits(color_image_samples),
-                                     string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
-                }
-            }
-
-            if (rendering_info.pDepthAttachment != nullptr) {
-                auto depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
-                auto depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
-
-                if (p_attachment_sample_count_info) {
-                    if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
-                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                    cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(
-                            objlist, vuid.dynamic_rendering_depth_sample_06186,
-                            "%s: Depth attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD sample "
-                            "count (%s)",
-                            caller, string_VkSampleCountFlagBits(depth_image_samples),
-                            string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
-                    }
-                }
-            }
-
-            if (rendering_info.pStencilAttachment != nullptr) {
-                auto stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
-                auto stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
-
-                if (p_attachment_sample_count_info) {
-                    if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
-                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                    cb_state.activeRenderPass->renderPass());
-                        skip |= LogError(
-                            objlist, vuid.dynamic_rendering_stencil_sample_06187,
-                            "%s: Stencil attachment sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
-                            "sample count (%s)",
-                            caller, string_VkSampleCountFlagBits(stencil_image_samples),
-                            string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
-                    }
-                }
-            }
-        } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
-            const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
-            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                    continue;
-                }
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
-
-                if (samples != rasterization_samples) {
-                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07285
-                                                  : vuid.dynamic_rendering_multi_sample_06188;
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid_string,
-                                     "%s: Color attachment (%" PRIu32
-                                     ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
-                                     "sample count (%s)",
-                                     caller, i, string_VkSampleCountFlagBits(samples),
-                                     string_VkSampleCountFlagBits(rasterization_samples));
-                }
-            }
-
-            if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
-                const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
-                const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
-                if (depth_image_samples != rasterization_samples) {
-                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07286
-                                                  : vuid.dynamic_rendering_06189;
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid_string,
-                                     "%s: Depth attachment sample count (%s) must match corresponding "
-                                     "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                     caller, string_VkSampleCountFlagBits(depth_image_samples),
-                                     string_VkSampleCountFlagBits(rasterization_samples));
-                }
-            }
-
-            if ((rendering_info.pStencilAttachment != nullptr) &&
-                (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
-                const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
-                const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
-                if (stencil_image_samples != rasterization_samples) {
-                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                  ? vuid.dynamic_rendering_07287
-                                                  : vuid.dynamic_rendering_06190;
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid_string,
-                                     "%s: Stencil attachment sample count (%s) must match corresponding "
-                                     "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                     caller, string_VkSampleCountFlagBits(stencil_image_samples),
-                                     string_VkSampleCountFlagBits(rasterization_samples));
-                }
+        if (pipeline.fragment_output_state && pipeline.fragment_output_state->dual_source_blending) {
+            uint32_t count =
+                cb_state.activeRenderPass->UsesDynamicRendering()
+                    ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
+                    : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
+            if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(
+                    objlist, "VUID-RuntimeSpirv-Fragment-06427",
+                    "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
+                    ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
+                    caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
             }
         }
     }
@@ -3866,124 +3993,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
             skip |=
                 LogError(objlist, kVUID_Core_DrawState_NoActiveRenderpass, "%s: No active render pass found at draw-time.", caller);
-        }
-    }
-    // Verify that PSO creation renderPass is compatible with active renderPass
-    if (cb_state.activeRenderPass && !cb_state.activeRenderPass->UsesDynamicRendering()) {
-        const auto &rp_state = pipeline.RenderPassState();
-        // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
-        if (cb_state.activeRenderPass->renderPass() != rp_state->renderPass()) {
-            // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
-            skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
-                                                    *rp_state.get(), caller, vuid.render_pass_compatible_02684);
-        }
-        const auto subpass = pipeline.Subpass();
-        if (subpass != cb_state.GetActiveSubpass()) {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
-            skip |= LogError(objlist, vuid.subpass_index_02685, "%s: Pipeline was built for subpass %u but used in subpass %u.",
-                             caller, subpass, cb_state.GetActiveSubpass());
-        }
-        const safe_VkAttachmentReference2 *ds_attachment =
-            cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].pDepthStencilAttachment;
-        if (ds_attachment != nullptr) {
-            // Check if depth stencil attachment was created with sample location compatible bit
-            if (pipeline.SampleLocationEnabled() == VK_TRUE) {
-                const uint32_t attachment = ds_attachment->attachment;
-                if (attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
-                    if (imageview_state != nullptr) {
-                        const auto *image_state = imageview_state->image_state.get();
-                        if (image_state != nullptr) {
-                            if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
-                                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                            cb_state.activeRenderPass->renderPass());
-                                skip |= LogError(objlist, vuid.sample_location_02689,
-                                                 "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
-                                                 "stencil attachment's VkImage was not created with "
-                                                 "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
-                                                 caller, cb_state.GetActiveSubpass());
-                            }
-                        }
-                    }
-                }
-            }
-            const auto ds_state = pipeline.DepthStencilState();
-            if (ds_state) {
-                // Set with static values and update for anything dynamically set
-                const bool depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                                    ? dynamic_state_value.depth_write_enable
-                                                    : ds_state->depthWriteEnable;
-                VkStencilOpState front = ds_state->front;
-                VkStencilOpState back = ds_state->back;
-
-                if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
-                    front.writeMask = dynamic_state_value.write_mask_front;
-                    back.writeMask = dynamic_state_value.write_mask_back;
-                }
-                if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
-                    front.failOp = dynamic_state_value.fail_op_front;
-                    front.passOp = dynamic_state_value.pass_op_front;
-                    front.depthFailOp = dynamic_state_value.depth_fail_op_front;
-                    back.failOp = dynamic_state_value.fail_op_back;
-                    back.passOp = dynamic_state_value.pass_op_back;
-                    back.depthFailOp = dynamic_state_value.depth_fail_op_back;
-                }
-
-                if (depth_write_enable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
-                    const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
-                                                cb_state.commandBuffer());
-                    skip |= LogError(objlist, vuid.depth_read_only_06886,
-                                     "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
-                                     "the depth aspect of the depth/stencil attachment in the render pass is read only.",
-                                     caller, string_VkImageLayout(ds_attachment->layout));
-                }
-
-                const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&
-                                          (front.depthFailOp == VK_STENCIL_OP_KEEP) && (back.failOp == VK_STENCIL_OP_KEEP) &&
-                                          (back.passOp == VK_STENCIL_OP_KEEP) && (back.depthFailOp == VK_STENCIL_OP_KEEP));
-
-                const bool write_mask_enabled = (front.writeMask != 0) && (back.writeMask != 0);
-
-                if (!all_keep_op && write_mask_enabled) {
-                    const bool is_stencil_layout_read_only = [&]() {
-                        // Look for potential dedicated stencil layout
-                        if (const auto *stencil_layout =
-                                LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(ds_attachment->pNext);
-                            stencil_layout)
-                            return IsImageLayoutStencilReadOnly(stencil_layout->stencilLayout);
-                        // Else depth and stencil share same layout
-                        return IsImageLayoutStencilReadOnly(ds_attachment->layout);
-                    }();
-
-                    if (is_stencil_layout_read_only) {
-                        const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
-                                                    cb_state.commandBuffer());
-                        skip |= LogError(
-                            objlist, vuid.stencil_read_only_06887,
-                            "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
-                            "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
-                            "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
-                            "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
-                            caller, string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(front.failOp),
-                            string_VkStencilOp(front.passOp), string_VkStencilOp(front.depthFailOp),
-                            string_VkStencilOp(back.failOp), string_VkStencilOp(back.passOp), string_VkStencilOp(back.depthFailOp));
-                    }
-                }
-            }
-        }
-    }
-
-    if (pipeline.fragment_output_state && pipeline.fragment_output_state->dual_source_blending && cb_state.activeRenderPass) {
-        uint32_t count = cb_state.activeRenderPass->UsesDynamicRendering()
-                             ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
-                             : cb_state.activeRenderPass->createInfo.pSubpasses[cb_state.GetActiveSubpass()].colorAttachmentCount;
-        if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
-            skip |=
-                LogError(objlist, "VUID-RuntimeSpirv-Fragment-06427",
-                         "%s: Dual source blend mode is used, but the number of written fragment shader output attachment (%" PRIu32
-                         ") is greater than maxFragmentDualSrcAttachments (%" PRIu32 ")",
-                         caller, count, phys_dev_props.limits.maxFragmentDualSrcAttachments);
         }
     }
 
