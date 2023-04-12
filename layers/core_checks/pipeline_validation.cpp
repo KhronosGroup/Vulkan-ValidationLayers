@@ -195,22 +195,6 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
         }
     }
 
-    if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
-        ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
-                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                         "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
-                         pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
-    }
-
-    if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
-        ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895",
-                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                         "] does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
-                         pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
-    }
-
     // Check if a Vertex Input State is used
     // Need to make sure it has a vertex shader and if a GPL, that it contains a GPL vertex input state
     // vkspec.html#pipelines-graphics-subsets-vertex-input
@@ -433,6 +417,23 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                                  "The following state is missing: [ %s].",
                                  pipeline.create_index, full_pipeline_state_msg.c_str());
             }
+        }
+
+        // The only time we shouldn't have a sub stage is if using GPL
+        if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
+            ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
+                             "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                             "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
+                             pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
+        }
+
+        if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
+            ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895",
+                             "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                             "] does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
+                             pipeline.create_index, string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
         }
 
         if (pipeline.HasFullState()) {
