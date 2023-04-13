@@ -62,7 +62,7 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     std::vector<const char *> errors;
     // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID 01091 since
     // each 'supportedOperations' flag is 1:1 map to a SPIR-V Capability
-    const char *operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-01091";
+    const char *operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-08740";
     const char *stage_vuid = "VUID-RuntimeSpirv-None-06343";
     const char *quad_vuid = "VUID-RuntimeSpirv-None-06342";
 
@@ -257,7 +257,7 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
         )glsl";
         errors.clear();
         // Extension not enabled on purpose if supported
-        errors.push_back("VUID-VkShaderModuleCreateInfo-pCode-04147");
+        errors.push_back("VUID-VkShaderModuleCreateInfo-pCode-08742");
         if (feature_support_partitioned == false) {
             // errors.push_back(operation_vuid);
         }

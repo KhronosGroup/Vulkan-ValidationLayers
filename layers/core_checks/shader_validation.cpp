@@ -3269,7 +3269,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     auto have_glsl_shader = IsExtEnabled(device_extensions.vk_nv_glsl_shader);
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
-        skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01376",
+        skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-codeSize-08735",
                          "SPIR-V module not valid: Codesize must be a multiple of 4 but is %zu", pCreateInfo->codeSize);
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
@@ -3293,10 +3293,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 if (spv_valid == SPV_WARNING) {
-                    skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-01377", "SPIR-V module not valid: %s",
+                    skip |= LogWarning(device, "VUID-VkShaderModuleCreateInfo-pCode-01379", "SPIR-V module not valid: %s",
                                        diag && diag->error ? diag->error : "(no error text)");
                 } else {
-                    skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01377", "SPIR-V module not valid: %s",
+                    skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01379", "SPIR-V module not valid: %s",
                                      diag && diag->error ? diag->error : "(no error text)");
                 }
             }

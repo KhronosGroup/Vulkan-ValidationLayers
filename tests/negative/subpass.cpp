@@ -1318,7 +1318,7 @@ TEST_F(VkLayerTest, SubpassInputWithoutFormat) {
     vk_testing::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08740");
     pipe.CreateVKPipeline(pl.handle(), rp.handle());
     m_errorMonitor->VerifyFound();
 }

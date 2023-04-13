@@ -2425,13 +2425,13 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
                OpFunctionEnd
         )spirv";
     VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM_TRY);
-    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01377");
+    m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01379");
     if (!vs.InitFromASMTry()) {
         GTEST_SKIP() << "Failed to compile shader";
     }
     const VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-04146");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-08741");
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
