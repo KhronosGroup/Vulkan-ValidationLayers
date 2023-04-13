@@ -1011,12 +1011,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
     oob_access = false;
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
-            strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
-                 << debug_record[kInstBindlessBoundsOutDescBound] << ". ";
+            strm << "(set = " <<  debug_record[kInstBindlessBoundsOutDescSet] << ", binding = " << debug_record[kInstBindlessBoundsOutDescBinding] << ") Index of "
+                 << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length " << debug_record[kInstBindlessBoundsOutDescBound] << ". ";
             vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case kInstErrorBindlessUninit: {
-            strm << "Descriptor index " << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized.";
+            strm << "(set = " << debug_record[kInstBindlessUninitOutDescSet] << ", binding = " << debug_record[kInstBindlessUninitOutBinding] << ") Descriptor index "
+                 << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized.";
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         case kInstErrorBuffAddrUnallocRef: {
@@ -1029,11 +1030,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
         case kInstErrorBuffOOBStorage: {
             auto size = debug_record[kInstBindlessBuffOOBOutBuffSize];
             if (size == 0) {
-                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
+                strm << "(set = " << debug_record[kInstBindlessBuffOOBOutDescSet] << ", binding = " << debug_record[kInstBindlessBuffOOBOutDescBinding]
+                     << ") Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
                 vuid_msg = "UNASSIGNED-Descriptor uninitialized";
             } else {
                 oob_access = true;
-                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
+                strm << "(set = " << debug_record[kInstBindlessBuffOOBOutDescSet] << ", binding = " << debug_record[kInstBindlessBuffOOBOutDescBinding]
+                     << ") Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " and highest byte accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
                 if (debug_record[kInstValidationOutError] == kInstErrorBuffOOBUniform)
@@ -1046,11 +1049,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
         case kInstErrorBuffOOBStorageTexel: {
             auto size = debug_record[kInstBindlessBuffOOBOutBuffSize];
             if (size == 0) {
-                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
+                strm << "(set = " << debug_record[kInstBindlessBuffOOBOutDescSet] << ", binding = " << debug_record[kInstBindlessBuffOOBOutDescBinding]
+                     << ") Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
                 vuid_msg = "UNASSIGNED-Descriptor uninitialized";
             } else {
                 oob_access = true;
-                strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
+                strm << "(set = " << debug_record[kInstBindlessBuffOOBOutDescSet] << ", binding = " << debug_record[kInstBindlessBuffOOBOutDescBinding]
+                     << ") Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " texels and highest texel accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
                 if (debug_record[kInstValidationOutError] == kInstErrorBuffOOBUniformTexel)

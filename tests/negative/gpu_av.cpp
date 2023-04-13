@@ -355,9 +355,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     std::vector<TestCase> tests;
     tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
-                     "Index of 25 used to index descriptor array of length 6."});
+                     "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
     tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
-                     "Index of 25 used to index descriptor array of length 6."});
+                     "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
@@ -369,18 +369,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 #endif
     if (descriptor_indexing) {
         tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set,
-                         25, "Index of 25 used to index descriptor array of length 6."});
+                         25, "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
         tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set,
-                         5, "Descriptor index 5 is uninitialized"});
+                         5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
         // Pick 6 below because it is less than the maximum specified, but more than the actual specified
         tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
-                         &descriptor_set_variable, 6, "Index of 6 used to index descriptor array of length 6."});
+                         &descriptor_set_variable, 6, "(set = 0, binding = 1) Index of 6 used to index descriptor array of length 6."});
         tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
-                         &descriptor_set_variable, 5, "Descriptor index 5 is uninitialized"});
+                         &descriptor_set_variable, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
         tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
-                         &descriptor_set_buffer, 25, "Index of 25 used to index descriptor array of length 6."});
+                         &descriptor_set_buffer, 25, "(set = 0, binding = 1) Index of 25 used to index descriptor array of length 6."});
         tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
-                         &descriptor_set_buffer, 5, "Descriptor index 5 is uninitialized"});
+                         &descriptor_set_buffer, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
         if (m_device->phy().features().geometryShader) {
             // OOB Geometry
             tests.push_back({vsSourceForGS, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
