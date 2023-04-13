@@ -100,8 +100,8 @@ class RENDER_PASS_STATE : public BASE_NODE {
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo2 const *pCreateInfo);
     RENDER_PASS_STATE(VkRenderPass rp, VkRenderPassCreateInfo const *pCreateInfo);
 
-    RENDER_PASS_STATE(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo);
-    RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo);
+    RENDER_PASS_STATE(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
+    RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
     RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
 
     VkRenderPass renderPass() const { return handle_.Cast<VkRenderPass>(); }
