@@ -275,6 +275,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             # Treat empty string as 'None' for consistency with 'error_codes'
             if success_codes == '':
                 success_codes = None
+            # This function only returns VK_SUCCESS
             if error_codes is None and success_codes is None:
                 return
             if self.featureExtraProtect is not None:
@@ -296,15 +297,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             if cmdname in self.manual_postcallrecord_list:
                 intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
             intercept += '    if (result != VK_SUCCESS) {\n'
-            error_input   = '{}'
-            success_input = '{}'
-            if error_codes is not None:
-                intercept += '        constexpr std::array error_codes = {%s};\n' % error_codes
-                error_input = 'error_codes'
-            if success_codes is not None:
-                intercept += '        constexpr std::array success_codes = {%s};\n' % success_codes
-                success_input = 'success_codes'
-            intercept += '        ValidateReturnCodes("%s", result, %s, %s);\n' % (cmdname, error_input, success_input)
+            intercept += f'        ValidateReturnCodes("{cmdname}", result);\n'
             intercept += '    }\n'
             intercept += '}\n'
             self.otwrite('cpp', intercept)

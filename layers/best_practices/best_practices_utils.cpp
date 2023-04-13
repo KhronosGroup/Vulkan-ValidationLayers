@@ -816,31 +816,36 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
                                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                        VkResult result) {
     if (result != VK_SUCCESS) {
-        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_TOO_MANY_OBJECTS,
-                                            VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
-        ValidateReturnCodes("vkAllocateMemory", result, error_codes, {});
+        ValidateReturnCodes("vkAllocateMemory", result);
         return;
     }
 }
 
-void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, vvl::span<const VkResult> error_codes,
-                                        vvl::span<const VkResult> success_codes) const {
-    auto error = std::find(error_codes.begin(), error_codes.end(), result);
-    if (error != error_codes.end()) {
-        constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result) const {
+    // This function shouldn't be called if result is equal to VK_SUCCESS.
+    assert(result != VK_SUCCESS);
 
-        auto common_failure = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
-        if (common_failure != common_failure_codes.end()) {
-            LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
-        } else {
-            LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
-        }
+    const auto result_string = string_VkResult(result);
+
+    // While the result is successful, users may still want this information. Since it may be unexpected.
+    if (result > VK_SUCCESS) {
+        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
+                result_string);
         return;
     }
-    auto success = std::find(success_codes.begin(), success_codes.end(), result);
-    if (success != success_codes.end()) {
-        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
-                string_VkResult(result));
+
+    assert(result < VK_SUCCESS);  // At this point we have an error
+
+    // Despite being error codes log these results as informational.
+    // That is because they are returned frequently during window resizing.
+    // They are expected to occur during the normal application lifecycle.
+    constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+
+    if (const auto it = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
+        it != common_failure_codes.end()) {
+        LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", api_name, result_string);
+    } else {
+        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, result_string);
     }
 }
 
