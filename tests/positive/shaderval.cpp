@@ -1690,7 +1690,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         // This could get triggered in the event that the shader fails to compile
-        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-01091");
+        m_errorMonitor->SetUnexpectedError("VUID-VkShaderModuleCreateInfo-pCode-08740");
         // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
         helper.cs_ =
             VkShaderObj::CreateFromGLSL(*this, VK_SHADER_STAGE_COMPUTE_BIT, current_shader, "main", nullptr, SPV_ENV_VULKAN_1_1);
