@@ -37,7 +37,8 @@
             "build_dir": "SPIRV-Tools/build",
             "install_dir": "SPIRV-Tools/build/install",
             "cmake_options": [
-                "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers"
+                "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers",
+                "-DSPIRV_WERROR=OFF"
             ],
             "commit": "44d72a9b36702f093dd20815561a56778b2d181e"
         },
