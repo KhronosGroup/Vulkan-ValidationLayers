@@ -697,8 +697,7 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount,
                                             const VkClearRect* pRects) const override;
-    void ValidateReturnCodes(const char* api_name, VkResult result, vvl::span<const VkResult> error_codes,
-                             vvl::span<const VkResult> success_codes) const;
+    void ValidateReturnCodes(const char* api_name, VkResult result) const;
     bool ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkImage src_image, VkImage dst_image, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
