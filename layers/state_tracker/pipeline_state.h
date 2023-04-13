@@ -445,6 +445,23 @@ class PIPELINE_STATE : public BASE_NODE {
         return false;
     }
 
+    template <typename CreateInfo>
+    static bool EnablesRasterizationStates(const CreateInfo &create_info) {
+        if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
+            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
+                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                    return create_info.pRasterizationState != nullptr;
+                }
+            }
+        }
+
+        if (create_info.pRasterizationState) {
+            return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
+        } else {
+            return false;
+        }
+    }
+
   protected:
     static std::shared_ptr<VertexInputState> CreateVertexInputState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
@@ -462,27 +479,12 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const RENDER_PASS_STATE> &rp);
 
-    template <typename PRState>
-    static bool EnablesRasterizationStates(const PRState pre_raster_state) {
+    static bool EnablesRasterizationStates(const std::shared_ptr<PreRasterState> pre_raster_state) {
         if (!pre_raster_state) {
             // Assume rasterization is enabled if we don't know for sure that it is disabled
             return true;
         }
-
-        const auto &create_info = pre_raster_state->parent.create_info.graphics;
-        if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
-            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
-                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
-                    return create_info.pRasterizationState != nullptr;
-                }
-            }
-        }
-
-        if (create_info.pRasterizationState) {
-            return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
-        } else {
-            return false;
-        }
+        return EnablesRasterizationStates(pre_raster_state->parent.create_info.graphics);
     }
 
     // Merged layouts

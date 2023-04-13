@@ -593,7 +593,7 @@ void CMD_BUFFER_STATE::EndRenderPass(CMD_TYPE cmd_type) {
 void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(cmd_type);
     begin_rendering_func_name = CommandTypeString(cmd_type);
-    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
+    activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo, true);
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
