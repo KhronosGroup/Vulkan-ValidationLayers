@@ -155,7 +155,6 @@ void BestPractices::PostCallRecordAllocateMemory(
     VkDeviceMemory*                             pMemory,
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
-    ManualPostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
     if (result != VK_SUCCESS) {
         ValidateReturnCodes("vkAllocateMemory", result);
     }

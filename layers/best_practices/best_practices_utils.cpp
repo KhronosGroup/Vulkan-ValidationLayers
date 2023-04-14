@@ -812,15 +812,6 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     return skip;
 }
 
-void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                                       const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-                                                       VkResult result) {
-    if (result != VK_SUCCESS) {
-        ValidateReturnCodes("vkAllocateMemory", result);
-        return;
-    }
-}
-
 void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result) const {
     // This function shouldn't be called if result is equal to VK_SUCCESS.
     assert(result != VK_SUCCESS);

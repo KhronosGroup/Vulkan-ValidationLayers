@@ -104,7 +104,6 @@ class BestPracticesOutputGenerator(OutputGenerator):
         # Commands that have a manually written post-call-record step which needs to be called from the autogen'd fcn
         self.manual_postcallrecord_list = [
             'vkAllocateDescriptorSets',
-            'vkAllocateMemory',
             'vkQueuePresentKHR',
             'vkQueueBindSparse',
             'vkCreateGraphicsPipelines',
