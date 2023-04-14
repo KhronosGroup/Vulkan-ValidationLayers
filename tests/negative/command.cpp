@@ -206,7 +206,6 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
-    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -221,7 +220,7 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
 
@@ -272,7 +271,6 @@ TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
-    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
@@ -294,13 +292,13 @@ TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    err = fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
     vk::QueueWaitIdle(m_device->m_queue);
 
     // Cause validation error by re-submitting cmd buffer that should only be
     // submitted once
-    err = fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
@@ -1205,12 +1203,6 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
     bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    PFN_vkCmdCopyBufferToImage2KHR vkCmdCopyBufferToImage2Function = nullptr;
-    if (copy_commands2) {
-        vkCmdCopyBufferToImage2Function =
-            (PFN_vkCmdCopyBufferToImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBufferToImage2KHR");
-    }
-
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     VkFormat compressed_format = VK_FORMAT_UNDEFINED;
@@ -1391,7 +1383,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     m_errorMonitor->VerifyFound();
 
     // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBufferToImage2Function) {
+    if (copy_commands2) {
         const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
                                                NULL,
                                                region.bufferOffset,
@@ -1412,7 +1404,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2-pRegions-07275");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdCopyBufferToImage2-imageOffset-07738");  // image transfer granularity
-        vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
+        vk::CmdCopyBufferToImage2KHR(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2172,11 +2164,6 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    PFN_vkCmdCopyImage2KHR vkCmdCopyImage2 = nullptr;
-    if (copy_commands2) {
-        vkCmdCopyImage2 = (PFN_vkCmdCopyImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyImage2KHR");
-    }
-
     // Tests are designed to run without Maintenance1 which was promoted in 1.1
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Tests for 1.0 only";
@@ -2268,7 +2255,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-00146");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcOffset-00145");  // also y-dim overrun
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-07742");   // not same image type
-        vkCmdCopyImage2(m_commandBuffer->handle(), &copy_image_info2);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2301,7 +2288,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstImage-00152");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstOffset-00151");  // also y-dim overrun
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-07742");   // not same image type
-        vkCmdCopyImage2(m_commandBuffer->handle(), &copy_image_info2);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2336,7 +2323,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-00146");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcOffset-00145");  // also y-dim overrun
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-07742");   // not same image type
-        vkCmdCopyImage2(m_commandBuffer->handle(), &copy_image_info2);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2367,7 +2354,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstImage-00152");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-dstOffset-00151");  // also y-dim overrun
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyImageInfo2-srcImage-07742");   // not same image type
-        vkCmdCopyImage2(m_commandBuffer->handle(), &copy_image_info2);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3829,11 +3816,6 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    PFN_vkCmdResolveImage2KHR vkCmdResolveImage2Function = nullptr;
-    if (copy_commands2) {
-        vkCmdResolveImage2Function = (PFN_vkCmdResolveImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdResolveImage2KHR");
-    }
-
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
@@ -3905,7 +3887,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_errorMonitor->VerifyFound();
 
     // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdResolveImage2Function) {
+    if (copy_commands2) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
                                                    NULL,
                                                    resolveRegion.srcSubresource,
@@ -3922,7 +3904,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
                                                             1,
                                                             &resolveRegion2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-srcSubresource-01709");
-        vkCmdResolveImage2Function(m_commandBuffer->handle(), &resolve_image_info2);
+        vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3935,7 +3917,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_errorMonitor->VerifyFound();
 
     // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdResolveImage2Function) {
+    if (copy_commands2) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
                                                    NULL,
                                                    resolveRegion.srcSubresource,
@@ -3952,7 +3934,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
                                                             1,
                                                             &resolveRegion2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-dstSubresource-01710");
-        vkCmdResolveImage2Function(m_commandBuffer->handle(), &resolve_image_info2);
+        vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3965,7 +3947,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_errorMonitor->VerifyFound();
 
     // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdResolveImage2Function) {
+    if (copy_commands2) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
                                                    NULL,
                                                    resolveRegion.srcSubresource,
@@ -3982,7 +3964,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
                                                             1,
                                                             &resolveRegion2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-srcSubresource-01711");
-        vkCmdResolveImage2Function(m_commandBuffer->handle(), &resolve_image_info2);
+        vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3995,7 +3977,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_errorMonitor->VerifyFound();
 
     // Equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdResolveImage2Function) {
+    if (copy_commands2) {
         const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
                                                    NULL,
                                                    resolveRegion.srcSubresource,
@@ -4012,7 +3994,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
                                                             1,
                                                             &resolveRegion2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkResolveImageInfo2-dstSubresource-01712");
-        vkCmdResolveImage2Function(m_commandBuffer->handle(), &resolve_image_info2);
+        vk::CmdResolveImage2KHR(m_commandBuffer->handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -4681,11 +4663,6 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
         vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    // Find address of extension call and make the call
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
-
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
     const std::optional<uint32_t> no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
@@ -4706,8 +4683,8 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
             // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
         }
-        vkCmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_write);
+        vk::CmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                    &descriptor_write);
         m_errorMonitor->VerifyFound();
         command_buffer.end();
 
@@ -4724,8 +4701,8 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00330");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
-            vkCmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                      &descriptor_write);
+            vk::CmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+                                        1, &descriptor_write);
             m_errorMonitor->VerifyFound();
             tran_command_buffer.end();
         }
@@ -4734,14 +4711,14 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     // Push to the non-push binding
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-set-00365");
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                              &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
+                                &descriptor_write);
     m_errorMonitor->VerifyFound();
 
     // Specify set out of bounds
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetKHR-set-00364");
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
-                              &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
+                                &descriptor_write);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
@@ -4750,8 +4727,8 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "You must call vkBeginCommandBuffer() before this call to vkCmdPushDescriptorSetKHR");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00330");
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                &descriptor_write);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4793,14 +4770,10 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
     VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
         vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
-
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00327");
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                &descriptor_write);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -4830,11 +4803,6 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
-    auto vkCmdDrawMultiIndexedEXT =
-        (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
-    assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
-
     VkMultiDrawInfoEXT multi_draws[3] = {};
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
 
@@ -4853,11 +4821,11 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-02700");
-    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-07312");  // missing index buffer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-02700");
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -4868,33 +4836,33 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     multi_draw_indices[2].indexCount = 511;
     m_commandBuffer->BindIndexBuffer(&buffer, 2, VK_INDEX_TYPE_UINT16);
     // This first should be fine
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     // Fail with index offset
     multi_draw_indices[2].firstIndex = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
     // Fail with index count
     multi_draw_indices[2].firstIndex = 0;
     multi_draw_indices[2].indexCount = 512;
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-07825");
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
     multi_draw_indices[2].indexCount = 1;
 
     m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-stride-04936");
-    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT) + 1);
+    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT) + 1);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-stride-04941");
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT) + 1, 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT) + 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04935");
-    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940");
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, nullptr, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 
     if (multi_draw_properties.maxMultiDrawCount < vvl::kU32Max) {
@@ -4902,11 +4870,11 @@ TEST_F(VkLayerTest, MultiDrawTests) {
         std::vector<VkMultiDrawInfoEXT> max_multi_draws(draw_count);
         std::vector<VkMultiDrawIndexedInfoEXT> max_multi_indexed_draws(draw_count);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-drawCount-04934");
-        vkCmdDrawMultiEXT(m_commandBuffer->handle(), draw_count, max_multi_draws.data(), 1, 0, sizeof(VkMultiDrawInfoEXT));
+        vk::CmdDrawMultiEXT(m_commandBuffer->handle(), draw_count, max_multi_draws.data(), 1, 0, sizeof(VkMultiDrawInfoEXT));
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-04939");
-        vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), draw_count, max_multi_indexed_draws.data(), 1, 0,
-                                 sizeof(VkMultiDrawIndexedInfoEXT), 0);
+        vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), draw_count, max_multi_indexed_draws.data(), 1, 0,
+                                   sizeof(VkMultiDrawIndexedInfoEXT), 0);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -4925,11 +4893,6 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
-    auto vkCmdDrawMultiIndexedEXT =
-        (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
-    assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
-
     VkMultiDrawInfoEXT multi_draws[3] = {};
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
 
@@ -4945,13 +4908,13 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-04933");
-    vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_errorMonitor->VerifyFound();
     VkBufferObj buffer;
     buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-04937");
-    vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5040,9 +5003,6 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdDrawIndirectCountKHR =
-        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -5080,8 +5040,8 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     count_buffer.init(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-buffer-02708");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     draw_buffer.bind_memory(*m_device, 0, 0);
@@ -5095,32 +5055,32 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     count_buffer_wrong.init(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " VUID-vkCmdDrawIndirectCount-countBuffer-02715");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-offset-02710");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBufferOffset-04129");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-stride-03110");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -5137,9 +5097,6 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdDrawIndexedIndirectCountKHR =
-        (PFN_vkCmdDrawIndexedIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -5183,8 +5140,8 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     index_buffer.init(*m_device, index_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-None-07312");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
@@ -5194,8 +5151,8 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     ASSERT_TRUE(draw_buffer_unbound.initialized());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer_unbound.handle(), 0, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer_unbound.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     vk_testing::Buffer count_buffer_unbound;
@@ -5207,32 +5164,32 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     count_buffer_wrong.init(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-04129");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size,
-                                     1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), count_buffer_size,
+                                       1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142");
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -5372,39 +5329,36 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
 
     // Based on SetDynScissorParamTests
     {
-        auto vkCmdSetExclusiveScissorNV =
-            (PFN_vkCmdSetExclusiveScissorNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetExclusiveScissorNV");
-
         const VkRect2D scissor = {{0, 0}, {16, 16}};
         const VkRect2D scissors[] = {scissor, scissor};
 
         m_commandBuffer->begin();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
         m_errorMonitor->VerifyFound();
 
         // This VU gets triggered before VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "vkCmdSetExclusiveScissorNV: required parameter pExclusiveScissors specified as NULL");
-        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
+        vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
         m_errorMonitor->VerifyFound();
 
         struct TestCase {
@@ -5424,7 +5378,7 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
 
         for (const auto &test_case : test_cases) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuid);
-            vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
+            vk::CmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
             m_errorMonitor->VerifyFound();
         }
 
@@ -5450,9 +5404,6 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdSetViewportWScalingNV =
-        reinterpret_cast<PFN_vkCmdSetViewportWScalingNV>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWScalingNV"));
 
     const char vs_src[] = R"glsl(
         #version 450
@@ -5547,10 +5498,10 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
     const auto max_vps = m_device->props.limits.maxViewports;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
-    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());
+    vk::CmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());
     m_errorMonitor->VerifyFound();
 
-    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 0, vp_count, scale.data());
+    vk::CmdSetViewportWScalingNV(m_commandBuffer->handle(), 0, vp_count, scale.data());
 
     m_commandBuffer->end();
 }
@@ -6098,11 +6049,6 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
     vk_testing::Framebuffer framebuffer(*m_device, fbci);
     ASSERT_TRUE(framebuffer.initialized());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
-    PFN_vkCmdEndConditionalRenderingEXT vkCmdEndConditionalRenderingEXT =
-        (PFN_vkCmdEndConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdEndConditionalRenderingEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
@@ -6125,23 +6071,23 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01985");
-    vkCmdEndConditionalRenderingEXT(m_commandBuffer->handle());
+    vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01986");
-    vkCmdEndConditionalRenderingEXT(m_commandBuffer->handle());
+    vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
-    vkCmdEndConditionalRenderingEXT(m_commandBuffer->handle());
+    vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndConditionalRenderingEXT-None-01987");
-    vkCmdEndConditionalRenderingEXT(m_commandBuffer->handle());
+    vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 }
