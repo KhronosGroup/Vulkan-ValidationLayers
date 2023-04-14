@@ -135,33 +135,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
         // Capture descriptor uses for the pipeline
         for (const auto &variable : stage.entrypoint->resource_interface_variables) {
             // While validating shaders capture which slots are used by the pipeline
-            auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
-            entry.is_written_to |= variable.is_written_to;
-
-            auto &reqs = entry.reqs;
-            reqs |= stage.module_state->DescriptorTypeToReqs(variable.type_id);
-            if (variable.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
-            if (variable.is_sampler_sampled) reqs |= DESCRIPTOR_REQ_SAMPLER_SAMPLED;
-            if (variable.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
-            if (variable.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
-            if (variable.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
-            if (variable.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
-            if (variable.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
-
-            if (!variable.samplers_used_by_image.empty()) {
-                if (variable.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
-                    entry.samplers_used_by_image.resize(variable.samplers_used_by_image.size());
-                }
-                uint32_t image_index = 0;
-                for (const auto &samplers : variable.samplers_used_by_image) {
-                    for (const auto &sampler : samplers) {
-                        entry.samplers_used_by_image[image_index].emplace(sampler);
-                    }
-                    ++image_index;
-                }
-            }
-            entry.write_without_formats_component_count_list = variable.write_without_formats_component_count_list;
-            entry.image_sampled_type_width = variable.image_sampled_type_width;
+            active_slots[variable.decorations.set][variable.decorations.binding] = &variable;
         }
     }
     return active_slots;

@@ -46,16 +46,6 @@ static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
     }
 }
 
-static uint32_t GetFormatType(VkFormat fmt) {
-    if (FormatIsSINT(fmt)) return FORMAT_TYPE_SINT;
-    if (FormatIsUINT(fmt)) return FORMAT_TYPE_UINT;
-    // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
-    if (FormatIsDepthAndStencil(fmt)) return FORMAT_TYPE_FLOAT | FORMAT_TYPE_UINT;
-    if (fmt == VK_FORMAT_UNDEFINED) return 0;
-    // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
-    return FORMAT_TYPE_FLOAT;
-}
-
 bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                            const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
     bool skip = false;
@@ -104,7 +94,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                              pipeline.create_index, location);
         } else if (attrib && input) {
             const auto attrib_type = GetFormatType(attrib->format);
-            const auto input_type = module_state.GetFundamentalType(input->type_id);
+            const auto input_type = module_state.GetNumericType(input->type_id);
 
             // Type checking
             if (!(attrib_type & input_type)) {
@@ -156,7 +146,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
                    (location < rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount)) {
             auto format = rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[location];
             const auto attachment_type = GetFormatType(format);
-            const auto output_type = module_state.GetFundamentalType(output->type_id);
+            const auto output_type = module_state.GetNumericType(output->type_id);
 
             // Type checking
             if (!(output_type & attachment_type)) {
@@ -319,7 +309,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
                 }
             } else if (attachment && output) {
                 const auto attachment_type = GetFormatType(attachment->format);
-                const auto output_type = module_state.GetFundamentalType(output->type_id);
+                const auto output_type = module_state.GetNumericType(output->type_id);
 
                 // Type checking
                 if (!(output_type & attachment_type)) {

@@ -22,6 +22,7 @@
 #include "core_validation.h"
 #include "state_tracker/descriptor_sets.h"
 #include "buffer_address_cc_validation.h"
+#include "generated/spirv_grammar_helper.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;
@@ -712,42 +713,11 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
     return skip;
 }
 
-static std::string StringDescriptorReqViewType(DescriptorReqFlags req) {
-    std::string result("");
-    for (unsigned i = 0; i <= VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; i++) {
-        if (req & (1 << i)) {
-            if (result.size()) result += ", ";
-            result += string_VkImageViewType(VkImageViewType(i));
-        }
-    }
-
-    if (!result.size()) result = "(none)";
-
-    return result;
-}
-
-static char const *StringDescriptorReqComponentType(DescriptorReqFlags req) {
-    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_SINT) return "SINT";
-    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_UINT) return "UINT";
-    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT) return "FLOAT";
-    return "(none)";
-}
-
-unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
-    if (FormatIsSINT(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-    if (FormatIsUINT(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-    // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
-    if (FormatIsDepthAndStencil(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT | DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-    if (fmt == VK_FORMAT_UNDEFINED) return 0;
-    // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
-    return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-}
-
 // Validate that the state of this set is appropriate for the given bindings and dynamic_offsets at Draw time
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingReqMap &bindings,
+bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingVariableMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE &cb_state,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
     std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
@@ -872,7 +842,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         context.vuids.unprotected_command_buffer_02707, "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second.is_written_to &&
+            if (binding_info.second->is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_node, context.caller,
                                           context.vuids.protected_command_buffer_02712, "Buffer is in a descriptorSet")) {
                 return true;
@@ -894,8 +864,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         sampler_states.emplace_back(
             static_cast<const cvdescriptorset::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
-        if (binding_info.second.samplers_used_by_image.size() > index) {
-            for (const auto &desc_index : binding_info.second.samplers_used_by_image[index]) {
+        if (binding_info.second->samplers_used_by_image.size() > index) {
+            for (const auto &desc_index : binding_info.second->samplers_used_by_image[index]) {
                 const auto *desc =
                     context.descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
                 // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
@@ -924,21 +894,51 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         report_data->FormatHandle(image_view).c_str());
     }
     if (image_view) {
-        const auto reqs = binding_info.second.reqs;
+        const auto &variable = *binding_info.second;
         const auto &image_view_ci = image_view_state->create_info;
 
-        if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
-            if (~reqs & (1 << image_view_ci.viewType)) {
+        // if combined sampler, this variable might not be a OpTypeImage
+        // SubpassData gets validated elsewhere
+        if (variable.IsImage() && variable.image_dim != spv::DimSubpassData) {
+            bool valid_dim = true;
+            // From vkspec.html#textures-operation-validation
+            switch (image_view_ci.viewType) {
+                case VK_IMAGE_VIEW_TYPE_1D:
+                    valid_dim = (variable.image_dim == spv::Dim1D) && !variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_2D:
+                    valid_dim = (variable.image_dim == spv::Dim2D) && !variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_3D:
+                    valid_dim = (variable.image_dim == spv::Dim3D) && !variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_CUBE:
+                    valid_dim = (variable.image_dim == spv::DimCube) && !variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+                    valid_dim = (variable.image_dim == spv::Dim1D) && variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+                    valid_dim = (variable.image_dim == spv::Dim2D) && variable.is_image_array;
+                    break;
+                case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+                    valid_dim = (variable.image_dim == spv::DimCube) && variable.is_image_array;
+                    break;
+                default:
+                    break;  // incase a new VkImageViewType is added, let it be valid by default
+            }
+            if (!valid_dim) {
                 auto set = context.descriptor_set.GetSet();
-                return LogError(set, context.vuids.image_view_dim_07752,
+                const LogObjectList objlist(set, image_view);
+                return LogError(objlist, context.vuids.image_view_dim_07752,
                                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
-                                " requires an image view of type %s but got %s which is of type %s.",
+                                " ImageView type is %s but the OpTypeImage has (Dim = %s) and (Arrrayed = %d).",
                                 context.caller, report_data->FormatHandle(set).c_str(), binding, index,
-                                StringDescriptorReqViewType(reqs).c_str(), report_data->FormatHandle(image_view).c_str(),
-                                string_VkImageViewType(image_view_ci.viewType));
+                                string_VkImageViewType(image_view_ci.viewType), string_SpvDim(variable.image_dim),
+                                variable.is_image_array);
             }
 
-            if (!(reqs & image_view_state->descriptor_format_bits)) {
+            if (!(variable.image_format_type & image_view_state->descriptor_format_bits)) {
                 // bad component type
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
@@ -946,11 +946,11 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                                 " requires %s component type, but bound descriptor format is %s.",
                                 context.caller, report_data->FormatHandle(set).c_str(), binding, index,
-                                StringDescriptorReqComponentType(reqs), string_VkFormat(image_view_ci.format));
+                                string_NumericType(variable.image_format_type), string_VkFormat(image_view_ci.format));
             }
 
             const bool image_format_width_64 = FormatHasComponentSize(image_view_ci.format, 64);
-            if (image_format_width_64 && binding_info.second.image_sampled_type_width != 64) {
+            if (image_format_width_64 && binding_info.second->image_sampled_type_width != 64) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
                 return LogError(
@@ -958,8 +958,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                     " has a 64-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                     context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
-                    binding_info.second.image_sampled_type_width);
-            } else if (!image_format_width_64 && binding_info.second.image_sampled_type_width != 32) {
+                    binding_info.second->image_sampled_type_width);
+            } else if (!image_format_width_64 && binding_info.second->image_sampled_type_width != 32) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
                 return LogError(
@@ -967,7 +967,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                     " has a 32-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                     context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
-                    binding_info.second.image_sampled_type_width);
+                    binding_info.second->image_sampled_type_width);
             }
         }
 
@@ -1008,7 +1008,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         // Verify Sample counts
-        if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
+        if (variable.IsImage() && !variable.is_multisampled && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
             auto set = context.descriptor_set.GetSet();
             return LogError(set, " VUID-RuntimeSpirv-samples-08725",
                             "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
@@ -1016,7 +1016,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             context.caller, report_data->FormatHandle(set).c_str(), binding, index,
                             string_VkSampleCountFlagBits(image_view_state->samples));
         }
-        if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
+        if (variable.IsImage() && variable.is_multisampled && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
             auto set = context.descriptor_set.GetSet();
             return LogError(set, "VUID-RuntimeSpirv-samples-08726",
                             "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
@@ -1025,7 +1025,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
-        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
+        if (variable.is_atomic_operation && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
             !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, image_view);
@@ -1043,8 +1043,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
 
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
-                if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
-                    !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
+                if ((variable.is_read_without_format) && !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view);
                     return LogError(objlist, context.vuids.storage_image_read_without_format_07028,
@@ -1056,7 +1055,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     string_VkFormatFeatureFlags2(format_features).c_str());
                 }
 
-                if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
+                if ((variable.is_write_without_format) &&
                     !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view);
@@ -1070,7 +1069,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
             }
 
-            if ((reqs & DESCRIPTOR_REQ_IMAGE_DREF) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
+            if ((variable.is_dref_operation) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
                 return LogError(objlist, context.vuids.depth_compare_sample_06479,
@@ -1115,10 +1114,11 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     if (!stage.entrypoint) {
                         continue;
                     }
-                    for (const auto &variable : stage.entrypoint->resource_interface_variables) {
-                        if (variable.decorations.set == set_index && variable.decorations.binding == binding) {
-                            descriptor_written_to |= variable.is_written_to;
-                            descriptor_read_from |= variable.is_read_from | variable.is_sampler_implicitLod_dref_proj;
+                    for (const auto &inteface_variable : stage.entrypoint->resource_interface_variables) {
+                        if (inteface_variable.decorations.set == set_index && inteface_variable.decorations.binding == binding) {
+                            descriptor_written_to |= inteface_variable.is_written_to;
+                            descriptor_read_from |=
+                                inteface_variable.is_read_from | inteface_variable.is_sampler_implicitLod_dref_proj;
                             break;
                         }
                     }
@@ -1202,7 +1202,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                            context.vuids.unprotected_command_buffer_02707, "Image is in a descriptorSet")) {
                     return true;
                 }
-                if (binding_info.second.is_written_to &&
+                if (binding_info.second->is_written_to &&
                     ValidateUnprotectedImage(context.cb_state, *image_view_state->image_state, context.caller,
                                              context.vuids.protected_command_buffer_02712, "Image is in a descriptorSet")) {
                     return true;
@@ -1357,7 +1357,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
             // UnnormalizedCoordinates sampler validations
             // only check if sampled as could have a texelFetch on a combined image sampler
-            if (sampler_state->createInfo.unnormalizedCoordinates && (reqs & DESCRIPTOR_REQ_SAMPLER_SAMPLED)) {
+            if (sampler_state->createInfo.unnormalizedCoordinates && variable.is_sampler_sampled) {
                 // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
                 if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                     image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
@@ -1375,7 +1375,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions with ImplicitLod, Dref or Proj in their name
-                if (reqs & DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ) {
+                if (variable.is_sampler_implicitLod_dref_proj) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view, sampler_state->sampler());
                     return LogError(objlist, context.vuids.sampler_implicitLod_dref_proj_02703,
@@ -1388,7 +1388,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions that includes a LOD bias or any offset values
-                if (reqs & DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET) {
+                if (variable.is_sampler_bias_offset) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view, sampler_state->sampler());
                     return LogError(objlist, context.vuids.sampler_bias_offset_02704,
@@ -1401,7 +1401,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
 
-        for (const auto &pair : binding_info.second.write_without_formats_component_count_list) {
+        for (const auto &pair : binding_info.second->write_without_formats_component_count_list) {
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(image_view_format);
             if (texel_component_count < format_component_count) {
@@ -1437,7 +1437,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     auto buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
     const auto binding = binding_info.first;
-    const auto reqs = binding_info.second.reqs;
+    const auto &variable = *binding_info.second;
     if ((!buffer_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
         (buffer_view_state && buffer_view_state->Destroyed())) {
         auto set = context.descriptor_set.GetSet();
@@ -1465,9 +1465,9 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                             report_data->FormatHandle(buffer).c_str());
         }
-        const auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_format);
+        const auto format_bits = GetFormatType(buffer_view_format);
 
-        if (!(reqs & format_bits)) {
+        if (!(variable.image_format_type & format_bits)) {
             // bad component type
             auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
@@ -1477,11 +1477,11 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                             "binding #%" PRIu32 " index %" PRIu32 " requires %s component type, but bound descriptor format is %s.",
                             report_data->FormatHandle(set).c_str(), context.caller, binding, index,
-                            StringDescriptorReqComponentType(reqs), string_VkFormat(buffer_view_format));
+                            string_NumericType(variable.image_format_type), string_VkFormat(buffer_view_format));
         }
 
         const bool buffer_format_width_64 = FormatHasComponentSize(buffer_view_format, 64);
-        if (buffer_format_width_64 && binding_info.second.image_sampled_type_width != 64) {
+        if (buffer_format_width_64 && binding_info.second->image_sampled_type_width != 64) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
             return LogError(
@@ -1489,8 +1489,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                 " has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                 context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
-                binding_info.second.image_sampled_type_width);
-        } else if (!buffer_format_width_64 && binding_info.second.image_sampled_type_width != 32) {
+                binding_info.second->image_sampled_type_width);
+        } else if (!buffer_format_width_64 && binding_info.second->image_sampled_type_width != 32) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
             return LogError(
@@ -1498,14 +1498,14 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                 " has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                 context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
-                binding_info.second.image_sampled_type_width);
+                binding_info.second->image_sampled_type_width);
         }
 
         const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;
         const VkDescriptorType descriptor_type = context.descriptor_set.GetBinding(binding)->type;
 
         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
-        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
+        if ((variable.is_atomic_operation) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
             !(buf_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
@@ -1523,7 +1523,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         // device feature.
         if (has_format_feature2) {
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-                if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
+                if ((variable.is_read_without_format) &&
                     !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
                     auto set = context.descriptor_set.GetSet();
 
@@ -1538,7 +1538,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     string_VkFormatFeatureFlags2KHR(buf_format_features).c_str());
                 }
 
-                if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
+                if ((variable.is_write_without_format) &&
                     !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, buffer_view);
@@ -1559,14 +1559,14 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         context.vuids.unprotected_command_buffer_02707, "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second.is_written_to &&
+            if (binding_info.second->is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_view_state->buffer_state, context.caller,
                                           context.vuids.protected_command_buffer_02712, "Buffer is in a descriptorSet")) {
                 return true;
             }
         }
 
-        for (const auto &pair : binding_info.second.write_without_formats_component_count_list) {
+        for (const auto &pair : binding_info.second->write_without_formats_component_count_list) {
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
             if (texel_component_count < format_component_count) {

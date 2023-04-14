@@ -175,6 +175,16 @@ struct InterfaceSlot {
     uint32_t GetSlotValue(uint32_t location, uint32_t component) { return (location * 4) + component; }
 };
 
+// Represents the Image formats that can map to a SPIR-V format
+enum NumericType {
+    NumericTypeUnknown = 0,  // In case image is not used
+    NumericTypeFloat = 1,    // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
+    NumericTypeSint = 2,
+    NumericTypeUint = 4,
+};
+uint32_t GetFormatType(VkFormat format);
+char const *string_NumericType(uint32_t type);
+
 // Common info needed for all OpVariable
 struct VariableBase {
     const uint32_t id;
@@ -251,6 +261,12 @@ struct ResourceInterfaceVariable : public VariableBase {
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
 
+    const NumericType image_format_type;
+    bool IsImage() const { return image_format_type != NumericTypeUnknown; }
+    const spv::Dim image_dim;
+    const bool is_image_array;
+    const bool is_multisampled;
+
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
 
@@ -272,14 +288,13 @@ struct ResourceInterfaceVariable : public VariableBase {
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SHADER_MODULE_STATE &module_state);
+    static NumericType FindImageFormatType(const SHADER_MODULE_STATE &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
 };
 
-enum FORMAT_TYPE {
-    FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
-    FORMAT_TYPE_SINT = 2,
-    FORMAT_TYPE_UINT = 4,
-};
+// Used to help detect if different variable is being used
+inline bool operator==(const ResourceInterfaceVariable &a, const ResourceInterfaceVariable &b) noexcept { return a.id == b.id; }
+inline bool operator<(const ResourceInterfaceVariable &a, const ResourceInterfaceVariable &b) noexcept { return a.id < b.id; }
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     // Contains all the details for a OpTypeStruct
@@ -548,13 +563,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
-    spv::Dim GetShaderResourceDimensionality(const ResourceInterfaceVariable &resource) const;
     uint32_t GetLocationsConsumedByType(uint32_t type) const;
     uint32_t GetComponentsConsumedByType(uint32_t type) const;
-    uint32_t GetFundamentalType(uint32_t type) const;
+    NumericType GetNumericType(uint32_t type) const;
     const Instruction *GetStructType(const Instruction *insn) const;
-
-    uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
     bool IsBuiltInWritten(const Instruction *builtin_insn, const EntryPoint &entrypoint) const;
 

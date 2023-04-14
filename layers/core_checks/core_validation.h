@@ -739,7 +739,7 @@ class CoreChecks : public ValidationStateTracker {
     VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                 void* pData) override;
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(const cvdescriptorset::DescriptorSet& descriptor_set, const BindingReqMap& bindings,
+    bool ValidateDrawState(const cvdescriptorset::DescriptorSet& descriptor_set, const BindingVariableMap& bindings,
                            const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE& cb_state, const char* caller,
                            const DrawDispatchVuid& vuids) const;
 
@@ -762,7 +762,7 @@ class CoreChecks : public ValidationStateTracker {
         bool record_time_validate;
         std::optional<vvl::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
     };
-    using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;
+    using DescriptorBindingInfo = std::pair<const uint32_t, const ResourceInterfaceVariable*>;
 
     bool ValidateDescriptorSetBindingData(const DescriptorContext& context, const DescriptorBindingInfo& binding_info,
                                           const cvdescriptorset::DescriptorBinding& binding) const;
