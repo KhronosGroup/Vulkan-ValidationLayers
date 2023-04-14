@@ -3319,17 +3319,15 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                             *error_msg = error_str.str();
                             return false;
                         }
-                        // image view need aspect mask for only the planes supported of format
-                        VkImageAspectFlags legal_aspect_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-                        legal_aspect_flags |=
-                            (FormatPlaneCount(image_state->createInfo.format) == 3) ? VK_IMAGE_ASPECT_PLANE_2_BIT : 0;
-                        if (0 != (iv_state->create_info.subresourceRange.aspectMask & (~legal_aspect_flags))) {
+                        const VkFormat image_format = image_state->createInfo.format;
+                        const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
+                        if (!IsValidPlaneAspect(image_format, image_aspect)) {
                             *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
                             std::stringstream error_str;
                             error_str << "image " << report_data->FormatHandle(image_state->image())
                                       << " combined image sampler is a multi-planar "
-                                      << "format and " << report_data->FormatHandle(iv_state->image_view())
-                                      << " aspectMask must only include " << string_VkImageAspectFlags(legal_aspect_flags);
+                                      << "format " << string_VkFormat(image_format) << " and "
+                                      << report_data->FormatHandle(iv_state->image_view()) << " aspectMask is invalid";
                             *error_msg = error_str.str();
                             return false;
                         }

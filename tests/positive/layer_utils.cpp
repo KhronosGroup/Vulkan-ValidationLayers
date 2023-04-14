@@ -89,3 +89,23 @@ TEST_F(VkPositiveLayerTest, GetEffectiveExtent) {
         ASSERT_TRUE(extent.depth == 8);
     }
 }
+
+TEST_F(VkPositiveLayerTest, IsOnlyOneValidPlaneAspect) {
+    const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
+    ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, 0));
+    ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_COLOR_BIT));
+    ASSERT_TRUE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT));
+    ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT));
+    ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
+    ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_2_BIT));
+}
+
+TEST_F(VkPositiveLayerTest, IsValidPlaneAspect) {
+    const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
+    ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, 0));
+    ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_COLOR_BIT));
+    ASSERT_TRUE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT));
+    ASSERT_TRUE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT));
+    ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
+    ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_2_BIT));
+}

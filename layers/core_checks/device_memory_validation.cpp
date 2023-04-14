@@ -796,22 +796,11 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     if (image_plane_info != nullptr) {
         if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
             // Make sure planeAspect is only a single, valid plane
-            uint32_t planes = FormatPlaneCount(image_format);
-            VkImageAspectFlags aspect = image_plane_info->planeAspect;
-            if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
-                skip |= LogError(
-                    pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
-                    "%s: Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
-                    "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
-                    func_name, report_data->FormatHandle(image_state->image()).c_str(), string_VkImageAspectFlags(aspect).c_str());
-            }
-            if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                skip |= LogError(
-                    pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
-                    "%s: Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
-                    "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
-                    func_name, report_data->FormatHandle(image_state->image()).c_str(), string_VkImageAspectFlags(aspect).c_str());
+            const VkImageAspectFlags aspect = image_plane_info->planeAspect;
+            if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
+                skip |= LogError(pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
+                                 "%s: VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but is invalid for %s.", func_name,
+                                 string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(image_format));
             }
         }
     }
@@ -1493,26 +1482,13 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Make sure planeAspect is only a single, valid plane
-                uint32_t planes = FormatPlaneCount(image_state->createInfo.format);
-                VkImageAspectFlags aspect = plane_info->planeAspect;
-                if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                const VkFormat image_format = image_state->createInfo.format;
+                const VkImageAspectFlags aspect = plane_info->planeAspect;
+                if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect)) {
                     const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |= LogError(
-                        objlist, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
-                        "%s: Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
-                        "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
-                        error_prefix, report_data->FormatHandle(image_state->image()).c_str(),
-                        string_VkImageAspectFlags(aspect).c_str());
-                }
-                if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                    (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                    const LogObjectList objlist(bind_info.image, bind_info.memory);
-                    skip |= LogError(
-                        objlist, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
-                        "%s: Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
-                        "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
-                        error_prefix, report_data->FormatHandle(image_state->image()).c_str(),
-                        string_VkImageAspectFlags(aspect).c_str());
+                    skip |= LogError(objlist, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
+                                     "%s: VkBindImagePlaneMemoryInfo::planeAspect is %s but is invalid for %s.", error_prefix,
+                                     string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(image_format));
                 }
             }
         }

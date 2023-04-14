@@ -2217,25 +2217,11 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_
 
     // subresource's aspect must be compatible with image's format.
     if (image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
-        if (FormatPlaneCount(image_format) == 2) {
-            if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
-                const char *vuid =
-                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
-                skip |= LogError(image_state.image(), vuid,
-                                 "%s: plane count of image format (%s) is 2 but VkImageSubresource.aspectMask is %s", caller,
-                                 string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
-            }
-        }
-
-        if (FormatPlaneCount(image_format) == 3) {
-            if ((aspect_mask != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect_mask != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                (aspect_mask != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                const char *vuid =
-                    is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
-                skip |= LogError(image_state.image(), vuid,
-                                 "%s: plane count of image format (%s) is 3 but VkImageSubresource.aspectMask is %s", caller,
-                                 string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());
-            }
+        if (FormatIsMultiplane(image_format) && !IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
+            const char *vuid =
+                is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-tiling-08717" : "VUID-vkGetImageSubresourceLayout-tiling-08717";
+            skip |= LogError(image_state.image(), vuid, "%s: VkImageSubresource.aspectMask (%s) is invalid for format %s", caller,
+                             string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
         }
     } else if (image_state.createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if ((aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (aspect_mask != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&

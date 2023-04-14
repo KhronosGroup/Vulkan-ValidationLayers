@@ -1388,22 +1388,12 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 }
             } else {
                 // Source image multiplane checks
-                uint32_t planes = FormatPlaneCount(src_format);
                 VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
-                if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                if (FormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
                     const LogObjectList objlist(commandBuffer, srcImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for 2-plane format.",
-                                     func_name, i, aspect);
-                }
-                if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                    (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                    const LogObjectList objlist(commandBuffer, srcImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for 3-plane format.",
-                                     func_name, i, aspect);
+                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for %s.",
+                                     func_name, i, aspect, string_VkFormat(src_format));
                 }
                 // Single-plane to multi-plane
                 if ((!FormatIsMultiplane(src_format)) && (FormatIsMultiplane(dst_format)) &&
@@ -1416,22 +1406,12 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 }
 
                 // Dest image multiplane checks
-                planes = FormatPlaneCount(dst_format);
                 aspect = region.dstSubresource.aspectMask;
-                if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                if (FormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
                     const LogObjectList objlist(commandBuffer, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for 2-plane format.",
-                                     func_name, i, aspect);
-                }
-                if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
-                    (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                    const LogObjectList objlist(commandBuffer, dstImage);
-                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
-                    skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for 3-plane format.",
-                                     func_name, i, aspect);
+                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for %s.",
+                                     func_name, i, aspect, string_VkFormat(dst_format));
                 }
                 // Multi-plane to single-plane
                 if ((FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format)) &&
