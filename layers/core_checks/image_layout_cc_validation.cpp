@@ -22,7 +22,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 #include "sync/sync_vuid_maps.h"
 
 using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
