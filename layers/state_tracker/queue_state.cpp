@@ -285,9 +285,7 @@ void FENCE_STATE::Reset() {
     if (scope_ == kSyncScopeExternalTemporary) {
         scope_ = kSyncScopeInternal;
     }
-    if (scope_ == kSyncScopeInternal) {
-        state_ = FENCE_UNSIGNALED;
-    }
+    state_ = FENCE_UNSIGNALED;
     completed_ = std::promise<void>();
     waiter_ = std::shared_future<void>(completed_.get_future());
 }
@@ -295,11 +293,10 @@ void FENCE_STATE::Reset() {
 void FENCE_STATE::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
     auto guard = WriteLock();
     if (scope_ != kSyncScopeExternalPermanent) {
-        if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT || flags & VK_FENCE_IMPORT_TEMPORARY_BIT) &&
-            scope_ == kSyncScopeInternal) {
-            scope_ = kSyncScopeExternalTemporary;
-        } else {
+        if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
             scope_ = kSyncScopeExternalPermanent;
+        } else if (scope_ == kSyncScopeInternal) {
+            scope_ = kSyncScopeExternalTemporary;
         }
     }
 }
@@ -309,9 +306,14 @@ void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
     if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
         // Export with reference transference becomes external
         scope_ = kSyncScopeExternalPermanent;
-    } else if (scope_ == kSyncScopeInternal) {
+    } else {
         // Export with copy transference has a side effect of resetting the fence
+        if (scope_ == kSyncScopeExternalTemporary) {
+            scope_ = kSyncScopeInternal;
+        }
         state_ = FENCE_UNSIGNALED;
+        completed_ = std::promise<void>();
+        waiter_ = std::shared_future<void>(completed_.get_future());
     }
 }
 
