@@ -1101,3 +1101,24 @@ const char* string_SpvDecoration(uint32_t decoration) {
     }
 };
 
+const char* string_SpvDim(uint32_t dim) {
+    switch(dim) {
+        case spv::Dim1D:
+            return "1D";
+        case spv::Dim2D:
+            return "2D";
+        case spv::Dim3D:
+            return "3D";
+        case spv::DimCube:
+            return "Cube";
+        case spv::DimRect:
+            return "Rect";
+        case spv::DimBuffer:
+            return "Buffer";
+        case spv::DimSubpassData:
+            return "SubpassData";
+        default:
+            return "Unknown Dim";
+    }
+};
+

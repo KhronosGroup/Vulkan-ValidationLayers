@@ -97,6 +97,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.storageClassList = [] # list of storage classes
         self.executionModelList = []
         self.decorationList = []
+        self.dimList = []
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
 
@@ -219,6 +220,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                 self.addToStingList(operandKind, 'StorageClass', self.storageClassList)
                 self.addToStingList(operandKind, 'ExecutionModel', self.executionModelList)
                 self.addToStingList(operandKind, 'Decoration', self.decorationList)
+                self.addToStingList(operandKind, 'Dim', self.dimList)
 
             for instruction in instructions:
                 opname = instruction['opname']
@@ -476,6 +478,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output +=  'const char* string_SpvStorageClass(uint32_t storage_class);\n'
             output +=  'const char* string_SpvExecutionModel(uint32_t execution_model);\n'
             output +=  'const char* string_SpvDecoration(uint32_t decoration);\n'
+            output +=  'const char* string_SpvDim(uint32_t dim);\n'
         elif self.sourceFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode) {\n'
             output += '    auto format_info = kInstructionTable.find(opcode);\n'
@@ -513,6 +516,16 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                 output += '            return \"{}\";\n'.format(decoration)
             output += '        default:\n'
             output += '            return \"Unknown Decoration\";\n'
+            output += '    }\n'
+            output += '};\n'
+
+            output += '\nconst char* string_SpvDim(uint32_t dim) {\n'
+            output += '    switch(dim) {\n'
+            for dim in self.dimList:
+                output += '        case spv::Dim{}:\n'.format(dim)
+                output += '            return \"{}\";\n'.format(dim)
+            output += '        default:\n'
+            output += '            return \"Unknown Dim\";\n'
             output += '    }\n'
             output += '};\n'
         return output
