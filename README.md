@@ -1,4 +1,4 @@
-# Vulkan Ecosystem Components
+# Vulkan Validation Layers (VVL)
 
 ## Introduction
 
