@@ -251,7 +251,20 @@ target_sources(VkLayer_khronos_validation PRIVATE
     state_tracker/state_tracker.h
     state_tracker/video_session_state.cpp
     state_tracker/video_session_state.h
-    stateless/parameter_validation_utils.cpp
+    stateless/buffer_sl_validation.cpp
+    stateless/cmd_buffer_dynamic_sl_validation.cpp
+    stateless/cmd_buffer_sl_validation.cpp
+    stateless/descriptor_sl_validation.cpp
+    stateless/device_memory_sl_validation.cpp
+    stateless/external_object_sl_validation.cpp
+    stateless/framebuffer_sl_validation.cpp
+    stateless/image_sl_validation.cpp
+    stateless/instance_device_sl_validation.cpp
+    stateless/pipeline_sl_validation.cpp
+    stateless/ray_tracing_sl_validation.cpp
+    stateless/render_pass_sl_validation.cpp
+    stateless/synchronization_sl_validation.cpp
+    stateless/wsi_sl_validation.cpp
     stateless/stateless_validation.h
     sync/sync_validation.cpp
     sync/sync_validation.h

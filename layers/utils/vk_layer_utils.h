@@ -371,6 +371,8 @@ static inline bool IsBetweenInclusive(const VkExtent2D &value, const VkExtent2D 
     return IsBetweenInclusive(value.width, min.width, max.width) && IsBetweenInclusive(value.height, min.height, max.height);
 }
 
+static inline bool IsBetweenInclusive(float value, float min, float max) { return (value >= min) && (value <= max); }
+
 // Check if value is integer multiple of granularity
 static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granularity) {
     if (granularity == 0) {

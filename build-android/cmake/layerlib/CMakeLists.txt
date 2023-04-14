@@ -112,7 +112,20 @@ add_library(VkLayer_khronos_validation SHARED
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
         ${COMMON_DIR}/include/chassis.cpp
         ${COMMON_DIR}/include/parameter_validation.cpp
-        ${SRC_DIR}/layers/stateless/parameter_validation_utils.cpp
+        ${SRC_DIR}/layers/stateless/buffer_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/cmd_buffer_dynamic_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/cmd_buffer_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/descriptor_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/device_memory_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/external_object_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/framebuffer_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/image_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/instance_device_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/pipeline_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/ray_tracing_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/render_pass_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/synchronization_sl_validation.cpp
+        ${SRC_DIR}/layers/stateless/wsi_sl_validation.cpp
         ${COMMON_DIR}/include/object_tracker.cpp
         ${SRC_DIR}/layers/object_tracker/object_tracker_utils.cpp
         ${COMMON_DIR}/include/thread_safety.cpp
