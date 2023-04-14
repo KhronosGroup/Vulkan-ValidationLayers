@@ -19,7 +19,7 @@
 
 #include "utils/vk_layer_utils.h"
 #include "generated/vk_enum_string_helper.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 
 #ifdef AHB_VALIDATION_SUPPORT
 // Android-specific validation that uses types defined only on Android and only for NDK versions

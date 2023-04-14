@@ -27,7 +27,7 @@
 
 #include "generated/chassis.h"
 #include "state_tracker/state_tracker.h"
-#include "core_checks/shader_validation.h"
+#include "core_checks/shader_cc_validation.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/cmd_buffer_state.h"
 

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "core_checks/shader_validation.h"
+#include "shader_cc_validation.h"
 
 #include <cassert>
 #include <cinttypes>
@@ -28,7 +28,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "external/xxhash.h"
 

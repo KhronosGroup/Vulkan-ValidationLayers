@@ -19,9 +19,9 @@
 #include <valarray>
 
 #include "error_message/validation_error_enums.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 #include "state_tracker/descriptor_sets.h"
-#include "buffer_address_validation.h"
+#include "buffer_address_cc_validation.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;

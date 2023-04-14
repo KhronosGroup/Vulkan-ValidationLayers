@@ -24,7 +24,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 #include "sync/sync_utils.h"
 #include "utils/convert_to_renderpass2.h"
 

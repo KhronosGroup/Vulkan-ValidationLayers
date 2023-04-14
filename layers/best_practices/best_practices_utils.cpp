@@ -20,7 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "best_practices/best_practices_error_enums.h"
-#include "core_checks/shader_validation.h"
+#include "core_checks/shader_cc_validation.h"
 #include "sync/sync_utils.h"
 
 #include <string>

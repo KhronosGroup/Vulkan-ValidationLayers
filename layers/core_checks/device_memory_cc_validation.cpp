@@ -21,7 +21,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const LogObjectList &objlist,

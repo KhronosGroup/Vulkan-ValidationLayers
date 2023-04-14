@@ -23,7 +23,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 
 static char const *GetCauseStr(VulkanTypedHandle obj) {

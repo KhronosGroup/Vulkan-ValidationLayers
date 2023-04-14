@@ -23,7 +23,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInfo) const {
     bool skip = false;

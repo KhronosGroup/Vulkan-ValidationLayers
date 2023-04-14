@@ -21,7 +21,7 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_checks/core_validation.h"
+#include "core_validation.h"
 
 // Check object status for selected flag state
 bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDynamicStatus status, CMD_TYPE cmd_type,
