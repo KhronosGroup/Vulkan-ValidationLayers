@@ -1112,10 +1112,10 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 assert(set_index != std::numeric_limits<uint32_t>::max());
                 const auto pipeline = context.cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 for (const auto &stage : pipeline->stage_states) {
-                    if (!stage.descriptor_variables) {
+                    if (!stage.entrypoint) {
                         continue;
                     }
-                    for (const auto &variable : *stage.descriptor_variables) {
+                    for (const auto &variable : stage.entrypoint->resource_interface_variables) {
                         if (variable.decorations.set == set_index && variable.decorations.binding == binding) {
                             descriptor_written_to |= variable.is_written_to;
                             descriptor_read_from |= variable.is_read_from | variable.is_sampler_implicitLod_dref_proj;

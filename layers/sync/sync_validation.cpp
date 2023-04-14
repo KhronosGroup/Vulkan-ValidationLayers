@@ -2043,10 +2043,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
             raster_state->rasterizerDiscardEnable) {
             continue;
-        } else if (!stage_state.descriptor_variables) {
+        } else if (!stage_state.entrypoint) {
             continue;
         }
-        for (const auto &variable : *stage_state.descriptor_variables) {
+        for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
@@ -2181,10 +2181,10 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         if (stage_state.create_info->stage == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state &&
             raster_state->rasterizerDiscardEnable) {
             continue;
-        } else if (!stage_state.descriptor_variables) {
+        } else if (!stage_state.entrypoint) {
             continue;
         }
-        for (const auto &variable : *stage_state.descriptor_variables) {
+        for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
