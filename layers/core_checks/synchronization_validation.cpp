@@ -1665,25 +1665,15 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             }
         }
 
-        VkImageAspectFlags valid_disjoint_mask =
-            VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-        if ((FormatIsMultiplane(image_format) == true) && (image_state->disjoint == true) &&
-            ((aspect_mask & valid_disjoint_mask) == 0)) {
-            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
-            skip |= LogError(img_barrier.image, vuid,
-                             "%s references %s of format %s has aspectMask (0x%" PRIx32
-                             ") but needs to include either an VK_IMAGE_ASPECT_PLANE_*_BIT or VK_IMAGE_ASPECT_COLOR_BIT.",
-                             image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                             string_VkFormat(image_format), aspect_mask);
-        }
-
-        if ((FormatPlaneCount(image_format) == 2) && ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) != 0)) {
-            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
-            skip |= LogError(img_barrier.image, vuid,
-                             "%s references %s of format %s has only two planes but included "
-                             "VK_IMAGE_ASPECT_PLANE_2_BIT in its aspectMask (0x%" PRIx32 ").",
-                             image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                             string_VkFormat(image_format), aspect_mask);
+        if ((FormatIsMultiplane(image_format)) && (image_state->disjoint == true)) {
+            if (!IsValidPlaneAspect(image_format, aspect_mask) && ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
+                const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
+                skip |= LogError(img_barrier.image, vuid,
+                                 "%s references %s of format %s has aspectMask (0x%" PRIx32
+                                 ") but needs to include either an VK_IMAGE_ASPECT_PLANE_*_BIT or VK_IMAGE_ASPECT_COLOR_BIT.",
+                                 image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                 string_VkFormat(image_format), aspect_mask);
+            }
         }
     }
     return skip;
