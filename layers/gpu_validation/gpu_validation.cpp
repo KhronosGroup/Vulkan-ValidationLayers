@@ -1299,6 +1299,10 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
                 for (const auto &update : buffer_info.update_at_submit) {
                     SetBindingState(data, update.first, update.second);
                 }
+                // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
+                result = vmaFlushAllocation(vmaAllocator, buffer_info.allocation, 0, VK_WHOLE_SIZE);
+                // No good way to handle this error, we should still try to unmap.
+                assert(result == VK_SUCCESS);
                 vmaUnmapMemory(vmaAllocator, buffer_info.allocation);
             }
         }
@@ -1379,7 +1383,9 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
             buffer_info.size = words_needed * 4;
             buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             VmaAllocationCreateInfo alloc_info = {};
-            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
+            // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
+            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
             alloc_info.pool = VK_NULL_HANDLE;
             GpuAssistedDeviceMemoryBlock di_input_block = {};
             VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer,
@@ -1497,6 +1503,10 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     }
                 }
             }
+            // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
+            result = vmaFlushAllocation(vmaAllocator, di_input_block.allocation, 0, VK_WHOLE_SIZE);
+            // No good way to handle this error, we should still try to unmap.
+            assert(result == VK_SUCCESS);
             vmaUnmapMemory(vmaAllocator, di_input_block.allocation);
             cb_node->di_input_buffer_list.emplace_back(di_input_block);
         }
@@ -2201,6 +2211,9 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
             buffer_info.size = words_needed * 8;  // 64 bit words
             alloc_info.pool = VK_NULL_HANDLE;
+            // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
+            // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
+            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
             result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
@@ -2223,6 +2236,10 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             }
             bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
             bda_data[size_index] = 0;
+            // Flush the BDA buffer before unmapping so that the new state is visible to the GPU
+            result = vmaFlushAllocation(vmaAllocator, bda_input_block.allocation, 0, VK_WHOLE_SIZE);
+            // No good way to handle this error, we should still try to unmap.
+            assert(result == VK_SUCCESS);
             vmaUnmapMemory(vmaAllocator, bda_input_block.allocation);
 
             bda_input_desc_buffer_info.range = (words_needed * 8);
