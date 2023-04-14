@@ -19,6 +19,10 @@
 #include <deque>
 #include <thread>
 
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#include <poll.h>
+#endif
+
 //
 // POSITIVE VALIDATION TESTS
 //
@@ -1509,9 +1513,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
-    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -1575,9 +1577,7 @@ TEST_F(VkPositiveLayerTest, ExternalFenceSyncFdLoop) {
     auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
-    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -1616,6 +1616,85 @@ TEST_F(VkPositiveLayerTest, ExternalFenceSyncFdLoop) {
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         close(ext_handle);
 #endif
+    }
+
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+}
+
+TEST_F(VkPositiveLayerTest, ExternalFenceSubmitCmdBuffer) {
+    const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    // Check for external fence export capability
+    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    efi.handleType = handle_type;
+    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External fence does not support exporting, skipping test.";
+        return;
+    }
+
+    VkResult err;
+
+    // Create a fence to export payload from
+    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    efci.handleTypes = handle_type;
+    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    vk_testing::Fence export_fence(*m_device, fci);
+
+    for (uint32_t i = 0; i < 1000; i++) {
+        m_commandBuffer->begin();
+        m_commandBuffer->end();
+
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, export_fence.handle());
+        ASSERT_VK_SUCCESS(err);
+
+        vk_testing::Fence::ExternalHandle ext_handle{};
+        err = export_fence.export_handle(ext_handle, handle_type);
+        ASSERT_VK_SUCCESS(err);
+
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+        // Wait until command buffer is finished using the exported handle.
+        if (ext_handle != -1) {
+            struct pollfd fds;
+            fds.fd = ext_handle;
+            fds.events = POLLIN;
+            int timeout_ms = static_cast<int>(kWaitTimeout / 1000000);
+            while (true) {
+                int ret = poll(&fds, 1, timeout_ms);
+                if (ret > 0) {
+                    ASSERT_FALSE(fds.revents & (POLLERR | POLLNVAL));
+                    break;
+                }
+                ASSERT_FALSE(ret == 0);                                         // Timeout.
+                ASSERT_TRUE(ret == -1 && (errno == EINTR || errno == EAGAIN));  // Retry...
+            }
+            close(ext_handle);
+        }
+#else
+        err = vk::QueueWaitIdle(m_device->m_queue);
+        ASSERT_VK_SUCCESS(err);
+#endif
+
+        m_commandBuffer->reset();
     }
 
     err = vk::QueueWaitIdle(m_device->m_queue);
