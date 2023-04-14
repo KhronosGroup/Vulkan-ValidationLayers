@@ -128,3 +128,12 @@ spv::BuiltIn Instruction::GetBuiltIn() const {
         return spv::BuiltInMax;
     }
 }
+
+spv::Dim Instruction::FindImageDim() const { return (Opcode() == spv::OpTypeImage) ? (spv::Dim(Word(3))) : spv::DimMax; }
+
+bool Instruction::IsArrayed() const { return (Opcode() == spv::OpTypeImage) && (Word(5) != 0); }
+
+bool Instruction::IsMultisampled() const {
+    // spirv-val makes sure that the MS operand is only non-zero when possible to be Multisampled
+    return (Opcode() == spv::OpTypeImage) && (Word(6) != 0);
+}

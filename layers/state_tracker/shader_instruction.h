@@ -72,6 +72,11 @@ class Instruction {
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
+    // Helpers for OpTypeImage
+    spv::Dim FindImageDim() const;
+    bool IsArrayed() const;
+    bool IsMultisampled() const;
+
     // Auto-generated helper functions
     spv::StorageClass StorageClass() const;
 
