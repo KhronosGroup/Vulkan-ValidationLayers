@@ -24,11 +24,7 @@
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
                                        std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> &entrypoint)
-    : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {
-    if (entrypoint) {
-        descriptor_variables = &(*entrypoint).resource_interface_variables;
-    }
-}
+    : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {}
 
 // static
 PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
@@ -133,11 +129,11 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
 PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec &stage_states) {
     PIPELINE_STATE::ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
-        if (!stage.entrypoint || !stage.descriptor_variables) {
+        if (!stage.entrypoint) {
             continue;
         }
         // Capture descriptor uses for the pipeline
-        for (const auto &variable : *stage.descriptor_variables) {
+        for (const auto &variable : stage.entrypoint->resource_interface_variables) {
             // While validating shaders capture which slots are used by the pipeline
             auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
             entry.is_written_to |= variable.is_written_to;

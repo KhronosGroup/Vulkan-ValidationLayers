@@ -98,7 +98,6 @@ struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> entrypoint;
-    const std::vector<ResourceInterfaceVariable> *descriptor_variables = {};
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
