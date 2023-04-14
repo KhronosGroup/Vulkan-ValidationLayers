@@ -919,25 +919,6 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     return value->GetConstantValue();
 }
 
-// Returns spv::Dim of the given OpVariable
-spv::Dim SHADER_MODULE_STATE::GetShaderResourceDimensionality(const ResourceInterfaceVariable& resource) const {
-    const Instruction* type = FindDef(resource.type_id);
-    while (true) {
-        switch (type->Opcode()) {
-            case spv::OpTypeSampledImage:
-                type = FindDef(type->Word(2));
-                break;
-            case spv::OpTypePointer:
-                type = FindDef(type->Word(3));
-                break;
-            case spv::OpTypeImage:
-                return spv::Dim(type->Word(3));
-            default:
-                return spv::DimMax;
-        }
-    }
-}
-
 // Returns the number of Location slots used for a given ID reference to a OpType*
 uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
@@ -1023,25 +1004,24 @@ uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type) const {
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
 // also used for input attachments, as we statically know their format.
-uint32_t SHADER_MODULE_STATE::GetFundamentalType(uint32_t type) const {
+NumericType SHADER_MODULE_STATE::GetNumericType(uint32_t type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
         case spv::OpTypeInt:
-            return insn->Word(3) ? FORMAT_TYPE_SINT : FORMAT_TYPE_UINT;
+            return insn->Word(3) ? NumericTypeSint : NumericTypeUint;
         case spv::OpTypeFloat:
-            return FORMAT_TYPE_FLOAT;
+            return NumericTypeFloat;
         case spv::OpTypeVector:
         case spv::OpTypeMatrix:
         case spv::OpTypeArray:
         case spv::OpTypeRuntimeArray:
         case spv::OpTypeImage:
-            return GetFundamentalType(insn->Word(2));
+            return GetNumericType(insn->Word(2));
         case spv::OpTypePointer:
-            return GetFundamentalType(insn->Word(3));
-
+            return GetNumericType(insn->Word(3));
         default:
-            return 0;
+            return NumericTypeUnknown;
     }
 }
 
@@ -1240,66 +1220,6 @@ void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE&
     }
 }
 
-uint32_t SHADER_MODULE_STATE::DescriptorTypeToReqs(uint32_t type_id) const {
-    const Instruction* type = FindDef(type_id);
-
-    while (true) {
-        switch (type->Opcode()) {
-            case spv::OpTypeArray:
-            case spv::OpTypeRuntimeArray:
-            case spv::OpTypeSampledImage:
-                type = FindDef(type->Word(2));
-                break;
-            case spv::OpTypePointer:
-                type = FindDef(type->Word(3));
-                break;
-            case spv::OpTypeImage: {
-                auto dim = type->Word(3);
-                auto arrayed = type->Word(5);
-                auto msaa = type->Word(6);
-
-                uint32_t bits = 0;
-                switch (GetFundamentalType(type->Word(2))) {
-                    case FORMAT_TYPE_FLOAT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-                        break;
-                    case FORMAT_TYPE_UINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-                        break;
-                    case FORMAT_TYPE_SINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-                        break;
-                    default:
-                        break;
-                }
-
-                switch (dim) {
-                    case spv::Dim1D:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
-                        return bits;
-                    case spv::Dim2D:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D;
-                        return bits;
-                    case spv::Dim3D:
-                        bits |= DESCRIPTOR_REQ_VIEW_TYPE_3D;
-                        return bits;
-                    case spv::DimCube:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
-                        return bits;
-                    case spv::DimSubpassData:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        return bits;
-                    default:  // buffer, etc.
-                        return bits;
-                }
-            }
-            default:
-                return 0;
-        }
-    }
-}
-
 // For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
 bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const EntryPoint& entrypoint) const {
@@ -1460,6 +1380,23 @@ std::string InterfaceSlot::Describe() const {
     msg << "Location = " << Location() << " | Component = " << Component() << " | Type = " << string_SpvOpcode(type) << " "
         << bit_width << " bits";
     return msg.str();
+}
+
+uint32_t GetFormatType(VkFormat format) {
+    if (FormatIsSINT(format)) return NumericTypeSint;
+    if (FormatIsUINT(format)) return NumericTypeUint;
+    // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
+    if (FormatIsDepthAndStencil(format)) return NumericTypeFloat | NumericTypeUint;
+    if (format == VK_FORMAT_UNDEFINED) return NumericTypeUnknown;
+    // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
+    return NumericTypeFloat;
+}
+
+char const* string_NumericType(uint32_t type) {
+    if (type == NumericTypeSint) return "SINT";
+    if (type == NumericTypeUint) return "UINT";
+    if (type == NumericTypeFloat) return "FLOAT";
+    return "(none)";
 }
 
 VariableBase::VariableBase(const SHADER_MODULE_STATE& module_state, const Instruction& insn, VkShaderStageFlagBits stage)
@@ -1683,6 +1620,10 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
+NumericType ResourceInterfaceVariable::FindImageFormatType(const SHADER_MODULE_STATE& module_state, const Instruction& base_type) {
+    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
+}
+
 bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable& variable) {
     // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
     const bool physical_storage_buffer = variable.storage_class == spv::StorageClassPhysicalStorageBuffer;
@@ -1697,6 +1638,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                                                      VkShaderStageFlagBits stage)
     : VariableBase(module_state, insn, stage),
       base_type(FindBaseType(*this, module_state)),
+      image_format_type(FindImageFormatType(module_state, base_type)),
+      image_dim(base_type.FindImageDim()),
+      is_image_array(base_type.IsArrayed()),
+      is_multisampled(base_type.IsMultisampled()),
       is_storage_buffer(IsStorageBuffer(*this)) {
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type

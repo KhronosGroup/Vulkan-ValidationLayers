@@ -557,7 +557,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 //   to be used in a draw by the given cb_state
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_state,
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
-                                                     const BindingReqMap &binding_req_map) {
+                                                     const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
         return;
@@ -615,8 +615,9 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     }
 }
 
-void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingReqMap::value_type &binding_req_pair, BindingReqMap *out_req,
-                                                         const TrackedBindings &bindings, uint32_t limit) {
+void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingVariableMap::value_type &binding_req_pair,
+                                                         BindingVariableMap *out_req, const TrackedBindings &bindings,
+                                                         uint32_t limit) {
     if (bindings.size() < limit) {
         const auto it = bindings.find(binding_req_pair.first);
         if (it == bindings.cend()) out_req->emplace(binding_req_pair);
@@ -624,7 +625,7 @@ void cvdescriptorset::DescriptorSet::FilterOneBindingReq(const BindingReqMap::va
 }
 
 void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                                       const BindingReqMap &in_req, BindingReqMap *out_req) const {
+                                                       const BindingVariableMap &in_req, BindingVariableMap *out_req) const {
     // For const cleanliness we have to find in the maps...
     const auto validated_it = cb_state.descriptorset_cache.find(this);
     if (validated_it == cb_state.descriptorset_cache.end()) {
@@ -676,7 +677,7 @@ void cvdescriptorset::DescriptorSet::FilterBindingReqs(const CMD_BUFFER_STATE &c
 }
 
 void cvdescriptorset::DescriptorSet::UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                                           const BindingReqMap &updated_bindings) {
+                                                           const BindingVariableMap &updated_bindings) {
     auto &validated = cb_state.descriptorset_cache[this];
 
     auto &image_sample_version = validated.image_samplers[&pipeline];
@@ -1183,10 +1184,10 @@ void cvdescriptorset::PerformUpdateDescriptorSets(ValidationStateTracker *dev_da
         }
     }
 }
-const BindingReqMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
-                                                                           const PIPELINE_STATE &pipeline) {
+const BindingVariableMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
+                                                                                const PIPELINE_STATE &pipeline) {
     if (IsManyDescriptors()) {
-        filtered_map_.reset(new BindingReqMap);
+        filtered_map_.reset(new BindingVariableMap);
         descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());
         return *filtered_map_;
     }

@@ -869,16 +869,17 @@ class DescriptorSet : public BASE_NODE {
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type, const PIPELINE_STATE *,
-                         const BindingReqMap &);
+                         const BindingVariableMap &);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
     typedef vvl::unordered_set<uint32_t> TrackedBindings;
-    static void FilterOneBindingReq(const BindingReqMap::value_type &binding_req_pair, BindingReqMap *out_req,
+    static void FilterOneBindingReq(const BindingVariableMap::value_type &binding_req_pair, BindingVariableMap *out_req,
                                     const TrackedBindings &set, uint32_t limit);
-    void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &, const BindingReqMap &in_req,
-                           BindingReqMap *out_req) const;
-    void UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline, const BindingReqMap &updated_bindings);
+    void FilterBindingReqs(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &, const BindingVariableMap &in_req,
+                           BindingVariableMap *out_req) const;
+    void UpdateValidationCache(CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+                               const BindingVariableMap &updated_bindings);
 
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
@@ -1079,13 +1080,13 @@ class DescriptorSet : public BASE_NODE {
 class PrefilterBindRequestMap {
   public:
     static const uint32_t kManyDescriptors_ = 64;  // TODO base this number on measured data
-    std::unique_ptr<BindingReqMap> filtered_map_;
-    const BindingReqMap &orig_map_;
+    std::unique_ptr<BindingVariableMap> filtered_map_;
+    const BindingVariableMap &orig_map_;
     const DescriptorSet &descriptor_set_;
 
-    PrefilterBindRequestMap(const DescriptorSet &ds, const BindingReqMap &in_map)
+    PrefilterBindRequestMap(const DescriptorSet &ds, const BindingVariableMap &in_map)
         : filtered_map_(), orig_map_(in_map), descriptor_set_(ds) {}
-    const BindingReqMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &);
+    const BindingVariableMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &);
     bool IsManyDescriptors() const { return descriptor_set_.GetTotalDescriptorCount() > kManyDescriptors_; }
 };
 }  // namespace cvdescriptorset

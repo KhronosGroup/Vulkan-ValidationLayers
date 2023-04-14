@@ -2934,11 +2934,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                     if (need_validate) {
                         if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
                             // Only validate the bindings that haven't already been validated
-                            BindingReqMap delta_reqs;
+                            BindingVariableMap delta_reqs;
                             std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                                 set_info.validated_set_binding_req_map.begin(),
                                                 set_info.validated_set_binding_req_map.end(),
-                                                vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                                                vvl::insert_iterator<BindingVariableMap>(delta_reqs, delta_reqs.begin()));
                             skip |=
                                 ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function, vuid);
                         } else {

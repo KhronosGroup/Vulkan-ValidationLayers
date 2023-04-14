@@ -1125,11 +1125,11 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                 // Bind this set and its active descriptor resources to the command buffer
                 if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
                     // Only record the bindings that haven't already been recorded
-                    BindingReqMap delta_reqs;
+                    BindingVariableMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                         set_info.validated_set_binding_req_map.begin(),
                                         set_info.validated_set_binding_req_map.end(),
-                                        vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                                        vvl::insert_iterator<BindingVariableMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs);
                 } else {
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);
@@ -1145,7 +1145,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                         set_info.validated_set_binding_req_map = set_binding_pair.second;
                     }
                 } else {
-                    set_info.validated_set_binding_req_map = BindingReqMap();
+                    set_info.validated_set_binding_req_map = BindingVariableMap();
                 }
             }
         }
