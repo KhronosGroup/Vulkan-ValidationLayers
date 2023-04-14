@@ -108,7 +108,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
 
             // Type checking
             if (!(attrib_type & input_type)) {
-                skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_VertexInputMismatch,
+                skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-08733",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
                                  pipeline.create_index, string_VkFormat(attrib->format), location,
@@ -3044,7 +3044,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     break;  // When going inbetween Tessellation or Geometry, array size can be different
                 }
                 const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
-                skip |= LogError(objlist, kVUID_Core_Shader_MissingOutput,
+                skip |= LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-08743",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s declared input at Location %" PRIu32
                                  " Comonent %" PRIu32 " but it is not an Output declared in %s",
                                  pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
