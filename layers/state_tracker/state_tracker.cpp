@@ -3948,6 +3948,8 @@ void ValidationStateTracker::PostCallRecordImportFenceFdKHR(VkDevice device, con
 void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type) {
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
+        // We no longer can track inflight fence after the export - perform early retire.
+        fence_state->NotifyAndWait();
         fence_state->Export(handle_type);
     }
 }
