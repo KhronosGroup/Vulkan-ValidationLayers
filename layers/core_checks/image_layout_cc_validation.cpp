@@ -621,6 +621,58 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                              report_data->FormatHandle(image_view).c_str());
         }
     }
+
+    if ((IsImageLayoutDepthOnly(layout) || IsImageLayoutStencilOnly(layout)) &&
+        !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        const char *vuid =
+            use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-02844" : "VUID-vkCmdBeginRenderPass-initialLayout-02842";
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+        skip |= LogError(objlist, vuid,
+                         "%s: Layout/usage mismatch for attachment %" PRIu32
+                         " in %s"
+                         " - the %s is %s but the image attached to %s via %s"
+                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                         report_data->FormatHandle(image_view).c_str());
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
+    RenderPassCreateVersion rp_version, VkImageLayout layout, const IMAGE_VIEW_STATE &image_view_state, VkFramebuffer framebuffer,
+    VkRenderPass renderpass, uint32_t attachment_index, const char *variable_name) const {
+    bool skip = false;
+    const auto &image_view = image_view_state.Handle();
+    const auto *image_state = image_view_state.image_state.get();
+    const auto &image = image_state->Handle();
+    const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
+    const char *function_name = use_rp2 ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
+
+    if (!image_state) {
+        return skip;
+    }
+    auto image_usage = image_state->createInfo.usage;
+    const auto stencil_usage_info = LvlFindInChain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+    if (stencil_usage_info) {
+        image_usage |= stencil_usage_info->stencilUsage;
+    }
+
+    if (IsImageLayoutStencilOnly(layout) && !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        const char *vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-stencilInitialLayout-02845"
+                                   : "VUID-vkCmdBeginRenderPass-stencilInitialLayout-02843";
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+        skip |= LogError(objlist, vuid,
+                         "%s: Layout/usage mismatch for attachment %" PRIu32
+                         " in %s"
+                         " - the %s is %s but the image attached to %s via %s"
+                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                         report_data->FormatHandle(image_view).c_str());
+    }
+
     return skip;
 }
 
@@ -674,15 +726,17 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             continue;
         }
         auto attachment_initial_layout = render_pass_info->pAttachments[i].initialLayout;
-        auto final_layout = render_pass_info->pAttachments[i].finalLayout;
+        auto attachment_final_layout = render_pass_info->pAttachments[i].finalLayout;
 
         // Default to expecting stencil in the same layout.
         auto attachment_stencil_initial_layout = attachment_initial_layout;
 
         // If a separate layout is specified, look for that.
-        const auto *attachment_description_stencil_layout =
+        const auto *attachment_desc_stencil_layout =
             LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-        if (attachment_description_stencil_layout) {
+        if (const auto *attachment_description_stencil_layout =
+                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+            attachment_description_stencil_layout) {
             attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
         }
 
@@ -736,8 +790,17 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, *view_state,
                                                                      framebuffer, render_pass, i, "initial layout");
 
-        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, *view_state, framebuffer,
+        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_final_layout, *view_state, framebuffer,
                                                                      render_pass, i, "final layout");
+
+        if (attachment_desc_stencil_layout != nullptr) {
+            skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
+                rp_version, attachment_desc_stencil_layout->stencilInitialLayout, *view_state, framebuffer, render_pass, i,
+                "stencil initial layout");
+            skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
+                rp_version, attachment_desc_stencil_layout->stencilFinalLayout, *view_state, framebuffer, render_pass, i,
+                "stencil final layout");
+        }
     }
 
     for (uint32_t j = 0; j < render_pass_info->subpassCount; ++j) {
@@ -800,7 +863,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
                         rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
-                        "input attachment layout");
+                        "depth stencil attachment layout");
+
+                    if (const auto *stencil_layout = LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(attachment_ref.pNext);
+                        stencil_layout != nullptr) {
+                        skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
+                            rp_version, stencil_layout->stencilLayout, *view_state, framebuffer, render_pass,
+                            attachment_ref.attachment, "stencil attachment layout");
+                    }
                 }
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {

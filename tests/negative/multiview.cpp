@@ -851,13 +851,17 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x3u};
-    uint32_t correlationMasks[] = {0x1u, 0x3u};
-    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 2u, correlationMasks);
+    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    std::array viewMasks = {0x3u};
+    std::array correlationMasks = {0x1u, 0x2u};
+    auto rpmvci = LvlInitStruct<VkRenderPassMultiviewCreateInfo>(
+        nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<uint32_t>(correlationMasks.size()), correlationMasks.data());
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
+    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false);
+
     // Correlation masks must not overlap
+    correlationMasks[1] = 0x3u;
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841",
                          "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056");
@@ -869,8 +873,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
         correlationMasks[1] = 0;
         safe_VkRenderPassCreateInfo2 safe_rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
-        TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), safe_rpci2.ptr(),
-                                 "VUID-VkRenderPassCreateInfo2-viewMask-03057");
+        TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, *safe_rpci2.ptr(), {"VUID-VkRenderPassCreateInfo2-viewMask-03057"});
     }
 }
 

@@ -938,6 +938,10 @@ class CoreChecks : public ValidationStateTracker {
                                                               const IMAGE_VIEW_STATE& image_view_state, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
                                                               const char* variable_name) const;
+    bool ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
+                                                                     const IMAGE_VIEW_STATE& image_view_state,
+                                                                     VkFramebuffer framebuffer, VkRenderPass renderpass,
+                                                                     uint32_t attachment_index, const char* variable_name) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
                                      const IMAGE_STATE* image_state, const char* function, CMD_TYPE cmd_type,
