@@ -86,12 +86,6 @@ def CheckVVL(config):
     vulkan_registry = ext_dir + "/Vulkan-Headers/registry"
     spirv_unified = ext_dir + "/SPIRV-Headers/include/spirv/unified1/"
 
-    # Scripts depend on modules within the Vulkan registry.
-    if "PYTHONPATH" in os.environ:
-        print(f"Using provided PYTHONPATH {os.environ['PYTHONPATH']}")
-    else:
-        os.environ['PYTHONPATH'] = vulkan_registry
-
     # Verify consistency of generated source code
     print("Check Generated Source Code Consistency")
     gen_check_cmd = f'python3 scripts/generate_source.py --verify {vulkan_registry} {spirv_unified}'

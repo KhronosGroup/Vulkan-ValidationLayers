@@ -7,23 +7,21 @@ How to generate the code:
 
 - Linux:
 ```bash
-PYTHONPATH=$PYTHONPATH:$PWD/external/Vulkan-Headers/registry python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
+scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
 ```
 
 - Windows Powershell:
 ```powershell
-pwsh -Command { $env:PYTHONPATH+=";$PWD/external/Vulkan-Headers/registry"; python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ }
+pwsh -Command { python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ }
 ```
 
 - Windows Command:
 ```cmd
-cmd /C "set PYTHONPATH=%PYTHONPATH%;%cd%/external/Vulkan-Headers/registry && python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/"
+cmd /C "python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/"
 ```
 
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
 `scripts/` and `layers/generated/` in any PR.
-
-Note the addition of the Vulkan registry directory to `PYTHONPATH`. This is because the generation scripts depend on modules within the Vulkan registry.
 
 ## CMake helper
 
@@ -33,8 +31,6 @@ A helper CMake target `vvl_codegen` is also provided to simplify the invocation 
 cmake -S . -B build -D VVL_CODEGEN=ON
 cmake --build build --target vvl_codegen
 ```
-
-Using the CMake target will also set `PYTHONPATH` properly, assuming a standard cmake invokation was made.
 
 NOTE: `VVL_CODEGEN` is `OFF` by default to allow users to build `VVL` via `add_subdirectory` and to avoid potential issues for system/language package managers.
 

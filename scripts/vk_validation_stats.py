@@ -16,7 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
-import common_codegen
 import csv
 import glob
 import html
@@ -36,69 +35,6 @@ vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 
 # Hard-coded flags that could be command line args, if we decide that's useful
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
-
-layer_source_files = [common_codegen.repo_relative(path) for path in [
-    'layers/core_checks/cc_android.cpp',
-    'layers/core_checks/cc_buffer.cpp',
-    'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
-    'layers/core_checks/cc_cmd_buffer_dynamic.cpp',
-    'layers/core_checks/cc_cmd_buffer.cpp',
-    'layers/core_checks/cc_copy_blit_resolve.cpp',
-    'layers/state_tracker/descriptor_sets.cpp',
-    'layers/core_checks/cc_descriptor.cpp',
-    'layers/core_checks/cc_device.cpp',
-    'layers/core_checks/cc_device_memory.cpp',
-    'layers/core_checks/cc_drawdispatch.cpp',
-    'layers/core_checks/cc_external_object.cpp',
-    'layers/gpu_validation/gpu_vuids.h',
-    'layers/stateless/sl_buffer.cpp',
-    'layers/stateless/sl_cmd_buffer_dynamic.cpp',
-    'layers/stateless/sl_cmd_buffer.cpp',
-    'layers/stateless/sl_descriptor.cpp',
-    'layers/stateless/sl_device_memory.cpp',
-    'layers/stateless/sl_external_object.cpp',
-    'layers/stateless/sl_framebuffer.cpp',
-    'layers/stateless/sl_image.cpp',
-    'layers/stateless/sl_instance_device.cpp',
-    'layers/stateless/sl_pipeline.cpp',
-    'layers/stateless/sl_ray_tracing.cpp',
-    'layers/stateless/sl_render_pass.cpp',
-    'layers/stateless/sl_synchronization.cpp',
-    'layers/stateless/sl_wsi.cpp',
-    'layers/core_checks/cc_image.cpp',
-    'layers/core_checks/cc_image_layout.cpp',
-    'layers/core_checks/cc_pipeline_compute.cpp',
-    'layers/core_checks/cc_pipeline_graphics.cpp',
-    'layers/core_checks/cc_pipeline_ray_tracing.cpp',
-    'layers/core_checks/cc_pipeline.cpp',
-    'layers/object_tracker/object_tracker_utils.cpp',
-    'layers/core_checks/cc_query.cpp',
-    'layers/core_checks/cc_queue.cpp',
-    'layers/core_checks/cc_ray_tracing.cpp',
-    'layers/core_checks/cc_render_pass.cpp',
-    'layers/state_tracker/shader_module.cpp',
-    'layers/core_checks/cc_shader.cpp',
-    'layers/core_checks/cc_synchronization.cpp',
-    'layers/stateless/stateless_validation.h',
-    'layers/sync/sync_validation.cpp',
-    'layers/sync/sync_vuid_maps.cpp',
-    'layers/core_checks/cc_video.cpp',
-    'layers/core_checks/cc_wsi.cpp',
-    'layers/core_checks/cc_ycbcr.cpp',
-    'layers/generated/parameter_validation.cpp',
-    'layers/generated/object_tracker.cpp',
-    'layers/generated/spirv_validation_helper.cpp',
-    'layers/generated/command_validation.cpp',
-]]
-
-test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
-
-unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
-    'layers/best_practices/best_practices_error_enums.h',
-    'layers/stateless/stateless_validation.h',
-    'layers/error_message/validation_error_enums.h',
-    'layers/object_tracker/object_lifetime_validation.h'
-]]
 
 # These files should not change unless event there is a major refactoring in SPIR-V Tools
 # Paths are relative from root of SPIR-V Tools repo
@@ -200,7 +136,7 @@ class ValidationJSON:
             print("Warning: duplicate VUIDs found in validusage.json")
 
 
-def buildKvuidDict():
+def buildKvuidDict(unassigned_vuid_files):
     kvuid_dict = {}
 
     for uf in unassigned_vuid_files:
@@ -221,8 +157,9 @@ def buildKvuidDict():
     return kvuid_dict
 
 class ValidationSource:
-    def __init__(self, source_file_list):
+    def __init__(self, source_file_list, unassigned_vuid_files):
         self.source_files = source_file_list
+        self.unassigned_vuid_files = unassigned_vuid_files
         self.vuid_count_dict = {} # dict of vuid values to the count of how much they're used, and location of where they're used
         self.duplicated_checks = 0
         self.explicit_vuids = set()
@@ -231,7 +168,7 @@ class ValidationSource:
         self.all_vuids = set()
 
     def parse(self, spirv_val):
-        kvuid_dict = buildKvuidDict()
+        kvuid_dict = buildKvuidDict(self.unassigned_vuid_files)
 
         if spirv_val and spirv_val.enabled:
             self.source_files.extend(spirv_val.source_files)
@@ -303,8 +240,9 @@ class ValidationSource:
 
 # Class to parse the validation layer test source and store testnames
 class ValidationTests:
-    def __init__(self, test_file_list, test_group_name=['VkLayerTest', 'VkPositiveLayerTest', 'VkBestPracticesLayerTest']):
+    def __init__(self, test_file_list, unassigned_vuid_files, test_group_name=['VkLayerTest', 'VkPositiveLayerTest', 'VkBestPracticesLayerTest']):
         self.test_files = test_file_list
+        self.unassigned_vuid_files = unassigned_vuid_files
         self.test_trigger_txt_list = []
         for tg in test_group_name:
             self.test_trigger_txt_list.append('TEST_F(%s' % tg)
@@ -317,7 +255,7 @@ class ValidationTests:
 
     # Parse test files into internal data struct
     def parse(self, spirv_val):
-        kvuid_dict = buildKvuidDict()
+        kvuid_dict = buildKvuidDict(self.unassigned_vuid_files)
 
         if spirv_val and spirv_val.enabled:
             self.test_files.extend(spirv_val.test_files)
@@ -780,6 +718,75 @@ def main(argv):
                         help='show your work (to stdout)')
     args = parser.parse_args()
 
+    # We need python modules found in the registry directory. This assumes that the validusage.json file is in that directory,
+    # and hasn't been copied elsewhere.
+    registry_dir = os.path.dirname(args.json_file)
+    sys.path.insert(0, registry_dir)
+    import common_codegen
+
+    layer_source_files = [common_codegen.repo_relative(path) for path in [
+        'layers/core_checks/cc_android.cpp',
+        'layers/core_checks/cc_buffer.cpp',
+        'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
+        'layers/core_checks/cc_cmd_buffer_dynamic.cpp',
+        'layers/core_checks/cc_cmd_buffer.cpp',
+        'layers/core_checks/cc_copy_blit_resolve.cpp',
+        'layers/state_tracker/descriptor_sets.cpp',
+        'layers/core_checks/cc_descriptor.cpp',
+        'layers/core_checks/cc_device.cpp',
+        'layers/core_checks/cc_device_memory.cpp',
+        'layers/core_checks/cc_drawdispatch.cpp',
+        'layers/core_checks/cc_external_object.cpp',
+        'layers/gpu_validation/gpu_vuids.h',
+        'layers/stateless/sl_buffer.cpp',
+        'layers/stateless/sl_cmd_buffer_dynamic.cpp',
+        'layers/stateless/sl_cmd_buffer.cpp',
+        'layers/stateless/sl_descriptor.cpp',
+        'layers/stateless/sl_device_memory.cpp',
+        'layers/stateless/sl_external_object.cpp',
+        'layers/stateless/sl_framebuffer.cpp',
+        'layers/stateless/sl_image.cpp',
+        'layers/stateless/sl_instance_device.cpp',
+        'layers/stateless/sl_pipeline.cpp',
+        'layers/stateless/sl_ray_tracing.cpp',
+        'layers/stateless/sl_render_pass.cpp',
+        'layers/stateless/sl_synchronization.cpp',
+        'layers/stateless/sl_wsi.cpp',
+        'layers/core_checks/cc_image.cpp',
+        'layers/core_checks/cc_image_layout.cpp',
+        'layers/core_checks/cc_pipeline_compute.cpp',
+        'layers/core_checks/cc_pipeline_graphics.cpp',
+        'layers/core_checks/cc_pipeline_ray_tracing.cpp',
+        'layers/core_checks/cc_pipeline.cpp',
+        'layers/object_tracker/object_tracker_utils.cpp',
+        'layers/core_checks/cc_query.cpp',
+        'layers/core_checks/cc_queue.cpp',
+        'layers/core_checks/cc_ray_tracing.cpp',
+        'layers/core_checks/cc_render_pass.cpp',
+        'layers/state_tracker/shader_module.cpp',
+        'layers/core_checks/cc_shader.cpp',
+        'layers/core_checks/cc_synchronization.cpp',
+        'layers/stateless/stateless_validation.h',
+        'layers/sync/sync_validation.cpp',
+        'layers/sync/sync_vuid_maps.cpp',
+        'layers/core_checks/cc_video.cpp',
+        'layers/core_checks/cc_wsi.cpp',
+        'layers/core_checks/cc_ycbcr.cpp',
+        'layers/generated/parameter_validation.cpp',
+        'layers/generated/object_tracker.cpp',
+        'layers/generated/spirv_validation_helper.cpp',
+        'layers/generated/command_validation.cpp',
+    ]]
+
+    test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
+
+    unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
+        'layers/best_practices/best_practices_error_enums.h',
+        'layers/stateless/stateless_validation.h',
+        'layers/error_message/validation_error_enums.h',
+        'layers/object_tracker/object_lifetime_validation.h'
+    ]]
+
     global verbose_mode
     verbose_mode = args.verbose
 
@@ -805,7 +812,7 @@ def main(argv):
                     print("    with extension: %s" % ext['ext'])
 
     # Parse layer source files
-    val_source = ValidationSource(layer_source_files)
+    val_source = ValidationSource(layer_source_files, unassigned_vuid_files)
     val_source.parse(spirv_val)
     exp_checks = len(val_source.explicit_vuids)
     imp_checks = len(val_source.implicit_vuids)
@@ -825,7 +832,7 @@ def main(argv):
         print("  %d checks are implemented more that once" % val_source.duplicated_checks)
 
     # Parse test files
-    val_tests = ValidationTests(test_source_files)
+    val_tests = ValidationTests(test_source_files, unassigned_vuid_files)
     val_tests.parse(spirv_val)
     exp_tests = len(val_tests.explicit_vuids)
     imp_tests = len(val_tests.implicit_vuids)
