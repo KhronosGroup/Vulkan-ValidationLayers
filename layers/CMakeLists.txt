@@ -140,7 +140,7 @@ option(VVL_CODEGEN "Enable vulkan validation layer code generation")
 if (VVL_CODEGEN)
     find_package(PythonInterp 3 REQUIRED)
     add_custom_target(vvl_codegen
-        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${PYTHON_EXECUTABLE} "${VVL_SOURCE_DIR}/scripts/generate_source.py"
+        COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_EXECUTABLE} "${VVL_SOURCE_DIR}/scripts/generate_source.py"
             ${VULKAN_HEADERS_REGISTRY_DIRECTORY} "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
             --incremental --generated-version ${VulkanHeaders_VERSION}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
