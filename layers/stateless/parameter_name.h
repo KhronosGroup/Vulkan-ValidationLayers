@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstring>
 
 /**
  * Parameter name string supporting deferred formatting for array subscripts.

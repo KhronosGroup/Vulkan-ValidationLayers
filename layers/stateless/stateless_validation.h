@@ -1009,8 +1009,6 @@ class StatelessValidation : public ValidationObject {
                                                      VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
                                                      VkResult result) override;
 
-    bool RequireDeviceExtension(bool flag, char const *function_name, char const *extension_name) const;
-
     bool ValidateInstanceExtensions(const VkInstanceCreateInfo *pCreateInfo) const;
 
     bool ValidateValidationFeatures(const VkInstanceCreateInfo *pCreateInfo,
