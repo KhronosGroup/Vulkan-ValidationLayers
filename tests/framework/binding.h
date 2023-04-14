@@ -1226,25 +1226,31 @@ struct GraphicsPipelineFromLibraries {
     VkPipelineLibraryCreateInfoKHR link_info;
     vk_testing::Pipeline pipe;
 
-    GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo *ci = nullptr)
-        : libs(libs) {
-        link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
-        link_info.libraryCount = static_cast<uint32_t>(libs.size());
-        link_info.pLibraries = libs.data();
+    GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkPipelineLayout layout)
+        : GraphicsPipelineFromLibraries(libs) {
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        exe_pipe_ci.layout = layout;
+        pipe.init(dev, exe_pipe_ci);
+        pipe.initialized();
+    }
 
-        if (ci) {
-            link_info.pNext = ci->pNext;
-            ci->pNext = &link_info;
-            pipe.init(dev, *ci);
-        } else {
-            auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
-            pipe.init(dev, exe_pipe_ci);
-        }
+    GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo &ci)
+        : GraphicsPipelineFromLibraries(libs) {
+        link_info.pNext = ci.pNext;
+        ci.pNext = &link_info;
+        pipe.init(dev, ci);
         pipe.initialized();
     }
 
     operator VkPipeline() const { return pipe.handle(); }
     operator bool() const { return pipe.initialized(); }
+
+  private:
+    GraphicsPipelineFromLibraries(vvl::span<VkPipeline> libs) : libs(libs) {
+        link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = static_cast<uint32_t>(libs.size());
+        link_info.pLibraries = libs.data();
+    }
 };
 
 }  // namespace vk_testing

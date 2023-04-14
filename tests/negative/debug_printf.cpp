@@ -574,7 +574,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, pipeline_layout.handle());
     ASSERT_TRUE(pipe);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -710,6 +710,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
 
         CreatePipelineHelper pre_raster_i64(*this);
         pre_raster_i64.InitPreRasterLibInfo(1, &pre_raster_i64_stage.stage_ci);
+        pre_raster_i64.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
         pre_raster_i64.gp_ci_.layout = pipeline_layout.handle();
         pre_raster_i64.gp_ci_.renderPass = render_pass;
         pre_raster_i64.gp_ci_.subpass = subpass;
@@ -722,7 +723,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
             frag_out.pipeline_,
         };
 
-        vk_testing::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64);
+        vk_testing::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64, pipeline_layout.handle());
         ASSERT_TRUE(pipe2);
 
         m_commandBuffer->begin(&begin_info);
@@ -893,7 +894,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
     ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
@@ -1052,7 +1053,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
         fragment.pipeline_,
         frag_out.pipeline_,
     };
-    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries, layout);
     ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
