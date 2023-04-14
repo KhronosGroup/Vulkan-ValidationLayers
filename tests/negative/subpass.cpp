@@ -49,7 +49,7 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
-    attach_desc.format = VK_FORMAT_UNDEFINED;
+    attach_desc.format = VK_FORMAT_R32_UINT;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -57,7 +57,7 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
     auto reference = LvlInitStruct<VkAttachmentReference2>();
     reference.attachment = 0;
     reference.layout = VK_IMAGE_LAYOUT_GENERAL;
-    reference.aspectMask = 0;
+    reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     auto subpass = LvlInitStruct<VkSubpassDescription2KHR>();
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -67,22 +67,28 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
 
     auto rpci2 = LvlInitStruct<VkRenderPassCreateInfo2KHR>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
+    // Valid
+    PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
+
+    attach_desc.format = VK_FORMAT_UNDEFINED;
+
+    reference.aspectMask = 0;
     // Test for aspect mask of 0
     m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-06698");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02800");
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02800"});
 
     // Test for invalid aspect mask bits
     reference.aspectMask = 0x40000000;  // invalid VkImageAspectFlagBits value
     m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-06698");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02799");
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02799"});
 
     // Test for invalid use of VK_IMAGE_ASPECT_METADATA_BIT
     reference.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetUnexpectedError("VUID-VkAttachmentDescription2-format-06698");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2-attachment-02801");
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02801"});
 }
 
 TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {

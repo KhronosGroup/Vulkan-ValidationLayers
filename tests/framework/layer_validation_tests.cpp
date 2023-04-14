@@ -270,28 +270,17 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     }
 }
 
-void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
-                                      const VkRenderPassCreateInfo2KHR *create_info) {
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    VkResult err;
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-
-    err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
-    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+void PositiveTestRenderPass2KHRCreate(const vk_testing::Device &device, const VkRenderPassCreateInfo2KHR &create_info) {
+    vk_testing::RenderPass rp(device, create_info, true);
 }
 
-void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
-                              const char *rp2_vuid) {
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    VkResult err;
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-
-    error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-    err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
-    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-    error_monitor->VerifyFound();
+void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vk_testing::Device &device,
+                              const VkRenderPassCreateInfo2KHR &create_info, const std::initializer_list<const char *> &vuids) {
+    for (auto vuid : vuids) {
+        error_monitor.SetDesiredFailureMsg(kErrorBit, vuid);
+    }
+    vk_testing::RenderPass rp(device, create_info, true);
+    error_monitor.VerifyFound();
 }
 
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
@@ -307,12 +296,10 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vk::ResetCommandBuffer(command_buffer, 0);
     }
     if (rp2Supported && rp2_vuid) {
-        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-        vkCmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
+        vk::CmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
         error_monitor->VerifyFound();
         vk::ResetCommandBuffer(command_buffer, 0);
 

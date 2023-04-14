@@ -1764,6 +1764,29 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             }
                         }
                     }
+
+                    if (IsImageLayoutDepthOnly(subpass.pDepthStencilAttachment->layout)) {
+                        if (LvlFindInChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext) == nullptr) {
+                            if (FormatIsDepthAndStencil(attachment_format)) {
+                                skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06244",
+                                                 "%s: pAttachments[%" PRIu32 "].format (%s) has both depth and stencil components.",
+                                                 function_name, attachment, string_VkFormat(attachment_format));
+                            }
+                        }
+                        if (FormatIsStencilOnly(attachment_format)) {
+                            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06246",
+                                             "%s: pAttachments[%" PRIu32 "].format (%s) only has a stencil component.",
+                                             function_name, attachment, string_VkFormat(attachment_format));
+                        }
+                    }
+
+                    if (IsImageLayoutStencilOnly(subpass.pDepthStencilAttachment->layout)) {
+                        if (!FormatIsStencilOnly(attachment_format)) {
+                            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-attachment-06245",
+                                             "%s: pAttachments[%" PRIu32 "].format (%s) does not only have a stencil component.",
+                                             function_name, attachment, string_VkFormat(attachment_format));
+                        }
+                    }
                 }
             }
         }
