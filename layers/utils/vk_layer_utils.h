@@ -503,9 +503,9 @@ constexpr uint32_t ResolveRemainingLayers(const VkImageCreateInfo &ci, VkImageSu
 
 // Find whether or not an element is in list
 // Two definitions, to be able to do the following calls:
-// IsIn(1, {1, 2, 3});
+// IsValueIn(1, {1, 2, 3});
 // std::array arr {1, 2, 3};
-// IsIn(1, arr);
+// IsValueIn(1, arr);
 template <typename T, typename RANGE>
 bool IsValueIn(const T &v, const RANGE &range) {
     return std::find(std::begin(range), std::end(range), v) != std::end(range);
