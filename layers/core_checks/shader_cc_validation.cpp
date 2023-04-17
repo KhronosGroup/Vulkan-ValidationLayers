@@ -2903,6 +2903,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         }
     }
 
+    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(create_info->pNext);
+        pipeline_robustness_info) {
+        std::stringstream parameter_name;
+        parameter_name << "pCreateInfos[" << pipeline.create_index << "]";
+        skip |= ValidatePipelineRobustnessCreateInfo(pipeline, parameter_name.str().c_str(), *pipeline_robustness_info);
+    }
+
     // Validate Push Constants use
     skip |= ValidatePushConstantUsage(pipeline, module_state, create_info);
     // can dereference because entrypoint is validated by here

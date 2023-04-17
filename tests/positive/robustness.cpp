@@ -95,3 +95,32 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     vkCmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, PipelineRobustnessRobustImageAccessExposed) {
+    TEST_DESCRIPTION("Check if VK_EXT_image_robustness is exposed feature doesn't need to be enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    // 1.3 exposes VK_EXT_image_robustness and the feature for us
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(pipeline_robustness_features);
+    if (!pipeline_robustness_features.pipelineRobustness) {
+        GTEST_SKIP() << "pipelineRobustness is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_robustness_features));
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
+    pipe.cp_ci_.pNext = &pipeline_robustness_info;
+    pipe.CreateComputePipeline();
+}

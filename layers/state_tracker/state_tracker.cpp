@@ -1099,6 +1099,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.robustness2_features = *robustness2_features;
         }
 
+        const auto *pipeline_robustness_features =
+            LvlFindInChain<VkPhysicalDevicePipelineRobustnessFeaturesEXT>(pCreateInfo->pNext);
+        if (pipeline_robustness_features) {
+            enabled_features.pipeline_robustness_features = *pipeline_robustness_features;
+        }
+
         const auto *fragment_density_map_features =
             LvlFindInChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
         if (fragment_density_map_features) {
@@ -1401,6 +1407,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         has_format_feature2 =
             (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
             phys_dev_extensions.find(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME) != phys_dev_extensions.end();
+
+        // feature is required if 1.3 or extension is supported
+        has_robust_image_access =
+            (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
+            phys_dev_extensions.find(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME) != phys_dev_extensions.end();
     }
 
     const auto &dev_ext = device_extensions;
