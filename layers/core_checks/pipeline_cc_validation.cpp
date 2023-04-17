@@ -376,7 +376,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
 
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
     if (pipeline.pre_raster_state && !pipeline.fragment_shader_state &&
-        ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
+        FragmentShaderState::ValidShaderStages(pipeline.create_info_shaders)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
                          "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
                          "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
@@ -429,7 +429,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
         }
 
         if (pipeline.fragment_shader_state && !pipeline.pre_raster_state &&
-            ((pipeline.create_info_shaders & PreRasterState::ValidShaderStages()) != 0)) {
+            PreRasterState::ValidShaderStages(pipeline.create_info_shaders)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895",
                              "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
                              "] does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
@@ -773,7 +773,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                         // Null DSL at pSetLayouts[i] in pre-raster state. Make sure that shader bindings in corresponding DSL in
                         // fragment shader state do not overlap.
                         for (const auto &fs_binding : fs_dsl->GetBindings()) {
-                            if (fs_binding.stageFlags & (PreRasterState::ValidShaderStages())) {
+                            if (PreRasterState::ValidShaderStages(fs_binding.stageFlags)) {
                                 const auto pre_raster_layout_handle_str =
                                     report_data->FormatHandle(pre_raster_flags.second.layout_state->Handle());
                                 const auto fs_layout_handle_str = report_data->FormatHandle(fs_flags.second.layout_state->Handle());
@@ -817,7 +817,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const PIPELINE_STATE &pipeline)
                         // Null DSL at pSetLayouts[i] in FS state. Make sure that shader bindings in corresponding DSL in pre-raster
                         // state do not overlap.
                         for (const auto &pre_raster_binding : pre_raster_dsl->GetBindings()) {
-                            if (pre_raster_binding.stageFlags & (FragmentShaderState::ValidShaderStages())) {
+                            if (FragmentShaderState::ValidShaderStages(pre_raster_binding.stageFlags)) {
                                 const auto pre_raster_layout_handle_str =
                                     report_data->FormatHandle(pre_raster_flags.second.layout_state->Handle());
                                 const auto fs_layout_handle_str = report_data->FormatHandle(fs_flags.second.layout_state->Handle());
@@ -1524,7 +1524,7 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
     // Only validate once during creation
     if (pipeline.OwnsSubState(pipeline.pre_raster_state)) {
         const VkShaderStageFlags stages = pipeline.create_info_shaders;
-        if ((stages & PreRasterState::ValidShaderStages()) == 0) {
+        if (!PreRasterState::ValidShaderStages(stages)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
                              "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
                              "] contains pre-raster state, but stages (%s) does not contain any pre-raster shaders.",

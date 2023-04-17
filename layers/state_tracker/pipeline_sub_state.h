@@ -68,9 +68,11 @@ struct PreRasterState : public PipelineSubState {
     PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
                    const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp);
 
-    static inline VkShaderStageFlags ValidShaderStages() {
-        return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-               VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+    static inline bool ValidShaderStages(VkShaderStageFlags flags) {
+        constexpr VkShaderStageFlags valid_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                                   VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT |
+                                                   VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+        return (flags & valid_flags) == flags;
     }
 
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
@@ -122,7 +124,10 @@ struct FragmentShaderState : public PipelineSubState {
         FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info);
     }
 
-    static inline VkShaderStageFlags ValidShaderStages() { return VK_SHADER_STAGE_FRAGMENT_BIT; }
+    static inline bool ValidShaderStages(VkShaderStageFlags flags) {
+        constexpr VkShaderStageFlags valid_flags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        return (flags & valid_flags) == flags;
+    }
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     uint32_t subpass = 0;
