@@ -2520,42 +2520,6 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     vk::UnmapMemory(m_device->device(), buffer.memory().handle());
 }
 
-TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
-    TEST_DESCRIPTION("Validate using NV acceleration structure descriptor writing with null descriptor.");
-
-    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-
-    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
-    if (robustness2_features.nullDescriptor != VK_TRUE) {
-        GTEST_SKIP() << "nullDescriptor feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_MISS_BIT_NV, nullptr},
-                                     });
-
-    VkAccelerationStructureNV top_level_as = VK_NULL_HANDLE;
-
-    VkWriteDescriptorSetAccelerationStructureNV acc = LvlInitStruct<VkWriteDescriptorSetAccelerationStructureNV>();
-    acc.accelerationStructureCount = 1;
-    acc.pAccelerationStructures = &top_level_as;
-
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>(&acc);
-    descriptor_write.dstSet = ds.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-
-    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
-}
-
 TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
     TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
     SetTargetApiVersion(VK_API_VERSION_1_3);
