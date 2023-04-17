@@ -104,6 +104,21 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/gpu_validation/gpu_utils.cpp
         ${SRC_DIR}/layers/gpu_validation/debug_printf.cpp
         ${SRC_DIR}/layers/best_practices/best_practices_utils.cpp
+        ${SRC_DIR}/layers/best_practices/bp_buffer.cpp
+        ${SRC_DIR}/layers/best_practices/bp_cmd_buffer.cpp
+        ${SRC_DIR}/layers/best_practices/bp_copy_blit_resolve.cpp
+        ${SRC_DIR}/layers/best_practices/bp_descriptor.cpp
+        ${SRC_DIR}/layers/best_practices/bp_device_memory.cpp
+        ${SRC_DIR}/layers/best_practices/bp_drawdispatch.cpp
+        ${SRC_DIR}/layers/best_practices/bp_framebuffer.cpp
+        ${SRC_DIR}/layers/best_practices/bp_image.cpp
+        ${SRC_DIR}/layers/best_practices/bp_instance_device.cpp
+        ${SRC_DIR}/layers/best_practices/bp_pipeline.cpp
+        ${SRC_DIR}/layers/best_practices/bp_ray_tracing.cpp
+        ${SRC_DIR}/layers/best_practices/bp_render_pass.cpp
+        ${SRC_DIR}/layers/best_practices/bp_synchronization.cpp
+        ${SRC_DIR}/layers/best_practices/bp_video.cpp
+        ${SRC_DIR}/layers/best_practices/bp_wsi.cpp
         ${SRC_DIR}/layers/sync/sync_utils.cpp
         ${SRC_DIR}/layers/sync/sync_vuid_maps.cpp
         ${SRC_DIR}/layers/error_message/core_error_location.cpp

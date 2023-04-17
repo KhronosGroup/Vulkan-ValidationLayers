@@ -152,6 +152,21 @@ add_library(VkLayer_khronos_validation MODULE)
 target_sources(VkLayer_khronos_validation PRIVATE
     best_practices/best_practices_error_enums.h
     best_practices/best_practices_utils.cpp
+    best_practices/bp_buffer.cpp
+    best_practices/bp_cmd_buffer.cpp
+    best_practices/bp_copy_blit_resolve.cpp
+    best_practices/bp_descriptor.cpp
+    best_practices/bp_device_memory.cpp
+    best_practices/bp_drawdispatch.cpp
+    best_practices/bp_framebuffer.cpp
+    best_practices/bp_image.cpp
+    best_practices/bp_instance_device.cpp
+    best_practices/bp_pipeline.cpp
+    best_practices/bp_ray_tracing.cpp
+    best_practices/bp_render_pass.cpp
+    best_practices/bp_synchronization.cpp
+    best_practices/bp_video.cpp
+    best_practices/bp_wsi.cpp
     best_practices/best_practices_validation.h
     containers/qfo_transfer.h
     containers/range_vector.h
