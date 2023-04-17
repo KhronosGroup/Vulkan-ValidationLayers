@@ -1134,7 +1134,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                                                       const char *binding_table_name) const {
     bool skip = false;
 
-    if (binding_table.deviceAddress == 0) {
+    if (binding_table.deviceAddress == 0 || binding_table.size == 0) {
         return skip;
     }
 
@@ -1174,16 +1174,14 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              }},
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04631",
-             [&binding_table, &requested_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                 if (binding_table.size != 0) {
-                     const auto buffer_address_range = buffer_state->DeviceAddressRange();
-                     if (!buffer_address_range.includes(requested_range)) {
-                         if (out_error_msg) {
-                             const std::string buffer_address_range_string = string_range_hex(buffer_address_range);
-                             *out_error_msg += "buffer device address range is " + buffer_address_range_string + '\n';
-                         }
-                         return false;
+             [&requested_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                 const auto buffer_address_range = buffer_state->DeviceAddressRange();
+                 if (!buffer_address_range.includes(requested_range)) {
+                     if (out_error_msg) {
+                         const std::string buffer_address_range_string = string_range_hex(buffer_address_range);
+                         *out_error_msg += "buffer device address range is " + buffer_address_range_string + '\n';
                      }
+                     return false;
                  }
 
                  return true;
@@ -1195,7 +1193,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
             {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
              [&binding_table](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
-                 if (binding_table.size != 0 && binding_table.stride > buffer_state->createInfo.size) {
+                 if (binding_table.stride > buffer_state->createInfo.size) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer size is " + std::to_string(buffer_state->createInfo.size) + '\n';
                      }
