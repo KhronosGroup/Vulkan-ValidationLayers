@@ -254,6 +254,13 @@ bool CoreChecks::ValidatePipeline(const PIPELINE_STATE &pipeline) const {
                              pipeline.create_index, attachment_sample_count_info->depthStencilAttachmentSamples);
         }
     }
+
+    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pipeline.PNext());
+        pipeline_robustness_info) {
+        std::stringstream parameter_name;
+        parameter_name << "vkCreateGraphicsPipelines(): pCreateInfos[" << pipeline.create_index << "]";
+        skip |= ValidatePipelineRobustnessCreateInfo(pipeline, parameter_name.str().c_str(), *pipeline_robustness_info);
+    }
     return skip;
 }
 
@@ -1026,6 +1033,61 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         skip |= ValidateShaderModuleId(*pipeline);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateComputePipelines",
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+
+        if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
+            pipeline_robustness_info) {
+            std::stringstream parameter_name;
+            parameter_name << "vkCreateComputePipelines(): pCreateInfos[" << i << "]";
+            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, parameter_name.str().c_str(), *pipeline_robustness_info);
+        }
+    }
+    return skip;
+}
+
+// This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
+bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const PIPELINE_STATE &pipeline, const char *parameter_name,
+                                                      const VkPipelineRobustnessCreateInfoEXT &create_info) const {
+    bool skip = false;
+
+    if (!enabled_features.pipeline_robustness_features.pipelineRobustness) {
+        if (create_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(pipeline.pipeline(), "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926",
+                             "%s "
+                             "has VkPipelineRobustnessCreateInfoEXT::storageBuffers == %s "
+                             "but the pipelineRobustness feature is not enabled.",
+                             parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.storageBuffers));
+        }
+        if (create_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(pipeline.pipeline(), "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06927",
+                             "%s "
+                             "has VkPipelineRobustnessCreateInfoEXT::uniformBuffers == %s "
+                             "but the pipelineRobustness feature is not enabled.",
+                             parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.uniformBuffers));
+        }
+        if (create_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(pipeline.pipeline(), "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06928",
+                             "%s "
+                             "has VkPipelineRobustnessCreateInfoEXT::vertexInputs == %s "
+                             "but the pipelineRobustness feature is not enabled.",
+                             parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.vertexInputs));
+        }
+        if (create_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(pipeline.pipeline(), "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06929",
+                             "%s "
+                             "has VkPipelineRobustnessCreateInfoEXT::images == %s "
+                             "but the pipelineRobustness feature is not enabled.",
+                             parameter_name, string_VkPipelineRobustnessImageBehaviorEXT(create_info.images));
+        }
+    }
+
+    // These validation depend if the features are exposed (not just enabled)
+    if (!has_robust_image_access && create_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT) {
+        skip |= LogError(pipeline.pipeline(), "VUID-VkPipelineRobustnessCreateInfoEXT-robustImageAccess-06930",
+                         "%s "
+                         "has VkPipelineRobustnessCreateInfoEXT::images == "
+                         "VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT "
+                         "but robustImageAccess2 is not supported.",
+                         parameter_name);
     }
     return skip;
 }
@@ -1094,6 +1156,13 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
 
     for (auto &stage_state : pipeline.stage_states) {
         skip |= ValidatePipelineShaderStage(pipeline, stage_state);
+    }
+
+    if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(create_info.pNext);
+        pipeline_robustness_info) {
+        std::stringstream parameter_name;
+        parameter_name << "vkCreateRayTracingPipelinesKHR(): pCreateInfos[" << pipeline.create_index << "]";
+        skip |= ValidatePipelineRobustnessCreateInfo(pipeline, parameter_name.str().c_str(), *pipeline_robustness_info);
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {

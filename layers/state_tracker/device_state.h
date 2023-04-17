@@ -50,6 +50,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features;
     VkPhysicalDeviceAccelerationStructureFeaturesKHR ray_tracing_acceleration_structure_features;
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
+    VkPhysicalDevicePipelineRobustnessFeaturesEXT pipeline_robustness_features;
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT fragment_density_map2_features;
     VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM fragment_density_map_offset_features;

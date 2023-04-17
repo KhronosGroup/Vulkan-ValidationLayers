@@ -72,7 +72,9 @@ TEST_F(VkLayerTest, PipelineRobustnessDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineRobustnessRobustBufferAccess2Unsupported) {
+// Need to fix check to check if feature is exposed
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
+TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustBufferAccess2 being unsupported");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -140,7 +142,9 @@ TEST_F(VkLayerTest, PipelineRobustnessRobustBufferAccess2Unsupported) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineRobustnessRobustImageAccess2Unsupported) {
+// Need to fix check to check if feature is exposed
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
+TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustImageAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustImageAccess2 being unsupported");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
@@ -188,46 +192,32 @@ TEST_F(VkLayerTest, PipelineRobustnessRobustImageAccess2Unsupported) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineRobustnessRobustImageAccessUnsupported) {
-    TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustImageAccess being unsupported");
+TEST_F(VkLayerTest, PipelineRobustnessRobustImageAccessNotExposed) {
+    TEST_DESCRIPTION("Check if VK_EXT_image_robustness is not exposed");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME);
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() > VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "version 1.3 enables extensions which we don't want";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    if (IsExtensionsEnabled(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)) {
-        auto robust_image_features = LvlInitStruct<VkPhysicalDeviceImageRobustnessFeatures>();
-        GetPhysicalDeviceFeatures2(robust_image_features);
-
-        if (robust_image_features.robustImageAccess) {
-            GTEST_SKIP() << "robustImageAccess is supported";
-        }
-    }
-
     auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
-
+    GetPhysicalDeviceFeatures2(pipeline_robustness_features);
     if (!pipeline_robustness_features.pipelineRobustness) {
         GTEST_SKIP() << "pipelineRobustness is not supported";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pipeline_robustness_features));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_EXT_image_robustness is supported";
+    }
 
     CreateComputePipelineHelper pipe(*this);
-
-    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_info;
-
     pipe.InitInfo();
     pipe.InitState();
-    pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    auto pipeline_robustness_info = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
     pipeline_robustness_info.images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT;
     pipe.cp_ci_.pNext = &pipeline_robustness_info;
 

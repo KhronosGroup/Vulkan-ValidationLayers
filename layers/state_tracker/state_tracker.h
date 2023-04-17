@@ -1528,10 +1528,16 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<VkExportMetalObjectTypeFlagBitsEXT> export_metal_flags;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-    // VK_KHR_format_feature_flags2 changes the behavior of the
-    // app/layers/spec if present. So it needs its own special boolean unlike
-    // the enabled_fatures.
-    bool has_format_feature2;
+    // Some extensions/features changes the behavior of the app/layers/spec if present.
+    // So it needs its own special boolean unlike the enabled_fatures.
+    bool has_format_feature2;  // VK_KHR_format_feature_flags2
+    // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions
+    // Enabling the other robustness features can reduce performance on GPU, so just the
+    // support is needed to check
+    bool has_robust_image_access;  // VK_EXT_image_robustness
+    // TODO - Issue 5657
+    // bool has_robust_image_access2;  // VK_EXT_robustness2
+    // bool has_robust_buffer_access2; // VK_EXT_robustness2
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
     struct DeviceExtensionProperties {

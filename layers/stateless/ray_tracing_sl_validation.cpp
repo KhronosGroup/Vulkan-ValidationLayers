@@ -653,14 +653,6 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 }
             }
         }
-
-        if (const auto *pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
-            pipeline_robustness_info) {
-            std::stringstream parameter_name;
-            parameter_name << "pCreateInfos[" << i << "]";
-            skip |= ValidatePipelineRobustnessCreateInfo("vkCreateRayTracingPipelinesKHR", parameter_name.str().c_str(),
-                                                         *pipeline_robustness_info);
-        }
     }
 
     return skip;
