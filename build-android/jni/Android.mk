@@ -183,6 +183,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/other.cpp \
                    $(SRC_DIR)/tests/positive/pipeline.cpp \
                    $(SRC_DIR)/tests/positive/render_pass.cpp \
+                   $(SRC_DIR)/tests/positive/robustness.cpp \
                    $(SRC_DIR)/tests/positive/shaderval.cpp \
                    $(SRC_DIR)/tests/positive/sync.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
@@ -267,6 +268,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/other.cpp \
                    $(SRC_DIR)/tests/positive/pipeline.cpp \
                    $(SRC_DIR)/tests/positive/render_pass.cpp \
+                   $(SRC_DIR)/tests/positive/robustness.cpp \
                    $(SRC_DIR)/tests/positive/shaderval.cpp \
                    $(SRC_DIR)/tests/positive/sync.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \

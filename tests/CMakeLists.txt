@@ -61,6 +61,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/ray_tracing.cpp
     positive/ray_tracing_pipeline.cpp
     positive/render_pass.cpp
+    positive/robustness.cpp
     positive/shaderval.cpp
     positive/sync.cpp
     positive/sync_val.cpp
