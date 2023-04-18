@@ -16,7 +16,7 @@
  **************************************************************************/
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 #include "vulkan/vk_layer.h"
@@ -32,41 +32,37 @@
 
 std::string GetEnvironment(const char *variable);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef enum {
+enum SettingsFileSource {
     kVkConfig,
     kEnvVar,
     kLocal,
-} SettingsFileSource;
+};
 
-typedef struct SettingsFileInfo {
+struct SettingsFileInfo {
     bool file_found = false;
     std::string location{};
     SettingsFileSource source = kLocal;
-} SettingsFileInfo;
+};
 
-typedef enum {
+enum LogMessageTypeBits {
     kInformationBit = 0x00000001,
     kWarningBit = 0x00000002,
     kPerformanceWarningBit = 0x00000004,
     kErrorBit = 0x00000008,
     kDebugBit = 0x00000010,
-} LogMessageTypeBits;
-typedef VkFlags LogMessageTypeFlags;
+};
+using LogMessageTypeFlags = VkFlags;
 
 // Definitions for Debug Actions
-typedef enum VkLayerDbgActionBits {
+enum VkLayerDbgActionBits {
     VK_DBG_LAYER_ACTION_IGNORE = 0x00000000,
     VK_DBG_LAYER_ACTION_CALLBACK = 0x00000001,
     VK_DBG_LAYER_ACTION_LOG_MSG = 0x00000002,
     VK_DBG_LAYER_ACTION_BREAK = 0x00000004,
     VK_DBG_LAYER_ACTION_DEBUG_OUTPUT = 0x00000008,
     VK_DBG_LAYER_ACTION_DEFAULT = 0x40000000,
-} VkLayerDbgActionBits;
-typedef VkFlags VkLayerDbgActionFlags;
+};
+using VkLayerDbgActionFlags = VkFlags;
 
 const char *getLayerOption(const char *option);
 const char *GetLayerEnvVar(const char *option);
@@ -81,7 +77,3 @@ void setLayerOption(const char *option, const char *val);
 void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
 void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
 void PrintMessageType(VkFlags vk_flags, char *msg_flags);
-
-#ifdef __cplusplus
-}
-#endif
