@@ -463,7 +463,28 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const RENDER_PASS_STATE> &rp);
 
-    static bool EnablesRasterizationStates(const safe_VkGraphicsPipelineCreateInfo &create_info);
+    template <typename PRState>
+    static bool EnablesRasterizationStates(const PRState pre_raster_state) {
+        if (!pre_raster_state) {
+            // Assume rasterization is enabled if we don't know for sure that it is disabled
+            return true;
+        }
+
+        const auto &create_info = pre_raster_state->parent.create_info.graphics;
+        if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
+            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
+                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                    return create_info.pRasterizationState != nullptr;
+                }
+            }
+        }
+
+        if (create_info.pRasterizationState) {
+            return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
+        } else {
+            return false;
+        }
+    }
 
     // Merged layouts
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> merged_graphics_layout;

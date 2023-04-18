@@ -298,22 +298,17 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
     const auto lib_type = GetGraphicsLibType(create_info);
 
     if (lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {  // Fragment shader graphics library
-        if (!EnablesRasterizationStates(safe_create_info)) {
-            return {};
-        }
         return std::make_shared<FragmentShaderState>(p, state, create_info, rp);
     }
 
     if (p.library_create_info) {
         auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(state, *p.library_create_info);
-        if (ss) {
+        if (ss && EnablesRasterizationStates(p.pre_raster_state)) {
             return ss;
         }
     } else {
-        if (lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) {  // Not a graphics library
-            if (!EnablesRasterizationStates(safe_create_info)) {
-                return {};
-            }
+        if ((lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) &&  // Not a graphics library
+            EnablesRasterizationStates(p.pre_raster_state)) {
             // No fragment shader _should_ imply no fragment shader state, however, for historical (GL) reasons, a pipeline _can_
             // be created with a VS but no FS and still have valid fragment shader state.
             // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/3178 for more details.
@@ -321,24 +316,8 @@ std::shared_ptr<FragmentShaderState> PIPELINE_STATE::CreateFragmentShaderState(
         }
     }
 
-    // We shouldn't get here...
+    // The conditions for containing FS state were not met, so return null
     return {};
-}
-
-bool PIPELINE_STATE::EnablesRasterizationStates(const safe_VkGraphicsPipelineCreateInfo &create_info) {
-    if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
-        for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
-            if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
-                return create_info.pRasterizationState != nullptr;
-            }
-        }
-    }
-
-    if (create_info.pRasterizationState) {
-        return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
-    } else {
-        return false;
-    }
 }
 
 // static
@@ -358,14 +337,14 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
         auto ss = GetLibSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT>(state, *p.library_create_info);
         // If this pipeline is linking in a library that contains FO state, check to see if the FO state is valid before creating it
         // for this pipeline
-        if (ss && EnablesRasterizationStates(ss->parent.create_info.graphics)) {
+        if (ss && EnablesRasterizationStates(p.pre_raster_state)) {
             return ss;
         }
     } else {
         // This is a complete pipeline that does not link to any graphics libraries. Check its create info to see if it has valid FO
         // state
-        if ((lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) &&
-            EnablesRasterizationStates(safe_create_info)) {  // Not a graphics library
+        if ((lib_type == static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0)) &&  // Not a graphics library
+            EnablesRasterizationStates(p.pre_raster_state)) {
             return std::make_shared<FragmentOutputState>(p, safe_create_info, rp);
         }
     }
