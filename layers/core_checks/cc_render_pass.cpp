@@ -1481,20 +1481,13 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
                                                        : "VUID-VkSubpassDescription-pInputAttachments-02647";
-                            skip |= LogError(
-                                device, vuid,
-                                "%s: Input attachment %s format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
-                                "| VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            skip |= LogError(device, vuid, "%s: Input attachment %s format (%s) lacks sufficient format features.",
+                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
                         } else if ((format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06499"
                                                        : "VUID-VkSubpassDescription-linearColorAttachment-06496";
-                            skip |= LogError(
-                                device, vuid,
-                                "%s: Input attachment %s format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
-                                "| VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT | "
-                                "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
-                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            skip |= LogError(device, vuid, "%s: Input attachment %s format (%s) lacks sufficient format features.",
+                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
                         }
                     }
                 }
