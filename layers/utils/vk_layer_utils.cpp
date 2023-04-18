@@ -97,6 +97,20 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     debug_action_key.append(".debug_action");
     log_filename_key.append(".log_filename");
 
+    const vvl::unordered_map<std::string, VkFlags> debug_actions_option_definitions = {
+        {std::string("VK_DBG_LAYER_ACTION_IGNORE"), VK_DBG_LAYER_ACTION_IGNORE},
+        {std::string("VK_DBG_LAYER_ACTION_CALLBACK"), VK_DBG_LAYER_ACTION_CALLBACK},
+        {std::string("VK_DBG_LAYER_ACTION_LOG_MSG"), VK_DBG_LAYER_ACTION_LOG_MSG},
+        {std::string("VK_DBG_LAYER_ACTION_BREAK"), VK_DBG_LAYER_ACTION_BREAK},
+        {std::string("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT"), VK_DBG_LAYER_ACTION_DEBUG_OUTPUT},
+        {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
+
+    const vvl::unordered_map<std::string, VkFlags> log_msg_type_option_definitions = {{std::string("warn"), kWarningBit},
+                                                                                      {std::string("info"), kInformationBit},
+                                                                                      {std::string("perf"), kPerformanceWarningBit},
+                                                                                      {std::string("error"), kErrorBit},
+                                                                                      {std::string("debug"), kDebugBit}};
+
     // Initialize layer options
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);

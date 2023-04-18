@@ -68,29 +68,6 @@ typedef enum VkLayerDbgActionBits {
 } VkLayerDbgActionBits;
 typedef VkFlags VkLayerDbgActionFlags;
 
-const vvl::unordered_map<std::string, VkFlags> debug_actions_option_definitions = {
-    {std::string("VK_DBG_LAYER_ACTION_IGNORE"), VK_DBG_LAYER_ACTION_IGNORE},
-    {std::string("VK_DBG_LAYER_ACTION_CALLBACK"), VK_DBG_LAYER_ACTION_CALLBACK},
-    {std::string("VK_DBG_LAYER_ACTION_LOG_MSG"), VK_DBG_LAYER_ACTION_LOG_MSG},
-    {std::string("VK_DBG_LAYER_ACTION_BREAK"), VK_DBG_LAYER_ACTION_BREAK},
-#if defined(WIN32)
-    {std::string("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT"), VK_DBG_LAYER_ACTION_DEBUG_OUTPUT},
-#endif
-    {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
-
-const vvl::unordered_map<std::string, VkFlags> report_flags_option_definitions = {
-    {std::string("warn"), VK_DEBUG_REPORT_WARNING_BIT_EXT},
-    {std::string("info"), VK_DEBUG_REPORT_INFORMATION_BIT_EXT},
-    {std::string("perf"), VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT},
-    {std::string("error"), VK_DEBUG_REPORT_ERROR_BIT_EXT},
-    {std::string("debug"), VK_DEBUG_REPORT_DEBUG_BIT_EXT}};
-
-const vvl::unordered_map<std::string, VkFlags> log_msg_type_option_definitions = {{std::string("warn"), kWarningBit},
-                                                                                  {std::string("info"), kInformationBit},
-                                                                                  {std::string("perf"), kPerformanceWarningBit},
-                                                                                  {std::string("error"), kErrorBit},
-                                                                                  {std::string("debug"), kDebugBit}};
-
 const char *getLayerOption(const char *option);
 const char *GetLayerEnvVar(const char *option);
 const SettingsFileInfo *GetLayerSettingsFileInfo();
