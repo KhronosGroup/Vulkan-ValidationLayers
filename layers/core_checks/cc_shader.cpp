@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "shader_cc_validation.h"
+#include "cc_shader.h"
 
 #include <cassert>
 #include <cinttypes>

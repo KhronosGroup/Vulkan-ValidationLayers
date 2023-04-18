@@ -25,7 +25,7 @@
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
 #include "core_validation.h"
-#include "buffer_address_cc_validation.h"
+#include "cc_buffer_address.h"
 
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE *mem_info,
                                                                 VkDeviceSize mem_offset, const char *api_name) const {

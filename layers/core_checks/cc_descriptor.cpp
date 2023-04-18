@@ -21,7 +21,7 @@
 #include "error_message/validation_error_enums.h"
 #include "core_validation.h"
 #include "state_tracker/descriptor_sets.h"
-#include "buffer_address_cc_validation.h"
+#include "cc_buffer_address.h"
 #include "generated/spirv_grammar_helper.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
