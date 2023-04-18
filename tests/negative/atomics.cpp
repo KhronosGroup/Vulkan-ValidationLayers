@@ -439,6 +439,81 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime32) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, ShaderImageAtomicInt64Mesh32) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view in Mesh shaders.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(&mesh_shader_features);
+    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt64 feature not supported";
+    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
+        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
+    } else if (mesh_shader_features.meshShader == VK_FALSE) {
+        GTEST_SKIP() << "Mesh shader feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    const char *mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        layout(set = 0, binding = 0, r32ui) uniform uimage2D z;
+
+        void main() {
+            SetMeshOutputsEXT(3,1);
+            uint y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
+    pipe.gp_ci_.pVertexInputState = nullptr;
+    pipe.gp_ci_.pInputAssemblyState = nullptr;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // "64-bit integer atomic support is guaranteed for optimally tiled images with the VK_FORMAT_R64_UINT"
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_R64_UINT);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-SampledType-04470");
+    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ShaderAtomicFloat) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
