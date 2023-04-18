@@ -39,7 +39,6 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 
 [[maybe_unused]] static const char *kVUID_Core_Shader_InterfacePatchVertex = "UNASSIGNED-CoreValidation-Shader-InterfacePatchVertex";
-[[maybe_unused]] static const char *kVUID_Core_Shader_AtomicFeature = "UNASSIGNED-CoreValidation-Shader-AtomicFeature";
 [[maybe_unused]] static const char *kVUID_Core_Shader_BuiltinMismatch = "UNASSIGNED-CoreValidation-Shader-BuiltinMismatch";
 
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";

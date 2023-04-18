@@ -1466,19 +1466,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                                      atomic_def->Describe().c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderBufferFloat16AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
                                          "%s: Can't use 16-bit float atomics for add operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat16AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float_features.shaderBufferFloat32AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for add operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat32AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float_features.shaderBufferFloat64AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for add operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat64AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1486,19 +1486,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                     }
                 } else if (opcode == spv::OpAtomicFMinEXT || opcode == spv::OpAtomicFMaxEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderBufferFloat16AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
                                          "%s: Can't use 16-bit float atomics for min/max operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat16AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float2_features.shaderBufferFloat32AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for min/max operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat32AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float2_features.shaderBufferFloat64AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for min/max operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat64AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1507,19 +1507,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                 } else {
                     // Assume is valid load/store/exchange (rest of supported atomic operations) or else spirv-val will catch
                     if ((atomic.bit_width == 16) && (float2_features.shaderBufferFloat16Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 16-bit float atomics for load/store/exhange operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat16Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float_features.shaderBufferFloat32Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for load/store/exhange operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat32Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float_features.shaderBufferFloat64Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for load/store/exhange operations\n%s\nwith "
                                          "StorageBuffer storage class without shaderBufferFloat64Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1540,19 +1540,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                         report_data->FormatHandle(module_state.vk_shader_module()).c_str(), atomic_def->Describe().c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderSharedFloat16AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
                                          "%s: Can't use 16-bit float atomics for add operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat16AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float_features.shaderSharedFloat32AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for add operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat32AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float_features.shaderSharedFloat64AtomicAdd == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for add operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat64AtomicAdd enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1560,19 +1560,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                     }
                 } else if (opcode == spv::OpAtomicFMinEXT || opcode == spv::OpAtomicFMaxEXT) {
                     if ((atomic.bit_width == 16) && (float2_features.shaderSharedFloat16AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
                                          "%s: Can't use 16-bit float atomics for min/max operations\n%s\nwith "
                                          "Workgroup storage class without shaderSharedFloat16AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float2_features.shaderSharedFloat32AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for min/max operations\n%s\nwith "
                                          "Workgroup storage class without shaderSharedFloat32AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float2_features.shaderSharedFloat64AtomicMinMax == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for min/max operations\n%s\nwith "
                                          "Workgroup storage class without shaderSharedFloat64AtomicMinMax enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1581,19 +1581,19 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                 } else {
                     // Assume is valid load/store/exchange (rest of supported atomic operations) or else spirv-val will catch
                     if ((atomic.bit_width == 16) && (float2_features.shaderSharedFloat16Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06337",
                                          "%s: Can't use 16-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat16Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 32) && (float_features.shaderSharedFloat32Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06338",
                                          "%s: Can't use 32-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat32Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                          atomic_def->Describe().c_str());
                     } else if ((atomic.bit_width == 64) && (float_features.shaderSharedFloat64Atomics == VK_FALSE)) {
-                        skip |= LogError(device, kVUID_Core_Shader_AtomicFeature,
+                        skip |= LogError(device, "VUID-RuntimeSpirv-None-06339",
                                          "%s: Can't use 64-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
                                          "storage class without shaderSharedFloat64Atomics enabled.",
                                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
