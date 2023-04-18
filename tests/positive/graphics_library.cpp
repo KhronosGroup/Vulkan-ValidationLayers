@@ -948,3 +948,138 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) 
         ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
     }
 }
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, DepthState) {
+    TEST_DESCRIPTION("Create a GPL with depth state");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    bool ext_dyn_state2 = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+
+    auto dyn_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    if (ext_dyn_state2) {
+        gpl_features.pNext = &dyn_state2_features;
+    }
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    ext_dyn_state2 = ext_dyn_state2 && dyn_state2_features.extendedDynamicState2;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    CreatePipelineHelper fs_lib(*this);
+    {
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        ds_ci.stencilTestEnable = VK_FALSE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+        fs_lib.InitState();
+        fs_lib.gp_ci_.pDepthStencilState = &ds_ci;
+        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
+    }
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(true, false));
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+
+    // Create a GPL and subpass that utilizes depth
+    {
+        CreatePipelineHelper pr_lib(*this);
+        {
+            const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+            vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+            pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
+            pr_lib.InitState();
+            ASSERT_VK_SUCCESS(pr_lib.CreateGraphicsPipeline());
+        }
+
+        VkPipeline libraries[4] = {
+            vi_lib.pipeline_,
+            pr_lib.pipeline_,
+            fs_lib.pipeline_,
+            fo_lib.pipeline_,
+        };
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size32(libraries);
+        link_info.pLibraries = libraries;
+
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        ASSERT_TRUE(exe_pipe.initialized());
+    }
+
+    // Create a GPL and subpass that utilizes depth, but specifies rasterizerDiscardEnabled dynamically
+
+    if (ext_dyn_state2) {
+        CreatePipelineHelper pr_lib(*this);
+        {
+            const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+            vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+            pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
+            pr_lib.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;  // This should get ignored due to its state being set as dynamic
+            pr_lib.InitState();
+            VkDynamicState dynamic_state = VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT;
+            VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+            dynamic_create_info.pDynamicStates = &dynamic_state;
+            dynamic_create_info.dynamicStateCount = 1;
+            pr_lib.gp_ci_.pDynamicState = &dynamic_create_info;
+            pr_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
+            ASSERT_VK_SUCCESS(pr_lib.CreateGraphicsPipeline(true, false));
+        }
+
+        VkPipeline libraries[4] = {
+            vi_lib.pipeline_,
+            pr_lib.pipeline_,
+            fs_lib.pipeline_,
+            fo_lib.pipeline_,
+        };
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size32(libraries);
+        link_info.pLibraries = libraries;
+
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        ASSERT_TRUE(exe_pipe.initialized());
+    }
+}
