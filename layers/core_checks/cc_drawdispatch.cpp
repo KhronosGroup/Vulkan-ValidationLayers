@@ -19,7 +19,7 @@
 
 #include "generated/chassis.h"
 #include "core_validation.h"
-#include "buffer_address_cc_validation.h"
+#include "cc_buffer_address.h"
 
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
