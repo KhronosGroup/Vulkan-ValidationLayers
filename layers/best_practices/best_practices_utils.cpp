@@ -820,8 +820,7 @@ void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result) c
 
     // While the result is successful, users may still want this information. Since it may be unexpected.
     if (result > VK_SUCCESS) {
-        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
-                result_string);
+        LogDebug(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned successful value %s.", api_name, result_string);
         return;
     }
 
@@ -1533,12 +1532,12 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
         }
         if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
             skip |=
-                LogWarning(device, kVUID_BestPractices_SemaphoreCount,
+                LogDebug(device, kVUID_BestPractices_SemaphoreCount,
                            "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.",
                            submit, submit);
         }
         if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            skip |= LogWarning(device, kVUID_BestPractices_SemaphoreCount,
+            skip |= LogDebug(device, kVUID_BestPractices_SemaphoreCount,
                                "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.",
                                submit, submit);
         }

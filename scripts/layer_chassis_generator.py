@@ -446,6 +446,14 @@ class ValidationObject {
             return result;
         }
 
+        bool DECORATE_PRINTF(4, 5) LogDebug(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
+            va_list argptr;
+            va_start(argptr, format);
+            const bool result = LogMsg(report_data, kDebugBit, objlist, vuid_text, format, argptr);
+            va_end(argptr);
+            return result;
+        }
+
         void LogInternalError(std::string_view failure_location, const LogObjectList &obj_list,
                               std::string_view entrypoint, VkResult err) const {
             const std::string_view err_string = string_VkResult(err);
