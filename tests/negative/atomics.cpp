@@ -1012,6 +1012,74 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06282"});
 }
 
+TEST_F(VkLayerTest, ShaderAtomicFloat2WidthMismatch) {
+    TEST_DESCRIPTION("VK_EXT_shader_atomic_float2 but enable wrong bitwidth.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    auto features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();  // need maintenance4
+    auto atomic_float2_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(&features13);
+    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&atomic_float2_features);
+    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
+    GetPhysicalDeviceFeatures2(storage_16_bit_features);
+    if (!float16int8_features.shaderFloat16 || !storage_16_bit_features.storageBuffer16BitAccess ||
+        !atomic_float2_features.shaderBufferFloat16AtomicMinMax) {
+        GTEST_SKIP() << "Required float 16 atomic features not supported";
+    }
+    // turn off 32-bit support
+    atomic_float2_features.shaderBufferFloat32AtomicMinMax = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &storage_16_bit_features));
+
+    // clang-format off
+    std::string cs_buffer_float_16_min = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_atomic_float2 : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        #extension GL_EXT_shader_16bit_storage: enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        shared float16_t x;
+        layout(set = 0, binding = 0) buffer ssbo { float16_t y; };
+        void main() {
+           atomicMin(y, float16_t(1.0));
+        }
+    )glsl";
+
+    std::string cs_buffer_float_32_min = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_atomic_float2 : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float32 : enable
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        shared float32_t x;
+        layout(set = 0, binding = 0) buffer ssbo { float32_t y; };
+        void main() {
+           atomicMin(y, 1);
+        }
+    )glsl";
+    // clang-format on
+
+    const char *current_shader = nullptr;
+    const auto set_info = [this, &current_shader](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, current_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+
+    // shaderBufferFloat16AtomicMinMax - valid - everything enabled
+    current_shader = cs_buffer_float_16_min.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+
+    // shaderBufferFloat32AtomicMinMax - not enabled
+    current_shader = cs_buffer_float_32_min.c_str();
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, std::vector<string>{"VUID-RuntimeSpirv-None-06338"});
+}
+
 TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
