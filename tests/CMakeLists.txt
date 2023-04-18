@@ -14,16 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-include(GoogleTest) # gtest_discover_tests
-
-# GoogleTest is required for testing framework
-find_package(GTest REQUIRED CONFIG)
-
-# glslang is required for testing framework
-find_package(glslang CONFIG REQUIRED)
-
 add_executable(vk_layer_validation_tests)
-
 target_sources(vk_layer_validation_tests PRIVATE
     ${VVL_SOURCE_DIR}/layers/utils/convert_to_renderpass2.cpp
     ${VVL_SOURCE_DIR}/layers/generated/lvt_function_pointers.cpp
@@ -123,18 +114,9 @@ if (VVL_ENABLE_ASAN)
     target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_ENABLE_ASAN=1)
 endif()
 
-# gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
-if (CMAKE_CROSSCOMPILING)
-    gtest_add_tests(TARGET vk_layer_validation_tests)
-else()
-    gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
-endif()
-
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
-target_include_directories(vk_layer_validation_tests PRIVATE
-    ${VVL_SOURCE_DIR}/layers
-    .
-)
+
+target_include_directories(vk_layer_validation_tests PRIVATE .)
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE
@@ -163,6 +145,9 @@ elseif(MSVC)
     endif()
 endif()
 
+find_package(GTest REQUIRED CONFIG QUIET)
+find_package(glslang REQUIRED CONFIG QUIET)
+
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
     glslang::glslang
@@ -181,6 +166,47 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
+
+include(GoogleTest)
+
+if (CMAKE_CROSSCOMPILING)
+    gtest_add_tests(TARGET vk_layer_validation_tests)
+else()
+    gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
+endif()
+
+if (ANDROID)
+    # "CMAKE_ANDROID_STL_TYPE specifies the C++ STL implementation to be used. Earlier NDK releases
+    # supported a range of different options, but projects should now use either c++_shared or c++_static.
+    # Only use the latter if your application consists of a single shared library." - Professional CMake
+    #
+    # Here is the problem we encountered when building tests with c++_static:
+    #
+    # https://developer.android.com/ndk/guides/cpp-support recommends using
+    # c++_shared for applications that use more than one shared library.
+    # If multiple libraries using c++_static are loaded several copies of
+    # the globals will be present in the C++ runtime. This also happens
+    # if the same library is dlopen/dlclosed several times, as when running
+    # the Layer Validation Tests. Some of the c++ runtime globals are
+    # thread_local, so each copy consumes a TLS key. There are only 128 TLS
+    # keys allowed on android, and the unit tests can hit this because of
+    # repeatedly loading and unloading VVL.
+    #
+    # The drawback to using c++_shared is that the layer library can no longer
+    # be installed manually, but must be installed in an APK. It is still
+    # common practice to load layer libraries manually.
+    if ("${CMAKE_ANDROID_STL_TYPE}" MATCHES "static")
+        message(FATAL_ERROR "Cannot build tests with ${CMAKE_ANDROID_STL_TYPE}!")
+    endif()
+
+    # AndroidNdkModules.cmake cannot be used reliably since it's not part of upstream CMake.
+    target_sources(vk_layer_validation_tests PRIVATE
+        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c
+        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.h
+    )
+    target_include_directories(vk_layer_validation_tests PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
+    target_link_libraries(vk_layer_validation_tests PUBLIC log)
+endif()
 
 option(INSTALL_TESTS "Install tests")
 if(INSTALL_TESTS)
