@@ -43,6 +43,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/ray_tracing_objects.h
     framework/ray_tracing_objects.cpp
     positive/android_hardware_buffer.cpp
+    positive/atomics.cpp
     positive/best_practices.cpp
     positive/command.cpp
     positive/descriptors.cpp
