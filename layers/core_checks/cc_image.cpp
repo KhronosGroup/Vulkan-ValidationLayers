@@ -1709,7 +1709,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             const auto image_class = FormatCompatibilityClass(compat_format);
 
             if (!IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
-                skip |= LogError(pCreateInfo->image, " VUID-VkImageViewCreateInfo-subresourceRange-07818",
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subresourceRange-07818",
                                  "vkCreateImageView(): subresourceRange.aspectMask (0x%x) is invalid for %s.", aspect_mask,
                                  string_VkFormat(image_format));
             } else if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
