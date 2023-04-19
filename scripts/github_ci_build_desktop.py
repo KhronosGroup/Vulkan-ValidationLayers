@@ -30,6 +30,9 @@ def main():
     args = parser.parse_args()
 
     config = args.configuration
+    osx = args.osx
+
+    common_ci.SetupDarwin(osx)
 
     try:
         common_ci.BuildVVL(config = config, cmake_args = args.cmake, build_tests = "OFF")

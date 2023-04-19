@@ -65,6 +65,21 @@ def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
 def IsWindows(): return 'windows' == platform.system().lower()
 
 #
+# Set MACOSX_DEPLOYMENT_TARGET
+def SetupDarwin(osx):
+    if platform.system() != "Darwin":
+        return
+
+    # By default it will use the latest MacOS SDK available on the system.
+    if osx == 'latest':
+        return
+
+    # Currently the Vulkan SDK targets 10.15 as the minimum for MacOS support.
+    # If we need to we can raise the minimim like we did for C++17 support.
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = "10.15"
+    print(f"Targeting {os.environ['MACOSX_DEPLOYMENT_TARGET']} MacOS Deployment Target", flush=True)
+
+#
 # Run VVL scripts
 def CheckVVL(config):
     ext_dir = externalDir(config)
@@ -241,6 +256,9 @@ def GetArgParser():
     configs = ['release', 'debug']
     default_config = configs[0]
 
+    osx_choices = ['min', 'latest']
+    osx_default = osx_choices[1]
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', dest='configuration',
@@ -258,4 +276,8 @@ def GetArgParser():
     parser.add_argument(
         '--test', dest='test',
         action='store_true', help='Tests the layers')
+    parser.add_argument(
+        '--osx', dest='osx', action='store',
+        choices=osx_choices, default=osx_default,
+        help='Sets MACOSX_DEPLOYMENT_TARGET on Apple platforms.')
     return parser
