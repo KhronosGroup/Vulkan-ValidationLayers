@@ -74,7 +74,11 @@ if (UPDATE_DEPS)
     if (timestamp STREQUAL $CACHE{UPDATE_DEPS_TIMESTAMP})
         message(DEBUG "update_deps.py: no work to do.")
     else()
-        set(UPDATE_DEPS_DIR "${PROJECT_SOURCE_DIR}/external/${_build_type}" CACHE PATH "Location where update_deps.py installs packages")
+        set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
+        if (ANDROID)
+            set(UPDATE_DEPS_DIR_SUFFIX "android/${UPDATE_DEPS_DIR_SUFFIX}")
+        endif()
+        set(UPDATE_DEPS_DIR "${PROJECT_SOURCE_DIR}/external/${UPDATE_DEPS_DIR_SUFFIX}" CACHE PATH "Location where update_deps.py installs packages")
         set(helper_file "${UPDATE_DEPS_DIR}/helper.cmake")
 
         execute_process(
