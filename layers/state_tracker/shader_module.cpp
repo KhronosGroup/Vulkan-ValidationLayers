@@ -265,154 +265,206 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     }
 }
 
-SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
+// TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
+// converting parts of this to be generated from the machine-readable spec instead.
+static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<uint32_t>& result) {
+    switch (insn.Opcode()) {
+        case spv::OpLoad:
+            result.insert(insn.Word(3));  // ptr
+            break;
+        case spv::OpStore:
+            result.insert(insn.Word(1));  // ptr
+            break;
+        case spv::OpAccessChain:
+        case spv::OpInBoundsAccessChain:
+            result.insert(insn.Word(3));  // base ptr
+            break;
+        case spv::OpSampledImage:
+        case spv::OpImageSampleImplicitLod:
+        case spv::OpImageSampleExplicitLod:
+        case spv::OpImageSampleDrefImplicitLod:
+        case spv::OpImageSampleDrefExplicitLod:
+        case spv::OpImageSampleProjImplicitLod:
+        case spv::OpImageSampleProjExplicitLod:
+        case spv::OpImageSampleProjDrefImplicitLod:
+        case spv::OpImageSampleProjDrefExplicitLod:
+        case spv::OpImageFetch:
+        case spv::OpImageGather:
+        case spv::OpImageDrefGather:
+        case spv::OpImageRead:
+        case spv::OpImage:
+        case spv::OpImageQueryFormat:
+        case spv::OpImageQueryOrder:
+        case spv::OpImageQuerySizeLod:
+        case spv::OpImageQuerySize:
+        case spv::OpImageQueryLod:
+        case spv::OpImageQueryLevels:
+        case spv::OpImageQuerySamples:
+        case spv::OpImageSparseSampleImplicitLod:
+        case spv::OpImageSparseSampleExplicitLod:
+        case spv::OpImageSparseSampleDrefImplicitLod:
+        case spv::OpImageSparseSampleDrefExplicitLod:
+        case spv::OpImageSparseSampleProjImplicitLod:
+        case spv::OpImageSparseSampleProjExplicitLod:
+        case spv::OpImageSparseSampleProjDrefImplicitLod:
+        case spv::OpImageSparseSampleProjDrefExplicitLod:
+        case spv::OpImageSparseFetch:
+        case spv::OpImageSparseGather:
+        case spv::OpImageSparseDrefGather:
+        case spv::OpImageTexelPointer:
+            // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
+            //  - NOT the shader input/output interfaces.
+            result.insert(insn.Word(3));  // Image or sampled image
+            break;
+        case spv::OpImageWrite:
+            result.insert(insn.Word(1));  // Image -- different operand order to above
+            break;
+        case spv::OpFunctionCall:
+            for (uint32_t i = 3; i < insn.Length(); i++) {
+                result.insert(insn.Word(i));  // fn itself, and all args
+            }
+            break;
+
+        case spv::OpExtInst:
+            for (uint32_t i = 5; i < insn.Length(); i++) {
+                result.insert(insn.Word(i));  // Operands to ext inst
+            }
+            break;
+
+        default: {
+            if (AtomicOperation(insn.Opcode())) {
+                if (insn.Opcode() == spv::OpAtomicStore) {
+                    result.insert(insn.Word(1));  // ptr
+                } else {
+                    result.insert(insn.Word(3));  // ptr
+                }
+            }
+            break;
+        }
+    }
+}
+
+vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const SHADER_MODULE_STATE& module_state, EntryPoint& entrypoint) {
+    vvl::unordered_set<uint32_t> result_ids;
+    if (!module_state.has_valid_spirv) {
+        return result_ids;
+    }
+
+    // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
+    // This is important for identifying the set of shader resources actually used by an entrypoint.
+    vvl::unordered_set<uint32_t> worklist;
+    worklist.insert(entrypoint.id);
+
+    while (!worklist.empty()) {
+        auto worklist_id_iter = worklist.begin();
+        auto worklist_id = *worklist_id_iter;
+        worklist.erase(worklist_id_iter);
+
+        const Instruction* next_insn = module_state.FindDef(worklist_id);
+        if (!next_insn) {
+            // ID is something we didn't collect in SpirvStaticData. that's OK -- we'll stumble across all kinds of things here
+            // that we may not care about.
+            continue;
+        }
+
+        // Try to add to the output set
+        if (!result_ids.insert(worklist_id).second) {
+            continue;  // If we already saw this id, we don't want to walk it again.
+        }
+
+        if (next_insn->Opcode() == spv::OpFunction) {
+            // Scan whole body of the function
+            while (++next_insn, next_insn->Opcode() != spv::OpFunctionEnd) {
+                const auto& insn = *next_insn;
+                // Build up list of accessible ID
+                FindPointersAndObjects(insn, worklist);
+
+                // Gather any instructions info that is only for the EntryPoint and not whole module
+                switch (insn.Opcode()) {
+                    case spv::OpEmitVertex:
+                    case spv::OpEmitStreamVertex:
+                        entrypoint.emit_vertex_geometry = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    return result_ids;
+}
+
+std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const SHADER_MODULE_STATE& module_state,
+                                                                          const EntryPoint& entrypoint) {
+    std::vector<StageInteraceVariable> variables;
+    if (!module_state.has_valid_spirv) {
+        return variables;
+    }
+
+    // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
+    uint32_t word = 3;  // operand Name operand starts
+    // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out
+    // the rest of the word - so we only need to look at the last byte in the word to determine which word contains the
+    // terminator.
+    while (entrypoint.entrypoint_insn.Word(word) & 0xff000000u) {
+        ++word;
+    }
+    ++word;
+
+    vvl::unordered_set<uint32_t> unique_interface_id;
+    for (; word < entrypoint.entrypoint_insn.Length(); word++) {
+        const uint32_t interface_id = entrypoint.entrypoint_insn.Word(word);
+        if (unique_interface_id.insert(interface_id).second == false) {
+            continue;  // Before SPIR-V 1.4 duplicates of these IDs are allowed
+        };
+        // guaranteed by spirv-val to be a OpVariable
+        const Instruction& insn = *module_state.FindDef(interface_id);
+
+        if (insn.Word(3) != spv::StorageClassInput && insn.Word(3) != spv::StorageClassOutput) {
+            continue;  // Only checking for input/output here
+        }
+        variables.emplace_back(module_state, insn, entrypoint.stage);
+    }
+    return variables;
+}
+
+std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const SHADER_MODULE_STATE& module_state,
+                                                                                 const EntryPoint& entrypoint) {
+    std::vector<ResourceInterfaceVariable> variables;
+    if (!module_state.has_valid_spirv) {
+        return variables;
+    }
+
+    // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
+    for (const auto& accessible_id : entrypoint.accessible_ids) {
+        const Instruction& insn = *module_state.FindDef(accessible_id);
+        if (insn.Opcode() != spv::OpVariable) {
+            continue;
+        }
+        const uint32_t storage_class = insn.StorageClass();
+        // These are the only storage classes that interface with a descriptor
+        // see vkspec.html#interfaces-resources-descset
+        if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
+            storage_class == spv::StorageClassStorageBuffer) {
+            variables.emplace_back(module_state, entrypoint, insn);
+        }
+    }
+    return variables;
+}
+
+EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
     : entrypoint_insn(entrypoint_insn),
       execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
       id(entrypoint_insn.Word(2)),
       name(entrypoint_insn.GetAsString(3)),
-      execution_mode(module_state.GetExecutionModeSet(id)) {
+      execution_mode(module_state.GetExecutionModeSet(id)),
+      emit_vertex_geometry(false),
+      accessible_ids(GetAccessibleIds(module_state, *this)),
+      resource_interface_variables(GetResourceInterfaceVariables(module_state, *this)),
+      stage_interface_variables(GetStageInterfaceVariables(module_state, *this)) {
     if (module_state.has_valid_spirv) {
-        // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
-        // important for identifying the set of shader resources actually used by an entrypoint, for example.
-        // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
-        //  - NOT the shader input/output interfaces.
-        //
-        // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
-        // converting parts of this to be generated from the machine-readable spec instead.
-        vvl::unordered_set<uint32_t> worklist;
-        worklist.insert(id);
-
-        while (!worklist.empty()) {
-            auto worklist_id_iter = worklist.begin();
-            auto worklist_id = *worklist_id_iter;
-            worklist.erase(worklist_id_iter);
-
-            const Instruction* insn = module_state.FindDef(worklist_id);
-            if (!insn) {
-                // ID is something we didn't collect in SpirvStaticData. that's OK -- we'll stumble across all kinds of things here
-                // that we may not care about.
-                continue;
-            }
-
-            // Try to add to the output set
-            if (!accessible_ids.insert(worklist_id).second) {
-                continue;  // If we already saw this id, we don't want to walk it again.
-            }
-
-            switch (insn->Opcode()) {
-                case spv::OpFunction:
-                    // Scan whole body of the function, enlisting anything interesting
-                    while (++insn, insn->Opcode() != spv::OpFunctionEnd) {
-                        switch (insn->Opcode()) {
-                            case spv::OpLoad:
-                                worklist.insert(insn->Word(3));  // ptr
-                                break;
-                            case spv::OpStore:
-                                worklist.insert(insn->Word(1));  // ptr
-                                break;
-                            case spv::OpAccessChain:
-                            case spv::OpInBoundsAccessChain:
-                                worklist.insert(insn->Word(3));  // base ptr
-                                break;
-                            case spv::OpSampledImage:
-                            case spv::OpImageSampleImplicitLod:
-                            case spv::OpImageSampleExplicitLod:
-                            case spv::OpImageSampleDrefImplicitLod:
-                            case spv::OpImageSampleDrefExplicitLod:
-                            case spv::OpImageSampleProjImplicitLod:
-                            case spv::OpImageSampleProjExplicitLod:
-                            case spv::OpImageSampleProjDrefImplicitLod:
-                            case spv::OpImageSampleProjDrefExplicitLod:
-                            case spv::OpImageFetch:
-                            case spv::OpImageGather:
-                            case spv::OpImageDrefGather:
-                            case spv::OpImageRead:
-                            case spv::OpImage:
-                            case spv::OpImageQueryFormat:
-                            case spv::OpImageQueryOrder:
-                            case spv::OpImageQuerySizeLod:
-                            case spv::OpImageQuerySize:
-                            case spv::OpImageQueryLod:
-                            case spv::OpImageQueryLevels:
-                            case spv::OpImageQuerySamples:
-                            case spv::OpImageSparseSampleImplicitLod:
-                            case spv::OpImageSparseSampleExplicitLod:
-                            case spv::OpImageSparseSampleDrefImplicitLod:
-                            case spv::OpImageSparseSampleDrefExplicitLod:
-                            case spv::OpImageSparseSampleProjImplicitLod:
-                            case spv::OpImageSparseSampleProjExplicitLod:
-                            case spv::OpImageSparseSampleProjDrefImplicitLod:
-                            case spv::OpImageSparseSampleProjDrefExplicitLod:
-                            case spv::OpImageSparseFetch:
-                            case spv::OpImageSparseGather:
-                            case spv::OpImageSparseDrefGather:
-                            case spv::OpImageTexelPointer:
-                                worklist.insert(insn->Word(3));  // Image or sampled image
-                                break;
-                            case spv::OpImageWrite:
-                                worklist.insert(insn->Word(1));  // Image -- different operand order to above
-                                break;
-                            case spv::OpFunctionCall:
-                                for (uint32_t i = 3; i < insn->Length(); i++) {
-                                    worklist.insert(insn->Word(i));  // fn itself, and all args
-                                }
-                                break;
-
-                            case spv::OpExtInst:
-                                for (uint32_t i = 5; i < insn->Length(); i++) {
-                                    worklist.insert(insn->Word(i));  // Operands to ext inst
-                                }
-                                break;
-
-                            case spv::OpEmitVertex:
-                            case spv::OpEmitStreamVertex:
-                                emit_vertex_geometry = true;
-                                break;
-
-                            default: {
-                                if (AtomicOperation(insn->Opcode())) {
-                                    if (insn->Opcode() == spv::OpAtomicStore) {
-                                        worklist.insert(insn->Word(1));  // ptr
-                                    } else {
-                                        worklist.insert(insn->Word(3));  // ptr
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-
-        // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
-        {
-            uint32_t word = 3;  // operand Name operand starts
-            // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out
-            // the rest of the word - so we only need to look at the last byte in the word to determine which word contains the
-            // terminator.
-            while (entrypoint_insn.Word(word) & 0xff000000u) {
-                ++word;
-            }
-            ++word;
-
-            vvl::unordered_set<uint32_t> unique_interface_id;
-            for (; word < entrypoint_insn.Length(); word++) {
-                const uint32_t interface_id = entrypoint_insn.Word(word);
-                if (unique_interface_id.insert(interface_id).second == false) {
-                    continue;  // Before SPIR-V 1.4 duplicates of these IDs are allowed
-                };
-                // guaranteed by spirv-val to be a OpVariable
-                const Instruction& insn = *module_state.FindDef(interface_id);
-
-                if (insn.Word(3) != spv::StorageClassInput && insn.Word(3) != spv::StorageClassOutput) {
-                    continue;  // Only checking for input/output here
-                }
-                stage_interface_variables.emplace_back(module_state, insn, stage);
-            }
-        }
-
         // After all variables are made, can get references from them
         // Also can set per-Entrypoint values now
         for (const auto& variable : stage_interface_variables) {
@@ -451,21 +503,6 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
                         }
                     }
                 }
-            }
-        }
-
-        // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
-        for (const auto& accessible_id : accessible_ids) {
-            const Instruction& insn = *module_state.FindDef(accessible_id);
-            if (insn.Opcode() != spv::OpVariable) {
-                continue;
-            }
-            const uint32_t storage_class = insn.StorageClass();
-            // These are the only storage classes that interface with a descriptor
-            // see vkspec.html#interfaces-resources-descset
-            if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
-                storage_class == spv::StorageClassStorageBuffer) {
-                resource_interface_variables.emplace_back(module_state, insn, stage);
             }
         }
 
@@ -833,8 +870,7 @@ std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     return ss.str();
 }
 
-const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushConstant(char const* name,
-                                                                                       VkShaderStageFlagBits stageBits) const {
+const StructInfo* SHADER_MODULE_STATE::FindEntrypointPushConstant(char const* name, VkShaderStageFlagBits stageBits) const {
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
             return &(entry_point->push_constant_used_in_shader);
@@ -843,8 +879,7 @@ const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushCo
     return nullptr;
 }
 
-std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> SHADER_MODULE_STATE::FindEntrypoint(char const* name,
-                                                                                           VkShaderStageFlagBits stageBits) const {
+std::shared_ptr<const EntryPoint> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
             return entry_point;
@@ -1193,7 +1228,7 @@ void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_w
     }
 }
 
-void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, vvl::unordered_set<uint32_t>& accessible_ids,
+void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const vvl::unordered_set<uint32_t>& accessible_ids,
                                               const StructInfo& data) const {
     for (const auto& id : accessible_ids) {
         const Instruction* insn = FindDef(id);
@@ -1206,7 +1241,7 @@ void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, vvl::u
 }
 
 void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE& module_state,
-                                                      std::vector<std::shared_ptr<SHADER_MODULE_STATE::EntryPoint>>& entry_points) {
+                                                      std::vector<std::shared_ptr<EntryPoint>>& entry_points) {
     for (auto& entrypoint : entry_points) {
         for (const Instruction* var_insn : module_state.static_data_.variable_inst) {
             if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
@@ -1634,9 +1669,9 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
-ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
-                                                     VkShaderStageFlagBits stage)
-    : VariableBase(module_state, insn, stage),
+ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                                     const Instruction& insn)
+    : VariableBase(module_state, insn, entrypoint.stage),
       base_type(FindBaseType(*this, module_state)),
       image_format_type(FindImageFormatType(module_state, base_type)),
       image_dim(base_type.FindImageDim()),

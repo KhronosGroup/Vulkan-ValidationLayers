@@ -47,11 +47,10 @@ typedef std::map<uint32_t, const ResourceInterfaceVariable *> BindingVariableMap
 struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
-    std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> entrypoint;
+    std::shared_ptr<const EntryPoint> entrypoint;
 
     PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
-                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
-                       std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> &entrypoint);
+                       std::shared_ptr<const SHADER_MODULE_STATE> &module_state, std::shared_ptr<const EntryPoint> &entrypoint);
 };
 
 class PIPELINE_STATE : public BASE_NODE {

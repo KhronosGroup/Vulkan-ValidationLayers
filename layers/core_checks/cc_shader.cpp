@@ -47,7 +47,7 @@ static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
 }
 
 bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                           const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
+                                           const EntryPoint &entrypoint) const {
     bool skip = false;
     safe_VkPipelineVertexInputStateCreateInfo const *vi = pipeline.vertex_input_state->input_state;
 
@@ -113,7 +113,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE &module_state,
-                                                                    const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+                                                                    const EntryPoint &entrypoint,
                                                                     const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -214,8 +214,7 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     return skip;
 }
 
-bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &module_state,
-                                                   const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                    const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -241,8 +240,7 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     return skip;
 }
 
-bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state,
-                                                    const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                     const PIPELINE_STATE &pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
@@ -330,7 +328,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
 }
 
 PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vector<uint8_t> &push_constant_data_update,
-                                                                const SHADER_MODULE_STATE::StructInfo &push_constant_used_in_shader,
+                                                                const StructInfo &push_constant_used_in_shader,
                                                                 uint32_t &out_issue_index) const {
     const auto *used_bytes = push_constant_used_in_shader.GetUsedbytes();
     const auto used_bytes_size = used_bytes->size();
@@ -438,7 +436,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                        const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -736,8 +734,7 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
 }
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                      const PIPELINE_STATE &pipeline,
-                                                      const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
+                                                      const PIPELINE_STATE &pipeline, const EntryPoint &entrypoint) const {
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT || stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
@@ -1641,7 +1638,7 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
     return skip;
 }
 
-bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                         VkShaderStageFlagBits stage, const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -1854,8 +1851,7 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
 }
 
 bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                              const SHADER_MODULE_STATE::EntryPoint &entrypoint,
-                                              VkShaderStageFlagBits stage) const {
+                                              const EntryPoint &entrypoint, VkShaderStageFlagBits stage) const {
     bool skip = false;
     // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
     //
@@ -1919,8 +1915,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
 }
 
 bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                                  const SHADER_MODULE_STATE::EntryPoint &entrypoint,
-                                                  VkShaderStageFlagBits stage) const {
+                                                  const EntryPoint &entrypoint, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     const auto viewport_state = pipeline.ViewportState();
@@ -2319,8 +2314,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
 }
 
 bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                  const PIPELINE_STATE &pipeline,
-                                                  const SHADER_MODULE_STATE::EntryPoint &entrypoint) const {
+                                                  const PIPELINE_STATE &pipeline, const EntryPoint &entrypoint) const {
     bool skip = false;
 
     std::string vuid_07988;
@@ -2431,8 +2425,7 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
     return skip;
 }
 
-bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_state,
-                                           const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateTransformFeedback(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                            const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
@@ -2845,7 +2838,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         }
     }
 
-    const SHADER_MODULE_STATE::EntryPoint &entrypoint = *stage_state.entrypoint;
+    const EntryPoint &entrypoint = *stage_state.entrypoint;
 
     // Validate descriptor set layout against what the entrypoint actually uses
 
@@ -2917,10 +2910,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer,
-                                                const SHADER_MODULE_STATE::EntryPoint &producer_entrypoint,
-                                                const SHADER_MODULE_STATE &consumer,
-                                                const SHADER_MODULE_STATE::EntryPoint &consumer_entrypoint,
+bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer, const EntryPoint &producer_entrypoint,
+                                                const SHADER_MODULE_STATE &consumer, const EntryPoint &consumer_entrypoint,
                                                 uint32_t pipe_index) const {
     bool skip = false;
 
@@ -3303,8 +3294,7 @@ bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice 
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module_state,
-                                               const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                uint32_t local_size_z) const {
     bool skip = false;
@@ -3440,8 +3430,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
     return skip;
 }
 
-bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &module_state,
-                                                const SHADER_MODULE_STATE::EntryPoint &entrypoint,
+bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
                                                 const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                 uint32_t local_size_z) const {
     bool skip = false;
