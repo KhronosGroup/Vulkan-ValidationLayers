@@ -960,10 +960,6 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-        auto vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-        ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
-
         const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
         std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
@@ -993,8 +989,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         raytracing_pipeline_ci.groupCount = shader_groups.size();
         raytracing_pipeline_ci.layout = pipeline_layout.handle();
 
-        const VkResult result = vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
-                                                               &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
+        const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+                                                                 &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
         ASSERT_VK_SUCCESS(result);
     }
 
@@ -1016,16 +1012,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     vk_testing::DeviceMemory mem(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
 
-    const auto vkGetPhysicalDeviceProperties2KHR =
-        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
-
-    const auto vkCmdTraceRaysKHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysKHR>("vkCmdTraceRaysKHR");
-    ASSERT_TRUE(vkCmdTraceRaysKHR != nullptr);
+    GetPhysicalDeviceProperties2(ray_tracing_properties);
 
     const VkDeviceAddress device_address = buffer.address();
 
@@ -1041,18 +1029,18 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
         if (invalid_stride.stride > 0) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03694");
-            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
-                              100, 1);
+            vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride,
+                                100, 100, 1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03690");
-            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
-                              100, 1);
+            vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion,
+                                100, 100, 1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-03686");
-            vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
-                              100, 1);
+            vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion,
+                                100, 100, 1);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1063,18 +1051,18 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         invalid_stride.stride =
             ray_tracing_properties.maxShaderGroupStride + (align - (ray_tracing_properties.maxShaderGroupStride % align));
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-04041");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
+                            100, 1);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-04035");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
+                            100, 1);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-stride-04029");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1087,21 +1075,13 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     vk::BindBufferMemory(device(), buffer_missing_flag.handle(), mem.handle(), 0);
     const VkDeviceAddress device_address_missing_flag = buffer_missing_flag.address();
 
-    // pRayGenShaderBindingTable->deviceAddress == 0
-    {
-        VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
-        invalid_stride.deviceAddress = 0;
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
-    }
-
     // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         // This address is the same as the one from the first (valid) buffer, so no validation error
         invalid_stride.deviceAddress = device_address_missing_flag;
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
     }
 
     // pRayGenShaderBindingTable address range and stride are invalid
@@ -1112,31 +1092,32 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkStridedDeviceAddressRegionKHR-size-04631");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkStridedDeviceAddressRegionKHR-size-04632");
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
         m_errorMonitor->VerifyFound();
     }
+
     // pMissShaderBindingTable->deviceAddress == 0
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
         m_errorMonitor->VerifyFound();
     }
     // pHitShaderBindingTable->deviceAddress == 0
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
+                            100, 1);
     }
     // pCallableShaderBindingTable->deviceAddress == 0
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
-                          100, 1);
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
+                            100, 1);
     }
 
     m_commandBuffer->end();
