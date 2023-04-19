@@ -1701,18 +1701,22 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     const bool multiplane_image = FormatIsMultiplane(image_format);
+    if (multiplane_image && IsMultiplePlaneAspect(aspect_mask)) {
+        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subresourceRange-07818",
+                         "vkCreateImageView(): subresourceRange.aspectMask (%s) is invalid for %s.",
+                         string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
+    }
+
     // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
         const auto view_class = FormatCompatibilityClass(view_format);
         if (multiplane_image) {
             const VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
             const auto image_class = FormatCompatibilityClass(compat_format);
-
-            if (!IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subresourceRange-07818",
-                                 "vkCreateImageView(): subresourceRange.aspectMask (%s) is invalid for %s.",
-                                 string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
-            } else if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
+            // Need valid aspect mask otherwise will throw extra error when getting compatible format
+            // Also this can be VK_IMAGE_ASPECT_COLOR_BIT
+            const bool has_valid_aspect = IsOnlyOneValidPlaneAspect(image_format, aspect_mask);
+            if (has_valid_aspect && ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE))) {
                 // Need to only check if one is NONE to handle edge case both are NONE
                 // View format must match the multiplane compatible format
                 std::stringstream ss;

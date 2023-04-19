@@ -383,6 +383,14 @@ static inline bool IsOnlyOneValidPlaneAspect(VkFormat format, VkImageAspectFlags
     return !multiple_bits && IsValidPlaneAspect(format, aspect_mask);
 }
 
+static inline bool IsMultiplePlaneAspect(VkImageAspectFlags aspect_mask) {
+    // If checking for multiple planes, there will already be another check if valid for plane count
+    constexpr VkImageAspectFlags valid_planes =
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+    const VkImageAspectFlags planes = aspect_mask & valid_planes;
+    return planes != 0 && !IsPowerOfTwo(planes);
+}
+
 // all "advanced blend operation" found in spec
 static inline bool IsAdvanceBlendOperation(const VkBlendOp blend_op) {
     return (static_cast<int>(blend_op) >= VK_BLEND_OP_ZERO_EXT) && (static_cast<int>(blend_op) <= VK_BLEND_OP_BLUE_EXT);

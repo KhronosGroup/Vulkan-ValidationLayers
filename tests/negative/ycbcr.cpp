@@ -1410,7 +1410,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-06415");
 
-        // If using multiplan format, need a matching VkSamplerYcbcrConversion
+        // If using multiplane format, need a matching VkSamplerYcbcrConversion
         ivci.pNext = &ycbcr_info;
         CreateImageViewTest(*this, &ivci);
     }
@@ -1471,24 +1471,11 @@ TEST_F(VkLayerTest, MultiplaneImageViewAspectMasks) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11));
 
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
-    ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                    VK_COMPONENT_SWIZZLE_IDENTITY};
-    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
-    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
-    ycbcr_create_info.forceExplicitReconstruction = false;
-
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
-
-    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
-    ycbcr_info.conversion = conversion;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, can hit issues with imageViewFormatReinterpretation";
+    }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
-    ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -1500,20 +1487,54 @@ TEST_F(VkLayerTest, MultiplaneImageViewAspectMasks) {
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImageObj image_obj(m_device);
-    image_obj.init(&ci);
-    ASSERT_TRUE(image_obj.initialized());
-
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
-    ivci.image = image_obj.image();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R8_UNORM;
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
 
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subresourceRange-07818");
+    // Different formats between VkImage and VkImageView
+    {
+        ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+        VkImageObj image(m_device);
+        image.init(&ci);
+        ASSERT_TRUE(image.initialized());
+
+        ivci.image = image.image();
+        ivci.format = VK_FORMAT_R8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subresourceRange-07818");
+    }
+
+    // Without Mutable format
+    {
+        ci.flags = 0;
+        VkImageObj image(m_device);
+        image.init(&ci);
+        ASSERT_TRUE(image.initialized());
+
+        VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+        ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+        ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+        ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+        ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                        VK_COMPONENT_SWIZZLE_IDENTITY};
+        ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
+        ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
+        ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+        ycbcr_create_info.forceExplicitReconstruction = false;
+
+        vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
+        VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+        ycbcr_info.conversion = conversion;
+
+        ivci.image = image.image();
+        ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+        ivci.pNext = &ycbcr_info;
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subresourceRange-07818");
+    }
 }
 
 TEST_F(VkLayerTest, MultiplaneAspectBits) {
