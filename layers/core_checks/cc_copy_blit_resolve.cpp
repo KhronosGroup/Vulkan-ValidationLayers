@@ -1392,8 +1392,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 if (FormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
                     const LogObjectList objlist(commandBuffer, srcImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
-                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is invalid for %s.",
-                                     func_name, i, aspect, string_VkFormat(src_format));
+                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (%s) is invalid for %s.",
+                                     func_name, i, string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(src_format));
                 }
                 // Single-plane to multi-plane
                 if ((!FormatIsMultiplane(src_format)) && (FormatIsMultiplane(dst_format)) &&
@@ -1401,8 +1401,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01557" : "VUID-vkCmdCopyImage-dstImage-01557";
                     skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (0x%x) is not VK_IMAGE_ASPECT_COLOR_BIT.",
-                                     func_name, i, aspect);
+                                     "%s: pRegions[%" PRIu32 "].srcSubresource.aspectMask (%s) is not VK_IMAGE_ASPECT_COLOR_BIT.",
+                                     func_name, i, string_VkImageAspectFlags(aspect).c_str());
                 }
 
                 // Dest image multiplane checks
@@ -1410,8 +1410,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 if (FormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
                     const LogObjectList objlist(commandBuffer, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
-                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is invalid for %s.",
-                                     func_name, i, aspect, string_VkFormat(dst_format));
+                    skip |= LogError(objlist, vuid, "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (%s) is invalid for %s.",
+                                     func_name, i, string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(dst_format));
                 }
                 // Multi-plane to single-plane
                 if ((FormatIsMultiplane(src_format)) && (!FormatIsMultiplane(dst_format)) &&
@@ -1419,8 +1419,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     const LogObjectList objlist(commandBuffer, srcImage, dstImage);
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01556" : "VUID-vkCmdCopyImage-srcImage-01556";
                     skip |= LogError(objlist, vuid,
-                                     "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (0x%x) is not VK_IMAGE_ASPECT_COLOR_BIT.",
-                                     func_name, i, aspect);
+                                     "%s: pRegions[%" PRIu32 "].dstSubresource.aspectMask (%s) is not VK_IMAGE_ASPECT_COLOR_BIT.",
+                                     func_name, i, string_VkImageAspectFlags(aspect).c_str());
                 }
             }
         } else {
@@ -1431,8 +1431,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 vuid = is_2 ? "VUID-VkImageCopy2-aspectMask-00137" : "VUID-VkImageCopy-aspectMask-00137";
                 skip |= LogError(objlist, vuid,
                                  "%s: Copy between images with differing aspectMasks in pRegions[%" PRIu32
-                                 "] with source (0x%x) destination (0x%x).",
-                                 func_name, i, region.srcSubresource.aspectMask, region.dstSubresource.aspectMask);
+                                 "] with source (%s) destination (%s).",
+                                 func_name, i, string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(),
+                                 string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
             }
         }
 
@@ -1442,8 +1443,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             vuid = is_2 ? "VUID-VkCopyImageInfo2-aspectMask-00142" : "VUID-vkCmdCopyImage-aspectMask-00142";
             skip |= LogError(objlist, vuid,
                              "%s: pRegions[%" PRIu32
-                             "].srcSubresource.aspectMask (0x%x) cannot specify aspects not present in source image.",
-                             func_name, i, region.srcSubresource.aspectMask);
+                             "].srcSubresource.aspectMask (%s) cannot specify aspects not present in source image.",
+                             func_name, i, string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str());
         }
 
         // For each region, the aspectMask member of dstSubresource must be present in the destination image
@@ -1452,8 +1453,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             vuid = is_2 ? "VUID-VkCopyImageInfo2-aspectMask-00143" : "VUID-vkCmdCopyImage-aspectMask-00143";
             skip |= LogError(objlist, vuid,
                              "%s: pRegions[%" PRIu32
-                             "].dstSubresource.aspectMask (0x%x) cannot specify aspects not present in destination image.",
-                             func_name, i, region.dstSubresource.aspectMask);
+                             "].dstSubresource.aspectMask (%s) cannot specify aspects not present in destination image.",
+                             func_name, i, string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
         }
 
         // Make sure not a empty region
