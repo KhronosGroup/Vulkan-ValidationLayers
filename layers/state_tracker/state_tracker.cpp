@@ -4079,7 +4079,8 @@ void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice de
 }
 
 void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                         VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
+                                                         VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+                                                         const char *func_name) {
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
@@ -4091,7 +4092,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     if (semaphore_state) {
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
-        semaphore_state->EnqueueAcquire();
+        semaphore_state->EnqueueAcquire(func_name);
     }
 
     // Mark the image as acquired.
@@ -4105,14 +4106,14 @@ void ValidationStateTracker::PostCallRecordAcquireNextImageKHR(VkDevice device, 
                                                                VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
                                                                VkResult result) {
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
-    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex);
+    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, "vkAcquireNextImageKHR");
 }
 
 void ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                                 uint32_t *pImageIndex, VkResult result) {
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                pAcquireInfo->fence, pImageIndex);
+                                pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
 }
 
 std::shared_ptr<PHYSICAL_DEVICE_STATE> ValidationStateTracker::CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) {

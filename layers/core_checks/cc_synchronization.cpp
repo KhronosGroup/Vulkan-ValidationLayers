@@ -170,14 +170,22 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const core_error::Location &l
         case VK_SEMAPHORE_TYPE_BINARY: {
             if ((semaphore_state->Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
-                if (CannotSignal(*semaphore_state, other_queue)) {
-                    objlist.add(other_queue);
+                const char *other_func = nullptr;
+                if (CannotSignal(*semaphore_state, other_queue, other_func)) {
+                    std::stringstream initiator;
+                    if (other_func) {
+                        initiator << other_func;
+                    }
+                    if (other_queue != VK_NULL_HANDLE) {
+                        if (other_func) initiator << " on ";
+                        initiator << core->report_data->FormatHandle(other_queue);
+                        objlist.add(other_queue);
+                    }
                     skip |= core->LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
                                            "%s is signaling %s (%s) that was previously "
                                            "signaled by %s but has not since been waited on by any queue.",
                                            loc.Message().c_str(), core->report_data->FormatHandle(queue).c_str(),
-                                           core->report_data->FormatHandle(semaphore).c_str(),
-                                           core->report_data->FormatHandle(other_queue).c_str());
+                                           core->report_data->FormatHandle(semaphore).c_str(), initiator.str().c_str());
                 } else {
                     unsignaled_semaphores.erase(semaphore);
                     signaled_semaphores.insert(semaphore);
