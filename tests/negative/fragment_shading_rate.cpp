@@ -35,11 +35,6 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_features));
 
-    // Find address of extension call and make the call
-    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
-        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
-    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
-
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
@@ -47,37 +42,37 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
     m_commandBuffer->begin();
     fragmentSize.width = 0;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 0;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 
     fragmentSize.width = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 
     fragmentSize.width = 8;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 8;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
     m_commandBuffer->end();
@@ -100,11 +95,6 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Find address of extension call and make the call
-    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
-        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
-    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
-
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
@@ -112,7 +102,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04509");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
@@ -141,11 +131,6 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Find address of extension call and make the call
-    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
-        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
-    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
-
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
@@ -155,14 +140,14 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
     combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 
     combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 
@@ -195,11 +180,6 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Find address of extension call and make the call
-    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
-        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
-    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
-
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
@@ -208,14 +188,14 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
     fragmentSize.width = 2;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 2;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508");
-    vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 }
@@ -256,11 +236,6 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Find address of extension call and make the call
-    PFN_vkCmdSetFragmentShadingRateKHR vkCmdSetFragmentShadingRateKHR =
-        (PFN_vkCmdSetFragmentShadingRateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFragmentShadingRateKHR");
-    ASSERT_TRUE(vkCmdSetFragmentShadingRateKHR != nullptr);
-
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
@@ -270,7 +245,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
-        vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
         m_errorMonitor->VerifyFound();
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
     }
@@ -279,7 +254,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
         combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
-        vkCmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
         m_errorMonitor->VerifyFound();
         combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
     }
@@ -348,9 +323,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
 
     VkViewport viewports[] = {{0, 0, 16, 16, 0, 1}, {1, 1, 16, 16, 0, 1}};
-    PFN_vkCmdSetViewportWithCountEXT vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(device(), "vkCmdSetViewportWithCountEXT");
-    vkCmdSetViewportWithCountEXT(m_commandBuffer->handle(), 2, viewports);
+    vk::CmdSetViewportWithCountEXT(m_commandBuffer->handle(), 2, viewports);
 
     // error produced here.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-04552");
@@ -1200,19 +1173,16 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
 
     VkRenderPass rp;
 
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-
     rpci.flags = VK_RENDER_PASS_CREATE_TRANSFORM_BIT_QCOM;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-flags-04521");
-    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     rpci.flags = 0;
     attach_desc.format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     if (attach_desc.format != VK_FORMAT_UNDEFINED) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pAttachments-04586");
-        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
     }
     attach_desc.format = VK_FORMAT_R8_UINT;
@@ -1220,7 +1190,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
     attach.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04524");
-    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1240,7 +1210,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
     }
-    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1250,7 +1220,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04526");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04529");
-    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1260,7 +1230,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04527");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04530");
-    vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+    vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
 
@@ -1270,7 +1240,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
         fsr_attachment.shadingRateAttachmentTexelSize.width = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04531");
-        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
         fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     }
@@ -1281,7 +1251,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
         fsr_attachment.shadingRateAttachmentTexelSize.height = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.height;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkFragmentShadingRateAttachmentInfoKHR-pFragmentShadingRateAttachment-04532");
-        vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
+        vk::CreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
         fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     }
@@ -1978,9 +1948,6 @@ TEST_F(VkLayerTest, FragmentDensityMappAttachmentCount) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCreateRenderPass2KHR =
-        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
-
     auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2005,7 +1972,7 @@ TEST_F(VkLayerTest, FragmentDensityMappAttachmentCount) {
 
     VkRenderPass render_pass;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-06472");
-    vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
+    vk::CreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2025,14 +1992,7 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
         GTEST_SKIP() << "multiview feature not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    PFN_vkCmdEndRenderPass2KHR vkCmdEndRenderPass2KHR = nullptr;
-
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    if (rp2Supported) {
-        vkCmdEndRenderPass2KHR =
-            reinterpret_cast<PFN_vkCmdEndRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderPass2KHR"));
-    }
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
@@ -2311,7 +2271,7 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
                                              "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511");
-        vkCmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        vk::CmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->reset();
@@ -2348,7 +2308,7 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
                                              "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510");
-        vkCmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        vk::CmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2546,21 +2506,13 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
 
-    // Test vk::CmdBindShadingRateImageNV errors
-    auto vkCmdBindShadingRateImageNV =
-        (PFN_vkCmdBindShadingRateImageNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindShadingRateImageNV");
-
     // if the view is non-NULL, it must be R8_UINT, USAGE_SRI, image layout must match, layout must be valid
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadingRateImageNV-imageView-02060");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadingRateImageNV-imageView-02061");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadingRateImageNV-imageView-02062");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063");
-    vkCmdBindShadingRateImageNV(m_commandBuffer->handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    vk::CmdBindShadingRateImageNV(m_commandBuffer->handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
-
-    // Test vk::CmdSetViewportShadingRatePaletteNV errors
-    auto vkCmdSetViewportShadingRatePaletteNV =
-        (PFN_vkCmdSetViewportShadingRatePaletteNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportShadingRatePaletteNV");
 
     VkShadingRatePaletteEntryNV paletteEntries[100] = {};
     VkShadingRatePaletteNV palette = {100, paletteEntries};
@@ -2570,12 +2522,12 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
-    vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 20, 2, palettes);
+    vk::CmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 20, 2, palettes);
     m_errorMonitor->VerifyFound();
 
     // shadingRatePaletteEntryCount must be in range
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
-    vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
+    vk::CmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
     m_errorMonitor->VerifyFound();
 
     VkCoarseSampleLocationNV locations[100] = {
@@ -2636,15 +2588,11 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
         }
 
-        // Test vk::CmdSetCoarseSampleOrderNV errors
-        auto vkCmdSetCoarseSampleOrderNV =
-            (PFN_vkCmdSetCoarseSampleOrderNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoarseSampleOrderNV");
-
         for (const auto &test_case : test_cases) {
             for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.vuids[i]);
             }
-            vkCmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
+            vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
             if (test_case.vuids.size()) {
                 m_errorMonitor->VerifyFound();
             } else {
@@ -2652,7 +2600,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         }
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081");
-        vkCmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
+        vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
         m_errorMonitor->VerifyFound();
     }
 

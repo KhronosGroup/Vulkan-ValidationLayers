@@ -708,23 +708,6 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
 
-    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
-    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
-        vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
-    } else {
-        vkCreateSamplerYcbcrConversionFunction =
-            (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-        vkDestroySamplerYcbcrConversionFunction =
-            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
-    }
-
-    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
-        GTEST_SKIP() << "Did not find required device support for YcbcrSamplerConversion";
-    }
-
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
@@ -745,7 +728,7 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     ycbcr_create_info.forceExplicitReconstruction = false;
 
     VkSamplerYcbcrConversion conversion;
-    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+    vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     ycbcr_info.conversion = conversion;
@@ -769,7 +752,7 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     m_errorMonitor->VerifyFound();
 
-    vkDestroySamplerYcbcrConversionFunction(m_device->handle(), conversion, nullptr);
+    vk::DestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
 }
 
 TEST_F(VkLayerTest, CustomBorderColor) {

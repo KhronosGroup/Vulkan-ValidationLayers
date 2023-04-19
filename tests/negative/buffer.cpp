@@ -24,11 +24,6 @@ TEST_F(VkLayerTest, BufferExtents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2KHR = nullptr;
-    if (copy_commands2) {
-        vkCmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
-    }
-
     const VkDeviceSize buffer_size = 2048;
 
     VkBufferObj buffer_one;
@@ -52,7 +47,7 @@ TEST_F(VkLayerTest, BufferExtents) {
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-srcOffset-00113");
-        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
+        vk::CmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -68,7 +63,7 @@ TEST_F(VkLayerTest, BufferExtents) {
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-dstOffset-00114");
-        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
+        vk::CmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -84,7 +79,7 @@ TEST_F(VkLayerTest, BufferExtents) {
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00115");
-        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
+        vk::CmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -100,7 +95,7 @@ TEST_F(VkLayerTest, BufferExtents) {
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00116");
-        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
+        vk::CmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -797,9 +792,6 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -811,7 +803,7 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982");
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
@@ -827,9 +819,6 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
     m_device_extension_names.push_back(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 128;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
@@ -843,12 +832,12 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkConditionalRenderingBeginInfoEXT-offset-01984");
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_errorMonitor->VerifyFound();
 
     conditional_rendering_begin.offset = buffer_create_info.size;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkConditionalRenderingBeginInfoEXT-offset-01983");
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -864,11 +853,6 @@ TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
-    PFN_vkCmdEndConditionalRenderingEXT vkCmdEndConditionalRenderingEXT =
-        (PFN_vkCmdEndConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdEndConditionalRenderingEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
@@ -879,11 +863,11 @@ TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
     conditional_rendering_begin.buffer = buffer.handle();
 
     m_commandBuffer->begin();
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginConditionalRenderingEXT-None-01980");
-    vkCmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
+    vk::CmdBeginConditionalRenderingEXT(m_commandBuffer->handle(), &conditional_rendering_begin);
     m_errorMonitor->VerifyFound();
-    vkCmdEndConditionalRenderingEXT(m_commandBuffer->handle());
+    vk::CmdEndConditionalRenderingEXT(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
 

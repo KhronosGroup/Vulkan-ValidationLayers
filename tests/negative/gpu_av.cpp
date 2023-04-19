@@ -768,11 +768,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     }
 
     if (multi_draw && multi_draw_features.multiDraw) {
-        auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
-        auto vkCmdDrawMultiIndexedEXT =
-            (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
-        assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
-
         VkMultiDrawInfoEXT multi_draws[3] = {};
         multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
         VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
@@ -788,7 +783,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+        vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
 
@@ -806,7 +801,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
             &descriptor_set.set_, 0, nullptr);
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-        vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+        vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
 
@@ -1317,12 +1312,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, features13.dynamicRendering ? (void *)&features13 : nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdDrawIndirectCountKHR =
-        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
-    if (vkCmdDrawIndirectCountKHR == nullptr) {
-        GTEST_SKIP() << "Did not find vkCmdDrawIndirectCountKHR function pointer.";
-    }
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 2 * sizeof(VkDrawIndirectCommand);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -1363,8 +1352,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
+                                sizeof(VkDrawIndirectCommand));
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -1386,8 +1375,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
-        vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
-                                  sizeof(VkDrawIndirectCommand));
+        vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
+                                    sizeof(VkDrawIndirectCommand));
 
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
@@ -1502,11 +1491,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    auto vkCmdDrawIndirectCountKHR =
-        (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
-    if (vkCmdDrawIndirectCountKHR == nullptr) {
-        GTEST_SKIP() << "did not find vkCmdDrawIndirectCountKHR function pointer";
-    }
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(VkDrawIndirectCommand);
@@ -1551,8 +1535,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkRect2D scissor = {{0, 0}, {16, 16}};
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
 
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
@@ -1570,20 +1554,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     // Offset of 4 should error
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyFound();
-
-    auto vkCmdDrawIndexedIndirectCountKHR =
-        (PFN_vkCmdDrawIndexedIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
-    if (vkCmdDrawIndexedIndirectCountKHR == nullptr) {
-        GTEST_SKIP() << "Did not find vkCmdDrawIndexedIndirectCountKHR function pointer.";
-    }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
     VkBufferObj indexed_draw_buffer;
@@ -1612,8 +1590,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkBufferObj index_buffer;
     index_buffer.init(*m_device, index_buffer_create_info);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
@@ -1632,8 +1610,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     // Offset of 4 should error
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_draw_buffer.handle(), 4, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
@@ -2081,10 +2059,6 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    auto vkCmdDrawIndexedIndirectCountKHR =
-        reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndexedIndirectCountKHR"));
-    ASSERT_TRUE(vkCmdDrawIndexedIndirectCountKHR != nullptr);
-
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
@@ -2125,8 +2099,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }

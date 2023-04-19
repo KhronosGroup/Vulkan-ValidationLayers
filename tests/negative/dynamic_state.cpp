@@ -270,27 +270,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     // First test attempted uses of VK_EXT_extended_dynamic_state without it being enabled.
     extended_dynamic_state_features.extendedDynamicState = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetCullModeEXT = (PFN_vkCmdSetCullModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCullModeEXT");
-    auto vkCmdSetFrontFaceEXT = (PFN_vkCmdSetFrontFaceEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetFrontFaceEXT");
-    auto vkCmdSetPrimitiveTopologyEXT =
-        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
-    auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
-    auto vkCmdSetDepthTestEnableEXT =
-        (PFN_vkCmdSetDepthTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthTestEnableEXT");
-    auto vkCmdSetDepthWriteEnableEXT =
-        (PFN_vkCmdSetDepthWriteEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthWriteEnableEXT");
-    auto vkCmdSetDepthCompareOpEXT =
-        (PFN_vkCmdSetDepthCompareOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthCompareOpEXT");
-    auto vkCmdSetDepthBoundsTestEnableEXT =
-        (PFN_vkCmdSetDepthBoundsTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBoundsTestEnableEXT");
-    auto vkCmdSetStencilTestEnableEXT =
-        (PFN_vkCmdSetStencilTestEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilTestEnableEXT");
-    auto vkCmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetStencilOpEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -317,43 +296,43 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     commandBuffer.begin();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08564",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08564",
                           VK_CULL_MODE_NONE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthBoundsTestEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthBoundsTestEnableEXT,
                           "VUID-vkCmdSetDepthBoundsTestEnable-None-08510", VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthCompareOpEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthCompareOpEXT,
                           "VUID-vkCmdSetDepthCompareOp-None-08518", VK_COMPARE_OP_NEVER);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthTestEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthTestEnableEXT,
                           "VUID-vkCmdSetDepthTestEnable-None-08516", VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetDepthWriteEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthWriteEnableEXT,
                           "VUID-vkCmdSetDepthWriteEnable-None-08520", VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08562",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08562",
                           VK_FRONT_FACE_CLOCKWISE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetPrimitiveTopologyEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetPrimitiveTopologyEXT,
                           "VUID-vkCmdSetPrimitiveTopology-None-08502", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-08590");
     VkRect2D scissor = {{0, 0}, {1, 1}};
-    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
+    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-08514");
-    vkCmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
-                         VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
+    vk::CmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
+                           VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vkCmdSetStencilTestEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetStencilTestEnableEXT,
                           "VUID-vkCmdSetStencilTestEnable-None-08512", VK_FALSE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-08588");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
-    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
+    vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
     m_errorMonitor->VerifyFound();
 
     commandBuffer.end();
@@ -381,27 +360,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetPrimitiveTopologyEXT =
-        (PFN_vkCmdSetPrimitiveTopologyEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT");
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
-    auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
-    auto vkCmdBindVertexBuffers2EXT =
-        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2EXT");
-    auto vkCmdSetViewportWithCount =
-        (PFN_vkCmdSetViewportWithCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCount");
-    auto vkCmdSetScissorWithCount =
-        (PFN_vkCmdSetScissorWithCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCount");
-    auto vkCmdBindVertexBuffers2 =
-        (PFN_vkCmdBindVertexBuffers2)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindVertexBuffers2");
-    if (vulkan_13) {
-        assert(vkCmdSetViewportWithCount != nullptr);
-        assert(vkCmdSetScissorWithCount != nullptr);
-        assert(vkCmdBindVertexBuffers2 != nullptr);
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Verify viewportCount and scissorCount are specified as zero.
@@ -508,24 +466,24 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     commandBuffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03355");
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
-                               offsets.data(), 0, 0);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
+                                 offsets.data(), 0, 0);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03355");
-        vkCmdBindVertexBuffers2(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
-                                offsets.data(), 0, 0);
+        vk::CmdBindVertexBuffers2(commandBuffer.handle(), m_device->props.limits.maxVertexInputBindings, 1, buffers.data(),
+                                  offsets.data(), 0, 0);
         m_errorMonitor->VerifyFound();
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03356");
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
-                               offsets.data(), 0, 0);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
+                                 offsets.data(), 0, 0);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-firstBinding-03356");
-        vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
-                                offsets.data(), 0, 0);
+        vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, m_device->props.limits.maxVertexInputBindings + 1, buffers.data(),
+                                  offsets.data(), 0, 0);
         m_errorMonitor->VerifyFound();
     }
 
@@ -535,11 +493,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pBuffers-03359");
         VkBuffer buffers2[1] = {bufferWrongUsage.handle()};
         VkDeviceSize offsets2[1] = {};
-        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+        vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pBuffers-03359");
-            vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+            vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -551,13 +509,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         VkBuffer buffers2[1] = {VK_NULL_HANDLE};
         VkDeviceSize offsets2[1] = {16};
         VkDeviceSize strides[1] = {m_device->props.limits.maxVertexInputBindingStride + 1ull};
-        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+        vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pBuffers-04111");
             m_errorMonitor->SetUnexpectedError("UNASSIGNED-GeneralParameterError-RequiredParameter");
             m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindVertexBuffers2-pBuffers-parameter");
-            vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
+            vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -565,21 +523,21 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         VkDeviceSize sizes[1] = {16};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pOffsets-03357");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pSizes-03358");
-        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, sizes, 0);
+        vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, sizes, 0);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pOffsets-03357");
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pSizes-03358");
-            vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, sizes, 0);
+            vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, sizes, 0);
             m_errorMonitor->VerifyFound();
         }
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pStrides-03362");
-        vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
+        vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pStrides-03362");
-            vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
+            vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, 1, buffers2, offsets2, 0, strides);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -621,27 +579,27 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     VkDeviceSize strides[1] = {0};
-    vkCmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+    vk::CmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
     VkRect2D scissor = {{0, 0}, {1, 1}};
-    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
+    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-viewportCount-03419");
     vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
-    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
+    vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
     strides[0] = 1;
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers2-pStrides-06209");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02721");
     vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     strides[0] = 4;
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
 
-    vkCmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vk::CmdSetPrimitiveTopologyEXT(commandBuffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveTopology-03420");
     vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -654,23 +612,23 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         VkViewport viewport2 = {
             0, 0, 1, 1, 0.0f, 0.0f,
         };
-        vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 0, &viewport2);
+        vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), 0, &viewport2);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-viewportCount-03394");
             m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCount-viewportCount-arraylength");
-            vkCmdSetViewportWithCount(commandBuffer.handle(), 0, &viewport2);
+            vk::CmdSetViewportWithCount(commandBuffer.handle(), 0, &viewport2);
             m_errorMonitor->VerifyFound();
         }
     }
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03400");
         VkRect2D scissor2 = {{1, 0}, {vvl::kI32Max, 16}};
-        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
+        vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03400");
-            vkCmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor2);
+            vk::CmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor2);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -678,11 +636,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03401");
         VkRect2D scissor2 = {{0, 1}, {16, vvl::kI32Max}};
-        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
+        vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor2);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03401");
-            vkCmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor2);
+            vk::CmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor2);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -690,12 +648,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     if (features2.features.multiViewport) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03397");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
-        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
+        vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03397");
             m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
-            vkCmdSetScissorWithCount(commandBuffer.handle(), 0, 0);
+            vk::CmdSetScissorWithCount(commandBuffer.handle(), 0, 0);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -703,19 +661,19 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-x-03399");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-x-03399");
     VkRect2D scissor3 = {{-1, -1}, {0, 0}};
-    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor3);
+    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor3);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-x-03399");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-x-03399");
-        vkCmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor3);
+        vk::CmdSetScissorWithCount(commandBuffer.handle(), 1, &scissor3);
         m_errorMonitor->VerifyFound();
     }
 
     if (vulkan_13) {
-        vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
+        vk::CmdBindVertexBuffers2(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
     }
-    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
+    vk::CmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
 
     commandBuffer.end();
 }
@@ -742,11 +700,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     features2.features.multiViewport = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetViewportWithCountEXT =
-        (PFN_vkCmdSetViewportWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWithCountEXT");
-    auto vkCmdSetScissorWithCountEXT =
-        (PFN_vkCmdSetScissorWithCountEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetScissorWithCountEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
@@ -755,13 +708,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-viewportCount-03395");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     VkViewport viewports[] = {viewport, viewport};
-    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), size(viewports), viewports);
+    vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), size(viewports), viewports);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03398");
     VkRect2D scissor = {{0, 0}, {1, 1}};
     VkRect2D scissors[] = {scissor, scissor};
-    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), size(scissors), scissors);
+    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), size(scissors), scissors);
     m_errorMonitor->VerifyFound();
 
     commandBuffer.end();
@@ -794,14 +747,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     // Attempt using VK_EXT_extended_dynamic_state2 without it being enabled.
     extended_dynamic_state2_features.extendedDynamicState2 = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetRasterizerDiscardEnableEXT =
-        (PFN_vkCmdSetRasterizerDiscardEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizerDiscardEnableEXT");
-    auto vkCmdSetDepthBiasEnableEXT =
-        (PFN_vkCmdSetDepthBiasEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthBiasEnableEXT");
-    auto vkCmdSetPrimitiveRestartEnableEXT =
-        (PFN_vkCmdSetPrimitiveRestartEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveRestartEnableEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -821,15 +766,15 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     m_commandBuffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-08548");
-    vkCmdSetRasterizerDiscardEnableEXT(m_commandBuffer.handle(), VK_TRUE);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-08568");
-    vkCmdSetDepthBiasEnableEXT(m_commandBuffer.handle(), VK_TRUE);
+    vk::CmdSetDepthBiasEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-08500");
-    vkCmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer.end();
@@ -857,10 +802,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     // Attempt using VK_EXT_extended_dynamic_state2 without it being enabled.
     extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetPatchControlPointsEXT =
-        (PFN_vkCmdSetPatchControlPointsEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -879,7 +820,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     m_commandBuffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPatchControlPointsEXT-None-08574");
-    vkCmdSetPatchControlPointsEXT(m_commandBuffer.handle(), 3);
+    vk::CmdSetPatchControlPointsEXT(m_commandBuffer.handle(), 3);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer.end();
@@ -907,9 +848,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     // Attempt using VK_EXT_extended_dynamic_state2 without it being enabled.
     extended_dynamic_state2_features.extendedDynamicState2LogicOp = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetLogicOpEXT = (PFN_vkCmdSetLogicOpEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
@@ -928,7 +866,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     m_commandBuffer.begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEXT-None-08544");
-    vkCmdSetLogicOpEXT(m_commandBuffer.handle(), VK_LOGIC_OP_AND);
+    vk::CmdSetLogicOpEXT(m_commandBuffer.handle(), VK_LOGIC_OP_AND);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer.end();
@@ -1025,9 +963,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    auto vkCmdSetPatchControlPointsEXT =
-        (PFN_vkCmdSetPatchControlPointsEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPatchControlPointsEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT};
@@ -1070,7 +1005,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
 
         // setting an invalid value for patchControlpoints is an error
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPatchControlPointsEXT-patchControlPoints-04874");
-        vkCmdSetPatchControlPointsEXT(m_commandBuffer.handle(), 0x1000);
+        vk::CmdSetPatchControlPointsEXT(m_commandBuffer.handle(), 0x1000);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(m_commandBuffer.handle());
         m_commandBuffer.end();
@@ -1344,265 +1279,204 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
     m_commandBuffer.begin();
     {
-        auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetTessellationDomainOriginEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetTessellationDomainOriginEXT-None-08576");
-        vkCmdSetTessellationDomainOriginEXT(m_commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+        vk::CmdSetTessellationDomainOriginEXT(m_commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetDepthClampEnableEXT =
-            (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetDepthClampEnableEXT-None-08582");
-        vkCmdSetDepthClampEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetDepthClampEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetPolygonModeEXT =
-            (PFN_vkCmdSetPolygonModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPolygonModeEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-None-08566");
-        vkCmdSetPolygonModeEXT(m_commandBuffer.handle(), VK_POLYGON_MODE_FILL);
+        vk::CmdSetPolygonModeEXT(m_commandBuffer.handle(), VK_POLYGON_MODE_FILL);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetRasterizationSamplesEXT =
-            (PFN_vkCmdSetRasterizationSamplesEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizationSamplesEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetRasterizationSamplesEXT-None-08552");
-        vkCmdSetRasterizationSamplesEXT(m_commandBuffer.handle(), VK_SAMPLE_COUNT_1_BIT);
+        vk::CmdSetRasterizationSamplesEXT(m_commandBuffer.handle(), VK_SAMPLE_COUNT_1_BIT);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetSampleMaskEXT = (PFN_vkCmdSetSampleMaskEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetSampleMaskEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetSampleMaskEXT-None-08504");
         VkSampleMask sampleMask = 1U;
-        vkCmdSetSampleMaskEXT(m_commandBuffer.handle(), VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+        vk::CmdSetSampleMaskEXT(m_commandBuffer.handle(), VK_SAMPLE_COUNT_1_BIT, &sampleMask);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetAlphaToCoverageEnableEXT =
-            (PFN_vkCmdSetAlphaToCoverageEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetAlphaToCoverageEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetAlphaToCoverageEnableEXT-None-08506");
-        vkCmdSetAlphaToCoverageEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetAlphaToOneEnableEXT =
-            (PFN_vkCmdSetAlphaToOneEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetAlphaToOneEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetAlphaToOneEnableEXT-None-08508");
-        vkCmdSetAlphaToOneEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetAlphaToOneEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetLogicOpEnableEXT =
-            (PFN_vkCmdSetLogicOpEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEnableEXT-None-08542");
-        vkCmdSetLogicOpEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetLogicOpEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetColorBlendEnableEXT =
-            (PFN_vkCmdSetColorBlendEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetColorBlendEnableEXT-None-08536");
         VkBool32 enable = VK_FALSE;
-        vkCmdSetColorBlendEnableEXT(m_commandBuffer.handle(), 0U, 1U, &enable);
+        vk::CmdSetColorBlendEnableEXT(m_commandBuffer.handle(), 0U, 1U, &enable);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetColorBlendEquationEXT =
-            (PFN_vkCmdSetColorBlendEquationEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendEquationEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetColorBlendEquationEXT-None-08538");
         VkColorBlendEquationEXT equation = {
             VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
         };
-        vkCmdSetColorBlendEquationEXT(m_commandBuffer.handle(), 0U, 1U, &equation);
+        vk::CmdSetColorBlendEquationEXT(m_commandBuffer.handle(), 0U, 1U, &equation);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetColorWriteMaskEXT =
-            (PFN_vkCmdSetColorWriteMaskEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorWriteMaskEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteMaskEXT-None-08540");
         VkColorComponentFlags const components = {VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
                                                   VK_COLOR_COMPONENT_A_BIT};
-        vkCmdSetColorWriteMaskEXT(m_commandBuffer.handle(), 0U, 1U, &components);
+        vk::CmdSetColorWriteMaskEXT(m_commandBuffer.handle(), 0U, 1U, &components);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetRasterizationStreamEXT =
-            (PFN_vkCmdSetRasterizationStreamEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizationStreamEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetRasterizationStreamEXT-None-08550");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
-        vkCmdSetRasterizationStreamEXT(m_commandBuffer.handle(), 0U);
+        vk::CmdSetRasterizationStreamEXT(m_commandBuffer.handle(), 0U);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetConservativeRasterizationModeEXT = (PFN_vkCmdSetConservativeRasterizationModeEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetConservativeRasterizationModeEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetConservativeRasterizationModeEXT-None-08570");
-        vkCmdSetConservativeRasterizationModeEXT(m_commandBuffer.handle(), VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
+        vk::CmdSetConservativeRasterizationModeEXT(m_commandBuffer.handle(), VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit,
             "VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-None-08572");
-        vkCmdSetExtraPrimitiveOverestimationSizeEXT(m_commandBuffer.handle(), 0.0f);
+        vk::CmdSetExtraPrimitiveOverestimationSizeEXT(m_commandBuffer.handle(), 0.0f);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetDepthClipEnableEXT =
-            (PFN_vkCmdSetDepthClipEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClipEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetDepthClipEnableEXT-None-08584");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClipEnableEXT-depthClipEnable-07451");
-        vkCmdSetDepthClipEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetDepthClipEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetSampleLocationsEnableEXT =
-            (PFN_vkCmdSetSampleLocationsEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetSampleLocationsEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetSampleLocationsEnableEXT-None-08554");
-        vkCmdSetSampleLocationsEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetSampleLocationsEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetColorBlendAdvancedEXT =
-            (PFN_vkCmdSetColorBlendAdvancedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendAdvancedEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetColorBlendAdvancedEXT-None-08592");
         VkColorBlendAdvancedEXT const advanced = {VK_BLEND_OP_BLUE_EXT, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT,
                                                   VK_FALSE};
-        vkCmdSetColorBlendAdvancedEXT(m_commandBuffer.handle(), 0U, 1U, &advanced);
+        vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer.handle(), 0U, 1U, &advanced);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetProvokingVertexModeEXT =
-            (PFN_vkCmdSetProvokingVertexModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetProvokingVertexModeEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetProvokingVertexModeEXT-None-08580");
-        vkCmdSetProvokingVertexModeEXT(m_commandBuffer.handle(), VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT);
+        vk::CmdSetProvokingVertexModeEXT(m_commandBuffer.handle(), VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetLineRasterizationModeEXT =
-            (PFN_vkCmdSetLineRasterizationModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineRasterizationModeEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-None-08558");
-        vkCmdSetLineRasterizationModeEXT(m_commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+        vk::CmdSetLineRasterizationModeEXT(m_commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetLineStippleEnableEXT =
-            (PFN_vkCmdSetLineStippleEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineStippleEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetLineStippleEnableEXT-None-08560");
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetDepthClipNegativeOneToOneEXT = (PFN_vkCmdSetDepthClipNegativeOneToOneEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetDepthClipNegativeOneToOneEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-None-08586");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-depthClipControl-07453");
-        vkCmdSetDepthClipNegativeOneToOneEXT(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetDepthClipNegativeOneToOneEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetViewportWScalingEnableNV =
-            (PFN_vkCmdSetViewportWScalingEnableNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWScalingEnableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetViewportWScalingEnableNV-None-08594");
-        vkCmdSetViewportWScalingEnableNV(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetViewportWScalingEnableNV(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetViewportSwizzleNV =
-            (PFN_vkCmdSetViewportSwizzleNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetViewportSwizzleNV");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetViewportSwizzleNV-None-08578");
         VkViewportSwizzleNV const swizzle = {
             VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
             VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV};
-        vkCmdSetViewportSwizzleNV(m_commandBuffer.handle(), 0U, 1U, &swizzle);
+        vk::CmdSetViewportSwizzleNV(m_commandBuffer.handle(), 0U, 1U, &swizzle);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageToColorEnableNV =
-            (PFN_vkCmdSetCoverageToColorEnableNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageToColorEnableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageToColorEnableNV-None-08524");
-        vkCmdSetCoverageToColorEnableNV(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetCoverageToColorEnableNV(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageToColorLocationNV =
-            (PFN_vkCmdSetCoverageToColorLocationNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageToColorLocationNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageToColorLocationNV-None-08526");
-        vkCmdSetCoverageToColorLocationNV(m_commandBuffer.handle(), 0U);
+        vk::CmdSetCoverageToColorLocationNV(m_commandBuffer.handle(), 0U);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageModulationModeNV =
-            (PFN_vkCmdSetCoverageModulationModeNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageModulationModeNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageModulationModeNV-None-08530");
-        vkCmdSetCoverageModulationModeNV(m_commandBuffer.handle(), VK_COVERAGE_MODULATION_MODE_NONE_NV);
+        vk::CmdSetCoverageModulationModeNV(m_commandBuffer.handle(), VK_COVERAGE_MODULATION_MODE_NONE_NV);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageModulationTableEnableNV = (PFN_vkCmdSetCoverageModulationTableEnableNV)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetCoverageModulationTableEnableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageModulationTableEnableNV-None-08532");
-        vkCmdSetCoverageModulationTableEnableNV(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetCoverageModulationTableEnableNV(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageModulationTableNV =
-            (PFN_vkCmdSetCoverageModulationTableNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageModulationTableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageModulationTableNV-None-08534");
         float const modulation = 1.0f;
-        vkCmdSetCoverageModulationTableNV(m_commandBuffer.handle(), 1U, &modulation);
+        vk::CmdSetCoverageModulationTableNV(m_commandBuffer.handle(), 1U, &modulation);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetShadingRateImageEnableNV =
-            (PFN_vkCmdSetShadingRateImageEnableNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetShadingRateImageEnableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetShadingRateImageEnableNV-None-08556");
-        vkCmdSetShadingRateImageEnableNV(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetShadingRateImageEnableNV(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetRepresentativeFragmentTestEnableNV = (PFN_vkCmdSetRepresentativeFragmentTestEnableNV)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetRepresentativeFragmentTestEnableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit,
             "VUID-vkCmdSetRepresentativeFragmentTestEnableNV-None-08522");
-        vkCmdSetRepresentativeFragmentTestEnableNV(m_commandBuffer.handle(), VK_FALSE);
+        vk::CmdSetRepresentativeFragmentTestEnableNV(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
-        auto vkCmdSetCoverageReductionModeNV =
-            (PFN_vkCmdSetCoverageReductionModeNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageReductionModeNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageReductionModeNV-None-08528");
-        vkCmdSetCoverageReductionModeNV(m_commandBuffer.handle(), VK_COVERAGE_REDUCTION_MODE_MERGE_NV);
+        vk::CmdSetCoverageReductionModeNV(m_commandBuffer.handle(), VK_COVERAGE_REDUCTION_MODE_MERGE_NV);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1696,9 +1570,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
-        auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetTessellationDomainOriginEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1722,7 +1593,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07619");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
-        vkCmdSetTessellationDomainOriginEXT(commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+        vk::CmdSetTessellationDomainOriginEXT(commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1730,9 +1601,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable) {
-        auto vkCmdSetDepthClampEnableEXT =
-            (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1752,7 +1620,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449");
-        vkCmdSetDepthClampEnableEXT(commandBuffer.handle(), VK_TRUE);
+        vk::CmdSetDepthClampEnableEXT(commandBuffer.handle(), VK_TRUE);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1760,9 +1628,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3PolygonMode) {
-        auto vkCmdSetPolygonModeEXT =
-            (PFN_vkCmdSetPolygonModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPolygonModeEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1782,14 +1647,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424");
-        vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_POINT);
+        vk::CmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_POINT);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-polygonMode-parameter");
         // 07425 is effectively handled by VUID-vkCmdSetPolygonModeEXT-polygonMode-parameter since it triggers when the enum is used
         // without the extension being enabled m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
         // "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425");
-        vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_FILL_RECTANGLE_NV);
+        vk::CmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_FILL_RECTANGLE_NV);
         m_errorMonitor->VerifyFound();
 
         vk::CmdEndRenderPass(commandBuffer.handle());
@@ -1798,9 +1663,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
-        auto vkCmdSetAlphaToOneEnableEXT =
-            (PFN_vkCmdSetAlphaToOneEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetAlphaToOneEnableEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1820,7 +1682,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607");
-        vkCmdSetAlphaToOneEnableEXT(commandBuffer.handle(), VK_TRUE);
+        vk::CmdSetAlphaToOneEnableEXT(commandBuffer.handle(), VK_TRUE);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1828,9 +1690,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
-        auto vkCmdSetLogicOpEnableEXT =
-            (PFN_vkCmdSetLogicOpEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEnableEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1850,7 +1709,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366");
-        vkCmdSetLogicOpEnableEXT(commandBuffer.handle(), VK_TRUE);
+        vk::CmdSetLogicOpEnableEXT(commandBuffer.handle(), VK_TRUE);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1858,9 +1717,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
-        auto vkCmdSetColorBlendEquationEXT =
-            (PFN_vkCmdSetColorBlendEquationEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendEquationEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1886,7 +1742,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-colorBlendOp-07361");
         VkColorBlendEquationEXT const equation = {VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_OP_ZERO_EXT,
                                                   VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_OP_ZERO_EXT};
-        vkCmdSetColorBlendEquationEXT(commandBuffer.handle(), 0U, 1U, &equation);
+        vk::CmdSetColorBlendEquationEXT(commandBuffer.handle(), 0U, 1U, &equation);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1897,9 +1753,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         extended_dynamic_state3_features.extendedDynamicState3RasterizationStream) {
         auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
         GetPhysicalDeviceProperties2(transform_feedback_props);
-
-        auto vkCmdSetRasterizationStreamEXT =
-            (PFN_vkCmdSetRasterizationStreamEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizationStreamEXT");
 
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
@@ -1924,7 +1777,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413");
         }
-        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), transform_feedback_props.maxTransformFeedbackStreams + 1);
+        vk::CmdSetRasterizationStreamEXT(commandBuffer.handle(), transform_feedback_props.maxTransformFeedbackStreams + 1);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1933,9 +1786,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
 
     if (IsExtensionsEnabled(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME) &&
         extended_dynamic_state3_features.extendedDynamicState3ExtraPrimitiveOverestimationSize) {
-        auto vkCmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -1956,7 +1806,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428");
-        vkCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer.handle(), -1.0F);
+        vk::CmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer.handle(), -1.0F);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -1967,9 +1817,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced) {
         auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
         GetPhysicalDeviceProperties2(blend_operation_advanced);
-
-        auto vkCmdSetColorBlendAdvancedEXT =
-            (PFN_vkCmdSetColorBlendAdvancedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendAdvancedEXT");
 
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
@@ -1999,7 +1846,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendAdvancedEXT-blendOverlap-07507");
         }
         VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ZERO_EXT, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_DISJOINT_EXT, VK_FALSE};
-        vkCmdSetColorBlendAdvancedEXT(commandBuffer.handle(), 0U, 1U, &advanced);
+        vk::CmdSetColorBlendAdvancedEXT(commandBuffer.handle(), 0U, 1U, &advanced);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -2008,9 +1855,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
 
     if (IsExtensionsEnabled(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME) &&
         extended_dynamic_state3_features.extendedDynamicState3ProvokingVertexMode) {
-        auto vkCmdSetProvokingVertexModeEXT =
-            (PFN_vkCmdSetProvokingVertexModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetProvokingVertexModeEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -2030,7 +1874,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447");
-        vkCmdSetProvokingVertexModeEXT(commandBuffer.handle(), VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT);
+        vk::CmdSetProvokingVertexModeEXT(commandBuffer.handle(), VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -2039,9 +1883,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
 
     if (IsExtensionsEnabled(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME) &&
         extended_dynamic_state3_features.extendedDynamicState3LineRasterizationMode) {
-        auto vkCmdSetLineRasterizationModeEXT =
-            (PFN_vkCmdSetLineRasterizationModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineRasterizationModeEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -2061,13 +1902,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");
-        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT);
+        vk::CmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419");
-        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT);
+        vk::CmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420");
-        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT);
+        vk::CmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -2075,13 +1916,10 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
-        auto vkCmdSetColorWriteMaskEXT =
-            (PFN_vkCmdSetColorWriteMaskEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorWriteMaskEXT");
-
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
-        vkCmdSetColorWriteMaskEXT(commandBuffer.handle(), 0U, 1U, nullptr);
+        vk::CmdSetColorWriteMaskEXT(commandBuffer.handle(), 0U, 1U, nullptr);
         m_errorMonitor->VerifyFound();
         commandBuffer.end();
     }
@@ -2101,9 +1939,6 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04807
@@ -2123,7 +1958,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
 
     // VUID-vkCmdSetVertexInputEXT-None-08546
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-None-08546");
-    vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 0, nullptr, 0, nullptr);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -2149,9 +1984,6 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442
@@ -2176,8 +2008,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
         std::vector<VkVertexInputBindingDescription2EXT> bindings(m_device->props.limits.maxVertexInputBindings + 1u, binding);
         for (uint32_t i = 0; i < bindings.size(); ++i) bindings[i].binding = i;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), m_device->props.limits.maxVertexInputBindings + 1u, bindings.data(), 0,
-                               nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), m_device->props.limits.maxVertexInputBindings + 1u, bindings.data(), 0,
+                                 nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2191,8 +2023,8 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                                       attribute);
         for (uint32_t i = 0; i < attributes.size(); ++i) attributes[i].location = i;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, m_device->props.limits.maxVertexInputAttributes + 1u,
-                               attributes.data());
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, m_device->props.limits.maxVertexInputAttributes + 1u,
+                                 attributes.data());
         m_errorMonitor->VerifyFound();
     }
 
@@ -2203,7 +2035,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
         VkVertexInputAttributeDescription2EXT attribute = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-binding-04793");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2213,7 +2045,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
             {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1},
             {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1}};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 2, bindings, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 2, bindings, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2225,7 +2057,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
             {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
             {VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0}};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 2, attributes);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 2, attributes);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2238,7 +2070,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                        VK_VERTEX_INPUT_RATE_VERTEX,
                                                        1};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-binding-04796");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2251,7 +2083,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                        VK_VERTEX_INPUT_RATE_VERTEX,
                                                        1};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-stride-04797");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2260,7 +2092,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 0};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-04798");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2269,7 +2101,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-04799");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2284,7 +2116,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                            VK_FORMAT_R32G32B32A32_SFLOAT,
                                                            0};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-location-06228");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2300,7 +2132,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
                                                            0};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-binding-06229");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetVertexInputEXT-binding-04793");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2313,7 +2145,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT,
             m_device->props.limits.maxVertexInputAttributeOffset + 1u};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-offset-06230");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2328,7 +2160,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
             VkVertexInputAttributeDescription2EXT attribute = {
                 VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, format, 0};
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputAttributeDescription2EXT-format-04805");
-            vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+            vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -2366,9 +2198,6 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
     GetPhysicalDeviceProperties2(properties2);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT");
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
@@ -2379,7 +2208,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,       nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE,
             vertex_attribute_divisor_properties.maxVertexAttribDivisor + 1u};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-06226");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2389,7 +2218,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,  nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX,
             vertex_attribute_divisor_properties.maxVertexAttribDivisor};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVertexInputBindingDescription2EXT-divisor-06227");
-        vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
+        vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2428,14 +2257,11 @@ TEST_F(VkLayerTest, DynamicRasterizationSamples) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    const auto vkCmdSetRasterizationSamplesEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetRasterizationSamplesEXT>("vkCmdSetRasterizationSamplesEXT");
-
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    vkCmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_4_BIT);
+    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_4_BIT);
     const char *vuid = IsExtensionsEnabled(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME)
                            ? "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284"
                            : "VUID-vkCmdDraw-rasterizationSamples-04740";
@@ -2444,7 +2270,7 @@ TEST_F(VkLayerTest, DynamicRasterizationSamples) {
     m_errorMonitor->VerifyFound();
 
     // Should be valid now
-    vkCmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -2474,8 +2300,6 @@ TEST_F(VkLayerTest, DynamicColorBlendAttchment) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     constexpr uint32_t color_attachments = 2;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(color_attachments));
-
-    auto vkCmdSetColorBlendEnableEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendEnableEXT>("vkCmdSetColorBlendEnableEXT");
 
     std::stringstream fsSource;
     fsSource << "#version 450\n";
@@ -2508,14 +2332,14 @@ TEST_F(VkLayerTest, DynamicColorBlendAttchment) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     VkBool32 color_blend_enabled[2] = {VK_FALSE, VK_FALSE};
-    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-firstAttachment-07476");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // all are set now so should work
-    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 2, &color_blend_enabled[0]);
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 2, &color_blend_enabled[0]);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -2549,10 +2373,6 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state3_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const auto vkCmdSetLineRasterizationModeEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetLineRasterizationModeEXT>("vkCmdSetLineRasterizationModeEXT");
-    const auto vkCmdSetLineStippleEnableEXT = GetDeviceProcAddr<PFN_vkCmdSetLineStippleEnableEXT>("vkCmdSetLineStippleEnableEXT");
-
     // set both from dynamic state, don't need a VkPipelineRasterizationLineStateCreateInfoEXT in pNext
     {
         CreatePipelineHelper pipe(*this);
@@ -2579,14 +2399,14 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
 
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-        vkCmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+        vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07498");
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // is valid now
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_FALSE);
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
         m_commandBuffer->EndRenderPass();
@@ -2611,7 +2431,7 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07495");
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -2637,7 +2457,7 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07496");
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -2663,7 +2483,7 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        vkCmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07497");
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -2726,10 +2546,6 @@ TEST_F(VkLayerTest, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     uint32_t count = m_device->props.limits.maxFragmentDualSrcAttachments + 1;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(count));
 
-    auto vkCmdSetColorBlendEnableEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendEnableEXT>("vkCmdSetColorBlendEnableEXT");
-    auto vkCmdSetColorBlendEquationEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendEquationEXT>("vkCmdSetColorBlendEquationEXT");
-    auto vkCmdSetColorWriteMaskEXT = GetDeviceProcAddr<PFN_vkCmdSetColorWriteMaskEXT>("vkCmdSetColorWriteMaskEXT");
-
     std::stringstream fsSource;
     fsSource << "#version 450\n";
     for (uint32_t i = 0; i < count; ++i) {
@@ -2778,16 +2594,16 @@ TEST_F(VkLayerTest, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
         VK_BLEND_FACTOR_SRC_ALPHA,  VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD};
     VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT;
 
-    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);  // enables
-    vkCmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &color_blend_equation);
-    vkCmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 1, &color_component_flags);
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[0]);  // enables
+    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0, 1, &color_blend_equation);
+    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 1, &color_component_flags);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Fragment-06427");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // disables blending so no error should appear
-    vkCmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[1]);
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &color_blend_enabled[1]);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -2840,9 +2656,6 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
 
-    auto vkCmdSetColorWriteEnableEXT =
-        reinterpret_cast<PFN_vkCmdSetColorWriteEnableEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT"));
-
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0].blendEnable = VK_TRUE;
     color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
@@ -2880,12 +2693,12 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
     m_errorMonitor->VerifyFound();
 
     VkBool32 color_write_enable[] = {VK_TRUE, VK_FALSE};
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-attachmentCount-07750");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable);
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -2914,9 +2727,6 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     // need a valid array to index into
     std::vector<VkBool32> color_write_enable(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
 
-    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
-        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
-
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
     helper.InitState();
@@ -2929,18 +2739,18 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     // TODO: The generated code is not use the correct implicit VUID, but at least its still correctly validating
     // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-arraylength");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 0, color_write_enable.data());
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 0, color_write_enable.data());
     m_errorMonitor->VerifyFound();
 
     // over the limit
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-attachmentCount-06656");
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), m_device->props.limits.maxColorAttachments + 1,
-                                color_write_enable.data());
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), m_device->props.limits.maxColorAttachments + 1,
+                                  color_write_enable.data());
     m_errorMonitor->VerifyFound();
 
     // mismatch of attachmentCount value is allowed for dynamic
     // see https://gitlab.khronos.org/vulkan/vulkan/-/issues/2868
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable.data());
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 2, color_write_enable.data());
 
     m_commandBuffer->end();
 }
@@ -2960,9 +2770,6 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
 
     VkBool32 color_write_enable[2] = {VK_TRUE, VK_FALSE};
 
-    PFN_vkCmdSetColorWriteEnableEXT vkCmdSetColorWriteEnableEXT =
-        (PFN_vkCmdSetColorWriteEnableEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT");
-
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
     helper.InitState();
@@ -2971,7 +2778,7 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteEnableEXT-None-04803");
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
@@ -2987,9 +2794,6 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
 
     auto discard_rect_ci = LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
     discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
@@ -3016,8 +2820,8 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
 
     // only fill in [0, 1, 3] index
     VkRect2D discard_rectangles[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 2, discard_rectangles);
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 3, 1, discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 2, discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 3, 1, discard_rectangles);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07751");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -3037,9 +2841,6 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
 
     auto discard_rect_ci = LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
     discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
@@ -3061,7 +2862,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -3075,7 +2876,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     // set again for this command buffer
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -3115,9 +2916,6 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
         GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";
     }
 
-    auto vkCmdSetSampleLocationsEXT =
-        reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetSampleLocationsEXT"));
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
@@ -3140,7 +2938,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -3154,7 +2952,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     // set again for this command buffer
-    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
@@ -3570,9 +3368,6 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
     phys_dev_props_2.pNext = &discard_rectangle_properties;
     GetPhysicalDeviceProperties2(phys_dev_props_2);
 
-    auto fpCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
-
     if (discard_rectangle_properties.maxDiscardRectangles == 0) {
         GTEST_SKIP() << "Discard rectangles are not supported";
     }
@@ -3585,13 +3380,13 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-x-00587");
-    fpCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
 
     discard_rectangles.offset.x = 0;
     discard_rectangles.offset.y = -32;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-x-00587");
-    fpCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
@@ -3606,8 +3401,6 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkCmdSetDiscardRectangleEXT = GetDeviceProcAddr<PFN_vkCmdSetDiscardRectangleEXT>("vkCmdSetDiscardRectangleEXT");
-
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 1;
     discard_rectangles.offset.y = 0;
@@ -3616,7 +3409,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-offset-00588");
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
 
     discard_rectangles.offset.x = 0;
@@ -3624,7 +3417,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     discard_rectangles.extent.width = 64;
     discard_rectangles.extent.height = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-offset-00589");
-    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 1, &discard_rectangles);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3647,9 +3440,6 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
     phys_dev_props_2.pNext = &discard_rectangle_properties;
     GetPhysicalDeviceProperties2(phys_dev_props_2);
 
-    auto fpCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
-
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 0;
     discard_rectangles.offset.y = 0;
@@ -3658,8 +3448,8 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585");
-    fpCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), discard_rectangle_properties.maxDiscardRectangles, 1,
-                                &discard_rectangles);
+    vk::CmdSetDiscardRectangleEXT(m_commandBuffer->handle(), discard_rectangle_properties.maxDiscardRectangles, 1,
+                                  &discard_rectangles);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3677,9 +3467,6 @@ TEST_F(VkLayerTest, DiscardRectanglesVersion) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkCmdSetDiscardRectangleEnableEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetDiscardRectangleEnableEXT>("vkCmdSetDiscardRectangleEnableEXT");
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
@@ -3702,7 +3489,7 @@ TEST_F(VkLayerTest, DiscardRectanglesVersion) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDiscardRectangleEnableEXT-specVersion-07851");
-    vkCmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

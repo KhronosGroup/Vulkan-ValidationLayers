@@ -219,7 +219,6 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
-    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
 
     VkBufferObj buffer_a;
     VkBufferObj buffer_b;
@@ -256,7 +255,7 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
         auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.bufferMemoryBarrierCount = 1;
         dep_info.pBufferMemoryBarriers = &buffer_barrier;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
     }
 
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
@@ -283,14 +282,14 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
         auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
 
         vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;  // Protect C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
         vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
         m_errorMonitor->VerifyFound();
 
@@ -737,7 +736,6 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
-    auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -798,7 +796,7 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
         auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.imageMemoryBarrierCount = 1;
         dep_info.pImageMemoryBarriers = &image_barrier;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
     }
 
     vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
@@ -825,14 +823,14 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
         auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
         vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
         // Use barrier to protect last reader, but not last writer...
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;  // Protects C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-        fpCmdPipelineBarrier2KHR(cb, &dep_info);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
         vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
         m_errorMonitor->VerifyFound();
     }
@@ -3652,7 +3650,6 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    auto fpCmdWaitEvents2KHR = (PFN_vkCmdWaitEvents2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWaitEvents2KHR");
 
     VkEventObj event;
     event.init(*m_device, VkEventObj::create_info(0));
@@ -3662,7 +3659,7 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
-    fpCmdWaitEvents2KHR(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
+    vk::CmdWaitEvents2KHR(m_commandBuffer->handle(), 1, &event_handle, &dependency_info);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWaitEvents2-synchronization2-03836");
@@ -3689,13 +3686,6 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     synchronization2.synchronization2 = VK_FALSE;  // Invalid
     GetPhysicalDeviceFeatures2(synchronization2);
 
-    auto vkCmdPipelineBarrier2KHR =
-        (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
-    auto vkCmdResetEvent2KHR = (PFN_vkCmdResetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdResetEvent2KHR");
-    auto vkCmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetEvent2KHR");
-    auto vkCmdWriteTimestamp2KHR =
-        (PFN_vkCmdWriteTimestamp2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR");
-
     bool timestamp = false;
 
     uint32_t queue_count;
@@ -3711,7 +3701,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     VkDependencyInfoKHR dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-synchronization2-03848");
-    vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
     VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
@@ -3721,11 +3711,11 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     VkPipelineStageFlagBits2KHR stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-synchronization2-03829");
-    vkCmdResetEvent2KHR(m_commandBuffer->handle(), event.handle(), stage);
+    vk::CmdResetEvent2KHR(m_commandBuffer->handle(), event.handle(), stage);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent2-synchronization2-03824");
-    vkCmdSetEvent2KHR(m_commandBuffer->handle(), event.handle(), &dependency_info);
+    vk::CmdSetEvent2KHR(m_commandBuffer->handle(), event.handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
 
     if (timestamp) {
@@ -3737,7 +3727,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
         query_pool.init(*m_device, qpci);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");
-        vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
+        vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), stage, query_pool.handle(), 0);
         m_errorMonitor->VerifyFound();
         if (vulkan_13) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp2-synchronization2-03858");

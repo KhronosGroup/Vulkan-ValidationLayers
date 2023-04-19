@@ -218,46 +218,37 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     vk_testing::PipelineLayout pipeline_layout(*m_device, plci);
 
     {
-        auto vkGetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorSetLayoutSizeEXT"));
         VkDeviceSize size;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorSetLayoutSizeEXT-None-08011");
-        vkGetDescriptorSetLayoutSizeEXT(m_device->device(), dsl.handle(), &size);
+        vk::GetDescriptorSetLayoutSizeEXT(m_device->device(), dsl.handle(), &size);
         m_errorMonitor->VerifyFound();
     }
 
     {
-        auto vkGetDescriptorSetLayoutBindingOffsetEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorSetLayoutBindingOffsetEXT"));
         VkDeviceSize offset;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-None-08013");
-        vkGetDescriptorSetLayoutBindingOffsetEXT(m_device->device(), dsl.handle(), 0, &offset);
+        vk::GetDescriptorSetLayoutBindingOffsetEXT(m_device->device(), dsl.handle(), 0, &offset);
         m_errorMonitor->VerifyFound();
     }
 
     {
-        auto vkGetDescriptorEXT =
-            reinterpret_cast<PFN_vkGetDescriptorEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorEXT"));
         uint8_t buffer[128];
         auto dgi = LvlInitStruct<VkDescriptorGetInfoEXT>();
         dgi.type = VK_DESCRIPTOR_TYPE_SAMPLER;
         dgi.data.pSampler = &sampler.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-None-08015");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.samplerDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.samplerDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
     }
 
     {
-        auto vkCmdBindDescriptorBufferEmbeddedSamplersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBufferEmbeddedSamplersEXT"));
-
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-None-08068");
-        vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     pipeline_layout.handle(), 0);
+        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                       pipeline_layout.handle(), 0);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();
@@ -374,24 +365,19 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
             vk_testing::Buffer as_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0U);
 
-            PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR =
-                reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-                    vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
-            assert(vkCreateAccelerationStructureKHR != nullptr);
-
             VkAccelerationStructureKHR as;
             auto asci = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
             asci.createFlags = VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
             asci.buffer = as_buffer.handle();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108");
-            vkCreateAccelerationStructureKHR(m_device->device(), &asci, NULL, &as);
+            vk::CreateAccelerationStructureKHR(m_device->device(), &asci, NULL, &as);
             m_errorMonitor->VerifyFound();
 
             asci.pNext = &ocddci;
             asci.createFlags &= ~VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109");
-            vkCreateAccelerationStructureKHR(m_device->device(), &asci, NULL, &as);
+            vk::CreateAccelerationStructureKHR(m_device->device(), &asci, NULL, &as);
             m_errorMonitor->VerifyFound();
         }
 
@@ -414,8 +400,6 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
     {
         uint8_t data[256];
-        auto vkGetBufferOpaqueCaptureDescriptorDataEXT = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureDescriptorDataEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferOpaqueCaptureDescriptorDataEXT"));
 
         uint32_t qfi = 0;
         auto buffCI = LvlInitStruct<VkBufferCreateInfo>();
@@ -431,14 +415,12 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-None-08072");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCaptureDescriptorDataInfoEXT-buffer-08075");
-        vkGetBufferOpaqueCaptureDescriptorDataEXT(m_device->device(), &bcddi, &data);
+        vk::GetBufferOpaqueCaptureDescriptorDataEXT(m_device->device(), &bcddi, &data);
         m_errorMonitor->VerifyFound();
     }
 
     {
         uint8_t data[256];
-        auto vkImageCaptureDescriptorDataInfoEXT = reinterpret_cast<PFN_vkGetImageOpaqueCaptureDescriptorDataEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetImageOpaqueCaptureDescriptorDataEXT"));
 
         auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -460,14 +442,12 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-None-08076");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCaptureDescriptorDataInfoEXT-image-08079");
-        vkImageCaptureDescriptorDataInfoEXT(m_device->device(), &icddi, &data);
+        vk::GetImageOpaqueCaptureDescriptorDataEXT(m_device->device(), &icddi, &data);
         m_errorMonitor->VerifyFound();
     }
 
     {
         uint8_t data[256];
-        auto vkGetImageViewOpaqueCaptureDescriptorDataEXT = reinterpret_cast<PFN_vkGetImageViewOpaqueCaptureDescriptorDataEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetImageViewOpaqueCaptureDescriptorDataEXT"));
 
         auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -500,21 +480,19 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-None-08080");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCaptureDescriptorDataInfoEXT-imageView-08083");
-        vkGetImageViewOpaqueCaptureDescriptorDataEXT(m_device->device(), &icddi, &data);
+        vk::GetImageViewOpaqueCaptureDescriptorDataEXT(m_device->device(), &icddi, &data);
         m_errorMonitor->VerifyFound();
     }
 
     {
         uint8_t data[256];
-        auto vkGetSamplerOpaqueCaptureDescriptorDataEXT = reinterpret_cast<PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkGetSamplerOpaqueCaptureDescriptorDataEXT"));
 
         auto scddi = LvlInitStruct<VkSamplerCaptureDescriptorDataInfoEXT>();
         scddi.sampler = sampler.handle();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-None-08084");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCaptureDescriptorDataInfoEXT-sampler-08087");
-        vkGetSamplerOpaqueCaptureDescriptorDataEXT(m_device->device(), &scddi, &data);
+        vk::GetSamplerOpaqueCaptureDescriptorDataEXT(m_device->device(), &scddi, &data);
         m_errorMonitor->VerifyFound();
     }
 
@@ -523,9 +501,6 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
         as->Build(*m_device);
 
         uint8_t data[256];
-        auto vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT =
-            GetDeviceProcAddr<PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT>(
-                "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT");
 
         auto ascddi = LvlInitStruct<VkAccelerationStructureCaptureDescriptorDataInfoEXT>();
         ascddi.accelerationStructure = as->handle();
@@ -533,7 +508,7 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-None-08088");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructure-08091");
-        vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(m_device->device(), &ascddi, &data);
+        vk::GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(m_device->device(), &ascddi, &data);
         m_errorMonitor->VerifyFound();
     }
 
@@ -548,9 +523,6 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
 
         vk_testing::Buffer d_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
 
-        auto vkCmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(
-            vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBuffersEXT"));
-
         auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
         dbbi.address = d_buffer.address();
         dbbi.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -561,7 +533,7 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-None-08047");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();
@@ -592,12 +564,6 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
-
-    auto vkCmdBindDescriptorBuffersEXT = GetDeviceProcAddr<PFN_vkCmdBindDescriptorBuffersEXT>("vkCmdBindDescriptorBuffersEXT");
-    auto vkCmdBindDescriptorBufferEmbeddedSamplersEXT =
-        GetDeviceProcAddr<PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT>("vkCmdBindDescriptorBufferEmbeddedSamplersEXT");
-    auto vkCmdSetDescriptorBufferOffsetsEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetDescriptorBufferOffsetsEXT>("vkCmdSetDescriptorBufferOffsetsEXT");
 
     const bool testPushDescriptorsInBuffers =
         descriptor_buffer_features.descriptorBufferPushDescriptors && !descriptor_buffer_properties.bufferlessPushDescriptors;
@@ -644,7 +610,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
                                                  "VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056");
         }
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-08051");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), binding_infos.size(), binding_infos.data());
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), binding_infos.size(), binding_infos.data());
         m_errorMonitor->VerifyFound();
 
         if (!testPushDescriptorsInBuffers) {
@@ -656,7 +622,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
             m_errorMonitor->SetDesiredFailureMsg(
                 kErrorBit, "VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059");
-            vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+            vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
             m_errorMonitor->VerifyFound();
 
             dbbi.pNext = nullptr;
@@ -672,7 +638,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-address-08057");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -687,19 +653,19 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08122");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
         m_errorMonitor->VerifyFound();
 
         dbbi2.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08123");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
         m_errorMonitor->VerifyFound();
 
         dbbi2.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08124");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -734,12 +700,12 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070");
-        vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     pipeline_layout.handle(), 0);
+        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                       pipeline_layout.handle(), 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071");
-        vkCmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     pipeline_layout.handle(), 2);
+        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                       pipeline_layout.handle(), 2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -755,7 +721,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         dbbi2.address = bufferA.address();
         dbbi2.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-        vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
+        vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi2);
 
         uint32_t index = 0;
         VkDeviceSize offset = 0;
@@ -764,8 +730,8 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
             index = 0;
             offset = 1;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061");
-            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
-                                               0, 1, &index, &offset);
+            vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout.handle(), 0, 1, &index, &offset);
             m_errorMonitor->VerifyFound();
         }
 
@@ -773,16 +739,16 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         offset = 0;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08064");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065");
-        vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                                           1, &index, &offset);
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
+                                             0, 1, &index, &offset);
         m_errorMonitor->VerifyFound();
 
         uint32_t indices[3] = {0};
         VkDeviceSize offsets[3] = {0};
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066");
-        vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                                           3, indices, offsets);
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
+                                             0, 3, indices, offsets);
         m_errorMonitor->VerifyFound();
 
         {
@@ -797,11 +763,11 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
 
                 command_buffer.begin();
 
-                vkCmdBindDescriptorBuffersEXT(command_buffer.handle(), 1, &dbbi2);
+                vk::CmdBindDescriptorBuffersEXT(command_buffer.handle(), 1, &dbbi2);
 
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-08067");
-                vkCmdSetDescriptorBufferOffsetsEXT(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                   pipeline_layout.handle(), 0, 1, &index, &offset);
+                vk::CmdSetDescriptorBufferOffsetsEXT(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout.handle(), 0, 1, &index, &offset);
                 m_errorMonitor->VerifyFound();
                 command_buffer.end();
             }
@@ -848,21 +814,21 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
             dbbi.address = common_address;
             dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-            vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+            vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
 
             constexpr uint32_t index = 0;
 
             // First call should succeed because offset is small enough to fit in large_buffer
             const VkDeviceSize offset = small_buffer_size;
-            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
-                                               0, 1, &index, &offset);
+            vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout.handle(), 0, 1, &index, &offset);
 
             large_buffer = nullptr;
             // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
             // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08062");
-            vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
-                                               0, 1, &index, &offset);
+            vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout.handle(), 0, 1, &index, &offset);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -891,13 +857,6 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
     GetPhysicalDeviceFeatures2(buffer_device_address_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    auto vkCmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBuffersEXT"));
-    ASSERT_TRUE(vkCmdBindDescriptorBuffersEXT);
-    auto vkCmdSetDescriptorBufferOffsetsEXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDescriptorBufferOffsetsEXT"));
-    ASSERT_TRUE(vkCmdSetDescriptorBufferOffsetsEXT);
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
 
@@ -936,12 +895,12 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
 
-    vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
 
     uint32_t index = 0;
     VkDeviceSize offset = 0;
-    vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                                       &index, &offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                                         &index, &offset);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08115");
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
@@ -1047,9 +1006,6 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    auto vkCmdBindDescriptorBufferEmbeddedSamplersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBufferEmbeddedSamplersEXT"));
-
     vk_testing::PipelineLayout pipeline_layout;
     {
         const VkDescriptorSetLayoutBinding bindings[] = {
@@ -1091,8 +1047,8 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
         command_buffer.begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-08069");
-        vkCmdBindDescriptorBufferEmbeddedSamplersEXT(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     pipeline_layout.handle(), 1);
+        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                       pipeline_layout.handle(), 1);
         m_errorMonitor->VerifyFound();
         command_buffer.end();
     }
@@ -1126,8 +1082,6 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    auto vkGetDescriptorEXT =
-        reinterpret_cast<PFN_vkGetDescriptorEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorEXT"));
     uint8_t buffer[128];
 
     auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
@@ -1138,13 +1092,13 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08018");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08018");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1158,60 +1112,61 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         dgi.data.pCombinedImageSampler = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08034");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         dgi.data.pSampledImage = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08035");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.data.pSampledImage = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08035");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         dgi.data.pStorageImage = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08036");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.data.pStorageImage = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08036");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
         dgi.data.pUniformTexelBuffer = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08037");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         dgi.data.pStorageTexelBuffer = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08038");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         dgi.data.pUniformBuffer = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08039");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         dgi.data.pStorageBuffer = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08040");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         if (acceleration_structure) {
             dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
             dgi.data.accelerationStructure = 0;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08041");
-            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+            vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize,
+                                 &buffer);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1219,7 +1174,8 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
             dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
             dgi.data.accelerationStructure = 0;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08042");
-            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+            vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize,
+                                 &buffer);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1245,7 +1201,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dai.format = VK_FORMAT_R8_UINT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-address-08043");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         VkMemoryRequirements mem_reqs;
@@ -1266,14 +1222,14 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dai.format = VK_FORMAT_R8_UINT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-range-08045");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dai.range = VK_WHOLE_SIZE;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-range-08045");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-range-08046");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         {
@@ -1285,7 +1241,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08125");
             }
 
-            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize - 1, &buffer);
+            vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize - 1, &buffer);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1296,25 +1252,25 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         dgi.data.pUniformBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08030");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         dgi.data.pStorageBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08031");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
         dgi.data.pUniformTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08032");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         dgi.data.pStorageTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08033");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1353,8 +1309,6 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
         VkImageView invalid_imageview = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);
         VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbeef);
 
-        auto vkGetDescriptorEXT =
-            reinterpret_cast<PFN_vkGetDescriptorEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorEXT"));
         uint8_t buffer[128];
         auto dgi = LvlInitStruct<VkDescriptorGetInfoEXT>();
 
@@ -1364,25 +1318,25 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
         dgi.data.pCombinedImageSampler = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08019");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08020");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.combinedImageSamplerDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         dgi.data.pInputAttachmentImage = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08021");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.inputAttachmentDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.inputAttachmentDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         dgi.data.pSampledImage = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08022");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.sampledImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         dgi.data.pStorageImage = &dii;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08023");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageImageDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         auto dai = LvlInitStruct<VkDescriptorAddressInfoEXT>();
@@ -1394,35 +1348,35 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
         dgi.data.pUniformTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-None-08044");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08024");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         dgi.data.pStorageTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-None-08044");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08025");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         dgi.data.pUniformTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-None-08044");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08026");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         dgi.data.pStorageTexelBuffer = &dai;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorAddressInfoEXT-None-08044");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08027");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+        vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         if (nv_ray_tracing) {
             dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
             dgi.data.pStorageTexelBuffer = &dai;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08029");
-            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+            vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1434,20 +1388,16 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
         vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
 
         {
-            auto vkGetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(
-                vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorSetLayoutSizeEXT"));
             VkDeviceSize size;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorSetLayoutSizeEXT-layout-08012");
-            vkGetDescriptorSetLayoutSizeEXT(m_device->device(), dsl.handle(), &size);
+            vk::GetDescriptorSetLayoutSizeEXT(m_device->device(), dsl.handle(), &size);
             m_errorMonitor->VerifyFound();
 
-            auto vkGetDescriptorSetLayoutBindingOffsetEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(
-                vk::GetDeviceProcAddr(m_device->device(), "vkGetDescriptorSetLayoutBindingOffsetEXT"));
             VkDeviceSize offset;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-layout-08014");
-            vkGetDescriptorSetLayoutBindingOffsetEXT(m_device->device(), dsl.handle(), 0, &offset);
+            vk::GetDescriptorSetLayoutBindingOffsetEXT(m_device->device(), dsl.handle(), 0, &offset);
             m_errorMonitor->VerifyFound();
         }
     }

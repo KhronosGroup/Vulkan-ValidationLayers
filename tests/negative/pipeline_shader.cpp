@@ -6047,15 +6047,11 @@ TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
             kErrorBit, vuids);
     }
 
-    PFN_vkCmdSetLineStippleEXT vkCmdSetLineStippleEXT =
-        (PFN_vkCmdSetLineStippleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineStippleEXT");
-    ASSERT_TRUE(vkCmdSetLineStippleEXT != nullptr);
-
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineStippleEXT-lineStippleFactor-02776");
-    vkCmdSetLineStippleEXT(m_commandBuffer->handle(), 0, 0);
+    vk::CmdSetLineStippleEXT(m_commandBuffer->handle(), 0, 0);
     m_errorMonitor->VerifyFound();
-    vkCmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
+    vk::CmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
 }
 
 TEST_F(VkLayerTest, FillRectangleNV) {
@@ -6447,17 +6443,6 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    PFN_vkGetPipelineExecutableInternalRepresentationsKHR vkGetPipelineExecutableInternalRepresentationsKHR =
-        (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)vk::GetDeviceProcAddr(
-            m_device->device(), "vkGetPipelineExecutableInternalRepresentationsKHR");
-    PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR =
-        (PFN_vkGetPipelineExecutableStatisticsKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetPipelineExecutableStatisticsKHR");
-    PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR =
-        (PFN_vkGetPipelineExecutablePropertiesKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetPipelineExecutablePropertiesKHR");
-    ASSERT_TRUE(vkGetPipelineExecutableInternalRepresentationsKHR != nullptr);
-    ASSERT_TRUE(vkGetPipelineExecutableStatisticsKHR != nullptr);
-    ASSERT_TRUE(vkGetPipelineExecutablePropertiesKHR != nullptr);
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
@@ -6474,16 +6459,16 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278");
-    vkGetPipelineExecutableInternalRepresentationsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    vk::GetPipelineExecutableInternalRepresentationsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274");
-    vkGetPipelineExecutableStatisticsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    vk::GetPipelineExecutableStatisticsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
-    vkGetPipelineExecutablePropertiesKHR(m_device->device(), &pipeline_info, &count, nullptr);
+    vk::GetPipelineExecutablePropertiesKHR(m_device->device(), &pipeline_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -10687,9 +10672,6 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
         GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";
     }
 
-    auto vkCmdSetSampleLocationsEXT =
-        reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetSampleLocationsEXT"));
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
@@ -10718,7 +10700,7 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
     sample_locations_info.sampleLocationsCount = 1;
     sample_locations_info.pSampleLocations = &sample_location;
 
-    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();

@@ -775,9 +775,6 @@ TEST_F(VkLayerTest, InvalidExternalFence) {
     ifi.flags = 0;
     ifi.name = L"something";
 
-    auto vkImportFenceWin32HandleKHR =
-        reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(vk::GetDeviceProcAddr(device(), "vkImportFenceWin32HandleKHR"));
-
     // If handleType is not VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT, name must be NULL
     // However, it looks like at least some windows drivers don't support exporting KMT handles for fences
     if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) {
@@ -785,7 +782,7 @@ TEST_F(VkLayerTest, InvalidExternalFence) {
     }
     // If handle is not NULL, name must be NULL
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceWin32HandleInfoKHR-handle-01462");
-    vkImportFenceWin32HandleKHR(m_device->device(), &ifi);
+    vk::ImportFenceWin32HandleKHR(m_device->device(), &ifi);
     m_errorMonitor->VerifyFound();
 #endif
     auto err = import_fence.import_handle(ext_handle, handle_type);
@@ -1080,11 +1077,6 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
-        reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR"));
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
-
     constexpr VkMemoryPropertyFlags mem_flags = 0;
     constexpr VkDeviceSize buffer_size = 1024;
 
@@ -1248,7 +1240,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     bind_buffer_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02727");
-    vkBindBufferMemory2Function(device(), 1, &bind_buffer_info);
+    vk::BindBufferMemory2KHR(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02729");
@@ -1265,7 +1257,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02729");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01614");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-memory-01612");
-    vkBindImageMemory2Function(device(), 1, &bind_image_info);
+    vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
 

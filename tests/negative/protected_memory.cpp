@@ -463,15 +463,12 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
         m_errorMonitor->VerifyFound();
 
-        PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
-        ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
-
         // Test device created with flag and trying to query with no flag
         queue_info_2.flags = 0;
         queue_info_2.queueFamilyIndex = queue_family_index;
         queue_info_2.queueIndex = 0;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-flags-06225");
-        vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+        vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue);
         m_errorMonitor->VerifyFound();
 
         vk::DestroyDevice(test_device, nullptr);
@@ -498,9 +495,6 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
     m_errorMonitor->VerifyFound();
 
-    PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
-    ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
-
     queue_info_2.flags = 0;  // same as device creation
     queue_info_2.queueFamilyIndex = queue_family_index;
     queue_info_2.queueIndex = 0;
@@ -509,7 +503,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         // Set queueIndex 1 over size of queueCount used to create device
         queue_info_2.queueIndex = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-queueIndex-01843");
-        vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+        vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue);
         m_errorMonitor->VerifyFound();
         queue_info_2.queueIndex = 0;  // reset
     }
@@ -517,14 +511,14 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     // Use an unknown queue family index
     queue_info_2.queueFamilyIndex = queue_family_index + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-queueFamilyIndex-01842");
-    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+    vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue);
     m_errorMonitor->VerifyFound();
     queue_info_2.queueFamilyIndex = queue_family_index;  // reset
 
     // Test device created with no flags and trying to query with flag
     queue_info_2.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueInfo2-flags-06225");
-    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue);
+    vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue);
     m_errorMonitor->VerifyFound();
     queue_info_2.flags = 0;  // reset
 

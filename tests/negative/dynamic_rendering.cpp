@@ -2553,13 +2553,6 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkCmdBeginRendering vkCmdBeginRendering =
-        reinterpret_cast<PFN_vkCmdBeginRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginRendering"));
-    assert(vkCmdBeginRendering != nullptr);
-    PFN_vkCmdEndRendering vkCmdEndRendering =
-        reinterpret_cast<PFN_vkCmdEndRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRendering"));
-    assert(vkCmdEndRendering != nullptr);
-
     m_commandBuffer->begin();
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
@@ -2567,7 +2560,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 
-    vkCmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
 
     VkBufferObj buffer;
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -2592,7 +2585,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
                            nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vkCmdEndRendering(m_commandBuffer->handle());
+    vk::CmdEndRendering(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
 
@@ -5644,10 +5637,6 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkQueueSubmit2KHR =
-        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-    ASSERT_TRUE(vkQueueSubmit2KHR != nullptr);
-
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
@@ -5692,13 +5681,13 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
     VkSubmitInfo2KHR submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     submit_info.commandBufferInfoCount = 2;
     submit_info.pCommandBufferInfos = command_buffer_submit_info;
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06010");
 
     submit_info.commandBufferInfoCount = 1;
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
@@ -5708,7 +5697,7 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
     command_buffer_submit_info[1].commandBuffer = cmd_buffer3.handle();
     command_buffer_submit_info[2].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 3;
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
@@ -5717,7 +5706,7 @@ TEST_F(VkLayerTest, DynamicRenderingSuspendingRenderPassInstanceQueueSubmit2) {
 
     command_buffer_submit_info[0].commandBuffer = cmd_buffer2.handle();
     submit_info.commandBufferInfoCount = 1;
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
@@ -6997,10 +6986,6 @@ TEST_F(VkLayerTest, DynamicRenderingEndRenderpassWithBeginRenderingRenderpassIns
     m_commandBuffer->EndRenderPass();
     m_errorMonitor->VerifyFound();
 
-    auto vkCmdEndRenderPass2KHR =
-        reinterpret_cast<PFN_vkCmdEndRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRenderPass2KHR"));
-    ASSERT_TRUE(vkCmdEndRenderPass2KHR != nullptr);
-
     VkSubpassEndInfoKHR subpassEndInfo = {VK_STRUCTURE_TYPE_SUBPASS_END_INFO_KHR, nullptr};
 
     VkCommandBufferObj primary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -7008,7 +6993,7 @@ TEST_F(VkLayerTest, DynamicRenderingEndRenderpassWithBeginRenderingRenderpassIns
     primary.begin();
     primary.BeginRendering(begin_rendering_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRenderPass2-None-06171");
-    vkCmdEndRenderPass2KHR(primary.handle(), &subpassEndInfo);
+    vk::CmdEndRenderPass2KHR(primary.handle(), &subpassEndInfo);
     m_errorMonitor->VerifyFound();
 }
 
@@ -7383,8 +7368,6 @@ TEST_F(VkLayerTest, DynamicRenderingDynamicColorBlendAttchment) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
 
-    auto vkCmdSetColorWriteMaskEXT = GetDeviceProcAddr<PFN_vkCmdSetColorWriteMaskEXT>("vkCmdSetColorWriteMaskEXT");
-
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
@@ -7421,7 +7404,7 @@ TEST_F(VkLayerTest, DynamicRenderingDynamicColorBlendAttchment) {
 
     // once set error goes away
     VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT;
-    vkCmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 1, &color_component_flags);
+    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0, 1, &color_component_flags);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRendering();

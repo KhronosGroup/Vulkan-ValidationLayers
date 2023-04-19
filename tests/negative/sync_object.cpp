@@ -490,18 +490,6 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
     // Test multip-planar image
     if (mp_extensions) {
-        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
-        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
-        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-            vkBindImageMemory2Function = vk::BindImageMemory2;
-            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
-        } else {
-            vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
-        }
-
         VkFormatProperties format_properties;
         VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_properties);
@@ -531,7 +519,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
             mem_req_info2.image = mp_image;
             VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
-            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
             // Find a valid memory type index to memory to be allocated from
             VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -540,7 +528,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory));
 
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
             alloc_info.allocationSize = mem_req2.memoryRequirements.size;
             ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
             ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory));
@@ -558,7 +546,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             bind_image_info[1] = bind_image_info[0];
             bind_image_info[1].pNext = &plane_1_memory_info;
             bind_image_info[1].memory = plane_1_memory;
-            vkBindImageMemory2Function(device(), 2, bind_image_info);
+            vk::BindImageMemory2KHR(device(), 2, bind_image_info);
 
             conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2073,9 +2061,6 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
         vk::QueueWaitIdle(other);
     }
     if (sync2_features.synchronization2) {
-        auto vkQueueSubmit2KHR =
-            reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-
         auto signal_sem_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
         signal_sem_info.semaphore = semaphore.handle();
         signal_sem_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -2092,10 +2077,10 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
         wait_submit.waitSemaphoreInfoCount = 1;
         wait_submit.pWaitSemaphoreInfos = &wait_sem_info;
 
-        vkQueueSubmit2KHR(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
-        vkQueueSubmit2KHR(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-semaphore-03871");
-        vkQueueSubmit2KHR(other, 1, &wait_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(other, 1, &wait_submit, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         vk::QueueWaitIdle(m_device->m_queue);
@@ -2115,16 +2100,13 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
-    auto fpQueueSubmit2 = (PFN_vkQueueSubmit2)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2");
-
     auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-synchronization2-03866");
-        fpQueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2295,10 +2277,8 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
-
     semaphore_signal_info.value = 10;
-    ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t signalValue = 20;
@@ -2435,7 +2415,6 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -2477,7 +2456,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         auto semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
         semaphore_signal_info.semaphore = semaphore.handle();
         semaphore_signal_info.value = signalValue;
-        ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
     }
 
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2570,7 +2549,6 @@ TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -2620,7 +2598,7 @@ TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
         auto semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
         semaphore_signal_info.semaphore = semaphore.handle();
         semaphore_signal_info.value = signalValue;
-        ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
     }
 
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2709,9 +2687,6 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
     }
     InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-    auto fpQueueSubmit2KHR =
-        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     GetPhysicalDeviceProperties2(prop2);
@@ -2735,17 +2710,17 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
 
     // Check for re-signalling an already completed value (5)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // Submit (6)
     signal_sem_info.value++;
-    auto err = fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    auto err = vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
     // Check against a pending value (6)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     {
@@ -2759,7 +2734,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
         submit_info.pSignalSemaphoreInfos = double_signal_info;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-        fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2772,7 +2747,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
         submit_info.pSignalSemaphoreInfos = &signal_sem_info;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03884");
-        fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         if (signal_sem_info.value < vvl::kU64Max) {
@@ -2788,7 +2763,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
             submit_info.pWaitSemaphoreInfos = &wait_sem_info;
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03883");
-            fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -2902,9 +2877,6 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
         const char *expected_vuid =
             has_timeline_sem_ext ? "VUID-vkQueueSubmit2-semaphore-03873" : "VUID-vkQueueSubmit2-semaphore-03872";
 
-        auto vkQueueSubmit2KHR =
-            reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-
         VkSemaphoreSubmitInfo sem_info[3];
         for (int i = 0; i < 3; i++) {
             sem_info[i] = LvlInitStruct<VkSemaphoreSubmitInfo>();
@@ -2920,7 +2892,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[0].pSignalSemaphoreInfos = &sem_info[1];
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_vuid);
-        vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info[0], VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info[0], VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[1] = LvlInitStruct<VkSubmitInfo2>();
@@ -2930,15 +2902,15 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
         submit_info[1].pSignalSemaphoreInfos = &sem_info[2];
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_vuid);
-        vkQueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
 
         submit_info[2] = LvlInitStruct<VkSubmitInfo2>();
         submit_info[2].signalSemaphoreInfoCount = 1;
         submit_info[2].pSignalSemaphoreInfos = &sem_info[0];
 
-        ASSERT_VK_SUCCESS(vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info[2], VK_NULL_HANDLE));
-        ASSERT_VK_SUCCESS(vkQueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info[2], VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 2, submit_info, VK_NULL_HANDLE));
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
     }
 }
@@ -3080,10 +3052,9 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
     semaphore_wait_info.pSemaphores = &semaphore[0];
     const uint64_t wait_values[] = {10, 40};
     semaphore_wait_info.pValues = &wait_values[0];
-    auto vkWaitSemaphoresKHR = (PFN_vkWaitSemaphoresKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreWaitInfo-pSemaphores-03256");
-    vkWaitSemaphoresKHR(m_device->device(), &semaphore_wait_info, 10000);
+    vk::WaitSemaphoresKHR(m_device->device(), &semaphore_wait_info, 10000);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore[0], nullptr);
@@ -3115,10 +3086,9 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore;
     semaphore_signal_info.value = 10;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-semaphore-03257");
-    vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -3160,14 +3130,13 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     VkSemaphoreSignalInfo semaphore_signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     semaphore_signal_info.semaphore = semaphore[0];
     semaphore_signal_info.value = 3;
-    auto vkSignalSemaphoreKHR = (PFN_vkSignalSemaphoreKHR)vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03258");
-    vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     semaphore_signal_info.value = 10;
-    ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfoKHR>();
     uint64_t waitValue = 10;
@@ -3189,13 +3158,13 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     semaphore_signal_info.value = 25;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03259");
-    vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+    vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
     m_errorMonitor->VerifyFound();
 
     semaphore_signal_info.value = 15;
-    ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
     semaphore_signal_info.semaphore = semaphore[1];
-    ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+    ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
@@ -3208,11 +3177,11 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
         semaphore_signal_info.value = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreSignalInfo-value-03260");
-        vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+        vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
         m_errorMonitor->VerifyFound();
 
         semaphore_signal_info.value--;
-        ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
+        ASSERT_VK_SUCCESS(vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 
@@ -3249,7 +3218,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
 
             semaphore_signal_info.semaphore = timeline_sem;
             semaphore_signal_info.value = 1;
-            vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+            vk::SignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
 
             ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 
@@ -3285,9 +3254,6 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
         GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::timelineSemaphore required";
     }
     InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-    auto fpQueueSubmit2KHR =
-        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
@@ -3325,19 +3291,19 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     signal_info.value = 11;
     wait_info.value = 11;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03881");
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // signal value == current value
     signal_info.value = 10;
     wait_info.value = 5;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2-semaphore-03882");
-    fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     signal_info.value = 20;
     wait_info.semaphore = semaphore[1].handle();
-    ASSERT_VK_SUCCESS(fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
 
     semaphore_signal_info.value = 25;
 
@@ -3365,7 +3331,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
         signal_info.semaphore = binary_sem.handle();
         signal_info.value = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
-        fpQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
         semaphore_signal_info.semaphore = timeline_sem.handle();
         semaphore_signal_info.value = 1;
@@ -3400,12 +3366,10 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
     VkSemaphore semaphore;
     ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
 
-    auto vkGetSemaphoreCounterValueKHR =
-        (PFN_vkGetSemaphoreCounterValueKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreCounterValueKHR");
     uint64_t value = 0xdeadbeef;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetSemaphoreCounterValue-semaphore-03255");
-    vkGetSemaphoreCounterValueKHR(m_device->device(), semaphore, &value);
+    vk::GetSemaphoreCounterValueKHR(m_device->device(), semaphore, &value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
