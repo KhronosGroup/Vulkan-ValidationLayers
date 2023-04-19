@@ -107,3 +107,13 @@ TEST_F(VkPositiveLayerTest, IsValidPlaneAspect) {
     ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
     ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_2_BIT));
 }
+
+TEST_F(VkPositiveLayerTest, IsMultiplePlaneAspect) {
+    ASSERT_FALSE(IsMultiplePlaneAspect(0));
+    ASSERT_FALSE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_COLOR_BIT));
+    ASSERT_FALSE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_0_BIT));
+    ASSERT_TRUE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT));
+    ASSERT_TRUE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
+    ASSERT_TRUE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT));
+    ASSERT_FALSE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_2_BIT));
+}
