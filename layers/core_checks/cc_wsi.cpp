@@ -356,10 +356,11 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
             if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
                 const auto *win32_full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
                 if (!win32_full_screen_info) {
-                    if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-pNext-02679",
-                                 "%s: pCreateInfo->pNext contains "
-                                 "VkSurfaceFullScreenExclusiveInfoEXT, but pCreateInfo->pNext does not contain "
-                                 "VkSurfaceFullScreenExclusiveWin32InfoEXT",
+                    const LogObjectList objlist(device, pCreateInfo->surface);
+                    if (LogError(objlist, "VUID-VkSwapchainCreateInfoKHR-pNext-02679",
+                                 "%s: pCreateInfo->pNext chain contains "
+                                 "VkSurfaceFullScreenExclusiveInfoEXT, but does not contain "
+                                 "VkSurfaceFullScreenExclusiveWin32InfoEXT.",
                                  func_name)) {
                         return true;
                     }
