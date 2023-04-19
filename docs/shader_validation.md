@@ -15,6 +15,19 @@ All of these validations are passed off to `spirv-val` in [SPIRV-Tools](https://
 ## spirv-opt
 
 There are a few special places where `spirv-opt` is run to reduce recreating work already done in `SPIRV-Tools`.
+These can be found by searching for `RegisterPass` in the code
+
+Currently these are
+
+- Specialization constants
+  - This `spirv-opt` pass is used to inject the constants from the pipeline layout.
+  - Some checks require the runtime spec constant values
+- Flatten OpGroupDecorations
+- Detects if group decorations were used; however, group decorations were [deprecated](https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpGroupDecorate) early on in the development of the SPIR-v specification.
+- Debug Printf
+  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md).
+- GPU-VA
+  - instruments the shaders - see [GPU-Assisted Validation](gpu_validation.md).
 
 ## Different sections
 
@@ -31,7 +44,20 @@ The code is currently split up into the following main sections
 - `layers/generated/spirv_grammar_helper.cpp`
     - This is a general util file that is [generated](generated_code.md) from the SPIR-V grammar
 
-### Design details
+## Types of Shader Validation
+
+All Shader Validation can be broken into 4 types of checks
+
+- Standalone with runtime properties
+  - Things like features and limits
+- Shader interface
+  - Ex. going between a Vertex and Fragment shader
+- Interaction with Pipeline creation structs
+  - Vertex input, fragment output, etc
+- Draw time
+  - making sure bound descriptor matches up what is being touched
+
+## Design details
 
 When dealing with shader validation there are a few concepts to understand and not confuse
 
@@ -65,3 +91,18 @@ If validation only cares about... :
   -For `Pipeline Library` it might need to wait until linking
 - descriptors variables, use `EntryPoint`
 - the stage of a shader module is always known, regardless of even using `ShaderModuleIdentifier`
+
+### Variables
+
+There are 2 types of Variables
+
+- `Resource Interface` variables (mapped to descriptors)
+- `Stage Interface` variables (input and output between shader)
+  - Can be either a `BuiltIn` or `User Defined` variables
+
+For each `EntryPoint` we walk the functions and find all `Variables` accessed (load, store, atomic).
+
+Infomaration to note:
+- It is possible to have multiple `EntryPoints` pointing to the same interface variable.
+- 2 different accesses (ex. `OpLoad`) can point to same `Variable`
+- 2 `Image operation` can point to 2 different `Variables`
