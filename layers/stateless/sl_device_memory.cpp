@@ -180,24 +180,26 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     bool skip = false;
 
     if (pInfo && pInfo->pCreateInfo) {
-        const auto *image_swapchain_create_info = LvlFindInChain<VkImageSwapchainCreateInfoKHR>(pInfo->pCreateInfo);
-        if (image_swapchain_create_info) {
+        const auto &create_info = *(pInfo->pCreateInfo);
+        if (LvlFindInChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
             skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416",
-                             "%s(): pInfo->pCreateInfo->pNext chain contains VkImageSwapchainCreateInfoKHR.", func_name);
+                             "%s(): pCreateInfo->pNext chain contains VkImageSwapchainCreateInfoKHR.", func_name);
         }
-        const auto *drm_format_modifier_create_info =
-            LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pInfo->pCreateInfo);
-        if (drm_format_modifier_create_info) {
+        if (LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
             skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776",
-                             "%s(): pInfo->pCreateInfo->pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.",
-                             func_name);
+                             "%s(): pCreateInfo->pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.", func_name);
         }
 
-        if ((pInfo->pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
-            if (FormatIsMultiplane(pInfo->pCreateInfo->format) && (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR)) {
+        if (FormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
+            if (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
                 skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417",
                                  "%s(): Must not specify VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.",
                                  func_name);
+            } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
+                       !IsOnlyOneValidPlaneAspect(create_info.format, pInfo->planeAspect)) {
+                skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06419",
+                                 "%s(): planeAspect is %s but is invalid for %s.", func_name,
+                                 string_VkImageAspectFlags(pInfo->planeAspect).c_str(), string_VkFormat(create_info.format));
             }
         }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
