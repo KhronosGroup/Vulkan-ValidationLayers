@@ -30,6 +30,7 @@
 #include "spirv-tools/optimizer.hpp"
 
 class PIPELINE_STATE;
+struct EntryPoint;
 
 // This is the common info for both OpDecorate and OpMemberDecorate
 // Used to keep track of all decorations applied to any instruction
@@ -284,7 +285,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_write_without_format{false};  // For storage images
     bool is_dref_operation{false};
 
-    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction &insn, VkShaderStageFlagBits stage);
+    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SHADER_MODULE_STATE &module_state);
@@ -296,114 +297,124 @@ struct ResourceInterfaceVariable : public VariableBase {
 inline bool operator==(const ResourceInterfaceVariable &a, const ResourceInterfaceVariable &b) noexcept { return a.id == b.id; }
 inline bool operator<(const ResourceInterfaceVariable &a, const ResourceInterfaceVariable &b) noexcept { return a.id < b.id; }
 
+// Contains all the details for a OpTypeStruct for Push Constants
+// TODO - Replace with TypeStructInfo
+struct StructInfo {
+    uint32_t offset;
+    uint32_t size;                                 // A scalar size or a struct size. Not consider array
+    std::vector<uint32_t> array_length_hierarchy;  // multi-dimensional array, mat, vec. mat is combined with 2 array.
+                                                   // e.g :array[2] -> {2}, array[2][3][4] -> {2,3,4}, mat4[2] ->{2,4,4},
+    std::vector<uint32_t> array_block_size;        // When index increases, how many data increases.
+                                             // e.g : array[2][3][4] -> {12,4,1}, it means if the first index increases one, the
+                                             // array gets 12 data. If the second index increases one, the array gets 4 data.
+
+    // OpTypeStruct can have OpTypeStruct inside it so need to track the struct-in-struct chain
+    std::vector<StructInfo> struct_members;  // If the data is not a struct, it's empty.
+    StructInfo *root;
+
+    StructInfo() : offset(0), size(0), root(nullptr) {}
+
+    bool IsUsed() const {
+        if (!root) return false;
+        return !root->used_bytes.empty();
+    }
+
+    std::vector<uint8_t> *GetUsedbytes() const {
+        if (!root) return nullptr;
+        return &root->used_bytes;
+    }
+
+    std::string GetLocationDesc(uint32_t index_used_bytes) const {
+        std::string desc = "";
+        if (array_length_hierarchy.size() > 0) {
+            desc += " index:";
+            for (const auto block_size : array_block_size) {
+                desc += "[";
+                desc += std::to_string(index_used_bytes / (block_size * size));
+                desc += "]";
+                index_used_bytes = index_used_bytes % (block_size * size);
+            }
+        }
+        const int struct_members_size = static_cast<int>(struct_members.size());
+        if (struct_members_size > 0) {
+            desc += " member:";
+            for (int i = struct_members_size - 1; i >= 0; --i) {
+                if (index_used_bytes > struct_members[i].offset) {
+                    desc += std::to_string(i);
+                    desc += struct_members[i].GetLocationDesc(index_used_bytes - struct_members[i].offset);
+                    break;
+                }
+            }
+        } else {
+            desc += " offset:";
+            desc += std::to_string(index_used_bytes);
+        }
+        return desc;
+    }
+
+  private:
+    std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
+};
+
+// Represents a single Entrypoint into a Shader Module
+struct EntryPoint {
+    // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
+    // There is no single unique item for a single entry point
+    const Instruction &entrypoint_insn;  // OpEntryPoint instruction
+    // For things like MeshNV vs MeshEXT, we need the execution_model
+    const spv::ExecutionModel execution_model;
+    const VkShaderStageFlagBits stage;
+    const uint32_t id;
+    const std::string name;
+    const ExecutionModeSet &execution_mode;
+
+    // Values found while gather the Accessible Ids
+    bool emit_vertex_geometry;
+
+    // All ids that can be accessed from the entry point
+    const vvl::unordered_set<uint32_t> accessible_ids;
+
+    const std::vector<ResourceInterfaceVariable> resource_interface_variables;
+    const std::vector<StageInteraceVariable> stage_interface_variables;
+    // Easier to lookup without having to check for the is_builtin bool
+    // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
+    std::vector<const StageInteraceVariable *> built_in_variables;
+    // "User-defined Variable Interface" - vkspec.html#interfaces-iointerfaces-user
+    std::vector<const StageInteraceVariable *> user_defined_interface_variables;
+
+    // Lookup map from Interface slot to the variable in that spot
+    // spirv-val guarantees no overlap so 2 variables won't have same slot
+    std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
+    std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
+    // Uesd for limit check
+    const StageInteraceVariable *max_input_slot_variable = nullptr;
+    const StageInteraceVariable *max_output_slot_variable = nullptr;
+    const InterfaceSlot *max_input_slot = nullptr;
+    const InterfaceSlot *max_output_slot = nullptr;
+    uint32_t builtin_input_components = 0;
+    uint32_t builtin_output_components = 0;
+
+    StructInfo push_constant_used_in_shader;
+
+    // Mark if a BuiltIn is written to
+    bool written_builtin_point_size{false};
+    bool written_builtin_primitive_shading_rate_khr{false};
+    bool written_builtin_viewport_index{false};
+    bool written_builtin_viewport_mask_nv{false};
+
+    bool has_passthrough{false};
+
+    EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn);
+
+  protected:
+    static vvl::unordered_set<uint32_t> GetAccessibleIds(const SHADER_MODULE_STATE &module_state, EntryPoint &entrypoint);
+    static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const SHADER_MODULE_STATE &module_state,
+                                                                         const EntryPoint &entrypoint);
+    static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const SHADER_MODULE_STATE &module_state,
+                                                                                const EntryPoint &entrypoint);
+};
+
 struct SHADER_MODULE_STATE : public BASE_NODE {
-    // Contains all the details for a OpTypeStruct
-    struct StructInfo {
-        uint32_t offset;
-        uint32_t size;                                 // A scalar size or a struct size. Not consider array
-        std::vector<uint32_t> array_length_hierarchy;  // multi-dimensional array, mat, vec. mat is combined with 2 array.
-                                                       // e.g :array[2] -> {2}, array[2][3][4] -> {2,3,4}, mat4[2] ->{2,4,4},
-        std::vector<uint32_t> array_block_size;        // When index increases, how many data increases.
-                                                 // e.g : array[2][3][4] -> {12,4,1}, it means if the first index increases one, the
-                                                 // array gets 12 data. If the second index increases one, the array gets 4 data.
-
-        // OpTypeStruct can have OpTypeStruct inside it so need to track the struct-in-struct chain
-        std::vector<StructInfo> struct_members;  // If the data is not a struct, it's empty.
-        StructInfo *root;
-
-        StructInfo() : offset(0), size(0), root(nullptr) {}
-
-        bool IsUsed() const {
-            if (!root) return false;
-            return !root->used_bytes.empty();
-        }
-
-        std::vector<uint8_t> *GetUsedbytes() const {
-            if (!root) return nullptr;
-            return &root->used_bytes;
-        }
-
-        std::string GetLocationDesc(uint32_t index_used_bytes) const {
-            std::string desc = "";
-            if (array_length_hierarchy.size() > 0) {
-                desc += " index:";
-                for (const auto block_size : array_block_size) {
-                    desc += "[";
-                    desc += std::to_string(index_used_bytes / (block_size * size));
-                    desc += "]";
-                    index_used_bytes = index_used_bytes % (block_size * size);
-                }
-            }
-            const int struct_members_size = static_cast<int>(struct_members.size());
-            if (struct_members_size > 0) {
-                desc += " member:";
-                for (int i = struct_members_size - 1; i >= 0; --i) {
-                    if (index_used_bytes > struct_members[i].offset) {
-                        desc += std::to_string(i);
-                        desc += struct_members[i].GetLocationDesc(index_used_bytes - struct_members[i].offset);
-                        break;
-                    }
-                }
-            } else {
-                desc += " offset:";
-                desc += std::to_string(index_used_bytes);
-            }
-            return desc;
-        }
-
-      private:
-        std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
-    };
-
-    struct EntryPoint {
-        // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
-        // There is no single unique item for a single entry point
-        const Instruction &entrypoint_insn;  // OpEntryPoint instruction
-        // For things like MeshNV vs MeshEXT, we need the execution_model
-        const spv::ExecutionModel execution_model;
-        const VkShaderStageFlagBits stage;
-        const uint32_t id;
-        const std::string name;
-        // All ids that can be accessed from the entry point
-        vvl::unordered_set<uint32_t> accessible_ids;
-
-        const ExecutionModeSet &execution_mode;
-
-        std::vector<ResourceInterfaceVariable> resource_interface_variables;
-        std::vector<StageInteraceVariable> stage_interface_variables;
-        // Easier to lookup without having to check for the is_builtin bool
-        // "Built-in interface variables" - vkspec.html#interfaces-iointerfaces-builtin
-        std::vector<const StageInteraceVariable *> built_in_variables;
-        // "User-defined Variable Interface" - vkspec.html#interfaces-iointerfaces-user
-        std::vector<const StageInteraceVariable *> user_defined_interface_variables;
-
-        // Lookup map from Interface slot to the variable in that spot
-        // spirv-val guarantees no overlap so 2 variables won't have same slot
-        std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> input_interface_slots;
-        std::unordered_map<InterfaceSlot, const StageInteraceVariable *, InterfaceSlot::Hash> output_interface_slots;
-        // Uesd for limit check
-        const StageInteraceVariable *max_input_slot_variable = nullptr;
-        const StageInteraceVariable *max_output_slot_variable = nullptr;
-        const InterfaceSlot *max_input_slot = nullptr;
-        const InterfaceSlot *max_output_slot = nullptr;
-        uint32_t builtin_input_components = 0;
-        uint32_t builtin_output_components = 0;
-
-        StructInfo push_constant_used_in_shader;
-
-        bool emit_vertex_geometry{false};
-
-        // Mark if a BuiltIn is written to
-        bool written_builtin_point_size{false};
-        bool written_builtin_primitive_shading_rate_khr{false};
-        bool written_builtin_viewport_index{false};
-        bool written_builtin_viewport_mask_nv{false};
-
-        bool has_passthrough{false};
-
-        EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn);
-    };
-
     // Static/const data extracted from a SPIRV module at initialization time
     // The goal of this struct is to move everything that is ready only into here
     struct StaticData {
@@ -586,7 +597,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // Used to set push constants values at shader module initialization time
     static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
-                                            std::vector<std::shared_ptr<SHADER_MODULE_STATE::EntryPoint>> &entry_points);
+                                            std::vector<std::shared_ptr<EntryPoint>> &entry_points);
 
   private:
     // The following are all helper functions to set the push constants values by tracking if the values are accessed in the entry
@@ -598,6 +609,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                       const Instruction *access_chain, const StructInfo &data) const;
     void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
                        const StructInfo &data) const;
-    void SetUsedStructMember(const uint32_t variable_id, vvl::unordered_set<uint32_t> &accessible_ids,
+    void SetUsedStructMember(const uint32_t variable_id, const vvl::unordered_set<uint32_t> &accessible_ids,
                              const StructInfo &data) const;
 };

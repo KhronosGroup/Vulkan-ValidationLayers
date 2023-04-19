@@ -23,7 +23,7 @@
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *create_info,
                                        std::shared_ptr<const SHADER_MODULE_STATE> &module_state,
-                                       std::shared_ptr<const SHADER_MODULE_STATE::EntryPoint> &entrypoint)
+                                       std::shared_ptr<const EntryPoint> &entrypoint)
     : module_state(module_state), create_info(create_info), entrypoint(entrypoint) {}
 
 // static
