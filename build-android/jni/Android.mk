@@ -19,7 +19,10 @@ LOCAL_PATH := $(call my-dir)
 SRC_DIR := ../..
 THIRD_PARTY := ../third_party
 
+# Treat these as system includes to match the CMake build. We don't care about warnings from headers we don't control.
 VULKAN_INCLUDE := $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Headers/include
+VVL_EXTERNAL_INCLUDE := $(LOCAL_PATH)/$(SRC_DIR)/layers/external
+ROBIN_HOOD_INCLUDE := $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := layer_utils
@@ -29,11 +32,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/logging.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/vk_layer_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_format_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/xxhash.cpp
-LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/external \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers
+LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 include $(BUILD_STATIC_LIBRARY)
@@ -117,12 +120,12 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
-LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/external \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
+LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -frtti -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
@@ -201,12 +204,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
-LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
-
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers
+LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -fvisibility=hidden
@@ -287,12 +289,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
-LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
-
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers
+LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
+LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK -DUSE_ROBIN_HOOD_HASHING
