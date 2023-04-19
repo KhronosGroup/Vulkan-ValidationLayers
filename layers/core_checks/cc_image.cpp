@@ -1700,14 +1700,20 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
     }
 
+    const bool multiplane_image = FormatIsMultiplane(image_format);
     // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
     if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
-        if (FormatIsMultiplane(image_format)) {
+        const auto view_class = FormatCompatibilityClass(view_format);
+        if (multiplane_image) {
             const VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
-            auto image_class = FormatCompatibilityClass(compat_format);
-            auto view_class = FormatCompatibilityClass(view_format);
-            // Need to only check if one is NONE to handle edge case both are NONE
-            if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
+            const auto image_class = FormatCompatibilityClass(compat_format);
+
+            if (!IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
+                skip |= LogError(pCreateInfo->image, " VUID-VkImageViewCreateInfo-subresourceRange-07818",
+                                 "vkCreateImageView(): subresourceRange.aspectMask (0x%x) is invalid for %s.", aspect_mask,
+                                 string_VkFormat(image_format));
+            } else if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
+                // Need to only check if one is NONE to handle edge case both are NONE
                 // View format must match the multiplane compatible format
                 std::stringstream ss;
                 ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format) << " is not compatible with plane "
@@ -1717,8 +1723,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         } else if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
             // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
-            auto image_class = FormatCompatibilityClass(image_format);
-            auto view_class = FormatCompatibilityClass(view_format);
+            const auto image_class = FormatCompatibilityClass(image_format);
             // Need to only check if one is NONE to handle edge case both are NONE
             if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
                 const char *error_vuid;
@@ -1747,8 +1752,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     } else {
         // Format MUST be IDENTICAL to the format the image was created with
         // Unless it is a multi-planar color bit aspect
-        if ((image_format != view_format) &&
-            ((FormatIsMultiplane(image_format) == false) || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
+        if ((image_format != view_format) && (!multiplane_image || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
             const char *vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
                                    ? "VUID-VkImageViewCreateInfo-image-01762"
                                    : "VUID-VkImageViewCreateInfo-image-01019";
