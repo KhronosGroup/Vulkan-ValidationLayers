@@ -1710,8 +1710,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
             if (!IsOnlyOneValidPlaneAspect(image_format, aspect_mask)) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-subresourceRange-07818",
-                                 "vkCreateImageView(): subresourceRange.aspectMask (0x%x) is invalid for %s.", aspect_mask,
-                                 string_VkFormat(image_format));
+                                 "vkCreateImageView(): subresourceRange.aspectMask (%s) is invalid for %s.",
+                                 string_VkImageAspectFlags(aspect_mask).c_str(), string_VkFormat(image_format));
             } else if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
                 // Need to only check if one is NONE to handle edge case both are NONE
                 // View format must match the multiplane compatible format
