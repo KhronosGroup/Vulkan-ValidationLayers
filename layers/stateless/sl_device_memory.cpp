@@ -200,6 +200,15 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
                                  func_name);
             }
         }
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        const auto *external_format = LvlFindInChain<VkExternalFormatANDROID>(pInfo->pCreateInfo);
+        if (external_format && external_format->externalFormat) {
+            skip |=
+                LogError(device, "VUID-VkDeviceImageMemoryRequirements-pNext-06996",
+                         "%s(): pInfo->pCreateInfo->pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".",
+                         func_name, external_format->externalFormat);
+        }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
     }
 
     return skip;
