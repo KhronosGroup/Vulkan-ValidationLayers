@@ -77,11 +77,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // Retrieve it's properties to make it's external format 'known' (AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM)
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
 
     // a defined image format with a non-zero external format
     ici.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -199,11 +195,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuDataBuffer) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
@@ -218,19 +209,17 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuDataBuffer) {
     import_ahb_Info.buffer = ahb;
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
-
-    VkDeviceMemory memory = VK_NULL_HANDLE;
 
     // Import requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -253,11 +242,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferAllocationSize) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
@@ -272,28 +256,30 @@ TEST_F(VkLayerTest, AndroidHardwareBufferAllocationSize) {
     import_ahb_Info.buffer = ahb;
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     // Allocation size mismatch
-    memory_allocate_info.allocationSize = ahb_props.allocationSize + 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
-    m_errorMonitor->VerifyFound();
+    {
+        memory_allocate_info.allocationSize = ahb_props.allocationSize + 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
+        vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+        m_errorMonitor->VerifyFound();
+    }
 
     // memoryTypeIndex mismatch
-    memory_allocate_info.allocationSize = ahb_props.allocationSize;
-    memory_allocate_info.memoryTypeIndex++;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
-    m_errorMonitor->VerifyFound();
+    {
+        memory_allocate_info.allocationSize = ahb_props.allocationSize;
+        memory_allocate_info.memoryTypeIndex++;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
+        vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+        m_errorMonitor->VerifyFound();
+    }
 
     AHardwareBuffer_release(ahb);
 }
@@ -315,11 +301,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageColor) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -332,7 +313,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageColor) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkExternalFormatANDROID external_format = LvlInitStruct<VkExternalFormatANDROID>();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -361,13 +342,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageColor) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02390");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -390,11 +369,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageDS) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_S8_UINT;
@@ -404,13 +378,16 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageDS) {
     ahb_desc.layers = 1;
     ahb_desc.stride = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
+    if (!ahb) {
+        GTEST_SKIP() << "Failed to Allocate AHB";
+    }
 
     // Incase it hits the below driver bug, catch the false VUID error thrown from driver not creating valid AHB
     m_errorMonitor->SetUnexpectedError("VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     if (ahb_fmt_props.format != VK_FORMAT_S8_UINT) {
         GTEST_SKIP() << "Driver bug: Didn't turn AHB format into VK_FORMAT_S8_UINT";
@@ -443,13 +420,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageDS) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02390");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -472,11 +447,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMipmapChain) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -494,7 +464,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMipmapChain) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>();
     ici.imageType = VK_IMAGE_TYPE_2D;
@@ -520,13 +490,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMipmapChain) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02389");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -549,11 +517,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageDimensions) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -566,7 +529,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageDimensions) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkExternalFormatANDROID external_format = LvlInitStruct<VkExternalFormatANDROID>();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -595,13 +558,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageDimensions) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02388");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -624,11 +585,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferUnknownFormat) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -641,7 +597,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferUnknownFormat) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>();
     ici.imageType = VK_IMAGE_TYPE_2D;
@@ -667,13 +623,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferUnknownFormat) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02387");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -696,11 +650,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -718,7 +667,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
     m_errorMonitor->VerifyFound();
 
     // Since we are creating a invalid AHB for the safe of getting the below AHB, there is a chance the driver will not be forgiving
@@ -757,8 +706,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
 
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     // Dedicated allocation with missing usage bits
     // Setting up this test also triggers a slew of others
     memory_allocate_info.allocationSize = 4096;
@@ -767,7 +714,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
     m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
     m_errorMonitor->SetUnexpectedError("VUID-VkMemoryAllocateInfo-allocationSize-02383");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02386");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -790,11 +737,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportMemoryAllocate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -807,7 +749,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportMemoryAllocate) {
 
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 
     VkExternalFormatANDROID external_format = LvlInitStruct<VkExternalFormatANDROID>();
     external_format.externalFormat = ahb_fmt_props.externalFormat;
@@ -836,13 +778,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportMemoryAllocate) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&export_memory);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-01874");
-    vk::AllocateMemory(device(), &memory_allocate_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
@@ -964,11 +904,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     // Retrieve AHB properties to make it's external format 'known'
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
     AHardwareBuffer_release(ahb);
 
     VkExternalMemoryImageCreateInfo emici = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
@@ -990,7 +926,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
         LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
     VkAndroidHardwareBufferPropertiesANDROID ahb_props_Ycbcr =
         LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props_Ycbcr);
-    pfn_GetAHBProps(device(), ahb, &ahb_props_Ycbcr);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props_Ycbcr);
     AHardwareBuffer_release(ahb);
 
     VkExternalFormatANDROID efa_Ycbcr = LvlInitStruct<VkExternalFormatANDROID>();
@@ -1120,13 +1056,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkDeviceMemory mem_handle = VK_NULL_HANDLE;
-
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
     // Allocate an AHardwareBuffer
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
@@ -1139,7 +1068,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     m_errorMonitor->SetUnexpectedError("VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
 
     // Create export and import buffers
     VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
@@ -1151,18 +1080,17 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
     // Import as buffer requires usage AHB_USAGE_GPU_DATA_BUFFER
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
     // Also causes "non-dedicated allocation format/usage" error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &mem_handle);
+    vk_testing::DeviceMemory mem_handle(*m_device, memory_allocate_info);
     m_errorMonitor->VerifyFound();
 
     AHardwareBuffer_release(ahb);
-    vk::FreeMemory(device(), mem_handle, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferExportBufferHandleType) {
@@ -1182,26 +1110,18 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportBufferHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-
     // Allocate device memory, no linked export struct indicating AHB handle type
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
     memory_allocate_info.allocationSize = 65536;
     memory_allocate_info.memoryTypeIndex = 0;
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
-
-    PFN_vkGetMemoryAndroidHardwareBufferANDROID pfn_GetMemAHB =
-        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
-    ASSERT_TRUE(pfn_GetMemAHB != nullptr);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
 
     VkMemoryGetAndroidHardwareBufferInfoANDROID mgahbi = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
     mgahbi.memory = memory;
     AHardwareBuffer *ahb = nullptr;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882");
-    pfn_GetMemAHB(device(), &mgahbi, &ahb);
+    vk::GetMemoryAndroidHardwareBufferANDROID(device(), &mgahbi, &ahb);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(device(), memory, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferExportImageNonBound) {
@@ -1220,10 +1140,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportImageNonBound) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    PFN_vkGetMemoryAndroidHardwareBufferANDROID pfn_GetMemAHB =
-        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
-    ASSERT_TRUE(pfn_GetMemAHB != nullptr);
 
     // Create VkImage to be exported to an AHB
     VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
@@ -1260,21 +1176,17 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportImageNonBound) {
     // Use any DEVICE_LOCAL memory found
     bool has_memtype = m_device->phy().set_memory_type(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
-
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-    vk::AllocateMemory(device(), &memory_info, NULL, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_info);
 
     VkMemoryGetAndroidHardwareBufferInfoANDROID mgahbi = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
     mgahbi.memory = memory;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883");
     AHardwareBuffer *ahb = nullptr;
-    pfn_GetMemAHB(device(), &mgahbi, &ahb);
+    vk::GetMemoryAndroidHardwareBufferANDROID(device(), &mgahbi, &ahb);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(device(), memory, NULL);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
@@ -1306,11 +1218,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
 
     VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -1332,7 +1240,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     if (!SetAllocationInfoImportAHB(m_device, ahb_props, memory_allocate_info)) {
         AHardwareBuffer_release(ahb);
-        GTEST_SKIP() << "No invalid memory type index could be found";
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
     vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
@@ -1374,12 +1282,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    PFN_vkBindBufferMemory2KHR vkBindBufferMemory2KHR =
-        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(device(), "vkBindBufferMemory2KHR");
-
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
@@ -1401,7 +1303,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
     import_ahb_Info.buffer = ahb;
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     memory_allocate_info.allocationSize = ahb_props.allocationSize;
@@ -1414,8 +1316,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
         }
     }
 
-    VkDeviceMemory memory;
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memory-02986");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
@@ -1429,10 +1330,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryInfo-memory-02986");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindBufferMemoryInfo-memory-01035");
-    vkBindBufferMemory2KHR(device(), 1, &bind_buffer_info);
+    vk::BindBufferMemory2KHR(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(device(), memory, nullptr);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
@@ -1450,12 +1349,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
-                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2KHR =
-        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
 
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
@@ -1492,7 +1385,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     import_ahb_Info.buffer = ahb;
 
     VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
-    pfn_GetAHBProps(device(), ahb, &ahb_props);
+    vk::GetAndroidHardwareBufferPropertiesANDROID(device(), ahb, &ahb_props);
 
     VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     memory_allocate_info.allocationSize = ahb_props.allocationSize;
@@ -1505,8 +1398,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
         }
     }
 
-    VkDeviceMemory memory;
-    vk::AllocateMemory(device(), &memory_allocate_info, nullptr, &memory);
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
@@ -1522,7 +1414,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
-    vkBindImageMemory2KHR(m_device->device(), 1, &bind_image_info);
+    vk::BindImageMemory2KHR(m_device->device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
 
