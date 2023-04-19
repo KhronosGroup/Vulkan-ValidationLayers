@@ -2452,11 +2452,6 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDisjoint) {
         GTEST_SKIP() << "Test requires disjoint support extensions";
     }
 
-    PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
-
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -2475,8 +2470,17 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDisjoint) {
     VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417");
-    vkGetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
+
+    device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06419");
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
+    m_errorMonitor->VerifyFound();
+
+    // valid
+    device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
 }
 
 TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
