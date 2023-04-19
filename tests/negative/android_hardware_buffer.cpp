@@ -1524,8 +1524,43 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
     vkBindImageMemory2KHR(m_device->device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
+}
 
-    vk::FreeMemory(m_device->device(), memory, nullptr);
+TEST_F(VkLayerTest, AndroidHardwareBufferDeviceImageMemoryReq) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_format = LvlInitStruct<VkExternalFormatANDROID>();
+    external_format.externalFormat = 0;
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>(&external_format);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.arrayLayers = 1;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.format = VK_FORMAT_UNDEFINED;
+    image_create_info.mipLevels = 1;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto image_memory_req = LvlInitStruct<VkDeviceImageMemoryRequirements>();
+    image_memory_req.pCreateInfo = &image_create_info;
+    image_memory_req.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    auto out_memory_req = LvlInitStruct<VkMemoryRequirements2>();
+    m_errorMonitor->SetUnexpectedError("VUID-VkDeviceImageMemoryRequirements-pNext-06996");
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &image_memory_req, &out_memory_req);
+    m_errorMonitor->VerifyFound();
 }
 
 #endif  // AHB_VALIDATION_SUPPORT
