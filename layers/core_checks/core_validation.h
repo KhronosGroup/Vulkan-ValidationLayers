@@ -290,7 +290,7 @@ struct SemaphoreSubmitState {
     bool ValidateWaitSemaphore(const core_error::Location& loc, VkSemaphore semaphore, uint64_t value);
     bool ValidateSignalSemaphore(const core_error::Location& loc, VkSemaphore semaphore, uint64_t value);
 
-    bool CannotSignal(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue) const {
+    bool CannotSignal(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue, const char*& other_func) const {
         const auto semaphore = semaphore_state.semaphore();
         if (signaled_semaphores.count(semaphore)) {
             other_queue = queue;
@@ -299,7 +299,8 @@ struct SemaphoreSubmitState {
         if (!unsignaled_semaphores.count(semaphore)) {
             const auto last_op = semaphore_state.LastOp();
             if (last_op && !last_op->CanBeSignaled()) {
-                other_queue = last_op && last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
+                other_queue = last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
+                other_func = last_op->func_name;
                 return true;
             }
         }

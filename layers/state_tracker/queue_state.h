@@ -115,13 +115,14 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     }
 
     struct SemOp {
-        SemOp(OpType ot, QUEUE_STATE *q, uint64_t queue_seq, uint64_t timeline_payload)
-            : op_type(ot), queue(q), seq(queue_seq), payload(timeline_payload) {}
+        SemOp(OpType ot, QUEUE_STATE *q, uint64_t queue_seq, uint64_t timeline_payload, const char *func_name = nullptr)
+            : op_type(ot), queue(q), seq(queue_seq), payload(timeline_payload), func_name(func_name) {}
 
         OpType op_type;
         QUEUE_STATE *queue;
         uint64_t seq;
         uint64_t payload;
+        const char *func_name;  // has to be initialized with a string literal
 
         bool operator<(const SemOp &rhs) const { return payload < rhs.payload; }
 
@@ -209,7 +210,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload);
 
     // Binary only special cases enqueue functions
-    void EnqueueAcquire();
+    void EnqueueAcquire(const char *func_name);
 
     // Signal queue(s) that need to retire because a wait on this payload has finished
     void Notify(uint64_t payload);
