@@ -1538,12 +1538,13 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
                                                  "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06210",
                                                  "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
 
+    const auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
+
     if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
         const auto *surface_present_mode = LvlFindInChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
         if (surface_present_mode) {
             VkPresentModeKHR present_mode = surface_present_mode->presentMode;
             std::vector<VkPresentModeKHR> present_modes{};
-            auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
             if (surface_state) {
                 present_modes = surface_state->GetPresentModes(physicalDevice, this);
             }
@@ -1559,6 +1560,26 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
             }
         }
     }
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (IsExtEnabled(device_extensions.vk_khr_win32_surface) && IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive)) {
+        if (surface_state) {
+            if (const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pSurfaceInfo->pNext);
+                full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
+                if (const auto *win32_full_screen_info =
+                        LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
+                    !win32_full_screen_info) {
+                    const LogObjectList objlist(device, pSurfaceInfo->surface);
+                    skip |= LogError(objlist, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672",
+                                     "vkGetPhysicalDeviceSurfaceCapabilities2KHR(): pSurfaceInfo->pNext chain contains "
+                                     "a VkSurfaceFullScreenExclusiveInfoEXT structure with its fullScreenExclusive member set to "
+                                     "VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, but does not contain "
+                                     "a VkSurfaceFullScreenExclusiveWin32InfoEXT structure.");
+                }
+            }
+        }
+    }
+#endif
 
     return skip;
 }
