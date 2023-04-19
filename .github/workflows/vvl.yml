@@ -222,54 +222,12 @@ jobs:
         - name: Build
           run: python3 scripts/github_ci_android.py --abi arm64-v8a
 
-  macos-12:
-    runs-on: macos-12
+  macos:
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        config: [Debug, Release]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-      - uses: lukka/get-cmake@latest
-      - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-macos-12-xcode
-        with:
-          path: |
-            external/${{ matrix.config }}/glslang/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Headers/build/install
-            external/${{ matrix.config }}/SPIRV-Tools/build/install
-            external/${{ matrix.config }}/robin-hood-hashing/build/install
-            external/${{ matrix.config }}/googletest/build/install
-            external/${{ matrix.config }}/Vulkan-Headers/registry
-            external/${{ matrix.config }}/SPIRV-Headers/include
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
-      - name: Generate build files and dependencies
-        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
-        env:
-          # Ensure we can build against 10.15: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
-          MACOSX_DEPLOYMENT_TARGET: 10.15
-      - name: Build Vulkan-ValidationLayers
-        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
-      - name: Install Vulkan-ValidationLayers
-        run: cmake --install build --prefix build/install --config ${{matrix.config}}
-
-  macos-11:
-    runs-on: macos-11
-    strategy:
-      fail-fast: false
-      matrix:
-        config: [Debug, Release]
+        macos_version: ["min","latest"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -279,17 +237,13 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-macOS11-${{ matrix.config }}
-      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
-      # PATH changes need to be done in an action before any action that needs it
+          key: macos-${{ matrix.macos_version }}
       - name: Add ccache to PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
-      - name: Generate build files and dependencies
-        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -G "Ninja"
-      - name: Build Vulkan-ValidationLayers
-        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
-      - name: Install Vulkan-ValidationLayers
-        run: cmake --install build --prefix build/install --config ${{matrix.config}}
+      - name: Install python dependencies
+        run: python3 -m pip install jsonschema pyparsing
+      - name: Build
+        run: python3 scripts/github_ci_build_desktop.py --config release --osx ${{ matrix.macos_version }}
 
   mingw:
     runs-on: windows-latest
