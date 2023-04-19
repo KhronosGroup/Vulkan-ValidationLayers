@@ -466,6 +466,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         image_info.usage = pCreateInfo->usage;
         image_info.flags = pCreateInfo->flags;
 
+        const auto image_drm_format_modifier_explicit_create_info_ext = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        auto drm_format_modifier_info_ext = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT && image_drm_format_modifier_explicit_create_info_ext != nullptr) {
+            drm_format_modifier_info_ext.drmFormatModifier = image_drm_format_modifier_explicit_create_info_ext->drmFormatModifier;
+            drm_format_modifier_info_ext.sharingMode = pCreateInfo->sharingMode;
+            external_image_info.pNext = &drm_format_modifier_info_ext;
+        }
+
         auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
         auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
         result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
