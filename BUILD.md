@@ -347,8 +347,6 @@ A common way to install on the system:
 
 #### Additional OSX System Requirements
 
-Tested on OSX version 10.15
-
 Setup Homebrew and components
 
 - Ensure Homebrew is at the beginning of your PATH:
@@ -407,10 +405,6 @@ Follow the setup steps for Windows above, then from the Developer Command Prompt
 ## Building on MacOS
 
 ### MacOS Build Requirements
-
-Tested on OSX version 10.15
-
-NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building VVL and it's dependencies.
 
 [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Darwin-x86_64.tar.gz) is recommended.
 
