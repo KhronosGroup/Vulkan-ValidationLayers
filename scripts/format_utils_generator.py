@@ -628,16 +628,9 @@ bool FormatIsYChromaSubsampled(VkFormat format);
     def multiplaneFunctions(self):
         output = ''
         if self.headerFile:
-            output += '''// Multiplane
-bool FormatIsSinglePlane_422(VkFormat format);
-uint32_t FormatPlaneCount(VkFormat format);
-static inline bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
-VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-'''
-        elif self.sourceFile:
-            output += '\n// Single-plane "_422" formats are treated as 2x1 compressed (for copies)\n'
-            output += '\nbool FormatIsSinglePlane_422(VkFormat format) {\n'
+            output += '// Multiplane\n'
+            output += '// Single-plane "_422" formats are treated as 2x1 compressed (for copies)\n'
+            output += '\nconstexpr bool FormatIsSinglePlane_422(VkFormat format) {\n'
             output += '    bool found = false;\n'
             output += '    switch (format) {\n'
             for f in sorted(self.ycbcrFormats.keys()):
@@ -646,7 +639,7 @@ VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plan
             output += self.commonBoolSwitch
 
             output += '\n// Returns number of planes in format (which is 1 by default)\n'
-            output += 'uint32_t FormatPlaneCount(VkFormat format) {\n'
+            output += 'constexpr uint32_t FormatPlaneCount(VkFormat format) {\n'
             output += '    switch (format) {\n'
             for i in range(2, self.maxPlaneCount + 1):
                 for f in sorted(self.planarFormats.keys()):
@@ -657,7 +650,13 @@ VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plan
             output += '            return 1;\n'
             output += '     }\n'
             output += '}\n'
+            output += '''
+constexpr bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
+VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
+'''
 
+        elif self.sourceFile:
             output += '''
 // Will return VK_FORMAT_UNDEFINED if given a plane aspect that doesn't exist for the format
 VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {

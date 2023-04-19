@@ -1752,61 +1752,6 @@ bool FormatIsYChromaSubsampled(VkFormat format) {
 }
 
 
-// Single-plane "_422" formats are treated as 2x1 compressed (for copies)
-
-bool FormatIsSinglePlane_422(VkFormat format) {
-    bool found = false;
-    switch (format) {
-        case VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16:
-        case VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16:
-        case VK_FORMAT_B16G16R16G16_422_UNORM:
-        case VK_FORMAT_B8G8R8G8_422_UNORM:
-        case VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16:
-        case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16:
-        case VK_FORMAT_G16B16G16R16_422_UNORM:
-        case VK_FORMAT_G8B8G8R8_422_UNORM:
-        found = true;
-            break;
-        default:
-            break;
-    }
-    return found;
-}
-
-// Returns number of planes in format (which is 1 by default)
-uint32_t FormatPlaneCount(VkFormat format) {
-    switch (format) {
-        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16:
-        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16:
-        case VK_FORMAT_G10X6_B10X6R10X6_2PLANE_444_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_444_UNORM_3PACK16:
-        case VK_FORMAT_G16_B16R16_2PLANE_420_UNORM:
-        case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM:
-        case VK_FORMAT_G16_B16R16_2PLANE_444_UNORM:
-        case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
-        case VK_FORMAT_G8_B8R8_2PLANE_422_UNORM:
-        case VK_FORMAT_G8_B8R8_2PLANE_444_UNORM:
-            return 2;
-        case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16:
-        case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16:
-        case VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16:
-        case VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16:
-        case VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM:
-        case VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM:
-        case VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM:
-        case VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM:
-        case VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM:
-        case VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM:
-            return 3;
-        default:
-            return 1;
-     }
-}
-
 // Will return VK_FORMAT_UNDEFINED if given a plane aspect that doesn't exist for the format
 VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     const uint32_t plane_idx = GetPlaneIndex(plane_aspect);
