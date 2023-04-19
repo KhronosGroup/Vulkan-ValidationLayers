@@ -138,3 +138,128 @@ TEST_F(VkPositiveLayerTest, RayTracingHostAccelerationStructureReference) {
         rt::as::blueprint::BuildGeometryInfoSimpleOnHostTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
     top_level_build_geometry.BuildHost(instance(), *m_device);
 }
+
+TEST_F(VkPositiveLayerTest, RayTracingStridedDeviceAddressRegion) {
+    TEST_DESCRIPTION("Test different valid VkStridedDeviceAddressRegionKHR");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&bda_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    // Needed for Ray Tracing
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!ray_tracing_features.rayTracingPipeline) {
+        GTEST_SKIP() << "Feature rayTracing is not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    // Create ray tracing pipeline
+    VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
+    {
+        const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+        VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+        VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+
+        const VkPipelineLayoutObj pipeline_layout(m_device, {});
+
+        std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
+        shader_stages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        shader_stages[0].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        shader_stages[0].module = chit_shader.handle();
+        shader_stages[0].pName = "main";
+
+        shader_stages[1] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+        shader_stages[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        shader_stages[1].module = rgen_shader.handle();
+        shader_stages[1].pName = "main";
+
+        std::array<VkRayTracingShaderGroupCreateInfoKHR, 1> shader_groups;
+        shader_groups[0] = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+        shader_groups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        shader_groups[0].generalShader = 1;
+        shader_groups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_groups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
+        shader_groups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
+
+        VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+        raytracing_pipeline_ci.flags = 0;
+        raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
+        raytracing_pipeline_ci.pStages = shader_stages.data();
+        raytracing_pipeline_ci.pGroups = shader_groups.data();
+        raytracing_pipeline_ci.groupCount = shader_groups.size();
+        raytracing_pipeline_ci.layout = pipeline_layout.handle();
+
+        const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+                                                                 &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
+        ASSERT_VK_SUCCESS(result);
+    }
+
+    VkBufferObj buffer;
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.usage =
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+    buffer_ci.size = 4096;
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer.init_no_mem(*m_device, buffer_ci);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+    vk_testing::DeviceMemory mem(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
+
+    auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    GetPhysicalDeviceProperties2(ray_tracing_properties);
+
+    const VkDeviceAddress device_address = buffer.address();
+
+    VkStridedDeviceAddressRegionKHR stridebufregion = {};
+    stridebufregion.deviceAddress = device_address;
+    stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
+    stridebufregion.size = stridebufregion.stride;
+
+    m_commandBuffer->begin();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
+
+    vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion, 100, 100,
+                        1);
+
+    // pRayGenShaderBindingTable->deviceAddress == 0
+    {
+        VkStridedDeviceAddressRegionKHR valid_region = stridebufregion;
+        valid_region.deviceAddress = 0;
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &valid_region, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
+    }
+
+    // pRayGenShaderBindingTable->size == 0, deviceAddress is invalid => region is considered unused so no error
+    {
+        VkStridedDeviceAddressRegionKHR empty_region = stridebufregion;
+        empty_region.deviceAddress += buffer.create_info().size + 128;
+        empty_region.size = 0;
+        empty_region.stride = 0;
+        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &empty_region, &stridebufregion, &stridebufregion, &stridebufregion, 100,
+                            100, 1);
+    }
+
+    m_commandBuffer->end();
+
+    vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
+}
