@@ -2205,9 +2205,6 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     if (sync2) {
-        auto vkCmdPipelineBarrier2KHR =
-            reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR"));
-
         auto img_barrier2 = LvlInitStruct<VkImageMemoryBarrier2KHR>();
         img_barrier2.srcAccessMask = 0;
         img_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2226,23 +2223,23 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
         m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-ImageBarrierAccessLayout");
-        vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
         m_errorMonitor->VerifyFound();
 
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         img_barrier2.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
         // make sure bits above UINT32_MAX are detected
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         img_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
         m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-ImageBarrierAccessLayout");
-        vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
         m_errorMonitor->VerifyFound();
 
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         img_barrier2.dstAccessMask = 0;
-        vkCmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+        vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
 
         m_commandBuffer->end();
     }

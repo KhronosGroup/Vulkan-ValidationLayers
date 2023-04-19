@@ -733,16 +733,9 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     vk::CmdSetScissor(set_state_fixed_count_cmd, 0, 2, test_data.kScissorArray);
     vk::EndCommandBuffer(set_state_fixed_count_cmd);
 
-    auto vkCmdSetViewportWithCountEXT =
-        PFN_vkCmdSetViewportWithCountEXT(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetViewportWithCountEXT"));
-    assert(vkCmdSetViewportWithCountEXT);
-    auto vkCmdSetScissorWithCountEXT =
-        PFN_vkCmdSetScissorWithCountEXT(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetScissorWithCountEXT"));
-    assert(vkCmdSetScissorWithCountEXT);
-
     VkCommandBuffer set_state_with_count_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
-    vkCmdSetViewportWithCountEXT(set_state_with_count_cmd, 2, test_data.kViewportArray);
-    vkCmdSetScissorWithCountEXT(set_state_with_count_cmd, 2, test_data.kScissorArray);
+    vk::CmdSetViewportWithCountEXT(set_state_with_count_cmd, 2, test_data.kViewportArray);
+    vk::CmdSetScissorWithCountEXT(set_state_with_count_cmd, 2, test_data.kScissorArray);
     vk::EndCommandBuffer(set_state_with_count_cmd);
 
     VkCommandBuffer static_state_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
@@ -867,7 +860,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
 
         // Decoy command, should be overwritten later.
-        vkCmdSetViewportWithCountEXT(primary_cmd, 3, test_data.kViewportAlternateDepthArray);
+        vk::CmdSetViewportWithCountEXT(primary_cmd, 3, test_data.kViewportAlternateDepthArray);
 
         // Record state setting commands in either the primary, or auxilliary secondary, command buffer.
         VkCommandBuffer set_state_cmd;
@@ -879,8 +872,8 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
             set_state_cmd = primary_cmd;
         }
         uint32_t count = should_fail ? 3 : 2;
-        vkCmdSetViewportWithCountEXT(set_state_cmd, count, viewports);
-        vkCmdSetScissorWithCountEXT(set_state_cmd, count, test_data.kScissorArray);
+        vk::CmdSetViewportWithCountEXT(set_state_cmd, count, viewports);
+        vk::CmdSetScissorWithCountEXT(set_state_cmd, count, test_data.kScissorArray);
         if (state_in_secondary) {
             vk::EndCommandBuffer(set_state_cmd);
         }

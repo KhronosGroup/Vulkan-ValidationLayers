@@ -1366,18 +1366,6 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
     VkBufferObj buffer;
     buffer.init(*m_device, buff_ci);
 
-    // Relying on the "return nullptr for non-enabled extensions
-    auto vkCreateDescriptorUpdateTemplateKHR =
-        (PFN_vkCreateDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
-    auto vkDestroyDescriptorUpdateTemplateKHR =
-        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
-    auto vkUpdateDescriptorSetWithTemplateKHR =
-        (PFN_vkUpdateDescriptorSetWithTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR");
-
-    ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
-    ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
-    ASSERT_NE(vkUpdateDescriptorSetWithTemplateKHR, nullptr);
-
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
     };
@@ -1399,7 +1387,7 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02226");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorUpdateTemplateEntry-descriptor-02227");
-    vkCreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
     m_errorMonitor->VerifyFound();
 }
 

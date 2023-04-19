@@ -454,9 +454,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
         m_errorMonitor->VerifyFound();
     }
 
-    auto vkSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
-        vk::GetDeviceProcAddr(test_device.handle(), "vkSetDeviceMemoryPriorityEXT"));
-    vkSetDeviceMemoryPriorityEXT(test_device.handle(), memory.handle(), 0.5f);
+    vk::SetDeviceMemoryPriorityEXT(test_device.handle(), memory.handle(), 0.5f);
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,

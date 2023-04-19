@@ -171,19 +171,10 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkDestroyPrivateDataSlotEXT pfn_vkDestroyPrivateDataSlotEXT =
-        (PFN_vkDestroyPrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyPrivateDataSlotEXT");
-    PFN_vkCreatePrivateDataSlotEXT pfn_vkCreatePrivateDataSlotEXT =
-        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
-    PFN_vkGetPrivateDataEXT pfn_vkGetPrivateDataEXT =
-        (PFN_vkGetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkGetPrivateDataEXT");
-    PFN_vkSetPrivateDataEXT pfn_vkSetPrivateDataEXT =
-        (PFN_vkSetPrivateDataEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkSetPrivateDataEXT");
-
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
-    VkResult err = pfn_vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    VkResult err = vk::CreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
     if (err != VK_SUCCESS) {
         printf("Failed to create private data slot, VkResult %d.\n", err);
     }
@@ -208,16 +199,16 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     vk_testing::Sampler sampler(*m_device, sampler_info);
 
     static const uint64_t data_value = 0x70AD;
-    err = pfn_vkSetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    err = vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
     if (err != VK_SUCCESS) {
         printf("Failed to set private data. VkResult = %d\n", err);
     }
     uint64_t data;
-    pfn_vkGetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
-    pfn_vkDestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
+    vk::DestroyPrivateDataSlotEXT(m_device->handle(), data_slot, NULL);
 }
 
 TEST_F(VkLayerTest, PrivateDataFeature) {
@@ -234,14 +225,12 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    PFN_vkCreatePrivateDataSlotEXT vkCreatePrivateDataSlotEXT =
-        (PFN_vkCreatePrivateDataSlotEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCreatePrivateDataSlotEXT");
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
     data_create_info.flags = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
-    vkCreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
+    vk::CreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, NULL, &data_slot);
     m_errorMonitor->VerifyFound();
     if (vulkan_13) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreatePrivateDataSlot-privateData-04564");
@@ -1599,27 +1588,19 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Load extension functions
-    auto fpCreateValidationCache =
-        (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCreateValidationCacheEXT");
-    auto fpDestroyValidationCache =
-        (PFN_vkDestroyValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyValidationCacheEXT");
-    auto fpMergeValidationCaches =
-        (PFN_vkMergeValidationCachesEXT)vk::GetDeviceProcAddr(m_device->device(), "vkMergeValidationCachesEXT");
-
     VkValidationCacheCreateInfoEXT validationCacheCreateInfo = LvlInitStruct<VkValidationCacheCreateInfoEXT>();
     validationCacheCreateInfo.initialDataSize = 0;
     validationCacheCreateInfo.pInitialData = NULL;
     validationCacheCreateInfo.flags = 0;
     VkValidationCacheEXT validationCache = VK_NULL_HANDLE;
-    VkResult res = fpCreateValidationCache(m_device->device(), &validationCacheCreateInfo, nullptr, &validationCache);
+    VkResult res = vk::CreateValidationCacheEXT(m_device->device(), &validationCacheCreateInfo, nullptr, &validationCache);
     ASSERT_VK_SUCCESS(res);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMergeValidationCachesEXT-dstCache-01536");
-    res = fpMergeValidationCaches(m_device->device(), validationCache, 1, &validationCache);
+    res = vk::MergeValidationCachesEXT(m_device->device(), validationCache, 1, &validationCache);
     m_errorMonitor->VerifyFound();
 
-    fpDestroyValidationCache(m_device->device(), validationCache, nullptr);
+    vk::DestroyValidationCacheEXT(m_device->device(), validationCache, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
@@ -2237,17 +2218,9 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkGetQueueCheckpointDataNV =
-        (PFN_vkGetQueueCheckpointDataNV)vk::GetDeviceProcAddr(m_device->device(), "vkGetQueueCheckpointDataNV");
-
-    auto vkCmdSetCheckpointNV = (PFN_vkCmdSetCheckpointNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCheckpointNV");
-
-    ASSERT_TRUE(vkGetQueueCheckpointDataNV != nullptr);
-    ASSERT_TRUE(vkCmdSetCheckpointNV != nullptr);
-
     uint32_t data = 100;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
-    vkCmdSetCheckpointNV(m_commandBuffer->handle(), &data);
+    vk::CmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2895,10 +2868,6 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkExportMetalObjectsEXT vkExportMetalObjectsEXT =
-        reinterpret_cast<PFN_vkExportMetalObjectsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkExportMetalObjectsEXT"));
-    ASSERT_TRUE(vkExportMetalObjectsEXT != nullptr);
-
     auto metal_object_create_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
     auto instance_ci = GetInstanceCreateInfo();
     metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
@@ -3014,12 +2983,12 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_command_queue_info.queue = m_device->m_queue;
     export_metal_objects_info.pNext = &metal_device_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     export_metal_objects_info.pNext = &metal_command_queue_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06792");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     alloc_info.pNext = nullptr;
@@ -3029,7 +2998,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_buffer_info.memory = memory;
     export_metal_objects_info.pNext = &metal_buffer_info;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06793");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
     vk::FreeMemory(device(), memory, nullptr);
 
@@ -3049,14 +3018,14 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
 
     // Only one of image, bufferView, imageView
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06794");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     // Image not created with struct in pNext
     metal_texture_info.bufferView = VK_NULL_HANDLE;
     metal_texture_info.image = image_obj.handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06795");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     metal_texture_info.image = VK_NULL_HANDLE;
@@ -3067,7 +3036,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_texture_info.imageView = image_view_no_struct.handle();
     // ImageView not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06796");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     buff_view_ci.pNext = nullptr;
@@ -3077,7 +3046,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_texture_info.bufferView = buffer_view_no_struct.handle();
     // BufferView not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06797");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     metal_texture_info.bufferView = VK_NULL_HANDLE;
@@ -3085,7 +3054,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
     // metal_texture_info.plane not plane 0, 1 or 2
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06798");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -3095,7 +3064,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_texture_info.image = single_plane_export_image_obj.handle();
     // metal_texture_info.plane not plane_0 for single plane image
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06799");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     image_view_ci.pNext = &export_metal_object_create_info;
@@ -3106,7 +3075,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     metal_texture_info.imageView = single_plane_export_image_view.handle();
     // metal_texture_info.plane not plane_0 for single plane imageView
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06801");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     auto metal_iosurface_info = LvlInitStruct<VkExportMetalIOSurfaceInfoEXT>();
@@ -3114,14 +3083,14 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     export_metal_objects_info.pNext = &metal_iosurface_info;
     // metal_iosurface_info.image not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06803");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     auto metal_shared_event_info = LvlInitStruct<VkExportMetalSharedEventInfoEXT>();
     export_metal_objects_info.pNext = &metal_shared_event_info;
     // metal_shared_event_info event and semaphore both VK_NULL_HANDLE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06804");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     sem_info.pNext = nullptr;
@@ -3131,7 +3100,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     export_metal_objects_info.pNext = &metal_shared_event_info;
     // Semaphore not created with struct in pNext
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06805");
-    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     if (portability_features.events) {
@@ -3142,7 +3111,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         metal_shared_event_info.semaphore = VK_NULL_HANDLE;
         // Event not created with struct in pNext
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06806");
-        vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3163,16 +3132,10 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
         export_metal_objects_info.pNext = &metal_texture_info;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06800");
-        vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
         m_errorMonitor->VerifyFound();
 
         if (ycbcr_conversion_extension) {
-            PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionKHR =
-                reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
-                    vk::GetDeviceProcAddr(m_device->device(), "vkCreateSamplerYcbcrConversionKHR"));
-            PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionKHR =
-                reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
-                    vk::GetDeviceProcAddr(m_device->device(), "vkDestroySamplerYcbcrConversionKHR"));
             VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
             ycbcr_create_info.format = mp_format;
             ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
@@ -3185,7 +3148,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
             ycbcr_create_info.forceExplicitReconstruction = false;
 
             VkSamplerYcbcrConversion conversion;
-            err = vkCreateSamplerYcbcrConversionKHR(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+            err = vk::CreateSamplerYcbcrConversionKHR(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
             ASSERT_VK_SUCCESS(err);
 
             VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
@@ -3199,9 +3162,9 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
             metal_texture_info.image = VK_NULL_HANDLE;
             metal_texture_info.imageView = mp_image_view.handle();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802");
-            vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+            vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
             m_errorMonitor->VerifyFound();
-            vkDestroySamplerYcbcrConversionKHR(m_device->device(), conversion, nullptr);
+            vk::DestroySamplerYcbcrConversionKHR(m_device->device(), conversion, nullptr);
         }
     }
 }
@@ -3227,23 +3190,15 @@ TEST_F(VkLayerTest, EndDebugLabelWithNoBegin) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginDebugUtilsLabelEXT"));
-    ASSERT_NE(vkCmdBeginDebugUtilsLabelEXT, nullptr);
-    auto vkCmdEndDebugUtilsLabelEXT =
-        reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndDebugUtilsLabelEXT"));
-    ASSERT_NE(vkCmdEndDebugUtilsLabelEXT, nullptr);
-
     m_commandBuffer->begin();
     // First verify there is no error in the valid case
     auto label = LvlInitStruct<VkDebugUtilsLabelEXT>(nullptr, "Test");
-    vkCmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vkCmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
 
     // Now call vkCmdEndDebugUtilsLabelEXT without a corresponding begin
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
-    vkCmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -3253,11 +3208,11 @@ TEST_F(VkLayerTest, EndDebugLabelWithNoBegin) {
         LvlInitStruct<VkCommandBufferAllocateInfo>(nullptr, m_commandPool->handle(), VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1u);
     vk_testing::CommandBuffer cb(*m_device, cb_info);
     cb.begin();
-    vkCmdBeginDebugUtilsLabelEXT(cb, &label);
-    vkCmdEndDebugUtilsLabelEXT(cb);
+    vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
+    vk::CmdEndDebugUtilsLabelEXT(cb);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
-    vkCmdEndDebugUtilsLabelEXT(cb);
+    vk::CmdEndDebugUtilsLabelEXT(cb);
     m_errorMonitor->VerifyFound();
 
     cb.end();
@@ -3289,10 +3244,6 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     m_errorMonitor->SetUnexpectedError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Find address of extension API
-    auto vkCreateSamplerYcbcrConversionKHR =
-        (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled");
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
     ycbcr_create_info.format = VK_FORMAT_UNDEFINED;
@@ -3305,7 +3256,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
     VkSamplerYcbcrConversion conversion;
-    vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+    vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
     m_errorMonitor->VerifyFound();
 }
 

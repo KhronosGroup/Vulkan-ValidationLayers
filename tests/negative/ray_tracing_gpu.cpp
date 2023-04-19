@@ -35,9 +35,6 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto vkCmdBuildAccelerationStructureNV =
-        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
-
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometry;
@@ -91,8 +88,8 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
-    vkCmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
-                                      VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
+                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
     command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(
@@ -120,9 +117,6 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    const auto vkCmdBuildAccelerationStructureNV =
-        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -186,8 +180,8 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
-    vkCmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
-                                      VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
+                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
     command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(
@@ -215,9 +209,6 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    const auto vkCmdBuildAccelerationStructureNV =
-        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -258,8 +249,8 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
-        vkCmdBuildAccelerationStructureNV(command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                          destroyed_bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+        vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                            destroyed_bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
         command_buffer.end();
 
         VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -302,8 +293,8 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
-    vkCmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
-                                      VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
+                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
     command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(
@@ -330,11 +321,6 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    const auto vkCmdBuildAccelerationStructureNV =
-        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
-
-    const auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -505,15 +491,15 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
     vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
     vk::CmdPushConstants(command_buffer.handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, 4,
                          &push_constant_value);
-    vkCmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout.handle(), 0, 1,
-                              &push_descriptor_set_write);
+    vk::CmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout.handle(), 0, 1,
+                                &push_descriptor_set_write);
     vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout.handle(), 1, 1,
                               &normal_descriptor_set.set_, 0, nullptr);
     vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout.handle(), 2, 1,
                               &output_descriptor_set.set_, 0, nullptr);
 
-    vkCmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
-                                      VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(command_buffer.handle(), &top_level_as_create_info.info, instance_buffer.handle(), 0,
+                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, top_level_as_scratch.handle(), 0);
 
     vk::CmdDispatch(command_buffer.handle(), 1, 1, 1);
     command_buffer.end();

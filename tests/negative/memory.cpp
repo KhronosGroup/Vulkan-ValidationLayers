@@ -199,9 +199,6 @@ TEST_F(VkLayerTest, MapMemory2) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto fpvkMapMemory2KHR = (PFN_vkMapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkMapMemory2KHR");
-    auto fpvkUnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkUnmapMemory2KHR");
-
     /* Vulkan doesn't have any requirements on what allocationSize can be
      * other than that it must be non-zero.  Pick 64KB because that should
      * work out to an even number of pages on basically any GPU.
@@ -229,33 +226,33 @@ TEST_F(VkLayerTest, MapMemory2) {
     map_info.offset = 0;
     map_info.size = 0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07960");
-    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
     map_info.offset = 0;
     map_info.size = VK_WHOLE_SIZE;
-    ASSERT_VK_SUCCESS(fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData));
+    ASSERT_VK_SUCCESS(vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData));
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-memory-07958");
-    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
     // Unmap the memory to avoid re-map error
-    fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
     // overstep offset with VK_WHOLE_SIZE
     map_info.offset = allocation_size + 1;
     map_info.size = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-offset-07959");
-    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
     map_info.offset = 1,
     map_info.size = allocation_size;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-size-07961");
-    fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryUnmapInfoKHR-memory-07964");
-    fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
     m_errorMonitor->VerifyFound();
 
     vk::FreeMemory(m_device->device(), memory, NULL);
@@ -959,20 +956,6 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         mp_image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
         mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
-        // Create aliased function pointers for 1.0 and 1.1 contexts
-        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
-        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
-
-        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-            vkBindImageMemory2Function = vk::BindImageMemory2;
-            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
-        } else {
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
-            vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-        }
-
         VkImage mp_image = VK_NULL_HANDLE;
         VkImage mp_unchecked_image = VK_NULL_HANDLE;
         // Array represent planes for disjoint images
@@ -990,11 +973,11 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
         VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
         mem_req_info2.image = mp_image;
         mp_image_mem_reqs2[0] = LvlInitStruct<VkMemoryRequirements2>();
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
         mp_image_mem_reqs2[1] = LvlInitStruct<VkMemoryRequirements2>();
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
 
         mp_image_alloc_info[0] = LvlInitStruct<VkMemoryAllocateInfo>();
         mp_image_alloc_info[1] = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -1032,7 +1015,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             bind_image_info[1].memoryOffset = 1;  // off alignment
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
-            vkBindImageMemory2Function(device(), 2, bind_image_info);
+            vk::BindImageMemory2KHR(device(), 2, bind_image_info);
             m_errorMonitor->VerifyFound();
 
             // Should trigger same VUID even when image was never checked
@@ -1043,7 +1026,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
             bind_image_info[1].image = mp_unchecked_image;
             bind_image_info[1].memory = mp_unchecked_image_mem[1];
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
-            vkBindImageMemory2Function(device(), 2, bind_image_info);
+            vk::BindImageMemory2KHR(device(), 2, bind_image_info);
             m_errorMonitor->VerifyFound();
         }
 
@@ -1071,14 +1054,6 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    // Create aliased function pointers for 1.0 and 1.1 contexts
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        vkBindImageMemory2Function = vk::BindImageMemory2;
-    } else {
-        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-    }
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1126,13 +1101,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[2] = bind_image_info[0];  // duplicate bind
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
-        vkBindImageMemory2Function(device(), 3, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 3, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Bind same image to 2 different memory in same array
         bind_image_info[1].image = image_a;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
-        vkBindImageMemory2Function(device(), 2, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 2, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         vk::FreeMemory(device(), image_a_mem, NULL);
@@ -1150,14 +1125,6 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         if (!((mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) &&
               (mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
             GTEST_SKIP() << "test rely on a supported disjoint format";
-        }
-
-        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
-        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
-        } else {
-            vkGetImageMemoryRequirements2Function =
-                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
         }
 
         // Creat 1 normal, not disjoint image
@@ -1183,13 +1150,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_a));
         ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_b));
 
-        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_a, &mp_image_a_mem[0],
+        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_a, &mp_image_a_mem[0],
                                VK_IMAGE_ASPECT_PLANE_0_BIT);
-        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_a, &mp_image_a_mem[1],
+        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_a, &mp_image_a_mem[1],
                                VK_IMAGE_ASPECT_PLANE_1_BIT);
-        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_b, &mp_image_b_mem[0],
+        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_b, &mp_image_b_mem[0],
                                VK_IMAGE_ASPECT_PLANE_0_BIT);
-        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_b, &mp_image_b_mem[1],
+        AllocateDisjointMemory(m_device, vk::GetImageMemoryRequirements2KHR, mp_image_b, &mp_image_b_mem[1],
                                VK_IMAGE_ASPECT_PLANE_1_BIT);
 
         VkBindImagePlaneMemoryInfo plane_memory_info[2];
@@ -1216,7 +1183,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[2].image = mp_image_b;
         bind_image_info[2].memory = mp_image_b_mem[0];
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
-        vkBindImageMemory2Function(device(), 3, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 3, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Same thing, but mix in a non-disjoint image
@@ -1224,7 +1191,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[3].image = normal_image;
         bind_image_info[3].memory = normal_image_mem;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
-        vkBindImageMemory2Function(device(), 4, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 4, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Try binding image_b plane 1 twice
@@ -1236,18 +1203,18 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[5].image = mp_image_b;
         bind_image_info[5].memory = mp_image_b_mem[1];
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
-        vkBindImageMemory2Function(device(), 6, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 6, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Try binding image_a with no plane specified
         bind_image_info[0].pNext = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-07736");
-        vkBindImageMemory2Function(device(), 1, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 1, bind_image_info);
         m_errorMonitor->VerifyFound();
         bind_image_info[0].pNext = (void *)&plane_memory_info[0];
 
         // Valid case of binding 2 disjoint image and normal image by removing duplicate
-        vkBindImageMemory2Function(device(), 5, bind_image_info);
+        vk::BindImageMemory2KHR(device(), 5, bind_image_info);
 
         vk::FreeMemory(device(), normal_image_mem, NULL);
         vk::FreeMemory(device(), mp_image_a_mem[0], NULL);
@@ -1651,9 +1618,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
@@ -1675,7 +1639,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-    vkGetBufferDeviceAddressEXT(m_device->device(), &info);
+    vk::GetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
     VkMemoryRequirements buffer_mem_reqs = {};
@@ -1708,9 +1672,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -1724,7 +1685,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02601");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-    vkGetBufferDeviceAddressEXT(m_device->device(), &info);
+    vk::GetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
@@ -1750,11 +1711,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
-        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
@@ -1776,19 +1732,8 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    vk::GetBufferDeviceAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddress");
-        if (nullptr == fpGetBufferDeviceAddress) {
-            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferDeviceAddress");
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-            fpGetBufferDeviceAddress(m_device->device(), &info);
-            m_errorMonitor->VerifyFound();
-        }
-    }
 
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
@@ -1806,20 +1751,12 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = LvlInitStruct<VkDeviceMemoryOpaqueCaptureAddressInfoKHR>();
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
-    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    vk::GetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetDeviceMemoryOpaqueCaptureAddress =
-            (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddress");
-        if (nullptr == fpGetDeviceMemoryOpaqueCaptureAddress) {
-            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetDeviceMemoryOpaqueCaptureAddress");
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
-            fpGetDeviceMemoryOpaqueCaptureAddress(m_device->device(), &mem_opaque_addr_info);
-            m_errorMonitor->VerifyFound();
-        }
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
+    vk::GetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    m_errorMonitor->VerifyFound();
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
 
@@ -1829,11 +1766,11 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
 
     mem_opaque_addr_info.memory = buffer_mem;
-    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    vk::GetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
 
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 
-    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    vk::GetBufferDeviceAddressKHR(m_device->device(), &info);
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
@@ -1855,13 +1792,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &buffer_device_address_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    PFN_vkGetBufferOpaqueCaptureAddressKHR vkGetBufferOpaqueCaptureAddressKHR =
-        (PFN_vkGetBufferOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddressKHR");
-    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
-        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
@@ -1875,24 +1805,12 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02601");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    vk::GetBufferDeviceAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
-    vkGetBufferOpaqueCaptureAddressKHR(m_device->device(), &info);
+    vk::GetBufferOpaqueCaptureAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        auto fpGetBufferOpaqueCaptureAddress =
-            (PFN_vkGetBufferOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddress");
-        if (nullptr == fpGetBufferOpaqueCaptureAddress) {
-            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferOpaqueCaptureAddress");
-        } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
-            fpGetBufferOpaqueCaptureAddress(m_device->device(), &info);
-            m_errorMonitor->VerifyFound();
-        }
-    }
 
     VkMemoryRequirements buffer_mem_reqs = {};
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
@@ -1907,7 +1825,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
-    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    vk::GetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
@@ -2215,16 +2133,12 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         vk::GetImageMemoryRequirements(m_device->device(), image, &memory_requirements);
         m_errorMonitor->VerifyFound();
 
-        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function =
-            (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
-        ASSERT_TRUE(vkGetImageMemoryRequirements2Function != nullptr);
-
         VkImageMemoryRequirementsInfo2 mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>();
         mem_req_info2.image = image;
         VkMemoryRequirements2 mem_req2 = LvlInitStruct<VkMemoryRequirements2>();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         // Point to a 3rd plane for a 2-plane format
@@ -2234,7 +2148,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         mem_req_info2.image = image;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         // Test with a non planar image aspect also
@@ -2243,7 +2157,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         mem_req_info2.image = image;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         vk::DestroyImage(m_device->device(), image, nullptr);
@@ -2258,7 +2172,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         mem_req_info2.image = image;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-01590");
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         vk::DestroyImage(m_device->device(), image, nullptr);
@@ -2278,7 +2192,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
                                                : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
         m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+        vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 
         vk::DestroyImage(m_device->device(), image, nullptr);

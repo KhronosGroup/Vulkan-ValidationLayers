@@ -1796,9 +1796,6 @@ TEST_F(VkLayerTest, PresentIdWait) {
     VkSwapchainKHR swapchain2;
     ASSERT_TRUE(CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2));
 
-    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
-    ASSERT_TRUE(vkWaitForPresentKHR != nullptr);
-
     auto images = GetSwapchainImages(m_swapchain);
     auto images2 = GetSwapchainImages(swapchain2);
 
@@ -1861,7 +1858,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
     CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
     present_id.swapchainCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-swapchain-04997");
-    vkWaitForPresentKHR(device(), swapchain2, 5, kWaitTimeout);
+    vk::WaitForPresentKHR(device(), swapchain2, 5, kWaitTimeout);
     m_errorMonitor->VerifyFound();
 
     vk::DestroySwapchainKHR(m_device->device(), swapchain2, nullptr);
@@ -1888,9 +1885,6 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
-
-    auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
-    assert(vkWaitForPresentKHR != nullptr);
 
     uint32_t image_count;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
@@ -1920,7 +1914,7 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-presentWait-06234");
-    vkWaitForPresentKHR(device(), m_swapchain, 1, kWaitTimeout);
+    vk::WaitForPresentKHR(device(), m_swapchain, 1, kWaitTimeout);
     m_errorMonitor->VerifyFound();
 }
 

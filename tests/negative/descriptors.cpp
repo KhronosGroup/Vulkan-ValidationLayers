@@ -1991,20 +1991,6 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = descriptor_set.set_;
 
-    // Relying on the "return nullptr for non-enabled extensions
-    auto vkCreateDescriptorUpdateTemplateKHR =
-        (PFN_vkCreateDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
-    auto vkDestroyDescriptorUpdateTemplateKHR =
-        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
-    auto vkUpdateDescriptorSetWithTemplateKHR =
-        (PFN_vkUpdateDescriptorSetWithTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR");
-
-    if (update_template_support) {
-        ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
-        ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
-        ASSERT_NE(vkUpdateDescriptorSetWithTemplateKHR, nullptr);
-    }
-
     // Setup for update w/ template tests
     // Create a template of descriptor set updates
     struct SimpleTemplateData {
@@ -2030,28 +2016,20 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
 
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
     if (update_template_support) {
-        auto result = vkCreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+        auto result = vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
         ASSERT_VK_SUCCESS(result);
     }
-
-    // VK_KHR_push_descriptor support
-    auto vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    auto vkCmdPushDescriptorSetWithTemplateKHR = (PFN_vkCmdPushDescriptorSetWithTemplateKHR)vk::GetDeviceProcAddr(
-        m_device->device(), "vkCmdPushDescriptorSetWithTemplateKHR");
 
     std::unique_ptr<VkDescriptorSetLayoutObj> push_dsl = nullptr;
     std::unique_ptr<VkPipelineLayoutObj> pipeline_layout = nullptr;
     VkDescriptorUpdateTemplate push_template = VK_NULL_HANDLE;
     if (push_descriptor_support) {
-        ASSERT_NE(vkCmdPushDescriptorSetKHR, nullptr);
         push_dsl.reset(
             new VkDescriptorSetLayoutObj(m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
         pipeline_layout.reset(new VkPipelineLayoutObj(m_device, {push_dsl.get()}));
         ASSERT_TRUE(push_dsl->initialized());
 
         if (update_template_support) {
-            ASSERT_NE(vkCmdPushDescriptorSetWithTemplateKHR, nullptr);
             auto push_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
             push_template_ci.descriptorUpdateEntryCount = 1;
             push_template_ci.pDescriptorUpdateEntries = &update_template_entry;
@@ -2060,7 +2038,7 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
             push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
             push_template_ci.pipelineLayout = pipeline_layout->handle();
             push_template_ci.set = 0;
-            auto result = vkCreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template);
+            auto result = vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template);
             ASSERT_VK_SUCCESS(result);
         }
     }
@@ -2073,8 +2051,8 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
         if (push_descriptor_support) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
             m_commandBuffer->begin();
-            vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
-                                      &descriptor_write);
+            vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
+                                        &descriptor_write);
             m_commandBuffer->end();
             m_errorMonitor->VerifyFound();
         }
@@ -2082,13 +2060,13 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
         if (update_template_support) {
             update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
-            vkUpdateDescriptorSetWithTemplateKHR(m_device->device(), descriptor_set.set_, update_template, &update_template_data);
+            vk::UpdateDescriptorSetWithTemplateKHR(m_device->device(), descriptor_set.set_, update_template, &update_template_data);
             m_errorMonitor->VerifyFound();
             if (push_descriptor_support) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
                 m_commandBuffer->begin();
-                vkCmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), push_template, pipeline_layout->handle(), 0,
-                                                      &update_template_data);
+                vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), push_template, pipeline_layout->handle(), 0,
+                                                        &update_template_data);
                 m_commandBuffer->end();
                 m_errorMonitor->VerifyFound();
             }
@@ -2111,9 +2089,9 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     do_test("VUID-VkDescriptorBufferInfo-range-00342");
 
     if (update_template_support) {
-        vkDestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+        vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
         if (push_descriptor_support) {
-            vkDestroyDescriptorUpdateTemplateKHR(m_device->device(), push_template, nullptr);
+            vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), push_template, nullptr);
         }
     }
 }
@@ -2809,9 +2787,6 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.dstBinding = 0;
 
-    auto vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-
     for (uint32_t i = 0; i < 2; i++) {
         m_commandBuffer->begin();
         if (i == 1) {
@@ -2822,8 +2797,8 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
         }
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_write);
+        vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                    &descriptor_write);
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
 
@@ -3341,12 +3316,6 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     const VkDescriptorSetLayoutObj ds_layout_ub_push(m_device, {dsl_binding},
                                                      VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     const VkPipelineLayoutObj pipeline_layout(m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
-    PFN_vkCreateDescriptorUpdateTemplateKHR vkCreateDescriptorUpdateTemplateKHR =
-        (PFN_vkCreateDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
-    ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
-    PFN_vkDestroyDescriptorUpdateTemplateKHR vkDestroyDescriptorUpdateTemplateKHR =
-        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
-    ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
 
     constexpr uint64_t badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
@@ -3358,8 +3327,8 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     auto do_test = [&](std::string err) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
-        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
         }
         m_errorMonitor->VerifyFound();
     };
@@ -3374,8 +3343,8 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
         create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
         create_info.descriptorSetLayout = ds_layout_ub.handle();
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
         }
     }
 
@@ -3411,8 +3380,8 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     create_info.descriptorSetLayout = CastFromUint64<VkDescriptorSetLayout>(badhandle);
     if (!IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
         }
     }
     // Bad descriptorSetLayout handle

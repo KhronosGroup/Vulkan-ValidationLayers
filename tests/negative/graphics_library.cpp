@@ -2087,10 +2087,8 @@ TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    auto vkGetShaderModuleIdentifierEXT =
-        (PFN_vkGetShaderModuleIdentifierEXT)vk::GetDeviceProcAddr(m_device->device(), "vkGetShaderModuleIdentifierEXT");
     auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
-    vkGetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
     stage_ci.module = VK_NULL_HANDLE;
@@ -2185,21 +2183,17 @@ TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifierFeatures) {
     m_errorMonitor->VerifyFound();
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    auto vkGetShaderModuleIdentifierEXT =
-        (PFN_vkGetShaderModuleIdentifierEXT)vk::GetDeviceProcAddr(m_device->device(), "vkGetShaderModuleIdentifierEXT");
     auto get_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884");
-    vkGetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
     m_errorMonitor->VerifyFound();
 
-    auto vkGetShaderModuleCreateInfoIdentifierEXT = (PFN_vkGetShaderModuleCreateInfoIdentifierEXT)vk::GetDeviceProcAddr(
-        m_device->device(), "vkGetShaderModuleCreateInfoIdentifierEXT");
     auto sm_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885");
     uint32_t code = 0;
     sm_ci.codeSize = 4;
     sm_ci.pCode = &code;
-    vkGetShaderModuleCreateInfoIdentifierEXT(device(), &sm_ci, &get_identifier);
+    vk::GetShaderModuleCreateInfoIdentifierEXT(device(), &sm_ci, &get_identifier);
     m_errorMonitor->VerifyFound();
 }
 
