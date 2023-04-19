@@ -61,7 +61,7 @@ TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes
 }
 
 TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
-    TEST_DESCRIPTION("Test host side accelerationStructureReference");
+    TEST_DESCRIPTION("Test device side accelerationStructureReference");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
