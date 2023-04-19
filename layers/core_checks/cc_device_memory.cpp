@@ -756,44 +756,41 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     auto image_state = Get<IMAGE_STATE>(pInfo->image);
     const VkFormat image_format = image_state->createInfo.format;
     const VkImageTiling image_tiling = image_state->createInfo.tiling;
-    const VkImagePlaneMemoryRequirementsInfo *image_plane_info = LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+    const auto *image_plane_info = LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+    if (!image_plane_info && image_state->disjoint) {
+        if (FormatIsMultiplane(image_format)) {
+            skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01589",
+                             "%s: %s image was created with a multi-planar format (%s) and "
+                             "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
+                             "VkImagePlaneMemoryRequirementsInfo struct",
+                             func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
+        }
+        if (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02279",
+                             "%s: %s image was created with VK_IMAGE_CREATE_DISJOINT_BIT and has tiling of "
+                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, "
+                             "but the current pNext does not include a VkImagePlaneMemoryRequirementsInfo struct",
+                             func_name, report_data->FormatHandle(pInfo->image).c_str());
+        }
+    } else if (image_plane_info) {
+        if ((image_state->disjoint == false)) {
+            skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01590",
+                             "%s: %s image was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
+                             "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
+                             func_name, report_data->FormatHandle(pInfo->image).c_str());
+        }
 
-    if ((FormatIsMultiplane(image_format)) && (image_state->disjoint == true) && (image_plane_info == nullptr)) {
-        skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01589",
-                         "%s: %s image was created with a multi-planar format (%s) and "
-                         "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
-                         "VkImagePlaneMemoryRequirementsInfo struct",
-                         func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
-    }
+        if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)
+                                   ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
+                                   : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
+            skip |= LogError(pInfo->image, vuid,
+                             "%s: %s image is a single-plane format (%s) and does not have tiling of "
+                             "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
+                             "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
+                             func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
+        }
 
-    if ((image_state->disjoint == false) && (image_plane_info != nullptr)) {
-        skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01590",
-                         "%s: %s image was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
-                         "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
-                         func_name, report_data->FormatHandle(pInfo->image).c_str());
-    }
-
-    if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) &&
-        (image_plane_info != nullptr)) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)
-                               ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
-                               : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
-        skip |= LogError(pInfo->image, vuid,
-                         "%s: %s image is a single-plane format (%s) and does not have tiling of "
-                         "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
-                         "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
-                         func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
-    }
-
-    if (image_state->disjoint && (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) && !image_plane_info) {
-        skip |= LogError(
-            pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02279",
-            "%s: %s image was created with VK_IMAGE_CREATE_DISJOINT_BIT and has tiling of VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, "
-            "but the current pNext does not include a VkImagePlaneMemoryRequirementsInfo struct",
-            func_name, report_data->FormatHandle(pInfo->image).c_str());
-    }
-
-    if (image_plane_info != nullptr) {
         if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
             // Make sure planeAspect is only a single, valid plane
             const VkImageAspectFlags aspect = image_plane_info->planeAspect;
@@ -804,6 +801,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
             }
         }
     }
+
     return skip;
 }
 
