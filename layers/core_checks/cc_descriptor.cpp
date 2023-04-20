@@ -967,7 +967,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     const LogObjectList objlist(set, image_view, image_view_state->image_state->image());
                     return LogError(objlist, context.vuids.image_view_sparse_64_04474,
                                     "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
-                                    " has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
+                                    " a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
                                     "sparseImageInt64Atomics is not enabled.",
                                     context.caller, report_data->FormatHandle(set).c_str(), binding, index);
                 }
