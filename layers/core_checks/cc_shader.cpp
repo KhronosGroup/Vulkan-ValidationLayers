@@ -88,7 +88,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                           "] Vertex attribute at location %" PRIu32 " not consumed by vertex shader",
                                           pipeline.create_index, location);
         } else if (!attrib && input) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-07905",
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-07904",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Vertex shader consumes input at location %" PRIu32 " but not provided",
                              pipeline.create_index, location);
@@ -2768,7 +2768,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     (consumer_stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
                     (input_var->is_patch != output_var->is_patch)) {
                     const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
-                    skip |= LogError(objlist, kVUID_Core_Shader_InterfacePatchVertex,
+                    skip |= LogError(objlist, "VUID-RuntimeSpirv-OpVariable-08746",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] at Location %" PRIu32
                                      " Comonent %" PRIu32 " Tessellation Control is %s while Tessellation Evalutaion is %s",
                                      pipe_index, location, component, input_var->is_patch ? "patch" : "vertex",
@@ -2875,7 +2875,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
         }
         msg << "}\n";
         const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
-        skip |= LogError(objlist, kVUID_Core_Shader_BuiltinMismatch,
+        skip |= LogError(objlist, "VUID-RuntimeSpirv-OpVariable-08746",
                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Mistmatch in BuiltIn blocks:\n %s", pipe_index,
                          msg.str().c_str());
     }
