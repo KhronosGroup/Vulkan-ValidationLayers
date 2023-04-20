@@ -49,7 +49,7 @@ enum LogMessageTypeBits {
     kWarningBit = 0x00000002,
     kPerformanceWarningBit = 0x00000004,
     kErrorBit = 0x00000008,
-    kDebugBit = 0x00000010,
+    kVerboseBit = 0x00000010,
 };
 using LogMessageTypeFlags = VkFlags;
 

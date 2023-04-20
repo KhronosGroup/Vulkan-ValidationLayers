@@ -295,9 +295,18 @@ class BestPracticesOutputGenerator(OutputGenerator):
             intercept += '    ValidationStateTracker::PostCallRecord'+cmdname[2:] + '(' + params_text
             if cmdname in self.manual_postcallrecord_list:
                 intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
-            intercept += '    if (result != VK_SUCCESS) {\n'
-            intercept += f'        ValidateReturnCodes("{cmdname}", result);\n'
-            intercept += '    }\n'
+            
+            if success_codes is not None:
+                intercept +=  '    if (result > VK_SUCCESS) {\n'
+                intercept += f'        LogSuccess("{cmdname}", result); // {success_codes}\n'
+                intercept +=  '        return;\n'
+                intercept +=  '    }\n'
+
+            if error_codes is not None:
+                intercept +=  '    if (result < VK_SUCCESS) {\n'
+                intercept += f'        LogError("{cmdname}", result); // {error_codes}\n'
+                intercept +=  '    }\n'
+
             intercept += '}\n'
             self.otwrite('cpp', intercept)
             if self.featureExtraProtect is not None:

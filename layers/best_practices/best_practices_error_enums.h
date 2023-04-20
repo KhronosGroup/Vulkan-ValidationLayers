@@ -116,7 +116,7 @@
     "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
 [[maybe_unused]] static const char *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
 [[maybe_unused]] static const char *kVUID_BestPractices_Failure_Result = "UNASSIGNED-BestPractices-Failure-Result";
-[[maybe_unused]] static const char *kVUID_BestPractices_NonSuccess_Result = "UNASSIGNED-BestPractices-NonSuccess-Result";
+[[maybe_unused]] static const char *kVUID_BestPractices_Verbose_Success_Logging = "UNASSIGNED-BestPractices-Verbose-Success-Logging";
 [[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
 [[maybe_unused]] static const char *kVUID_BestPractices_SuboptimalSwapchainImageCount =
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count";

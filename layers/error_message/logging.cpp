@@ -151,8 +151,8 @@ static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags
         oss << "Validation Performance Warning: ";
     } else if (msg_flags & kInformationBit) {
         oss << "Validation Information: ";
-    } else if (msg_flags & kDebugBit) {
-        oss << "DEBUG: ";
+    } else if (msg_flags & kVerboseBit) {
+        oss << "Verbose Information: ";
     }
     if (text_vuid != nullptr) {
         oss << "[ " << text_vuid << " ] ";
