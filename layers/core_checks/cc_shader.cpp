@@ -3171,34 +3171,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE &cb_state,
-                                                            const char *caller, const DrawDispatchVuid &vuid) const {
-    bool skip = false;
-
-    for (auto &stage_state : pipeline.stage_states) {
-        const VkShaderStageFlagBits stage = stage_state.create_info->stage;
-        if (stage == VK_SHADER_STAGE_VERTEX_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
-            if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.viewportWithCountCount != 1) {
-                if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
-                    skip |= LogError(
-                        stage_state.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate_04552,
-                        "%s: %s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in"
-                        "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
-                        "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                        caller, string_VkShaderStageFlagBits(stage));
-                }
-            }
-        }
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline) const {
-    return ValidatePipelineShaderStage(pipeline, pipeline.stage_states[0]);
-}
-
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
     uint32_t total = 0;
     for (const auto &stage_ci : pipeline.shader_stages_ci) {

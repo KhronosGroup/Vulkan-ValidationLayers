@@ -82,6 +82,9 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/state_tracker/pipeline_state.cpp
         ${SRC_DIR}/layers/core_checks/cc_image_cc_alidation.cpp
         ${SRC_DIR}/layers/core_checks/cc_image_layout.cpp
+        ${SRC_DIR}/layers/core_checks/cc_pipeline_compute.cpp
+        ${SRC_DIR}/layers/core_checks/cc_pipeline_graphics.cpp
+        ${SRC_DIR}/layers/core_checks/cc_pipeline_ray_tracing.cpp
         ${SRC_DIR}/layers/core_checks/cc_pipeline.cpp
         ${SRC_DIR}/layers/state_tracker/queue_state.cpp
         ${SRC_DIR}/layers/state_tracker/render_pass_state.cpp
