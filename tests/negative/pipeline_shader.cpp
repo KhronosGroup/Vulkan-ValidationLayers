@@ -2999,45 +2999,45 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
          1,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          1,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {1,
          viewports,
          2,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          2,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
-        {1, nullptr, 1, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747"}},
-        {1, viewports, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+        {1, nullptr, 1, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
+        {1, viewports, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {1,
          nullptr,
          1,
          nullptr,
-         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {2,
          nullptr,
          3,
          nullptr,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
+          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {2,
          nullptr,
          2,
          nullptr,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
     };
 
     for (const auto &test_case : test_cases) {
@@ -3056,25 +3056,25 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
          1,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          1,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {1,
          viewports,
          0,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {1,
          viewports,
          2,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          2,
@@ -3093,20 +3093,20 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
           "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          nullptr,
          3,
          nullptr,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {0,
          nullptr,
          0,
@@ -3166,26 +3166,26 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
          2,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {0,
          viewports,
          0,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-        {2, nullptr, 2, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747"}},
-        {2, viewports, 2, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+        {2, nullptr, 2, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
+        {2, viewports, 2, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {2,
          nullptr,
          2,
          nullptr,
-         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}},
+         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {0,
          nullptr,
          0,
@@ -3206,23 +3206,23 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
                               2,
                               scissors,
                               {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220",
-                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747"}});
+                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
+                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}});
         test_cases.push_back({2,
                               viewports,
                               too_much_viewports,
                               nullptr,
                               {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
-                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220",
-                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}});
+                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
+                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
         test_cases.push_back(
             {too_much_viewports,
              nullptr,
              too_much_viewports,
              nullptr,
              {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-              "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747",
-              "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748"}});
+              "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
+              "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
     }
 
     for (const auto &test_case : test_cases) {
@@ -3241,13 +3241,13 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
          2,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
          {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}},
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {0,
          viewports,
          0,
@@ -3270,13 +3270,13 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
                                   2,
                                   scissors,
                                   {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}});
+                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
         dyn_test_cases.push_back({2,
                                   viewports,
                                   too_much_viewports,
                                   nullptr,
                                   {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
-                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220"}});
+                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
         dyn_test_cases.push_back({too_much_viewports,
                                   nullptr,
                                   too_much_viewports,
@@ -3438,10 +3438,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
         helper.pipe_ms_state_ci_ = pipe_ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
-                           ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609"
-                           : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042";
-    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, vuid);
+    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
 }
 
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
@@ -10530,7 +10527,7 @@ TEST_F(VkLayerTest, TestMismatchedRenderPassAndPipelineAttachments) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
 
     char const *vsSource = R"glsl(
                 #version 450

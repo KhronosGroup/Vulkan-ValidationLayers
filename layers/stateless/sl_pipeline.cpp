@@ -1114,11 +1114,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (viewport_state.scissorCount != viewport_state.viewportCount) {
                         if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) ||
                             (!has_dynamic_viewport_with_count && !has_dynamic_scissor_with_count)) {
-                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"
-                                                   : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01220";
                             skip |= LogError(
-                                device, vuid,
+                                device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
                                 "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
                                 ") is not identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
                                 i, viewport_state.scissorCount, i, viewport_state.viewportCount);
@@ -1148,10 +1145,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                     if (!has_dynamic_viewport && !has_dynamic_viewport_with_count && viewport_state.viewportCount > 0 &&
                         viewport_state.pViewports == nullptr) {
-                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                               ? "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"
-                                               : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00747";
-                        skip |= LogError(device, vuid,
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
                                          "vkCreateGraphicsPipelines: The viewport state is not dynamic but pCreateInfos[%" PRIu32
                                          "].pViewportState->pViewports is an invalid pointer.",
                                          i);
@@ -1159,10 +1153,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                     if (!has_dynamic_scissor && !has_dynamic_scissor_with_count && viewport_state.scissorCount > 0 &&
                         viewport_state.pScissors == nullptr) {
-                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                               ? "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"
-                                               : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00748";
-                        skip |= LogError(device, vuid,
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131",
                                          "vkCreateGraphicsPipelines: The scissor state is is not dynamic, but pCreateInfos[%" PRIu32
                                          "].pViewportState->pScissors is an invalid pointer.",
                                          i);

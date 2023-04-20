@@ -191,7 +191,7 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
             helper.gp_ci_.pInputAssemblyState = nullptr;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp3, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-04910",
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
                                                                "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
 
         // xfb with mesh shader
