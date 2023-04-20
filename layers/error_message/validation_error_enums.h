@@ -38,9 +38,6 @@
 [[maybe_unused]] static const char *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
 [[maybe_unused]] static const char *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 
-[[maybe_unused]] static const char *kVUID_Core_Shader_InterfacePatchVertex = "UNASSIGNED-CoreValidation-Shader-InterfacePatchVertex";
-[[maybe_unused]] static const char *kVUID_Core_Shader_BuiltinMismatch = "UNASSIGNED-CoreValidation-Shader-BuiltinMismatch";
-
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 
 // TODO - Need to be moved to Best Practice
