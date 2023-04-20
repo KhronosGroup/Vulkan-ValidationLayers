@@ -109,7 +109,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
                                                                                       {std::string("info"), kInformationBit},
                                                                                       {std::string("perf"), kPerformanceWarningBit},
                                                                                       {std::string("error"), kErrorBit},
-                                                                                      {std::string("debug"), kDebugBit}};
+                                                                                      {std::string("verbose"), kVerboseBit}};
 
     // Initialize layer options
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
@@ -132,7 +132,7 @@ void layer_debug_messenger_actions(debug_report_data *report_data, const char *l
     if (report_flags & kInformationBit) {
         dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
     }
-    if (report_flags & kDebugBit) {
+    if (report_flags & kVerboseBit) {
         dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
     }
 

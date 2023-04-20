@@ -101,25 +101,21 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
     return res->second.c_str();
 }
 
-void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result) const {
-    // This function shouldn't be called if result is equal to VK_SUCCESS.
-    assert(result != VK_SUCCESS);
+// Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
+void BestPractices::LogSuccess(const char* api_name, VkResult result) const {
+    assert(result > VK_SUCCESS);
 
-    const auto result_string = string_VkResult(result);
+    LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", api_name, string_VkResult(result));
+}
 
-    // While the result is successful, users may still want this information. Since it may be unexpected.
-    if (result > VK_SUCCESS) {
-        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
-                result_string);
-        return;
-    }
-
-    assert(result < VK_SUCCESS);  // At this point we have an error
+void BestPractices::LogError(const char* api_name, VkResult result) const {
+    assert(result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
 
     // Despite being error codes log these results as informational.
     // That is because they are returned frequently during window resizing.
     // They are expected to occur during the normal application lifecycle.
     constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+    const auto result_string = string_VkResult(result);
 
     if (const auto it = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
         it != common_failure_codes.end()) {

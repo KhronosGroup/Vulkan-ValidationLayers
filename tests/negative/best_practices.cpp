@@ -35,7 +35,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_che
     InitFramework(m_errorMonitor, &features_);
 }
 
-TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
+TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
@@ -86,8 +86,9 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     format_count -= 1;
     formats.resize(format_count);
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "UNASSIGNED-BestPractices-NonSuccess-Result");
+    m_errorMonitor->SetDesiredFailureMsg(kVerboseBit, "UNASSIGNED-BestPractices-Verbose-Success-Logging");
     result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, formats.data());
+    ASSERT_TRUE(result > VK_SUCCESS);
     m_errorMonitor->VerifyFound();
 }
 

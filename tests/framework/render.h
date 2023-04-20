@@ -91,11 +91,11 @@ struct DebugReporter {
                                                         size_t, int32_t, const char *, const char *msg, void *user_data);
 
     const char *debug_extension_name = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-    VkDebugReportCallbackCreateInfoEXT debug_create_info_ = {VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
-                                                             VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                                                                 VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-                                                                 VK_DEBUG_REPORT_INFORMATION_BIT_EXT,
-                                                             &DebugCallback, &error_monitor_};
+    VkDebugReportCallbackCreateInfoEXT debug_create_info_ = {
+        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
+        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+            VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+        &DebugCallback, &error_monitor_};
     using DebugCreateFnType = PFN_vkCreateDebugReportCallbackEXT;
     const char *debug_create_fn_name_ = "vkCreateDebugReportCallbackEXT";
     using DebugDestroyFnType = PFN_vkDestroyDebugReportCallbackEXT;
@@ -107,12 +107,16 @@ struct DebugReporter {
                                                         const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
 
     const char *debug_extension_name = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+
+    const VkDebugUtilsMessageSeverityFlagsEXT message_severity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info_ = {
         VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
         nullptr,
         0,
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+        message_severity,
         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
         &DebugCallback,
         &error_monitor_};

@@ -377,6 +377,9 @@ class BestPractices : public ValidationStateTracker {
 
     std::string GetAPIVersionName(uint32_t version) const;
 
+    void LogSuccess(const char* api_name, VkResult result) const;
+    void LogError(const char* api_name, VkResult result) const;
+
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
@@ -697,7 +700,6 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount,
                                             const VkClearRect* pRects) const override;
-    void ValidateReturnCodes(const char* api_name, VkResult result) const;
     bool ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkImage src_image, VkImage dst_image, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
