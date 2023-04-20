@@ -381,7 +381,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineRenderingCreateInfo* rendering_struct, uint32_t pipe_index, int lib_index,
                                       const char* vuid) const;
     bool ValidatePipelineDerivatives(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, uint32_t pipe_index) const;
-    bool ValidatePipeline(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipeline(const PIPELINE_STATE& pipeline) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices) const;
     bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,

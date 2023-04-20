@@ -172,6 +172,9 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/cc_external_object.cpp
     core_checks/cc_image.cpp
     core_checks/cc_image_layout.cpp
+    core_checks/cc_pipeline_compute.cpp
+    core_checks/cc_pipeline_graphics.cpp
+    core_checks/cc_pipeline_ray_tracing.cpp
     core_checks/cc_pipeline.cpp
     core_checks/cc_query.cpp
     core_checks/cc_queue.cpp
