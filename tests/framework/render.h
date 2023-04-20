@@ -20,19 +20,12 @@
 
 #include "generated/lvt_function_pointers.h"
 #include "error_monitor.h"
-
-#ifdef ANDROID
-#include "test_framework_android.h"
-class VkImageObj;
-#else
 #include "test_framework.h"
-#endif
 
-#if defined(ANDROID)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+class VkImageObj;
 #include <android/log.h>
-#if defined(VALIDATION_APK)
 #include <android_native_app_glue.h>
-#endif
 #endif
 
 #include <algorithm>
@@ -680,8 +673,6 @@ class VkShaderObj : public vk_testing::ShaderModule {
                                                       const VkSpecializationInfo *spec_info = nullptr,
                                                       const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
 
-    // TODO (ncesario) remove ifndef once android build consolidation changes go in
-#ifndef __ANDROID__
     struct GlslangTargetEnv {
         GlslangTargetEnv(const spv_target_env env) {
             switch (env) {
@@ -739,7 +730,6 @@ class VkShaderObj : public vk_testing::ShaderModule {
         glslang::EShTargetLanguageVersion language_version = glslang::EShTargetSpv_1_0;
         glslang::EShTargetClientVersion client_version = glslang::EShTargetVulkan_1_0;
     };
-#endif
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;

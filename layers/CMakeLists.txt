@@ -304,6 +304,7 @@ elseif(APPLE)
     set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
 elseif(ANDROID)
     message(DEBUG "Functions are exported via VVL_EXPORT")
+    target_link_libraries(VkLayer_utils PRIVATE log) # Required for __android_log_print
 else()
     target_link_options(VkLayer_khronos_validation PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
@@ -341,6 +342,12 @@ if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 
 target_include_directories(VkLayer_khronos_validation SYSTEM PRIVATE external)
+
+# Android doesn't need a corresponding json file
+if (ANDROID)
+    install(TARGETS VkLayer_khronos_validation DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    return()
+endif()
 
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)

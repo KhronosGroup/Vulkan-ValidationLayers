@@ -204,8 +204,8 @@ if (ANDROID)
         ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c
         ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.h
     )
-    target_include_directories(vk_layer_validation_tests PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
-    target_link_libraries(vk_layer_validation_tests PUBLIC log)
+    target_include_directories(vk_layer_validation_tests PRIVATE ${ANDROID_NDK}/sources/android/native_app_glue)
+    target_link_libraries(vk_layer_validation_tests PRIVATE log)
 endif()
 
 option(INSTALL_TESTS "Install tests")
