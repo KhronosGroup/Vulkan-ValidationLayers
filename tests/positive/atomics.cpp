@@ -18,7 +18,6 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -90,6 +89,85 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
 
     current_shader = cs_image_add.c_str();
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64DrawtimeSparse) {
+    TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto image_atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
+    if (!features2.features.shaderInt64) {
+        GTEST_SKIP() << "shaderInt64 feature not supported";
+    } else if (!features2.features.sparseBinding) {
+        GTEST_SKIP() << "sparseBinding feature not supported";
+    } else if (!image_atomic_int64_features.shaderImageInt64Atomics) {
+        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
+    } else if (!image_atomic_int64_features.sparseImageInt64Atomics) {
+        GTEST_SKIP() << "sparseImageInt64Atomics feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+
+    const char *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+        #extension GL_EXT_shader_image_int64 : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
+        layout(set = 0, binding = 1, r64ui) uniform u64image2D z;
+        void main() {
+           y = imageAtomicLoad(z, ivec2(1, 1), gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    // Requires SPIR-V 1.3 for SPV_KHR_storage_buffer_storage_class
+    pipe.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1));
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_ci.size = 1024;
+    VkBufferObj buffer(*m_device, buffer_ci);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R64_UINT;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_ci);
+    VkImageView image_view = image.targetView(VK_FORMAT_R64_UINT);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
