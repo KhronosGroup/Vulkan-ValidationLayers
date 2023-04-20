@@ -172,3 +172,39 @@ TEST_F(VkPositiveWsiTest, CreateX11Surface) {
     XCloseDisplay(x11_display);
 #endif
 }
+
+#if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(VkPositiveWsiTest, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
+    TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    const POINT pt_zero = {0, 0};
+
+    auto fullscreen_exclusive_win32_info = LvlInitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
+    fullscreen_exclusive_win32_info.hmonitor = MonitorFromPoint(pt_zero, MONITOR_DEFAULTTOPRIMARY);
+    auto fullscreen_exclusive_info = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>(&fullscreen_exclusive_win32_info);
+    fullscreen_exclusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
+
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&fullscreen_exclusive_info);
+    surface_info.surface = m_surface;
+
+    auto surface_caps = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
+}
+#endif
