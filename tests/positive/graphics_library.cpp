@@ -587,11 +587,11 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, NotAttachmentDynamicBlendEnable) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDynamicState dynamic_states[3] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
+    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT};
     VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 3;
+    dynamic_create_info.dynamicStateCount = 4;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentOutputLibInfo();

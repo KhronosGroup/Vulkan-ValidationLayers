@@ -2753,11 +2753,11 @@ TEST_F(VkLayerTest, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
 
-    VkDynamicState dynamic_states[3] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
+    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT};
     VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 3;
+    dynamic_create_info.dynamicStateCount = 4;
 
     CreatePipelineHelper pipe(*this, count);
     pipe.InitInfo();
