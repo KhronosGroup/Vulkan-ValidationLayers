@@ -21,6 +21,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "generated/spirv_grammar_helper.h"
+#include "external/xxhash.h"
 
 void DecorationBase::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
@@ -1620,6 +1621,11 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
+uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const SHADER_MODULE_STATE& module_state,
+                                                              const Instruction& base_type) {
+    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
+}
+
 NumericType ResourceInterfaceVariable::FindImageFormatType(const SHADER_MODULE_STATE& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
 }
@@ -1634,28 +1640,33 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
     return ((uniform && buffer_block) || ((storage_buffer || physical_storage_buffer) && block));
 }
 
+bool ResourceInterfaceVariable::IsAtomicOperation(const SHADER_MODULE_STATE& module_state,
+                                                  const ResourceInterfaceVariable& variable) {
+    return !module_state.FindVariableAccesses(variable.id, module_state.static_data_.atomic_pointer_ids, true).empty();
+}
+
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
                                                      VkShaderStageFlagBits stage)
     : VariableBase(module_state, insn, stage),
       base_type(FindBaseType(*this, module_state)),
-      image_format_type(FindImageFormatType(module_state, base_type)),
-      image_dim(base_type.FindImageDim()),
-      is_image_array(base_type.IsArrayed()),
-      is_multisampled(base_type.IsMultisampled()),
+      image_sampled_type_width(FindImageSampledTypeWidth(module_state, base_type)),
       is_storage_buffer(IsStorageBuffer(*this)) {
+    info.image_format_type = FindImageFormatType(module_state, base_type);
+    info.image_dim = base_type.FindImageDim();
+    info.is_image_array = base_type.IsArrayed();
+    info.is_multisampled = base_type.IsMultisampled();
+    info.is_atomic_operation = IsAtomicOperation(module_state, *this);
+
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type
     switch (base_type.Opcode()) {
         case spv::OpTypeImage: {
-            image_sampled_type_width = module_state.GetTypeBitsSize(&base_type);
-
             const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
-            const spv::Dim image_dim = spv::Dim(base_type.Word(3));
             if (is_sampled_without_sampler) {
-                if (image_dim == spv::DimSubpassData) {
+                if (info.image_dim == spv::DimSubpassData) {
                     is_input_attachment = true;
                     input_attachment_index_read.resize(array_length);  // is zero if runtime array
-                } else if (image_dim == spv::DimBuffer) {
+                } else if (info.image_dim == spv::DimBuffer) {
                     is_storage_texel_buffer = true;
                 } else {
                     is_storage_image = true;
@@ -1668,7 +1679,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             if (!image_write_loads.empty()) {
                 is_written_to = true;
                 if (is_written_to && is_image_without_format) {
-                    is_write_without_format = true;
+                    info.is_write_without_format = true;
                     for (const auto& entry : static_data_.image_write_load_id_map) {
                         for (const Instruction* insn : image_write_loads) {
                             if (insn->Word(insn->ResultId()) == entry.second) {
@@ -1684,7 +1695,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             if (!image_read_loads.empty()) {
                 is_read_from = true;
                 if (is_image_without_format) {
-                    is_read_without_format = true;
+                    info.is_read_without_format = true;
                 }
 
                 // If accessed in an array, track which indexes were read, if not runtime array
@@ -1706,16 +1717,16 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                 }
             }
             if (!module_state.FindVariableAccesses(id, static_data_.sampler_load_ids, false).empty()) {
-                is_sampler_sampled = true;
+                info.is_sampler_sampled = true;
             }
             if (!module_state.FindVariableAccesses(id, static_data_.sampler_implicitLod_dref_proj_load_ids, false).empty()) {
-                is_sampler_implicitLod_dref_proj = true;
+                info.is_sampler_implicitLod_dref_proj = true;
             }
             if (!module_state.FindVariableAccesses(id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
-                is_sampler_bias_offset = true;
+                info.is_sampler_bias_offset = true;
             }
             if (!module_state.FindVariableAccesses(id, static_data_.image_dref_load_ids, false).empty()) {
-                is_dref_operation = true;
+                info.is_dref_operation = true;
             }
 
             // Search all <image, sampler> combos (if not CombinedImageSampler)
@@ -1764,14 +1775,14 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
                     // Need to check again for these properties in case not using a combined image sampler
                     if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_load_ids, false).empty()) {
-                        is_sampler_sampled = true;
+                        info.is_sampler_sampled = true;
                     }
                     if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids, false)
                              .empty()) {
-                        is_sampler_implicitLod_dref_proj = true;
+                        info.is_sampler_implicitLod_dref_proj = true;
                     }
                     if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
-                        is_sampler_bias_offset = true;
+                        info.is_sampler_bias_offset = true;
                     }
 
                     samplers_used_by_image[image_index].emplace(
@@ -1801,10 +1812,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
             break;
     }
 
-    // Type independent checks
-    if (!module_state.FindVariableAccesses(id, static_data_.atomic_pointer_ids, true).empty()) {
-        is_atomic_operation = true;
-    }
+    descriptor_hash = XXH32(&info, sizeof(info), 0);
 }
 
 TypeStructInfo::TypeStructInfo(const SHADER_MODULE_STATE& module_state, const Instruction& struct_insn)
