@@ -132,3 +132,39 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
+    TEST_DESCRIPTION("Make sure pAttachments is ignored if dynamic state is enabled");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!IsPlatform(kMockICD)) {
+        // Several drivers have been observed to crash on the legal null pAttachments - restrict to MockICD for now
+        GTEST_SKIP() << "This test only runs on MockICD";
+    }
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
+        !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||
+        !extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        GTEST_SKIP() << "DynamicState3 features not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDynamicState dynamic_states[3] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
+    VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dynamic_create_info.pDynamicStates = dynamic_states;
+    dynamic_create_info.dynamicStateCount = 3;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cb_ci_.pAttachments = nullptr;
+    pipe.gp_ci_.pDynamicState = &dynamic_create_info;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
