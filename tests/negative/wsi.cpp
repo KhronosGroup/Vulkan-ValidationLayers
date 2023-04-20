@@ -2762,14 +2762,12 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-#ifdef VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN
-TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
+#if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(VkLayerTest, AcquireFullScreenExclusiveModeEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-#ifndef VK_USE_PLATFORM_WIN32_KHR
-    GTEST_SKIP() << "Test not supported on platform, skipping.";
-#else
+
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -2845,7 +2843,6 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
 
     vk::DestroySwapchainKHR(device(), swapchain_one, nullptr);
     vk::DestroySwapchainKHR(device(), swapchain_two, nullptr);
-#endif
 }
 #endif
 
