@@ -883,7 +883,7 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
     return skip;
 }
 
-bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void **ppData) const {
+bool CoreChecks::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryMapInfo->memory);
     if (mem_info) {
@@ -901,7 +901,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
     return skip;
 }
 
-bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) const {
+bool CoreChecks::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(pMemoryUnmapInfo->memory);
     if (mem_info && !mem_info->mapped_range.size) {
@@ -1264,6 +1264,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                 // Validate export memory handles
                 if (mem_info->IsExport()) {
+                    auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                    drm_format_modifier.sharingMode = image_state->createInfo.sharingMode;
+                    drm_format_modifier.queueFamilyIndexCount = image_state->createInfo.queueFamilyIndexCount;
+                    drm_format_modifier.pQueueFamilyIndices = image_state->createInfo.pQueueFamilyIndices;
                     auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
                     auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
                     image_info.format = image_state->createInfo.format;
@@ -1277,6 +1281,16 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                         external_info.handleType = flag;
+                        external_info.pNext = NULL;
+                        if (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+                            auto drm_modifier_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+                            auto result =
+                                DispatchGetImageDrmFormatModifierPropertiesEXT(device, bind_info.image, &drm_modifier_properties);
+                            if (result == VK_SUCCESS) {
+                                external_info.pNext = &drm_format_modifier;
+                                drm_format_modifier.drmFormatModifier = drm_modifier_properties.drmFormatModifier;
+                            }
+                        }
                         auto result =
                             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
                         if (result != VK_SUCCESS) {
