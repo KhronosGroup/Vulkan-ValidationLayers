@@ -114,6 +114,7 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_07287 = kVUIDUndefined;
     const char* image_view_access_64_04470 = kVUIDUndefined;
     const char* image_view_access_32_04471 = kVUIDUndefined;
+    const char* image_view_sparse_64_04474 = kVUIDUndefined;
     const char* buffer_view_access_64_04472 = kVUIDUndefined;
     const char* buffer_view_access_32_04473 = kVUIDUndefined;
     const char* storage_image_read_without_format_07028 = kVUIDUndefined;

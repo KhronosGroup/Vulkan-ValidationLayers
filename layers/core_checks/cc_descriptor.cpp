@@ -950,15 +950,27 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
 
             const bool image_format_width_64 = FormatHasComponentSize(image_view_ci.format, 64);
-            if (image_format_width_64 && binding_info.second->image_sampled_type_width != 64) {
-                auto set = context.descriptor_set.GetSet();
-                const LogObjectList objlist(set, image_view);
-                return LogError(
-                    objlist, context.vuids.image_view_access_64_04470,
-                    "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
-                    " has a 64-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
-                    context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
-                    binding_info.second->image_sampled_type_width);
+            if (image_format_width_64) {
+                if (binding_info.second->image_sampled_type_width != 64) {
+                    auto set = context.descriptor_set.GetSet();
+                    const LogObjectList objlist(set, image_view);
+                    return LogError(
+                        objlist, context.vuids.image_view_access_64_04470,
+                        "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                        " has a 64-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32
+                        ".",
+                        context.caller, report_data->FormatHandle(set).c_str(), binding, index,
+                        string_VkFormat(image_view_ci.format), binding_info.second->image_sampled_type_width);
+                } else if (!enabled_features.shader_image_atomic_int64_features.sparseImageInt64Atomics &&
+                           image_view_state->image_state->sparse_residency) {
+                    auto set = context.descriptor_set.GetSet();
+                    const LogObjectList objlist(set, image_view, image_view_state->image_state->image());
+                    return LogError(objlist, context.vuids.image_view_sparse_64_04474,
+                                    "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
+                                    " has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
+                                    "sparseImageInt64Atomics is not enabled.",
+                                    context.caller, report_data->FormatHandle(set).c_str(), binding, index);
+                }
             } else if (!image_format_width_64 && binding_info.second->image_sampled_type_width != 32) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);

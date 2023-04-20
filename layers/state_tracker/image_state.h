@@ -106,11 +106,14 @@ class IMAGE_STATE : public BINDABLE {
     const MemoryReqs requirements;
     const VkMemoryRequirements *const memory_requirements_pointer = &requirements[0];
     std::array<bool, MAX_PLANES> memory_requirements_checked;
+
+    const bool sparse_residency;
     using SparseReqs = std::vector<VkSparseImageMemoryRequirements>;
     const SparseReqs sparse_requirements;
     const bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
     bool get_sparse_reqs_called;          // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_bound;           // Track if sparse metadata aspect is bound to this image
+
     VkImageFormatProperties image_format_properties = {};
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_image_export;

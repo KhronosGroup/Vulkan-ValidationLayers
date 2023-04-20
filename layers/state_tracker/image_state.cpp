@@ -149,10 +149,9 @@ static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracke
     return result;
 }
 
-static IMAGE_STATE::SparseReqs GetSparseRequirements(const ValidationStateTracker *dev_data, VkImage img,
-                                                     const VkImageCreateInfo *create_info) {
+static IMAGE_STATE::SparseReqs GetSparseRequirements(const ValidationStateTracker *dev_data, VkImage img, bool sparse_residency) {
     IMAGE_STATE::SparseReqs result;
-    if (create_info->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+    if (sparse_residency) {
         uint32_t count = 0;
         DispatchGetImageSparseMemoryRequirements(dev_data->device, img, &count, nullptr);
         result.resize(count);
@@ -203,7 +202,8 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements(GetMemoryRequirements(dev_data, img, pCreateInfo, disjoint, IsExternalAHB())),
       memory_requirements_checked{{false, false, false}},
-      sparse_requirements(GetSparseRequirements(dev_data, img, pCreateInfo)),
+      sparse_residency((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0),
+      sparse_requirements(GetSparseRequirements(dev_data, img, sparse_residency)),
       sparse_metadata_required(SparseMetaDataRequired(sparse_requirements)),
       get_sparse_reqs_called(false),
       sparse_metadata_bound(false),
@@ -235,6 +235,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       disjoint((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0),
       requirements{},
       memory_requirements_checked{false, false, false},
+      sparse_residency(false),
       sparse_requirements{},
       sparse_metadata_required(false),
       get_sparse_reqs_called(false),
