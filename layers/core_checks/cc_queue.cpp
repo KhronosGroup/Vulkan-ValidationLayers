@@ -647,7 +647,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_idx];
                 auto image_state = Get<IMAGE_STATE>(image_bind.image);
 
-                if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
+                if (image_state && !(image_state->sparse_residency)) {
                     skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
                                      "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: image must have been created with "
                                      "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set",

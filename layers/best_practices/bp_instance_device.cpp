@@ -441,7 +441,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }
             sparse_images.insert(image_state.get());
-            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+            if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
                     skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
@@ -465,7 +465,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }
             sparse_images.insert(image_state.get());
-            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+            if (image_state->sparse_residency) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
                     skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,

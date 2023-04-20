@@ -96,6 +96,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDraw-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDraw-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDraw-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDraw-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDraw-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDraw-OpTypeImage-07028";
@@ -239,6 +240,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMultiEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMultiEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMultiEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMultiEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMultiEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07028";
@@ -383,6 +385,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndexed-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndexed-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawIndexed-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndexed-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndexed-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndexed-OpTypeImage-07028";
@@ -527,6 +530,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMultiIndexedEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMultiIndexedEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMultiIndexedEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMultiIndexedEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMultiIndexedEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07028";
@@ -672,6 +676,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndirect-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndirect-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndirect-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawIndirect-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndirect-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndirect-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndirect-OpTypeImage-07028";
@@ -818,6 +823,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndexedIndirect-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndexedIndirect-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndexedIndirect-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawIndexedIndirect-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndexedIndirect-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndexedIndirect-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07028";
@@ -910,6 +916,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatch-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdDispatch-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDispatch-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDispatch-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDispatch-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDispatch-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDispatch-OpTypeImage-07028";
@@ -952,6 +959,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatchIndirect-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdDispatchIndirect-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDispatchIndirect-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDispatchIndirect-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDispatchIndirect-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDispatchIndirect-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDispatchIndirect-OpTypeImage-07028";
@@ -1048,6 +1056,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndirectCount-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndirectCount-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndirectCount-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawIndirectCount-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndirectCount-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndirectCount-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07028";
@@ -1197,6 +1206,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndexedIndirectCount-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndexedIndirectCount-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndexedIndirectCount-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDraw-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndexedIndirectCount-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndexedIndirectCount-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07028";
@@ -1289,6 +1299,7 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdTraceRaysNV-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdTraceRaysNV-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdTraceRaysNV-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdTraceRaysNV-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdTraceRaysNV-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdTraceRaysNV-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdTraceRaysNV-OpTypeImage-07028";
@@ -1329,6 +1340,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdTraceRaysKHR-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdTraceRaysKHR-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdTraceRaysKHR-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdTraceRaysKHR-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdTraceRaysKHR-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdTraceRaysKHR-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07028";
@@ -1371,6 +1383,7 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdTraceRaysIndirectKHR-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdTraceRaysIndirectKHR-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdTraceRaysIndirectKHR-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdTraceRaysIndirectKHR-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdTraceRaysIndirectKHR-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdTraceRaysIndirectKHR-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07028";
@@ -1413,6 +1426,7 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdTraceRaysIndirect2KHR-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdTraceRaysIndirect2KHR-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdTraceRaysIndirect2KHR-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdTraceRaysIndirect2KHR-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdTraceRaysIndirect2KHR-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdTraceRaysIndirect2KHR-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07028";
@@ -1493,6 +1507,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksNV-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksNV-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksNV-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksNV-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksNV-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksNV-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07028";
@@ -1629,6 +1644,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksIndirectNV-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksIndirectNV-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksIndirectNV-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksIndirectNV-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksIndirectNV-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksIndirectNV-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07028";
@@ -1768,6 +1784,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07028";
@@ -1901,6 +1918,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksEXT-OpTypeImage-07028";
@@ -2037,6 +2055,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksIndirectEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksIndirectEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksIndirectEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksIndirectEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksIndirectEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksIndirectEXT-OpTypeImage-07028";
@@ -2176,6 +2195,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-OpTypeImage-07028";
@@ -2322,6 +2342,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_rendering_07287                  = "VUID-vkCmdDrawIndirectByteCountEXT-multisampledRenderToSingleSampled-07287";
         image_view_access_64_04470               = "VUID-vkCmdDrawIndirectByteCountEXT-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDrawIndirectByteCountEXT-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDrawIndirectByteCountEXT-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDrawIndirectByteCountEXT-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDrawIndirectByteCountEXT-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07028";
@@ -2414,6 +2435,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatchBase-filterCubicMinmax-02695";
         image_view_access_64_04470               = "VUID-vkCmdDispatchBase-SampledType-04470";
         image_view_access_32_04471               = "VUID-vkCmdDispatchBase-SampledType-04471";
+        image_view_sparse_64_04474               = "VUID-vkCmdDispatchBase-sparseImageInt64Atomics-04474";
         buffer_view_access_64_04472              = "VUID-vkCmdDispatchBase-SampledType-04472";
         buffer_view_access_32_04473              = "VUID-vkCmdDispatchBase-SampledType-04473";
         storage_image_read_without_format_07028  = "VUID-vkCmdDispatchBase-OpTypeImage-07028";
