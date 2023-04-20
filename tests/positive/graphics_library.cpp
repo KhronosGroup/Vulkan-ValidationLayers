@@ -917,6 +917,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // Pass rendering info with null pointers that should be ignored
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
+
     CreatePipelineHelper fs_lib(*this);
     {
         VkStencilOpState stencil = {};
@@ -937,16 +941,44 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) 
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
         vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        // Pass rendering info with null pointers that should be ignored
-        auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
-        pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
-
         fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci, &pipeline_rendering_info);
         fs_lib.InitState();
         fs_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
         fs_lib.gp_ci_.pDepthStencilState = &ds_ci;
         ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
     }
+
+    // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    vi_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pr_lib(*this);
+    {
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci, &pipeline_rendering_info);
+        pr_lib.rs_state_ci_.rasterizerDiscardEnable =
+            VK_TRUE;  // This should cause the bad info in pipeline_rendering_info to be ignored
+        pr_lib.InitState();
+        pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        pr_lib.CreateGraphicsPipeline();
+    }
+
+    VkPipeline libraries[3] = {
+        vi_lib.pipeline_,
+        pr_lib.pipeline_,
+        fs_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, DepthState) {
