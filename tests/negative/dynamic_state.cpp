@@ -3103,7 +3103,7 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
         // Set invalid grid size width
         sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width =
             multisample_prop.maxSampleLocationGridSize.width + 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07610");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -3112,7 +3112,7 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
         // Set invalid grid size height
         sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height =
             multisample_prop.maxSampleLocationGridSize.height + 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07611");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -3121,14 +3121,14 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
         // Test to make sure the modulo is correct due to akward wording in spec
         sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height =
             multisample_prop.maxSampleLocationGridSize.height * 2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07611");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
         sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height;
 
         if (multisample_prop.maxSampleLocationGridSize.height > 1) {
-            // Expects there to be no 01522 vuid
+            // Expects there to be no 07611 vuid
             sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height =
                 multisample_prop.maxSampleLocationGridSize.height / 2;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
@@ -3140,10 +3140,10 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
 
         // non-matching rasterizationSamples
         pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07612");
         // if grid size is different
-        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521");
-        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07610");
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07611");
         m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
