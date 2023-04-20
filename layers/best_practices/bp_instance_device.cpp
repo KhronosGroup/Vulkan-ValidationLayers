@@ -381,15 +381,14 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
             skip |= CheckPipelineStageFlags("vkQueueSubmit", pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
         if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
-            skip |=
-                LogWarning(device, kVUID_BestPractices_SemaphoreCount,
-                           "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.",
-                           submit, submit);
+            skip |= LogInfo(device, kVUID_BestPractices_SemaphoreCount,
+                            "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.",
+                            submit, submit);
         }
         if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            skip |= LogWarning(device, kVUID_BestPractices_SemaphoreCount,
-                               "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.",
-                               submit, submit);
+            skip |= LogInfo(device, kVUID_BestPractices_SemaphoreCount,
+                            "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.",
+                            submit, submit);
         }
     }
 
