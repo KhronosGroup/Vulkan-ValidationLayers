@@ -882,10 +882,6 @@ class CoreChecks : public ValidationStateTracker {
                                 const PIPELINE_STATE& pipeline) const;
     bool ValidateViAgainstVsInputs(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    const EntryPoint& entrypoint) const;
-    bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                            const PIPELINE_STATE& pipeline, uint32_t subpass_index) const;
-    bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                                            const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderInputAttachment(const SHADER_MODULE_STATE& module_state, const PIPELINE_STATE& pipeline,
                                        const ResourceInterfaceVariable& variable) const;
     bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,

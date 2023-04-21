@@ -477,8 +477,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
 
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
-
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
                                      helper.fs_->GetStageCreateInfo()};
@@ -596,8 +594,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         VkPipelineTessellationStateCreateInfo tessInfo = LvlInitStruct<VkPipelineTessellationStateCreateInfo>();
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
-
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),

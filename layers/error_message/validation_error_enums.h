@@ -44,8 +44,6 @@
 [[maybe_unused]] static const char *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 
 // TODO - Need to be moved to Best Practice
-[[maybe_unused]] static const char *kVUID_Core_Shader_InputNotProduced = "UNASSIGNED-CoreValidation-Shader-InputNotProduced";
-[[maybe_unused]] static const char *kVUID_Core_Shader_FragmentOutputMismatch = "UNASSIGNED-CoreValidation-Shader-FragmentOutputMismatch";
 [[maybe_unused]] static const char *kVUID_Core_Shader_OutputNotConsumed = "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed";
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PriorCount = "UNASSIGNED-CoreValidation-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PreTransform = "UNASSIGNED-CoreValidation-SwapchainPreTransform";
