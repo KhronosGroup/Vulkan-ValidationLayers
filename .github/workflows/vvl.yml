@@ -188,12 +188,6 @@ jobs:
       steps:
         - uses: actions/checkout@v3
         - uses: lukka/get-cmake@latest
-        - name: Setup ccache
-          uses: hendrikmuhs/ccache-action@v1.2
-          with:
-            key: ${{ runner.os }}-android-${{ matrix.abi }}-cmake
-        - name: Add ccache to PATH
-          run: echo "/usr/lib/ccache" >> $GITHUB_PATH
         - name: Configure
           run: |
             cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
