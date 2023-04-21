@@ -29,9 +29,6 @@ TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdSetDiscardRectangleEnableEXT =
-        GetDeviceProcAddr<PFN_vkCmdSetDiscardRectangleEnableEXT>("vkCmdSetDiscardRectangleEnableEXT");
-
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dyn_state_ci.dynamicStateCount = size(dyn_states);
@@ -46,7 +43,7 @@ TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdSetDiscardRectangleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -148,9 +145,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdSetVertexInputEXT =
-        reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
@@ -175,7 +169,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -211,10 +205,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkCmdSetVertexInputEXT =
-        reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
-    ASSERT_NE(vkCmdSetVertexInputEXT, nullptr);
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT};
@@ -239,7 +229,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
@@ -297,10 +287,6 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdSetColorWriteEnableEXT =
-        reinterpret_cast<PFN_vkCmdSetColorWriteEnableEXT>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetColorWriteEnableEXT"));
-    ASSERT_NE(vkCmdSetColorWriteEnableEXT, nullptr);
-
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
@@ -357,7 +343,7 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     VkBool32 color_write_enable = VK_TRUE;
-    vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, &color_write_enable);
+    vk::CmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, &color_write_enable);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

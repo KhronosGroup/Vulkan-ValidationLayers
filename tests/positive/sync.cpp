@@ -1425,9 +1425,6 @@ TEST_F(VkPositiveLayerTest, ExternalTimelineSemaphore) {
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
     }
-    auto fpGetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkGetSemaphoreCounterValueKHR"));
-
     VkResult err;
 
     // Create a semaphore to export payload from
@@ -1478,11 +1475,11 @@ TEST_F(VkPositiveLayerTest, ExternalTimelineSemaphore) {
 
     uint64_t import_value{0}, export_value{0};
 
-    err = fpGetSemaphoreCounterValue(m_device->handle(), export_semaphore.handle(), &export_value);
+    err = vk::GetSemaphoreCounterValueKHR(m_device->handle(), export_semaphore.handle(), &export_value);
     ASSERT_VK_SUCCESS(err);
     ASSERT_EQ(export_value, signal_value);
 
-    err = fpGetSemaphoreCounterValue(m_device->handle(), import_semaphore.handle(), &import_value);
+    err = vk::GetSemaphoreCounterValueKHR(m_device->handle(), import_semaphore.handle(), &import_value);
     ASSERT_VK_SUCCESS(err);
     ASSERT_EQ(import_value, signal_value);
 }
@@ -1759,11 +1756,6 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    auto fpWaitSemaphores =
-        reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkWaitSemaphoresKHR"));
-    auto fpSignalSemaphore =
-        reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(m_device->device(), "vkSignalSemaphoreKHR"));
-
     vk_testing::Queue *q0 = m_device->graphics_queues()[0];
     vk_testing::Queue *q1 = nullptr;
 
@@ -1858,7 +1850,7 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     signal_info.semaphore = semaphore.handle();
     signal_info.value = kQ0Begin;
-    fpSignalSemaphore(m_device->device(), &signal_info);
+    vk::SignalSemaphoreKHR(m_device->device(), &signal_info);
 
     // buffer_a is only used by the q0 commands
     uint64_t wait_info_value = kQ0End;
@@ -1866,16 +1858,16 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &wait_info_value;
-    fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
+    vk::WaitSemaphoresKHR(m_device->device(), &wait_info, 1000000000);
     buffer_a.reset();
 
     // signal semaphore to 3 to allow q1 to proceed
     signal_info.value = kQ1Begin;
-    fpSignalSemaphore(m_device->device(), &signal_info);
+    vk::SignalSemaphoreKHR(m_device->device(), &signal_info);
 
     // buffer_b is used by both q0 and q1, buffer_c is used by q1
     wait_info_value = kQ1End;
-    fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
+    vk::WaitSemaphoresKHR(m_device->device(), &wait_info, 1000000000);
     buffer_b.reset();
     buffer_c.reset();
 
@@ -1972,14 +1964,13 @@ struct FenceSemRaceData {
 
 void WaitTimelineSem(FenceSemRaceData *data) {
     uint64_t wait_value = data->wait_value;
-    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data->device, "vkWaitSemaphoresKHR"));
     auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &data->sem;
     wait_info.pValues = &wait_value;
 
     for (uint32_t i = 0; i < data->iterations; i++, wait_value++) {
-        fpWaitSemaphores(data->device, &wait_info, data->timeout);
+        vk::WaitSemaphoresKHR(data->device, &wait_info, data->timeout);
         if (*data->bailout) {
             break;
         }
@@ -2118,9 +2109,7 @@ TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
 }
 
 struct SemBufferRaceData {
-    SemBufferRaceData(VkDeviceObj &dev_)
-        : dev(dev_),
-          SignalSemaphore(reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkSignalSemaphoreKHR"))) {
+    SemBufferRaceData(VkDeviceObj &dev_) : dev(dev_) {
         auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
         timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         timeline_ci.initialValue = 0;
@@ -2130,7 +2119,6 @@ struct SemBufferRaceData {
     }
 
     VkDeviceObj &dev;
-    PFN_vkSignalSemaphoreKHR SignalSemaphore{nullptr};
     vk_testing::Semaphore sem;
     uint64_t start_wait_value{0};
     uint64_t timeout_ns{kWaitTimeout};
@@ -2145,7 +2133,7 @@ struct SemBufferRaceData {
         auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
         signal_info.semaphore = sem.handle();
         signal_info.value = sem_value;
-        return SignalSemaphore(dev.handle(), &signal_info);
+        return vk::SignalSemaphoreKHR(dev.handle(), &signal_info);
     }
 
     void ThreadFunc() {
@@ -2236,9 +2224,7 @@ struct SemBufferRaceData {
 };
 
 struct WaitTimelineSemThreadData : public SemBufferRaceData {
-    WaitTimelineSemThreadData(VkDeviceObj &dev_)
-        : SemBufferRaceData(dev_),
-          WaitSemaphores(reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkWaitSemaphoresKHR"))) {}
+    WaitTimelineSemThreadData(VkDeviceObj &dev_) : SemBufferRaceData(dev_) {}
 
     VkResult Wait(uint64_t sem_value) {
         auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
@@ -2246,10 +2232,8 @@ struct WaitTimelineSemThreadData : public SemBufferRaceData {
         wait_info.pSemaphores = &sem.handle();
         wait_info.pValues = &sem_value;
 
-        return WaitSemaphores(dev.handle(), &wait_info, timeout_ns);
+        return vk::WaitSemaphoresKHR(dev.handle(), &wait_info, timeout_ns);
     }
-
-    PFN_vkWaitSemaphoresKHR WaitSemaphores;
 };
 
 TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {

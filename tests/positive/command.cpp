@@ -512,13 +512,6 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    auto vkCmdDrawIndirectCountKHR =
-        reinterpret_cast<PFN_vkCmdDrawIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndirectCountKHR"));
-    ASSERT_TRUE(vkCmdDrawIndirectCountKHR != nullptr);
-    auto vkCmdDrawIndexedIndirectCountKHR =
-        reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndexedIndirectCountKHR"));
-    ASSERT_TRUE(vkCmdDrawIndexedIndirectCountKHR != nullptr);
-
     VkBufferObj indirect_buffer;
     indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                          VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
@@ -542,11 +535,11 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                              sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                sizeof(VkDrawIndirectCommand));
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                     sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                       sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -1143,9 +1136,6 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    auto vkCmdWriteTimestamp2KHR =
-        reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR"));
-
     vk_testing::QueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -1153,8 +1143,8 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
     query_pool.init(*m_device, query_pool_ci);
 
     m_commandBuffer->begin();
-    vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
-    vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
+    vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
+    vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
     m_commandBuffer->end();
 }
 

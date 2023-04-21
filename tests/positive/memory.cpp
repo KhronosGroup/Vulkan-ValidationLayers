@@ -24,9 +24,6 @@ TEST_F(VkPositiveLayerTest, MapMemory2) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto fpvkMapMemory2KHR = (PFN_vkMapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkMapMemory2KHR");
-    auto fpvkUnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkUnmapMemory2KHR");
-
     /* Vulkan doesn't have any requirements on what allocationSize can be
      * other than that it must be non-zero.  Pick 64KB because that should
      * work out to an even number of pages on basically any GPU.
@@ -52,21 +49,21 @@ TEST_F(VkPositiveLayerTest, MapMemory2) {
     unmap_info.memory = memory;
 
     uint32_t *pData = NULL;
-    err = fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     ASSERT_TRUE(pData != NULL);
 
-    err = fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
     ASSERT_VK_SUCCESS(err);
 
     map_info.size = VK_WHOLE_SIZE;
 
     pData = NULL;
-    err = fpvkMapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    err = vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     ASSERT_TRUE(pData != NULL);
 
-    err = fpvkUnmapMemory2KHR(m_device->device(), &unmap_info);
+    err = vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
     ASSERT_VK_SUCCESS(err);
 
     vk::FreeMemory(m_device->device(), memory, NULL);
