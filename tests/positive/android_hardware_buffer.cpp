@@ -283,10 +283,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID =
-        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
-    ASSERT_TRUE(vkGetMemoryAndroidHardwareBufferANDROID != nullptr);
-
     // Create VkImage to be exported to an AHB
     VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
     ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;

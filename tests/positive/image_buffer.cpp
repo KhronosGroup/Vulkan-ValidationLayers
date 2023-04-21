@@ -1076,13 +1076,10 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
                        VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
     // Use extension to get buffer memory requirements
-    auto vkGetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferMemoryRequirements2KHR"));
-    ASSERT_TRUE(vkGetBufferMemoryRequirements2KHR != nullptr);
     VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
                                                       buffer.handle()};
     VkMemoryRequirements2KHR buffer_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
-    vkGetBufferMemoryRequirements2KHR(m_device->device(), &buffer_info, &buffer_reqs);
+    vk::GetBufferMemoryRequirements2KHR(m_device->device(), &buffer_info, &buffer_reqs);
 
     // Allocate and bind buffer memory
     vk_testing::DeviceMemory buffer_memory;
@@ -1101,13 +1098,10 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     image.init_no_mem(*m_device, image_ci);
 
     // Use extension to get image memory requirements
-    auto vkGetImageMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkGetImageMemoryRequirements2KHR"));
-    ASSERT_TRUE(vkGetImageMemoryRequirements2KHR != nullptr);
     VkImageMemoryRequirementsInfo2KHR image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
                                                     image.handle()};
     VkMemoryRequirements2KHR image_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
-    vkGetImageMemoryRequirements2KHR(m_device->device(), &image_info, &image_reqs);
+    vk::GetImageMemoryRequirements2KHR(m_device->device(), &image_info, &image_reqs);
 
     // Allocate and bind image memory
     vk_testing::DeviceMemory image_memory;
@@ -1156,12 +1150,9 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     buffer_memory.init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
 
     // Bind buffer memory with extension
-    auto vkBindBufferMemory2KHR =
-        reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkBindBufferMemory2KHR"));
-    ASSERT_TRUE(vkBindBufferMemory2KHR != nullptr);
     VkBindBufferMemoryInfoKHR buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer.handle(),
                                                   buffer_memory.handle(), 0};
-    vkBindBufferMemory2KHR(m_device->device(), 1, &buffer_bind_info);
+    vk::BindBufferMemory2KHR(m_device->device(), 1, &buffer_bind_info);
 
     // Create a test image
     auto image_ci = vk_testing::Image::create_info();
@@ -1179,12 +1170,9 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     image_memory.init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
 
     // Bind image memory with extension
-    auto vkBindImageMemory2KHR =
-        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkBindImageMemory2KHR"));
-    ASSERT_TRUE(vkBindImageMemory2KHR != nullptr);
     VkBindImageMemoryInfoKHR image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image.handle(),
                                                 image_memory.handle(), 0};
-    vkBindImageMemory2KHR(m_device->device(), 1, &image_bind_info);
+    vk::BindImageMemory2KHR(m_device->device(), 1, &image_bind_info);
 
     // Now execute arbitrary commands that use the test buffer and image
     m_commandBuffer->begin();
@@ -1281,33 +1269,12 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mp_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
+    }
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
-    }
-
-    // Create aliased function pointers for 1.0 and 1.1 contexts
-
-    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
-    PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties2KHR vkGetPhysicalDeviceMemoryProperties2Function = nullptr;
-
-    bool is_khr = DeviceValidationVersion() >= VK_API_VERSION_1_1;
-    if (is_khr) {
-        vkBindImageMemory2Function = vk::BindImageMemory2;
-        vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
-        vkGetPhysicalDeviceMemoryProperties2Function = vk::GetPhysicalDeviceMemoryProperties2;
-    } else {
-        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-        vkGetImageMemoryRequirements2Function =
-            (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
-        vkGetPhysicalDeviceMemoryProperties2Function = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vk::GetDeviceProcAddr(
-            m_device->handle(), "vkGetPhysicalDeviceMemoryProperties2KHR");
-    }
-
-    if (!vkBindImageMemory2Function || !vkGetImageMemoryRequirements2Function || !vkGetPhysicalDeviceMemoryProperties2Function) {
-        GTEST_SKIP() << "Did not find required device extension support";
     }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
@@ -1390,7 +1357,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Allocate & bind memory
         VkPhysicalDeviceMemoryProperties2 phys_mem_props2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
-        vkGetPhysicalDeviceMemoryProperties2Function(gpu(), &phys_mem_props2);
+        vk::GetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
         VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
         VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
         mem_req_info2.pNext = &image_plane_req;
@@ -1403,7 +1370,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Plane 0
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
+        vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
         uint32_t mem_type = 0;
         for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
             if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
@@ -1417,12 +1384,12 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Plane 1 & 2 use same memory type
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
+        vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
         ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &p1_mem));
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
-        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
+        vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
         ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &p2_mem));
 
@@ -1442,7 +1409,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         plane_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
         plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
-        vkBindImageMemory2Function(device(), 3, bind_info);
+        vk::BindImageMemory2(device(), 3, bind_info);
 
         vk::FreeMemory(device(), p0_mem, NULL);
         vk::FreeMemory(device(), p1_mem, NULL);
@@ -1476,7 +1443,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
-    vk_testing::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR, is_khr);
+    vk_testing::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR);
     auto conversion_info = conversion.ConversionInfo();
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&conversion_info);
     ivci.image = mpimage.handle();
@@ -1919,11 +1886,9 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
         GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
     uint32_t image_index, image_count;
-    PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
-        (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
-    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
+    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
-    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
+    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
     auto fenceci = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fenceci);
     ASSERT_VK_SUCCESS(

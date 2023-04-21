@@ -40,8 +40,6 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
-
     char const *csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
@@ -112,8 +110,8 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2,
-                              descriptor_writes);
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2,
+                                descriptor_writes);
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 3, 1,
                               &descriptor_set_2.set_, 0, nullptr);

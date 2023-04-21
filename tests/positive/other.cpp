@@ -357,13 +357,11 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
-
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
-    fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
+    vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
 }
 
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
@@ -779,10 +777,6 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     }
 
-    auto vkExportMetalObjectsEXT =
-        reinterpret_cast<PFN_vkExportMetalObjectsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkExportMetalObjectsEXT"));
-    ASSERT_TRUE(vkExportMetalObjectsEXT != nullptr);
-
     const VkDevice device = m_device->device();
 
     // Get Metal Device and Metal Command Queue in 1 call
@@ -795,7 +789,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&deviceInfo);
 
         // This tests both device, queue, and pNext chaining
-        vkExportMetalObjectsEXT(device, &objectsInfo);
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
 
         ASSERT_TRUE(deviceInfo.mtlDevice != nullptr);
         ASSERT_TRUE(queueInfo.mtlCommandQueue != nullptr);
@@ -818,7 +812,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         bufferInfo.memory = memory;
         auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&bufferInfo);
 
-        vkExportMetalObjectsEXT(device, &objectsInfo);
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
 
         ASSERT_TRUE(bufferInfo.mtlBuffer != nullptr);
 
@@ -854,7 +848,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&textureInfo);
 
         // This tests both texture, surface, and pNext chaining
-        vkExportMetalObjectsEXT(device, &objectsInfo);
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
 
         ASSERT_TRUE(textureInfo.mtlTexture != nullptr);
         ASSERT_TRUE(surfaceInfo.ioSurface != nullptr);
@@ -873,7 +867,7 @@ TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
         eventInfo.event = event.handle();
         auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&eventInfo);
 
-        vkExportMetalObjectsEXT(device, &objectsInfo);
+        vk::ExportMetalObjectsEXT(device, &objectsInfo);
 
         ASSERT_TRUE(eventInfo.mtlSharedEvent != nullptr);
     }

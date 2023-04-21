@@ -3066,19 +3066,16 @@ TEST_F(VkPositiveLayerTest, ProtectedAndUnprotectedQueue) {
     VkQueue test_queue_protected = VK_NULL_HANDLE;
     VkQueue test_queue_unprotected = VK_NULL_HANDLE;
 
-    PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
-    ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
-
     VkDeviceQueueInfo2 queue_info_2 = LvlInitStruct<VkDeviceQueueInfo2>();
 
     queue_info_2.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
     queue_info_2.queueFamilyIndex = queue_family_index;
     queue_info_2.queueIndex = 0;
-    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue_protected);
+    vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue_protected);
 
     queue_info_2.flags = 0;
     queue_info_2.queueIndex = 0;
-    vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue_unprotected);
+    vk::GetDeviceQueue2(test_device, &queue_info_2, &test_queue_unprotected);
 
     vk::DestroyDevice(test_device, nullptr);
 }
@@ -3798,9 +3795,6 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    auto vkBindImageMemory2KHR =
-        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkBindImageMemory2KHR"));
-
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = m_surface_formats[0].format;
@@ -3833,7 +3827,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
         bind_info.memory = VK_NULL_HANDLE;
         bind_info.memoryOffset = 0;
 
-        vkBindImageMemory2KHR(m_device->device(), 1, &bind_info);
+        vk::BindImageMemory2KHR(m_device->device(), 1, &bind_info);
     }
 }
 
@@ -3908,14 +3902,11 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     ASSERT_VK_SUCCESS(vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
 
     // Get VkImage from swapchain which should be protected
-    PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR =
-        (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
-    ASSERT_TRUE(vkGetSwapchainImagesKHR != nullptr);
     uint32_t image_count;
     std::vector<VkImage> swapchain_images;
-    vkGetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
     swapchain_images.resize(image_count, VK_NULL_HANDLE);
-    vkGetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data());
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data());
     VkImage protected_image = swapchain_images.at(0);  // only need 1 image to test
 
     // Create a protected image view
@@ -4922,10 +4913,6 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
-
-    auto vkCmdSetPrimitiveTopologyEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveTopologyEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPrimitiveTopologyEXT"));
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkDynamicState dyn_states[1] = {
@@ -4959,7 +4946,7 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
 
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     cb.BindVertexBuffer(&vb, 0, 0);
-    vkCmdSetPrimitiveTopologyEXT(cb.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
+    vk::CmdSetPrimitiveTopologyEXT(cb.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
     vk::CmdDraw(cb.handle(), 1, 1, 0, 0);
 
     cb.EndRenderPass();
@@ -5525,10 +5512,6 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkQueueSubmit2KHR =
-        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-    assert(vkQueueSubmit2KHR != nullptr);
-
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -5622,7 +5605,7 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyBuffer(device(), buffer2, nullptr);
@@ -5660,10 +5643,6 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkQueueSubmit2KHR =
-        reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
-    assert(vkQueueSubmit2KHR != nullptr);
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -5753,7 +5732,7 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
-    vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyBuffer(device(), buffer3, nullptr);
@@ -5867,12 +5846,8 @@ TEST_F(VkPositiveLayerTest, ShaderModuleIdentifierGPL) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     ASSERT_TRUE(vs.initialized());
 
-    auto vkGetShaderModuleIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleIdentifierEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkGetShaderModuleIdentifierEXT"));
-    ASSERT_NE(vkGetShaderModuleIdentifierEXT, nullptr);
-
     auto vs_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
-    vkGetShaderModuleIdentifierEXT(device(), vs.handle(), &vs_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &vs_identifier);
 
     auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
     sm_id_create_info.identifierSize = vs_identifier.identifierSize;
@@ -5895,12 +5870,8 @@ TEST_F(VkPositiveLayerTest, ShaderModuleIdentifierGPL) {
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
 
-    auto vkGetShaderModuleCreateInfoIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleCreateInfoIdentifierEXT>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkGetShaderModuleCreateInfoIdentifierEXT"));
-    ASSERT_NE(vkGetShaderModuleCreateInfoIdentifierEXT, nullptr);
-
     auto fs_identifier = LvlInitStruct<VkShaderModuleIdentifierEXT>();
-    vkGetShaderModuleCreateInfoIdentifierEXT(device(), &fs_ci, &fs_identifier);
+    vk::GetShaderModuleCreateInfoIdentifierEXT(device(), &fs_ci, &fs_identifier);
 
     sm_id_create_info.identifierSize = fs_identifier.identifierSize;
     sm_id_create_info.pIdentifier = fs_identifier.identifier;
