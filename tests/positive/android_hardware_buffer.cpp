@@ -342,18 +342,17 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
 
     // FORMAT_Y8Cb8Cr8_420 is a known/public valid AHB Format but does not have a Vulkan mapping to it
     // Will use the external image feature to get access to it
@@ -400,10 +399,28 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
-    if (image.handle() == VK_NULL_HANDLE) {
-        GTEST_SKIP() << "could not create image with external format";
+
+    {
+        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        image_info.format = image_create_info.format;
+        image_info.type = image_create_info.imageType;
+        image_info.tiling = image_create_info.tiling;
+        image_info.usage = image_create_info.usage;
+        image_info.flags = image_create_info.flags;
+
+        auto ahb_usage = LvlInitStruct<VkAndroidHardwareBufferUsageANDROID>();
+        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>(&ahb_usage);
+        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+
+        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+            AHardwareBuffer_release(ahb);
+            GTEST_SKIP() << "could not create image with external format";
+        }
     }
+
+    image.init_no_mem(*m_device, image_create_info);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
     memory_dedicated_info.image = image.handle();
@@ -428,18 +445,17 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (IsPlatform(kGalaxyS10)) {
-        GTEST_SKIP() << "This test should not run on Galaxy S10";
-    }
-
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
 
     // Simulate camera usage of AHB
     AHardwareBuffer *ahb;
@@ -486,10 +502,27 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.init_no_mem(*m_device, image_create_info);
-    if (image.handle() == VK_NULL_HANDLE) {
-        GTEST_SKIP() << "could not create image with external format";
+    {
+        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        external_image_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        image_info.format = image_create_info.format;
+        image_info.type = image_create_info.imageType;
+        image_info.tiling = image_create_info.tiling;
+        image_info.usage = image_create_info.usage;
+        image_info.flags = image_create_info.flags;
+
+        auto ahb_usage = LvlInitStruct<VkAndroidHardwareBufferUsageANDROID>();
+        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>(&ahb_usage);
+        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+
+        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+            AHardwareBuffer_release(ahb);
+            GTEST_SKIP() << "could not create image with external format";
+        }
     }
+
+    image.init_no_mem(*m_device, image_create_info);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
     memory_dedicated_info.image = image.handle();
