@@ -102,13 +102,13 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
 }
 
 // Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
-void BestPractices::LogSuccess(const char* api_name, VkResult result) const {
+void BestPractices::LogPositiveSuccessCode(const char* api_name, VkResult result) const {
     assert(result > VK_SUCCESS);
 
     LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", api_name, string_VkResult(result));
 }
 
-void BestPractices::LogError(const char* api_name, VkResult result) const {
+void BestPractices::LogErrorCode(const char* api_name, VkResult result) const {
     assert(result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
 
     // Despite being error codes log these results as informational.
@@ -117,8 +117,7 @@ void BestPractices::LogError(const char* api_name, VkResult result) const {
     constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
     const auto result_string = string_VkResult(result);
 
-    if (const auto it = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
-        it != common_failure_codes.end()) {
+    if (IsValueIn(result, common_failure_codes)) {
         LogInfo(instance, kVUID_BestPractices_Failure_Result, "%s(): Returned error %s.", api_name, result_string);
     } else {
         LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, result_string);
