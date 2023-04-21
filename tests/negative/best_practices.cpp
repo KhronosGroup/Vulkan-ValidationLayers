@@ -733,7 +733,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
     // This test does not need for the shader to consume the vertex input
-    m_errorMonitor->SetAllowedFailureMsg(kVUID_Core_Shader_OutputNotConsumed);
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-Shader-OutputNotConsumed");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -771,6 +771,74 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineFragmentOutputNotWritten) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
+        "attachments");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkShaderObj fs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.cb_attachments_[0].colorWriteMask = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-BestPractices-Shader-InputNotProduced");
+}
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
+        "format of the corresponding attachment");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out ivec4 x; /* not UNORM */
+        void main(){
+           x = ivec4(1);
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-BestPractices-Shader-FragmentOutputMismatch");
+}
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineFragmentOutputNotConsumed) {
+    TEST_DESCRIPTION(
+        "Test that a warning is produced for a fragment shader which provides a spurious output with no matching attachment");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        layout(location=1) out vec4 y; /* no matching attachment for this */
+        void main(){
+           x = vec4(1);
+           y = vec4(1);
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kWarningBit, "UNASSIGNED-BestPractices-Shader-OutputNotConsumed");
 }
 
 TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {

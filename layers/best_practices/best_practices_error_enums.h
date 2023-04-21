@@ -140,6 +140,9 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_SwapchainImagesNotFound = "UNASSIGNED-BestPractices-DrawState-SwapchainImagesNotFound";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_MismatchedImageType = "UNASSIGNED-BestPractices-DrawState-MismatchedImageType";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_InvalidExtents = "UNASSIGNED-BestPractices-DrawState-InvalidExtents";
+[[maybe_unused]] static const char *kVUID_BestPractices_Shader_InputNotProduced = "UNASSIGNED-BestPractices-Shader-InputNotProduced";
+[[maybe_unused]] static const char *kVUID_BestPractices_Shader_OutputNotConsumed = "UNASSIGNED-BestPractices-Shader-OutputNotConsumed";
+[[maybe_unused]] static const char *kVUID_BestPractices_Shader_FragmentOutputMismatch = "UNASSIGNED-BestPractices-Shader-FragmentOutputMismatch";
 
 // Arm-specific best practice
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
