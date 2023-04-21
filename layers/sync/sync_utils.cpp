@@ -40,10 +40,10 @@ VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features) 
         result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
     }
     if (!features.mesh_shader_features.meshShader) {
-        result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+        result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
     }
     if (!features.mesh_shader_features.taskShader) {
-        result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+        result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
     }
     if (!features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
         !features.shading_rate_image_features.shadingRateImage) {
