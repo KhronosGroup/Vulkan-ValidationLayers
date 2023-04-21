@@ -24,6 +24,7 @@ namespace core_error {
 struct Location;
 }
 
+struct DeviceExtensions;
 struct SubresourceRangeErrorCodes;
 
 namespace sync_vuid_maps {
@@ -31,7 +32,7 @@ using core_error::Location;
 
 extern const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap;
 
-const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2KHR bit, bool sync2_enabled);
+const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 bit, const DeviceExtensions &device_extensions);
 
 const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR bit);
 

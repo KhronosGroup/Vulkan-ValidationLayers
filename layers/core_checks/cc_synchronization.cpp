@@ -951,9 +951,8 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
 bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlist, const Location &loc,
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
-    const bool sync2 = IsExtEnabled(device_extensions.vk_khr_synchronization2);
     if (!enabled_features.core13.synchronization2 && stage_mask == 0) {
-        const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0, sync2);
+        const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0, device_extensions);
         skip |= LogError(objlist, vuid, "%s must not be 0 unless synchronization2 is enabled", loc.Message().c_str());
     }
 
@@ -965,7 +964,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlis
     for (size_t i = 0; i < sizeof(bad_bits) * 8; i++) {
         VkPipelineStageFlags2KHR bit = 1ULL << i;
         if (bit & bad_bits) {
-            const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(loc, bit, sync2);
+            const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(loc, bit, device_extensions);
             std::stringstream msg;
             msg << loc.Message() << " includes " << sync_utils::StringPipelineStageFlags(bit) << " when the device does not have "
                 << sync_vuid_maps::kFeatureNameMap.at(bit) << " feature enabled.";
