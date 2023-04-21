@@ -167,45 +167,17 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
 
-include(GoogleTest)
-
 if (CMAKE_CROSSCOMPILING)
-    gtest_add_tests(TARGET vk_layer_validation_tests)
-else()
-    gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
+    # Fixes how gtest_discover_tests find tests when cross-compiling.
+    set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE "PRE_TEST")
 endif()
 
-if (ANDROID)
-    # "CMAKE_ANDROID_STL_TYPE specifies the C++ STL implementation to be used. Earlier NDK releases
-    # supported a range of different options, but projects should now use either c++_shared or c++_static.
-    # Only use the latter if your application consists of a single shared library." - Professional CMake
-    #
-    # Here is the problem we encountered when building tests with c++_static:
-    #
-    # https://developer.android.com/ndk/guides/cpp-support recommends using
-    # c++_shared for applications that use more than one shared library.
-    # If multiple libraries using c++_static are loaded several copies of
-    # the globals will be present in the C++ runtime. This also happens
-    # if the same library is dlopen/dlclosed several times, as when running
-    # the Layer Validation Tests. Some of the c++ runtime globals are
-    # thread_local, so each copy consumes a TLS key. There are only 128 TLS
-    # keys allowed on android, and the unit tests can hit this because of
-    # repeatedly loading and unloading VVL.
-    #
-    # The drawback to using c++_shared is that the layer library can no longer
-    # be installed manually, but must be installed in an APK. It is still
-    # common practice to load layer libraries manually.
-    if ("${CMAKE_ANDROID_STL_TYPE}" MATCHES "static")
-        message(FATAL_ERROR "Cannot build tests with ${CMAKE_ANDROID_STL_TYPE}!")
-    endif()
+include(GoogleTest)
+gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 
-    # AndroidNdkModules.cmake cannot be used reliably since it's not part of upstream CMake.
-    target_sources(vk_layer_validation_tests PRIVATE
-        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c
-        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.h
-    )
-    target_include_directories(vk_layer_validation_tests PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue)
-    target_link_libraries(vk_layer_validation_tests PUBLIC log)
+if (ANDROID)
+    add_subdirectory(android)
+    return()
 endif()
 
 option(INSTALL_TESTS "Install tests")
