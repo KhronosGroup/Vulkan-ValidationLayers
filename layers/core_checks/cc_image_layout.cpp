@@ -505,53 +505,54 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
                          " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
+                         " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
         !(image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
         const char *vuid =
             use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
-        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
-        skip |= LogError(objlist, vuid,
-                         "%s: Layout/usage mismatch for attachment %" PRIu32
-                         " in %s"
-                         " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT.",
-                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
-                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+        const LogObjectList objlist(renderpass, framebuffer, image_view, image);
+        skip |=
+            LogError(objlist, vuid,
+                     "%s: Layout/usage mismatch for attachment %" PRIu32
+                     " in %s"
+                     " - the %s is %s but the image attached to %s via %s"
+                     " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT. Image usage: %s.",
+                     function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                     string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                     report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         const char *vuid =
             use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
-        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+        const LogObjectList objlist(renderpass, framebuffer, image_view, image);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
                          " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT.",
+                         " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         const char *vuid =
             use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
-        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+        const LogObjectList objlist(renderpass, framebuffer, image_view, image);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
                          " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
+                         " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
@@ -559,7 +560,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
             ((image_usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0)) {
             const char *vuid =
                 use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07002" : "VUID-vkCmdBeginRenderPass-initialLayout-07000";
-            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
             skip |=
                 LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
@@ -567,23 +568,24 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                          " - the %s is %s but the image attached to %s via %s"
                          " was not created with either the VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT or "
                          "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bits, and the VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or "
-                         "VK_IMAGE_USAGE_SAMPLED_BIT usage bits.",
+                         "VK_IMAGE_USAGE_SAMPLED_BIT usage bits. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
         }
         if (!(image_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT)) {
             const char *vuid =
                 use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07003" : "VUID-vkCmdBeginRenderPass-initialLayout-07001";
-            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
-            skip |= LogError(objlist, vuid,
-                             "%s: Layout/usage mismatch for attachment %" PRIu32
-                             " in %s"
-                             " - the %s is %s but the image attached to %s via %s"
-                             " was not created with the VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT usage bit.",
-                             function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
-                             string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                             report_data->FormatHandle(image_view).c_str());
+            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
+            skip |=
+                LogError(objlist, vuid,
+                         "%s: Layout/usage mismatch for attachment %" PRIu32
+                         " in %s"
+                         " - the %s is %s but the image attached to %s via %s"
+                         " was not created with the VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT usage bit. Image usage: %s.",
+                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
         }
     }
 
@@ -595,30 +597,30 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             const char *vuid =
                 use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
             skip |= LogError(objlist, vuid,
                              "%s: Layout/usage mismatch for attachment %" PRIu32
                              " in %s"
                              " - the %s is %s but the image attached to %s via %s"
-                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
                              function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                              string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                             report_data->FormatHandle(image_view).c_str());
+                             report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
         }
     } else {
         // The create render pass 2 extension requires maintenance 2 (the previous branch), so no vuid switch needed here.
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
             skip |= LogError(objlist, "VUID-vkCmdBeginRenderPass-initialLayout-00896",
                              "%s: Layout/usage mismatch for attachment %" PRIu32
                              " in %s"
                              " - the %s is %s but the image attached to %s via %s"
-                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
                              function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                              string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                             report_data->FormatHandle(image_view).c_str());
+                             report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
         }
     }
 
@@ -626,15 +628,15 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         const char *vuid =
             use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-02844" : "VUID-vkCmdBeginRenderPass-initialLayout-02842";
-        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
+        const LogObjectList objlist(renderpass, framebuffer, image, image_view);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
                          " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     return skip;
@@ -667,10 +669,10 @@ bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
                          " - the %s is %s but the image attached to %s via %s"
-                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
                          function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                          string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                         report_data->FormatHandle(image_view).c_str());
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     return skip;
