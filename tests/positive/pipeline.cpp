@@ -3835,7 +3835,7 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     TEST_DESCRIPTION(
         "Make sure images from protected swapchain are considered protected image when writing to it as a color attachment");
 
-#if !defined(ANDROID)
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     // Protected swapchains are guaranteed in Android Loader
     // VK_KHR_surface_protected_capabilities is needed for other platforms
     // Without device to test with, blocking this test from non-Android platforms for now

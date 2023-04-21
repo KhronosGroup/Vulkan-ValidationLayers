@@ -18,7 +18,7 @@
 #include "../layers/vk_lunarg_device_profile_api_layer.h"
 #include "vk_layer_settings_ext.h"
 
-#if defined(ANDROID)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
 #if defined(VALIDATION_APK)
 #include <android_native_app_glue.h>

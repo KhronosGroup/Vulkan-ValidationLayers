@@ -358,7 +358,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                      "Index of 25 used to index descriptor array of length 6."});
     tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                      "Index of 25 used to index descriptor array of length 6."});
-#if !defined(ANDROID)
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
     // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.

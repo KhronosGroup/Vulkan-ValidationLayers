@@ -21,14 +21,14 @@
 #include "generated/lvt_function_pointers.h"
 #include "error_monitor.h"
 
-#ifdef ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "test_framework_android.h"
 class VkImageObj;
 #else
 #include "test_framework.h"
 #endif
 
-#if defined(ANDROID)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
 #if defined(VALIDATION_APK)
 #include <android_native_app_glue.h>

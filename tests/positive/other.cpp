@@ -386,7 +386,7 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
 }
 
 // Android loader returns an error in this case
-#if !defined(ANDROID)
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
 TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
