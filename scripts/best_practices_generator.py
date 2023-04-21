@@ -122,6 +122,11 @@ class BestPracticesOutputGenerator(OutputGenerator):
             ]
 
         self.extension_info = dict()
+
+        # Despite being error codes we don't want to log these results as Warnings.
+        # They are expected to occur during the normal application lifecycle when resizing the window.
+        self.common_errors = ['VK_ERROR_OUT_OF_DATE_KHR', 'VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT']
+
     #
     # Separate content for validation source and header files
     def otwrite(self, dest, formatstring):
@@ -170,6 +175,15 @@ class BestPracticesOutputGenerator(OutputGenerator):
         self.newline()
         self.otwrite('cpp', '#include "chassis.h"')
         self.otwrite('cpp', '#include "best_practices/best_practices_validation.h"')
+        self.otwrite('cpp', '#include "best_practices/best_practices_error_enums.h"')
+        
+        codes = ", ".join(self.common_errors)
+        self.otwrite('cpp', '')
+        self.otwrite('cpp', 'constexpr std::array kCommonErrorCodes = {')
+        self.otwrite('cpp', f'    {codes}')
+        self.otwrite('cpp', '};')
+        self.otwrite('cpp', '')
+
     #
     # Now that the data is all collected and complete, generate and output the object validation routines
     def endFile(self):
@@ -295,16 +309,26 @@ class BestPracticesOutputGenerator(OutputGenerator):
             intercept += '    ValidationStateTracker::PostCallRecord'+cmdname[2:] + '(' + params_text
             if cmdname in self.manual_postcallrecord_list:
                 intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
-            
+
+            # Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
             if success_codes is not None:
                 intercept +=  '    if (result > VK_SUCCESS) {\n'
-                intercept += f'        LogSuccess("{cmdname}", result); // {success_codes}\n'
+                intercept += f'        // {success_codes}\n'
+                intercept += f'        LogVerbose(instance, kVUID_BestPractices_Verbose_Success_Logging, "%s(): Returned %s.", "{cmdname}", string_VkResult(result));\n'
                 intercept +=  '        return;\n'
                 intercept +=  '    }\n'
 
-            if error_codes is not None:
+            if error_codes is not None:                
+                # Handle common errors we don't want to log with LogWarning.
+                if any(i in error_codes for i in self.common_errors):
+                    intercept +=  '    if (IsValueIn(result, kCommonErrorCodes)) {\n'
+                    intercept += f'        LogInfo(instance, kVUID_BestPractices_Error_Result, "%s(): Returned common error %s.", "{cmdname}", string_VkResult(result));\n'
+                    intercept +=  '        return;\n'
+                    intercept +=  '    }\n'
+
                 intercept +=  '    if (result < VK_SUCCESS) {\n'
-                intercept += f'        LogError("{cmdname}", result); // {error_codes}\n'
+                intercept += f'        // {error_codes}\n'
+                intercept += f'        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", "{cmdname}", string_VkResult(result));\n'
                 intercept +=  '    }\n'
 
             intercept += '}\n'

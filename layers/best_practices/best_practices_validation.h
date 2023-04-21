@@ -377,9 +377,6 @@ class BestPractices : public ValidationStateTracker {
 
     std::string GetAPIVersionName(uint32_t version) const;
 
-    void LogSuccess(const char* api_name, VkResult result) const;
-    void LogError(const char* api_name, VkResult result) const;
-
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
