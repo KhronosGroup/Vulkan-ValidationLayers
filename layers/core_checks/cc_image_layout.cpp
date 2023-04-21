@@ -710,7 +710,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         if (!view_state) {
             const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state->framebuffer(), image_view);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                             "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
+                             "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle.",
                              report_data->FormatHandle(framebuffer_state->framebuffer()).c_str(), i,
                              report_data->FormatHandle(image_view).c_str());
             continue;
@@ -782,7 +782,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                                                " where the render pass initial "
                                                "layout is %s "
                                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                                               "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                               "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED.",
                                                i, string_VkImageLayout(layout_check.expected_layout), layout_check.message,
                                                string_VkImageLayout(layout_check.layout));
                     }
