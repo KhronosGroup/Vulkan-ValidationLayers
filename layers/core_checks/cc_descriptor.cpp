@@ -842,7 +842,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         context.vuids.unprotected_command_buffer_02707, "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second->is_written_to &&
+            if (binding_info.second.variable->is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_node, context.caller,
                                           context.vuids.protected_command_buffer_02712, "Buffer is in a descriptorSet")) {
                 return true;
@@ -864,8 +864,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         sampler_states.emplace_back(
             static_cast<const cvdescriptorset::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
-        if (binding_info.second->samplers_used_by_image.size() > index) {
-            for (const auto &desc_index : binding_info.second->samplers_used_by_image[index]) {
+        if (binding_info.second.variable->samplers_used_by_image.size() > index) {
+            for (const auto &desc_index : binding_info.second.variable->samplers_used_by_image[index]) {
                 const auto *desc =
                     context.descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
                 // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
@@ -894,7 +894,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         report_data->FormatHandle(image_view).c_str());
     }
     if (image_view) {
-        const auto &variable = *binding_info.second;
+        const auto &variable = *binding_info.second.variable;
         const auto &image_view_ci = image_view_state->create_info;
 
         // if combined sampler, this variable might not be a OpTypeImage
@@ -951,7 +951,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
             const bool image_format_width_64 = FormatHasComponentSize(image_view_ci.format, 64);
             if (image_format_width_64) {
-                if (binding_info.second->image_sampled_type_width != 64) {
+                if (binding_info.second.variable->image_sampled_type_width != 64) {
                     auto set = context.descriptor_set.GetSet();
                     const LogObjectList objlist(set, image_view);
                     return LogError(
@@ -960,7 +960,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         " has a 64-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32
                         ".",
                         context.caller, report_data->FormatHandle(set).c_str(), binding, index,
-                        string_VkFormat(image_view_ci.format), binding_info.second->image_sampled_type_width);
+                        string_VkFormat(image_view_ci.format), binding_info.second.variable->image_sampled_type_width);
                 } else if (!enabled_features.shader_image_atomic_int64_features.sparseImageInt64Atomics &&
                            image_view_state->image_state->sparse_residency) {
                     auto set = context.descriptor_set.GetSet();
@@ -971,7 +971,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     "sparseImageInt64Atomics is not enabled.",
                                     context.caller, report_data->FormatHandle(set).c_str(), binding, index);
                 }
-            } else if (!image_format_width_64 && binding_info.second->image_sampled_type_width != 32) {
+            } else if (!image_format_width_64 && binding_info.second.variable->image_sampled_type_width != 32) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
                 return LogError(
@@ -979,7 +979,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                     " has a 32-bit component ImageView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                     context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(image_view_ci.format),
-                    binding_info.second->image_sampled_type_width);
+                    binding_info.second.variable->image_sampled_type_width);
             }
         }
 
@@ -1214,7 +1214,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                            context.vuids.unprotected_command_buffer_02707, "Image is in a descriptorSet")) {
                     return true;
                 }
-                if (binding_info.second->is_written_to &&
+                if (binding_info.second.variable->is_written_to &&
                     ValidateUnprotectedImage(context.cb_state, *image_view_state->image_state, context.caller,
                                              context.vuids.protected_command_buffer_02712, "Image is in a descriptorSet")) {
                     return true;
@@ -1413,7 +1413,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
 
-        for (const auto &pair : binding_info.second->write_without_formats_component_count_list) {
+        for (const auto &pair : binding_info.second.variable->write_without_formats_component_count_list) {
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(image_view_format);
             if (texel_component_count < format_component_count) {
@@ -1449,7 +1449,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     auto buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
     const auto binding = binding_info.first;
-    const auto &variable = *binding_info.second;
+    const auto &variable = *binding_info.second.variable;
     if ((!buffer_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
         (buffer_view_state && buffer_view_state->Destroyed())) {
         auto set = context.descriptor_set.GetSet();
@@ -1493,7 +1493,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         const bool buffer_format_width_64 = FormatHasComponentSize(buffer_view_format, 64);
-        if (buffer_format_width_64 && binding_info.second->image_sampled_type_width != 64) {
+        if (buffer_format_width_64 && binding_info.second.variable->image_sampled_type_width != 64) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
             return LogError(
@@ -1501,8 +1501,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                 " has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                 context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
-                binding_info.second->image_sampled_type_width);
-        } else if (!buffer_format_width_64 && binding_info.second->image_sampled_type_width != 32) {
+                binding_info.second.variable->image_sampled_type_width);
+        } else if (!buffer_format_width_64 && binding_info.second.variable->image_sampled_type_width != 32) {
             auto set = context.descriptor_set.GetSet();
             const LogObjectList objlist(set, buffer_view);
             return LogError(
@@ -1510,7 +1510,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                 " has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled Type has a width of %" PRIu32 ".",
                 context.caller, report_data->FormatHandle(set).c_str(), binding, index, string_VkFormat(buffer_view_format),
-                binding_info.second->image_sampled_type_width);
+                binding_info.second.variable->image_sampled_type_width);
         }
 
         const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;
@@ -1571,14 +1571,14 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         context.vuids.unprotected_command_buffer_02707, "Buffer is in a descriptorSet")) {
                 return true;
             }
-            if (binding_info.second->is_written_to &&
+            if (binding_info.second.variable->is_written_to &&
                 ValidateUnprotectedBuffer(context.cb_state, *buffer_view_state->buffer_state, context.caller,
                                           context.vuids.protected_command_buffer_02712, "Buffer is in a descriptorSet")) {
                 return true;
             }
         }
 
-        for (const auto &pair : binding_info.second->write_without_formats_component_count_list) {
+        for (const auto &pair : binding_info.second.variable->write_without_formats_component_count_list) {
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
             if (texel_component_count < format_component_count) {
