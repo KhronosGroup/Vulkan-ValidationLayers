@@ -1450,9 +1450,109 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDeviceImageMemoryReq) {
     image_memory_req.pCreateInfo = &image_create_info;
     image_memory_req.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
     auto out_memory_req = LvlInitStruct<VkMemoryRequirements2>();
-    m_errorMonitor->SetUnexpectedError("VUID-VkDeviceImageMemoryRequirements-pNext-06996");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pNext-06996");
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &image_memory_req, &out_memory_req);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferNullAHBProperties) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer calls must have non-null AHB objects passed in.");
+
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
+    }
+
+    // Allocate an AHardwareBuffer
+    AHardwareBuffer *ahb = nullptr;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-parameter");
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), nullptr, &ahb_props);
+    m_errorMonitor->VerifyFound();
+
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferNullAHBImport) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer calls must have non-null AHB objects passed in.");
+
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
+    }
+
+    // Allocate an AHardwareBuffer
+    AHardwareBuffer *ahb = nullptr;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    VkBufferObj buffer;
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&ext_buf_info);
+    buffer_create_info.size = 512;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer.init_no_mem(*m_device, buffer_create_info);
+
+    auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
+    vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
+
+    auto import_ahb_Info = LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>();
+    import_ahb_Info.buffer = nullptr;  // invalid
+
+    VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+
+    // Set index to match one of the bits in ahb_props that is also only Device Local
+    // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB
+    VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkPhysicalDeviceMemoryProperties gpu_memory_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &gpu_memory_props);
+    memory_allocate_info.memoryTypeIndex = gpu_memory_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < gpu_memory_props.memoryTypeCount; i++) {
+        if ((ahb_props.memoryTypeBits & (1 << i)) && ((gpu_memory_props.memoryTypes[i].propertyFlags & property) == property)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (memory_allocate_info.memoryTypeIndex >= gpu_memory_props.memoryTypeCount) {
+        AHardwareBuffer_release(ahb);
+        GTEST_SKIP() << "No valid memory type index could be found; skipped.\n";
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-parameter");
+    vk_testing::DeviceMemory memory(*m_device, memory_allocate_info);
+    m_errorMonitor->VerifyFound();
+
+    AHardwareBuffer_release(ahb);
 }
 
 #endif  // AHB_VALIDATION_SUPPORT

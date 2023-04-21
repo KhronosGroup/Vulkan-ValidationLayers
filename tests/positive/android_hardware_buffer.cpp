@@ -345,6 +345,10 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
@@ -446,6 +450,10 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "This test should not run on Galaxy S10 - fails in gralloc";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
