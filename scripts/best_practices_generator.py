@@ -298,13 +298,13 @@ class BestPracticesOutputGenerator(OutputGenerator):
             
             if success_codes is not None:
                 intercept +=  '    if (result > VK_SUCCESS) {\n'
-                intercept += f'        LogSuccess("{cmdname}", result); // {success_codes}\n'
+                intercept += f'        LogPositiveSuccessCode("{cmdname}", result); // {success_codes}\n'
                 intercept +=  '        return;\n'
                 intercept +=  '    }\n'
 
             if error_codes is not None:
                 intercept +=  '    if (result < VK_SUCCESS) {\n'
-                intercept += f'        LogError("{cmdname}", result); // {error_codes}\n'
+                intercept += f'        LogErrorCode("{cmdname}", result); // {error_codes}\n'
                 intercept +=  '    }\n'
 
             intercept += '}\n'
