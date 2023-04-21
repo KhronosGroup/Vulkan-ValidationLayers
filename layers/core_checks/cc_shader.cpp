@@ -2987,7 +2987,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
                     skip |= LogError(objlist, "VUID-RuntimeSpirv-OpVariable-08746",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] at Location %" PRIu32
-                                     " Comonent %" PRIu32 " Tessellation Control is %s while Tessellation Evalutaion is %s",
+                                     " Component %" PRIu32 " Tessellation Control is %s while Tessellation Evaluation is %s",
                                      pipe_index, location, component, input_var->is_patch ? "patch" : "vertex",
                                      output_var->is_patch ? "patch" : "vertex");
                 }
@@ -3003,7 +3003,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                         skip |=
                             LogError(objlist, "VUID-RuntimeSpirv-maintenance4-06817",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] starting at Location %" PRIu32
-                                     " Comonent %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
+                                     " Component %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
                                      " Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
                                      "between input and output vectors",
                                      pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
@@ -3019,7 +3019,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
                     skip |= LogPerformanceWarning(objlist, kVUID_Core_Shader_OutputNotConsumed,
                                                   "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                                  "] %s declared to output location %" PRIu32 " Comonent %" PRIu32
+                                                  "] %s declared to output location %" PRIu32 " Component %" PRIu32
                                                   " but is not an Input declared by %s.",
                                                   pipe_index, string_VkShaderStageFlagBits(producer_stage), location, component,
                                                   string_VkShaderStageFlagBits(consumer_stage));
@@ -3034,7 +3034,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                 const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
                 skip |= LogError(objlist, "VUID-RuntimeSpirv-OpEntryPoint-08743",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] %s declared input at Location %" PRIu32
-                                 " Comonent %" PRIu32 " but it is not an Output declared in %s",
+                                 " Component %" PRIu32 " but it is not an Output declared in %s",
                                  pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
                                  string_VkShaderStageFlagBits(producer_stage));
             }
