@@ -2606,3 +2606,71 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateStageUsage) {
+    TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature disabled");
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+
+    auto query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vk_testing::Event event(*m_device, LvlInitStruct<VkEventCreateInfo>());
+    const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07317");
+    vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-07319");
+    vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-fragmentShadingRate-07315");
+    vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidFragmentShadingRateStageUsageNV) {
+    TEST_DESCRIPTION(
+        "Specify shading rate pipeline stage with shading rate features disabled and NV shading rate extension enabled");
+    AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    sync2_features.synchronization2 = VK_TRUE;  // sync2 extension guarantees feature support
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sync2_features));
+
+    auto query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    const vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
+    const vk_testing::Event event(*m_device, LvlInitStruct<VkEventCreateInfo>());
+    const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent2-stageMask-07316");
+    vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-07318");
+    vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdWriteTimestamp-shadingRateImage-07314");
+    vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
