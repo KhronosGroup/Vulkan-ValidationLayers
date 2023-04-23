@@ -41,6 +41,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/dynamic_rendering.cpp
     positive/dynamic_state.cpp
     positive/external_memory_sync.cpp
+    positive/fragment_shading_rate.cpp
     positive/gpu_av.cpp
     positive/graphics_library.cpp
     positive/image_buffer.cpp
