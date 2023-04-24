@@ -1044,13 +1044,17 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     }
     if (firstGroup >= create_info.groupCount) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051",
-                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: firstGroup must be less than the number of shader "
-                         "groups in pipeline.");
+                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: firstGroup (%" PRIu32
+                         ") must be less than the number of shader "
+                         "groups in pipeline (%" PRIu32 ").",
+                         firstGroup, create_info.groupCount);
     }
     if ((firstGroup + groupCount) > create_info.groupCount) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483",
-                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: The sum of firstGroup and groupCount must be less "
-                         "than or equal to the number of shader groups in pipeline.");
+                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: The sum of firstGroup (%" PRIu32
+                         ") and groupCount (%" PRIu32
+                         ") must be less than or equal to the number of shader groups in pipeline (%" PRIu32 ").",
+                         firstGroup, groupCount, create_info.groupCount);
     }
     if (!(create_info.flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-03607",
