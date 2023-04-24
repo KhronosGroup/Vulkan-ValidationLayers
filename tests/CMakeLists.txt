@@ -20,6 +20,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     ${VVL_SOURCE_DIR}/layers/generated/lvt_function_pointers.cpp
     ${VVL_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
     ${VVL_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
+    framework/android_hardware_buffer.h
     framework/layer_validation_tests.h
     framework/layer_validation_tests.cpp
     framework/test_common.h

@@ -14,7 +14,10 @@
 
 #include "../framework/layer_validation_tests.h"
 
-#include "utils/android_ndk_types.h"
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+#include "../framework/android_hardware_buffer.h"
+#endif
+
 #ifdef AHB_VALIDATION_SUPPORT
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
