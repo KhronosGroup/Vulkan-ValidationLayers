@@ -16,7 +16,7 @@
 
 option(UPDATE_DEPS "Run update_deps.py for user")
 if (UPDATE_DEPS)
-    find_package(PythonInterp 3 REQUIRED)
+    find_package(Python3 REQUIRED QUIET)
 
     set(update_dep_py "${CMAKE_CURRENT_LIST_DIR}/update_deps.py")
     set(known_good_json "${CMAKE_CURRENT_LIST_DIR}/known_good.json")
@@ -92,7 +92,7 @@ if (UPDATE_DEPS)
         message(DEBUG "update_deps.py: no work to do.")
     else()
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${update_dep_command}
+            COMMAND ${Python3_EXECUTABLE} ${update_dep_command}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE _update_deps_result
         )
