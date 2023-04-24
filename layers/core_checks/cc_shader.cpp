@@ -1933,31 +1933,7 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
 
     // If not found before with spec constants, find here
     if (total_shared_size == 0) {
-        // when using WorkgroupMemoryExplicitLayoutKHR
-        // either all or none the structs are decorated with Block,
-        // if using block, all must decorated with Aliased.
-        // In this case we want to find the MAX not ADD the block sizes
-        bool find_max_block = false;
-
-        for (const Instruction *insn : module_state.static_data_.variable_inst) {
-            // StorageClass Workgroup is shared memory
-            if (insn->StorageClass() == spv::StorageClassWorkgroup) {
-                if (module_state.GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
-                    find_max_block = true;
-                }
-
-                const uint32_t result_type_id = insn->Word(1);
-                const Instruction *result_type = module_state.FindDef(result_type_id);
-                const Instruction *type = module_state.FindDef(result_type->Word(3));
-                const uint32_t variable_shared_size = module_state.GetTypeBytesSize(type);
-
-                if (find_max_block) {
-                    total_shared_size = std::max(total_shared_size, variable_shared_size);
-                } else {
-                    total_shared_size += variable_shared_size;
-                }
-            }
-        }
+        total_shared_size = module_state.CalculateComputeSharedMemory();
     }
 
     if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
@@ -2487,6 +2463,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                         pipeline.GetCreateFunctionName(), pipeline.create_index, create_info->pName,
                         string_VkShaderStageFlagBits(stage));
     }
+    const EntryPoint &entrypoint = *stage_state.entrypoint;
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
     uint32_t local_size_x = 0;
@@ -2622,67 +2599,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             // guaranteed to run things such as dead-code elimination. The following checks are things that don't follow under
             // "static use" rules and need to be validated still.
 
-            // see ValidateComputeSharedMemory() for details why we might track max block size
-            vvl::unordered_set<uint32_t> aliased_id;
-            bool find_max_block = false;
+            const auto spec_entrypoint = spec_mod.FindEntrypoint(entrypoint.name.c_str(), entrypoint.stage);
+            assert(spec_entrypoint);  // spirv-opt won't change Entrypoint Name/stage
 
-            uint32_t workgroup_size_id = 0;  // result id can't be zero
-            uint32_t local_size_id_x = 0;
-            uint32_t local_size_id_y = 0;
-            uint32_t local_size_id_z = 0;
+            spec_mod.FindLocalSize(*spec_entrypoint, local_size_x, local_size_y, local_size_z);
 
-            // make single interation through new shader
-            for (const Instruction &insn : spec_mod.GetInstructions()) {
-                const uint32_t opcode = insn.Opcode();
-
-                if (opcode == spv::OpExecutionModeId && insn.Word(2) == spv::ExecutionModeLocalSizeId) {
-                    local_size_id_x = insn.Word(3);
-                    local_size_id_y = insn.Word(4);
-                    local_size_id_z = insn.Word(5);
-                }
-
-                if (opcode == spv::OpDecorate) {
-                    // Validate applied WorkgroupSize is still below maxComputeWorkGroupSize limit
-                    if (insn.Word(2) == spv::DecorationBuiltIn && insn.Word(3) == spv::BuiltInWorkgroupSize) {
-                        // Will be a OpConstantComposite and always have the OpDecorate section
-                        workgroup_size_id = insn.Word(1);
-                    }
-                    if (insn.Word(2) == spv::DecorationAliased) {
-                        aliased_id.emplace(insn.Word(1));
-                    }
-                }
-
-                if (opcode == spv::OpConstantComposite && workgroup_size_id == insn.Word(2)) {
-                    // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32 so this can be assuemd
-                    local_size_x = spec_mod.FindDef(insn.Word(3))->Word(3);
-                    local_size_y = spec_mod.FindDef(insn.Word(4))->Word(3);
-                    local_size_z = spec_mod.FindDef(insn.Word(5))->Word(3);
-                }
-
-                if (opcode == spv::OpVariable && insn.StorageClass() == spv::StorageClassWorkgroup) {
-                    if (aliased_id.find(insn.Word(2)) != aliased_id.end()) {
-                        find_max_block = true;
-                    }
-
-                    const uint32_t result_type_id = insn.Word(1);
-                    const Instruction *result_type = spec_mod.FindDef(result_type_id);
-                    const Instruction *type = spec_mod.FindDef(result_type->Word(3));
-                    const uint32_t variable_shared_size = spec_mod.GetTypeBitsSize(type) / 8;
-
-                    if (find_max_block) {
-                        total_shared_size = std::max(total_shared_size, variable_shared_size);
-                    } else {
-                        total_shared_size += variable_shared_size;
-                    }
-                }
-            }
-
-            // if after no WorkgroupSize is found, then can apply any possible LocalSizeId due to precedence order
-            if (local_size_x == 0 && local_size_id_x != 0) {
-                local_size_x = spec_mod.FindDef(local_size_id_x)->Word(3);
-                local_size_y = spec_mod.FindDef(local_size_id_y)->Word(3);
-                local_size_z = spec_mod.FindDef(local_size_id_z)->Word(3);
-            }
+            total_shared_size = spec_mod.CalculateComputeSharedMemory();
 
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
@@ -2700,8 +2622,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             return skip;  // if spec constants have errors, can produce false positives later
         }
     }
-
-    const EntryPoint &entrypoint = *stage_state.entrypoint;
 
     // Validate descriptor set layout against what the entrypoint actually uses
 
