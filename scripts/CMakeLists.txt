@@ -18,6 +18,15 @@ option(UPDATE_DEPS "Run update_deps.py for user")
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
 
+    set(update_dep_py "${CMAKE_CURRENT_LIST_DIR}/update_deps.py")
+    set(known_good_json "${CMAKE_CURRENT_LIST_DIR}/known_good.json")
+
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${update_dep_py} ${known_good_json})
+
+    list(APPEND update_dep_command "${update_dep_py}")
+    list(APPEND update_dep_command "--generator")
+    list(APPEND update_dep_command "${CMAKE_GENERATOR}")
+
     if (CMAKE_GENERATOR_PLATFORM)
         set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
     else()
@@ -26,6 +35,8 @@ if (UPDATE_DEPS)
         endif()
         set(_target_arch x64)
     endif()
+    list(APPEND update_dep_command "--arch")
+    list(APPEND update_dep_command "${_target_arch}")
 
     if (NOT CMAKE_BUILD_TYPE)
         message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
@@ -33,14 +44,23 @@ if (UPDATE_DEPS)
     else()
         set(_build_type ${CMAKE_BUILD_TYPE})
     endif()
+    list(APPEND update_dep_command "--config")
+    list(APPEND update_dep_command "${_build_type}")
 
-    set(optional_args)
+    set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
+    if (ANDROID)
+        set(UPDATE_DEPS_DIR_SUFFIX "android/${UPDATE_DEPS_DIR_SUFFIX}")
+    endif()
+    set(UPDATE_DEPS_DIR "${PROJECT_SOURCE_DIR}/external/${UPDATE_DEPS_DIR_SUFFIX}" CACHE PATH "Location where update_deps.py installs packages")
+    list(APPEND update_dep_command "--dir" )
+    list(APPEND update_dep_command "${UPDATE_DEPS_DIR}")
+
     if (NOT BUILD_TESTS)
-        set(optional_args "--optional=tests")
+        list(APPEND update_dep_command "--optional=tests")
     endif()
 
     if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
-        set(optional_args ${optional_args} "--skip-existing-install")
+        list(APPEND update_dep_command "--skip-existing-install")
     endif()
 
     list(APPEND cmake_vars "CMAKE_TOOLCHAIN_FILE")
@@ -51,47 +71,36 @@ if (UPDATE_DEPS)
     set(cmake_var)
     foreach(var IN LISTS cmake_vars)
         if (DEFINED ${var})
-            set(optional_args ${optional_args} "--cmake_var")
-            set(optional_args ${optional_args} "${var}=${${var}}")
+            list(APPEND update_dep_command "--cmake_var")
+            list(APPEND update_dep_command "${var}=${${var}}")
         endif()
     endforeach()
 
     if (cmake_var)
-        set(optional_args "${optional_args} ${cmake_var}")
+        list(APPEND update_dep_command "${cmake_var}")
     endif()
-
-    set(update_dep_py "${CMAKE_CURRENT_LIST_DIR}/update_deps.py")
-    set(known_good_json "${CMAKE_CURRENT_LIST_DIR}/known_good.json")
-
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${update_dep_py} ${known_good_json})
 
     file(TIMESTAMP ${update_dep_py} timestamp_1)
     file(TIMESTAMP ${known_good_json} timestamp_2)
-    set(timestamp "${timestamp_1}-${timestamp_2}")
 
-    set(UPDATE_DEPS_TIMESTAMP "0" CACHE STRING "Default value until we run update_deps.py")
+    string("MD5" md5_hash "${timestamp_1}-${timestamp_2}-${update_dep_command}")
 
-    if (timestamp STREQUAL $CACHE{UPDATE_DEPS_TIMESTAMP})
+    set(UPDATE_DEPS_HASH "0" CACHE STRING "Default value until we run update_deps.py")
+    mark_as_advanced(UPDATE_DEPS_HASH)
+
+    if ("${md5_hash}" STREQUAL $CACHE{UPDATE_DEPS_HASH})
         message(DEBUG "update_deps.py: no work to do.")
     else()
-        set(UPDATE_DEPS_DIR_SUFFIX "${_build_type}")
-        if (ANDROID)
-            set(UPDATE_DEPS_DIR_SUFFIX "android/${UPDATE_DEPS_DIR_SUFFIX}")
-        endif()
-        set(UPDATE_DEPS_DIR "${PROJECT_SOURCE_DIR}/external/${UPDATE_DEPS_DIR_SUFFIX}" CACHE PATH "Location where update_deps.py installs packages")
-        set(helper_file "${UPDATE_DEPS_DIR}/helper.cmake")
-
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${update_dep_py}
-                --dir ${UPDATE_DEPS_DIR} --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
+            COMMAND ${PYTHON_EXECUTABLE} ${update_dep_command}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE _update_deps_result
         )
         if (NOT (${_update_deps_result} EQUAL 0))
             message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
         endif()
-        set(UPDATE_DEPS_TIMESTAMP ${timestamp} CACHE STRING "Ensure we only run update_deps.py when we need to by caching time stamps" FORCE)
-        include(${helper_file})
+        set(UPDATE_DEPS_HASH ${md5_hash} CACHE STRING "Ensure we only run update_deps.py when we need to." FORCE)
+        include("${UPDATE_DEPS_DIR}/helper.cmake")
     endif()
 endif()
 if (ROBIN_HOOD_HASHING_INSTALL_DIR)
