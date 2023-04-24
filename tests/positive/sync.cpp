@@ -2254,3 +2254,48 @@ TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
     data.Run(*m_commandPool, *m_errorMonitor);
 }
 
+TEST_F(VkPositiveLayerTest, PipelineBarrierStateFragmentShadingRateAttachment) {
+    TEST_DESCRIPTION("Test pipeline barrier with VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR stage");
+
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
+    fsr_features.pipelineFragmentShadingRate = VK_FALSE;
+    fsr_features.primitiveFragmentShadingRate = VK_FALSE;
+
+    if (fsr_features.attachmentFragmentShadingRate == VK_FALSE) {
+        GTEST_SKIP() << "requires attachmentFragmentShadingRate";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+               VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageMemoryBarrier imageMemoryBarrier = LvlInitStruct<VkImageMemoryBarrier>();
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageMemoryBarrier.image = image.handle();
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    imageMemoryBarrier.subresourceRange.layerCount = 1;
+    imageMemoryBarrier.subresourceRange.levelCount = 1;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0u, 0u, nullptr, 0u, nullptr, 1u,
+                           &imageMemoryBarrier);
+    m_commandBuffer->end();
+}
