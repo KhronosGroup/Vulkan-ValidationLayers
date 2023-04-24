@@ -148,6 +148,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
             break;
         case spv::ExecutionModeLocalSizeId:
             flags |= local_size_id_bit;
+            // Store ID here, will use flag to know to pull then out
             local_size_x = insn.Word(3);
             local_size_y = insn.Word(4);
             local_size_z = insn.Word(5);
@@ -921,6 +922,36 @@ bool SHADER_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& 
     }
 
     return false;  // not found
+}
+
+uint32_t SHADER_MODULE_STATE::CalculateComputeSharedMemory() const {
+    uint32_t total_shared_size = 0;
+    // when using WorkgroupMemoryExplicitLayoutKHR
+    // either all or none the structs are decorated with Block,
+    // if using block, all must decorated with Aliased.
+    // In this case we want to find the MAX not ADD the block sizes
+    bool find_max_block = false;
+
+    for (const Instruction* insn : static_data_.variable_inst) {
+        // StorageClass Workgroup is shared memory
+        if (insn->StorageClass() == spv::StorageClassWorkgroup) {
+            if (GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
+                find_max_block = true;
+            }
+
+            const uint32_t result_type_id = insn->Word(1);
+            const Instruction* result_type = FindDef(result_type_id);
+            const Instruction* type = FindDef(result_type->Word(3));
+            const uint32_t variable_shared_size = GetTypeBytesSize(type);
+
+            if (find_max_block) {
+                total_shared_size = std::max(total_shared_size, variable_shared_size);
+            } else {
+                total_shared_size += variable_shared_size;
+            }
+        }
+    }
+    return total_shared_size;
 }
 
 // If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
