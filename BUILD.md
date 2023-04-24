@@ -179,56 +179,28 @@ cmake -S . -B build/ --preset dev
 
 ### Windows Development Environment Requirements
 
-- Windows
-  - Any Personal Computer version supported by Microsoft
+- Windows 10+
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
-  - Versions
-    - [2022](https://www.visualstudio.com/vs/downloads/)
-    - [2017-2019](https://www.visualstudio.com/vs/older-downloads/)
-  - The Community Edition of each of the above versions is sufficient, as
-    well as any more capable edition.
-- [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is the minimum CMake version supported.  [CMake 3.19.3](https://cmake.org/files/v3.19/cmake-3.19.3-win64-x64.zip) is recommended.
-  - Use the installer option to add CMake to the system PATH
+  - `Visual Studio 2019` is the oldest we support. Anything less than that is not guaranteed to compile/work.
+- [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is the minimum CMake version supported.
 - Git Client Support
-  - [Git for Windows](http://git-scm.com/download/win) is a popular solution
-    for Windows
-  - Some IDEs (e.g., [Visual Studio](https://www.visualstudio.com/),
-    [GitHub Desktop](https://desktop.github.com/)) have integrated
-    Git client support
+  - [Git for Windows](http://git-scm.com/download/win) is a popular solution for Windows
+
+NOTE: [Visual Studio 17 2022](https://cmake.org/cmake/help/latest/generator/Visual%20Studio%2017%202022.html) requires at least CMake `3.21`
 
 ### Windows Build - Microsoft Visual Studio
 
-Run CMake to generate the Visual Studio project files.
+Run CMake to generate [Visual Studio project files](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#command-line-g-option).
 
-The `-A` option is used to select either the "Win32" or "x64" architecture.
+```bash
+# NOTE: By default CMake picks the latest version of Visual Studio as the default generator.
+cmake -S . -B build --preset dev
 
-If a generator for a specific version of Visual Studio is required, you can
-specify it with the `-G` switch.
-
-```batch
-# Generates Visual Studio 2022 for x64
-cmake -G "Visual Studio 17 2022" -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-# Generates Visual Studio 2022 for Win32
-cmake -G "Visual Studio 17 2022" -A Win32 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
+# Open the Visual Studio solution
+cmake --open build
 ```
-
-Note: VS2019 and higher target "x64" by default. VS2017 and lower target "Win32" by default
 
 Check the [official CMake documentation](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators) for further information on Visual Studio generators.
-
-The above steps create a Windows solution file named
-`Vulkan-ValidationLayers.sln` in the build directory.
-
-At this point, you can build the solution from the command line or open the
-generated solution with Visual Studio.
-
-If you want to build the Solution From the Command Line
-
-```batch
-cmake --build . --config Debug
-# Or
-cmake --build . --config Release
-```
 
 ## Building On Linux
 
