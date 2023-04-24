@@ -2568,14 +2568,12 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
     }
 }
 
-TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
-    TEST_DESCRIPTION("Creating images with unsupported formats ");
+TEST_F(VkLayerTest, ImageWithUndefinedFormat) {
+    TEST_DESCRIPTION("Create image with undefined format");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Create image with unsupported format - Expect FORMAT_UNSUPPORTED
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_UNDEFINED;
     image_create_info.extent.width = 32;
@@ -3285,7 +3283,7 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    VkImageCreateInfo tmp_img_ci = LvlInitStruct<VkImageCreateInfo>();
+    auto tmp_img_ci = LvlInitStruct<VkImageCreateInfo>();
     tmp_img_ci.flags = 0;                          // assumably any is supported
     tmp_img_ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
     tmp_img_ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
@@ -3300,12 +3298,6 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
     const VkImageCreateInfo safe_image_ci = tmp_img_ci;
 
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &safe_image_ci));
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.format = VK_FORMAT_UNDEFINED;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-format-00943");
-    }
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
