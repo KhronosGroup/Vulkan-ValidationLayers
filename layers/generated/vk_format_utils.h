@@ -194,7 +194,7 @@ constexpr bool FormatIsSinglePlane_422(VkFormat format) {
         case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16:
         case VK_FORMAT_G16B16G16R16_422_UNORM:
         case VK_FORMAT_G8B8G8R8_422_UNORM:
-        found = true;
+            found = true;
             break;
         default:
             break;

@@ -99,7 +99,7 @@ class FormatUtilsOutputGenerator(OutputGenerator):
         self.planarFormats = dict()
 
         # Lots of switch statements share same ending
-        self.commonBoolSwitch  = '''        found = true;
+        self.commonBoolSwitch  = '''            found = true;
             break;
         default:
             break;
