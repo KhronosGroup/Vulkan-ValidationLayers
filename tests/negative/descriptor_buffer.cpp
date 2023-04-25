@@ -1499,3 +1499,51 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidExtensionCombination) {
     vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DescriptorBufferSetBufferAddressSpaceLimits) {
+    TEST_DESCRIPTION("Create VkBuffer with extension.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    // descriptorBuffer guaranteed to be enabled if extension is
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(descriptor_buffer_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_buffer_features));
+
+    auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    // After a few GB, can have memory issues running these tests
+    // descriptorBufferAddressSpaceSize is always the largest of the 3 buffer address size limits
+    const VkDeviceSize max_limit = 1 << 31;
+    if (descriptor_buffer_properties.descriptorBufferAddressSpaceSize > max_limit) {
+        GTEST_SKIP() << "descriptorBufferAddressSpaceSize are too large";
+    }
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = descriptor_buffer_properties.descriptorBufferAddressSpaceSize + 1;
+    VkBuffer buffer = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08097");
+    buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08098");
+    buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08097");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08098");
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                      VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}

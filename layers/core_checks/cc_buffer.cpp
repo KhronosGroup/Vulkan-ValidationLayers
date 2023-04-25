@@ -211,10 +211,8 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                 ") is greater than specified in properties field samplerDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
                 pCreateInfo->size, samplerDescriptorBufferAddressSpaceSize.load(),
                 phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize);
-        }
-
-        if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
-            phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
+        } else if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
+                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
             skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-08097",
                              "vkCreateBuffer(): Requested buffer size (%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
                              ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ")",
@@ -232,10 +230,8 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                 ") is greater than specified in properties field resourceDescriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",
                 pCreateInfo->size, resourceDescriptorBufferAddressSpaceSize.load(),
                 phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize);
-        }
-
-        if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
-            phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
+        } else if (pCreateInfo->size + descriptorBufferAddressSpaceSize >
+                   phys_dev_ext_props.descriptor_buffer_props.descriptorBufferAddressSpaceSize) {
             skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-08098",
                              "vkCreateBuffer(): Requested buffer size (%" PRIuLEAST64 ") plus current total (%" PRIuLEAST64
                              ") is greater than specified in properties field descriptorBufferAddressSpaceSize (%" PRIuLEAST64 ").",

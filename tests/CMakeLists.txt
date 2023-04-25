@@ -34,6 +34,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/atomics.cpp
     positive/best_practices.cpp
     positive/command.cpp
+    positive/descriptor_buffer.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp
     positive/dynamic_state.cpp
