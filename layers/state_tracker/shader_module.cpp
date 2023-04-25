@@ -643,6 +643,17 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 break;
             }
 
+            // Shader Tile image instructions
+            case spv::OpDepthAttachmentReadEXT:
+                has_shader_tile_image_depth_read = true;
+                break;
+            case spv::OpStencilAttachmentReadEXT:
+                has_shader_tile_image_stencil_read = true;
+                break;
+            case spv::OpColorAttachmentReadEXT:
+                has_shader_tile_image_color_read = true;
+                break;
+
             // Access operations
             case spv::OpImageSampleImplicitLod:
             case spv::OpImageSampleProjImplicitLod:

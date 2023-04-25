@@ -95,9 +95,6 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         # should be attempted to be cleared
         self.capabilityExcludeList = [
             'ClusterCullingShadingHUAWEI',
-            'TileImageColorReadAccessEXT',
-            'TileImageDepthReadAccessEXT',
-            'TileImageStencilReadAccessEXT',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
@@ -146,6 +143,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceImageProcessingFeaturesQCOM', 'layer' : 'image_processing_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM', 'layer' : 'shader_core_builtins_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR', 'layer' : 'ray_tracing_position_fetch_features'},
+            {'vulkan' : 'VkPhysicalDeviceShaderTileImageFeaturesEXT', 'layer': 'shader_tile_image_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs

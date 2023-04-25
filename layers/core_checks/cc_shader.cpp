@@ -2448,6 +2448,104 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state) con
     return skip;
 }
 
+static const std::string GetShaderTileImageCapabilitiesString(const SHADER_MODULE_STATE &module_state) {
+    struct SpvCapabilityWithString {
+        const spv::Capability cap;
+        const std::string cap_string;
+    };
+
+    // Shader tile image capabilities
+    static const std::array<SpvCapabilityWithString, 3> shader_tile_image_capabilities = {
+        {{spv::CapabilityTileImageColorReadAccessEXT, "TileImageColorReadAccessEXT"},
+         {spv::CapabilityTileImageDepthReadAccessEXT, "TileImageDepthReadAccessEXT"},
+         {spv::CapabilityTileImageStencilReadAccessEXT, "TileImageStencilReadAccessEXT"}}};
+
+    std::stringstream ss_capabilities;
+    for (auto spv_capability : shader_tile_image_capabilities) {
+        if (module_state.HasCapability(spv_capability.cap)) {
+            if (ss_capabilities.tellp()) ss_capabilities << ", ";
+            ss_capabilities << spv_capability.cap_string;
+        }
+    }
+
+    return ss_capabilities.str();
+}
+
+bool CoreChecks::ValidateShaderTileImage(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint,
+                                         const PIPELINE_STATE &pipeline, const VkShaderStageFlagBits stage) const {
+    bool skip = false;
+
+    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && !IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
+        return skip;
+    }
+
+    const bool using_tile_image_capability = module_state.HasCapability(spv::CapabilityTileImageColorReadAccessEXT) ||
+                                             module_state.HasCapability(spv::CapabilityTileImageDepthReadAccessEXT) ||
+                                             module_state.HasCapability(spv::CapabilityTileImageStencilReadAccessEXT);
+
+    if (!using_tile_image_capability) {
+        // None of the capabilities exist.
+        return skip;
+    }
+
+    if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-08710",
+            "%s(): pCreateInfos[%" PRIu32 "] Fragment shader is using capabilities ( %s ), then renderpass must be VK_NULL_HANDLE.",
+            pipeline.GetCreateFunctionName(), pipeline.create_index, GetShaderTileImageCapabilitiesString(module_state).c_str());
+    }
+
+    const bool mode_early_fragment_test = entrypoint.execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
+    if (module_state.static_data_.has_shader_tile_image_depth_read) {
+        skip |= RequireFeature(module_state, enabled_features.shader_tile_image_features.shaderTileImageDepthReadAccess,
+                               "shaderTileImageDepthReadAccess", "VUID-RuntimeSpirv-shaderTileImageDepthReadAccess-08729");
+
+        const auto *ds_state = pipeline.DepthStencilState();
+        const bool write_enabled =
+            !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
+        if (mode_early_fragment_test && write_enabled) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-08711",
+                             "%s(): pCreateInfos[%" PRIu32
+                             "] Fragment shader contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.",
+                             pipeline.GetCreateFunctionName(), pipeline.create_index);
+        }
+    }
+
+    if (module_state.static_data_.has_shader_tile_image_stencil_read) {
+        skip |= RequireFeature(module_state, enabled_features.shader_tile_image_features.shaderTileImageStencilReadAccess,
+                               "shaderTileImageStencilReadAccess", "VUID-RuntimeSpirv-shaderTileImageStencilReadAccess-08730");
+
+        const auto *ds_state = pipeline.DepthStencilState();
+        const bool is_write_mask_set = !pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
+                                       (ds_state && (ds_state->front.writeMask != 0 || ds_state->back.writeMask != 0));
+        if (mode_early_fragment_test && is_write_mask_set) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-08712",
+                             "%s(): pCreateInfos[%" PRIu32
+                             "] Fragment shader contains OpStencilAttachmentReadEXT, and stencil write mask is not equal to 0 for "
+                             "both front(=%" PRIu32 ") and back (=%" PRIu32 ").",
+                             pipeline.GetCreateFunctionName(), pipeline.create_index, ds_state->front.writeMask,
+                             ds_state->back.writeMask);
+        }
+    }
+
+    if (module_state.static_data_.has_shader_tile_image_color_read) {
+        skip |= RequireFeature(module_state, enabled_features.shader_tile_image_features.shaderTileImageColorReadAccess,
+                               "shaderTileImageColorReadAccess", "VUID-RuntimeSpirv-shaderTileImageColorReadAccess-08728");
+    }
+
+    bool using_tile_image_op = module_state.static_data_.has_shader_tile_image_depth_read ||
+                               module_state.static_data_.has_shader_tile_image_stencil_read ||
+                               module_state.static_data_.has_shader_tile_image_color_read;
+    const auto *ms_state = pipeline.MultisampleState();
+    if (using_tile_image_op && ms_state && ms_state->sampleShadingEnable && (ms_state->minSampleShading != 1.0)) {
+        skip |= LogError(device, "VUID-RuntimeSpirv-minSampleShading-08732",
+                         "%s(): pCreateInfos[%" PRIu32 "]: minSampleShading (=%f) is not equal to 1.0.",
+                         pipeline.GetCreateFunctionName(), pipeline.create_index, ms_state->minSampleShading);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, const PipelineStageState &stage_state) const {
     bool skip = false;
     const auto *create_info = stage_state.create_info;
@@ -2639,6 +2737,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidateAtomicsTypes(module_state);
     skip |= ValidateShaderStageGroupNonUniform(module_state, stage);
     skip |= ValidateShaderClock(module_state);
+    skip |= ValidateShaderTileImage(module_state, entrypoint, pipeline, stage);
     skip |= ValidateImageWrite(module_state);
     skip |= ValidateExecutionModes(module_state, entrypoint, stage, pipeline);
     skip |= ValidateSpecializations(module_state, create_info->pSpecializationInfo, pipeline);

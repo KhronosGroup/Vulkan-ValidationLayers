@@ -449,6 +449,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<const Instruction *> builtin_decoration_inst;
         // OpEmitStreamVertex/OpEndStreamPrimitive
         std::vector<const Instruction *> transform_feedback_stream_inst;
+        // For shader tile image - OpDepthAttachmentReadEXT/OpStencilAttachmentReadEXT/OpColorAttachmentReadEXT
+        bool has_shader_tile_image_depth_read{false};
+        bool has_shader_tile_image_stencil_read{false};
+        bool has_shader_tile_image_color_read{false};
         // BuiltIn we just care about existing or not, don't have to be written to
         bool has_builtin_layer{false};
         bool has_builtin_fully_covered{false};

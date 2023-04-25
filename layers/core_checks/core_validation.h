@@ -164,8 +164,10 @@ struct DrawDispatchVuid {
     const char* dynamic_line_stipple_ext_07849 = kVUIDUndefined;
     const char* dynamic_blend_constants_07835 = kVUIDUndefined;
     const char* dynamic_depth_bounds_07836 = kVUIDUndefined;
+    const char* dynamic_depth_enable_08715 = kVUIDUndefined;
     const char* dynamic_stencil_compare_mask_07837 = kVUIDUndefined;
     const char* dynamic_stencil_write_mask_07838 = kVUIDUndefined;
+    const char* dynamic_stencil_write_mask_08716 = kVUIDUndefined;
     const char* dynamic_stencil_reference_07839 = kVUIDUndefined;
     const char* dynamic_state_inherited_07850 = kVUIDUndefined;
     const char* dynamic_cull_mode_07840 = kVUIDUndefined;
@@ -496,6 +498,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
+    bool ValidateDependencyInfoForShaderTileImage(const Location& loc, const CMD_BUFFER_STATE& cb_state,
+                                                  const VkDependencyInfoKHR& dep_info) const;
     template <typename ImgBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImgBarrier& barrier,
                                       const IMAGE_STATE* state_data) const;
@@ -888,6 +892,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state, VkPipelineShaderStageCreateFlags flags) const;
     bool ValidateWorkgroupSharedMemory(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                        uint32_t total_workgroup_shared_memory) const;
+    bool ValidateShaderTileImage(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
+                                 const PIPELINE_STATE& pipeline, const VkShaderStageFlagBits stage) const;
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE& pipeline) const;
