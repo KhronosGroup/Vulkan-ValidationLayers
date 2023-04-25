@@ -27,7 +27,11 @@ target_sources(VkLayer_utils PRIVATE
     generated/vk_layer_dispatch_table.h
     generated/vk_dispatch_table_helper.h
     generated/vk_safe_struct.h
-    generated/vk_safe_struct.cpp
+    generated/vk_safe_struct_utils.cpp
+    generated/vk_safe_struct_core.cpp
+    generated/vk_safe_struct_khr.cpp
+    generated/vk_safe_struct_ext.cpp
+    generated/vk_safe_struct_vendor.cpp
     generated/vk_enum_string_helper.h
     generated/vk_object_types.h
     generated/vk_extension_helper.h
@@ -79,7 +83,11 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_layer_dispatch_table.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_dispatch_table_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_core.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_khr.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_ext.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_vendor.cpp
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_object_types.h
                   ${CMAKE_SOURCE_DIR}/layers/generated/vk_extension_helper.h
@@ -222,7 +230,11 @@ target_sources(VkLayer_khronos_validation PRIVATE
     generated/sync_validation_types.cpp
     generated/thread_safety.cpp
     generated/thread_safety.h
-    generated/vk_safe_struct.cpp
+    generated/vk_safe_struct_utils.cpp
+    generated/vk_safe_struct_core.cpp
+    generated/vk_safe_struct_khr.cpp
+    generated/vk_safe_struct_ext.cpp
+    generated/vk_safe_struct_vendor.cpp
     generated/vk_safe_struct.h
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h

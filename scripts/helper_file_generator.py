@@ -1059,6 +1059,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Construct Safe-struct helper functions
 
         string_copy_proc = '\n\n'
+        string_copy_proc += 'extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;\n\n'
         string_copy_proc += 'char *SafeStringCopy(const char *in_string) {\n'
         string_copy_proc += '    if (nullptr == in_string) return nullptr;\n'
         string_copy_proc += '    char* dest = new char[std::strlen(in_string) + 1];\n'
@@ -1190,37 +1191,23 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Combine safe struct helper source file preamble with body text and return
     def GenerateSafeStructHelperSource(self):
-        safe_struct_helper_source = '\n'
-        safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
-        safe_struct_helper_source += '#include "vk_typemap_helper.h"\n'
-        safe_struct_helper_source += '#include "utils/vk_layer_utils.h"\n'
-        safe_struct_helper_source += '\n'
-        safe_struct_helper_source += '#include <cstddef>\n'
-        safe_struct_helper_source += '#include <cassert>\n'
-        safe_struct_helper_source += '#include <cstring>\n'
-        safe_struct_helper_source += '#include <vector>\n'
-        safe_struct_helper_source += '\n'
-        safe_struct_helper_source += '#include <vulkan/vk_layer.h>\n'
-        safe_struct_helper_source += '\n'
-        safe_struct_helper_source += 'extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;\n'
-        safe_struct_helper_source += 'struct ASGeomKHRExtraData {\n'
-        safe_struct_helper_source += '    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :\n'
-        safe_struct_helper_source += '        ptr(alloc),\n'
-        safe_struct_helper_source += '        primitiveOffset(primOffset),\n'
-        safe_struct_helper_source += '        primitiveCount(primCount)\n'
-        safe_struct_helper_source += '    {}\n'
-        safe_struct_helper_source += '    ~ASGeomKHRExtraData() {\n'
-        safe_struct_helper_source += '        if (ptr)\n'
-        safe_struct_helper_source += '            delete[] ptr;\n'
-        safe_struct_helper_source += '    }\n'
-        safe_struct_helper_source += '    uint8_t *ptr;\n'
-        safe_struct_helper_source += '    uint32_t primitiveOffset;\n'
-        safe_struct_helper_source += '    uint32_t primitiveCount;\n'
-        safe_struct_helper_source += '};\n'
-        safe_struct_helper_source += 'vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;\n'
-        safe_struct_helper_source += '\n'
-        safe_struct_helper_source += self.GenerateSafeStructSource()
-        safe_struct_helper_source += self.build_safe_struct_utility_funcs()
+        safe_struct_helper_source = """
+#include "vk_safe_struct.h"
+#include "vk_typemap_helper.h"
+#include "utils/vk_layer_utils.h"
+
+#include <cstddef>
+#include <cassert>
+#include <cstring>
+#include <vector>
+
+#include <vulkan/vk_layer.h>
+
+"""     
+        if self.genOpts.filename.endswith('_utils.cpp'):
+            safe_struct_helper_source += self.build_safe_struct_utility_funcs()
+        else:
+            safe_struct_helper_source += self.GenerateSafeStructSource()
 
         return safe_struct_helper_source
     #
@@ -1261,10 +1248,24 @@ class HelperFileOutputGenerator(OutputGenerator):
                           'ANativeWindow',
                           'CAMetalLayer'
                          ]
+
+        # Find what types of safe structs need to be generated based on output file name
+        safe_struct_type_re = r'.*';
+        if self.genOpts.filename.endswith('_khr.cpp'):
+            safe_struct_type_re = r'.*KHR$'
+        elif self.genOpts.filename.endswith('_ext.cpp'):
+            safe_struct_type_re = r'.*EXT$'
+        elif self.genOpts.filename.endswith('_vendor.cpp'):
+            safe_struct_type_re = r'^(?!.*(KHR|EXT)$).*[A-Z]$' # Matches all words finishing with an upper case letter, but not ending with KHRor EXT
+        else: # elif self.genOpts.filename.endswith('_core.cpp'):
+            safe_struct_type_re = r'.*[a-z0-9]$'
+
         for item in self.structMembers:
             if self.NeedSafeStruct(item) == False:
                 continue
             if item.name in wsi_structs:
+                continue
+            if not re.match(safe_struct_type_re, item.name):
                 continue
             if item.ifdef_protect is not None:
                 safe_struct_body.append("#ifdef %s\n" % item.ifdef_protect)
@@ -1274,6 +1275,28 @@ class HelperFileOutputGenerator(OutputGenerator):
             init_func_txt = ''      # Txt for initialize() function that takes struct ptr and inits members
             construct_txt = ''      # Body of constuctor as well as body of initialize() func following init_func_txt
             destruct_txt = ''
+
+            custom_definitions = {
+            # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array. 
+            'VkAccelerationStructureGeometryKHR':
+"""
+struct ASGeomKHRExtraData {
+    ASGeomKHRExtraData(uint8_t *alloc, uint32_t primOffset, uint32_t primCount) :
+        ptr(alloc),
+        primitiveOffset(primOffset),
+        primitiveCount(primCount)
+    {}
+    ~ASGeomKHRExtraData() {
+        if (ptr)
+            delete[] ptr;
+    }
+    uint8_t *ptr;
+    uint32_t primitiveOffset;
+    uint32_t primitiveCount;
+};
+
+vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;"""
+            }
 
             custom_defeault_construct_txt = {
                 'VkDescriptorDataEXT' :
@@ -1884,6 +1907,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
 
+            if item.name in custom_definitions:
+                safe_struct_body.append(custom_definitions[item.name])
+
             if item.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[item.name]
 
@@ -1895,7 +1921,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             if copy_pnext:
                 destruct_txt += '    if (pNext)\n'
                 destruct_txt += '        FreePnextChain(pNext);\n'
-
+            
             if (self.structOrUnion[item.name] == 'union'):
                 if (item.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'

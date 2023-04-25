@@ -291,12 +291,72 @@ def makeGenOpts(args):
             helper_file_type  = 'safe_struct_header')
         ]
 
-    # Helper file generator options for vk_safe_struct.cpp
-    genOpts['vk_safe_struct.cpp'] = [
+    # Helper file generator options for vk_safe_struct_utils.cpp
+    genOpts['vk_safe_struct_utils.cpp'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
-            filename          = 'vk_safe_struct.cpp',
+            filename          = 'vk_safe_struct_utils.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            helper_file_type  = 'safe_struct_source')
+        ]
+
+    # Helper file generator options for vk_safe_struct_core.cpp
+    genOpts['vk_safe_struct_core.cpp'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_safe_struct_core.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            helper_file_type  = 'safe_struct_source')
+        ]
+
+    # Helper file generator options for vk_safe_struct_khr.cpp
+    genOpts['vk_safe_struct_khr.cpp'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_safe_struct_khr.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            helper_file_type  = 'safe_struct_source')
+        ]
+
+    # Helper file generator options for vk_safe_struct_khr.cpp
+    genOpts['vk_safe_struct_ext.cpp'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_safe_struct_ext.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            helper_file_type  = 'safe_struct_source')
+        ]
+
+    # Helper file generator options for vk_safe_struct_vendor.cpp
+    genOpts['vk_safe_struct_vendor.cpp'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'vk_safe_struct_vendor.cpp',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,

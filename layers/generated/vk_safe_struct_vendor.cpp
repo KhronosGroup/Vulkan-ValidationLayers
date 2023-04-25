@@ -1,0 +1,13183 @@
+// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See helper_file_generator.py for modifications
+
+
+/***************************************************************************
+ *
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ****************************************************************************/
+
+
+#include "vk_safe_struct.h"
+#include "vk_typemap_helper.h"
+#include "utils/vk_layer_utils.h"
+
+#include <cstddef>
+#include <cassert>
+#include <cstring>
+#include <vector>
+
+#include <vulkan/vk_layer.h>
+
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct) :
+    sType(in_struct->sType),
+    colorAttachmentCount(in_struct->colorAttachmentCount),
+    pColorAttachmentSamples(nullptr),
+    depthStencilAttachmentSamples(in_struct->depthStencilAttachmentSamples)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)in_struct->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*in_struct->colorAttachmentCount);
+    }
+}
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD),
+    pNext(nullptr),
+    colorAttachmentCount(),
+    pColorAttachmentSamples(nullptr),
+    depthStencilAttachmentSamples()
+{}
+
+safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const safe_VkAttachmentSampleCountInfoAMD& copy_src)
+{
+    sType = copy_src.sType;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src.pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src.colorAttachmentCount);
+    }
+}
+
+safe_VkAttachmentSampleCountInfoAMD& safe_VkAttachmentSampleCountInfoAMD::operator=(const safe_VkAttachmentSampleCountInfoAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    colorAttachmentCount = copy_src.colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src.depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src.pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src.colorAttachmentCount);
+    }
+
+    return *this;
+}
+
+safe_VkAttachmentSampleCountInfoAMD::~safe_VkAttachmentSampleCountInfoAMD()
+{
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAttachmentSampleCountInfoAMD::initialize(const VkAttachmentSampleCountInfoAMD* in_struct)
+{
+    if (pColorAttachmentSamples)
+        delete[] pColorAttachmentSamples;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    colorAttachmentCount = in_struct->colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = in_struct->depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[in_struct->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)in_struct->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*in_struct->colorAttachmentCount);
+    }
+}
+
+void safe_VkAttachmentSampleCountInfoAMD::initialize(const safe_VkAttachmentSampleCountInfoAMD* copy_src)
+{
+    sType = copy_src->sType;
+    colorAttachmentCount = copy_src->colorAttachmentCount;
+    pColorAttachmentSamples = nullptr;
+    depthStencilAttachmentSamples = copy_src->depthStencilAttachmentSamples;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pColorAttachmentSamples) {
+        pColorAttachmentSamples = new VkSampleCountFlagBits[copy_src->colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentSamples, (void *)copy_src->pColorAttachmentSamples, sizeof(VkSampleCountFlagBits)*copy_src->colorAttachmentCount);
+    }
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX(const VkMultiviewPerViewAttributesInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    perViewAttributes(in_struct->perViewAttributes),
+    perViewAttributesPositionXOnly(in_struct->perViewAttributesPositionXOnly)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX),
+    pNext(nullptr),
+    perViewAttributes(),
+    perViewAttributesPositionXOnly()
+{}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::safe_VkMultiviewPerViewAttributesInfoNVX(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    perViewAttributes = copy_src.perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src.perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX& safe_VkMultiviewPerViewAttributesInfoNVX::operator=(const safe_VkMultiviewPerViewAttributesInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perViewAttributes = copy_src.perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src.perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMultiviewPerViewAttributesInfoNVX::~safe_VkMultiviewPerViewAttributesInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMultiviewPerViewAttributesInfoNVX::initialize(const VkMultiviewPerViewAttributesInfoNVX* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    perViewAttributes = in_struct->perViewAttributes;
+    perViewAttributesPositionXOnly = in_struct->perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMultiviewPerViewAttributesInfoNVX::initialize(const safe_VkMultiviewPerViewAttributesInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    perViewAttributes = copy_src->perViewAttributes;
+    perViewAttributesPositionXOnly = copy_src->perViewAttributesPositionXOnly;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV(const VkQueueFamilyCheckpointProperties2NV* in_struct) :
+    sType(in_struct->sType),
+    checkpointExecutionStageMask(in_struct->checkpointExecutionStageMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV),
+    pNext(nullptr),
+    checkpointExecutionStageMask()
+{}
+
+safe_VkQueueFamilyCheckpointProperties2NV::safe_VkQueueFamilyCheckpointProperties2NV(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src)
+{
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV& safe_VkQueueFamilyCheckpointProperties2NV::operator=(const safe_VkQueueFamilyCheckpointProperties2NV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueueFamilyCheckpointProperties2NV::~safe_VkQueueFamilyCheckpointProperties2NV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueueFamilyCheckpointProperties2NV::initialize(const VkQueueFamilyCheckpointProperties2NV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    checkpointExecutionStageMask = in_struct->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueueFamilyCheckpointProperties2NV::initialize(const safe_VkQueueFamilyCheckpointProperties2NV* copy_src)
+{
+    sType = copy_src->sType;
+    checkpointExecutionStageMask = copy_src->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV(const VkCheckpointData2NV* in_struct) :
+    sType(in_struct->sType),
+    stage(in_struct->stage),
+    pCheckpointMarker(in_struct->pCheckpointMarker)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV() :
+    sType(VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV),
+    pNext(nullptr),
+    stage(),
+    pCheckpointMarker(nullptr)
+{}
+
+safe_VkCheckpointData2NV::safe_VkCheckpointData2NV(const safe_VkCheckpointData2NV& copy_src)
+{
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCheckpointData2NV& safe_VkCheckpointData2NV::operator=(const safe_VkCheckpointData2NV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCheckpointData2NV::~safe_VkCheckpointData2NV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCheckpointData2NV::initialize(const VkCheckpointData2NV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stage = in_struct->stage;
+    pCheckpointMarker = in_struct->pCheckpointMarker;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCheckpointData2NV::initialize(const safe_VkCheckpointData2NV* copy_src)
+{
+    sType = copy_src->sType;
+    stage = copy_src->stage;
+    pCheckpointMarker = copy_src->pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD(const VkPipelineRasterizationStateRasterizationOrderAMD* in_struct) :
+    sType(in_struct->sType),
+    rasterizationOrder(in_struct->rasterizationOrder)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD),
+    pNext(nullptr),
+    rasterizationOrder()
+{}
+
+safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD(const safe_VkPipelineRasterizationStateRasterizationOrderAMD& copy_src)
+{
+    sType = copy_src.sType;
+    rasterizationOrder = copy_src.rasterizationOrder;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineRasterizationStateRasterizationOrderAMD& safe_VkPipelineRasterizationStateRasterizationOrderAMD::operator=(const safe_VkPipelineRasterizationStateRasterizationOrderAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rasterizationOrder = copy_src.rasterizationOrder;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineRasterizationStateRasterizationOrderAMD::~safe_VkPipelineRasterizationStateRasterizationOrderAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineRasterizationStateRasterizationOrderAMD::initialize(const VkPipelineRasterizationStateRasterizationOrderAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rasterizationOrder = in_struct->rasterizationOrder;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineRasterizationStateRasterizationOrderAMD::initialize(const safe_VkPipelineRasterizationStateRasterizationOrderAMD* copy_src)
+{
+    sType = copy_src->sType;
+    rasterizationOrder = copy_src->rasterizationOrder;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV(const VkDedicatedAllocationImageCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    dedicatedAllocation(in_struct->dedicatedAllocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV),
+    pNext(nullptr),
+    dedicatedAllocation()
+{}
+
+safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV(const safe_VkDedicatedAllocationImageCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    dedicatedAllocation = copy_src.dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDedicatedAllocationImageCreateInfoNV& safe_VkDedicatedAllocationImageCreateInfoNV::operator=(const safe_VkDedicatedAllocationImageCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dedicatedAllocation = copy_src.dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDedicatedAllocationImageCreateInfoNV::~safe_VkDedicatedAllocationImageCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDedicatedAllocationImageCreateInfoNV::initialize(const VkDedicatedAllocationImageCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    dedicatedAllocation = in_struct->dedicatedAllocation;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDedicatedAllocationImageCreateInfoNV::initialize(const safe_VkDedicatedAllocationImageCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    dedicatedAllocation = copy_src->dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV(const VkDedicatedAllocationBufferCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    dedicatedAllocation(in_struct->dedicatedAllocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV),
+    pNext(nullptr),
+    dedicatedAllocation()
+{}
+
+safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV(const safe_VkDedicatedAllocationBufferCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    dedicatedAllocation = copy_src.dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDedicatedAllocationBufferCreateInfoNV& safe_VkDedicatedAllocationBufferCreateInfoNV::operator=(const safe_VkDedicatedAllocationBufferCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dedicatedAllocation = copy_src.dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDedicatedAllocationBufferCreateInfoNV::~safe_VkDedicatedAllocationBufferCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDedicatedAllocationBufferCreateInfoNV::initialize(const VkDedicatedAllocationBufferCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    dedicatedAllocation = in_struct->dedicatedAllocation;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDedicatedAllocationBufferCreateInfoNV::initialize(const safe_VkDedicatedAllocationBufferCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    dedicatedAllocation = copy_src->dedicatedAllocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV(const VkDedicatedAllocationMemoryAllocateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    image(in_struct->image),
+    buffer(in_struct->buffer)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV),
+    pNext(nullptr),
+    image(),
+    buffer()
+{}
+
+safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV(const safe_VkDedicatedAllocationMemoryAllocateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    image = copy_src.image;
+    buffer = copy_src.buffer;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDedicatedAllocationMemoryAllocateInfoNV& safe_VkDedicatedAllocationMemoryAllocateInfoNV::operator=(const safe_VkDedicatedAllocationMemoryAllocateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    image = copy_src.image;
+    buffer = copy_src.buffer;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDedicatedAllocationMemoryAllocateInfoNV::~safe_VkDedicatedAllocationMemoryAllocateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDedicatedAllocationMemoryAllocateInfoNV::initialize(const VkDedicatedAllocationMemoryAllocateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    image = in_struct->image;
+    buffer = in_struct->buffer;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDedicatedAllocationMemoryAllocateInfoNV::initialize(const safe_VkDedicatedAllocationMemoryAllocateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    image = copy_src->image;
+    buffer = copy_src->buffer;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const VkCuModuleCreateInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    dataSize(in_struct->dataSize),
+    pData(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
+}
+
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX),
+    pNext(nullptr),
+    dataSize(),
+    pData(nullptr)
+{}
+
+safe_VkCuModuleCreateInfoNVX::safe_VkCuModuleCreateInfoNVX(const safe_VkCuModuleCreateInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    dataSize = copy_src.dataSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
+}
+
+safe_VkCuModuleCreateInfoNVX& safe_VkCuModuleCreateInfoNVX::operator=(const safe_VkCuModuleCreateInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dataSize = copy_src.dataSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pData != nullptr) {
+        auto temp = new std::byte[copy_src.dataSize];
+        std::memcpy(temp, copy_src.pData, copy_src.dataSize);
+        pData = temp;
+    }
+
+    return *this;
+}
+
+safe_VkCuModuleCreateInfoNVX::~safe_VkCuModuleCreateInfoNVX()
+{
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuModuleCreateInfoNVX::initialize(const VkCuModuleCreateInfoNVX* in_struct)
+{
+    if (pData != nullptr) {
+        auto temp = reinterpret_cast<const std::byte*>(pData);
+        delete [] temp;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    dataSize = in_struct->dataSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pData != nullptr) {
+        auto temp = new std::byte[in_struct->dataSize];
+        std::memcpy(temp, in_struct->pData, in_struct->dataSize);
+        pData = temp;
+    }
+}
+
+void safe_VkCuModuleCreateInfoNVX::initialize(const safe_VkCuModuleCreateInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    dataSize = copy_src->dataSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pData != nullptr) {
+        auto temp = new std::byte[copy_src->dataSize];
+        std::memcpy(temp, copy_src->pData, copy_src->dataSize);
+        pData = temp;
+    }
+}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX(const VkCuFunctionCreateInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    module(in_struct->module)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX),
+    pNext(nullptr),
+    module(),
+    pName(nullptr)
+{}
+
+safe_VkCuFunctionCreateInfoNVX::safe_VkCuFunctionCreateInfoNVX(const safe_VkCuFunctionCreateInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    module = copy_src.module;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+}
+
+safe_VkCuFunctionCreateInfoNVX& safe_VkCuFunctionCreateInfoNVX::operator=(const safe_VkCuFunctionCreateInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    module = copy_src.module;
+    pNext = SafePnextCopy(copy_src.pNext);
+    pName = SafeStringCopy(copy_src.pName);
+
+    return *this;
+}
+
+safe_VkCuFunctionCreateInfoNVX::~safe_VkCuFunctionCreateInfoNVX()
+{
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuFunctionCreateInfoNVX::initialize(const VkCuFunctionCreateInfoNVX* in_struct)
+{
+    if (pName) delete [] pName;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    module = in_struct->module;
+    pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
+}
+
+void safe_VkCuFunctionCreateInfoNVX::initialize(const safe_VkCuFunctionCreateInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    module = copy_src->module;
+    pNext = SafePnextCopy(copy_src->pNext);
+    pName = SafeStringCopy(copy_src->pName);
+}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX(const VkCuLaunchInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    function(in_struct->function),
+    gridDimX(in_struct->gridDimX),
+    gridDimY(in_struct->gridDimY),
+    gridDimZ(in_struct->gridDimZ),
+    blockDimX(in_struct->blockDimX),
+    blockDimY(in_struct->blockDimY),
+    blockDimZ(in_struct->blockDimZ),
+    sharedMemBytes(in_struct->sharedMemBytes),
+    paramCount(in_struct->paramCount),
+    pParams(in_struct->pParams),
+    extraCount(in_struct->extraCount),
+    pExtras(in_struct->pExtras)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX),
+    pNext(nullptr),
+    function(),
+    gridDimX(),
+    gridDimY(),
+    gridDimZ(),
+    blockDimX(),
+    blockDimY(),
+    blockDimZ(),
+    sharedMemBytes(),
+    paramCount(),
+    pParams(nullptr),
+    extraCount(),
+    pExtras(nullptr)
+{}
+
+safe_VkCuLaunchInfoNVX::safe_VkCuLaunchInfoNVX(const safe_VkCuLaunchInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    function = copy_src.function;
+    gridDimX = copy_src.gridDimX;
+    gridDimY = copy_src.gridDimY;
+    gridDimZ = copy_src.gridDimZ;
+    blockDimX = copy_src.blockDimX;
+    blockDimY = copy_src.blockDimY;
+    blockDimZ = copy_src.blockDimZ;
+    sharedMemBytes = copy_src.sharedMemBytes;
+    paramCount = copy_src.paramCount;
+    pParams = copy_src.pParams;
+    extraCount = copy_src.extraCount;
+    pExtras = copy_src.pExtras;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCuLaunchInfoNVX& safe_VkCuLaunchInfoNVX::operator=(const safe_VkCuLaunchInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    function = copy_src.function;
+    gridDimX = copy_src.gridDimX;
+    gridDimY = copy_src.gridDimY;
+    gridDimZ = copy_src.gridDimZ;
+    blockDimX = copy_src.blockDimX;
+    blockDimY = copy_src.blockDimY;
+    blockDimZ = copy_src.blockDimZ;
+    sharedMemBytes = copy_src.sharedMemBytes;
+    paramCount = copy_src.paramCount;
+    pParams = copy_src.pParams;
+    extraCount = copy_src.extraCount;
+    pExtras = copy_src.pExtras;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCuLaunchInfoNVX::~safe_VkCuLaunchInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCuLaunchInfoNVX::initialize(const VkCuLaunchInfoNVX* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    function = in_struct->function;
+    gridDimX = in_struct->gridDimX;
+    gridDimY = in_struct->gridDimY;
+    gridDimZ = in_struct->gridDimZ;
+    blockDimX = in_struct->blockDimX;
+    blockDimY = in_struct->blockDimY;
+    blockDimZ = in_struct->blockDimZ;
+    sharedMemBytes = in_struct->sharedMemBytes;
+    paramCount = in_struct->paramCount;
+    pParams = in_struct->pParams;
+    extraCount = in_struct->extraCount;
+    pExtras = in_struct->pExtras;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCuLaunchInfoNVX::initialize(const safe_VkCuLaunchInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    function = copy_src->function;
+    gridDimX = copy_src->gridDimX;
+    gridDimY = copy_src->gridDimY;
+    gridDimZ = copy_src->gridDimZ;
+    blockDimX = copy_src->blockDimX;
+    blockDimY = copy_src->blockDimY;
+    blockDimZ = copy_src->blockDimZ;
+    sharedMemBytes = copy_src->sharedMemBytes;
+    paramCount = copy_src->paramCount;
+    pParams = copy_src->pParams;
+    extraCount = copy_src->extraCount;
+    pExtras = copy_src->pExtras;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const VkImageViewHandleInfoNVX* in_struct) :
+    sType(in_struct->sType),
+    imageView(in_struct->imageView),
+    descriptorType(in_struct->descriptorType),
+    sampler(in_struct->sampler)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX),
+    pNext(nullptr),
+    imageView(),
+    descriptorType(),
+    sampler()
+{}
+
+safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const safe_VkImageViewHandleInfoNVX& copy_src)
+{
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    descriptorType = copy_src.descriptorType;
+    sampler = copy_src.sampler;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewHandleInfoNVX& safe_VkImageViewHandleInfoNVX::operator=(const safe_VkImageViewHandleInfoNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageView = copy_src.imageView;
+    descriptorType = copy_src.descriptorType;
+    sampler = copy_src.sampler;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewHandleInfoNVX::~safe_VkImageViewHandleInfoNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewHandleInfoNVX::initialize(const VkImageViewHandleInfoNVX* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    imageView = in_struct->imageView;
+    descriptorType = in_struct->descriptorType;
+    sampler = in_struct->sampler;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewHandleInfoNVX::initialize(const safe_VkImageViewHandleInfoNVX* copy_src)
+{
+    sType = copy_src->sType;
+    imageView = copy_src->imageView;
+    descriptorType = copy_src->descriptorType;
+    sampler = copy_src->sampler;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX(const VkImageViewAddressPropertiesNVX* in_struct) :
+    sType(in_struct->sType),
+    deviceAddress(in_struct->deviceAddress),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX),
+    pNext(nullptr),
+    deviceAddress(),
+    size()
+{}
+
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX(const safe_VkImageViewAddressPropertiesNVX& copy_src)
+{
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewAddressPropertiesNVX& safe_VkImageViewAddressPropertiesNVX::operator=(const safe_VkImageViewAddressPropertiesNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewAddressPropertiesNVX::~safe_VkImageViewAddressPropertiesNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewAddressPropertiesNVX::initialize(const VkImageViewAddressPropertiesNVX* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    deviceAddress = in_struct->deviceAddress;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewAddressPropertiesNVX::initialize(const safe_VkImageViewAddressPropertiesNVX* copy_src)
+{
+    sType = copy_src->sType;
+    deviceAddress = copy_src->deviceAddress;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD(const VkTextureLODGatherFormatPropertiesAMD* in_struct) :
+    sType(in_struct->sType),
+    supportsTextureGatherLODBiasAMD(in_struct->supportsTextureGatherLODBiasAMD)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD() :
+    sType(VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD),
+    pNext(nullptr),
+    supportsTextureGatherLODBiasAMD()
+{}
+
+safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD(const safe_VkTextureLODGatherFormatPropertiesAMD& copy_src)
+{
+    sType = copy_src.sType;
+    supportsTextureGatherLODBiasAMD = copy_src.supportsTextureGatherLODBiasAMD;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkTextureLODGatherFormatPropertiesAMD& safe_VkTextureLODGatherFormatPropertiesAMD::operator=(const safe_VkTextureLODGatherFormatPropertiesAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    supportsTextureGatherLODBiasAMD = copy_src.supportsTextureGatherLODBiasAMD;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkTextureLODGatherFormatPropertiesAMD::~safe_VkTextureLODGatherFormatPropertiesAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkTextureLODGatherFormatPropertiesAMD::initialize(const VkTextureLODGatherFormatPropertiesAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    supportsTextureGatherLODBiasAMD = in_struct->supportsTextureGatherLODBiasAMD;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkTextureLODGatherFormatPropertiesAMD::initialize(const safe_VkTextureLODGatherFormatPropertiesAMD* copy_src)
+{
+    sType = copy_src->sType;
+    supportsTextureGatherLODBiasAMD = copy_src->supportsTextureGatherLODBiasAMD;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_GGP
+
+
+safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP(const VkStreamDescriptorSurfaceCreateInfoGGP* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    streamDescriptor(in_struct->streamDescriptor)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP() :
+    sType(VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP),
+    pNext(nullptr),
+    flags(),
+    streamDescriptor()
+{}
+
+safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP(const safe_VkStreamDescriptorSurfaceCreateInfoGGP& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    streamDescriptor = copy_src.streamDescriptor;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkStreamDescriptorSurfaceCreateInfoGGP& safe_VkStreamDescriptorSurfaceCreateInfoGGP::operator=(const safe_VkStreamDescriptorSurfaceCreateInfoGGP& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    streamDescriptor = copy_src.streamDescriptor;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkStreamDescriptorSurfaceCreateInfoGGP::~safe_VkStreamDescriptorSurfaceCreateInfoGGP()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkStreamDescriptorSurfaceCreateInfoGGP::initialize(const VkStreamDescriptorSurfaceCreateInfoGGP* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    streamDescriptor = in_struct->streamDescriptor;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkStreamDescriptorSurfaceCreateInfoGGP::initialize(const safe_VkStreamDescriptorSurfaceCreateInfoGGP* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    streamDescriptor = copy_src->streamDescriptor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_GGP
+
+
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const VkPhysicalDeviceCornerSampledImageFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    cornerSampledImage(in_struct->cornerSampledImage)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV),
+    pNext(nullptr),
+    cornerSampledImage()
+{}
+
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    cornerSampledImage = copy_src.cornerSampledImage;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::operator=(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    cornerSampledImage = copy_src.cornerSampledImage;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::~safe_VkPhysicalDeviceCornerSampledImageFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::initialize(const VkPhysicalDeviceCornerSampledImageFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    cornerSampledImage = in_struct->cornerSampledImage;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::initialize(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    cornerSampledImage = copy_src->cornerSampledImage;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV(const VkExternalMemoryImageCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    handleTypes(in_struct->handleTypes)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV),
+    pNext(nullptr),
+    handleTypes()
+{}
+
+safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV(const safe_VkExternalMemoryImageCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    handleTypes = copy_src.handleTypes;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkExternalMemoryImageCreateInfoNV& safe_VkExternalMemoryImageCreateInfoNV::operator=(const safe_VkExternalMemoryImageCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handleTypes = copy_src.handleTypes;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkExternalMemoryImageCreateInfoNV::~safe_VkExternalMemoryImageCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExternalMemoryImageCreateInfoNV::initialize(const VkExternalMemoryImageCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    handleTypes = in_struct->handleTypes;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkExternalMemoryImageCreateInfoNV::initialize(const safe_VkExternalMemoryImageCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    handleTypes = copy_src->handleTypes;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV(const VkExportMemoryAllocateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    handleTypes(in_struct->handleTypes)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV),
+    pNext(nullptr),
+    handleTypes()
+{}
+
+safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV(const safe_VkExportMemoryAllocateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    handleTypes = copy_src.handleTypes;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkExportMemoryAllocateInfoNV& safe_VkExportMemoryAllocateInfoNV::operator=(const safe_VkExportMemoryAllocateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handleTypes = copy_src.handleTypes;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkExportMemoryAllocateInfoNV::~safe_VkExportMemoryAllocateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExportMemoryAllocateInfoNV::initialize(const VkExportMemoryAllocateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    handleTypes = in_struct->handleTypes;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkExportMemoryAllocateInfoNV::initialize(const safe_VkExportMemoryAllocateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    handleTypes = copy_src->handleTypes;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
+
+safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const VkImportMemoryWin32HandleInfoNV* in_struct) :
+    sType(in_struct->sType),
+    handleType(in_struct->handleType),
+    handle(in_struct->handle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV),
+    pNext(nullptr),
+    handleType(),
+    handle()
+{}
+
+safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const safe_VkImportMemoryWin32HandleInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportMemoryWin32HandleInfoNV& safe_VkImportMemoryWin32HandleInfoNV::operator=(const safe_VkImportMemoryWin32HandleInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportMemoryWin32HandleInfoNV::~safe_VkImportMemoryWin32HandleInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportMemoryWin32HandleInfoNV::initialize(const VkImportMemoryWin32HandleInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    handleType = in_struct->handleType;
+    handle = in_struct->handle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportMemoryWin32HandleInfoNV::initialize(const safe_VkImportMemoryWin32HandleInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    handleType = copy_src->handleType;
+    handle = copy_src->handle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
+
+safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const VkExportMemoryWin32HandleInfoNV* in_struct) :
+    sType(in_struct->sType),
+    pAttributes(nullptr),
+    dwAccess(in_struct->dwAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pAttributes) {
+        pAttributes = new SECURITY_ATTRIBUTES(*in_struct->pAttributes);
+    }
+}
+
+safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV() :
+    sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV),
+    pNext(nullptr),
+    pAttributes(nullptr),
+    dwAccess()
+{}
+
+safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const safe_VkExportMemoryWin32HandleInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    pAttributes = nullptr;
+    dwAccess = copy_src.dwAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pAttributes) {
+        pAttributes = new SECURITY_ATTRIBUTES(*copy_src.pAttributes);
+    }
+}
+
+safe_VkExportMemoryWin32HandleInfoNV& safe_VkExportMemoryWin32HandleInfoNV::operator=(const safe_VkExportMemoryWin32HandleInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pAttributes = nullptr;
+    dwAccess = copy_src.dwAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pAttributes) {
+        pAttributes = new SECURITY_ATTRIBUTES(*copy_src.pAttributes);
+    }
+
+    return *this;
+}
+
+safe_VkExportMemoryWin32HandleInfoNV::~safe_VkExportMemoryWin32HandleInfoNV()
+{
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExportMemoryWin32HandleInfoNV::initialize(const VkExportMemoryWin32HandleInfoNV* in_struct)
+{
+    if (pAttributes)
+        delete pAttributes;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pAttributes = nullptr;
+    dwAccess = in_struct->dwAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pAttributes) {
+        pAttributes = new SECURITY_ATTRIBUTES(*in_struct->pAttributes);
+    }
+}
+
+void safe_VkExportMemoryWin32HandleInfoNV::initialize(const safe_VkExportMemoryWin32HandleInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    pAttributes = nullptr;
+    dwAccess = copy_src->dwAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pAttributes) {
+        pAttributes = new SECURITY_ATTRIBUTES(*copy_src->pAttributes);
+    }
+}
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
+
+safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV(const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct) :
+    sType(in_struct->sType),
+    acquireCount(in_struct->acquireCount),
+    pAcquireSyncs(nullptr),
+    pAcquireKeys(nullptr),
+    pAcquireTimeoutMilliseconds(nullptr),
+    releaseCount(in_struct->releaseCount),
+    pReleaseSyncs(nullptr),
+    pReleaseKeys(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (acquireCount && in_struct->pAcquireSyncs) {
+        pAcquireSyncs = new VkDeviceMemory[acquireCount];
+        for (uint32_t i = 0; i < acquireCount; ++i) {
+            pAcquireSyncs[i] = in_struct->pAcquireSyncs[i];
+        }
+    }
+    if (in_struct->pAcquireKeys) {
+        pAcquireKeys = new uint64_t[in_struct->acquireCount];
+        memcpy ((void *)pAcquireKeys, (void *)in_struct->pAcquireKeys, sizeof(uint64_t)*in_struct->acquireCount);
+    }
+    if (in_struct->pAcquireTimeoutMilliseconds) {
+        pAcquireTimeoutMilliseconds = new uint32_t[in_struct->acquireCount];
+        memcpy ((void *)pAcquireTimeoutMilliseconds, (void *)in_struct->pAcquireTimeoutMilliseconds, sizeof(uint32_t)*in_struct->acquireCount);
+    }
+    if (releaseCount && in_struct->pReleaseSyncs) {
+        pReleaseSyncs = new VkDeviceMemory[releaseCount];
+        for (uint32_t i = 0; i < releaseCount; ++i) {
+            pReleaseSyncs[i] = in_struct->pReleaseSyncs[i];
+        }
+    }
+    if (in_struct->pReleaseKeys) {
+        pReleaseKeys = new uint64_t[in_struct->releaseCount];
+        memcpy ((void *)pReleaseKeys, (void *)in_struct->pReleaseKeys, sizeof(uint64_t)*in_struct->releaseCount);
+    }
+}
+
+safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV() :
+    sType(VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV),
+    pNext(nullptr),
+    acquireCount(),
+    pAcquireSyncs(nullptr),
+    pAcquireKeys(nullptr),
+    pAcquireTimeoutMilliseconds(nullptr),
+    releaseCount(),
+    pReleaseSyncs(nullptr),
+    pReleaseKeys(nullptr)
+{}
+
+safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV(const safe_VkWin32KeyedMutexAcquireReleaseInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    acquireCount = copy_src.acquireCount;
+    pAcquireSyncs = nullptr;
+    pAcquireKeys = nullptr;
+    pAcquireTimeoutMilliseconds = nullptr;
+    releaseCount = copy_src.releaseCount;
+    pReleaseSyncs = nullptr;
+    pReleaseKeys = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (acquireCount && copy_src.pAcquireSyncs) {
+        pAcquireSyncs = new VkDeviceMemory[acquireCount];
+        for (uint32_t i = 0; i < acquireCount; ++i) {
+            pAcquireSyncs[i] = copy_src.pAcquireSyncs[i];
+        }
+    }
+    if (copy_src.pAcquireKeys) {
+        pAcquireKeys = new uint64_t[copy_src.acquireCount];
+        memcpy ((void *)pAcquireKeys, (void *)copy_src.pAcquireKeys, sizeof(uint64_t)*copy_src.acquireCount);
+    }
+    if (copy_src.pAcquireTimeoutMilliseconds) {
+        pAcquireTimeoutMilliseconds = new uint32_t[copy_src.acquireCount];
+        memcpy ((void *)pAcquireTimeoutMilliseconds, (void *)copy_src.pAcquireTimeoutMilliseconds, sizeof(uint32_t)*copy_src.acquireCount);
+    }
+    if (releaseCount && copy_src.pReleaseSyncs) {
+        pReleaseSyncs = new VkDeviceMemory[releaseCount];
+        for (uint32_t i = 0; i < releaseCount; ++i) {
+            pReleaseSyncs[i] = copy_src.pReleaseSyncs[i];
+        }
+    }
+    if (copy_src.pReleaseKeys) {
+        pReleaseKeys = new uint64_t[copy_src.releaseCount];
+        memcpy ((void *)pReleaseKeys, (void *)copy_src.pReleaseKeys, sizeof(uint64_t)*copy_src.releaseCount);
+    }
+}
+
+safe_VkWin32KeyedMutexAcquireReleaseInfoNV& safe_VkWin32KeyedMutexAcquireReleaseInfoNV::operator=(const safe_VkWin32KeyedMutexAcquireReleaseInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pAcquireSyncs)
+        delete[] pAcquireSyncs;
+    if (pAcquireKeys)
+        delete[] pAcquireKeys;
+    if (pAcquireTimeoutMilliseconds)
+        delete[] pAcquireTimeoutMilliseconds;
+    if (pReleaseSyncs)
+        delete[] pReleaseSyncs;
+    if (pReleaseKeys)
+        delete[] pReleaseKeys;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    acquireCount = copy_src.acquireCount;
+    pAcquireSyncs = nullptr;
+    pAcquireKeys = nullptr;
+    pAcquireTimeoutMilliseconds = nullptr;
+    releaseCount = copy_src.releaseCount;
+    pReleaseSyncs = nullptr;
+    pReleaseKeys = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (acquireCount && copy_src.pAcquireSyncs) {
+        pAcquireSyncs = new VkDeviceMemory[acquireCount];
+        for (uint32_t i = 0; i < acquireCount; ++i) {
+            pAcquireSyncs[i] = copy_src.pAcquireSyncs[i];
+        }
+    }
+    if (copy_src.pAcquireKeys) {
+        pAcquireKeys = new uint64_t[copy_src.acquireCount];
+        memcpy ((void *)pAcquireKeys, (void *)copy_src.pAcquireKeys, sizeof(uint64_t)*copy_src.acquireCount);
+    }
+    if (copy_src.pAcquireTimeoutMilliseconds) {
+        pAcquireTimeoutMilliseconds = new uint32_t[copy_src.acquireCount];
+        memcpy ((void *)pAcquireTimeoutMilliseconds, (void *)copy_src.pAcquireTimeoutMilliseconds, sizeof(uint32_t)*copy_src.acquireCount);
+    }
+    if (releaseCount && copy_src.pReleaseSyncs) {
+        pReleaseSyncs = new VkDeviceMemory[releaseCount];
+        for (uint32_t i = 0; i < releaseCount; ++i) {
+            pReleaseSyncs[i] = copy_src.pReleaseSyncs[i];
+        }
+    }
+    if (copy_src.pReleaseKeys) {
+        pReleaseKeys = new uint64_t[copy_src.releaseCount];
+        memcpy ((void *)pReleaseKeys, (void *)copy_src.pReleaseKeys, sizeof(uint64_t)*copy_src.releaseCount);
+    }
+
+    return *this;
+}
+
+safe_VkWin32KeyedMutexAcquireReleaseInfoNV::~safe_VkWin32KeyedMutexAcquireReleaseInfoNV()
+{
+    if (pAcquireSyncs)
+        delete[] pAcquireSyncs;
+    if (pAcquireKeys)
+        delete[] pAcquireKeys;
+    if (pAcquireTimeoutMilliseconds)
+        delete[] pAcquireTimeoutMilliseconds;
+    if (pReleaseSyncs)
+        delete[] pReleaseSyncs;
+    if (pReleaseKeys)
+        delete[] pReleaseKeys;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct)
+{
+    if (pAcquireSyncs)
+        delete[] pAcquireSyncs;
+    if (pAcquireKeys)
+        delete[] pAcquireKeys;
+    if (pAcquireTimeoutMilliseconds)
+        delete[] pAcquireTimeoutMilliseconds;
+    if (pReleaseSyncs)
+        delete[] pReleaseSyncs;
+    if (pReleaseKeys)
+        delete[] pReleaseKeys;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    acquireCount = in_struct->acquireCount;
+    pAcquireSyncs = nullptr;
+    pAcquireKeys = nullptr;
+    pAcquireTimeoutMilliseconds = nullptr;
+    releaseCount = in_struct->releaseCount;
+    pReleaseSyncs = nullptr;
+    pReleaseKeys = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (acquireCount && in_struct->pAcquireSyncs) {
+        pAcquireSyncs = new VkDeviceMemory[acquireCount];
+        for (uint32_t i = 0; i < acquireCount; ++i) {
+            pAcquireSyncs[i] = in_struct->pAcquireSyncs[i];
+        }
+    }
+    if (in_struct->pAcquireKeys) {
+        pAcquireKeys = new uint64_t[in_struct->acquireCount];
+        memcpy ((void *)pAcquireKeys, (void *)in_struct->pAcquireKeys, sizeof(uint64_t)*in_struct->acquireCount);
+    }
+    if (in_struct->pAcquireTimeoutMilliseconds) {
+        pAcquireTimeoutMilliseconds = new uint32_t[in_struct->acquireCount];
+        memcpy ((void *)pAcquireTimeoutMilliseconds, (void *)in_struct->pAcquireTimeoutMilliseconds, sizeof(uint32_t)*in_struct->acquireCount);
+    }
+    if (releaseCount && in_struct->pReleaseSyncs) {
+        pReleaseSyncs = new VkDeviceMemory[releaseCount];
+        for (uint32_t i = 0; i < releaseCount; ++i) {
+            pReleaseSyncs[i] = in_struct->pReleaseSyncs[i];
+        }
+    }
+    if (in_struct->pReleaseKeys) {
+        pReleaseKeys = new uint64_t[in_struct->releaseCount];
+        memcpy ((void *)pReleaseKeys, (void *)in_struct->pReleaseKeys, sizeof(uint64_t)*in_struct->releaseCount);
+    }
+}
+
+void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const safe_VkWin32KeyedMutexAcquireReleaseInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    acquireCount = copy_src->acquireCount;
+    pAcquireSyncs = nullptr;
+    pAcquireKeys = nullptr;
+    pAcquireTimeoutMilliseconds = nullptr;
+    releaseCount = copy_src->releaseCount;
+    pReleaseSyncs = nullptr;
+    pReleaseKeys = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (acquireCount && copy_src->pAcquireSyncs) {
+        pAcquireSyncs = new VkDeviceMemory[acquireCount];
+        for (uint32_t i = 0; i < acquireCount; ++i) {
+            pAcquireSyncs[i] = copy_src->pAcquireSyncs[i];
+        }
+    }
+    if (copy_src->pAcquireKeys) {
+        pAcquireKeys = new uint64_t[copy_src->acquireCount];
+        memcpy ((void *)pAcquireKeys, (void *)copy_src->pAcquireKeys, sizeof(uint64_t)*copy_src->acquireCount);
+    }
+    if (copy_src->pAcquireTimeoutMilliseconds) {
+        pAcquireTimeoutMilliseconds = new uint32_t[copy_src->acquireCount];
+        memcpy ((void *)pAcquireTimeoutMilliseconds, (void *)copy_src->pAcquireTimeoutMilliseconds, sizeof(uint32_t)*copy_src->acquireCount);
+    }
+    if (releaseCount && copy_src->pReleaseSyncs) {
+        pReleaseSyncs = new VkDeviceMemory[releaseCount];
+        for (uint32_t i = 0; i < releaseCount; ++i) {
+            pReleaseSyncs[i] = copy_src->pReleaseSyncs[i];
+        }
+    }
+    if (copy_src->pReleaseKeys) {
+        pReleaseKeys = new uint64_t[copy_src->releaseCount];
+        memcpy ((void *)pReleaseKeys, (void *)copy_src->pReleaseKeys, sizeof(uint64_t)*copy_src->releaseCount);
+    }
+}
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_VI_NN
+
+
+safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCreateInfoNN* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    window(in_struct->window)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN() :
+    sType(VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN),
+    pNext(nullptr),
+    flags(),
+    window(nullptr)
+{}
+
+safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const safe_VkViSurfaceCreateInfoNN& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    window = copy_src.window;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkViSurfaceCreateInfoNN& safe_VkViSurfaceCreateInfoNN::operator=(const safe_VkViSurfaceCreateInfoNN& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    window = copy_src.window;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkViSurfaceCreateInfoNN::~safe_VkViSurfaceCreateInfoNN()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkViSurfaceCreateInfoNN::initialize(const VkViSurfaceCreateInfoNN* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    window = in_struct->window;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkViSurfaceCreateInfoNN::initialize(const safe_VkViSurfaceCreateInfoNN* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    window = copy_src->window;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_VI_NN
+
+
+safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV(const VkPipelineViewportWScalingStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    viewportWScalingEnable(in_struct->viewportWScalingEnable),
+    viewportCount(in_struct->viewportCount),
+    pViewportWScalings(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportWScalings) {
+        pViewportWScalings = new VkViewportWScalingNV[in_struct->viewportCount];
+        memcpy ((void *)pViewportWScalings, (void *)in_struct->pViewportWScalings, sizeof(VkViewportWScalingNV)*in_struct->viewportCount);
+    }
+}
+
+safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    viewportWScalingEnable(),
+    viewportCount(),
+    pViewportWScalings(nullptr)
+{}
+
+safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV(const safe_VkPipelineViewportWScalingStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    viewportWScalingEnable = copy_src.viewportWScalingEnable;
+    viewportCount = copy_src.viewportCount;
+    pViewportWScalings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportWScalings) {
+        pViewportWScalings = new VkViewportWScalingNV[copy_src.viewportCount];
+        memcpy ((void *)pViewportWScalings, (void *)copy_src.pViewportWScalings, sizeof(VkViewportWScalingNV)*copy_src.viewportCount);
+    }
+}
+
+safe_VkPipelineViewportWScalingStateCreateInfoNV& safe_VkPipelineViewportWScalingStateCreateInfoNV::operator=(const safe_VkPipelineViewportWScalingStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pViewportWScalings)
+        delete[] pViewportWScalings;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    viewportWScalingEnable = copy_src.viewportWScalingEnable;
+    viewportCount = copy_src.viewportCount;
+    pViewportWScalings = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportWScalings) {
+        pViewportWScalings = new VkViewportWScalingNV[copy_src.viewportCount];
+        memcpy ((void *)pViewportWScalings, (void *)copy_src.pViewportWScalings, sizeof(VkViewportWScalingNV)*copy_src.viewportCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineViewportWScalingStateCreateInfoNV::~safe_VkPipelineViewportWScalingStateCreateInfoNV()
+{
+    if (pViewportWScalings)
+        delete[] pViewportWScalings;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportWScalingStateCreateInfoNV::initialize(const VkPipelineViewportWScalingStateCreateInfoNV* in_struct)
+{
+    if (pViewportWScalings)
+        delete[] pViewportWScalings;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    viewportWScalingEnable = in_struct->viewportWScalingEnable;
+    viewportCount = in_struct->viewportCount;
+    pViewportWScalings = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportWScalings) {
+        pViewportWScalings = new VkViewportWScalingNV[in_struct->viewportCount];
+        memcpy ((void *)pViewportWScalings, (void *)in_struct->pViewportWScalings, sizeof(VkViewportWScalingNV)*in_struct->viewportCount);
+    }
+}
+
+void safe_VkPipelineViewportWScalingStateCreateInfoNV::initialize(const safe_VkPipelineViewportWScalingStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    viewportWScalingEnable = copy_src->viewportWScalingEnable;
+    viewportCount = copy_src->viewportCount;
+    pViewportWScalings = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pViewportWScalings) {
+        pViewportWScalings = new VkViewportWScalingNV[copy_src->viewportCount];
+        memcpy ((void *)pViewportWScalings, (void *)copy_src->pViewportWScalings, sizeof(VkViewportWScalingNV)*copy_src->viewportCount);
+    }
+}
+
+safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const VkPresentTimesInfoGOOGLE* in_struct) :
+    sType(in_struct->sType),
+    swapchainCount(in_struct->swapchainCount),
+    pTimes(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pTimes) {
+        pTimes = new VkPresentTimeGOOGLE[in_struct->swapchainCount];
+        memcpy ((void *)pTimes, (void *)in_struct->pTimes, sizeof(VkPresentTimeGOOGLE)*in_struct->swapchainCount);
+    }
+}
+
+safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE),
+    pNext(nullptr),
+    swapchainCount(),
+    pTimes(nullptr)
+{}
+
+safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const safe_VkPresentTimesInfoGOOGLE& copy_src)
+{
+    sType = copy_src.sType;
+    swapchainCount = copy_src.swapchainCount;
+    pTimes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pTimes) {
+        pTimes = new VkPresentTimeGOOGLE[copy_src.swapchainCount];
+        memcpy ((void *)pTimes, (void *)copy_src.pTimes, sizeof(VkPresentTimeGOOGLE)*copy_src.swapchainCount);
+    }
+}
+
+safe_VkPresentTimesInfoGOOGLE& safe_VkPresentTimesInfoGOOGLE::operator=(const safe_VkPresentTimesInfoGOOGLE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pTimes)
+        delete[] pTimes;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    swapchainCount = copy_src.swapchainCount;
+    pTimes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pTimes) {
+        pTimes = new VkPresentTimeGOOGLE[copy_src.swapchainCount];
+        memcpy ((void *)pTimes, (void *)copy_src.pTimes, sizeof(VkPresentTimeGOOGLE)*copy_src.swapchainCount);
+    }
+
+    return *this;
+}
+
+safe_VkPresentTimesInfoGOOGLE::~safe_VkPresentTimesInfoGOOGLE()
+{
+    if (pTimes)
+        delete[] pTimes;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPresentTimesInfoGOOGLE::initialize(const VkPresentTimesInfoGOOGLE* in_struct)
+{
+    if (pTimes)
+        delete[] pTimes;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    swapchainCount = in_struct->swapchainCount;
+    pTimes = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pTimes) {
+        pTimes = new VkPresentTimeGOOGLE[in_struct->swapchainCount];
+        memcpy ((void *)pTimes, (void *)in_struct->pTimes, sizeof(VkPresentTimeGOOGLE)*in_struct->swapchainCount);
+    }
+}
+
+void safe_VkPresentTimesInfoGOOGLE::initialize(const safe_VkPresentTimesInfoGOOGLE* copy_src)
+{
+    sType = copy_src->sType;
+    swapchainCount = copy_src->swapchainCount;
+    pTimes = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pTimes) {
+        pTimes = new VkPresentTimeGOOGLE[copy_src->swapchainCount];
+        memcpy ((void *)pTimes, (void *)copy_src->pTimes, sizeof(VkPresentTimeGOOGLE)*copy_src->swapchainCount);
+    }
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX(const VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* in_struct) :
+    sType(in_struct->sType),
+    perViewPositionAllComponents(in_struct->perViewPositionAllComponents)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX),
+    pNext(nullptr),
+    perViewPositionAllComponents()
+{}
+
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX(const safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& copy_src)
+{
+    sType = copy_src.sType;
+    perViewPositionAllComponents = copy_src.perViewPositionAllComponents;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::operator=(const safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perViewPositionAllComponents = copy_src.perViewPositionAllComponents;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::~safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::initialize(const VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    perViewPositionAllComponents = in_struct->perViewPositionAllComponents;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::initialize(const safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX* copy_src)
+{
+    sType = copy_src->sType;
+    perViewPositionAllComponents = copy_src->perViewPositionAllComponents;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleStateCreateInfoNV(const VkPipelineViewportSwizzleStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    viewportCount(in_struct->viewportCount),
+    pViewportSwizzles(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportSwizzles) {
+        pViewportSwizzles = new VkViewportSwizzleNV[in_struct->viewportCount];
+        memcpy ((void *)pViewportSwizzles, (void *)in_struct->pViewportSwizzles, sizeof(VkViewportSwizzleNV)*in_struct->viewportCount);
+    }
+}
+
+safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    viewportCount(),
+    pViewportSwizzles(nullptr)
+{}
+
+safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleStateCreateInfoNV(const safe_VkPipelineViewportSwizzleStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    viewportCount = copy_src.viewportCount;
+    pViewportSwizzles = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportSwizzles) {
+        pViewportSwizzles = new VkViewportSwizzleNV[copy_src.viewportCount];
+        memcpy ((void *)pViewportSwizzles, (void *)copy_src.pViewportSwizzles, sizeof(VkViewportSwizzleNV)*copy_src.viewportCount);
+    }
+}
+
+safe_VkPipelineViewportSwizzleStateCreateInfoNV& safe_VkPipelineViewportSwizzleStateCreateInfoNV::operator=(const safe_VkPipelineViewportSwizzleStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pViewportSwizzles)
+        delete[] pViewportSwizzles;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    viewportCount = copy_src.viewportCount;
+    pViewportSwizzles = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportSwizzles) {
+        pViewportSwizzles = new VkViewportSwizzleNV[copy_src.viewportCount];
+        memcpy ((void *)pViewportSwizzles, (void *)copy_src.pViewportSwizzles, sizeof(VkViewportSwizzleNV)*copy_src.viewportCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineViewportSwizzleStateCreateInfoNV::~safe_VkPipelineViewportSwizzleStateCreateInfoNV()
+{
+    if (pViewportSwizzles)
+        delete[] pViewportSwizzles;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const VkPipelineViewportSwizzleStateCreateInfoNV* in_struct)
+{
+    if (pViewportSwizzles)
+        delete[] pViewportSwizzles;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    viewportCount = in_struct->viewportCount;
+    pViewportSwizzles = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportSwizzles) {
+        pViewportSwizzles = new VkViewportSwizzleNV[in_struct->viewportCount];
+        memcpy ((void *)pViewportSwizzles, (void *)in_struct->pViewportSwizzles, sizeof(VkViewportSwizzleNV)*in_struct->viewportCount);
+    }
+}
+
+void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const safe_VkPipelineViewportSwizzleStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    viewportCount = copy_src->viewportCount;
+    pViewportSwizzles = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pViewportSwizzles) {
+        pViewportSwizzles = new VkViewportSwizzleNV[copy_src->viewportCount];
+        memcpy ((void *)pViewportSwizzles, (void *)copy_src->pViewportSwizzles, sizeof(VkViewportSwizzleNV)*copy_src->viewportCount);
+    }
+}
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID(const VkAndroidHardwareBufferUsageANDROID* in_struct) :
+    sType(in_struct->sType),
+    androidHardwareBufferUsage(in_struct->androidHardwareBufferUsage)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID),
+    pNext(nullptr),
+    androidHardwareBufferUsage()
+{}
+
+safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID(const safe_VkAndroidHardwareBufferUsageANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    androidHardwareBufferUsage = copy_src.androidHardwareBufferUsage;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferUsageANDROID& safe_VkAndroidHardwareBufferUsageANDROID::operator=(const safe_VkAndroidHardwareBufferUsageANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    androidHardwareBufferUsage = copy_src.androidHardwareBufferUsage;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferUsageANDROID::~safe_VkAndroidHardwareBufferUsageANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferUsageANDROID::initialize(const VkAndroidHardwareBufferUsageANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    androidHardwareBufferUsage = in_struct->androidHardwareBufferUsage;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAndroidHardwareBufferUsageANDROID::initialize(const safe_VkAndroidHardwareBufferUsageANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    androidHardwareBufferUsage = copy_src->androidHardwareBufferUsage;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID(const VkAndroidHardwareBufferPropertiesANDROID* in_struct) :
+    sType(in_struct->sType),
+    allocationSize(in_struct->allocationSize),
+    memoryTypeBits(in_struct->memoryTypeBits)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID),
+    pNext(nullptr),
+    allocationSize(),
+    memoryTypeBits()
+{}
+
+safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID(const safe_VkAndroidHardwareBufferPropertiesANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    allocationSize = copy_src.allocationSize;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferPropertiesANDROID& safe_VkAndroidHardwareBufferPropertiesANDROID::operator=(const safe_VkAndroidHardwareBufferPropertiesANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    allocationSize = copy_src.allocationSize;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferPropertiesANDROID::~safe_VkAndroidHardwareBufferPropertiesANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferPropertiesANDROID::initialize(const VkAndroidHardwareBufferPropertiesANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    allocationSize = in_struct->allocationSize;
+    memoryTypeBits = in_struct->memoryTypeBits;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAndroidHardwareBufferPropertiesANDROID::initialize(const safe_VkAndroidHardwareBufferPropertiesANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    allocationSize = copy_src->allocationSize;
+    memoryTypeBits = copy_src->memoryTypeBits;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct) :
+    sType(in_struct->sType),
+    format(in_struct->format),
+    externalFormat(in_struct->externalFormat),
+    formatFeatures(in_struct->formatFeatures),
+    samplerYcbcrConversionComponents(in_struct->samplerYcbcrConversionComponents),
+    suggestedYcbcrModel(in_struct->suggestedYcbcrModel),
+    suggestedYcbcrRange(in_struct->suggestedYcbcrRange),
+    suggestedXChromaOffset(in_struct->suggestedXChromaOffset),
+    suggestedYChromaOffset(in_struct->suggestedYChromaOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID),
+    pNext(nullptr),
+    format(),
+    externalFormat(),
+    formatFeatures(),
+    samplerYcbcrConversionComponents(),
+    suggestedYcbcrModel(),
+    suggestedYcbcrRange(),
+    suggestedXChromaOffset(),
+    suggestedYChromaOffset()
+{}
+
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const safe_VkAndroidHardwareBufferFormatPropertiesANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID& safe_VkAndroidHardwareBufferFormatPropertiesANDROID::operator=(const safe_VkAndroidHardwareBufferFormatPropertiesANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID::~safe_VkAndroidHardwareBufferFormatPropertiesANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatPropertiesANDROID::initialize(const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    format = in_struct->format;
+    externalFormat = in_struct->externalFormat;
+    formatFeatures = in_struct->formatFeatures;
+    samplerYcbcrConversionComponents = in_struct->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = in_struct->suggestedYcbcrModel;
+    suggestedYcbcrRange = in_struct->suggestedYcbcrRange;
+    suggestedXChromaOffset = in_struct->suggestedXChromaOffset;
+    suggestedYChromaOffset = in_struct->suggestedYChromaOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatPropertiesANDROID::initialize(const safe_VkAndroidHardwareBufferFormatPropertiesANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    format = copy_src->format;
+    externalFormat = copy_src->externalFormat;
+    formatFeatures = copy_src->formatFeatures;
+    samplerYcbcrConversionComponents = copy_src->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src->suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src->suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src->suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID(const VkImportAndroidHardwareBufferInfoANDROID* in_struct) :
+    sType(in_struct->sType),
+    buffer(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    buffer = in_struct->buffer;
+}
+
+safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID),
+    pNext(nullptr),
+    buffer(nullptr)
+{}
+
+safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID(const safe_VkImportAndroidHardwareBufferInfoANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    pNext = SafePnextCopy(copy_src.pNext);
+    buffer = copy_src.buffer;
+}
+
+safe_VkImportAndroidHardwareBufferInfoANDROID& safe_VkImportAndroidHardwareBufferInfoANDROID::operator=(const safe_VkImportAndroidHardwareBufferInfoANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pNext = SafePnextCopy(copy_src.pNext);
+    buffer = copy_src.buffer;
+
+    return *this;
+}
+
+safe_VkImportAndroidHardwareBufferInfoANDROID::~safe_VkImportAndroidHardwareBufferInfoANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportAndroidHardwareBufferInfoANDROID::initialize(const VkImportAndroidHardwareBufferInfoANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pNext = SafePnextCopy(in_struct->pNext);
+    buffer = in_struct->buffer;
+}
+
+void safe_VkImportAndroidHardwareBufferInfoANDROID::initialize(const safe_VkImportAndroidHardwareBufferInfoANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    pNext = SafePnextCopy(copy_src->pNext);
+    buffer = copy_src->buffer;
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct) :
+    sType(in_struct->sType),
+    memory(in_struct->memory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID),
+    pNext(nullptr),
+    memory()
+{}
+
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::operator=(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::~safe_VkMemoryGetAndroidHardwareBufferInfoANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::initialize(const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memory = in_struct->memory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::initialize(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    memory = copy_src->memory;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const VkExternalFormatANDROID* in_struct) :
+    sType(in_struct->sType),
+    externalFormat(in_struct->externalFormat)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID),
+    pNext(nullptr),
+    externalFormat()
+{}
+
+safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const safe_VkExternalFormatANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    externalFormat = copy_src.externalFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkExternalFormatANDROID& safe_VkExternalFormatANDROID::operator=(const safe_VkExternalFormatANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    externalFormat = copy_src.externalFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkExternalFormatANDROID::~safe_VkExternalFormatANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExternalFormatANDROID::initialize(const VkExternalFormatANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    externalFormat = in_struct->externalFormat;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkExternalFormatANDROID::initialize(const safe_VkExternalFormatANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    externalFormat = copy_src->externalFormat;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct) :
+    sType(in_struct->sType),
+    format(in_struct->format),
+    externalFormat(in_struct->externalFormat),
+    formatFeatures(in_struct->formatFeatures),
+    samplerYcbcrConversionComponents(in_struct->samplerYcbcrConversionComponents),
+    suggestedYcbcrModel(in_struct->suggestedYcbcrModel),
+    suggestedYcbcrRange(in_struct->suggestedYcbcrRange),
+    suggestedXChromaOffset(in_struct->suggestedXChromaOffset),
+    suggestedYChromaOffset(in_struct->suggestedYChromaOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID() :
+    sType(VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID),
+    pNext(nullptr),
+    format(),
+    externalFormat(),
+    formatFeatures(),
+    samplerYcbcrConversionComponents(),
+    suggestedYcbcrModel(),
+    suggestedYcbcrRange(),
+    suggestedXChromaOffset(),
+    suggestedYChromaOffset()
+{}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src)
+{
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID& safe_VkAndroidHardwareBufferFormatProperties2ANDROID::operator=(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAndroidHardwareBufferFormatProperties2ANDROID::~safe_VkAndroidHardwareBufferFormatProperties2ANDROID()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    format = in_struct->format;
+    externalFormat = in_struct->externalFormat;
+    formatFeatures = in_struct->formatFeatures;
+    samplerYcbcrConversionComponents = in_struct->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = in_struct->suggestedYcbcrModel;
+    suggestedYcbcrRange = in_struct->suggestedYcbcrRange;
+    suggestedXChromaOffset = in_struct->suggestedXChromaOffset;
+    suggestedYChromaOffset = in_struct->suggestedYChromaOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const safe_VkAndroidHardwareBufferFormatProperties2ANDROID* copy_src)
+{
+    sType = copy_src->sType;
+    format = copy_src->format;
+    externalFormat = copy_src->externalFormat;
+    formatFeatures = copy_src->formatFeatures;
+    samplerYcbcrConversionComponents = copy_src->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src->suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src->suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src->suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+
+safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    coverageToColorEnable(in_struct->coverageToColorEnable),
+    coverageToColorLocation(in_struct->coverageToColorLocation)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    coverageToColorEnable(),
+    coverageToColorLocation()
+{}
+
+safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV(const safe_VkPipelineCoverageToColorStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageToColorEnable = copy_src.coverageToColorEnable;
+    coverageToColorLocation = copy_src.coverageToColorLocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineCoverageToColorStateCreateInfoNV& safe_VkPipelineCoverageToColorStateCreateInfoNV::operator=(const safe_VkPipelineCoverageToColorStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageToColorEnable = copy_src.coverageToColorEnable;
+    coverageToColorLocation = copy_src.coverageToColorLocation;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineCoverageToColorStateCreateInfoNV::~safe_VkPipelineCoverageToColorStateCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineCoverageToColorStateCreateInfoNV::initialize(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    coverageToColorEnable = in_struct->coverageToColorEnable;
+    coverageToColorLocation = in_struct->coverageToColorLocation;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineCoverageToColorStateCreateInfoNV::initialize(const safe_VkPipelineCoverageToColorStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    coverageToColorEnable = copy_src->coverageToColorEnable;
+    coverageToColorLocation = copy_src->coverageToColorLocation;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModulationStateCreateInfoNV(const VkPipelineCoverageModulationStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    coverageModulationMode(in_struct->coverageModulationMode),
+    coverageModulationTableEnable(in_struct->coverageModulationTableEnable),
+    coverageModulationTableCount(in_struct->coverageModulationTableCount),
+    pCoverageModulationTable(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCoverageModulationTable) {
+        pCoverageModulationTable = new float[in_struct->coverageModulationTableCount];
+        memcpy ((void *)pCoverageModulationTable, (void *)in_struct->pCoverageModulationTable, sizeof(float)*in_struct->coverageModulationTableCount);
+    }
+}
+
+safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModulationStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    coverageModulationMode(),
+    coverageModulationTableEnable(),
+    coverageModulationTableCount(),
+    pCoverageModulationTable(nullptr)
+{}
+
+safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModulationStateCreateInfoNV(const safe_VkPipelineCoverageModulationStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageModulationMode = copy_src.coverageModulationMode;
+    coverageModulationTableEnable = copy_src.coverageModulationTableEnable;
+    coverageModulationTableCount = copy_src.coverageModulationTableCount;
+    pCoverageModulationTable = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCoverageModulationTable) {
+        pCoverageModulationTable = new float[copy_src.coverageModulationTableCount];
+        memcpy ((void *)pCoverageModulationTable, (void *)copy_src.pCoverageModulationTable, sizeof(float)*copy_src.coverageModulationTableCount);
+    }
+}
+
+safe_VkPipelineCoverageModulationStateCreateInfoNV& safe_VkPipelineCoverageModulationStateCreateInfoNV::operator=(const safe_VkPipelineCoverageModulationStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pCoverageModulationTable)
+        delete[] pCoverageModulationTable;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageModulationMode = copy_src.coverageModulationMode;
+    coverageModulationTableEnable = copy_src.coverageModulationTableEnable;
+    coverageModulationTableCount = copy_src.coverageModulationTableCount;
+    pCoverageModulationTable = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pCoverageModulationTable) {
+        pCoverageModulationTable = new float[copy_src.coverageModulationTableCount];
+        memcpy ((void *)pCoverageModulationTable, (void *)copy_src.pCoverageModulationTable, sizeof(float)*copy_src.coverageModulationTableCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineCoverageModulationStateCreateInfoNV::~safe_VkPipelineCoverageModulationStateCreateInfoNV()
+{
+    if (pCoverageModulationTable)
+        delete[] pCoverageModulationTable;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineCoverageModulationStateCreateInfoNV::initialize(const VkPipelineCoverageModulationStateCreateInfoNV* in_struct)
+{
+    if (pCoverageModulationTable)
+        delete[] pCoverageModulationTable;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    coverageModulationMode = in_struct->coverageModulationMode;
+    coverageModulationTableEnable = in_struct->coverageModulationTableEnable;
+    coverageModulationTableCount = in_struct->coverageModulationTableCount;
+    pCoverageModulationTable = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCoverageModulationTable) {
+        pCoverageModulationTable = new float[in_struct->coverageModulationTableCount];
+        memcpy ((void *)pCoverageModulationTable, (void *)in_struct->pCoverageModulationTable, sizeof(float)*in_struct->coverageModulationTableCount);
+    }
+}
+
+void safe_VkPipelineCoverageModulationStateCreateInfoNV::initialize(const safe_VkPipelineCoverageModulationStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    coverageModulationMode = copy_src->coverageModulationMode;
+    coverageModulationTableEnable = copy_src->coverageModulationTableEnable;
+    coverageModulationTableCount = copy_src->coverageModulationTableCount;
+    pCoverageModulationTable = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pCoverageModulationTable) {
+        pCoverageModulationTable = new float[copy_src->coverageModulationTableCount];
+        memcpy ((void *)pCoverageModulationTable, (void *)copy_src->pCoverageModulationTable, sizeof(float)*copy_src->coverageModulationTableCount);
+    }
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV(const VkPhysicalDeviceShaderSMBuiltinsPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    shaderSMCount(in_struct->shaderSMCount),
+    shaderWarpsPerSM(in_struct->shaderWarpsPerSM)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_PROPERTIES_NV),
+    pNext(nullptr),
+    shaderSMCount(),
+    shaderWarpsPerSM()
+{}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    shaderSMCount = copy_src.shaderSMCount;
+    shaderWarpsPerSM = copy_src.shaderWarpsPerSM;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::operator=(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderSMCount = copy_src.shaderSMCount;
+    shaderWarpsPerSM = copy_src.shaderWarpsPerSM;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::~safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::initialize(const VkPhysicalDeviceShaderSMBuiltinsPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderSMCount = in_struct->shaderSMCount;
+    shaderWarpsPerSM = in_struct->shaderWarpsPerSM;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::initialize(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    shaderSMCount = copy_src->shaderSMCount;
+    shaderWarpsPerSM = copy_src->shaderWarpsPerSM;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV(const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    shaderSMBuiltins(in_struct->shaderSMBuiltins)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SM_BUILTINS_FEATURES_NV),
+    pNext(nullptr),
+    shaderSMBuiltins()
+{}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    shaderSMBuiltins = copy_src.shaderSMBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::operator=(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderSMBuiltins = copy_src.shaderSMBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::~safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::initialize(const VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderSMBuiltins = in_struct->shaderSMBuiltins;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::initialize(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    shaderSMBuiltins = copy_src->shaderSMBuiltins;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkShadingRatePaletteNV::safe_VkShadingRatePaletteNV(const VkShadingRatePaletteNV* in_struct) :
+    shadingRatePaletteEntryCount(in_struct->shadingRatePaletteEntryCount),
+    pShadingRatePaletteEntries(nullptr)
+{
+    if (in_struct->pShadingRatePaletteEntries) {
+        pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[in_struct->shadingRatePaletteEntryCount];
+        memcpy ((void *)pShadingRatePaletteEntries, (void *)in_struct->pShadingRatePaletteEntries, sizeof(VkShadingRatePaletteEntryNV)*in_struct->shadingRatePaletteEntryCount);
+    }
+}
+
+safe_VkShadingRatePaletteNV::safe_VkShadingRatePaletteNV() :
+    shadingRatePaletteEntryCount(),
+    pShadingRatePaletteEntries(nullptr)
+{}
+
+safe_VkShadingRatePaletteNV::safe_VkShadingRatePaletteNV(const safe_VkShadingRatePaletteNV& copy_src)
+{
+    shadingRatePaletteEntryCount = copy_src.shadingRatePaletteEntryCount;
+    pShadingRatePaletteEntries = nullptr;
+    if (copy_src.pShadingRatePaletteEntries) {
+        pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src.shadingRatePaletteEntryCount];
+        memcpy ((void *)pShadingRatePaletteEntries, (void *)copy_src.pShadingRatePaletteEntries, sizeof(VkShadingRatePaletteEntryNV)*copy_src.shadingRatePaletteEntryCount);
+    }
+}
+
+safe_VkShadingRatePaletteNV& safe_VkShadingRatePaletteNV::operator=(const safe_VkShadingRatePaletteNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pShadingRatePaletteEntries)
+        delete[] pShadingRatePaletteEntries;
+
+    shadingRatePaletteEntryCount = copy_src.shadingRatePaletteEntryCount;
+    pShadingRatePaletteEntries = nullptr;
+    if (copy_src.pShadingRatePaletteEntries) {
+        pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src.shadingRatePaletteEntryCount];
+        memcpy ((void *)pShadingRatePaletteEntries, (void *)copy_src.pShadingRatePaletteEntries, sizeof(VkShadingRatePaletteEntryNV)*copy_src.shadingRatePaletteEntryCount);
+    }
+
+    return *this;
+}
+
+safe_VkShadingRatePaletteNV::~safe_VkShadingRatePaletteNV()
+{
+    if (pShadingRatePaletteEntries)
+        delete[] pShadingRatePaletteEntries;
+}
+
+void safe_VkShadingRatePaletteNV::initialize(const VkShadingRatePaletteNV* in_struct)
+{
+    if (pShadingRatePaletteEntries)
+        delete[] pShadingRatePaletteEntries;
+    shadingRatePaletteEntryCount = in_struct->shadingRatePaletteEntryCount;
+    pShadingRatePaletteEntries = nullptr;
+    if (in_struct->pShadingRatePaletteEntries) {
+        pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[in_struct->shadingRatePaletteEntryCount];
+        memcpy ((void *)pShadingRatePaletteEntries, (void *)in_struct->pShadingRatePaletteEntries, sizeof(VkShadingRatePaletteEntryNV)*in_struct->shadingRatePaletteEntryCount);
+    }
+}
+
+void safe_VkShadingRatePaletteNV::initialize(const safe_VkShadingRatePaletteNV* copy_src)
+{
+    shadingRatePaletteEntryCount = copy_src->shadingRatePaletteEntryCount;
+    pShadingRatePaletteEntries = nullptr;
+    if (copy_src->pShadingRatePaletteEntries) {
+        pShadingRatePaletteEntries = new VkShadingRatePaletteEntryNV[copy_src->shadingRatePaletteEntryCount];
+        memcpy ((void *)pShadingRatePaletteEntries, (void *)copy_src->pShadingRatePaletteEntries, sizeof(VkShadingRatePaletteEntryNV)*copy_src->shadingRatePaletteEntryCount);
+    }
+}
+
+safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewportShadingRateImageStateCreateInfoNV(const VkPipelineViewportShadingRateImageStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    shadingRateImageEnable(in_struct->shadingRateImageEnable),
+    viewportCount(in_struct->viewportCount),
+    pShadingRatePalettes(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (viewportCount && in_struct->pShadingRatePalettes) {
+        pShadingRatePalettes = new safe_VkShadingRatePaletteNV[viewportCount];
+        for (uint32_t i = 0; i < viewportCount; ++i) {
+            pShadingRatePalettes[i].initialize(&in_struct->pShadingRatePalettes[i]);
+        }
+    }
+}
+
+safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewportShadingRateImageStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    shadingRateImageEnable(),
+    viewportCount(),
+    pShadingRatePalettes(nullptr)
+{}
+
+safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewportShadingRateImageStateCreateInfoNV(const safe_VkPipelineViewportShadingRateImageStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    shadingRateImageEnable = copy_src.shadingRateImageEnable;
+    viewportCount = copy_src.viewportCount;
+    pShadingRatePalettes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (viewportCount && copy_src.pShadingRatePalettes) {
+        pShadingRatePalettes = new safe_VkShadingRatePaletteNV[viewportCount];
+        for (uint32_t i = 0; i < viewportCount; ++i) {
+            pShadingRatePalettes[i].initialize(&copy_src.pShadingRatePalettes[i]);
+        }
+    }
+}
+
+safe_VkPipelineViewportShadingRateImageStateCreateInfoNV& safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::operator=(const safe_VkPipelineViewportShadingRateImageStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pShadingRatePalettes)
+        delete[] pShadingRatePalettes;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shadingRateImageEnable = copy_src.shadingRateImageEnable;
+    viewportCount = copy_src.viewportCount;
+    pShadingRatePalettes = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (viewportCount && copy_src.pShadingRatePalettes) {
+        pShadingRatePalettes = new safe_VkShadingRatePaletteNV[viewportCount];
+        for (uint32_t i = 0; i < viewportCount; ++i) {
+            pShadingRatePalettes[i].initialize(&copy_src.pShadingRatePalettes[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::~safe_VkPipelineViewportShadingRateImageStateCreateInfoNV()
+{
+    if (pShadingRatePalettes)
+        delete[] pShadingRatePalettes;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::initialize(const VkPipelineViewportShadingRateImageStateCreateInfoNV* in_struct)
+{
+    if (pShadingRatePalettes)
+        delete[] pShadingRatePalettes;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shadingRateImageEnable = in_struct->shadingRateImageEnable;
+    viewportCount = in_struct->viewportCount;
+    pShadingRatePalettes = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (viewportCount && in_struct->pShadingRatePalettes) {
+        pShadingRatePalettes = new safe_VkShadingRatePaletteNV[viewportCount];
+        for (uint32_t i = 0; i < viewportCount; ++i) {
+            pShadingRatePalettes[i].initialize(&in_struct->pShadingRatePalettes[i]);
+        }
+    }
+}
+
+void safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::initialize(const safe_VkPipelineViewportShadingRateImageStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    shadingRateImageEnable = copy_src->shadingRateImageEnable;
+    viewportCount = copy_src->viewportCount;
+    pShadingRatePalettes = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (viewportCount && copy_src->pShadingRatePalettes) {
+        pShadingRatePalettes = new safe_VkShadingRatePaletteNV[viewportCount];
+        for (uint32_t i = 0; i < viewportCount; ++i) {
+            pShadingRatePalettes[i].initialize(&copy_src->pShadingRatePalettes[i]);
+        }
+    }
+}
+
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV(const VkPhysicalDeviceShadingRateImageFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    shadingRateImage(in_struct->shadingRateImage),
+    shadingRateCoarseSampleOrder(in_struct->shadingRateCoarseSampleOrder)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV),
+    pNext(nullptr),
+    shadingRateImage(),
+    shadingRateCoarseSampleOrder()
+{}
+
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    shadingRateImage = copy_src.shadingRateImage;
+    shadingRateCoarseSampleOrder = copy_src.shadingRateCoarseSampleOrder;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV& safe_VkPhysicalDeviceShadingRateImageFeaturesNV::operator=(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shadingRateImage = copy_src.shadingRateImage;
+    shadingRateCoarseSampleOrder = copy_src.shadingRateCoarseSampleOrder;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV::~safe_VkPhysicalDeviceShadingRateImageFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShadingRateImageFeaturesNV::initialize(const VkPhysicalDeviceShadingRateImageFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shadingRateImage = in_struct->shadingRateImage;
+    shadingRateCoarseSampleOrder = in_struct->shadingRateCoarseSampleOrder;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShadingRateImageFeaturesNV::initialize(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    shadingRateImage = copy_src->shadingRateImage;
+    shadingRateCoarseSampleOrder = copy_src->shadingRateCoarseSampleOrder;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV(const VkPhysicalDeviceShadingRateImagePropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    shadingRateTexelSize(in_struct->shadingRateTexelSize),
+    shadingRatePaletteSize(in_struct->shadingRatePaletteSize),
+    shadingRateMaxCoarseSamples(in_struct->shadingRateMaxCoarseSamples)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV),
+    pNext(nullptr),
+    shadingRateTexelSize(),
+    shadingRatePaletteSize(),
+    shadingRateMaxCoarseSamples()
+{}
+
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    shadingRateTexelSize = copy_src.shadingRateTexelSize;
+    shadingRatePaletteSize = copy_src.shadingRatePaletteSize;
+    shadingRateMaxCoarseSamples = copy_src.shadingRateMaxCoarseSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV& safe_VkPhysicalDeviceShadingRateImagePropertiesNV::operator=(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shadingRateTexelSize = copy_src.shadingRateTexelSize;
+    shadingRatePaletteSize = copy_src.shadingRatePaletteSize;
+    shadingRateMaxCoarseSamples = copy_src.shadingRateMaxCoarseSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV::~safe_VkPhysicalDeviceShadingRateImagePropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShadingRateImagePropertiesNV::initialize(const VkPhysicalDeviceShadingRateImagePropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shadingRateTexelSize = in_struct->shadingRateTexelSize;
+    shadingRatePaletteSize = in_struct->shadingRatePaletteSize;
+    shadingRateMaxCoarseSamples = in_struct->shadingRateMaxCoarseSamples;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShadingRateImagePropertiesNV::initialize(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    shadingRateTexelSize = copy_src->shadingRateTexelSize;
+    shadingRatePaletteSize = copy_src->shadingRatePaletteSize;
+    shadingRateMaxCoarseSamples = copy_src->shadingRateMaxCoarseSamples;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCoarseSampleOrderCustomNV::safe_VkCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV* in_struct) :
+    shadingRate(in_struct->shadingRate),
+    sampleCount(in_struct->sampleCount),
+    sampleLocationCount(in_struct->sampleLocationCount),
+    pSampleLocations(nullptr)
+{
+    if (in_struct->pSampleLocations) {
+        pSampleLocations = new VkCoarseSampleLocationNV[in_struct->sampleLocationCount];
+        memcpy ((void *)pSampleLocations, (void *)in_struct->pSampleLocations, sizeof(VkCoarseSampleLocationNV)*in_struct->sampleLocationCount);
+    }
+}
+
+safe_VkCoarseSampleOrderCustomNV::safe_VkCoarseSampleOrderCustomNV() :
+    shadingRate(),
+    sampleCount(),
+    sampleLocationCount(),
+    pSampleLocations(nullptr)
+{}
+
+safe_VkCoarseSampleOrderCustomNV::safe_VkCoarseSampleOrderCustomNV(const safe_VkCoarseSampleOrderCustomNV& copy_src)
+{
+    shadingRate = copy_src.shadingRate;
+    sampleCount = copy_src.sampleCount;
+    sampleLocationCount = copy_src.sampleLocationCount;
+    pSampleLocations = nullptr;
+    if (copy_src.pSampleLocations) {
+        pSampleLocations = new VkCoarseSampleLocationNV[copy_src.sampleLocationCount];
+        memcpy ((void *)pSampleLocations, (void *)copy_src.pSampleLocations, sizeof(VkCoarseSampleLocationNV)*copy_src.sampleLocationCount);
+    }
+}
+
+safe_VkCoarseSampleOrderCustomNV& safe_VkCoarseSampleOrderCustomNV::operator=(const safe_VkCoarseSampleOrderCustomNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pSampleLocations)
+        delete[] pSampleLocations;
+
+    shadingRate = copy_src.shadingRate;
+    sampleCount = copy_src.sampleCount;
+    sampleLocationCount = copy_src.sampleLocationCount;
+    pSampleLocations = nullptr;
+    if (copy_src.pSampleLocations) {
+        pSampleLocations = new VkCoarseSampleLocationNV[copy_src.sampleLocationCount];
+        memcpy ((void *)pSampleLocations, (void *)copy_src.pSampleLocations, sizeof(VkCoarseSampleLocationNV)*copy_src.sampleLocationCount);
+    }
+
+    return *this;
+}
+
+safe_VkCoarseSampleOrderCustomNV::~safe_VkCoarseSampleOrderCustomNV()
+{
+    if (pSampleLocations)
+        delete[] pSampleLocations;
+}
+
+void safe_VkCoarseSampleOrderCustomNV::initialize(const VkCoarseSampleOrderCustomNV* in_struct)
+{
+    if (pSampleLocations)
+        delete[] pSampleLocations;
+    shadingRate = in_struct->shadingRate;
+    sampleCount = in_struct->sampleCount;
+    sampleLocationCount = in_struct->sampleLocationCount;
+    pSampleLocations = nullptr;
+    if (in_struct->pSampleLocations) {
+        pSampleLocations = new VkCoarseSampleLocationNV[in_struct->sampleLocationCount];
+        memcpy ((void *)pSampleLocations, (void *)in_struct->pSampleLocations, sizeof(VkCoarseSampleLocationNV)*in_struct->sampleLocationCount);
+    }
+}
+
+void safe_VkCoarseSampleOrderCustomNV::initialize(const safe_VkCoarseSampleOrderCustomNV* copy_src)
+{
+    shadingRate = copy_src->shadingRate;
+    sampleCount = copy_src->sampleCount;
+    sampleLocationCount = copy_src->sampleLocationCount;
+    pSampleLocations = nullptr;
+    if (copy_src->pSampleLocations) {
+        pSampleLocations = new VkCoarseSampleLocationNV[copy_src->sampleLocationCount];
+        memcpy ((void *)pSampleLocations, (void *)copy_src->pSampleLocations, sizeof(VkCoarseSampleLocationNV)*copy_src->sampleLocationCount);
+    }
+}
+
+safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV(const VkPipelineViewportCoarseSampleOrderStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    sampleOrderType(in_struct->sampleOrderType),
+    customSampleOrderCount(in_struct->customSampleOrderCount),
+    pCustomSampleOrders(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (customSampleOrderCount && in_struct->pCustomSampleOrders) {
+        pCustomSampleOrders = new safe_VkCoarseSampleOrderCustomNV[customSampleOrderCount];
+        for (uint32_t i = 0; i < customSampleOrderCount; ++i) {
+            pCustomSampleOrders[i].initialize(&in_struct->pCustomSampleOrders[i]);
+        }
+    }
+}
+
+safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    sampleOrderType(),
+    customSampleOrderCount(),
+    pCustomSampleOrders(nullptr)
+{}
+
+safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV(const safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    sampleOrderType = copy_src.sampleOrderType;
+    customSampleOrderCount = copy_src.customSampleOrderCount;
+    pCustomSampleOrders = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (customSampleOrderCount && copy_src.pCustomSampleOrders) {
+        pCustomSampleOrders = new safe_VkCoarseSampleOrderCustomNV[customSampleOrderCount];
+        for (uint32_t i = 0; i < customSampleOrderCount; ++i) {
+            pCustomSampleOrders[i].initialize(&copy_src.pCustomSampleOrders[i]);
+        }
+    }
+}
+
+safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV& safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::operator=(const safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pCustomSampleOrders)
+        delete[] pCustomSampleOrders;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    sampleOrderType = copy_src.sampleOrderType;
+    customSampleOrderCount = copy_src.customSampleOrderCount;
+    pCustomSampleOrders = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (customSampleOrderCount && copy_src.pCustomSampleOrders) {
+        pCustomSampleOrders = new safe_VkCoarseSampleOrderCustomNV[customSampleOrderCount];
+        for (uint32_t i = 0; i < customSampleOrderCount; ++i) {
+            pCustomSampleOrders[i].initialize(&copy_src.pCustomSampleOrders[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::~safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV()
+{
+    if (pCustomSampleOrders)
+        delete[] pCustomSampleOrders;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::initialize(const VkPipelineViewportCoarseSampleOrderStateCreateInfoNV* in_struct)
+{
+    if (pCustomSampleOrders)
+        delete[] pCustomSampleOrders;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    sampleOrderType = in_struct->sampleOrderType;
+    customSampleOrderCount = in_struct->customSampleOrderCount;
+    pCustomSampleOrders = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (customSampleOrderCount && in_struct->pCustomSampleOrders) {
+        pCustomSampleOrders = new safe_VkCoarseSampleOrderCustomNV[customSampleOrderCount];
+        for (uint32_t i = 0; i < customSampleOrderCount; ++i) {
+            pCustomSampleOrders[i].initialize(&in_struct->pCustomSampleOrders[i]);
+        }
+    }
+}
+
+void safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::initialize(const safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    sampleOrderType = copy_src->sampleOrderType;
+    customSampleOrderCount = copy_src->customSampleOrderCount;
+    pCustomSampleOrders = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (customSampleOrderCount && copy_src->pCustomSampleOrders) {
+        pCustomSampleOrders = new safe_VkCoarseSampleOrderCustomNV[customSampleOrderCount];
+        for (uint32_t i = 0; i < customSampleOrderCount; ++i) {
+            pCustomSampleOrders[i].initialize(&copy_src->pCustomSampleOrders[i]);
+        }
+    }
+}
+
+safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV(const VkRayTracingShaderGroupCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    type(in_struct->type),
+    generalShader(in_struct->generalShader),
+    closestHitShader(in_struct->closestHitShader),
+    anyHitShader(in_struct->anyHitShader),
+    intersectionShader(in_struct->intersectionShader)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV),
+    pNext(nullptr),
+    type(),
+    generalShader(),
+    closestHitShader(),
+    anyHitShader(),
+    intersectionShader()
+{}
+
+safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV(const safe_VkRayTracingShaderGroupCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    type = copy_src.type;
+    generalShader = copy_src.generalShader;
+    closestHitShader = copy_src.closestHitShader;
+    anyHitShader = copy_src.anyHitShader;
+    intersectionShader = copy_src.intersectionShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRayTracingShaderGroupCreateInfoNV& safe_VkRayTracingShaderGroupCreateInfoNV::operator=(const safe_VkRayTracingShaderGroupCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    type = copy_src.type;
+    generalShader = copy_src.generalShader;
+    closestHitShader = copy_src.closestHitShader;
+    anyHitShader = copy_src.anyHitShader;
+    intersectionShader = copy_src.intersectionShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRayTracingShaderGroupCreateInfoNV::~safe_VkRayTracingShaderGroupCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRayTracingShaderGroupCreateInfoNV::initialize(const VkRayTracingShaderGroupCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    type = in_struct->type;
+    generalShader = in_struct->generalShader;
+    closestHitShader = in_struct->closestHitShader;
+    anyHitShader = in_struct->anyHitShader;
+    intersectionShader = in_struct->intersectionShader;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkRayTracingShaderGroupCreateInfoNV::initialize(const safe_VkRayTracingShaderGroupCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    type = copy_src->type;
+    generalShader = copy_src->generalShader;
+    closestHitShader = copy_src->closestHitShader;
+    anyHitShader = copy_src->anyHitShader;
+    intersectionShader = copy_src->intersectionShader;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV(const VkRayTracingPipelineCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    stageCount(in_struct->stageCount),
+    pStages(nullptr),
+    groupCount(in_struct->groupCount),
+    pGroups(nullptr),
+    maxRecursionDepth(in_struct->maxRecursionDepth),
+    layout(in_struct->layout),
+    basePipelineHandle(in_struct->basePipelineHandle),
+    basePipelineIndex(in_struct->basePipelineIndex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (groupCount && in_struct->pGroups) {
+        pGroups = new safe_VkRayTracingShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&in_struct->pGroups[i]);
+        }
+    }
+}
+
+safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    stageCount(),
+    pStages(nullptr),
+    groupCount(),
+    pGroups(nullptr),
+    maxRecursionDepth(),
+    layout(),
+    basePipelineHandle(),
+    basePipelineIndex()
+{}
+
+safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV(const safe_VkRayTracingPipelineCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    groupCount = copy_src.groupCount;
+    pGroups = nullptr;
+    maxRecursionDepth = copy_src.maxRecursionDepth;
+    layout = copy_src.layout;
+    basePipelineHandle = copy_src.basePipelineHandle;
+    basePipelineIndex = copy_src.basePipelineIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (groupCount && copy_src.pGroups) {
+        pGroups = new safe_VkRayTracingShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src.pGroups[i]);
+        }
+    }
+}
+
+safe_VkRayTracingPipelineCreateInfoNV& safe_VkRayTracingPipelineCreateInfoNV::operator=(const safe_VkRayTracingPipelineCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pStages)
+        delete[] pStages;
+    if (pGroups)
+        delete[] pGroups;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    groupCount = copy_src.groupCount;
+    pGroups = nullptr;
+    maxRecursionDepth = copy_src.maxRecursionDepth;
+    layout = copy_src.layout;
+    basePipelineHandle = copy_src.basePipelineHandle;
+    basePipelineIndex = copy_src.basePipelineIndex;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (groupCount && copy_src.pGroups) {
+        pGroups = new safe_VkRayTracingShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src.pGroups[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkRayTracingPipelineCreateInfoNV::~safe_VkRayTracingPipelineCreateInfoNV()
+{
+    if (pStages)
+        delete[] pStages;
+    if (pGroups)
+        delete[] pGroups;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRayTracingPipelineCreateInfoNV::initialize(const VkRayTracingPipelineCreateInfoNV* in_struct)
+{
+    if (pStages)
+        delete[] pStages;
+    if (pGroups)
+        delete[] pGroups;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    stageCount = in_struct->stageCount;
+    pStages = nullptr;
+    groupCount = in_struct->groupCount;
+    pGroups = nullptr;
+    maxRecursionDepth = in_struct->maxRecursionDepth;
+    layout = in_struct->layout;
+    basePipelineHandle = in_struct->basePipelineHandle;
+    basePipelineIndex = in_struct->basePipelineIndex;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (groupCount && in_struct->pGroups) {
+        pGroups = new safe_VkRayTracingShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&in_struct->pGroups[i]);
+        }
+    }
+}
+
+void safe_VkRayTracingPipelineCreateInfoNV::initialize(const safe_VkRayTracingPipelineCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    stageCount = copy_src->stageCount;
+    pStages = nullptr;
+    groupCount = copy_src->groupCount;
+    pGroups = nullptr;
+    maxRecursionDepth = copy_src->maxRecursionDepth;
+    layout = copy_src->layout;
+    basePipelineHandle = copy_src->basePipelineHandle;
+    basePipelineIndex = copy_src->basePipelineIndex;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (stageCount && copy_src->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src->pStages[i]);
+        }
+    }
+    if (groupCount && copy_src->pGroups) {
+        pGroups = new safe_VkRayTracingShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src->pGroups[i]);
+        }
+    }
+}
+
+safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV(const VkGeometryTrianglesNV* in_struct) :
+    sType(in_struct->sType),
+    vertexData(in_struct->vertexData),
+    vertexOffset(in_struct->vertexOffset),
+    vertexCount(in_struct->vertexCount),
+    vertexStride(in_struct->vertexStride),
+    vertexFormat(in_struct->vertexFormat),
+    indexData(in_struct->indexData),
+    indexOffset(in_struct->indexOffset),
+    indexCount(in_struct->indexCount),
+    indexType(in_struct->indexType),
+    transformData(in_struct->transformData),
+    transformOffset(in_struct->transformOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV),
+    pNext(nullptr),
+    vertexData(),
+    vertexOffset(),
+    vertexCount(),
+    vertexStride(),
+    vertexFormat(),
+    indexData(),
+    indexOffset(),
+    indexCount(),
+    indexType(),
+    transformData(),
+    transformOffset()
+{}
+
+safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV(const safe_VkGeometryTrianglesNV& copy_src)
+{
+    sType = copy_src.sType;
+    vertexData = copy_src.vertexData;
+    vertexOffset = copy_src.vertexOffset;
+    vertexCount = copy_src.vertexCount;
+    vertexStride = copy_src.vertexStride;
+    vertexFormat = copy_src.vertexFormat;
+    indexData = copy_src.indexData;
+    indexOffset = copy_src.indexOffset;
+    indexCount = copy_src.indexCount;
+    indexType = copy_src.indexType;
+    transformData = copy_src.transformData;
+    transformOffset = copy_src.transformOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkGeometryTrianglesNV& safe_VkGeometryTrianglesNV::operator=(const safe_VkGeometryTrianglesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    vertexData = copy_src.vertexData;
+    vertexOffset = copy_src.vertexOffset;
+    vertexCount = copy_src.vertexCount;
+    vertexStride = copy_src.vertexStride;
+    vertexFormat = copy_src.vertexFormat;
+    indexData = copy_src.indexData;
+    indexOffset = copy_src.indexOffset;
+    indexCount = copy_src.indexCount;
+    indexType = copy_src.indexType;
+    transformData = copy_src.transformData;
+    transformOffset = copy_src.transformOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkGeometryTrianglesNV::~safe_VkGeometryTrianglesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGeometryTrianglesNV::initialize(const VkGeometryTrianglesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    vertexData = in_struct->vertexData;
+    vertexOffset = in_struct->vertexOffset;
+    vertexCount = in_struct->vertexCount;
+    vertexStride = in_struct->vertexStride;
+    vertexFormat = in_struct->vertexFormat;
+    indexData = in_struct->indexData;
+    indexOffset = in_struct->indexOffset;
+    indexCount = in_struct->indexCount;
+    indexType = in_struct->indexType;
+    transformData = in_struct->transformData;
+    transformOffset = in_struct->transformOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkGeometryTrianglesNV::initialize(const safe_VkGeometryTrianglesNV* copy_src)
+{
+    sType = copy_src->sType;
+    vertexData = copy_src->vertexData;
+    vertexOffset = copy_src->vertexOffset;
+    vertexCount = copy_src->vertexCount;
+    vertexStride = copy_src->vertexStride;
+    vertexFormat = copy_src->vertexFormat;
+    indexData = copy_src->indexData;
+    indexOffset = copy_src->indexOffset;
+    indexCount = copy_src->indexCount;
+    indexType = copy_src->indexType;
+    transformData = copy_src->transformData;
+    transformOffset = copy_src->transformOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkGeometryAABBNV::safe_VkGeometryAABBNV(const VkGeometryAABBNV* in_struct) :
+    sType(in_struct->sType),
+    aabbData(in_struct->aabbData),
+    numAABBs(in_struct->numAABBs),
+    stride(in_struct->stride),
+    offset(in_struct->offset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkGeometryAABBNV::safe_VkGeometryAABBNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV),
+    pNext(nullptr),
+    aabbData(),
+    numAABBs(),
+    stride(),
+    offset()
+{}
+
+safe_VkGeometryAABBNV::safe_VkGeometryAABBNV(const safe_VkGeometryAABBNV& copy_src)
+{
+    sType = copy_src.sType;
+    aabbData = copy_src.aabbData;
+    numAABBs = copy_src.numAABBs;
+    stride = copy_src.stride;
+    offset = copy_src.offset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkGeometryAABBNV& safe_VkGeometryAABBNV::operator=(const safe_VkGeometryAABBNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    aabbData = copy_src.aabbData;
+    numAABBs = copy_src.numAABBs;
+    stride = copy_src.stride;
+    offset = copy_src.offset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkGeometryAABBNV::~safe_VkGeometryAABBNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGeometryAABBNV::initialize(const VkGeometryAABBNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    aabbData = in_struct->aabbData;
+    numAABBs = in_struct->numAABBs;
+    stride = in_struct->stride;
+    offset = in_struct->offset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkGeometryAABBNV::initialize(const safe_VkGeometryAABBNV* copy_src)
+{
+    sType = copy_src->sType;
+    aabbData = copy_src->aabbData;
+    numAABBs = copy_src->numAABBs;
+    stride = copy_src->stride;
+    offset = copy_src->offset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkGeometryNV::safe_VkGeometryNV(const VkGeometryNV* in_struct) :
+    sType(in_struct->sType),
+    geometryType(in_struct->geometryType),
+    geometry(in_struct->geometry),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkGeometryNV::safe_VkGeometryNV() :
+    sType(VK_STRUCTURE_TYPE_GEOMETRY_NV),
+    pNext(nullptr),
+    geometryType(),
+    geometry(),
+    flags()
+{}
+
+safe_VkGeometryNV::safe_VkGeometryNV(const safe_VkGeometryNV& copy_src)
+{
+    sType = copy_src.sType;
+    geometryType = copy_src.geometryType;
+    geometry = copy_src.geometry;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkGeometryNV& safe_VkGeometryNV::operator=(const safe_VkGeometryNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    geometryType = copy_src.geometryType;
+    geometry = copy_src.geometry;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkGeometryNV::~safe_VkGeometryNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGeometryNV::initialize(const VkGeometryNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    geometryType = in_struct->geometryType;
+    geometry = in_struct->geometry;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkGeometryNV::initialize(const safe_VkGeometryNV* copy_src)
+{
+    sType = copy_src->sType;
+    geometryType = copy_src->geometryType;
+    geometry = copy_src->geometry;
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV* in_struct) :
+    sType(in_struct->sType),
+    type(in_struct->type),
+    flags(in_struct->flags),
+    instanceCount(in_struct->instanceCount),
+    geometryCount(in_struct->geometryCount),
+    pGeometries(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (geometryCount && in_struct->pGeometries) {
+        pGeometries = new safe_VkGeometryNV[geometryCount];
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+            pGeometries[i].initialize(&in_struct->pGeometries[i]);
+        }
+    }
+}
+
+safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV),
+    pNext(nullptr),
+    type(),
+    flags(),
+    instanceCount(),
+    geometryCount(),
+    pGeometries(nullptr)
+{}
+
+safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV(const safe_VkAccelerationStructureInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    type = copy_src.type;
+    flags = copy_src.flags;
+    instanceCount = copy_src.instanceCount;
+    geometryCount = copy_src.geometryCount;
+    pGeometries = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (geometryCount && copy_src.pGeometries) {
+        pGeometries = new safe_VkGeometryNV[geometryCount];
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+            pGeometries[i].initialize(&copy_src.pGeometries[i]);
+        }
+    }
+}
+
+safe_VkAccelerationStructureInfoNV& safe_VkAccelerationStructureInfoNV::operator=(const safe_VkAccelerationStructureInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pGeometries)
+        delete[] pGeometries;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    type = copy_src.type;
+    flags = copy_src.flags;
+    instanceCount = copy_src.instanceCount;
+    geometryCount = copy_src.geometryCount;
+    pGeometries = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (geometryCount && copy_src.pGeometries) {
+        pGeometries = new safe_VkGeometryNV[geometryCount];
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+            pGeometries[i].initialize(&copy_src.pGeometries[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkAccelerationStructureInfoNV::~safe_VkAccelerationStructureInfoNV()
+{
+    if (pGeometries)
+        delete[] pGeometries;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureInfoNV::initialize(const VkAccelerationStructureInfoNV* in_struct)
+{
+    if (pGeometries)
+        delete[] pGeometries;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    type = in_struct->type;
+    flags = in_struct->flags;
+    instanceCount = in_struct->instanceCount;
+    geometryCount = in_struct->geometryCount;
+    pGeometries = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (geometryCount && in_struct->pGeometries) {
+        pGeometries = new safe_VkGeometryNV[geometryCount];
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+            pGeometries[i].initialize(&in_struct->pGeometries[i]);
+        }
+    }
+}
+
+void safe_VkAccelerationStructureInfoNV::initialize(const safe_VkAccelerationStructureInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    type = copy_src->type;
+    flags = copy_src->flags;
+    instanceCount = copy_src->instanceCount;
+    geometryCount = copy_src->geometryCount;
+    pGeometries = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (geometryCount && copy_src->pGeometries) {
+        pGeometries = new safe_VkGeometryNV[geometryCount];
+        for (uint32_t i = 0; i < geometryCount; ++i) {
+            pGeometries[i].initialize(&copy_src->pGeometries[i]);
+        }
+    }
+}
+
+safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV(const VkAccelerationStructureCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    compactedSize(in_struct->compactedSize),
+    info(&in_struct->info)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV),
+    pNext(nullptr),
+    compactedSize()
+{}
+
+safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV(const safe_VkAccelerationStructureCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    compactedSize = copy_src.compactedSize;
+    info.initialize(&copy_src.info);
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAccelerationStructureCreateInfoNV& safe_VkAccelerationStructureCreateInfoNV::operator=(const safe_VkAccelerationStructureCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    compactedSize = copy_src.compactedSize;
+    info.initialize(&copy_src.info);
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAccelerationStructureCreateInfoNV::~safe_VkAccelerationStructureCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureCreateInfoNV::initialize(const VkAccelerationStructureCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    compactedSize = in_struct->compactedSize;
+    info.initialize(&in_struct->info);
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAccelerationStructureCreateInfoNV::initialize(const safe_VkAccelerationStructureCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    compactedSize = copy_src->compactedSize;
+    info.initialize(&copy_src->info);
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMemoryInfoNV(const VkBindAccelerationStructureMemoryInfoNV* in_struct) :
+    sType(in_struct->sType),
+    accelerationStructure(in_struct->accelerationStructure),
+    memory(in_struct->memory),
+    memoryOffset(in_struct->memoryOffset),
+    deviceIndexCount(in_struct->deviceIndexCount),
+    pDeviceIndices(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pDeviceIndices) {
+        pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
+        memcpy ((void *)pDeviceIndices, (void *)in_struct->pDeviceIndices, sizeof(uint32_t)*in_struct->deviceIndexCount);
+    }
+}
+
+safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMemoryInfoNV() :
+    sType(VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV),
+    pNext(nullptr),
+    accelerationStructure(),
+    memory(),
+    memoryOffset(),
+    deviceIndexCount(),
+    pDeviceIndices(nullptr)
+{}
+
+safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMemoryInfoNV(const safe_VkBindAccelerationStructureMemoryInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    accelerationStructure = copy_src.accelerationStructure;
+    memory = copy_src.memory;
+    memoryOffset = copy_src.memoryOffset;
+    deviceIndexCount = copy_src.deviceIndexCount;
+    pDeviceIndices = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pDeviceIndices) {
+        pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
+        memcpy ((void *)pDeviceIndices, (void *)copy_src.pDeviceIndices, sizeof(uint32_t)*copy_src.deviceIndexCount);
+    }
+}
+
+safe_VkBindAccelerationStructureMemoryInfoNV& safe_VkBindAccelerationStructureMemoryInfoNV::operator=(const safe_VkBindAccelerationStructureMemoryInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    accelerationStructure = copy_src.accelerationStructure;
+    memory = copy_src.memory;
+    memoryOffset = copy_src.memoryOffset;
+    deviceIndexCount = copy_src.deviceIndexCount;
+    pDeviceIndices = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pDeviceIndices) {
+        pDeviceIndices = new uint32_t[copy_src.deviceIndexCount];
+        memcpy ((void *)pDeviceIndices, (void *)copy_src.pDeviceIndices, sizeof(uint32_t)*copy_src.deviceIndexCount);
+    }
+
+    return *this;
+}
+
+safe_VkBindAccelerationStructureMemoryInfoNV::~safe_VkBindAccelerationStructureMemoryInfoNV()
+{
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBindAccelerationStructureMemoryInfoNV::initialize(const VkBindAccelerationStructureMemoryInfoNV* in_struct)
+{
+    if (pDeviceIndices)
+        delete[] pDeviceIndices;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    accelerationStructure = in_struct->accelerationStructure;
+    memory = in_struct->memory;
+    memoryOffset = in_struct->memoryOffset;
+    deviceIndexCount = in_struct->deviceIndexCount;
+    pDeviceIndices = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pDeviceIndices) {
+        pDeviceIndices = new uint32_t[in_struct->deviceIndexCount];
+        memcpy ((void *)pDeviceIndices, (void *)in_struct->pDeviceIndices, sizeof(uint32_t)*in_struct->deviceIndexCount);
+    }
+}
+
+void safe_VkBindAccelerationStructureMemoryInfoNV::initialize(const safe_VkBindAccelerationStructureMemoryInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    accelerationStructure = copy_src->accelerationStructure;
+    memory = copy_src->memory;
+    memoryOffset = copy_src->memoryOffset;
+    deviceIndexCount = copy_src->deviceIndexCount;
+    pDeviceIndices = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pDeviceIndices) {
+        pDeviceIndices = new uint32_t[copy_src->deviceIndexCount];
+        memcpy ((void *)pDeviceIndices, (void *)copy_src->pDeviceIndices, sizeof(uint32_t)*copy_src->deviceIndexCount);
+    }
+}
+
+safe_VkWriteDescriptorSetAccelerationStructureNV::safe_VkWriteDescriptorSetAccelerationStructureNV(const VkWriteDescriptorSetAccelerationStructureNV* in_struct) :
+    sType(in_struct->sType),
+    accelerationStructureCount(in_struct->accelerationStructureCount),
+    pAccelerationStructures(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (accelerationStructureCount && in_struct->pAccelerationStructures) {
+        pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
+        for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+            pAccelerationStructures[i] = in_struct->pAccelerationStructures[i];
+        }
+    }
+}
+
+safe_VkWriteDescriptorSetAccelerationStructureNV::safe_VkWriteDescriptorSetAccelerationStructureNV() :
+    sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV),
+    pNext(nullptr),
+    accelerationStructureCount(),
+    pAccelerationStructures(nullptr)
+{}
+
+safe_VkWriteDescriptorSetAccelerationStructureNV::safe_VkWriteDescriptorSetAccelerationStructureNV(const safe_VkWriteDescriptorSetAccelerationStructureNV& copy_src)
+{
+    sType = copy_src.sType;
+    accelerationStructureCount = copy_src.accelerationStructureCount;
+    pAccelerationStructures = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (accelerationStructureCount && copy_src.pAccelerationStructures) {
+        pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
+        for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+            pAccelerationStructures[i] = copy_src.pAccelerationStructures[i];
+        }
+    }
+}
+
+safe_VkWriteDescriptorSetAccelerationStructureNV& safe_VkWriteDescriptorSetAccelerationStructureNV::operator=(const safe_VkWriteDescriptorSetAccelerationStructureNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pAccelerationStructures)
+        delete[] pAccelerationStructures;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    accelerationStructureCount = copy_src.accelerationStructureCount;
+    pAccelerationStructures = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (accelerationStructureCount && copy_src.pAccelerationStructures) {
+        pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
+        for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+            pAccelerationStructures[i] = copy_src.pAccelerationStructures[i];
+        }
+    }
+
+    return *this;
+}
+
+safe_VkWriteDescriptorSetAccelerationStructureNV::~safe_VkWriteDescriptorSetAccelerationStructureNV()
+{
+    if (pAccelerationStructures)
+        delete[] pAccelerationStructures;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkWriteDescriptorSetAccelerationStructureNV::initialize(const VkWriteDescriptorSetAccelerationStructureNV* in_struct)
+{
+    if (pAccelerationStructures)
+        delete[] pAccelerationStructures;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    accelerationStructureCount = in_struct->accelerationStructureCount;
+    pAccelerationStructures = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (accelerationStructureCount && in_struct->pAccelerationStructures) {
+        pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
+        for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+            pAccelerationStructures[i] = in_struct->pAccelerationStructures[i];
+        }
+    }
+}
+
+void safe_VkWriteDescriptorSetAccelerationStructureNV::initialize(const safe_VkWriteDescriptorSetAccelerationStructureNV* copy_src)
+{
+    sType = copy_src->sType;
+    accelerationStructureCount = copy_src->accelerationStructureCount;
+    pAccelerationStructures = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (accelerationStructureCount && copy_src->pAccelerationStructures) {
+        pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
+        for (uint32_t i = 0; i < accelerationStructureCount; ++i) {
+            pAccelerationStructures[i] = copy_src->pAccelerationStructures[i];
+        }
+    }
+}
+
+safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV(const VkAccelerationStructureMemoryRequirementsInfoNV* in_struct) :
+    sType(in_struct->sType),
+    type(in_struct->type),
+    accelerationStructure(in_struct->accelerationStructure)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV),
+    pNext(nullptr),
+    type(),
+    accelerationStructure()
+{}
+
+safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV(const safe_VkAccelerationStructureMemoryRequirementsInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    type = copy_src.type;
+    accelerationStructure = copy_src.accelerationStructure;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAccelerationStructureMemoryRequirementsInfoNV& safe_VkAccelerationStructureMemoryRequirementsInfoNV::operator=(const safe_VkAccelerationStructureMemoryRequirementsInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    type = copy_src.type;
+    accelerationStructure = copy_src.accelerationStructure;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAccelerationStructureMemoryRequirementsInfoNV::~safe_VkAccelerationStructureMemoryRequirementsInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureMemoryRequirementsInfoNV::initialize(const VkAccelerationStructureMemoryRequirementsInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    type = in_struct->type;
+    accelerationStructure = in_struct->accelerationStructure;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAccelerationStructureMemoryRequirementsInfoNV::initialize(const safe_VkAccelerationStructureMemoryRequirementsInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    type = copy_src->type;
+    accelerationStructure = copy_src->accelerationStructure;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV(const VkPhysicalDeviceRayTracingPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    shaderGroupHandleSize(in_struct->shaderGroupHandleSize),
+    maxRecursionDepth(in_struct->maxRecursionDepth),
+    maxShaderGroupStride(in_struct->maxShaderGroupStride),
+    shaderGroupBaseAlignment(in_struct->shaderGroupBaseAlignment),
+    maxGeometryCount(in_struct->maxGeometryCount),
+    maxInstanceCount(in_struct->maxInstanceCount),
+    maxTriangleCount(in_struct->maxTriangleCount),
+    maxDescriptorSetAccelerationStructures(in_struct->maxDescriptorSetAccelerationStructures)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV),
+    pNext(nullptr),
+    shaderGroupHandleSize(),
+    maxRecursionDepth(),
+    maxShaderGroupStride(),
+    shaderGroupBaseAlignment(),
+    maxGeometryCount(),
+    maxInstanceCount(),
+    maxTriangleCount(),
+    maxDescriptorSetAccelerationStructures()
+{}
+
+safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV(const safe_VkPhysicalDeviceRayTracingPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    shaderGroupHandleSize = copy_src.shaderGroupHandleSize;
+    maxRecursionDepth = copy_src.maxRecursionDepth;
+    maxShaderGroupStride = copy_src.maxShaderGroupStride;
+    shaderGroupBaseAlignment = copy_src.shaderGroupBaseAlignment;
+    maxGeometryCount = copy_src.maxGeometryCount;
+    maxInstanceCount = copy_src.maxInstanceCount;
+    maxTriangleCount = copy_src.maxTriangleCount;
+    maxDescriptorSetAccelerationStructures = copy_src.maxDescriptorSetAccelerationStructures;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingPropertiesNV& safe_VkPhysicalDeviceRayTracingPropertiesNV::operator=(const safe_VkPhysicalDeviceRayTracingPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderGroupHandleSize = copy_src.shaderGroupHandleSize;
+    maxRecursionDepth = copy_src.maxRecursionDepth;
+    maxShaderGroupStride = copy_src.maxShaderGroupStride;
+    shaderGroupBaseAlignment = copy_src.shaderGroupBaseAlignment;
+    maxGeometryCount = copy_src.maxGeometryCount;
+    maxInstanceCount = copy_src.maxInstanceCount;
+    maxTriangleCount = copy_src.maxTriangleCount;
+    maxDescriptorSetAccelerationStructures = copy_src.maxDescriptorSetAccelerationStructures;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingPropertiesNV::~safe_VkPhysicalDeviceRayTracingPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingPropertiesNV::initialize(const VkPhysicalDeviceRayTracingPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderGroupHandleSize = in_struct->shaderGroupHandleSize;
+    maxRecursionDepth = in_struct->maxRecursionDepth;
+    maxShaderGroupStride = in_struct->maxShaderGroupStride;
+    shaderGroupBaseAlignment = in_struct->shaderGroupBaseAlignment;
+    maxGeometryCount = in_struct->maxGeometryCount;
+    maxInstanceCount = in_struct->maxInstanceCount;
+    maxTriangleCount = in_struct->maxTriangleCount;
+    maxDescriptorSetAccelerationStructures = in_struct->maxDescriptorSetAccelerationStructures;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingPropertiesNV::initialize(const safe_VkPhysicalDeviceRayTracingPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    shaderGroupHandleSize = copy_src->shaderGroupHandleSize;
+    maxRecursionDepth = copy_src->maxRecursionDepth;
+    maxShaderGroupStride = copy_src->maxShaderGroupStride;
+    shaderGroupBaseAlignment = copy_src->shaderGroupBaseAlignment;
+    maxGeometryCount = copy_src->maxGeometryCount;
+    maxInstanceCount = copy_src->maxInstanceCount;
+    maxTriangleCount = copy_src->maxTriangleCount;
+    maxDescriptorSetAccelerationStructures = copy_src->maxDescriptorSetAccelerationStructures;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    representativeFragmentTest(in_struct->representativeFragmentTest)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV),
+    pNext(nullptr),
+    representativeFragmentTest()
+{}
+
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(const safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    representativeFragmentTest = copy_src.representativeFragmentTest;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::operator=(const safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    representativeFragmentTest = copy_src.representativeFragmentTest;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::~safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::initialize(const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    representativeFragmentTest = in_struct->representativeFragmentTest;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::initialize(const safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    representativeFragmentTest = copy_src->representativeFragmentTest;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV(const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    representativeFragmentTestEnable(in_struct->representativeFragmentTestEnable)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    representativeFragmentTestEnable()
+{}
+
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV(const safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    representativeFragmentTestEnable = copy_src.representativeFragmentTestEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::operator=(const safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    representativeFragmentTestEnable = copy_src.representativeFragmentTestEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::~safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::initialize(const VkPipelineRepresentativeFragmentTestStateCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    representativeFragmentTestEnable = in_struct->representativeFragmentTestEnable;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::initialize(const safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    representativeFragmentTestEnable = copy_src->representativeFragmentTestEnable;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineCompilerControlCreateInfoAMD::safe_VkPipelineCompilerControlCreateInfoAMD(const VkPipelineCompilerControlCreateInfoAMD* in_struct) :
+    sType(in_struct->sType),
+    compilerControlFlags(in_struct->compilerControlFlags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineCompilerControlCreateInfoAMD::safe_VkPipelineCompilerControlCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD),
+    pNext(nullptr),
+    compilerControlFlags()
+{}
+
+safe_VkPipelineCompilerControlCreateInfoAMD::safe_VkPipelineCompilerControlCreateInfoAMD(const safe_VkPipelineCompilerControlCreateInfoAMD& copy_src)
+{
+    sType = copy_src.sType;
+    compilerControlFlags = copy_src.compilerControlFlags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineCompilerControlCreateInfoAMD& safe_VkPipelineCompilerControlCreateInfoAMD::operator=(const safe_VkPipelineCompilerControlCreateInfoAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    compilerControlFlags = copy_src.compilerControlFlags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineCompilerControlCreateInfoAMD::~safe_VkPipelineCompilerControlCreateInfoAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineCompilerControlCreateInfoAMD::initialize(const VkPipelineCompilerControlCreateInfoAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    compilerControlFlags = in_struct->compilerControlFlags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineCompilerControlCreateInfoAMD::initialize(const safe_VkPipelineCompilerControlCreateInfoAMD* copy_src)
+{
+    sType = copy_src->sType;
+    compilerControlFlags = copy_src->compilerControlFlags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD(const VkPhysicalDeviceShaderCorePropertiesAMD* in_struct) :
+    sType(in_struct->sType),
+    shaderEngineCount(in_struct->shaderEngineCount),
+    shaderArraysPerEngineCount(in_struct->shaderArraysPerEngineCount),
+    computeUnitsPerShaderArray(in_struct->computeUnitsPerShaderArray),
+    simdPerComputeUnit(in_struct->simdPerComputeUnit),
+    wavefrontsPerSimd(in_struct->wavefrontsPerSimd),
+    wavefrontSize(in_struct->wavefrontSize),
+    sgprsPerSimd(in_struct->sgprsPerSimd),
+    minSgprAllocation(in_struct->minSgprAllocation),
+    maxSgprAllocation(in_struct->maxSgprAllocation),
+    sgprAllocationGranularity(in_struct->sgprAllocationGranularity),
+    vgprsPerSimd(in_struct->vgprsPerSimd),
+    minVgprAllocation(in_struct->minVgprAllocation),
+    maxVgprAllocation(in_struct->maxVgprAllocation),
+    vgprAllocationGranularity(in_struct->vgprAllocationGranularity)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD),
+    pNext(nullptr),
+    shaderEngineCount(),
+    shaderArraysPerEngineCount(),
+    computeUnitsPerShaderArray(),
+    simdPerComputeUnit(),
+    wavefrontsPerSimd(),
+    wavefrontSize(),
+    sgprsPerSimd(),
+    minSgprAllocation(),
+    maxSgprAllocation(),
+    sgprAllocationGranularity(),
+    vgprsPerSimd(),
+    minVgprAllocation(),
+    maxVgprAllocation(),
+    vgprAllocationGranularity()
+{}
+
+safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD(const safe_VkPhysicalDeviceShaderCorePropertiesAMD& copy_src)
+{
+    sType = copy_src.sType;
+    shaderEngineCount = copy_src.shaderEngineCount;
+    shaderArraysPerEngineCount = copy_src.shaderArraysPerEngineCount;
+    computeUnitsPerShaderArray = copy_src.computeUnitsPerShaderArray;
+    simdPerComputeUnit = copy_src.simdPerComputeUnit;
+    wavefrontsPerSimd = copy_src.wavefrontsPerSimd;
+    wavefrontSize = copy_src.wavefrontSize;
+    sgprsPerSimd = copy_src.sgprsPerSimd;
+    minSgprAllocation = copy_src.minSgprAllocation;
+    maxSgprAllocation = copy_src.maxSgprAllocation;
+    sgprAllocationGranularity = copy_src.sgprAllocationGranularity;
+    vgprsPerSimd = copy_src.vgprsPerSimd;
+    minVgprAllocation = copy_src.minVgprAllocation;
+    maxVgprAllocation = copy_src.maxVgprAllocation;
+    vgprAllocationGranularity = copy_src.vgprAllocationGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesAMD& safe_VkPhysicalDeviceShaderCorePropertiesAMD::operator=(const safe_VkPhysicalDeviceShaderCorePropertiesAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderEngineCount = copy_src.shaderEngineCount;
+    shaderArraysPerEngineCount = copy_src.shaderArraysPerEngineCount;
+    computeUnitsPerShaderArray = copy_src.computeUnitsPerShaderArray;
+    simdPerComputeUnit = copy_src.simdPerComputeUnit;
+    wavefrontsPerSimd = copy_src.wavefrontsPerSimd;
+    wavefrontSize = copy_src.wavefrontSize;
+    sgprsPerSimd = copy_src.sgprsPerSimd;
+    minSgprAllocation = copy_src.minSgprAllocation;
+    maxSgprAllocation = copy_src.maxSgprAllocation;
+    sgprAllocationGranularity = copy_src.sgprAllocationGranularity;
+    vgprsPerSimd = copy_src.vgprsPerSimd;
+    minVgprAllocation = copy_src.minVgprAllocation;
+    maxVgprAllocation = copy_src.maxVgprAllocation;
+    vgprAllocationGranularity = copy_src.vgprAllocationGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesAMD::~safe_VkPhysicalDeviceShaderCorePropertiesAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesAMD::initialize(const VkPhysicalDeviceShaderCorePropertiesAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderEngineCount = in_struct->shaderEngineCount;
+    shaderArraysPerEngineCount = in_struct->shaderArraysPerEngineCount;
+    computeUnitsPerShaderArray = in_struct->computeUnitsPerShaderArray;
+    simdPerComputeUnit = in_struct->simdPerComputeUnit;
+    wavefrontsPerSimd = in_struct->wavefrontsPerSimd;
+    wavefrontSize = in_struct->wavefrontSize;
+    sgprsPerSimd = in_struct->sgprsPerSimd;
+    minSgprAllocation = in_struct->minSgprAllocation;
+    maxSgprAllocation = in_struct->maxSgprAllocation;
+    sgprAllocationGranularity = in_struct->sgprAllocationGranularity;
+    vgprsPerSimd = in_struct->vgprsPerSimd;
+    minVgprAllocation = in_struct->minVgprAllocation;
+    maxVgprAllocation = in_struct->maxVgprAllocation;
+    vgprAllocationGranularity = in_struct->vgprAllocationGranularity;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesAMD::initialize(const safe_VkPhysicalDeviceShaderCorePropertiesAMD* copy_src)
+{
+    sType = copy_src->sType;
+    shaderEngineCount = copy_src->shaderEngineCount;
+    shaderArraysPerEngineCount = copy_src->shaderArraysPerEngineCount;
+    computeUnitsPerShaderArray = copy_src->computeUnitsPerShaderArray;
+    simdPerComputeUnit = copy_src->simdPerComputeUnit;
+    wavefrontsPerSimd = copy_src->wavefrontsPerSimd;
+    wavefrontSize = copy_src->wavefrontSize;
+    sgprsPerSimd = copy_src->sgprsPerSimd;
+    minSgprAllocation = copy_src->minSgprAllocation;
+    maxSgprAllocation = copy_src->maxSgprAllocation;
+    sgprAllocationGranularity = copy_src->sgprAllocationGranularity;
+    vgprsPerSimd = copy_src->vgprsPerSimd;
+    minVgprAllocation = copy_src->minVgprAllocation;
+    maxVgprAllocation = copy_src->maxVgprAllocation;
+    vgprAllocationGranularity = copy_src->vgprAllocationGranularity;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD(const VkDeviceMemoryOverallocationCreateInfoAMD* in_struct) :
+    sType(in_struct->sType),
+    overallocationBehavior(in_struct->overallocationBehavior)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD),
+    pNext(nullptr),
+    overallocationBehavior()
+{}
+
+safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD(const safe_VkDeviceMemoryOverallocationCreateInfoAMD& copy_src)
+{
+    sType = copy_src.sType;
+    overallocationBehavior = copy_src.overallocationBehavior;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDeviceMemoryOverallocationCreateInfoAMD& safe_VkDeviceMemoryOverallocationCreateInfoAMD::operator=(const safe_VkDeviceMemoryOverallocationCreateInfoAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    overallocationBehavior = copy_src.overallocationBehavior;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceMemoryOverallocationCreateInfoAMD::~safe_VkDeviceMemoryOverallocationCreateInfoAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceMemoryOverallocationCreateInfoAMD::initialize(const VkDeviceMemoryOverallocationCreateInfoAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    overallocationBehavior = in_struct->overallocationBehavior;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceMemoryOverallocationCreateInfoAMD::initialize(const safe_VkDeviceMemoryOverallocationCreateInfoAMD* copy_src)
+{
+    sType = copy_src->sType;
+    overallocationBehavior = copy_src->overallocationBehavior;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_GGP
+
+
+safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const VkPresentFrameTokenGGP* in_struct) :
+    sType(in_struct->sType),
+    frameToken(in_struct->frameToken)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP() :
+    sType(VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP),
+    pNext(nullptr),
+    frameToken()
+{}
+
+safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const safe_VkPresentFrameTokenGGP& copy_src)
+{
+    sType = copy_src.sType;
+    frameToken = copy_src.frameToken;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPresentFrameTokenGGP& safe_VkPresentFrameTokenGGP::operator=(const safe_VkPresentFrameTokenGGP& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    frameToken = copy_src.frameToken;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPresentFrameTokenGGP::~safe_VkPresentFrameTokenGGP()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPresentFrameTokenGGP::initialize(const VkPresentFrameTokenGGP* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    frameToken = in_struct->frameToken;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPresentFrameTokenGGP::initialize(const safe_VkPresentFrameTokenGGP* copy_src)
+{
+    sType = copy_src->sType;
+    frameToken = copy_src->frameToken;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_GGP
+
+
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    computeDerivativeGroupQuads(in_struct->computeDerivativeGroupQuads),
+    computeDerivativeGroupLinear(in_struct->computeDerivativeGroupLinear)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV),
+    pNext(nullptr),
+    computeDerivativeGroupQuads(),
+    computeDerivativeGroupLinear()
+{}
+
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(const safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    computeDerivativeGroupQuads = copy_src.computeDerivativeGroupQuads;
+    computeDerivativeGroupLinear = copy_src.computeDerivativeGroupLinear;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::operator=(const safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    computeDerivativeGroupQuads = copy_src.computeDerivativeGroupQuads;
+    computeDerivativeGroupLinear = copy_src.computeDerivativeGroupLinear;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::~safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::initialize(const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    computeDerivativeGroupQuads = in_struct->computeDerivativeGroupQuads;
+    computeDerivativeGroupLinear = in_struct->computeDerivativeGroupLinear;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::initialize(const safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    computeDerivativeGroupQuads = copy_src->computeDerivativeGroupQuads;
+    computeDerivativeGroupLinear = copy_src->computeDerivativeGroupLinear;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV(const VkPhysicalDeviceMeshShaderFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    taskShader(in_struct->taskShader),
+    meshShader(in_struct->meshShader)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV),
+    pNext(nullptr),
+    taskShader(),
+    meshShader()
+{}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV(const safe_VkPhysicalDeviceMeshShaderFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    taskShader = copy_src.taskShader;
+    meshShader = copy_src.meshShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesNV& safe_VkPhysicalDeviceMeshShaderFeaturesNV::operator=(const safe_VkPhysicalDeviceMeshShaderFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    taskShader = copy_src.taskShader;
+    meshShader = copy_src.meshShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesNV::~safe_VkPhysicalDeviceMeshShaderFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderFeaturesNV::initialize(const VkPhysicalDeviceMeshShaderFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    taskShader = in_struct->taskShader;
+    meshShader = in_struct->meshShader;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderFeaturesNV::initialize(const safe_VkPhysicalDeviceMeshShaderFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    taskShader = copy_src->taskShader;
+    meshShader = copy_src->meshShader;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV(const VkPhysicalDeviceMeshShaderPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    maxDrawMeshTasksCount(in_struct->maxDrawMeshTasksCount),
+    maxTaskWorkGroupInvocations(in_struct->maxTaskWorkGroupInvocations),
+    maxTaskTotalMemorySize(in_struct->maxTaskTotalMemorySize),
+    maxTaskOutputCount(in_struct->maxTaskOutputCount),
+    maxMeshWorkGroupInvocations(in_struct->maxMeshWorkGroupInvocations),
+    maxMeshTotalMemorySize(in_struct->maxMeshTotalMemorySize),
+    maxMeshOutputVertices(in_struct->maxMeshOutputVertices),
+    maxMeshOutputPrimitives(in_struct->maxMeshOutputPrimitives),
+    maxMeshMultiviewViewCount(in_struct->maxMeshMultiviewViewCount),
+    meshOutputPerVertexGranularity(in_struct->meshOutputPerVertexGranularity),
+    meshOutputPerPrimitiveGranularity(in_struct->meshOutputPerPrimitiveGranularity)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV),
+    pNext(nullptr),
+    maxDrawMeshTasksCount(),
+    maxTaskWorkGroupInvocations(),
+    maxTaskTotalMemorySize(),
+    maxTaskOutputCount(),
+    maxMeshWorkGroupInvocations(),
+    maxMeshTotalMemorySize(),
+    maxMeshOutputVertices(),
+    maxMeshOutputPrimitives(),
+    maxMeshMultiviewViewCount(),
+    meshOutputPerVertexGranularity(),
+    meshOutputPerPrimitiveGranularity()
+{}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV(const safe_VkPhysicalDeviceMeshShaderPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxDrawMeshTasksCount = copy_src.maxDrawMeshTasksCount;
+    maxTaskWorkGroupInvocations = copy_src.maxTaskWorkGroupInvocations;
+    maxTaskTotalMemorySize = copy_src.maxTaskTotalMemorySize;
+    maxTaskOutputCount = copy_src.maxTaskOutputCount;
+    maxMeshWorkGroupInvocations = copy_src.maxMeshWorkGroupInvocations;
+    maxMeshTotalMemorySize = copy_src.maxMeshTotalMemorySize;
+    maxMeshOutputVertices = copy_src.maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src.maxMeshOutputPrimitives;
+    maxMeshMultiviewViewCount = copy_src.maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesNV& safe_VkPhysicalDeviceMeshShaderPropertiesNV::operator=(const safe_VkPhysicalDeviceMeshShaderPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxDrawMeshTasksCount = copy_src.maxDrawMeshTasksCount;
+    maxTaskWorkGroupInvocations = copy_src.maxTaskWorkGroupInvocations;
+    maxTaskTotalMemorySize = copy_src.maxTaskTotalMemorySize;
+    maxTaskOutputCount = copy_src.maxTaskOutputCount;
+    maxMeshWorkGroupInvocations = copy_src.maxMeshWorkGroupInvocations;
+    maxMeshTotalMemorySize = copy_src.maxMeshTotalMemorySize;
+    maxMeshOutputVertices = copy_src.maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src.maxMeshOutputPrimitives;
+    maxMeshMultiviewViewCount = copy_src.maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
+    }
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesNV::~safe_VkPhysicalDeviceMeshShaderPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderPropertiesNV::initialize(const VkPhysicalDeviceMeshShaderPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxDrawMeshTasksCount = in_struct->maxDrawMeshTasksCount;
+    maxTaskWorkGroupInvocations = in_struct->maxTaskWorkGroupInvocations;
+    maxTaskTotalMemorySize = in_struct->maxTaskTotalMemorySize;
+    maxTaskOutputCount = in_struct->maxTaskOutputCount;
+    maxMeshWorkGroupInvocations = in_struct->maxMeshWorkGroupInvocations;
+    maxMeshTotalMemorySize = in_struct->maxMeshTotalMemorySize;
+    maxMeshOutputVertices = in_struct->maxMeshOutputVertices;
+    maxMeshOutputPrimitives = in_struct->maxMeshOutputPrimitives;
+    maxMeshMultiviewViewCount = in_struct->maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = in_struct->meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = in_struct->meshOutputPerPrimitiveGranularity;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
+    }
+}
+
+void safe_VkPhysicalDeviceMeshShaderPropertiesNV::initialize(const safe_VkPhysicalDeviceMeshShaderPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxDrawMeshTasksCount = copy_src->maxDrawMeshTasksCount;
+    maxTaskWorkGroupInvocations = copy_src->maxTaskWorkGroupInvocations;
+    maxTaskTotalMemorySize = copy_src->maxTaskTotalMemorySize;
+    maxTaskOutputCount = copy_src->maxTaskOutputCount;
+    maxMeshWorkGroupInvocations = copy_src->maxMeshWorkGroupInvocations;
+    maxMeshTotalMemorySize = copy_src->maxMeshTotalMemorySize;
+    maxMeshOutputVertices = copy_src->maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src->maxMeshOutputPrimitives;
+    maxMeshMultiviewViewCount = copy_src->maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src->meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src->meshOutputPerPrimitiveGranularity;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src->maxMeshWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV(const VkPhysicalDeviceShaderImageFootprintFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    imageFootprint(in_struct->imageFootprint)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV),
+    pNext(nullptr),
+    imageFootprint()
+{}
+
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV(const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    imageFootprint = copy_src.imageFootprint;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::operator=(const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageFootprint = copy_src.imageFootprint;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::~safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::initialize(const VkPhysicalDeviceShaderImageFootprintFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    imageFootprint = in_struct->imageFootprint;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::initialize(const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    imageFootprint = copy_src->imageFootprint;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV(const VkPipelineViewportExclusiveScissorStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    exclusiveScissorCount(in_struct->exclusiveScissorCount),
+    pExclusiveScissors(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pExclusiveScissors) {
+        pExclusiveScissors = new VkRect2D[in_struct->exclusiveScissorCount];
+        memcpy ((void *)pExclusiveScissors, (void *)in_struct->pExclusiveScissors, sizeof(VkRect2D)*in_struct->exclusiveScissorCount);
+    }
+}
+
+safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    exclusiveScissorCount(),
+    pExclusiveScissors(nullptr)
+{}
+
+safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV(const safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    exclusiveScissorCount = copy_src.exclusiveScissorCount;
+    pExclusiveScissors = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pExclusiveScissors) {
+        pExclusiveScissors = new VkRect2D[copy_src.exclusiveScissorCount];
+        memcpy ((void *)pExclusiveScissors, (void *)copy_src.pExclusiveScissors, sizeof(VkRect2D)*copy_src.exclusiveScissorCount);
+    }
+}
+
+safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::operator=(const safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pExclusiveScissors)
+        delete[] pExclusiveScissors;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    exclusiveScissorCount = copy_src.exclusiveScissorCount;
+    pExclusiveScissors = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pExclusiveScissors) {
+        pExclusiveScissors = new VkRect2D[copy_src.exclusiveScissorCount];
+        memcpy ((void *)pExclusiveScissors, (void *)copy_src.pExclusiveScissors, sizeof(VkRect2D)*copy_src.exclusiveScissorCount);
+    }
+
+    return *this;
+}
+
+safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::~safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV()
+{
+    if (pExclusiveScissors)
+        delete[] pExclusiveScissors;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::initialize(const VkPipelineViewportExclusiveScissorStateCreateInfoNV* in_struct)
+{
+    if (pExclusiveScissors)
+        delete[] pExclusiveScissors;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    exclusiveScissorCount = in_struct->exclusiveScissorCount;
+    pExclusiveScissors = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pExclusiveScissors) {
+        pExclusiveScissors = new VkRect2D[in_struct->exclusiveScissorCount];
+        memcpy ((void *)pExclusiveScissors, (void *)in_struct->pExclusiveScissors, sizeof(VkRect2D)*in_struct->exclusiveScissorCount);
+    }
+}
+
+void safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::initialize(const safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    exclusiveScissorCount = copy_src->exclusiveScissorCount;
+    pExclusiveScissors = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pExclusiveScissors) {
+        pExclusiveScissors = new VkRect2D[copy_src->exclusiveScissorCount];
+        memcpy ((void *)pExclusiveScissors, (void *)copy_src->pExclusiveScissors, sizeof(VkRect2D)*copy_src->exclusiveScissorCount);
+    }
+}
+
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV(const VkPhysicalDeviceExclusiveScissorFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    exclusiveScissor(in_struct->exclusiveScissor)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXCLUSIVE_SCISSOR_FEATURES_NV),
+    pNext(nullptr),
+    exclusiveScissor()
+{}
+
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    exclusiveScissor = copy_src.exclusiveScissor;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::operator=(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    exclusiveScissor = copy_src.exclusiveScissor;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::~safe_VkPhysicalDeviceExclusiveScissorFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::initialize(const VkPhysicalDeviceExclusiveScissorFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    exclusiveScissor = in_struct->exclusiveScissor;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::initialize(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    exclusiveScissor = copy_src->exclusiveScissor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV(const VkQueueFamilyCheckpointPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    checkpointExecutionStageMask(in_struct->checkpointExecutionStageMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV),
+    pNext(nullptr),
+    checkpointExecutionStageMask()
+{}
+
+safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV(const safe_VkQueueFamilyCheckpointPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueueFamilyCheckpointPropertiesNV& safe_VkQueueFamilyCheckpointPropertiesNV::operator=(const safe_VkQueueFamilyCheckpointPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    checkpointExecutionStageMask = copy_src.checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueueFamilyCheckpointPropertiesNV::~safe_VkQueueFamilyCheckpointPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueueFamilyCheckpointPropertiesNV::initialize(const VkQueueFamilyCheckpointPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    checkpointExecutionStageMask = in_struct->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueueFamilyCheckpointPropertiesNV::initialize(const safe_VkQueueFamilyCheckpointPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    checkpointExecutionStageMask = copy_src->checkpointExecutionStageMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_struct) :
+    sType(in_struct->sType),
+    stage(in_struct->stage),
+    pCheckpointMarker(in_struct->pCheckpointMarker)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCheckpointDataNV::safe_VkCheckpointDataNV() :
+    sType(VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV),
+    pNext(nullptr),
+    stage(),
+    pCheckpointMarker(nullptr)
+{}
+
+safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const safe_VkCheckpointDataNV& copy_src)
+{
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCheckpointDataNV& safe_VkCheckpointDataNV::operator=(const safe_VkCheckpointDataNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stage = copy_src.stage;
+    pCheckpointMarker = copy_src.pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCheckpointDataNV::~safe_VkCheckpointDataNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCheckpointDataNV::initialize(const VkCheckpointDataNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stage = in_struct->stage;
+    pCheckpointMarker = in_struct->pCheckpointMarker;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCheckpointDataNV::initialize(const safe_VkCheckpointDataNV* copy_src)
+{
+    sType = copy_src->sType;
+    stage = copy_src->stage;
+    pCheckpointMarker = copy_src->pCheckpointMarker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* in_struct) :
+    sType(in_struct->sType),
+    shaderIntegerFunctions2(in_struct->shaderIntegerFunctions2)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL),
+    pNext(nullptr),
+    shaderIntegerFunctions2()
+{}
+
+safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(const safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    shaderIntegerFunctions2 = copy_src.shaderIntegerFunctions2;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL& safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::operator=(const safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderIntegerFunctions2 = copy_src.shaderIntegerFunctions2;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::~safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::initialize(const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderIntegerFunctions2 = in_struct->shaderIntegerFunctions2;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::initialize(const safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    shaderIntegerFunctions2 = copy_src->shaderIntegerFunctions2;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerformanceValueDataINTEL* in_struct)
+{
+    initialize(in_struct);
+}
+
+safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL() :
+    valueString(nullptr)
+{}
+
+safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const safe_VkPerformanceValueDataINTEL& copy_src)
+{
+    value32 = copy_src.value32;
+    value64 = copy_src.value64;
+    valueFloat = copy_src.valueFloat;
+    valueBool = copy_src.valueBool;
+    valueString = SafeStringCopy(copy_src.valueString);
+}
+
+safe_VkPerformanceValueDataINTEL& safe_VkPerformanceValueDataINTEL::operator=(const safe_VkPerformanceValueDataINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (valueString) delete [] valueString;
+
+    value32 = copy_src.value32;
+    value64 = copy_src.value64;
+    valueFloat = copy_src.valueFloat;
+    valueBool = copy_src.valueBool;
+    valueString = SafeStringCopy(copy_src.valueString);
+
+    return *this;
+}
+
+safe_VkPerformanceValueDataINTEL::~safe_VkPerformanceValueDataINTEL()
+{
+    if (valueString) delete [] valueString;
+}
+
+void safe_VkPerformanceValueDataINTEL::initialize(const VkPerformanceValueDataINTEL* in_struct)
+{
+    if (valueString) delete [] valueString;
+    value32 = in_struct->value32;
+    value64 = in_struct->value64;
+    valueFloat = in_struct->valueFloat;
+    valueBool = in_struct->valueBool;
+    valueString = SafeStringCopy(in_struct->valueString);
+}
+
+void safe_VkPerformanceValueDataINTEL::initialize(const safe_VkPerformanceValueDataINTEL* copy_src)
+{
+    value32 = copy_src->value32;
+    value64 = copy_src->value64;
+    valueFloat = copy_src->valueFloat;
+    valueBool = copy_src->valueBool;
+    valueString = SafeStringCopy(copy_src->valueString);
+}
+
+safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL(const VkInitializePerformanceApiInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    pUserData(in_struct->pUserData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL),
+    pNext(nullptr),
+    pUserData(nullptr)
+{}
+
+safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL(const safe_VkInitializePerformanceApiInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    pUserData = copy_src.pUserData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkInitializePerformanceApiInfoINTEL& safe_VkInitializePerformanceApiInfoINTEL::operator=(const safe_VkInitializePerformanceApiInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pUserData = copy_src.pUserData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkInitializePerformanceApiInfoINTEL::~safe_VkInitializePerformanceApiInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkInitializePerformanceApiInfoINTEL::initialize(const VkInitializePerformanceApiInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pUserData = in_struct->pUserData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkInitializePerformanceApiInfoINTEL::initialize(const safe_VkInitializePerformanceApiInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    pUserData = copy_src->pUserData;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::safe_VkQueryPoolPerformanceQueryCreateInfoINTEL(const VkQueryPoolPerformanceQueryCreateInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    performanceCountersSampling(in_struct->performanceCountersSampling)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::safe_VkQueryPoolPerformanceQueryCreateInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL),
+    pNext(nullptr),
+    performanceCountersSampling()
+{}
+
+safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::safe_VkQueryPoolPerformanceQueryCreateInfoINTEL(const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    performanceCountersSampling = copy_src.performanceCountersSampling;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::operator=(const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    performanceCountersSampling = copy_src.performanceCountersSampling;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::~safe_VkQueryPoolPerformanceQueryCreateInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::initialize(const VkQueryPoolPerformanceQueryCreateInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    performanceCountersSampling = in_struct->performanceCountersSampling;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueryPoolPerformanceQueryCreateInfoINTEL::initialize(const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    performanceCountersSampling = copy_src->performanceCountersSampling;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL(const VkPerformanceMarkerInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    marker(in_struct->marker)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL),
+    pNext(nullptr),
+    marker()
+{}
+
+safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL(const safe_VkPerformanceMarkerInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPerformanceMarkerInfoINTEL& safe_VkPerformanceMarkerInfoINTEL::operator=(const safe_VkPerformanceMarkerInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPerformanceMarkerInfoINTEL::~safe_VkPerformanceMarkerInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceMarkerInfoINTEL::initialize(const VkPerformanceMarkerInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    marker = in_struct->marker;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPerformanceMarkerInfoINTEL::initialize(const safe_VkPerformanceMarkerInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    marker = copy_src->marker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL(const VkPerformanceStreamMarkerInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    marker(in_struct->marker)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL),
+    pNext(nullptr),
+    marker()
+{}
+
+safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL(const safe_VkPerformanceStreamMarkerInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPerformanceStreamMarkerInfoINTEL& safe_VkPerformanceStreamMarkerInfoINTEL::operator=(const safe_VkPerformanceStreamMarkerInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    marker = copy_src.marker;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPerformanceStreamMarkerInfoINTEL::~safe_VkPerformanceStreamMarkerInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceStreamMarkerInfoINTEL::initialize(const VkPerformanceStreamMarkerInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    marker = in_struct->marker;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPerformanceStreamMarkerInfoINTEL::initialize(const safe_VkPerformanceStreamMarkerInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    marker = copy_src->marker;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL(const VkPerformanceOverrideInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    type(in_struct->type),
+    enable(in_struct->enable),
+    parameter(in_struct->parameter)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL),
+    pNext(nullptr),
+    type(),
+    enable(),
+    parameter()
+{}
+
+safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL(const safe_VkPerformanceOverrideInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    type = copy_src.type;
+    enable = copy_src.enable;
+    parameter = copy_src.parameter;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPerformanceOverrideInfoINTEL& safe_VkPerformanceOverrideInfoINTEL::operator=(const safe_VkPerformanceOverrideInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    type = copy_src.type;
+    enable = copy_src.enable;
+    parameter = copy_src.parameter;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPerformanceOverrideInfoINTEL::~safe_VkPerformanceOverrideInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceOverrideInfoINTEL::initialize(const VkPerformanceOverrideInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    type = in_struct->type;
+    enable = in_struct->enable;
+    parameter = in_struct->parameter;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPerformanceOverrideInfoINTEL::initialize(const safe_VkPerformanceOverrideInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    type = copy_src->type;
+    enable = copy_src->enable;
+    parameter = copy_src->parameter;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL(const VkPerformanceConfigurationAcquireInfoINTEL* in_struct) :
+    sType(in_struct->sType),
+    type(in_struct->type)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL() :
+    sType(VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL),
+    pNext(nullptr),
+    type()
+{}
+
+safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL(const safe_VkPerformanceConfigurationAcquireInfoINTEL& copy_src)
+{
+    sType = copy_src.sType;
+    type = copy_src.type;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPerformanceConfigurationAcquireInfoINTEL& safe_VkPerformanceConfigurationAcquireInfoINTEL::operator=(const safe_VkPerformanceConfigurationAcquireInfoINTEL& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    type = copy_src.type;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPerformanceConfigurationAcquireInfoINTEL::~safe_VkPerformanceConfigurationAcquireInfoINTEL()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceConfigurationAcquireInfoINTEL::initialize(const VkPerformanceConfigurationAcquireInfoINTEL* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    type = in_struct->type;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPerformanceConfigurationAcquireInfoINTEL::initialize(const safe_VkPerformanceConfigurationAcquireInfoINTEL* copy_src)
+{
+    sType = copy_src->sType;
+    type = copy_src->type;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD(const VkDisplayNativeHdrSurfaceCapabilitiesAMD* in_struct) :
+    sType(in_struct->sType),
+    localDimmingSupport(in_struct->localDimmingSupport)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD() :
+    sType(VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD),
+    pNext(nullptr),
+    localDimmingSupport()
+{}
+
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& copy_src)
+{
+    sType = copy_src.sType;
+    localDimmingSupport = copy_src.localDimmingSupport;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::operator=(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    localDimmingSupport = copy_src.localDimmingSupport;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::~safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::initialize(const VkDisplayNativeHdrSurfaceCapabilitiesAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    localDimmingSupport = in_struct->localDimmingSupport;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::initialize(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD* copy_src)
+{
+    sType = copy_src->sType;
+    localDimmingSupport = copy_src->localDimmingSupport;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD(const VkSwapchainDisplayNativeHdrCreateInfoAMD* in_struct) :
+    sType(in_struct->sType),
+    localDimmingEnable(in_struct->localDimmingEnable)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD() :
+    sType(VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD),
+    pNext(nullptr),
+    localDimmingEnable()
+{}
+
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& copy_src)
+{
+    sType = copy_src.sType;
+    localDimmingEnable = copy_src.localDimmingEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::operator=(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    localDimmingEnable = copy_src.localDimmingEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::~safe_VkSwapchainDisplayNativeHdrCreateInfoAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::initialize(const VkSwapchainDisplayNativeHdrCreateInfoAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    localDimmingEnable = in_struct->localDimmingEnable;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::initialize(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD* copy_src)
+{
+    sType = copy_src->sType;
+    localDimmingEnable = copy_src->localDimmingEnable;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    imagePipeHandle(in_struct->imagePipeHandle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA),
+    pNext(nullptr),
+    flags(),
+    imagePipeHandle()
+{}
+
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    imagePipeHandle = copy_src.imagePipeHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA& safe_VkImagePipeSurfaceCreateInfoFUCHSIA::operator=(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    imagePipeHandle = copy_src.imagePipeHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA::~safe_VkImagePipeSurfaceCreateInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImagePipeSurfaceCreateInfoFUCHSIA::initialize(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    imagePipeHandle = in_struct->imagePipeHandle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImagePipeSurfaceCreateInfoFUCHSIA::initialize(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    imagePipeHandle = copy_src->imagePipeHandle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCoreProperties2AMD(const VkPhysicalDeviceShaderCoreProperties2AMD* in_struct) :
+    sType(in_struct->sType),
+    shaderCoreFeatures(in_struct->shaderCoreFeatures),
+    activeComputeUnitCount(in_struct->activeComputeUnitCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCoreProperties2AMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD),
+    pNext(nullptr),
+    shaderCoreFeatures(),
+    activeComputeUnitCount()
+{}
+
+safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCoreProperties2AMD(const safe_VkPhysicalDeviceShaderCoreProperties2AMD& copy_src)
+{
+    sType = copy_src.sType;
+    shaderCoreFeatures = copy_src.shaderCoreFeatures;
+    activeComputeUnitCount = copy_src.activeComputeUnitCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreProperties2AMD& safe_VkPhysicalDeviceShaderCoreProperties2AMD::operator=(const safe_VkPhysicalDeviceShaderCoreProperties2AMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderCoreFeatures = copy_src.shaderCoreFeatures;
+    activeComputeUnitCount = copy_src.activeComputeUnitCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCoreProperties2AMD::~safe_VkPhysicalDeviceShaderCoreProperties2AMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreProperties2AMD::initialize(const VkPhysicalDeviceShaderCoreProperties2AMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderCoreFeatures = in_struct->shaderCoreFeatures;
+    activeComputeUnitCount = in_struct->activeComputeUnitCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreProperties2AMD::initialize(const safe_VkPhysicalDeviceShaderCoreProperties2AMD* copy_src)
+{
+    sType = copy_src->sType;
+    shaderCoreFeatures = copy_src->shaderCoreFeatures;
+    activeComputeUnitCount = copy_src->activeComputeUnitCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct) :
+    sType(in_struct->sType),
+    deviceCoherentMemory(in_struct->deviceCoherentMemory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD),
+    pNext(nullptr),
+    deviceCoherentMemory()
+{}
+
+safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& copy_src)
+{
+    sType = copy_src.sType;
+    deviceCoherentMemory = copy_src.deviceCoherentMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::operator=(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceCoherentMemory = copy_src.deviceCoherentMemory;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::~safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::initialize(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    deviceCoherentMemory = in_struct->deviceCoherentMemory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD::initialize(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD* copy_src)
+{
+    sType = copy_src->sType;
+    deviceCoherentMemory = copy_src->deviceCoherentMemory;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV(const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    dedicatedAllocationImageAliasing(in_struct->dedicatedAllocationImageAliasing)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV),
+    pNext(nullptr),
+    dedicatedAllocationImageAliasing()
+{}
+
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV(const safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    dedicatedAllocationImageAliasing = copy_src.dedicatedAllocationImageAliasing;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::operator=(const safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dedicatedAllocationImageAliasing = copy_src.dedicatedAllocationImageAliasing;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::~safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::initialize(const VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    dedicatedAllocationImageAliasing = in_struct->dedicatedAllocationImageAliasing;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::initialize(const safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    dedicatedAllocationImageAliasing = copy_src->dedicatedAllocationImageAliasing;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV(const VkCooperativeMatrixPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    MSize(in_struct->MSize),
+    NSize(in_struct->NSize),
+    KSize(in_struct->KSize),
+    AType(in_struct->AType),
+    BType(in_struct->BType),
+    CType(in_struct->CType),
+    DType(in_struct->DType),
+    scope(in_struct->scope)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV),
+    pNext(nullptr),
+    MSize(),
+    NSize(),
+    KSize(),
+    AType(),
+    BType(),
+    CType(),
+    DType(),
+    scope()
+{}
+
+safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV(const safe_VkCooperativeMatrixPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    MSize = copy_src.MSize;
+    NSize = copy_src.NSize;
+    KSize = copy_src.KSize;
+    AType = copy_src.AType;
+    BType = copy_src.BType;
+    CType = copy_src.CType;
+    DType = copy_src.DType;
+    scope = copy_src.scope;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCooperativeMatrixPropertiesNV& safe_VkCooperativeMatrixPropertiesNV::operator=(const safe_VkCooperativeMatrixPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    MSize = copy_src.MSize;
+    NSize = copy_src.NSize;
+    KSize = copy_src.KSize;
+    AType = copy_src.AType;
+    BType = copy_src.BType;
+    CType = copy_src.CType;
+    DType = copy_src.DType;
+    scope = copy_src.scope;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCooperativeMatrixPropertiesNV::~safe_VkCooperativeMatrixPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCooperativeMatrixPropertiesNV::initialize(const VkCooperativeMatrixPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    MSize = in_struct->MSize;
+    NSize = in_struct->NSize;
+    KSize = in_struct->KSize;
+    AType = in_struct->AType;
+    BType = in_struct->BType;
+    CType = in_struct->CType;
+    DType = in_struct->DType;
+    scope = in_struct->scope;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCooperativeMatrixPropertiesNV::initialize(const safe_VkCooperativeMatrixPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    MSize = copy_src->MSize;
+    NSize = copy_src->NSize;
+    KSize = copy_src->KSize;
+    AType = copy_src->AType;
+    BType = copy_src->BType;
+    CType = copy_src->CType;
+    DType = copy_src->DType;
+    scope = copy_src->scope;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV(const VkPhysicalDeviceCooperativeMatrixFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    cooperativeMatrix(in_struct->cooperativeMatrix),
+    cooperativeMatrixRobustBufferAccess(in_struct->cooperativeMatrixRobustBufferAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV),
+    pNext(nullptr),
+    cooperativeMatrix(),
+    cooperativeMatrixRobustBufferAccess()
+{}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    cooperativeMatrix = copy_src.cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src.cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::operator=(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    cooperativeMatrix = copy_src.cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src.cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::~safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::initialize(const VkPhysicalDeviceCooperativeMatrixFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    cooperativeMatrix = in_struct->cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = in_struct->cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::initialize(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    cooperativeMatrix = copy_src->cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src->cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV(const VkPhysicalDeviceCooperativeMatrixPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    cooperativeMatrixSupportedStages(in_struct->cooperativeMatrixSupportedStages)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV),
+    pNext(nullptr),
+    cooperativeMatrixSupportedStages()
+{}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    cooperativeMatrixSupportedStages = copy_src.cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::operator=(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    cooperativeMatrixSupportedStages = copy_src.cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::~safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::initialize(const VkPhysicalDeviceCooperativeMatrixPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    cooperativeMatrixSupportedStages = in_struct->cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::initialize(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    cooperativeMatrixSupportedStages = copy_src->cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV(const VkPhysicalDeviceCoverageReductionModeFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    coverageReductionMode(in_struct->coverageReductionMode)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV),
+    pNext(nullptr),
+    coverageReductionMode()
+{}
+
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV(const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::operator=(const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::~safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::initialize(const VkPhysicalDeviceCoverageReductionModeFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    coverageReductionMode = in_struct->coverageReductionMode;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::initialize(const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    coverageReductionMode = copy_src->coverageReductionMode;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV(const VkPipelineCoverageReductionStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    coverageReductionMode(in_struct->coverageReductionMode)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    coverageReductionMode()
+{}
+
+safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV(const safe_VkPipelineCoverageReductionStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineCoverageReductionStateCreateInfoNV& safe_VkPipelineCoverageReductionStateCreateInfoNV::operator=(const safe_VkPipelineCoverageReductionStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineCoverageReductionStateCreateInfoNV::~safe_VkPipelineCoverageReductionStateCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineCoverageReductionStateCreateInfoNV::initialize(const VkPipelineCoverageReductionStateCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    coverageReductionMode = in_struct->coverageReductionMode;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineCoverageReductionStateCreateInfoNV::initialize(const safe_VkPipelineCoverageReductionStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    coverageReductionMode = copy_src->coverageReductionMode;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV(const VkFramebufferMixedSamplesCombinationNV* in_struct) :
+    sType(in_struct->sType),
+    coverageReductionMode(in_struct->coverageReductionMode),
+    rasterizationSamples(in_struct->rasterizationSamples),
+    depthStencilSamples(in_struct->depthStencilSamples),
+    colorSamples(in_struct->colorSamples)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV() :
+    sType(VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV),
+    pNext(nullptr),
+    coverageReductionMode(),
+    rasterizationSamples(),
+    depthStencilSamples(),
+    colorSamples()
+{}
+
+safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV(const safe_VkFramebufferMixedSamplesCombinationNV& copy_src)
+{
+    sType = copy_src.sType;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    rasterizationSamples = copy_src.rasterizationSamples;
+    depthStencilSamples = copy_src.depthStencilSamples;
+    colorSamples = copy_src.colorSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkFramebufferMixedSamplesCombinationNV& safe_VkFramebufferMixedSamplesCombinationNV::operator=(const safe_VkFramebufferMixedSamplesCombinationNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    coverageReductionMode = copy_src.coverageReductionMode;
+    rasterizationSamples = copy_src.rasterizationSamples;
+    depthStencilSamples = copy_src.depthStencilSamples;
+    colorSamples = copy_src.colorSamples;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkFramebufferMixedSamplesCombinationNV::~safe_VkFramebufferMixedSamplesCombinationNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkFramebufferMixedSamplesCombinationNV::initialize(const VkFramebufferMixedSamplesCombinationNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    coverageReductionMode = in_struct->coverageReductionMode;
+    rasterizationSamples = in_struct->rasterizationSamples;
+    depthStencilSamples = in_struct->depthStencilSamples;
+    colorSamples = in_struct->colorSamples;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkFramebufferMixedSamplesCombinationNV::initialize(const safe_VkFramebufferMixedSamplesCombinationNV* copy_src)
+{
+    sType = copy_src->sType;
+    coverageReductionMode = copy_src->coverageReductionMode;
+    rasterizationSamples = copy_src->rasterizationSamples;
+    depthStencilSamples = copy_src->depthStencilSamples;
+    colorSamples = copy_src->colorSamples;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV(const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    maxGraphicsShaderGroupCount(in_struct->maxGraphicsShaderGroupCount),
+    maxIndirectSequenceCount(in_struct->maxIndirectSequenceCount),
+    maxIndirectCommandsTokenCount(in_struct->maxIndirectCommandsTokenCount),
+    maxIndirectCommandsStreamCount(in_struct->maxIndirectCommandsStreamCount),
+    maxIndirectCommandsTokenOffset(in_struct->maxIndirectCommandsTokenOffset),
+    maxIndirectCommandsStreamStride(in_struct->maxIndirectCommandsStreamStride),
+    minSequencesCountBufferOffsetAlignment(in_struct->minSequencesCountBufferOffsetAlignment),
+    minSequencesIndexBufferOffsetAlignment(in_struct->minSequencesIndexBufferOffsetAlignment),
+    minIndirectCommandsBufferOffsetAlignment(in_struct->minIndirectCommandsBufferOffsetAlignment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV),
+    pNext(nullptr),
+    maxGraphicsShaderGroupCount(),
+    maxIndirectSequenceCount(),
+    maxIndirectCommandsTokenCount(),
+    maxIndirectCommandsStreamCount(),
+    maxIndirectCommandsTokenOffset(),
+    maxIndirectCommandsStreamStride(),
+    minSequencesCountBufferOffsetAlignment(),
+    minSequencesIndexBufferOffsetAlignment(),
+    minIndirectCommandsBufferOffsetAlignment()
+{}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV(const safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxGraphicsShaderGroupCount = copy_src.maxGraphicsShaderGroupCount;
+    maxIndirectSequenceCount = copy_src.maxIndirectSequenceCount;
+    maxIndirectCommandsTokenCount = copy_src.maxIndirectCommandsTokenCount;
+    maxIndirectCommandsStreamCount = copy_src.maxIndirectCommandsStreamCount;
+    maxIndirectCommandsTokenOffset = copy_src.maxIndirectCommandsTokenOffset;
+    maxIndirectCommandsStreamStride = copy_src.maxIndirectCommandsStreamStride;
+    minSequencesCountBufferOffsetAlignment = copy_src.minSequencesCountBufferOffsetAlignment;
+    minSequencesIndexBufferOffsetAlignment = copy_src.minSequencesIndexBufferOffsetAlignment;
+    minIndirectCommandsBufferOffsetAlignment = copy_src.minIndirectCommandsBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::operator=(const safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxGraphicsShaderGroupCount = copy_src.maxGraphicsShaderGroupCount;
+    maxIndirectSequenceCount = copy_src.maxIndirectSequenceCount;
+    maxIndirectCommandsTokenCount = copy_src.maxIndirectCommandsTokenCount;
+    maxIndirectCommandsStreamCount = copy_src.maxIndirectCommandsStreamCount;
+    maxIndirectCommandsTokenOffset = copy_src.maxIndirectCommandsTokenOffset;
+    maxIndirectCommandsStreamStride = copy_src.maxIndirectCommandsStreamStride;
+    minSequencesCountBufferOffsetAlignment = copy_src.minSequencesCountBufferOffsetAlignment;
+    minSequencesIndexBufferOffsetAlignment = copy_src.minSequencesIndexBufferOffsetAlignment;
+    minIndirectCommandsBufferOffsetAlignment = copy_src.minIndirectCommandsBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::~safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::initialize(const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxGraphicsShaderGroupCount = in_struct->maxGraphicsShaderGroupCount;
+    maxIndirectSequenceCount = in_struct->maxIndirectSequenceCount;
+    maxIndirectCommandsTokenCount = in_struct->maxIndirectCommandsTokenCount;
+    maxIndirectCommandsStreamCount = in_struct->maxIndirectCommandsStreamCount;
+    maxIndirectCommandsTokenOffset = in_struct->maxIndirectCommandsTokenOffset;
+    maxIndirectCommandsStreamStride = in_struct->maxIndirectCommandsStreamStride;
+    minSequencesCountBufferOffsetAlignment = in_struct->minSequencesCountBufferOffsetAlignment;
+    minSequencesIndexBufferOffsetAlignment = in_struct->minSequencesIndexBufferOffsetAlignment;
+    minIndirectCommandsBufferOffsetAlignment = in_struct->minIndirectCommandsBufferOffsetAlignment;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::initialize(const safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxGraphicsShaderGroupCount = copy_src->maxGraphicsShaderGroupCount;
+    maxIndirectSequenceCount = copy_src->maxIndirectSequenceCount;
+    maxIndirectCommandsTokenCount = copy_src->maxIndirectCommandsTokenCount;
+    maxIndirectCommandsStreamCount = copy_src->maxIndirectCommandsStreamCount;
+    maxIndirectCommandsTokenOffset = copy_src->maxIndirectCommandsTokenOffset;
+    maxIndirectCommandsStreamStride = copy_src->maxIndirectCommandsStreamStride;
+    minSequencesCountBufferOffsetAlignment = copy_src->minSequencesCountBufferOffsetAlignment;
+    minSequencesIndexBufferOffsetAlignment = copy_src->minSequencesIndexBufferOffsetAlignment;
+    minIndirectCommandsBufferOffsetAlignment = copy_src->minIndirectCommandsBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV(const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    deviceGeneratedCommands(in_struct->deviceGeneratedCommands)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV),
+    pNext(nullptr),
+    deviceGeneratedCommands()
+{}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV(const safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    deviceGeneratedCommands = copy_src.deviceGeneratedCommands;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::operator=(const safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceGeneratedCommands = copy_src.deviceGeneratedCommands;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::~safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::initialize(const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    deviceGeneratedCommands = in_struct->deviceGeneratedCommands;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::initialize(const safe_VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    deviceGeneratedCommands = copy_src->deviceGeneratedCommands;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkGraphicsShaderGroupCreateInfoNV::safe_VkGraphicsShaderGroupCreateInfoNV(const VkGraphicsShaderGroupCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    stageCount(in_struct->stageCount),
+    pStages(nullptr),
+    pVertexInputState(nullptr),
+    pTessellationState(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (in_struct->pVertexInputState)
+        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
+    if (in_struct->pTessellationState)
+        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
+}
+
+safe_VkGraphicsShaderGroupCreateInfoNV::safe_VkGraphicsShaderGroupCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GRAPHICS_SHADER_GROUP_CREATE_INFO_NV),
+    pNext(nullptr),
+    stageCount(),
+    pStages(nullptr),
+    pVertexInputState(nullptr),
+    pTessellationState(nullptr)
+{}
+
+safe_VkGraphicsShaderGroupCreateInfoNV::safe_VkGraphicsShaderGroupCreateInfoNV(const safe_VkGraphicsShaderGroupCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    pVertexInputState = nullptr;
+    pTessellationState = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (copy_src.pVertexInputState)
+        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
+    if (copy_src.pTessellationState)
+        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
+}
+
+safe_VkGraphicsShaderGroupCreateInfoNV& safe_VkGraphicsShaderGroupCreateInfoNV::operator=(const safe_VkGraphicsShaderGroupCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pStages)
+        delete[] pStages;
+    if (pVertexInputState)
+        delete pVertexInputState;
+    if (pTessellationState)
+        delete pTessellationState;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    stageCount = copy_src.stageCount;
+    pStages = nullptr;
+    pVertexInputState = nullptr;
+    pTessellationState = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (stageCount && copy_src.pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src.pStages[i]);
+        }
+    }
+    if (copy_src.pVertexInputState)
+        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
+    if (copy_src.pTessellationState)
+        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
+
+    return *this;
+}
+
+safe_VkGraphicsShaderGroupCreateInfoNV::~safe_VkGraphicsShaderGroupCreateInfoNV()
+{
+    if (pStages)
+        delete[] pStages;
+    if (pVertexInputState)
+        delete pVertexInputState;
+    if (pTessellationState)
+        delete pTessellationState;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGraphicsShaderGroupCreateInfoNV::initialize(const VkGraphicsShaderGroupCreateInfoNV* in_struct)
+{
+    if (pStages)
+        delete[] pStages;
+    if (pVertexInputState)
+        delete pVertexInputState;
+    if (pTessellationState)
+        delete pTessellationState;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    stageCount = in_struct->stageCount;
+    pStages = nullptr;
+    pVertexInputState = nullptr;
+    pTessellationState = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (stageCount && in_struct->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&in_struct->pStages[i]);
+        }
+    }
+    if (in_struct->pVertexInputState)
+        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
+    if (in_struct->pTessellationState)
+        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
+}
+
+void safe_VkGraphicsShaderGroupCreateInfoNV::initialize(const safe_VkGraphicsShaderGroupCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    stageCount = copy_src->stageCount;
+    pStages = nullptr;
+    pVertexInputState = nullptr;
+    pTessellationState = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (stageCount && copy_src->pStages) {
+        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
+        for (uint32_t i = 0; i < stageCount; ++i) {
+            pStages[i].initialize(&copy_src->pStages[i]);
+        }
+    }
+    if (copy_src->pVertexInputState)
+        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src->pVertexInputState);
+    if (copy_src->pTessellationState)
+        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src->pTessellationState);
+}
+
+safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::safe_VkGraphicsPipelineShaderGroupsCreateInfoNV(const VkGraphicsPipelineShaderGroupsCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    groupCount(in_struct->groupCount),
+    pGroups(nullptr),
+    pipelineCount(in_struct->pipelineCount),
+    pPipelines(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (groupCount && in_struct->pGroups) {
+        pGroups = new safe_VkGraphicsShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&in_struct->pGroups[i]);
+        }
+    }
+    if (pipelineCount && in_struct->pPipelines) {
+        pPipelines = new VkPipeline[pipelineCount];
+        for (uint32_t i = 0; i < pipelineCount; ++i) {
+            pPipelines[i] = in_struct->pPipelines[i];
+        }
+    }
+}
+
+safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::safe_VkGraphicsPipelineShaderGroupsCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV),
+    pNext(nullptr),
+    groupCount(),
+    pGroups(nullptr),
+    pipelineCount(),
+    pPipelines(nullptr)
+{}
+
+safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::safe_VkGraphicsPipelineShaderGroupsCreateInfoNV(const safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    groupCount = copy_src.groupCount;
+    pGroups = nullptr;
+    pipelineCount = copy_src.pipelineCount;
+    pPipelines = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (groupCount && copy_src.pGroups) {
+        pGroups = new safe_VkGraphicsShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src.pGroups[i]);
+        }
+    }
+    if (pipelineCount && copy_src.pPipelines) {
+        pPipelines = new VkPipeline[pipelineCount];
+        for (uint32_t i = 0; i < pipelineCount; ++i) {
+            pPipelines[i] = copy_src.pPipelines[i];
+        }
+    }
+}
+
+safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::operator=(const safe_VkGraphicsPipelineShaderGroupsCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pGroups)
+        delete[] pGroups;
+    if (pPipelines)
+        delete[] pPipelines;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    groupCount = copy_src.groupCount;
+    pGroups = nullptr;
+    pipelineCount = copy_src.pipelineCount;
+    pPipelines = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (groupCount && copy_src.pGroups) {
+        pGroups = new safe_VkGraphicsShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src.pGroups[i]);
+        }
+    }
+    if (pipelineCount && copy_src.pPipelines) {
+        pPipelines = new VkPipeline[pipelineCount];
+        for (uint32_t i = 0; i < pipelineCount; ++i) {
+            pPipelines[i] = copy_src.pPipelines[i];
+        }
+    }
+
+    return *this;
+}
+
+safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::~safe_VkGraphicsPipelineShaderGroupsCreateInfoNV()
+{
+    if (pGroups)
+        delete[] pGroups;
+    if (pPipelines)
+        delete[] pPipelines;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::initialize(const VkGraphicsPipelineShaderGroupsCreateInfoNV* in_struct)
+{
+    if (pGroups)
+        delete[] pGroups;
+    if (pPipelines)
+        delete[] pPipelines;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    groupCount = in_struct->groupCount;
+    pGroups = nullptr;
+    pipelineCount = in_struct->pipelineCount;
+    pPipelines = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (groupCount && in_struct->pGroups) {
+        pGroups = new safe_VkGraphicsShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&in_struct->pGroups[i]);
+        }
+    }
+    if (pipelineCount && in_struct->pPipelines) {
+        pPipelines = new VkPipeline[pipelineCount];
+        for (uint32_t i = 0; i < pipelineCount; ++i) {
+            pPipelines[i] = in_struct->pPipelines[i];
+        }
+    }
+}
+
+void safe_VkGraphicsPipelineShaderGroupsCreateInfoNV::initialize(const safe_VkGraphicsPipelineShaderGroupsCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    groupCount = copy_src->groupCount;
+    pGroups = nullptr;
+    pipelineCount = copy_src->pipelineCount;
+    pPipelines = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (groupCount && copy_src->pGroups) {
+        pGroups = new safe_VkGraphicsShaderGroupCreateInfoNV[groupCount];
+        for (uint32_t i = 0; i < groupCount; ++i) {
+            pGroups[i].initialize(&copy_src->pGroups[i]);
+        }
+    }
+    if (pipelineCount && copy_src->pPipelines) {
+        pPipelines = new VkPipeline[pipelineCount];
+        for (uint32_t i = 0; i < pipelineCount; ++i) {
+            pPipelines[i] = copy_src->pPipelines[i];
+        }
+    }
+}
+
+safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV(const VkIndirectCommandsLayoutTokenNV* in_struct) :
+    sType(in_struct->sType),
+    tokenType(in_struct->tokenType),
+    stream(in_struct->stream),
+    offset(in_struct->offset),
+    vertexBindingUnit(in_struct->vertexBindingUnit),
+    vertexDynamicStride(in_struct->vertexDynamicStride),
+    pushconstantPipelineLayout(in_struct->pushconstantPipelineLayout),
+    pushconstantShaderStageFlags(in_struct->pushconstantShaderStageFlags),
+    pushconstantOffset(in_struct->pushconstantOffset),
+    pushconstantSize(in_struct->pushconstantSize),
+    indirectStateFlags(in_struct->indirectStateFlags),
+    indexTypeCount(in_struct->indexTypeCount),
+    pIndexTypes(nullptr),
+    pIndexTypeValues(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pIndexTypes) {
+        pIndexTypes = new VkIndexType[in_struct->indexTypeCount];
+        memcpy ((void *)pIndexTypes, (void *)in_struct->pIndexTypes, sizeof(VkIndexType)*in_struct->indexTypeCount);
+    }
+    if (in_struct->pIndexTypeValues) {
+        pIndexTypeValues = new uint32_t[in_struct->indexTypeCount];
+        memcpy ((void *)pIndexTypeValues, (void *)in_struct->pIndexTypeValues, sizeof(uint32_t)*in_struct->indexTypeCount);
+    }
+}
+
+safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV() :
+    sType(VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_TOKEN_NV),
+    pNext(nullptr),
+    tokenType(),
+    stream(),
+    offset(),
+    vertexBindingUnit(),
+    vertexDynamicStride(),
+    pushconstantPipelineLayout(),
+    pushconstantShaderStageFlags(),
+    pushconstantOffset(),
+    pushconstantSize(),
+    indirectStateFlags(),
+    indexTypeCount(),
+    pIndexTypes(nullptr),
+    pIndexTypeValues(nullptr)
+{}
+
+safe_VkIndirectCommandsLayoutTokenNV::safe_VkIndirectCommandsLayoutTokenNV(const safe_VkIndirectCommandsLayoutTokenNV& copy_src)
+{
+    sType = copy_src.sType;
+    tokenType = copy_src.tokenType;
+    stream = copy_src.stream;
+    offset = copy_src.offset;
+    vertexBindingUnit = copy_src.vertexBindingUnit;
+    vertexDynamicStride = copy_src.vertexDynamicStride;
+    pushconstantPipelineLayout = copy_src.pushconstantPipelineLayout;
+    pushconstantShaderStageFlags = copy_src.pushconstantShaderStageFlags;
+    pushconstantOffset = copy_src.pushconstantOffset;
+    pushconstantSize = copy_src.pushconstantSize;
+    indirectStateFlags = copy_src.indirectStateFlags;
+    indexTypeCount = copy_src.indexTypeCount;
+    pIndexTypes = nullptr;
+    pIndexTypeValues = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pIndexTypes) {
+        pIndexTypes = new VkIndexType[copy_src.indexTypeCount];
+        memcpy ((void *)pIndexTypes, (void *)copy_src.pIndexTypes, sizeof(VkIndexType)*copy_src.indexTypeCount);
+    }
+    if (copy_src.pIndexTypeValues) {
+        pIndexTypeValues = new uint32_t[copy_src.indexTypeCount];
+        memcpy ((void *)pIndexTypeValues, (void *)copy_src.pIndexTypeValues, sizeof(uint32_t)*copy_src.indexTypeCount);
+    }
+}
+
+safe_VkIndirectCommandsLayoutTokenNV& safe_VkIndirectCommandsLayoutTokenNV::operator=(const safe_VkIndirectCommandsLayoutTokenNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pIndexTypes)
+        delete[] pIndexTypes;
+    if (pIndexTypeValues)
+        delete[] pIndexTypeValues;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    tokenType = copy_src.tokenType;
+    stream = copy_src.stream;
+    offset = copy_src.offset;
+    vertexBindingUnit = copy_src.vertexBindingUnit;
+    vertexDynamicStride = copy_src.vertexDynamicStride;
+    pushconstantPipelineLayout = copy_src.pushconstantPipelineLayout;
+    pushconstantShaderStageFlags = copy_src.pushconstantShaderStageFlags;
+    pushconstantOffset = copy_src.pushconstantOffset;
+    pushconstantSize = copy_src.pushconstantSize;
+    indirectStateFlags = copy_src.indirectStateFlags;
+    indexTypeCount = copy_src.indexTypeCount;
+    pIndexTypes = nullptr;
+    pIndexTypeValues = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pIndexTypes) {
+        pIndexTypes = new VkIndexType[copy_src.indexTypeCount];
+        memcpy ((void *)pIndexTypes, (void *)copy_src.pIndexTypes, sizeof(VkIndexType)*copy_src.indexTypeCount);
+    }
+    if (copy_src.pIndexTypeValues) {
+        pIndexTypeValues = new uint32_t[copy_src.indexTypeCount];
+        memcpy ((void *)pIndexTypeValues, (void *)copy_src.pIndexTypeValues, sizeof(uint32_t)*copy_src.indexTypeCount);
+    }
+
+    return *this;
+}
+
+safe_VkIndirectCommandsLayoutTokenNV::~safe_VkIndirectCommandsLayoutTokenNV()
+{
+    if (pIndexTypes)
+        delete[] pIndexTypes;
+    if (pIndexTypeValues)
+        delete[] pIndexTypeValues;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkIndirectCommandsLayoutTokenNV::initialize(const VkIndirectCommandsLayoutTokenNV* in_struct)
+{
+    if (pIndexTypes)
+        delete[] pIndexTypes;
+    if (pIndexTypeValues)
+        delete[] pIndexTypeValues;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    tokenType = in_struct->tokenType;
+    stream = in_struct->stream;
+    offset = in_struct->offset;
+    vertexBindingUnit = in_struct->vertexBindingUnit;
+    vertexDynamicStride = in_struct->vertexDynamicStride;
+    pushconstantPipelineLayout = in_struct->pushconstantPipelineLayout;
+    pushconstantShaderStageFlags = in_struct->pushconstantShaderStageFlags;
+    pushconstantOffset = in_struct->pushconstantOffset;
+    pushconstantSize = in_struct->pushconstantSize;
+    indirectStateFlags = in_struct->indirectStateFlags;
+    indexTypeCount = in_struct->indexTypeCount;
+    pIndexTypes = nullptr;
+    pIndexTypeValues = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pIndexTypes) {
+        pIndexTypes = new VkIndexType[in_struct->indexTypeCount];
+        memcpy ((void *)pIndexTypes, (void *)in_struct->pIndexTypes, sizeof(VkIndexType)*in_struct->indexTypeCount);
+    }
+    if (in_struct->pIndexTypeValues) {
+        pIndexTypeValues = new uint32_t[in_struct->indexTypeCount];
+        memcpy ((void *)pIndexTypeValues, (void *)in_struct->pIndexTypeValues, sizeof(uint32_t)*in_struct->indexTypeCount);
+    }
+}
+
+void safe_VkIndirectCommandsLayoutTokenNV::initialize(const safe_VkIndirectCommandsLayoutTokenNV* copy_src)
+{
+    sType = copy_src->sType;
+    tokenType = copy_src->tokenType;
+    stream = copy_src->stream;
+    offset = copy_src->offset;
+    vertexBindingUnit = copy_src->vertexBindingUnit;
+    vertexDynamicStride = copy_src->vertexDynamicStride;
+    pushconstantPipelineLayout = copy_src->pushconstantPipelineLayout;
+    pushconstantShaderStageFlags = copy_src->pushconstantShaderStageFlags;
+    pushconstantOffset = copy_src->pushconstantOffset;
+    pushconstantSize = copy_src->pushconstantSize;
+    indirectStateFlags = copy_src->indirectStateFlags;
+    indexTypeCount = copy_src->indexTypeCount;
+    pIndexTypes = nullptr;
+    pIndexTypeValues = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pIndexTypes) {
+        pIndexTypes = new VkIndexType[copy_src->indexTypeCount];
+        memcpy ((void *)pIndexTypes, (void *)copy_src->pIndexTypes, sizeof(VkIndexType)*copy_src->indexTypeCount);
+    }
+    if (copy_src->pIndexTypeValues) {
+        pIndexTypeValues = new uint32_t[copy_src->indexTypeCount];
+        memcpy ((void *)pIndexTypeValues, (void *)copy_src->pIndexTypeValues, sizeof(uint32_t)*copy_src->indexTypeCount);
+    }
+}
+
+safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateInfoNV(const VkIndirectCommandsLayoutCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    pipelineBindPoint(in_struct->pipelineBindPoint),
+    tokenCount(in_struct->tokenCount),
+    pTokens(nullptr),
+    streamCount(in_struct->streamCount),
+    pStreamStrides(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (tokenCount && in_struct->pTokens) {
+        pTokens = new safe_VkIndirectCommandsLayoutTokenNV[tokenCount];
+        for (uint32_t i = 0; i < tokenCount; ++i) {
+            pTokens[i].initialize(&in_struct->pTokens[i]);
+        }
+    }
+    if (in_struct->pStreamStrides) {
+        pStreamStrides = new uint32_t[in_struct->streamCount];
+        memcpy ((void *)pStreamStrides, (void *)in_struct->pStreamStrides, sizeof(uint32_t)*in_struct->streamCount);
+    }
+}
+
+safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    pipelineBindPoint(),
+    tokenCount(),
+    pTokens(nullptr),
+    streamCount(),
+    pStreamStrides(nullptr)
+{}
+
+safe_VkIndirectCommandsLayoutCreateInfoNV::safe_VkIndirectCommandsLayoutCreateInfoNV(const safe_VkIndirectCommandsLayoutCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    tokenCount = copy_src.tokenCount;
+    pTokens = nullptr;
+    streamCount = copy_src.streamCount;
+    pStreamStrides = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (tokenCount && copy_src.pTokens) {
+        pTokens = new safe_VkIndirectCommandsLayoutTokenNV[tokenCount];
+        for (uint32_t i = 0; i < tokenCount; ++i) {
+            pTokens[i].initialize(&copy_src.pTokens[i]);
+        }
+    }
+    if (copy_src.pStreamStrides) {
+        pStreamStrides = new uint32_t[copy_src.streamCount];
+        memcpy ((void *)pStreamStrides, (void *)copy_src.pStreamStrides, sizeof(uint32_t)*copy_src.streamCount);
+    }
+}
+
+safe_VkIndirectCommandsLayoutCreateInfoNV& safe_VkIndirectCommandsLayoutCreateInfoNV::operator=(const safe_VkIndirectCommandsLayoutCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pTokens)
+        delete[] pTokens;
+    if (pStreamStrides)
+        delete[] pStreamStrides;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    tokenCount = copy_src.tokenCount;
+    pTokens = nullptr;
+    streamCount = copy_src.streamCount;
+    pStreamStrides = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (tokenCount && copy_src.pTokens) {
+        pTokens = new safe_VkIndirectCommandsLayoutTokenNV[tokenCount];
+        for (uint32_t i = 0; i < tokenCount; ++i) {
+            pTokens[i].initialize(&copy_src.pTokens[i]);
+        }
+    }
+    if (copy_src.pStreamStrides) {
+        pStreamStrides = new uint32_t[copy_src.streamCount];
+        memcpy ((void *)pStreamStrides, (void *)copy_src.pStreamStrides, sizeof(uint32_t)*copy_src.streamCount);
+    }
+
+    return *this;
+}
+
+safe_VkIndirectCommandsLayoutCreateInfoNV::~safe_VkIndirectCommandsLayoutCreateInfoNV()
+{
+    if (pTokens)
+        delete[] pTokens;
+    if (pStreamStrides)
+        delete[] pStreamStrides;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkIndirectCommandsLayoutCreateInfoNV::initialize(const VkIndirectCommandsLayoutCreateInfoNV* in_struct)
+{
+    if (pTokens)
+        delete[] pTokens;
+    if (pStreamStrides)
+        delete[] pStreamStrides;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pipelineBindPoint = in_struct->pipelineBindPoint;
+    tokenCount = in_struct->tokenCount;
+    pTokens = nullptr;
+    streamCount = in_struct->streamCount;
+    pStreamStrides = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (tokenCount && in_struct->pTokens) {
+        pTokens = new safe_VkIndirectCommandsLayoutTokenNV[tokenCount];
+        for (uint32_t i = 0; i < tokenCount; ++i) {
+            pTokens[i].initialize(&in_struct->pTokens[i]);
+        }
+    }
+    if (in_struct->pStreamStrides) {
+        pStreamStrides = new uint32_t[in_struct->streamCount];
+        memcpy ((void *)pStreamStrides, (void *)in_struct->pStreamStrides, sizeof(uint32_t)*in_struct->streamCount);
+    }
+}
+
+void safe_VkIndirectCommandsLayoutCreateInfoNV::initialize(const safe_VkIndirectCommandsLayoutCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pipelineBindPoint = copy_src->pipelineBindPoint;
+    tokenCount = copy_src->tokenCount;
+    pTokens = nullptr;
+    streamCount = copy_src->streamCount;
+    pStreamStrides = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (tokenCount && copy_src->pTokens) {
+        pTokens = new safe_VkIndirectCommandsLayoutTokenNV[tokenCount];
+        for (uint32_t i = 0; i < tokenCount; ++i) {
+            pTokens[i].initialize(&copy_src->pTokens[i]);
+        }
+    }
+    if (copy_src->pStreamStrides) {
+        pStreamStrides = new uint32_t[copy_src->streamCount];
+        memcpy ((void *)pStreamStrides, (void *)copy_src->pStreamStrides, sizeof(uint32_t)*copy_src->streamCount);
+    }
+}
+
+safe_VkGeneratedCommandsInfoNV::safe_VkGeneratedCommandsInfoNV(const VkGeneratedCommandsInfoNV* in_struct) :
+    sType(in_struct->sType),
+    pipelineBindPoint(in_struct->pipelineBindPoint),
+    pipeline(in_struct->pipeline),
+    indirectCommandsLayout(in_struct->indirectCommandsLayout),
+    streamCount(in_struct->streamCount),
+    pStreams(nullptr),
+    sequencesCount(in_struct->sequencesCount),
+    preprocessBuffer(in_struct->preprocessBuffer),
+    preprocessOffset(in_struct->preprocessOffset),
+    preprocessSize(in_struct->preprocessSize),
+    sequencesCountBuffer(in_struct->sequencesCountBuffer),
+    sequencesCountOffset(in_struct->sequencesCountOffset),
+    sequencesIndexBuffer(in_struct->sequencesIndexBuffer),
+    sequencesIndexOffset(in_struct->sequencesIndexOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (streamCount && in_struct->pStreams) {
+        pStreams = new VkIndirectCommandsStreamNV[streamCount];
+        for (uint32_t i = 0; i < streamCount; ++i) {
+            pStreams[i] = in_struct->pStreams[i];
+        }
+    }
+}
+
+safe_VkGeneratedCommandsInfoNV::safe_VkGeneratedCommandsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV),
+    pNext(nullptr),
+    pipelineBindPoint(),
+    pipeline(),
+    indirectCommandsLayout(),
+    streamCount(),
+    pStreams(nullptr),
+    sequencesCount(),
+    preprocessBuffer(),
+    preprocessOffset(),
+    preprocessSize(),
+    sequencesCountBuffer(),
+    sequencesCountOffset(),
+    sequencesIndexBuffer(),
+    sequencesIndexOffset()
+{}
+
+safe_VkGeneratedCommandsInfoNV::safe_VkGeneratedCommandsInfoNV(const safe_VkGeneratedCommandsInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    indirectCommandsLayout = copy_src.indirectCommandsLayout;
+    streamCount = copy_src.streamCount;
+    pStreams = nullptr;
+    sequencesCount = copy_src.sequencesCount;
+    preprocessBuffer = copy_src.preprocessBuffer;
+    preprocessOffset = copy_src.preprocessOffset;
+    preprocessSize = copy_src.preprocessSize;
+    sequencesCountBuffer = copy_src.sequencesCountBuffer;
+    sequencesCountOffset = copy_src.sequencesCountOffset;
+    sequencesIndexBuffer = copy_src.sequencesIndexBuffer;
+    sequencesIndexOffset = copy_src.sequencesIndexOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (streamCount && copy_src.pStreams) {
+        pStreams = new VkIndirectCommandsStreamNV[streamCount];
+        for (uint32_t i = 0; i < streamCount; ++i) {
+            pStreams[i] = copy_src.pStreams[i];
+        }
+    }
+}
+
+safe_VkGeneratedCommandsInfoNV& safe_VkGeneratedCommandsInfoNV::operator=(const safe_VkGeneratedCommandsInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pStreams)
+        delete[] pStreams;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    indirectCommandsLayout = copy_src.indirectCommandsLayout;
+    streamCount = copy_src.streamCount;
+    pStreams = nullptr;
+    sequencesCount = copy_src.sequencesCount;
+    preprocessBuffer = copy_src.preprocessBuffer;
+    preprocessOffset = copy_src.preprocessOffset;
+    preprocessSize = copy_src.preprocessSize;
+    sequencesCountBuffer = copy_src.sequencesCountBuffer;
+    sequencesCountOffset = copy_src.sequencesCountOffset;
+    sequencesIndexBuffer = copy_src.sequencesIndexBuffer;
+    sequencesIndexOffset = copy_src.sequencesIndexOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (streamCount && copy_src.pStreams) {
+        pStreams = new VkIndirectCommandsStreamNV[streamCount];
+        for (uint32_t i = 0; i < streamCount; ++i) {
+            pStreams[i] = copy_src.pStreams[i];
+        }
+    }
+
+    return *this;
+}
+
+safe_VkGeneratedCommandsInfoNV::~safe_VkGeneratedCommandsInfoNV()
+{
+    if (pStreams)
+        delete[] pStreams;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGeneratedCommandsInfoNV::initialize(const VkGeneratedCommandsInfoNV* in_struct)
+{
+    if (pStreams)
+        delete[] pStreams;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pipelineBindPoint = in_struct->pipelineBindPoint;
+    pipeline = in_struct->pipeline;
+    indirectCommandsLayout = in_struct->indirectCommandsLayout;
+    streamCount = in_struct->streamCount;
+    pStreams = nullptr;
+    sequencesCount = in_struct->sequencesCount;
+    preprocessBuffer = in_struct->preprocessBuffer;
+    preprocessOffset = in_struct->preprocessOffset;
+    preprocessSize = in_struct->preprocessSize;
+    sequencesCountBuffer = in_struct->sequencesCountBuffer;
+    sequencesCountOffset = in_struct->sequencesCountOffset;
+    sequencesIndexBuffer = in_struct->sequencesIndexBuffer;
+    sequencesIndexOffset = in_struct->sequencesIndexOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (streamCount && in_struct->pStreams) {
+        pStreams = new VkIndirectCommandsStreamNV[streamCount];
+        for (uint32_t i = 0; i < streamCount; ++i) {
+            pStreams[i] = in_struct->pStreams[i];
+        }
+    }
+}
+
+void safe_VkGeneratedCommandsInfoNV::initialize(const safe_VkGeneratedCommandsInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    pipelineBindPoint = copy_src->pipelineBindPoint;
+    pipeline = copy_src->pipeline;
+    indirectCommandsLayout = copy_src->indirectCommandsLayout;
+    streamCount = copy_src->streamCount;
+    pStreams = nullptr;
+    sequencesCount = copy_src->sequencesCount;
+    preprocessBuffer = copy_src->preprocessBuffer;
+    preprocessOffset = copy_src->preprocessOffset;
+    preprocessSize = copy_src->preprocessSize;
+    sequencesCountBuffer = copy_src->sequencesCountBuffer;
+    sequencesCountOffset = copy_src->sequencesCountOffset;
+    sequencesIndexBuffer = copy_src->sequencesIndexBuffer;
+    sequencesIndexOffset = copy_src->sequencesIndexOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (streamCount && copy_src->pStreams) {
+        pStreams = new VkIndirectCommandsStreamNV[streamCount];
+        for (uint32_t i = 0; i < streamCount; ++i) {
+            pStreams[i] = copy_src->pStreams[i];
+        }
+    }
+}
+
+safe_VkGeneratedCommandsMemoryRequirementsInfoNV::safe_VkGeneratedCommandsMemoryRequirementsInfoNV(const VkGeneratedCommandsMemoryRequirementsInfoNV* in_struct) :
+    sType(in_struct->sType),
+    pipelineBindPoint(in_struct->pipelineBindPoint),
+    pipeline(in_struct->pipeline),
+    indirectCommandsLayout(in_struct->indirectCommandsLayout),
+    maxSequencesCount(in_struct->maxSequencesCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkGeneratedCommandsMemoryRequirementsInfoNV::safe_VkGeneratedCommandsMemoryRequirementsInfoNV() :
+    sType(VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV),
+    pNext(nullptr),
+    pipelineBindPoint(),
+    pipeline(),
+    indirectCommandsLayout(),
+    maxSequencesCount()
+{}
+
+safe_VkGeneratedCommandsMemoryRequirementsInfoNV::safe_VkGeneratedCommandsMemoryRequirementsInfoNV(const safe_VkGeneratedCommandsMemoryRequirementsInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    indirectCommandsLayout = copy_src.indirectCommandsLayout;
+    maxSequencesCount = copy_src.maxSequencesCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkGeneratedCommandsMemoryRequirementsInfoNV& safe_VkGeneratedCommandsMemoryRequirementsInfoNV::operator=(const safe_VkGeneratedCommandsMemoryRequirementsInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineBindPoint = copy_src.pipelineBindPoint;
+    pipeline = copy_src.pipeline;
+    indirectCommandsLayout = copy_src.indirectCommandsLayout;
+    maxSequencesCount = copy_src.maxSequencesCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkGeneratedCommandsMemoryRequirementsInfoNV::~safe_VkGeneratedCommandsMemoryRequirementsInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkGeneratedCommandsMemoryRequirementsInfoNV::initialize(const VkGeneratedCommandsMemoryRequirementsInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pipelineBindPoint = in_struct->pipelineBindPoint;
+    pipeline = in_struct->pipeline;
+    indirectCommandsLayout = in_struct->indirectCommandsLayout;
+    maxSequencesCount = in_struct->maxSequencesCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkGeneratedCommandsMemoryRequirementsInfoNV::initialize(const safe_VkGeneratedCommandsMemoryRequirementsInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    pipelineBindPoint = copy_src->pipelineBindPoint;
+    pipeline = copy_src->pipeline;
+    indirectCommandsLayout = copy_src->indirectCommandsLayout;
+    maxSequencesCount = copy_src->maxSequencesCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV(const VkPhysicalDeviceInheritedViewportScissorFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    inheritedViewportScissor2D(in_struct->inheritedViewportScissor2D)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV),
+    pNext(nullptr),
+    inheritedViewportScissor2D()
+{}
+
+safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV(const safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    inheritedViewportScissor2D = copy_src.inheritedViewportScissor2D;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV& safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::operator=(const safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    inheritedViewportScissor2D = copy_src.inheritedViewportScissor2D;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::~safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::initialize(const VkPhysicalDeviceInheritedViewportScissorFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    inheritedViewportScissor2D = in_struct->inheritedViewportScissor2D;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV::initialize(const safe_VkPhysicalDeviceInheritedViewportScissorFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    inheritedViewportScissor2D = copy_src->inheritedViewportScissor2D;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCommandBufferInheritanceViewportScissorInfoNV::safe_VkCommandBufferInheritanceViewportScissorInfoNV(const VkCommandBufferInheritanceViewportScissorInfoNV* in_struct) :
+    sType(in_struct->sType),
+    viewportScissor2D(in_struct->viewportScissor2D),
+    viewportDepthCount(in_struct->viewportDepthCount),
+    pViewportDepths(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportDepths) {
+        pViewportDepths = new VkViewport(*in_struct->pViewportDepths);
+    }
+}
+
+safe_VkCommandBufferInheritanceViewportScissorInfoNV::safe_VkCommandBufferInheritanceViewportScissorInfoNV() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV),
+    pNext(nullptr),
+    viewportScissor2D(),
+    viewportDepthCount(),
+    pViewportDepths(nullptr)
+{}
+
+safe_VkCommandBufferInheritanceViewportScissorInfoNV::safe_VkCommandBufferInheritanceViewportScissorInfoNV(const safe_VkCommandBufferInheritanceViewportScissorInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    viewportScissor2D = copy_src.viewportScissor2D;
+    viewportDepthCount = copy_src.viewportDepthCount;
+    pViewportDepths = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportDepths) {
+        pViewportDepths = new VkViewport(*copy_src.pViewportDepths);
+    }
+}
+
+safe_VkCommandBufferInheritanceViewportScissorInfoNV& safe_VkCommandBufferInheritanceViewportScissorInfoNV::operator=(const safe_VkCommandBufferInheritanceViewportScissorInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pViewportDepths)
+        delete pViewportDepths;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    viewportScissor2D = copy_src.viewportScissor2D;
+    viewportDepthCount = copy_src.viewportDepthCount;
+    pViewportDepths = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pViewportDepths) {
+        pViewportDepths = new VkViewport(*copy_src.pViewportDepths);
+    }
+
+    return *this;
+}
+
+safe_VkCommandBufferInheritanceViewportScissorInfoNV::~safe_VkCommandBufferInheritanceViewportScissorInfoNV()
+{
+    if (pViewportDepths)
+        delete pViewportDepths;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCommandBufferInheritanceViewportScissorInfoNV::initialize(const VkCommandBufferInheritanceViewportScissorInfoNV* in_struct)
+{
+    if (pViewportDepths)
+        delete pViewportDepths;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    viewportScissor2D = in_struct->viewportScissor2D;
+    viewportDepthCount = in_struct->viewportDepthCount;
+    pViewportDepths = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pViewportDepths) {
+        pViewportDepths = new VkViewport(*in_struct->pViewportDepths);
+    }
+}
+
+void safe_VkCommandBufferInheritanceViewportScissorInfoNV::initialize(const safe_VkCommandBufferInheritanceViewportScissorInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    viewportScissor2D = copy_src->viewportScissor2D;
+    viewportDepthCount = copy_src->viewportDepthCount;
+    pViewportDepths = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pViewportDepths) {
+        pViewportDepths = new VkViewport(*copy_src->pViewportDepths);
+    }
+}
+
+safe_VkRenderPassTransformBeginInfoQCOM::safe_VkRenderPassTransformBeginInfoQCOM(const VkRenderPassTransformBeginInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    transform(in_struct->transform)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkRenderPassTransformBeginInfoQCOM::safe_VkRenderPassTransformBeginInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM),
+    pNext(nullptr),
+    transform()
+{}
+
+safe_VkRenderPassTransformBeginInfoQCOM::safe_VkRenderPassTransformBeginInfoQCOM(const safe_VkRenderPassTransformBeginInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkRenderPassTransformBeginInfoQCOM& safe_VkRenderPassTransformBeginInfoQCOM::operator=(const safe_VkRenderPassTransformBeginInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkRenderPassTransformBeginInfoQCOM::~safe_VkRenderPassTransformBeginInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderPassTransformBeginInfoQCOM::initialize(const VkRenderPassTransformBeginInfoQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    transform = in_struct->transform;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkRenderPassTransformBeginInfoQCOM::initialize(const safe_VkRenderPassTransformBeginInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    transform = copy_src->transform;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(const VkCommandBufferInheritanceRenderPassTransformInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    transform(in_struct->transform),
+    renderArea(in_struct->renderArea)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM),
+    pNext(nullptr),
+    transform(),
+    renderArea()
+{}
+
+safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    renderArea = copy_src.renderArea;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM& safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::operator=(const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    renderArea = copy_src.renderArea;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::~safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::initialize(const VkCommandBufferInheritanceRenderPassTransformInfoQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    transform = in_struct->transform;
+    renderArea = in_struct->renderArea;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::initialize(const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    transform = copy_src->transform;
+    renderArea = copy_src->renderArea;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDevicePresentBarrierFeaturesNV::safe_VkPhysicalDevicePresentBarrierFeaturesNV(const VkPhysicalDevicePresentBarrierFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    presentBarrier(in_struct->presentBarrier)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePresentBarrierFeaturesNV::safe_VkPhysicalDevicePresentBarrierFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV),
+    pNext(nullptr),
+    presentBarrier()
+{}
+
+safe_VkPhysicalDevicePresentBarrierFeaturesNV::safe_VkPhysicalDevicePresentBarrierFeaturesNV(const safe_VkPhysicalDevicePresentBarrierFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    presentBarrier = copy_src.presentBarrier;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePresentBarrierFeaturesNV& safe_VkPhysicalDevicePresentBarrierFeaturesNV::operator=(const safe_VkPhysicalDevicePresentBarrierFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentBarrier = copy_src.presentBarrier;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePresentBarrierFeaturesNV::~safe_VkPhysicalDevicePresentBarrierFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePresentBarrierFeaturesNV::initialize(const VkPhysicalDevicePresentBarrierFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentBarrier = in_struct->presentBarrier;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePresentBarrierFeaturesNV::initialize(const safe_VkPhysicalDevicePresentBarrierFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    presentBarrier = copy_src->presentBarrier;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSurfaceCapabilitiesPresentBarrierNV::safe_VkSurfaceCapabilitiesPresentBarrierNV(const VkSurfaceCapabilitiesPresentBarrierNV* in_struct) :
+    sType(in_struct->sType),
+    presentBarrierSupported(in_struct->presentBarrierSupported)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSurfaceCapabilitiesPresentBarrierNV::safe_VkSurfaceCapabilitiesPresentBarrierNV() :
+    sType(VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV),
+    pNext(nullptr),
+    presentBarrierSupported()
+{}
+
+safe_VkSurfaceCapabilitiesPresentBarrierNV::safe_VkSurfaceCapabilitiesPresentBarrierNV(const safe_VkSurfaceCapabilitiesPresentBarrierNV& copy_src)
+{
+    sType = copy_src.sType;
+    presentBarrierSupported = copy_src.presentBarrierSupported;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSurfaceCapabilitiesPresentBarrierNV& safe_VkSurfaceCapabilitiesPresentBarrierNV::operator=(const safe_VkSurfaceCapabilitiesPresentBarrierNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentBarrierSupported = copy_src.presentBarrierSupported;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSurfaceCapabilitiesPresentBarrierNV::~safe_VkSurfaceCapabilitiesPresentBarrierNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSurfaceCapabilitiesPresentBarrierNV::initialize(const VkSurfaceCapabilitiesPresentBarrierNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentBarrierSupported = in_struct->presentBarrierSupported;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSurfaceCapabilitiesPresentBarrierNV::initialize(const safe_VkSurfaceCapabilitiesPresentBarrierNV* copy_src)
+{
+    sType = copy_src->sType;
+    presentBarrierSupported = copy_src->presentBarrierSupported;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSwapchainPresentBarrierCreateInfoNV::safe_VkSwapchainPresentBarrierCreateInfoNV(const VkSwapchainPresentBarrierCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    presentBarrierEnable(in_struct->presentBarrierEnable)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSwapchainPresentBarrierCreateInfoNV::safe_VkSwapchainPresentBarrierCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_BARRIER_CREATE_INFO_NV),
+    pNext(nullptr),
+    presentBarrierEnable()
+{}
+
+safe_VkSwapchainPresentBarrierCreateInfoNV::safe_VkSwapchainPresentBarrierCreateInfoNV(const safe_VkSwapchainPresentBarrierCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    presentBarrierEnable = copy_src.presentBarrierEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSwapchainPresentBarrierCreateInfoNV& safe_VkSwapchainPresentBarrierCreateInfoNV::operator=(const safe_VkSwapchainPresentBarrierCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    presentBarrierEnable = copy_src.presentBarrierEnable;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSwapchainPresentBarrierCreateInfoNV::~safe_VkSwapchainPresentBarrierCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSwapchainPresentBarrierCreateInfoNV::initialize(const VkSwapchainPresentBarrierCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    presentBarrierEnable = in_struct->presentBarrierEnable;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSwapchainPresentBarrierCreateInfoNV::initialize(const safe_VkSwapchainPresentBarrierCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    presentBarrierEnable = copy_src->presentBarrierEnable;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(const VkPhysicalDeviceDiagnosticsConfigFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    diagnosticsConfig(in_struct->diagnosticsConfig)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV),
+    pNext(nullptr),
+    diagnosticsConfig()
+{}
+
+safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV(const safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    diagnosticsConfig = copy_src.diagnosticsConfig;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::operator=(const safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    diagnosticsConfig = copy_src.diagnosticsConfig;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::~safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::initialize(const VkPhysicalDeviceDiagnosticsConfigFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    diagnosticsConfig = in_struct->diagnosticsConfig;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV::initialize(const safe_VkPhysicalDeviceDiagnosticsConfigFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    diagnosticsConfig = copy_src->diagnosticsConfig;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDeviceDiagnosticsConfigCreateInfoNV::safe_VkDeviceDiagnosticsConfigCreateInfoNV(const VkDeviceDiagnosticsConfigCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceDiagnosticsConfigCreateInfoNV::safe_VkDeviceDiagnosticsConfigCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV),
+    pNext(nullptr),
+    flags()
+{}
+
+safe_VkDeviceDiagnosticsConfigCreateInfoNV::safe_VkDeviceDiagnosticsConfigCreateInfoNV(const safe_VkDeviceDiagnosticsConfigCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDeviceDiagnosticsConfigCreateInfoNV& safe_VkDeviceDiagnosticsConfigCreateInfoNV::operator=(const safe_VkDeviceDiagnosticsConfigCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceDiagnosticsConfigCreateInfoNV::~safe_VkDeviceDiagnosticsConfigCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const VkDeviceDiagnosticsConfigCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const safe_VkDeviceDiagnosticsConfigCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV(const VkQueryLowLatencySupportNV* in_struct) :
+    sType(in_struct->sType),
+    pQueriedLowLatencyData(in_struct->pQueriedLowLatencyData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV() :
+    sType(VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV),
+    pNext(nullptr),
+    pQueriedLowLatencyData(nullptr)
+{}
+
+safe_VkQueryLowLatencySupportNV::safe_VkQueryLowLatencySupportNV(const safe_VkQueryLowLatencySupportNV& copy_src)
+{
+    sType = copy_src.sType;
+    pQueriedLowLatencyData = copy_src.pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkQueryLowLatencySupportNV& safe_VkQueryLowLatencySupportNV::operator=(const safe_VkQueryLowLatencySupportNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pQueriedLowLatencyData = copy_src.pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkQueryLowLatencySupportNV::~safe_VkQueryLowLatencySupportNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueryLowLatencySupportNV::initialize(const VkQueryLowLatencySupportNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pQueriedLowLatencyData = in_struct->pQueriedLowLatencyData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkQueryLowLatencySupportNV::initialize(const safe_VkQueryLowLatencySupportNV* copy_src)
+{
+    sType = copy_src->sType;
+    pQueriedLowLatencyData = copy_src->pQueriedLowLatencyData;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* in_struct) :
+    sType(in_struct->sType),
+    shaderEarlyAndLateFragmentTests(in_struct->shaderEarlyAndLateFragmentTests)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_AMD),
+    pNext(nullptr),
+    shaderEarlyAndLateFragmentTests()
+{}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& copy_src)
+{
+    sType = copy_src.sType;
+    shaderEarlyAndLateFragmentTests = copy_src.shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::operator=(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderEarlyAndLateFragmentTests = copy_src.shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::~safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::initialize(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderEarlyAndLateFragmentTests = in_struct->shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD::initialize(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD* copy_src)
+{
+    sType = copy_src->sType;
+    shaderEarlyAndLateFragmentTests = copy_src->shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    fragmentShadingRateEnums(in_struct->fragmentShadingRateEnums),
+    supersampleFragmentShadingRates(in_struct->supersampleFragmentShadingRates),
+    noInvocationFragmentShadingRates(in_struct->noInvocationFragmentShadingRates)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV),
+    pNext(nullptr),
+    fragmentShadingRateEnums(),
+    supersampleFragmentShadingRates(),
+    noInvocationFragmentShadingRates()
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentShadingRateEnums = copy_src.fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src.supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src.noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentShadingRateEnums = copy_src.fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src.supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src.noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::~safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    fragmentShadingRateEnums = in_struct->fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = in_struct->supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = in_struct->noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentShadingRateEnums = copy_src->fragmentShadingRateEnums;
+    supersampleFragmentShadingRates = copy_src->supersampleFragmentShadingRates;
+    noInvocationFragmentShadingRates = copy_src->noInvocationFragmentShadingRates;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    maxFragmentShadingRateInvocationCount(in_struct->maxFragmentShadingRateInvocationCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV),
+    pNext(nullptr),
+    maxFragmentShadingRateInvocationCount()
+{}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxFragmentShadingRateInvocationCount = copy_src.maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::operator=(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxFragmentShadingRateInvocationCount = copy_src.maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::~safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::initialize(const VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxFragmentShadingRateInvocationCount = in_struct->maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV::initialize(const safe_VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxFragmentShadingRateInvocationCount = copy_src->maxFragmentShadingRateInvocationCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    shadingRateType(in_struct->shadingRateType),
+    shadingRate(in_struct->shadingRate)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV),
+    pNext(nullptr),
+    shadingRateType(),
+    shadingRate()
+{}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    shadingRateType = copy_src.shadingRateType;
+    shadingRate = copy_src.shadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::operator=(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shadingRateType = copy_src.shadingRateType;
+    shadingRate = copy_src.shadingRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src.combinerOps[i];
+    }
+
+    return *this;
+}
+
+safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::~safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const VkPipelineFragmentShadingRateEnumStateCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shadingRateType = in_struct->shadingRateType;
+    shadingRate = in_struct->shadingRate;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = in_struct->combinerOps[i];
+    }
+}
+
+void safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV::initialize(const safe_VkPipelineFragmentShadingRateEnumStateCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    shadingRateType = copy_src->shadingRateType;
+    shadingRate = copy_src->shadingRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 2; ++i) {
+        combinerOps[i] = copy_src->combinerOps[i];
+    }
+}
+
+safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::safe_VkAccelerationStructureGeometryMotionTrianglesDataNV(const VkAccelerationStructureGeometryMotionTrianglesDataNV* in_struct) :
+    sType(in_struct->sType),
+    vertexData(&in_struct->vertexData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::safe_VkAccelerationStructureGeometryMotionTrianglesDataNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_MOTION_TRIANGLES_DATA_NV),
+    pNext(nullptr)
+{}
+
+safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::safe_VkAccelerationStructureGeometryMotionTrianglesDataNV(const safe_VkAccelerationStructureGeometryMotionTrianglesDataNV& copy_src)
+{
+    sType = copy_src.sType;
+    vertexData.initialize(&copy_src.vertexData);
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAccelerationStructureGeometryMotionTrianglesDataNV& safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::operator=(const safe_VkAccelerationStructureGeometryMotionTrianglesDataNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    vertexData.initialize(&copy_src.vertexData);
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::~safe_VkAccelerationStructureGeometryMotionTrianglesDataNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::initialize(const VkAccelerationStructureGeometryMotionTrianglesDataNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    vertexData.initialize(&in_struct->vertexData);
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAccelerationStructureGeometryMotionTrianglesDataNV::initialize(const safe_VkAccelerationStructureGeometryMotionTrianglesDataNV* copy_src)
+{
+    sType = copy_src->sType;
+    vertexData.initialize(&copy_src->vertexData);
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkAccelerationStructureMotionInfoNV::safe_VkAccelerationStructureMotionInfoNV(const VkAccelerationStructureMotionInfoNV* in_struct) :
+    sType(in_struct->sType),
+    maxInstances(in_struct->maxInstances),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAccelerationStructureMotionInfoNV::safe_VkAccelerationStructureMotionInfoNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MOTION_INFO_NV),
+    pNext(nullptr),
+    maxInstances(),
+    flags()
+{}
+
+safe_VkAccelerationStructureMotionInfoNV::safe_VkAccelerationStructureMotionInfoNV(const safe_VkAccelerationStructureMotionInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxInstances = copy_src.maxInstances;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAccelerationStructureMotionInfoNV& safe_VkAccelerationStructureMotionInfoNV::operator=(const safe_VkAccelerationStructureMotionInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxInstances = copy_src.maxInstances;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAccelerationStructureMotionInfoNV::~safe_VkAccelerationStructureMotionInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureMotionInfoNV::initialize(const VkAccelerationStructureMotionInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxInstances = in_struct->maxInstances;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAccelerationStructureMotionInfoNV::initialize(const safe_VkAccelerationStructureMotionInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxInstances = copy_src->maxInstances;
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV(const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    rayTracingMotionBlur(in_struct->rayTracingMotionBlur),
+    rayTracingMotionBlurPipelineTraceRaysIndirect(in_struct->rayTracingMotionBlurPipelineTraceRaysIndirect)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV),
+    pNext(nullptr),
+    rayTracingMotionBlur(),
+    rayTracingMotionBlurPipelineTraceRaysIndirect()
+{}
+
+safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV(const safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    rayTracingMotionBlur = copy_src.rayTracingMotionBlur;
+    rayTracingMotionBlurPipelineTraceRaysIndirect = copy_src.rayTracingMotionBlurPipelineTraceRaysIndirect;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::operator=(const safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingMotionBlur = copy_src.rayTracingMotionBlur;
+    rayTracingMotionBlurPipelineTraceRaysIndirect = copy_src.rayTracingMotionBlurPipelineTraceRaysIndirect;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::~safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::initialize(const VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingMotionBlur = in_struct->rayTracingMotionBlur;
+    rayTracingMotionBlurPipelineTraceRaysIndirect = in_struct->rayTracingMotionBlurPipelineTraceRaysIndirect;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::initialize(const safe_VkPhysicalDeviceRayTracingMotionBlurFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    rayTracingMotionBlur = copy_src->rayTracingMotionBlur;
+    rayTracingMotionBlurPipelineTraceRaysIndirect = copy_src->rayTracingMotionBlurPipelineTraceRaysIndirect;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM(const VkCopyCommandTransformInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    transform(in_struct->transform)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM),
+    pNext(nullptr),
+    transform()
+{}
+
+safe_VkCopyCommandTransformInfoQCOM::safe_VkCopyCommandTransformInfoQCOM(const safe_VkCopyCommandTransformInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCopyCommandTransformInfoQCOM& safe_VkCopyCommandTransformInfoQCOM::operator=(const safe_VkCopyCommandTransformInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    transform = copy_src.transform;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCopyCommandTransformInfoQCOM::~safe_VkCopyCommandTransformInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCopyCommandTransformInfoQCOM::initialize(const VkCopyCommandTransformInfoQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    transform = in_struct->transform;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkCopyCommandTransformInfoQCOM::initialize(const safe_VkCopyCommandTransformInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    transform = copy_src->transform;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    handleType(in_struct->handleType),
+    handle(in_struct->handle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr),
+    handleType(),
+    handle()
+{}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA& safe_VkImportMemoryZirconHandleInfoFUCHSIA::operator=(const safe_VkImportMemoryZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handleType = copy_src.handleType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportMemoryZirconHandleInfoFUCHSIA::~safe_VkImportMemoryZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    handleType = in_struct->handleType;
+    handle = in_struct->handle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const safe_VkImportMemoryZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    handleType = copy_src->handleType;
+    handle = copy_src->handle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    memoryTypeBits(in_struct->memoryTypeBits)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA),
+    pNext(nullptr),
+    memoryTypeBits()
+{}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA& safe_VkMemoryZirconHandlePropertiesFUCHSIA::operator=(const safe_VkMemoryZirconHandlePropertiesFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryZirconHandlePropertiesFUCHSIA::~safe_VkMemoryZirconHandlePropertiesFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memoryTypeBits = in_struct->memoryTypeBits;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const safe_VkMemoryZirconHandlePropertiesFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    memoryTypeBits = copy_src->memoryTypeBits;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    memory(in_struct->memory),
+    handleType(in_struct->handleType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr),
+    memory(),
+    handleType()
+{}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA& safe_VkMemoryGetZirconHandleInfoFUCHSIA::operator=(const safe_VkMemoryGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryGetZirconHandleInfoFUCHSIA::~safe_VkMemoryGetZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memory = in_struct->memory;
+    handleType = in_struct->handleType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const safe_VkMemoryGetZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    memory = copy_src->memory;
+    handleType = copy_src->handleType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    semaphore(in_struct->semaphore),
+    flags(in_struct->flags),
+    handleType(in_struct->handleType),
+    zirconHandle(in_struct->zirconHandle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr),
+    semaphore(),
+    flags(),
+    handleType(),
+    zirconHandle()
+{}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    flags = copy_src.flags;
+    handleType = copy_src.handleType;
+    zirconHandle = copy_src.zirconHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::operator=(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    flags = copy_src.flags;
+    handleType = copy_src.handleType;
+    zirconHandle = copy_src.zirconHandle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::~safe_VkImportSemaphoreZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    semaphore = in_struct->semaphore;
+    flags = in_struct->flags;
+    handleType = in_struct->handleType;
+    zirconHandle = in_struct->zirconHandle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const safe_VkImportSemaphoreZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    semaphore = copy_src->semaphore;
+    flags = copy_src->flags;
+    handleType = copy_src->handleType;
+    zirconHandle = copy_src->zirconHandle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    semaphore(in_struct->semaphore),
+    handleType(in_struct->handleType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA),
+    pNext(nullptr),
+    semaphore(),
+    handleType()
+{}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::operator=(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphore = copy_src.semaphore;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::~safe_VkSemaphoreGetZirconHandleInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    semaphore = in_struct->semaphore;
+    handleType = in_struct->handleType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const safe_VkSemaphoreGetZirconHandleInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    semaphore = copy_src->semaphore;
+    handleType = copy_src->handleType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferCollectionCreateInfoFUCHSIA::safe_VkBufferCollectionCreateInfoFUCHSIA(const VkBufferCollectionCreateInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    collectionToken(in_struct->collectionToken)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCollectionCreateInfoFUCHSIA::safe_VkBufferCollectionCreateInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA),
+    pNext(nullptr),
+    collectionToken()
+{}
+
+safe_VkBufferCollectionCreateInfoFUCHSIA::safe_VkBufferCollectionCreateInfoFUCHSIA(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    collectionToken = copy_src.collectionToken;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCollectionCreateInfoFUCHSIA& safe_VkBufferCollectionCreateInfoFUCHSIA::operator=(const safe_VkBufferCollectionCreateInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    collectionToken = copy_src.collectionToken;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCollectionCreateInfoFUCHSIA::~safe_VkBufferCollectionCreateInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCollectionCreateInfoFUCHSIA::initialize(const VkBufferCollectionCreateInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    collectionToken = in_struct->collectionToken;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCollectionCreateInfoFUCHSIA::initialize(const safe_VkBufferCollectionCreateInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    collectionToken = copy_src->collectionToken;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImportMemoryBufferCollectionFUCHSIA::safe_VkImportMemoryBufferCollectionFUCHSIA(const VkImportMemoryBufferCollectionFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    collection(in_struct->collection),
+    index(in_struct->index)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImportMemoryBufferCollectionFUCHSIA::safe_VkImportMemoryBufferCollectionFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA),
+    pNext(nullptr),
+    collection(),
+    index()
+{}
+
+safe_VkImportMemoryBufferCollectionFUCHSIA::safe_VkImportMemoryBufferCollectionFUCHSIA(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImportMemoryBufferCollectionFUCHSIA& safe_VkImportMemoryBufferCollectionFUCHSIA::operator=(const safe_VkImportMemoryBufferCollectionFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImportMemoryBufferCollectionFUCHSIA::~safe_VkImportMemoryBufferCollectionFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportMemoryBufferCollectionFUCHSIA::initialize(const VkImportMemoryBufferCollectionFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    collection = in_struct->collection;
+    index = in_struct->index;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImportMemoryBufferCollectionFUCHSIA::initialize(const safe_VkImportMemoryBufferCollectionFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    collection = copy_src->collection;
+    index = copy_src->index;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferCollectionImageCreateInfoFUCHSIA::safe_VkBufferCollectionImageCreateInfoFUCHSIA(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    collection(in_struct->collection),
+    index(in_struct->index)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCollectionImageCreateInfoFUCHSIA::safe_VkBufferCollectionImageCreateInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA),
+    pNext(nullptr),
+    collection(),
+    index()
+{}
+
+safe_VkBufferCollectionImageCreateInfoFUCHSIA::safe_VkBufferCollectionImageCreateInfoFUCHSIA(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCollectionImageCreateInfoFUCHSIA& safe_VkBufferCollectionImageCreateInfoFUCHSIA::operator=(const safe_VkBufferCollectionImageCreateInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCollectionImageCreateInfoFUCHSIA::~safe_VkBufferCollectionImageCreateInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCollectionImageCreateInfoFUCHSIA::initialize(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    collection = in_struct->collection;
+    index = in_struct->index;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCollectionImageCreateInfoFUCHSIA::initialize(const safe_VkBufferCollectionImageCreateInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    collection = copy_src->collection;
+    index = copy_src->index;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferCollectionConstraintsInfoFUCHSIA::safe_VkBufferCollectionConstraintsInfoFUCHSIA(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    minBufferCount(in_struct->minBufferCount),
+    maxBufferCount(in_struct->maxBufferCount),
+    minBufferCountForCamping(in_struct->minBufferCountForCamping),
+    minBufferCountForDedicatedSlack(in_struct->minBufferCountForDedicatedSlack),
+    minBufferCountForSharedSlack(in_struct->minBufferCountForSharedSlack)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCollectionConstraintsInfoFUCHSIA::safe_VkBufferCollectionConstraintsInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA),
+    pNext(nullptr),
+    minBufferCount(),
+    maxBufferCount(),
+    minBufferCountForCamping(),
+    minBufferCountForDedicatedSlack(),
+    minBufferCountForSharedSlack()
+{}
+
+safe_VkBufferCollectionConstraintsInfoFUCHSIA::safe_VkBufferCollectionConstraintsInfoFUCHSIA(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    minBufferCount = copy_src.minBufferCount;
+    maxBufferCount = copy_src.maxBufferCount;
+    minBufferCountForCamping = copy_src.minBufferCountForCamping;
+    minBufferCountForDedicatedSlack = copy_src.minBufferCountForDedicatedSlack;
+    minBufferCountForSharedSlack = copy_src.minBufferCountForSharedSlack;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCollectionConstraintsInfoFUCHSIA& safe_VkBufferCollectionConstraintsInfoFUCHSIA::operator=(const safe_VkBufferCollectionConstraintsInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    minBufferCount = copy_src.minBufferCount;
+    maxBufferCount = copy_src.maxBufferCount;
+    minBufferCountForCamping = copy_src.minBufferCountForCamping;
+    minBufferCountForDedicatedSlack = copy_src.minBufferCountForDedicatedSlack;
+    minBufferCountForSharedSlack = copy_src.minBufferCountForSharedSlack;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCollectionConstraintsInfoFUCHSIA::~safe_VkBufferCollectionConstraintsInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCollectionConstraintsInfoFUCHSIA::initialize(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    minBufferCount = in_struct->minBufferCount;
+    maxBufferCount = in_struct->maxBufferCount;
+    minBufferCountForCamping = in_struct->minBufferCountForCamping;
+    minBufferCountForDedicatedSlack = in_struct->minBufferCountForDedicatedSlack;
+    minBufferCountForSharedSlack = in_struct->minBufferCountForSharedSlack;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCollectionConstraintsInfoFUCHSIA::initialize(const safe_VkBufferCollectionConstraintsInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    minBufferCount = copy_src->minBufferCount;
+    maxBufferCount = copy_src->maxBufferCount;
+    minBufferCountForCamping = copy_src->minBufferCountForCamping;
+    minBufferCountForDedicatedSlack = copy_src->minBufferCountForDedicatedSlack;
+    minBufferCountForSharedSlack = copy_src->minBufferCountForSharedSlack;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferConstraintsInfoFUCHSIA::safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    createInfo(&in_struct->createInfo),
+    requiredFormatFeatures(in_struct->requiredFormatFeatures),
+    bufferCollectionConstraints(&in_struct->bufferCollectionConstraints)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferConstraintsInfoFUCHSIA::safe_VkBufferConstraintsInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA),
+    pNext(nullptr),
+    requiredFormatFeatures()
+{}
+
+safe_VkBufferConstraintsInfoFUCHSIA::safe_VkBufferConstraintsInfoFUCHSIA(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    createInfo.initialize(&copy_src.createInfo);
+    requiredFormatFeatures = copy_src.requiredFormatFeatures;
+    bufferCollectionConstraints.initialize(&copy_src.bufferCollectionConstraints);
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferConstraintsInfoFUCHSIA& safe_VkBufferConstraintsInfoFUCHSIA::operator=(const safe_VkBufferConstraintsInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    createInfo.initialize(&copy_src.createInfo);
+    requiredFormatFeatures = copy_src.requiredFormatFeatures;
+    bufferCollectionConstraints.initialize(&copy_src.bufferCollectionConstraints);
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferConstraintsInfoFUCHSIA::~safe_VkBufferConstraintsInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferConstraintsInfoFUCHSIA::initialize(const VkBufferConstraintsInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    createInfo.initialize(&in_struct->createInfo);
+    requiredFormatFeatures = in_struct->requiredFormatFeatures;
+    bufferCollectionConstraints.initialize(&in_struct->bufferCollectionConstraints);
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferConstraintsInfoFUCHSIA::initialize(const safe_VkBufferConstraintsInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    createInfo.initialize(&copy_src->createInfo);
+    requiredFormatFeatures = copy_src->requiredFormatFeatures;
+    bufferCollectionConstraints.initialize(&copy_src->bufferCollectionConstraints);
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferCollectionBufferCreateInfoFUCHSIA::safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    collection(in_struct->collection),
+    index(in_struct->index)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCollectionBufferCreateInfoFUCHSIA::safe_VkBufferCollectionBufferCreateInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA),
+    pNext(nullptr),
+    collection(),
+    index()
+{}
+
+safe_VkBufferCollectionBufferCreateInfoFUCHSIA::safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCollectionBufferCreateInfoFUCHSIA& safe_VkBufferCollectionBufferCreateInfoFUCHSIA::operator=(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    collection = copy_src.collection;
+    index = copy_src.index;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCollectionBufferCreateInfoFUCHSIA::~safe_VkBufferCollectionBufferCreateInfoFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCollectionBufferCreateInfoFUCHSIA::initialize(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    collection = in_struct->collection;
+    index = in_struct->index;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCollectionBufferCreateInfoFUCHSIA::initialize(const safe_VkBufferCollectionBufferCreateInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    collection = copy_src->collection;
+    index = copy_src->index;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkSysmemColorSpaceFUCHSIA::safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    colorSpace(in_struct->colorSpace)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSysmemColorSpaceFUCHSIA::safe_VkSysmemColorSpaceFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA),
+    pNext(nullptr),
+    colorSpace()
+{}
+
+safe_VkSysmemColorSpaceFUCHSIA::safe_VkSysmemColorSpaceFUCHSIA(const safe_VkSysmemColorSpaceFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    colorSpace = copy_src.colorSpace;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSysmemColorSpaceFUCHSIA& safe_VkSysmemColorSpaceFUCHSIA::operator=(const safe_VkSysmemColorSpaceFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    colorSpace = copy_src.colorSpace;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSysmemColorSpaceFUCHSIA::~safe_VkSysmemColorSpaceFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSysmemColorSpaceFUCHSIA::initialize(const VkSysmemColorSpaceFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    colorSpace = in_struct->colorSpace;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSysmemColorSpaceFUCHSIA::initialize(const safe_VkSysmemColorSpaceFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    colorSpace = copy_src->colorSpace;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkBufferCollectionPropertiesFUCHSIA::safe_VkBufferCollectionPropertiesFUCHSIA(const VkBufferCollectionPropertiesFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    memoryTypeBits(in_struct->memoryTypeBits),
+    bufferCount(in_struct->bufferCount),
+    createInfoIndex(in_struct->createInfoIndex),
+    sysmemPixelFormat(in_struct->sysmemPixelFormat),
+    formatFeatures(in_struct->formatFeatures),
+    sysmemColorSpaceIndex(&in_struct->sysmemColorSpaceIndex),
+    samplerYcbcrConversionComponents(in_struct->samplerYcbcrConversionComponents),
+    suggestedYcbcrModel(in_struct->suggestedYcbcrModel),
+    suggestedYcbcrRange(in_struct->suggestedYcbcrRange),
+    suggestedXChromaOffset(in_struct->suggestedXChromaOffset),
+    suggestedYChromaOffset(in_struct->suggestedYChromaOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferCollectionPropertiesFUCHSIA::safe_VkBufferCollectionPropertiesFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA),
+    pNext(nullptr),
+    memoryTypeBits(),
+    bufferCount(),
+    createInfoIndex(),
+    sysmemPixelFormat(),
+    formatFeatures(),
+    samplerYcbcrConversionComponents(),
+    suggestedYcbcrModel(),
+    suggestedYcbcrRange(),
+    suggestedXChromaOffset(),
+    suggestedYChromaOffset()
+{}
+
+safe_VkBufferCollectionPropertiesFUCHSIA::safe_VkBufferCollectionPropertiesFUCHSIA(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    bufferCount = copy_src.bufferCount;
+    createInfoIndex = copy_src.createInfoIndex;
+    sysmemPixelFormat = copy_src.sysmemPixelFormat;
+    formatFeatures = copy_src.formatFeatures;
+    sysmemColorSpaceIndex.initialize(&copy_src.sysmemColorSpaceIndex);
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkBufferCollectionPropertiesFUCHSIA& safe_VkBufferCollectionPropertiesFUCHSIA::operator=(const safe_VkBufferCollectionPropertiesFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    bufferCount = copy_src.bufferCount;
+    createInfoIndex = copy_src.createInfoIndex;
+    sysmemPixelFormat = copy_src.sysmemPixelFormat;
+    formatFeatures = copy_src.formatFeatures;
+    sysmemColorSpaceIndex.initialize(&copy_src.sysmemColorSpaceIndex);
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferCollectionPropertiesFUCHSIA::~safe_VkBufferCollectionPropertiesFUCHSIA()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferCollectionPropertiesFUCHSIA::initialize(const VkBufferCollectionPropertiesFUCHSIA* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memoryTypeBits = in_struct->memoryTypeBits;
+    bufferCount = in_struct->bufferCount;
+    createInfoIndex = in_struct->createInfoIndex;
+    sysmemPixelFormat = in_struct->sysmemPixelFormat;
+    formatFeatures = in_struct->formatFeatures;
+    sysmemColorSpaceIndex.initialize(&in_struct->sysmemColorSpaceIndex);
+    samplerYcbcrConversionComponents = in_struct->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = in_struct->suggestedYcbcrModel;
+    suggestedYcbcrRange = in_struct->suggestedYcbcrRange;
+    suggestedXChromaOffset = in_struct->suggestedXChromaOffset;
+    suggestedYChromaOffset = in_struct->suggestedYChromaOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferCollectionPropertiesFUCHSIA::initialize(const safe_VkBufferCollectionPropertiesFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    memoryTypeBits = copy_src->memoryTypeBits;
+    bufferCount = copy_src->bufferCount;
+    createInfoIndex = copy_src->createInfoIndex;
+    sysmemPixelFormat = copy_src->sysmemPixelFormat;
+    formatFeatures = copy_src->formatFeatures;
+    sysmemColorSpaceIndex.initialize(&copy_src->sysmemColorSpaceIndex);
+    samplerYcbcrConversionComponents = copy_src->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src->suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src->suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src->suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA(const VkImageFormatConstraintsInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    imageCreateInfo(&in_struct->imageCreateInfo),
+    requiredFormatFeatures(in_struct->requiredFormatFeatures),
+    flags(in_struct->flags),
+    sysmemPixelFormat(in_struct->sysmemPixelFormat),
+    colorSpaceCount(in_struct->colorSpaceCount),
+    pColorSpaces(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (colorSpaceCount && in_struct->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&in_struct->pColorSpaces[i]);
+        }
+    }
+}
+
+safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA),
+    pNext(nullptr),
+    requiredFormatFeatures(),
+    flags(),
+    sysmemPixelFormat(),
+    colorSpaceCount(),
+    pColorSpaces(nullptr)
+{}
+
+safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    imageCreateInfo.initialize(&copy_src.imageCreateInfo);
+    requiredFormatFeatures = copy_src.requiredFormatFeatures;
+    flags = copy_src.flags;
+    sysmemPixelFormat = copy_src.sysmemPixelFormat;
+    colorSpaceCount = copy_src.colorSpaceCount;
+    pColorSpaces = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (colorSpaceCount && copy_src.pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src.pColorSpaces[i]);
+        }
+    }
+}
+
+safe_VkImageFormatConstraintsInfoFUCHSIA& safe_VkImageFormatConstraintsInfoFUCHSIA::operator=(const safe_VkImageFormatConstraintsInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pColorSpaces)
+        delete[] pColorSpaces;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    imageCreateInfo.initialize(&copy_src.imageCreateInfo);
+    requiredFormatFeatures = copy_src.requiredFormatFeatures;
+    flags = copy_src.flags;
+    sysmemPixelFormat = copy_src.sysmemPixelFormat;
+    colorSpaceCount = copy_src.colorSpaceCount;
+    pColorSpaces = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (colorSpaceCount && copy_src.pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src.pColorSpaces[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkImageFormatConstraintsInfoFUCHSIA::~safe_VkImageFormatConstraintsInfoFUCHSIA()
+{
+    if (pColorSpaces)
+        delete[] pColorSpaces;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const VkImageFormatConstraintsInfoFUCHSIA* in_struct)
+{
+    if (pColorSpaces)
+        delete[] pColorSpaces;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    imageCreateInfo.initialize(&in_struct->imageCreateInfo);
+    requiredFormatFeatures = in_struct->requiredFormatFeatures;
+    flags = in_struct->flags;
+    sysmemPixelFormat = in_struct->sysmemPixelFormat;
+    colorSpaceCount = in_struct->colorSpaceCount;
+    pColorSpaces = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (colorSpaceCount && in_struct->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&in_struct->pColorSpaces[i]);
+        }
+    }
+}
+
+void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const safe_VkImageFormatConstraintsInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    imageCreateInfo.initialize(&copy_src->imageCreateInfo);
+    requiredFormatFeatures = copy_src->requiredFormatFeatures;
+    flags = copy_src->flags;
+    sysmemPixelFormat = copy_src->sysmemPixelFormat;
+    colorSpaceCount = copy_src->colorSpaceCount;
+    pColorSpaces = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (colorSpaceCount && copy_src->pColorSpaces) {
+        pColorSpaces = new safe_VkSysmemColorSpaceFUCHSIA[colorSpaceCount];
+        for (uint32_t i = 0; i < colorSpaceCount; ++i) {
+            pColorSpaces[i].initialize(&copy_src->pColorSpaces[i]);
+        }
+    }
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkImageConstraintsInfoFUCHSIA::safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct) :
+    sType(in_struct->sType),
+    formatConstraintsCount(in_struct->formatConstraintsCount),
+    pFormatConstraints(nullptr),
+    bufferCollectionConstraints(&in_struct->bufferCollectionConstraints),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (formatConstraintsCount && in_struct->pFormatConstraints) {
+        pFormatConstraints = new safe_VkImageFormatConstraintsInfoFUCHSIA[formatConstraintsCount];
+        for (uint32_t i = 0; i < formatConstraintsCount; ++i) {
+            pFormatConstraints[i].initialize(&in_struct->pFormatConstraints[i]);
+        }
+    }
+}
+
+safe_VkImageConstraintsInfoFUCHSIA::safe_VkImageConstraintsInfoFUCHSIA() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA),
+    pNext(nullptr),
+    formatConstraintsCount(),
+    pFormatConstraints(nullptr),
+    flags()
+{}
+
+safe_VkImageConstraintsInfoFUCHSIA::safe_VkImageConstraintsInfoFUCHSIA(const safe_VkImageConstraintsInfoFUCHSIA& copy_src)
+{
+    sType = copy_src.sType;
+    formatConstraintsCount = copy_src.formatConstraintsCount;
+    pFormatConstraints = nullptr;
+    bufferCollectionConstraints.initialize(&copy_src.bufferCollectionConstraints);
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (formatConstraintsCount && copy_src.pFormatConstraints) {
+        pFormatConstraints = new safe_VkImageFormatConstraintsInfoFUCHSIA[formatConstraintsCount];
+        for (uint32_t i = 0; i < formatConstraintsCount; ++i) {
+            pFormatConstraints[i].initialize(&copy_src.pFormatConstraints[i]);
+        }
+    }
+}
+
+safe_VkImageConstraintsInfoFUCHSIA& safe_VkImageConstraintsInfoFUCHSIA::operator=(const safe_VkImageConstraintsInfoFUCHSIA& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pFormatConstraints)
+        delete[] pFormatConstraints;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    formatConstraintsCount = copy_src.formatConstraintsCount;
+    pFormatConstraints = nullptr;
+    bufferCollectionConstraints.initialize(&copy_src.bufferCollectionConstraints);
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (formatConstraintsCount && copy_src.pFormatConstraints) {
+        pFormatConstraints = new safe_VkImageFormatConstraintsInfoFUCHSIA[formatConstraintsCount];
+        for (uint32_t i = 0; i < formatConstraintsCount; ++i) {
+            pFormatConstraints[i].initialize(&copy_src.pFormatConstraints[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkImageConstraintsInfoFUCHSIA::~safe_VkImageConstraintsInfoFUCHSIA()
+{
+    if (pFormatConstraints)
+        delete[] pFormatConstraints;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageConstraintsInfoFUCHSIA::initialize(const VkImageConstraintsInfoFUCHSIA* in_struct)
+{
+    if (pFormatConstraints)
+        delete[] pFormatConstraints;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    formatConstraintsCount = in_struct->formatConstraintsCount;
+    pFormatConstraints = nullptr;
+    bufferCollectionConstraints.initialize(&in_struct->bufferCollectionConstraints);
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (formatConstraintsCount && in_struct->pFormatConstraints) {
+        pFormatConstraints = new safe_VkImageFormatConstraintsInfoFUCHSIA[formatConstraintsCount];
+        for (uint32_t i = 0; i < formatConstraintsCount; ++i) {
+            pFormatConstraints[i].initialize(&in_struct->pFormatConstraints[i]);
+        }
+    }
+}
+
+void safe_VkImageConstraintsInfoFUCHSIA::initialize(const safe_VkImageConstraintsInfoFUCHSIA* copy_src)
+{
+    sType = copy_src->sType;
+    formatConstraintsCount = copy_src->formatConstraintsCount;
+    pFormatConstraints = nullptr;
+    bufferCollectionConstraints.initialize(&copy_src->bufferCollectionConstraints);
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (formatConstraintsCount && copy_src->pFormatConstraints) {
+        pFormatConstraints = new safe_VkImageFormatConstraintsInfoFUCHSIA[formatConstraintsCount];
+        for (uint32_t i = 0; i < formatConstraintsCount; ++i) {
+            pFormatConstraints[i].initialize(&copy_src->pFormatConstraints[i]);
+        }
+    }
+}
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+
+safe_VkSubpassShadingPipelineCreateInfoHUAWEI::safe_VkSubpassShadingPipelineCreateInfoHUAWEI(const VkSubpassShadingPipelineCreateInfoHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    renderPass(in_struct->renderPass),
+    subpass(in_struct->subpass)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSubpassShadingPipelineCreateInfoHUAWEI::safe_VkSubpassShadingPipelineCreateInfoHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI),
+    pNext(nullptr),
+    renderPass(),
+    subpass()
+{}
+
+safe_VkSubpassShadingPipelineCreateInfoHUAWEI::safe_VkSubpassShadingPipelineCreateInfoHUAWEI(const safe_VkSubpassShadingPipelineCreateInfoHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    renderPass = copy_src.renderPass;
+    subpass = copy_src.subpass;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSubpassShadingPipelineCreateInfoHUAWEI& safe_VkSubpassShadingPipelineCreateInfoHUAWEI::operator=(const safe_VkSubpassShadingPipelineCreateInfoHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    renderPass = copy_src.renderPass;
+    subpass = copy_src.subpass;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSubpassShadingPipelineCreateInfoHUAWEI::~safe_VkSubpassShadingPipelineCreateInfoHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSubpassShadingPipelineCreateInfoHUAWEI::initialize(const VkSubpassShadingPipelineCreateInfoHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    renderPass = in_struct->renderPass;
+    subpass = in_struct->subpass;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSubpassShadingPipelineCreateInfoHUAWEI::initialize(const safe_VkSubpassShadingPipelineCreateInfoHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    renderPass = copy_src->renderPass;
+    subpass = copy_src->subpass;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI(const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    subpassShading(in_struct->subpassShading)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI),
+    pNext(nullptr),
+    subpassShading()
+{}
+
+safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI(const safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    subpassShading = copy_src.subpassShading;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::operator=(const safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    subpassShading = copy_src.subpassShading;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::~safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::initialize(const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    subpassShading = in_struct->subpassShading;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI::initialize(const safe_VkPhysicalDeviceSubpassShadingFeaturesHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    subpassShading = copy_src->subpassShading;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI(const VkPhysicalDeviceSubpassShadingPropertiesHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    maxSubpassShadingWorkgroupSizeAspectRatio(in_struct->maxSubpassShadingWorkgroupSizeAspectRatio)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI),
+    pNext(nullptr),
+    maxSubpassShadingWorkgroupSizeAspectRatio()
+{}
+
+safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI(const safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    maxSubpassShadingWorkgroupSizeAspectRatio = copy_src.maxSubpassShadingWorkgroupSizeAspectRatio;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::operator=(const safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxSubpassShadingWorkgroupSizeAspectRatio = copy_src.maxSubpassShadingWorkgroupSizeAspectRatio;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::~safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::initialize(const VkPhysicalDeviceSubpassShadingPropertiesHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxSubpassShadingWorkgroupSizeAspectRatio = in_struct->maxSubpassShadingWorkgroupSizeAspectRatio;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI::initialize(const safe_VkPhysicalDeviceSubpassShadingPropertiesHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    maxSubpassShadingWorkgroupSizeAspectRatio = copy_src->maxSubpassShadingWorkgroupSizeAspectRatio;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI(const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    invocationMask(in_struct->invocationMask)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INVOCATION_MASK_FEATURES_HUAWEI),
+    pNext(nullptr),
+    invocationMask()
+{}
+
+safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI(const safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    invocationMask = copy_src.invocationMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::operator=(const safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    invocationMask = copy_src.invocationMask;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::~safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::initialize(const VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    invocationMask = in_struct->invocationMask;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI::initialize(const safe_VkPhysicalDeviceInvocationMaskFeaturesHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    invocationMask = copy_src->invocationMask;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMemoryGetRemoteAddressInfoNV::safe_VkMemoryGetRemoteAddressInfoNV(const VkMemoryGetRemoteAddressInfoNV* in_struct) :
+    sType(in_struct->sType),
+    memory(in_struct->memory),
+    handleType(in_struct->handleType)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryGetRemoteAddressInfoNV::safe_VkMemoryGetRemoteAddressInfoNV() :
+    sType(VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV),
+    pNext(nullptr),
+    memory(),
+    handleType()
+{}
+
+safe_VkMemoryGetRemoteAddressInfoNV::safe_VkMemoryGetRemoteAddressInfoNV(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkMemoryGetRemoteAddressInfoNV& safe_VkMemoryGetRemoteAddressInfoNV::operator=(const safe_VkMemoryGetRemoteAddressInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memory = copy_src.memory;
+    handleType = copy_src.handleType;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryGetRemoteAddressInfoNV::~safe_VkMemoryGetRemoteAddressInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryGetRemoteAddressInfoNV::initialize(const VkMemoryGetRemoteAddressInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memory = in_struct->memory;
+    handleType = in_struct->handleType;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryGetRemoteAddressInfoNV::initialize(const safe_VkMemoryGetRemoteAddressInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    memory = copy_src->memory;
+    handleType = copy_src->handleType;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    externalMemoryRDMA(in_struct->externalMemoryRDMA)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_RDMA_FEATURES_NV),
+    pNext(nullptr),
+    externalMemoryRDMA()
+{}
+
+safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    externalMemoryRDMA = copy_src.externalMemoryRDMA;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::operator=(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    externalMemoryRDMA = copy_src.externalMemoryRDMA;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::~safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::initialize(const VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    externalMemoryRDMA = in_struct->externalMemoryRDMA;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::initialize(const safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    externalMemoryRDMA = copy_src->externalMemoryRDMA;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    context(nullptr),
+    window(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->context) {
+        context = new _screen_context(*in_struct->context);
+    }
+    if (in_struct->window) {
+        window = new _screen_window(*in_struct->window);
+    }
+}
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX() :
+    sType(VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX),
+    pNext(nullptr),
+    flags(),
+    context(nullptr),
+    window(nullptr)
+{}
+
+safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const safe_VkScreenSurfaceCreateInfoQNX& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.context) {
+        context = new _screen_context(*copy_src.context);
+    }
+    if (copy_src.window) {
+        window = new _screen_window(*copy_src.window);
+    }
+}
+
+safe_VkScreenSurfaceCreateInfoQNX& safe_VkScreenSurfaceCreateInfoQNX::operator=(const safe_VkScreenSurfaceCreateInfoQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.context) {
+        context = new _screen_context(*copy_src.context);
+    }
+    if (copy_src.window) {
+        window = new _screen_window(*copy_src.window);
+    }
+
+    return *this;
+}
+
+safe_VkScreenSurfaceCreateInfoQNX::~safe_VkScreenSurfaceCreateInfoQNX()
+{
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkScreenSurfaceCreateInfoQNX::initialize(const VkScreenSurfaceCreateInfoQNX* in_struct)
+{
+    if (context)
+        delete context;
+    if (window)
+        delete window;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->context) {
+        context = new _screen_context(*in_struct->context);
+    }
+    if (in_struct->window) {
+        window = new _screen_window(*in_struct->window);
+    }
+}
+
+void safe_VkScreenSurfaceCreateInfoQNX::initialize(const safe_VkScreenSurfaceCreateInfoQNX* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    context = nullptr;
+    window = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->context) {
+        context = new _screen_context(*copy_src->context);
+    }
+    if (copy_src->window) {
+        window = new _screen_window(*copy_src->window);
+    }
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    displacementMicromap(in_struct->displacementMicromap)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV),
+    pNext(nullptr),
+    displacementMicromap()
+{}
+
+safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    displacementMicromap = copy_src.displacementMicromap;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::operator=(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    displacementMicromap = copy_src.displacementMicromap;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::~safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::initialize(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    displacementMicromap = in_struct->displacementMicromap;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::initialize(const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    displacementMicromap = copy_src->displacementMicromap;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    maxDisplacementMicromapSubdivisionLevel(in_struct->maxDisplacementMicromapSubdivisionLevel)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV),
+    pNext(nullptr),
+    maxDisplacementMicromapSubdivisionLevel()
+{}
+
+safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    maxDisplacementMicromapSubdivisionLevel = copy_src.maxDisplacementMicromapSubdivisionLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::operator=(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxDisplacementMicromapSubdivisionLevel = copy_src.maxDisplacementMicromapSubdivisionLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::~safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::initialize(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxDisplacementMicromapSubdivisionLevel = in_struct->maxDisplacementMicromapSubdivisionLevel;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::initialize(const safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    maxDisplacementMicromapSubdivisionLevel = copy_src->maxDisplacementMicromapSubdivisionLevel;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct) :
+    sType(in_struct->sType),
+    displacementBiasAndScaleFormat(in_struct->displacementBiasAndScaleFormat),
+    displacementVectorFormat(in_struct->displacementVectorFormat),
+    displacementBiasAndScaleBuffer(&in_struct->displacementBiasAndScaleBuffer),
+    displacementBiasAndScaleStride(in_struct->displacementBiasAndScaleStride),
+    displacementVectorBuffer(&in_struct->displacementVectorBuffer),
+    displacementVectorStride(in_struct->displacementVectorStride),
+    displacedMicromapPrimitiveFlags(&in_struct->displacedMicromapPrimitiveFlags),
+    displacedMicromapPrimitiveFlagsStride(in_struct->displacedMicromapPrimitiveFlagsStride),
+    indexType(in_struct->indexType),
+    indexBuffer(&in_struct->indexBuffer),
+    indexStride(in_struct->indexStride),
+    baseTriangle(in_struct->baseTriangle),
+    usageCountsCount(in_struct->usageCountsCount),
+    pUsageCounts(nullptr),
+    ppUsageCounts(nullptr),
+    micromap(in_struct->micromap)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pUsageCounts) {
+        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
+        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
+    }
+    if (in_struct->ppUsageCounts) {
+        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
+        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
+            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
+        }
+        ppUsageCounts = pointer_array;
+    }
+}
+
+safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV() :
+    sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV),
+    pNext(nullptr),
+    displacementBiasAndScaleFormat(),
+    displacementVectorFormat(),
+    displacementBiasAndScaleStride(),
+    displacementVectorStride(),
+    displacedMicromapPrimitiveFlagsStride(),
+    indexType(),
+    indexStride(),
+    baseTriangle(),
+    usageCountsCount(),
+    pUsageCounts(nullptr),
+    ppUsageCounts(nullptr),
+    micromap()
+{}
+
+safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& copy_src)
+{
+    sType = copy_src.sType;
+    displacementBiasAndScaleFormat = copy_src.displacementBiasAndScaleFormat;
+    displacementVectorFormat = copy_src.displacementVectorFormat;
+    displacementBiasAndScaleBuffer.initialize(&copy_src.displacementBiasAndScaleBuffer);
+    displacementBiasAndScaleStride = copy_src.displacementBiasAndScaleStride;
+    displacementVectorBuffer.initialize(&copy_src.displacementVectorBuffer);
+    displacementVectorStride = copy_src.displacementVectorStride;
+    displacedMicromapPrimitiveFlags.initialize(&copy_src.displacedMicromapPrimitiveFlags);
+    displacedMicromapPrimitiveFlagsStride = copy_src.displacedMicromapPrimitiveFlagsStride;
+    indexType = copy_src.indexType;
+    indexBuffer.initialize(&copy_src.indexBuffer);
+    indexStride = copy_src.indexStride;
+    baseTriangle = copy_src.baseTriangle;
+    usageCountsCount = copy_src.usageCountsCount;
+    pUsageCounts = nullptr;
+    ppUsageCounts = nullptr;
+    micromap = copy_src.micromap;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pUsageCounts) {
+        pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
+        memcpy ((void *)pUsageCounts, (void *)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT)*copy_src.usageCountsCount);
+    }
+    if (copy_src.ppUsageCounts) {
+        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[copy_src.usageCountsCount];
+        for (uint32_t i = 0; i < copy_src.usageCountsCount; ++i) {
+            pointer_array[i] = new VkMicromapUsageEXT(*copy_src.ppUsageCounts[i]);
+        }
+        ppUsageCounts = pointer_array;
+    }
+}
+
+safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::operator=(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pUsageCounts)
+        delete[] pUsageCounts;
+    if (ppUsageCounts) {
+        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+             delete ppUsageCounts[i];
+        }
+        delete[] ppUsageCounts;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    displacementBiasAndScaleFormat = copy_src.displacementBiasAndScaleFormat;
+    displacementVectorFormat = copy_src.displacementVectorFormat;
+    displacementBiasAndScaleBuffer.initialize(&copy_src.displacementBiasAndScaleBuffer);
+    displacementBiasAndScaleStride = copy_src.displacementBiasAndScaleStride;
+    displacementVectorBuffer.initialize(&copy_src.displacementVectorBuffer);
+    displacementVectorStride = copy_src.displacementVectorStride;
+    displacedMicromapPrimitiveFlags.initialize(&copy_src.displacedMicromapPrimitiveFlags);
+    displacedMicromapPrimitiveFlagsStride = copy_src.displacedMicromapPrimitiveFlagsStride;
+    indexType = copy_src.indexType;
+    indexBuffer.initialize(&copy_src.indexBuffer);
+    indexStride = copy_src.indexStride;
+    baseTriangle = copy_src.baseTriangle;
+    usageCountsCount = copy_src.usageCountsCount;
+    pUsageCounts = nullptr;
+    ppUsageCounts = nullptr;
+    micromap = copy_src.micromap;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pUsageCounts) {
+        pUsageCounts = new VkMicromapUsageEXT[copy_src.usageCountsCount];
+        memcpy ((void *)pUsageCounts, (void *)copy_src.pUsageCounts, sizeof(VkMicromapUsageEXT)*copy_src.usageCountsCount);
+    }
+    if (copy_src.ppUsageCounts) {
+        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[copy_src.usageCountsCount];
+        for (uint32_t i = 0; i < copy_src.usageCountsCount; ++i) {
+            pointer_array[i] = new VkMicromapUsageEXT(*copy_src.ppUsageCounts[i]);
+        }
+        ppUsageCounts = pointer_array;
+    }
+
+    return *this;
+}
+
+safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::~safe_VkAccelerationStructureTrianglesDisplacementMicromapNV()
+{
+    if (pUsageCounts)
+        delete[] pUsageCounts;
+    if (ppUsageCounts) {
+        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+             delete ppUsageCounts[i];
+        }
+        delete[] ppUsageCounts;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::initialize(const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct)
+{
+    if (pUsageCounts)
+        delete[] pUsageCounts;
+    if (ppUsageCounts) {
+        for (uint32_t i = 0; i < usageCountsCount; ++i) {
+             delete ppUsageCounts[i];
+        }
+        delete[] ppUsageCounts;
+    }
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    displacementBiasAndScaleFormat = in_struct->displacementBiasAndScaleFormat;
+    displacementVectorFormat = in_struct->displacementVectorFormat;
+    displacementBiasAndScaleBuffer.initialize(&in_struct->displacementBiasAndScaleBuffer);
+    displacementBiasAndScaleStride = in_struct->displacementBiasAndScaleStride;
+    displacementVectorBuffer.initialize(&in_struct->displacementVectorBuffer);
+    displacementVectorStride = in_struct->displacementVectorStride;
+    displacedMicromapPrimitiveFlags.initialize(&in_struct->displacedMicromapPrimitiveFlags);
+    displacedMicromapPrimitiveFlagsStride = in_struct->displacedMicromapPrimitiveFlagsStride;
+    indexType = in_struct->indexType;
+    indexBuffer.initialize(&in_struct->indexBuffer);
+    indexStride = in_struct->indexStride;
+    baseTriangle = in_struct->baseTriangle;
+    usageCountsCount = in_struct->usageCountsCount;
+    pUsageCounts = nullptr;
+    ppUsageCounts = nullptr;
+    micromap = in_struct->micromap;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pUsageCounts) {
+        pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];
+        memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);
+    }
+    if (in_struct->ppUsageCounts) {
+        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];
+        for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {
+            pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);
+        }
+        ppUsageCounts = pointer_array;
+    }
+}
+
+void safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::initialize(const safe_VkAccelerationStructureTrianglesDisplacementMicromapNV* copy_src)
+{
+    sType = copy_src->sType;
+    displacementBiasAndScaleFormat = copy_src->displacementBiasAndScaleFormat;
+    displacementVectorFormat = copy_src->displacementVectorFormat;
+    displacementBiasAndScaleBuffer.initialize(&copy_src->displacementBiasAndScaleBuffer);
+    displacementBiasAndScaleStride = copy_src->displacementBiasAndScaleStride;
+    displacementVectorBuffer.initialize(&copy_src->displacementVectorBuffer);
+    displacementVectorStride = copy_src->displacementVectorStride;
+    displacedMicromapPrimitiveFlags.initialize(&copy_src->displacedMicromapPrimitiveFlags);
+    displacedMicromapPrimitiveFlagsStride = copy_src->displacedMicromapPrimitiveFlagsStride;
+    indexType = copy_src->indexType;
+    indexBuffer.initialize(&copy_src->indexBuffer);
+    indexStride = copy_src->indexStride;
+    baseTriangle = copy_src->baseTriangle;
+    usageCountsCount = copy_src->usageCountsCount;
+    pUsageCounts = nullptr;
+    ppUsageCounts = nullptr;
+    micromap = copy_src->micromap;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pUsageCounts) {
+        pUsageCounts = new VkMicromapUsageEXT[copy_src->usageCountsCount];
+        memcpy ((void *)pUsageCounts, (void *)copy_src->pUsageCounts, sizeof(VkMicromapUsageEXT)*copy_src->usageCountsCount);
+    }
+    if (copy_src->ppUsageCounts) {
+        VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[copy_src->usageCountsCount];
+        for (uint32_t i = 0; i < copy_src->usageCountsCount; ++i) {
+            pointer_array[i] = new VkMicromapUsageEXT(*copy_src->ppUsageCounts[i]);
+        }
+        ppUsageCounts = pointer_array;
+    }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    clustercullingShader(in_struct->clustercullingShader),
+    multiviewClusterCullingShader(in_struct->multiviewClusterCullingShader)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI),
+    pNext(nullptr),
+    clustercullingShader(),
+    multiviewClusterCullingShader()
+{}
+
+safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    clustercullingShader = copy_src.clustercullingShader;
+    multiviewClusterCullingShader = copy_src.multiviewClusterCullingShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::operator=(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    clustercullingShader = copy_src.clustercullingShader;
+    multiviewClusterCullingShader = copy_src.multiviewClusterCullingShader;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::~safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::initialize(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    clustercullingShader = in_struct->clustercullingShader;
+    multiviewClusterCullingShader = in_struct->multiviewClusterCullingShader;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::initialize(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    clustercullingShader = copy_src->clustercullingShader;
+    multiviewClusterCullingShader = copy_src->multiviewClusterCullingShader;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(const VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* in_struct) :
+    sType(in_struct->sType),
+    maxOutputClusterCount(in_struct->maxOutputClusterCount),
+    indirectBufferOffsetAlignment(in_struct->indirectBufferOffsetAlignment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupCount[i] = in_struct->maxWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupSize[i] = in_struct->maxWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI),
+    pNext(nullptr),
+    maxOutputClusterCount(),
+    indirectBufferOffsetAlignment()
+{}
+
+safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& copy_src)
+{
+    sType = copy_src.sType;
+    maxOutputClusterCount = copy_src.maxOutputClusterCount;
+    indirectBufferOffsetAlignment = copy_src.indirectBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupCount[i] = copy_src.maxWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupSize[i] = copy_src.maxWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::operator=(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxOutputClusterCount = copy_src.maxOutputClusterCount;
+    indirectBufferOffsetAlignment = copy_src.indirectBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupCount[i] = copy_src.maxWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupSize[i] = copy_src.maxWorkGroupSize[i];
+    }
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::~safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::initialize(const VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxOutputClusterCount = in_struct->maxOutputClusterCount;
+    indirectBufferOffsetAlignment = in_struct->indirectBufferOffsetAlignment;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupCount[i] = in_struct->maxWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupSize[i] = in_struct->maxWorkGroupSize[i];
+    }
+}
+
+void safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI::initialize(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* copy_src)
+{
+    sType = copy_src->sType;
+    maxOutputClusterCount = copy_src->maxOutputClusterCount;
+    indirectBufferOffsetAlignment = copy_src->indirectBufferOffsetAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupCount[i] = copy_src->maxWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxWorkGroupSize[i] = copy_src->maxWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM(const VkPhysicalDeviceShaderCorePropertiesARM* in_struct) :
+    sType(in_struct->sType),
+    pixelRate(in_struct->pixelRate),
+    texelRate(in_struct->texelRate),
+    fmaRate(in_struct->fmaRate)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_ARM),
+    pNext(nullptr),
+    pixelRate(),
+    texelRate(),
+    fmaRate()
+{}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::safe_VkPhysicalDeviceShaderCorePropertiesARM(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src)
+{
+    sType = copy_src.sType;
+    pixelRate = copy_src.pixelRate;
+    texelRate = copy_src.texelRate;
+    fmaRate = copy_src.fmaRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM& safe_VkPhysicalDeviceShaderCorePropertiesARM::operator=(const safe_VkPhysicalDeviceShaderCorePropertiesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pixelRate = copy_src.pixelRate;
+    texelRate = copy_src.texelRate;
+    fmaRate = copy_src.fmaRate;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCorePropertiesARM::~safe_VkPhysicalDeviceShaderCorePropertiesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesARM::initialize(const VkPhysicalDeviceShaderCorePropertiesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pixelRate = in_struct->pixelRate;
+    texelRate = in_struct->texelRate;
+    fmaRate = in_struct->fmaRate;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCorePropertiesARM::initialize(const safe_VkPhysicalDeviceShaderCorePropertiesARM* copy_src)
+{
+    sType = copy_src->sType;
+    pixelRate = copy_src->pixelRate;
+    texelRate = copy_src->texelRate;
+    fmaRate = copy_src->fmaRate;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorSetHostMapping(in_struct->descriptorSetHostMapping)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE),
+    pNext(nullptr),
+    descriptorSetHostMapping()
+{}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorSetHostMapping = copy_src.descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::operator=(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorSetHostMapping = copy_src.descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::~safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::initialize(const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    descriptorSetHostMapping = in_struct->descriptorSetHostMapping;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE::initialize(const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorSetHostMapping = copy_src->descriptorSetHostMapping;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE(const VkDescriptorSetBindingReferenceVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorSetLayout(in_struct->descriptorSetLayout),
+    binding(in_struct->binding)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE),
+    pNext(nullptr),
+    descriptorSetLayout(),
+    binding()
+{}
+
+safe_VkDescriptorSetBindingReferenceVALVE::safe_VkDescriptorSetBindingReferenceVALVE(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorSetLayout = copy_src.descriptorSetLayout;
+    binding = copy_src.binding;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE& safe_VkDescriptorSetBindingReferenceVALVE::operator=(const safe_VkDescriptorSetBindingReferenceVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorSetLayout = copy_src.descriptorSetLayout;
+    binding = copy_src.binding;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDescriptorSetBindingReferenceVALVE::~safe_VkDescriptorSetBindingReferenceVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDescriptorSetBindingReferenceVALVE::initialize(const VkDescriptorSetBindingReferenceVALVE* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    descriptorSetLayout = in_struct->descriptorSetLayout;
+    binding = in_struct->binding;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDescriptorSetBindingReferenceVALVE::initialize(const safe_VkDescriptorSetBindingReferenceVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorSetLayout = copy_src->descriptorSetLayout;
+    binding = copy_src->binding;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct) :
+    sType(in_struct->sType),
+    descriptorOffset(in_struct->descriptorOffset),
+    descriptorSize(in_struct->descriptorSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE() :
+    sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE),
+    pNext(nullptr),
+    descriptorOffset(),
+    descriptorSize()
+{}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::safe_VkDescriptorSetLayoutHostMappingInfoVALVE(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src)
+{
+    sType = copy_src.sType;
+    descriptorOffset = copy_src.descriptorOffset;
+    descriptorSize = copy_src.descriptorSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE& safe_VkDescriptorSetLayoutHostMappingInfoVALVE::operator=(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    descriptorOffset = copy_src.descriptorOffset;
+    descriptorSize = copy_src.descriptorSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDescriptorSetLayoutHostMappingInfoVALVE::~safe_VkDescriptorSetLayoutHostMappingInfoVALVE()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const VkDescriptorSetLayoutHostMappingInfoVALVE* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    descriptorOffset = in_struct->descriptorOffset;
+    descriptorSize = in_struct->descriptorSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const safe_VkDescriptorSetLayoutHostMappingInfoVALVE* copy_src)
+{
+    sType = copy_src->sType;
+    descriptorOffset = copy_src->descriptorOffset;
+    descriptorSize = copy_src->descriptorSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityMapOffset(in_struct->fragmentDensityMapOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM),
+    pNext(nullptr),
+    fragmentDensityMapOffset()
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityMapOffset = copy_src.fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::operator=(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityMapOffset = copy_src.fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::~safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    fragmentDensityMapOffset = in_struct->fragmentDensityMapOffset;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM::initialize(const safe_VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityMapOffset = copy_src->fragmentDensityMapOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityOffsetGranularity(in_struct->fragmentDensityOffsetGranularity)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM),
+    pNext(nullptr),
+    fragmentDensityOffsetGranularity()
+{}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityOffsetGranularity = copy_src.fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::operator=(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityOffsetGranularity = copy_src.fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::~safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::initialize(const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    fragmentDensityOffsetGranularity = in_struct->fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM::initialize(const safe_VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityOffsetGranularity = copy_src->fragmentDensityOffsetGranularity;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    fragmentDensityOffsetCount(in_struct->fragmentDensityOffsetCount),
+    pFragmentDensityOffsets(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)in_struct->pFragmentDensityOffsets, sizeof(VkOffset2D)*in_struct->fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM),
+    pNext(nullptr),
+    fragmentDensityOffsetCount(),
+    pFragmentDensityOffsets(nullptr)
+{}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src.pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src.fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::operator=(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    fragmentDensityOffsetCount = copy_src.fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src.fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src.pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src.fragmentDensityOffsetCount);
+    }
+
+    return *this;
+}
+
+safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::~safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM()
+{
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const VkSubpassFragmentDensityMapOffsetEndInfoQCOM* in_struct)
+{
+    if (pFragmentDensityOffsets)
+        delete[] pFragmentDensityOffsets;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    fragmentDensityOffsetCount = in_struct->fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[in_struct->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)in_struct->pFragmentDensityOffsets, sizeof(VkOffset2D)*in_struct->fragmentDensityOffsetCount);
+    }
+}
+
+void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    fragmentDensityOffsetCount = copy_src->fragmentDensityOffsetCount;
+    pFragmentDensityOffsets = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pFragmentDensityOffsets) {
+        pFragmentDensityOffsets = new VkOffset2D[copy_src->fragmentDensityOffsetCount];
+        memcpy ((void *)pFragmentDensityOffsets, (void *)copy_src->pFragmentDensityOffsets, sizeof(VkOffset2D)*copy_src->fragmentDensityOffsetCount);
+    }
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    indirectCopy(in_struct->indirectCopy)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV),
+    pNext(nullptr),
+    indirectCopy()
+{}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    indirectCopy = copy_src.indirectCopy;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::operator=(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    indirectCopy = copy_src.indirectCopy;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::~safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::initialize(const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    indirectCopy = in_struct->indirectCopy;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::initialize(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    indirectCopy = copy_src->indirectCopy;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    supportedQueues(in_struct->supportedQueues)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV),
+    pNext(nullptr),
+    supportedQueues()
+{}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    supportedQueues = copy_src.supportedQueues;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::operator=(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    supportedQueues = copy_src.supportedQueues;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::~safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::initialize(const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    supportedQueues = in_struct->supportedQueues;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::initialize(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    supportedQueues = copy_src->supportedQueues;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const VkPhysicalDeviceMemoryDecompressionFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    memoryDecompression(in_struct->memoryDecompression)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV),
+    pNext(nullptr),
+    memoryDecompression()
+{}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    memoryDecompression = copy_src.memoryDecompression;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::operator=(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryDecompression = copy_src.memoryDecompression;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::~safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::initialize(const VkPhysicalDeviceMemoryDecompressionFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memoryDecompression = in_struct->memoryDecompression;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::initialize(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    memoryDecompression = copy_src->memoryDecompression;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const VkPhysicalDeviceMemoryDecompressionPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    decompressionMethods(in_struct->decompressionMethods),
+    maxDecompressionIndirectCount(in_struct->maxDecompressionIndirectCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV),
+    pNext(nullptr),
+    decompressionMethods(),
+    maxDecompressionIndirectCount()
+{}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    decompressionMethods = copy_src.decompressionMethods;
+    maxDecompressionIndirectCount = copy_src.maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::operator=(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    decompressionMethods = copy_src.decompressionMethods;
+    maxDecompressionIndirectCount = copy_src.maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::~safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::initialize(const VkPhysicalDeviceMemoryDecompressionPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    decompressionMethods = in_struct->decompressionMethods;
+    maxDecompressionIndirectCount = in_struct->maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::initialize(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    decompressionMethods = copy_src->decompressionMethods;
+    maxDecompressionIndirectCount = copy_src->maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    linearColorAttachment(in_struct->linearColorAttachment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV),
+    pNext(nullptr),
+    linearColorAttachment()
+{}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    linearColorAttachment = copy_src.linearColorAttachment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::operator=(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    linearColorAttachment = copy_src.linearColorAttachment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::~safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::initialize(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    linearColorAttachment = in_struct->linearColorAttachment;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::initialize(const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    linearColorAttachment = copy_src->linearColorAttachment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM(const VkImageViewSampleWeightCreateInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    filterCenter(in_struct->filterCenter),
+    filterSize(in_struct->filterSize),
+    numPhases(in_struct->numPhases)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM),
+    pNext(nullptr),
+    filterCenter(),
+    filterSize(),
+    numPhases()
+{}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    filterCenter = copy_src.filterCenter;
+    filterSize = copy_src.filterSize;
+    numPhases = copy_src.numPhases;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM& safe_VkImageViewSampleWeightCreateInfoQCOM::operator=(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    filterCenter = copy_src.filterCenter;
+    filterSize = copy_src.filterSize;
+    numPhases = copy_src.numPhases;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::~safe_VkImageViewSampleWeightCreateInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewSampleWeightCreateInfoQCOM::initialize(const VkImageViewSampleWeightCreateInfoQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    filterCenter = in_struct->filterCenter;
+    filterSize = in_struct->filterSize;
+    numPhases = in_struct->numPhases;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewSampleWeightCreateInfoQCOM::initialize(const safe_VkImageViewSampleWeightCreateInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    filterCenter = copy_src->filterCenter;
+    filterSize = copy_src->filterSize;
+    numPhases = copy_src->numPhases;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    textureSampleWeighted(in_struct->textureSampleWeighted),
+    textureBoxFilter(in_struct->textureBoxFilter),
+    textureBlockMatch(in_struct->textureBlockMatch)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM),
+    pNext(nullptr),
+    textureSampleWeighted(),
+    textureBoxFilter(),
+    textureBlockMatch()
+{}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    textureSampleWeighted = copy_src.textureSampleWeighted;
+    textureBoxFilter = copy_src.textureBoxFilter;
+    textureBlockMatch = copy_src.textureBlockMatch;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::operator=(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    textureSampleWeighted = copy_src.textureSampleWeighted;
+    textureBoxFilter = copy_src.textureBoxFilter;
+    textureBlockMatch = copy_src.textureBlockMatch;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::~safe_VkPhysicalDeviceImageProcessingFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::initialize(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    textureSampleWeighted = in_struct->textureSampleWeighted;
+    textureBoxFilter = in_struct->textureBoxFilter;
+    textureBlockMatch = in_struct->textureBlockMatch;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::initialize(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    textureSampleWeighted = copy_src->textureSampleWeighted;
+    textureBoxFilter = copy_src->textureBoxFilter;
+    textureBlockMatch = copy_src->textureBlockMatch;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    maxWeightFilterPhases(in_struct->maxWeightFilterPhases),
+    maxWeightFilterDimension(in_struct->maxWeightFilterDimension),
+    maxBlockMatchRegion(in_struct->maxBlockMatchRegion),
+    maxBoxFilterBlockSize(in_struct->maxBoxFilterBlockSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM),
+    pNext(nullptr),
+    maxWeightFilterPhases(),
+    maxWeightFilterDimension(),
+    maxBlockMatchRegion(),
+    maxBoxFilterBlockSize()
+{}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    maxWeightFilterPhases = copy_src.maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src.maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src.maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src.maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::operator=(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxWeightFilterPhases = copy_src.maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src.maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src.maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src.maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::~safe_VkPhysicalDeviceImageProcessingPropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::initialize(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxWeightFilterPhases = in_struct->maxWeightFilterPhases;
+    maxWeightFilterDimension = in_struct->maxWeightFilterDimension;
+    maxBlockMatchRegion = in_struct->maxBlockMatchRegion;
+    maxBoxFilterBlockSize = in_struct->maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::initialize(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    maxWeightFilterPhases = copy_src->maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src->maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src->maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src->maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG(const VkDirectDriverLoadingInfoLUNARG* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    pfnGetInstanceProcAddr(in_struct->pfnGetInstanceProcAddr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG() :
+    sType(VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG),
+    pNext(nullptr),
+    flags(),
+    pfnGetInstanceProcAddr()
+{}
+
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnGetInstanceProcAddr = copy_src.pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG& safe_VkDirectDriverLoadingInfoLUNARG::operator=(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnGetInstanceProcAddr = copy_src.pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG::~safe_VkDirectDriverLoadingInfoLUNARG()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDirectDriverLoadingInfoLUNARG::initialize(const VkDirectDriverLoadingInfoLUNARG* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pfnGetInstanceProcAddr = in_struct->pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDirectDriverLoadingInfoLUNARG::initialize(const safe_VkDirectDriverLoadingInfoLUNARG* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pfnGetInstanceProcAddr = copy_src->pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG(const VkDirectDriverLoadingListLUNARG* in_struct) :
+    sType(in_struct->sType),
+    mode(in_struct->mode),
+    driverCount(in_struct->driverCount),
+    pDrivers(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (driverCount && in_struct->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&in_struct->pDrivers[i]);
+        }
+    }
+}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG() :
+    sType(VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG),
+    pNext(nullptr),
+    mode(),
+    driverCount(),
+    pDrivers(nullptr)
+{}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG(const safe_VkDirectDriverLoadingListLUNARG& copy_src)
+{
+    sType = copy_src.sType;
+    mode = copy_src.mode;
+    driverCount = copy_src.driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (driverCount && copy_src.pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src.pDrivers[i]);
+        }
+    }
+}
+
+safe_VkDirectDriverLoadingListLUNARG& safe_VkDirectDriverLoadingListLUNARG::operator=(const safe_VkDirectDriverLoadingListLUNARG& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    mode = copy_src.mode;
+    driverCount = copy_src.driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (driverCount && copy_src.pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src.pDrivers[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkDirectDriverLoadingListLUNARG::~safe_VkDirectDriverLoadingListLUNARG()
+{
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDirectDriverLoadingListLUNARG::initialize(const VkDirectDriverLoadingListLUNARG* in_struct)
+{
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    mode = in_struct->mode;
+    driverCount = in_struct->driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (driverCount && in_struct->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&in_struct->pDrivers[i]);
+        }
+    }
+}
+
+void safe_VkDirectDriverLoadingListLUNARG::initialize(const safe_VkDirectDriverLoadingListLUNARG* copy_src)
+{
+    sType = copy_src->sType;
+    mode = copy_src->mode;
+    driverCount = copy_src->driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (driverCount && copy_src->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src->pDrivers[i]);
+        }
+    }
+}
+
+safe_VkPhysicalDeviceOpticalFlowFeaturesNV::safe_VkPhysicalDeviceOpticalFlowFeaturesNV(const VkPhysicalDeviceOpticalFlowFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    opticalFlow(in_struct->opticalFlow)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceOpticalFlowFeaturesNV::safe_VkPhysicalDeviceOpticalFlowFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_FEATURES_NV),
+    pNext(nullptr),
+    opticalFlow()
+{}
+
+safe_VkPhysicalDeviceOpticalFlowFeaturesNV::safe_VkPhysicalDeviceOpticalFlowFeaturesNV(const safe_VkPhysicalDeviceOpticalFlowFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    opticalFlow = copy_src.opticalFlow;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceOpticalFlowFeaturesNV& safe_VkPhysicalDeviceOpticalFlowFeaturesNV::operator=(const safe_VkPhysicalDeviceOpticalFlowFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    opticalFlow = copy_src.opticalFlow;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceOpticalFlowFeaturesNV::~safe_VkPhysicalDeviceOpticalFlowFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceOpticalFlowFeaturesNV::initialize(const VkPhysicalDeviceOpticalFlowFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    opticalFlow = in_struct->opticalFlow;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceOpticalFlowFeaturesNV::initialize(const safe_VkPhysicalDeviceOpticalFlowFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    opticalFlow = copy_src->opticalFlow;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceOpticalFlowPropertiesNV::safe_VkPhysicalDeviceOpticalFlowPropertiesNV(const VkPhysicalDeviceOpticalFlowPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    supportedOutputGridSizes(in_struct->supportedOutputGridSizes),
+    supportedHintGridSizes(in_struct->supportedHintGridSizes),
+    hintSupported(in_struct->hintSupported),
+    costSupported(in_struct->costSupported),
+    bidirectionalFlowSupported(in_struct->bidirectionalFlowSupported),
+    globalFlowSupported(in_struct->globalFlowSupported),
+    minWidth(in_struct->minWidth),
+    minHeight(in_struct->minHeight),
+    maxWidth(in_struct->maxWidth),
+    maxHeight(in_struct->maxHeight),
+    maxNumRegionsOfInterest(in_struct->maxNumRegionsOfInterest)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceOpticalFlowPropertiesNV::safe_VkPhysicalDeviceOpticalFlowPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_PROPERTIES_NV),
+    pNext(nullptr),
+    supportedOutputGridSizes(),
+    supportedHintGridSizes(),
+    hintSupported(),
+    costSupported(),
+    bidirectionalFlowSupported(),
+    globalFlowSupported(),
+    minWidth(),
+    minHeight(),
+    maxWidth(),
+    maxHeight(),
+    maxNumRegionsOfInterest()
+{}
+
+safe_VkPhysicalDeviceOpticalFlowPropertiesNV::safe_VkPhysicalDeviceOpticalFlowPropertiesNV(const safe_VkPhysicalDeviceOpticalFlowPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    supportedOutputGridSizes = copy_src.supportedOutputGridSizes;
+    supportedHintGridSizes = copy_src.supportedHintGridSizes;
+    hintSupported = copy_src.hintSupported;
+    costSupported = copy_src.costSupported;
+    bidirectionalFlowSupported = copy_src.bidirectionalFlowSupported;
+    globalFlowSupported = copy_src.globalFlowSupported;
+    minWidth = copy_src.minWidth;
+    minHeight = copy_src.minHeight;
+    maxWidth = copy_src.maxWidth;
+    maxHeight = copy_src.maxHeight;
+    maxNumRegionsOfInterest = copy_src.maxNumRegionsOfInterest;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceOpticalFlowPropertiesNV& safe_VkPhysicalDeviceOpticalFlowPropertiesNV::operator=(const safe_VkPhysicalDeviceOpticalFlowPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    supportedOutputGridSizes = copy_src.supportedOutputGridSizes;
+    supportedHintGridSizes = copy_src.supportedHintGridSizes;
+    hintSupported = copy_src.hintSupported;
+    costSupported = copy_src.costSupported;
+    bidirectionalFlowSupported = copy_src.bidirectionalFlowSupported;
+    globalFlowSupported = copy_src.globalFlowSupported;
+    minWidth = copy_src.minWidth;
+    minHeight = copy_src.minHeight;
+    maxWidth = copy_src.maxWidth;
+    maxHeight = copy_src.maxHeight;
+    maxNumRegionsOfInterest = copy_src.maxNumRegionsOfInterest;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceOpticalFlowPropertiesNV::~safe_VkPhysicalDeviceOpticalFlowPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceOpticalFlowPropertiesNV::initialize(const VkPhysicalDeviceOpticalFlowPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    supportedOutputGridSizes = in_struct->supportedOutputGridSizes;
+    supportedHintGridSizes = in_struct->supportedHintGridSizes;
+    hintSupported = in_struct->hintSupported;
+    costSupported = in_struct->costSupported;
+    bidirectionalFlowSupported = in_struct->bidirectionalFlowSupported;
+    globalFlowSupported = in_struct->globalFlowSupported;
+    minWidth = in_struct->minWidth;
+    minHeight = in_struct->minHeight;
+    maxWidth = in_struct->maxWidth;
+    maxHeight = in_struct->maxHeight;
+    maxNumRegionsOfInterest = in_struct->maxNumRegionsOfInterest;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceOpticalFlowPropertiesNV::initialize(const safe_VkPhysicalDeviceOpticalFlowPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    supportedOutputGridSizes = copy_src->supportedOutputGridSizes;
+    supportedHintGridSizes = copy_src->supportedHintGridSizes;
+    hintSupported = copy_src->hintSupported;
+    costSupported = copy_src->costSupported;
+    bidirectionalFlowSupported = copy_src->bidirectionalFlowSupported;
+    globalFlowSupported = copy_src->globalFlowSupported;
+    minWidth = copy_src->minWidth;
+    minHeight = copy_src->minHeight;
+    maxWidth = copy_src->maxWidth;
+    maxHeight = copy_src->maxHeight;
+    maxNumRegionsOfInterest = copy_src->maxNumRegionsOfInterest;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOpticalFlowImageFormatInfoNV::safe_VkOpticalFlowImageFormatInfoNV(const VkOpticalFlowImageFormatInfoNV* in_struct) :
+    sType(in_struct->sType),
+    usage(in_struct->usage)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkOpticalFlowImageFormatInfoNV::safe_VkOpticalFlowImageFormatInfoNV() :
+    sType(VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_INFO_NV),
+    pNext(nullptr),
+    usage()
+{}
+
+safe_VkOpticalFlowImageFormatInfoNV::safe_VkOpticalFlowImageFormatInfoNV(const safe_VkOpticalFlowImageFormatInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    usage = copy_src.usage;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkOpticalFlowImageFormatInfoNV& safe_VkOpticalFlowImageFormatInfoNV::operator=(const safe_VkOpticalFlowImageFormatInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    usage = copy_src.usage;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkOpticalFlowImageFormatInfoNV::~safe_VkOpticalFlowImageFormatInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkOpticalFlowImageFormatInfoNV::initialize(const VkOpticalFlowImageFormatInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    usage = in_struct->usage;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkOpticalFlowImageFormatInfoNV::initialize(const safe_VkOpticalFlowImageFormatInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    usage = copy_src->usage;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOpticalFlowImageFormatPropertiesNV::safe_VkOpticalFlowImageFormatPropertiesNV(const VkOpticalFlowImageFormatPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    format(in_struct->format)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkOpticalFlowImageFormatPropertiesNV::safe_VkOpticalFlowImageFormatPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_OPTICAL_FLOW_IMAGE_FORMAT_PROPERTIES_NV),
+    pNext(nullptr),
+    format()
+{}
+
+safe_VkOpticalFlowImageFormatPropertiesNV::safe_VkOpticalFlowImageFormatPropertiesNV(const safe_VkOpticalFlowImageFormatPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    format = copy_src.format;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkOpticalFlowImageFormatPropertiesNV& safe_VkOpticalFlowImageFormatPropertiesNV::operator=(const safe_VkOpticalFlowImageFormatPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    format = copy_src.format;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkOpticalFlowImageFormatPropertiesNV::~safe_VkOpticalFlowImageFormatPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkOpticalFlowImageFormatPropertiesNV::initialize(const VkOpticalFlowImageFormatPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    format = in_struct->format;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkOpticalFlowImageFormatPropertiesNV::initialize(const safe_VkOpticalFlowImageFormatPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    format = copy_src->format;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOpticalFlowSessionCreateInfoNV::safe_VkOpticalFlowSessionCreateInfoNV(const VkOpticalFlowSessionCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    width(in_struct->width),
+    height(in_struct->height),
+    imageFormat(in_struct->imageFormat),
+    flowVectorFormat(in_struct->flowVectorFormat),
+    costFormat(in_struct->costFormat),
+    outputGridSize(in_struct->outputGridSize),
+    hintGridSize(in_struct->hintGridSize),
+    performanceLevel(in_struct->performanceLevel),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkOpticalFlowSessionCreateInfoNV::safe_VkOpticalFlowSessionCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_OPTICAL_FLOW_SESSION_CREATE_INFO_NV),
+    pNext(nullptr),
+    width(),
+    height(),
+    imageFormat(),
+    flowVectorFormat(),
+    costFormat(),
+    outputGridSize(),
+    hintGridSize(),
+    performanceLevel(),
+    flags()
+{}
+
+safe_VkOpticalFlowSessionCreateInfoNV::safe_VkOpticalFlowSessionCreateInfoNV(const safe_VkOpticalFlowSessionCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    width = copy_src.width;
+    height = copy_src.height;
+    imageFormat = copy_src.imageFormat;
+    flowVectorFormat = copy_src.flowVectorFormat;
+    costFormat = copy_src.costFormat;
+    outputGridSize = copy_src.outputGridSize;
+    hintGridSize = copy_src.hintGridSize;
+    performanceLevel = copy_src.performanceLevel;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkOpticalFlowSessionCreateInfoNV& safe_VkOpticalFlowSessionCreateInfoNV::operator=(const safe_VkOpticalFlowSessionCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    width = copy_src.width;
+    height = copy_src.height;
+    imageFormat = copy_src.imageFormat;
+    flowVectorFormat = copy_src.flowVectorFormat;
+    costFormat = copy_src.costFormat;
+    outputGridSize = copy_src.outputGridSize;
+    hintGridSize = copy_src.hintGridSize;
+    performanceLevel = copy_src.performanceLevel;
+    flags = copy_src.flags;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkOpticalFlowSessionCreateInfoNV::~safe_VkOpticalFlowSessionCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkOpticalFlowSessionCreateInfoNV::initialize(const VkOpticalFlowSessionCreateInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    width = in_struct->width;
+    height = in_struct->height;
+    imageFormat = in_struct->imageFormat;
+    flowVectorFormat = in_struct->flowVectorFormat;
+    costFormat = in_struct->costFormat;
+    outputGridSize = in_struct->outputGridSize;
+    hintGridSize = in_struct->hintGridSize;
+    performanceLevel = in_struct->performanceLevel;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkOpticalFlowSessionCreateInfoNV::initialize(const safe_VkOpticalFlowSessionCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    width = copy_src->width;
+    height = copy_src->height;
+    imageFormat = copy_src->imageFormat;
+    flowVectorFormat = copy_src->flowVectorFormat;
+    costFormat = copy_src->costFormat;
+    outputGridSize = copy_src->outputGridSize;
+    hintGridSize = copy_src->hintGridSize;
+    performanceLevel = copy_src->performanceLevel;
+    flags = copy_src->flags;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::safe_VkOpticalFlowSessionCreatePrivateDataInfoNV(const VkOpticalFlowSessionCreatePrivateDataInfoNV* in_struct) :
+    sType(in_struct->sType),
+    id(in_struct->id),
+    size(in_struct->size),
+    pPrivateData(in_struct->pPrivateData)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::safe_VkOpticalFlowSessionCreatePrivateDataInfoNV() :
+    sType(VK_STRUCTURE_TYPE_OPTICAL_FLOW_SESSION_CREATE_PRIVATE_DATA_INFO_NV),
+    pNext(nullptr),
+    id(),
+    size(),
+    pPrivateData(nullptr)
+{}
+
+safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::safe_VkOpticalFlowSessionCreatePrivateDataInfoNV(const safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    id = copy_src.id;
+    size = copy_src.size;
+    pPrivateData = copy_src.pPrivateData;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::operator=(const safe_VkOpticalFlowSessionCreatePrivateDataInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    id = copy_src.id;
+    size = copy_src.size;
+    pPrivateData = copy_src.pPrivateData;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::~safe_VkOpticalFlowSessionCreatePrivateDataInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::initialize(const VkOpticalFlowSessionCreatePrivateDataInfoNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    id = in_struct->id;
+    size = in_struct->size;
+    pPrivateData = in_struct->pPrivateData;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkOpticalFlowSessionCreatePrivateDataInfoNV::initialize(const safe_VkOpticalFlowSessionCreatePrivateDataInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    id = copy_src->id;
+    size = copy_src->size;
+    pPrivateData = copy_src->pPrivateData;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkOpticalFlowExecuteInfoNV::safe_VkOpticalFlowExecuteInfoNV(const VkOpticalFlowExecuteInfoNV* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    regionCount(in_struct->regionCount),
+    pRegions(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pRegions) {
+        pRegions = new VkRect2D[in_struct->regionCount];
+        memcpy ((void *)pRegions, (void *)in_struct->pRegions, sizeof(VkRect2D)*in_struct->regionCount);
+    }
+}
+
+safe_VkOpticalFlowExecuteInfoNV::safe_VkOpticalFlowExecuteInfoNV() :
+    sType(VK_STRUCTURE_TYPE_OPTICAL_FLOW_EXECUTE_INFO_NV),
+    pNext(nullptr),
+    flags(),
+    regionCount(),
+    pRegions(nullptr)
+{}
+
+safe_VkOpticalFlowExecuteInfoNV::safe_VkOpticalFlowExecuteInfoNV(const safe_VkOpticalFlowExecuteInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pRegions) {
+        pRegions = new VkRect2D[copy_src.regionCount];
+        memcpy ((void *)pRegions, (void *)copy_src.pRegions, sizeof(VkRect2D)*copy_src.regionCount);
+    }
+}
+
+safe_VkOpticalFlowExecuteInfoNV& safe_VkOpticalFlowExecuteInfoNV::operator=(const safe_VkOpticalFlowExecuteInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    regionCount = copy_src.regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pRegions) {
+        pRegions = new VkRect2D[copy_src.regionCount];
+        memcpy ((void *)pRegions, (void *)copy_src.pRegions, sizeof(VkRect2D)*copy_src.regionCount);
+    }
+
+    return *this;
+}
+
+safe_VkOpticalFlowExecuteInfoNV::~safe_VkOpticalFlowExecuteInfoNV()
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkOpticalFlowExecuteInfoNV::initialize(const VkOpticalFlowExecuteInfoNV* in_struct)
+{
+    if (pRegions)
+        delete[] pRegions;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    regionCount = in_struct->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pRegions) {
+        pRegions = new VkRect2D[in_struct->regionCount];
+        memcpy ((void *)pRegions, (void *)in_struct->pRegions, sizeof(VkRect2D)*in_struct->regionCount);
+    }
+}
+
+void safe_VkOpticalFlowExecuteInfoNV::initialize(const safe_VkOpticalFlowExecuteInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    regionCount = copy_src->regionCount;
+    pRegions = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pRegions) {
+        pRegions = new VkRect2D[copy_src->regionCount];
+        memcpy ((void *)pRegions, (void *)copy_src->pRegions, sizeof(VkRect2D)*copy_src->regionCount);
+    }
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    tileProperties(in_struct->tileProperties)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM),
+    pNext(nullptr),
+    tileProperties()
+{}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    tileProperties = copy_src.tileProperties;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::operator=(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    tileProperties = copy_src.tileProperties;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::~safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::initialize(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    tileProperties = in_struct->tileProperties;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::initialize(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    tileProperties = copy_src->tileProperties;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM(const VkTilePropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    tileSize(in_struct->tileSize),
+    apronSize(in_struct->apronSize),
+    origin(in_struct->origin)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM),
+    pNext(nullptr),
+    tileSize(),
+    apronSize(),
+    origin()
+{}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM(const safe_VkTilePropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    tileSize = copy_src.tileSize;
+    apronSize = copy_src.apronSize;
+    origin = copy_src.origin;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkTilePropertiesQCOM& safe_VkTilePropertiesQCOM::operator=(const safe_VkTilePropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    tileSize = copy_src.tileSize;
+    apronSize = copy_src.apronSize;
+    origin = copy_src.origin;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkTilePropertiesQCOM::~safe_VkTilePropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkTilePropertiesQCOM::initialize(const VkTilePropertiesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    tileSize = in_struct->tileSize;
+    apronSize = in_struct->apronSize;
+    origin = in_struct->origin;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkTilePropertiesQCOM::initialize(const safe_VkTilePropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    tileSize = copy_src->tileSize;
+    apronSize = copy_src->apronSize;
+    origin = copy_src->origin;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC(const VkPhysicalDeviceAmigoProfilingFeaturesSEC* in_struct) :
+    sType(in_struct->sType),
+    amigoProfiling(in_struct->amigoProfiling)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC),
+    pNext(nullptr),
+    amigoProfiling()
+{}
+
+safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC(const safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& copy_src)
+{
+    sType = copy_src.sType;
+    amigoProfiling = copy_src.amigoProfiling;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::operator=(const safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    amigoProfiling = copy_src.amigoProfiling;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::~safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::initialize(const VkPhysicalDeviceAmigoProfilingFeaturesSEC* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    amigoProfiling = in_struct->amigoProfiling;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC::initialize(const safe_VkPhysicalDeviceAmigoProfilingFeaturesSEC* copy_src)
+{
+    sType = copy_src->sType;
+    amigoProfiling = copy_src->amigoProfiling;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkAmigoProfilingSubmitInfoSEC::safe_VkAmigoProfilingSubmitInfoSEC(const VkAmigoProfilingSubmitInfoSEC* in_struct) :
+    sType(in_struct->sType),
+    firstDrawTimestamp(in_struct->firstDrawTimestamp),
+    swapBufferTimestamp(in_struct->swapBufferTimestamp)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAmigoProfilingSubmitInfoSEC::safe_VkAmigoProfilingSubmitInfoSEC() :
+    sType(VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC),
+    pNext(nullptr),
+    firstDrawTimestamp(),
+    swapBufferTimestamp()
+{}
+
+safe_VkAmigoProfilingSubmitInfoSEC::safe_VkAmigoProfilingSubmitInfoSEC(const safe_VkAmigoProfilingSubmitInfoSEC& copy_src)
+{
+    sType = copy_src.sType;
+    firstDrawTimestamp = copy_src.firstDrawTimestamp;
+    swapBufferTimestamp = copy_src.swapBufferTimestamp;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkAmigoProfilingSubmitInfoSEC& safe_VkAmigoProfilingSubmitInfoSEC::operator=(const safe_VkAmigoProfilingSubmitInfoSEC& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    firstDrawTimestamp = copy_src.firstDrawTimestamp;
+    swapBufferTimestamp = copy_src.swapBufferTimestamp;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkAmigoProfilingSubmitInfoSEC::~safe_VkAmigoProfilingSubmitInfoSEC()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAmigoProfilingSubmitInfoSEC::initialize(const VkAmigoProfilingSubmitInfoSEC* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    firstDrawTimestamp = in_struct->firstDrawTimestamp;
+    swapBufferTimestamp = in_struct->swapBufferTimestamp;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAmigoProfilingSubmitInfoSEC::initialize(const safe_VkAmigoProfilingSubmitInfoSEC* copy_src)
+{
+    sType = copy_src->sType;
+    firstDrawTimestamp = copy_src->firstDrawTimestamp;
+    swapBufferTimestamp = copy_src->swapBufferTimestamp;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    multiviewPerViewViewports(in_struct->multiviewPerViewViewports)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM),
+    pNext(nullptr),
+    multiviewPerViewViewports()
+{}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    multiviewPerViewViewports = copy_src.multiviewPerViewViewports;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::operator=(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    multiviewPerViewViewports = copy_src.multiviewPerViewViewports;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::~safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::initialize(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    multiviewPerViewViewports = in_struct->multiviewPerViewViewports;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::initialize(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    multiviewPerViewViewports = copy_src->multiviewPerViewViewports;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    rayTracingInvocationReorderReorderingHint(in_struct->rayTracingInvocationReorderReorderingHint)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV),
+    pNext(nullptr),
+    rayTracingInvocationReorderReorderingHint()
+{}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    rayTracingInvocationReorderReorderingHint = copy_src.rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::operator=(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingInvocationReorderReorderingHint = copy_src.rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::~safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::initialize(const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingInvocationReorderReorderingHint = in_struct->rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::initialize(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    rayTracingInvocationReorderReorderingHint = copy_src->rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    rayTracingInvocationReorder(in_struct->rayTracingInvocationReorder)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV),
+    pNext(nullptr),
+    rayTracingInvocationReorder()
+{}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    rayTracingInvocationReorder = copy_src.rayTracingInvocationReorder;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::operator=(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingInvocationReorder = copy_src.rayTracingInvocationReorder;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::~safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::initialize(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingInvocationReorder = in_struct->rayTracingInvocationReorder;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::initialize(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    rayTracingInvocationReorder = copy_src->rayTracingInvocationReorder;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct) :
+    sType(in_struct->sType),
+    shaderCoreBuiltins(in_struct->shaderCoreBuiltins)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM),
+    pNext(nullptr),
+    shaderCoreBuiltins()
+{}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src)
+{
+    sType = copy_src.sType;
+    shaderCoreBuiltins = copy_src.shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderCoreBuiltins = copy_src.shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::~safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::initialize(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderCoreBuiltins = in_struct->shaderCoreBuiltins;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* copy_src)
+{
+    sType = copy_src->sType;
+    shaderCoreBuiltins = copy_src->shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct) :
+    sType(in_struct->sType),
+    shaderCoreMask(in_struct->shaderCoreMask),
+    shaderCoreCount(in_struct->shaderCoreCount),
+    shaderWarpsPerCore(in_struct->shaderWarpsPerCore)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM),
+    pNext(nullptr),
+    shaderCoreMask(),
+    shaderCoreCount(),
+    shaderWarpsPerCore()
+{}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src)
+{
+    sType = copy_src.sType;
+    shaderCoreMask = copy_src.shaderCoreMask;
+    shaderCoreCount = copy_src.shaderCoreCount;
+    shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderCoreMask = copy_src.shaderCoreMask;
+    shaderCoreCount = copy_src.shaderCoreCount;
+    shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::~safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderCoreMask = in_struct->shaderCoreMask;
+    shaderCoreCount = in_struct->shaderCoreCount;
+    shaderWarpsPerCore = in_struct->shaderWarpsPerCore;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* copy_src)
+{
+    sType = copy_src->sType;
+    shaderCoreMask = copy_src->shaderCoreMask;
+    shaderCoreCount = copy_src->shaderCoreCount;
+    shaderWarpsPerCore = copy_src->shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    multiviewPerViewRenderAreas(in_struct->multiviewPerViewRenderAreas)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM),
+    pNext(nullptr),
+    multiviewPerViewRenderAreas()
+{}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    multiviewPerViewRenderAreas = copy_src.multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::operator=(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    multiviewPerViewRenderAreas = copy_src.multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::~safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::initialize(const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    multiviewPerViewRenderAreas = in_struct->multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM::initialize(const safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    multiviewPerViewRenderAreas = copy_src->multiviewPerViewRenderAreas;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    perViewRenderAreaCount(in_struct->perViewRenderAreaCount),
+    pPerViewRenderAreas(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)in_struct->pPerViewRenderAreas, sizeof(VkRect2D)*in_struct->perViewRenderAreaCount);
+    }
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM),
+    pNext(nullptr),
+    perViewRenderAreaCount(),
+    pPerViewRenderAreas(nullptr)
+{}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src.pPerViewRenderAreas, sizeof(VkRect2D)*copy_src.perViewRenderAreaCount);
+    }
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::operator=(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    perViewRenderAreaCount = copy_src.perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src.perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src.pPerViewRenderAreas, sizeof(VkRect2D)*copy_src.perViewRenderAreaCount);
+    }
+
+    return *this;
+}
+
+safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::~safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM()
+{
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* in_struct)
+{
+    if (pPerViewRenderAreas)
+        delete[] pPerViewRenderAreas;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    perViewRenderAreaCount = in_struct->perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[in_struct->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)in_struct->pPerViewRenderAreas, sizeof(VkRect2D)*in_struct->perViewRenderAreaCount);
+    }
+}
+
+void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    perViewRenderAreaCount = copy_src->perViewRenderAreaCount;
+    pPerViewRenderAreas = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pPerViewRenderAreas) {
+        pPerViewRenderAreas = new VkRect2D[copy_src->perViewRenderAreaCount];
+        memcpy ((void *)pPerViewRenderAreas, (void *)copy_src->pPerViewRenderAreas, sizeof(VkRect2D)*copy_src->perViewRenderAreaCount);
+    }
+}
