@@ -2102,16 +2102,6 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     return skip;
 }
 
-static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
-    return (inflags & ~(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) != 0;
-}
-
-static bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
-    return (inflags & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                       VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) != 0;
-}
-
 bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo) const {
     bool skip = false;
     const char *vuid;

@@ -751,4 +751,25 @@ class vl_concurrent_unordered_map {
         return hash;
     }
 };
+
+static constexpr VkPipelineStageFlags2KHR kFramebufferStagePipelineStageFlags =
+    (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+static constexpr VkAccessFlags2 kShaderTileImageAllowedAccessFlags =
+    VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+static constexpr bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
+    return (inflags & ~kFramebufferStagePipelineStageFlags) != 0;
+}
+
+static constexpr bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
+    return (inflags & kFramebufferStagePipelineStageFlags) != 0;
+}
+
+static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) {
+    return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
+}
+
 #endif

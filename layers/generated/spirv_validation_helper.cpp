@@ -105,6 +105,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_core_builtins_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_position_fetch_features.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceShaderTileImageFeaturesEXT::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.shader_tile_image_features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
@@ -285,12 +287,9 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityTextureBlockMatchQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBlockMatch, nullptr, ""}},
     {spv::CapabilityTextureBoxFilterQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureBoxFilter, nullptr, ""}},
     {spv::CapabilityTextureSampleWeightedQCOM, {0, &VkPhysicalDeviceImageProcessingFeaturesQCOM::textureSampleWeighted, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTileImageColorReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
+    {spv::CapabilityTileImageColorReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess, nullptr, ""}},
+    {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
+    {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
     {spv::CapabilityTransformFeedback, {0, &VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback, nullptr, ""}},
     {spv::CapabilityUniformAndStorageBuffer16BitAccess, {0, &VkPhysicalDeviceVulkan11Features::uniformAndStorageBuffer16BitAccess, nullptr, ""}},
     {spv::CapabilityUniformAndStorageBuffer8BitAccess, {0, &VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess, nullptr, ""}},
@@ -650,6 +649,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "TextureBoxFilterQCOM";
          case spv::CapabilityTextureSampleWeightedQCOM:
             return "TextureSampleWeightedQCOM";
+         case spv::CapabilityTileImageColorReadAccessEXT:
+            return "TileImageColorReadAccessEXT";
+         case spv::CapabilityTileImageDepthReadAccessEXT:
+            return "TileImageDepthReadAccessEXT";
+         case spv::CapabilityTileImageStencilReadAccessEXT:
+            return "TileImageStencilReadAccessEXT";
          case spv::CapabilityTransformFeedback:
             return "TransformFeedback";
          case spv::CapabilityUniformAndStorageBuffer16BitAccess:

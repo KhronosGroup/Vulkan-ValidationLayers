@@ -371,6 +371,42 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         }
     }
 
+    // VK_EXT_shader_tile_image
+    {
+        const bool dyn_depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+        const bool dyn_stencil_write_mask = pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
+        if (IsExtEnabled(device_extensions.vk_ext_shader_tile_image) && (dyn_depth_write_enable || dyn_stencil_write_mask) &&
+            (pipeline.fragment_shader_state && pipeline.fragment_shader_state->fragment_shader)) {
+            std::shared_ptr<const SHADER_MODULE_STATE> module_state = pipeline.fragment_shader_state->fragment_shader;
+            const safe_VkPipelineShaderStageCreateInfo *stage_ci = pipeline.fragment_shader_state->fragment_shader_ci.get();
+            auto entrypoint = module_state->FindEntrypoint(stage_ci->pName, stage_ci->stage);
+            const bool mode_early_fragment_test =
+                entrypoint && entrypoint->execution_mode.Has(ExecutionModeSet::early_fragment_test_bit);
+
+            if (module_state->static_data_.has_shader_tile_image_depth_read && dyn_depth_write_enable && mode_early_fragment_test &&
+                cb_state.dynamic_state_value.depth_write_enable) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |=
+                    LogError(objlist, vuid.dynamic_depth_enable_08715,
+                             "%s(): Fragment shader contains OpDepthAttachmentReadEXT, but depthWriteEnable parameter in the last "
+                             "call to vkCmdSetDepthWriteEnable is not false.",
+                             CommandTypeString(cmd_type));
+            }
+
+            if (module_state->static_data_.has_shader_tile_image_stencil_read && dyn_stencil_write_mask &&
+                mode_early_fragment_test &&
+                ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.dynamic_stencil_write_mask_08716,
+                                 "%s(): Fragment shader contains OpStencilAttachmentReadEXT, but writeMask parameter in the last "
+                                 "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (=%" PRIu32
+                                 ") and back (=%" PRIu32 ").",
+                                 CommandTypeString(cmd_type), cb_state.dynamic_state_value.write_mask_front,
+                                 cb_state.dynamic_state_value.write_mask_back);
+            }
+        }
+    }
+
     // Makes sure topology is compatible (in same topology class)
     // see vkspec.html#drawing-primitive-topology-class
     if (pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
