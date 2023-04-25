@@ -254,6 +254,7 @@ bool FormatHasRed(VkFormat format);
 bool FormatHasGreen(VkFormat format);
 bool FormatHasBlue(VkFormat format);
 bool FormatHasAlpha(VkFormat format);
+bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b);
 
 
 // Utils/misc
