@@ -559,6 +559,139 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
 }
 
+TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
+    TEST_DESCRIPTION("vkCmdDraw* with shader tile image read extension using dynamic Rendering Tests.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    dynamic_rendering_features.pNext = &shader_tile_image_features;
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    // shader tile image read features not supported skip the test.
+    if (!shader_tile_image_features.shaderTileImageDepthReadAccess &&
+        !shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    auto fs =
+        VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageDepthStencilReadSpv, "main", nullptr);
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 2;
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_state.depthWriteEnable = VK_TRUE;
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+
+    auto ms_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+    ms_ci.sampleShadingEnable = VK_TRUE;
+    ms_ci.minSampleShading = 1.0;
+    ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pMultisampleState = &ms_ci;
+    pipe.gp_ci_.pDepthStencilState = &ds_state;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&dsl});
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkImageObj depth_image(m_device);
+    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(depth_image.initialized());
+
+    VkImageViewCreateInfo depth_view_ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                           nullptr,
+                                           0,
+                                           depth_image.handle(),
+                                           VK_IMAGE_VIEW_TYPE_2D,
+                                           depth_format,
+                                           {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                            VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                           {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
+
+    vk_testing::ImageView depth_image_view(*m_device, depth_view_ci);
+
+    VkImageObj color_image(m_device);
+    color_image.Init(32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(color_image.initialized());
+
+    VkImageViewCreateInfo color_view_ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                           nullptr,
+                                           0,
+                                           color_image.handle(),
+                                           VK_IMAGE_VIEW_TYPE_2D,
+                                           color_format,
+                                           {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                            VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                           {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
+
+    vk_testing::ImageView color_image_view(*m_device, color_view_ci);
+
+    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depth_image_view.handle();
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view.handle();
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_attachment;
+    begin_rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdSetDepthWriteEnable(m_commandBuffer->handle(), false);
+    vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_FRONT_BIT, 0);
+    vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_BACK_BIT, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     TEST_DESCRIPTION("Test drawing with dynamic rendering and dual source blending.");
 
@@ -803,4 +936,65 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
 
     vk::QueueWaitIdle(m_device->m_queue);
+}
+
+
+TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
+    TEST_DESCRIPTION("Test setting memory barrier with shader tile image features are enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    auto vk13features = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    vk13features.pNext = &shader_tile_image_features;
+
+    auto features2 = GetPhysicalDeviceFeatures2(vk13features);
+    if (!vk13features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+    if (!vk13features.synchronization2) {
+        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
+    }
+
+    if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
+        !shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+    begin_rendering_info.renderArea = clear_rect.rect;
+    begin_rendering_info.layerCount = 1;
+
+    auto memory_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
+    memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+
+    auto dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &memory_barrier;
+    dependency_info.bufferMemoryBarrierCount = 0;
+    dependency_info.pBufferMemoryBarriers = VK_NULL_HANDLE;
+    dependency_info.imageMemoryBarrierCount = 0;
+    dependency_info.pImageMemoryBarriers = VK_NULL_HANDLE;
+
+    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    vk::CmdEndRendering(m_commandBuffer->handle());
+    m_commandBuffer->end();
 }

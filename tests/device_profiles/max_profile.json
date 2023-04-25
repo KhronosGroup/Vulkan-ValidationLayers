@@ -753,6 +753,11 @@
                 },
                 "VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT": {
                     "imageSlicedViewOf3D": true
+                },
+                "VkPhysicalDeviceShaderTileImageFeaturesEXT": {
+                    "shaderTileImageColorReadAccess": true,
+                    "shaderTileImageDepthReadAccess": true,
+                    "shaderTileImageStencilReadAccess": true
                 }
             },
             "properties": {
@@ -1942,7 +1947,8 @@
                 "VK_SEC_amigo_profiling": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
                 "VK_VALVE_mutable_descriptor_type": 1,
-                "VK_EXT_image_sliced_view_of_3d": 1
+                "VK_EXT_image_sliced_view_of_3d": 1,
+                "VK_EXT_shader_tile_image": 1
             },
             "formats": {
                 "VK_FORMAT_R4G4_UNORM_PACK8": {

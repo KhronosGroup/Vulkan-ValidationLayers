@@ -203,6 +203,156 @@ static char const bindStateFragColorOutputText[] = R"glsl(
     void main() {}
 )glsl";
 
+static char const bindShaderTileImageDepthReadSpv[] = R"(
+               OpCapability Shader
+               OpCapability TileImageDepthReadAccessEXT
+               OpExtension "SPV_EXT_shader_tile_image"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %depth_output
+               OpExecutionMode %main OriginUpperLeft
+               OpExecutionMode %main EarlyFragmentTests
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_tile_image"
+               OpName %main "main"
+               OpName %depth "depth"
+               OpName %depth_output "depth_output"
+               OpDecorate %depth_output Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%depth_output = OpVariable %_ptr_Output_v4float Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+      %depth = OpVariable %_ptr_Function_float Function
+          %9 = OpDepthAttachmentReadEXT %float
+               OpStore %depth %9
+         %13 = OpLoad %float %depth
+         %14 = OpCompositeConstruct %v4float %13 %13 %13 %13
+               OpStore %depth_output %14
+               OpReturn
+               OpFunctionEnd
+        )";
+
+static char const bindShaderTileImageStencilReadSpv[] = R"(
+               OpCapability Shader
+               OpCapability TileImageStencilReadAccessEXT
+               OpExtension "SPV_EXT_shader_tile_image"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %stencil_output
+               OpExecutionMode %main OriginUpperLeft
+               OpExecutionMode %main EarlyFragmentTests
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_tile_image"
+               OpName %main "main"
+               OpName %stencil "stencil"
+               OpName %stencil_output "stencil_output"
+               OpDecorate %9 RelaxedPrecision
+               OpDecorate %stencil_output Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Function_uint = OpTypePointer Function %uint
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%stencil_output = OpVariable %_ptr_Output_v4float Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+    %stencil = OpVariable %_ptr_Function_uint Function
+          %9 = OpStencilAttachmentReadEXT %uint
+               OpStore %stencil %9
+         %14 = OpLoad %uint %stencil
+         %15 = OpConvertUToF %float %14
+         %16 = OpCompositeConstruct %v4float %15 %15 %15 %15
+               OpStore %stencil_output %16
+               OpReturn
+               OpFunctionEnd
+        )";
+
+static char const bindShaderTileImageColorReadSpv[] = R"(
+               OpCapability Shader
+               OpCapability TileImageColorReadAccessEXT
+               OpExtension "SPV_EXT_shader_tile_image"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color_output
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_tile_image"
+               OpName %main "main"
+               OpName %color_output "color_output"
+               OpName %color_f "color_f"
+               OpDecorate %color_output Location 0
+               OpDecorate %color_f Location 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%color_output = OpVariable %_ptr_Output_v4float Output
+         %10 = OpTypeImage %float TileImageDataEXT 0 0 0 2 Unknown
+%_ptr_TileImageEXT_10 = OpTypePointer TileImageEXT %10
+    %color_f = OpVariable %_ptr_TileImageEXT_10 TileImageEXT
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %color_f
+         %14 = OpColorAttachmentReadEXT %v4float %13
+               OpStore %color_output %14
+               OpReturn
+               OpFunctionEnd
+        )";
+
+static char const bindShaderTileImageDepthStencilReadSpv[] = R"(
+               OpCapability Shader
+               OpCapability TileImageDepthReadAccessEXT
+               OpCapability TileImageStencilReadAccessEXT
+               OpExtension "SPV_EXT_shader_tile_image"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %uFragColor
+               OpExecutionMode %main OriginUpperLeft
+               OpExecutionMode %main EarlyFragmentTests
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_tile_image"
+               OpName %main "main"
+               OpName %depth "depth"
+               OpName %stencil "stencil"
+               OpName %uFragColor "uFragColor"
+               OpDecorate %13 RelaxedPrecision
+               OpDecorate %uFragColor Location 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Function_float = OpTypePointer Function %float
+       %uint = OpTypeInt 32 0
+%_ptr_Function_uint = OpTypePointer Function %uint
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+ %uFragColor = OpVariable %_ptr_Output_v4float Output
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+      %depth = OpVariable %_ptr_Function_float Function
+    %stencil = OpVariable %_ptr_Function_uint Function
+          %9 = OpDepthAttachmentReadEXT %float
+               OpStore %depth %9
+         %13 = OpStencilAttachmentReadEXT %uint
+               OpStore %stencil %13
+         %17 = OpLoad %float %depth
+         %18 = OpLoad %uint %stencil
+         %19 = OpConvertUToF %float %18
+         %22 = OpCompositeConstruct %v4float %17 %19 %float_0 %float_1
+               OpStore %uFragColor %22
+               OpReturn
+               OpFunctionEnd
+        )";
+
 // Static arrays helper
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
