@@ -703,6 +703,7 @@ bool FormatHasRed(VkFormat format);
 bool FormatHasGreen(VkFormat format);
 bool FormatHasBlue(VkFormat format);
 bool FormatHasAlpha(VkFormat format);
+bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b);
 '''
         elif self.sourceFile:
             output += '''
@@ -806,6 +807,33 @@ bool FormatHasBlue(VkFormat format) {
 
 bool FormatHasAlpha(VkFormat format) {
     return FormatHasComponentType(format, COMPONENT_TYPE::A);
+}
+
+bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b) {
+    const auto item_a = kVkFormatTable.find(format_a);
+    const auto item_b = kVkFormatTable.find(format_b);
+    if (item_a == kVkFormatTable.end() || item_b == kVkFormatTable.end()) {
+        return false;
+    } else if (item_a->second.component_count != item_b->second.component_count) {
+        return false;
+    }
+    // Need to loop match each component type is found in both formats
+    // formats are maxed at 4 components, so the double loop is not going to scale
+    for (uint32_t i = 0; i < item_a->second.component_count; i++) {
+        const auto& component_a = item_a->second.components[i];
+        bool component_match = false;
+        for (uint32_t j = 0; j < item_b->second.component_count; j++) {
+            const auto& component_b = item_b->second.components[j];
+            if ((component_a.type == component_b.type) && (component_a.size == component_b.size)) {
+                component_match = true;
+                break;
+            }
+        }
+        if (!component_match) {
+            return false;
+        }
+    }
+    return true;
 }'''
         return output;
 
