@@ -93,7 +93,25 @@ public:
         }
     }
 
+    void Store(std::thread::id thread, const char* api_name) {
+        this->api_name.store(api_name, std::memory_order_relaxed);
+
+        // release ordering to store 'thread' variable acts like a barrier
+        // for previous stores, so they can be relaxed.
+        this->thread.store(thread, std::memory_order_release);
+    }
+    std::thread::id LoadThreadId() const {
+        // acquire ordering to load 'thread' variable acts like a barrier
+        // for subsequent loads, so they can be relaxed.
+        return this->thread.load(std::memory_order_acquire);
+    }
+    // This function is called in scenarios when 'thread' variable is already load-acquired.
+    void LoadRelaxed(std::thread::id& thread, const char*& api_name) const {
+        thread = this->thread.load(std::memory_order_relaxed);
+        api_name = this->api_name.load(std::memory_order_relaxed);
+    }
     std::atomic<std::thread::id> thread{};
+    std::atomic<const char*> api_name{nullptr};
 
 private:
     // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
@@ -137,58 +155,31 @@ public:
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        bool skip = false;
-        std::thread::id tid = std::this_thread::get_id();
 
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
         }
+        const std::thread::id tid = std::this_thread::get_id();
         const ObjectUseData::WriteReadCount prevCount = use_data->AddWriter();
 
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.  Record writer thread.
-            use_data->thread = tid;
+            use_data->Store(tid, api_name);
         } else {
             if (prevCount.GetReadCount() == 0) {
                 assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
-                if (use_data->thread != tid) {
-                    std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
-                            <<" is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
-                            <<" and thread " << tid;
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
-                    if (skip) {
-                        // Wait for thread-safe access to object instead of skipping call.
-                        use_data->WaitForObjectIdle(true);
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    } else {
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    }
+                if (use_data->LoadThreadId() != tid) {
+                    HandleErrorOnWrite(use_data, object, api_name);
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
                 }
             } else {
                 // There are readers.  This writer collided with them.
-                if (use_data->thread != tid) {
-                    std::stringstream err_str;
-                    err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
-                            <<" is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
-                            <<" and thread " << tid;
-                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
-                    if (skip) {
-                        // Wait for thread-safe access to object instead of skipping call.
-                        use_data->WaitForObjectIdle(true);
-                        // There is now no current use of the object.  Record writer thread.
-                        use_data->thread = tid;
-                    } else {
-                        // Continue with an unsafe use of the object.
-                        use_data->thread = tid;
-                    }
+                if (use_data->LoadThreadId() != tid) {
+                    HandleErrorOnWrite(use_data, object, api_name);
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
@@ -213,30 +204,19 @@ public:
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        bool skip = false;
-        std::thread::id tid = std::this_thread::get_id();
 
         auto use_data = FindObject(object);
         if (!use_data) {
             return;
         }
+        const std::thread::id tid = std::this_thread::get_id();
         const ObjectUseData::WriteReadCount prevCount = use_data->AddReader();
 
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.
-            use_data->thread = tid;
-        } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
-            // There is a writer of the object.
-            std::stringstream err_str;
-            err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
-                    <<" is simultaneously used in thread " << use_data->thread.load(std::memory_order_relaxed)
-                    <<" and thread " << tid;
-            skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", err_str.str().c_str());
-            if (skip) {
-                // Wait for thread-safe access to object instead of skipping call.
-                use_data->WaitForObjectIdle(false);
-                use_data->thread = tid;
-            }
+            use_data->Store(tid, api_name);
+        } else if (prevCount.GetWriteCount() > 0 && use_data->LoadThreadId() != tid) {
+            HandleErrorOnRead(use_data, object, api_name);
         } else {
             // There are other readers of the object.
         }
@@ -259,6 +239,50 @@ public:
     }
 
 private:
+    std::string GetErrorMessage(std::thread::id tid, const char* api_name, std::thread::id other_tid, const char* other_api_name) const {
+        std::stringstream err_str;
+        err_str << "THREADING ERROR : " << api_name << "(): object of type " << typeName
+                <<" is simultaneously used in thread " << other_tid << " (" << other_api_name << ")"
+                <<" and current reporting thread " << tid;
+        return err_str.str();
+    }
+
+    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData>& use_data, T object, const char* api_name) {
+        const auto tid = std::this_thread::get_id();
+
+        std::thread::id other_tid;
+        const char* other_api_name = nullptr;
+        use_data->LoadRelaxed(other_tid, other_api_name);
+
+        const auto error_message = GetErrorMessage(tid, api_name, other_tid, other_api_name);
+        const bool skip = object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
+        if (skip) {
+            // Wait for thread-safe access to object instead of skipping call.
+            use_data->WaitForObjectIdle(true);
+            // There is now no current use of the object.  Record writer thread.
+            use_data->Store(tid, api_name);
+        } else {
+            // There is now no current use of the object.  Record writer thread.
+            use_data->Store(tid, api_name);
+        }
+    }
+
+    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData>& use_data, T object, const char* api_name) {
+        const auto tid = std::this_thread::get_id();
+
+        std::thread::id other_tid;
+        const char* other_api_name = nullptr;
+        use_data->LoadRelaxed(other_tid, other_api_name);
+
+        // There is a writer of the object.
+        const auto error_message = GetErrorMessage(tid, api_name, other_tid, other_api_name);
+        const bool skip = object_data->LogError(object, kVUID_Threading_MultipleThreads, "%s", error_message.c_str());
+        if (skip) {
+            // Wait for thread-safe access to object instead of skipping call.
+            use_data->WaitForObjectIdle(false);
+            use_data->Store(tid, api_name);
+        }
+    }
 };
 
 class ThreadSafety : public ValidationObject {
