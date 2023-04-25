@@ -134,7 +134,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_wsi.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
@@ -222,7 +226,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
                    $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
@@ -308,7 +316,11 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
                    $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
