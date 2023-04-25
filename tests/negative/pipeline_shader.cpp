@@ -5726,6 +5726,227 @@ TEST_F(VkLayerTest, TestCreatingPipelineWithScissorWithCount) {
     }
 }
 
+TEST_F(VkLayerTest, TestCreatingPipelineWithoutShaderTileImage) {
+    TEST_DESCRIPTION("Validate creating graphics pipeline without shader tile image features enabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    dynamic_rendering_features.pNext = &shader_tile_image_features;
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    // None of the shader tile image read features supported skip the test.
+    if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
+        !shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
+    }
+
+    shader_tile_image_features.shaderTileImageColorReadAccess = false;
+    shader_tile_image_features.shaderTileImageDepthReadAccess = false;
+    shader_tile_image_features.shaderTileImageStencilReadAccess = false;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageDepthReadSpv, "main", nullptr);
+        auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit,
+                                          "VUID-RuntimeSpirv-shaderTileImageDepthReadAccess-08729");
+    }
+
+    if (shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        auto fs =
+            VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageStencilReadSpv, "main", nullptr);
+        auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit,
+                                          "VUID-RuntimeSpirv-shaderTileImageStencilReadAccess-08730");
+    }
+
+    if (shader_tile_image_features.shaderTileImageColorReadAccess) {
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageColorReadSpv, "main", nullptr);
+        auto pipeline_createinfo_with_ms = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo_with_ms, kErrorBit,
+                                          "VUID-RuntimeSpirv-shaderTileImageColorReadAccess-08728");
+    }
+}
+
+TEST_F(VkLayerTest, TestCreatingPipelineWithShaderTileImage) {
+    TEST_DESCRIPTION("Validate creating graphics pipeline with shader tile image extension.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
+    dynamic_rendering_features.pNext = &shader_tile_image_features;
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    // None of the shader tile image read features supported skip the test.
+    if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
+        !shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
+    if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageDepthReadSpv, "main", nullptr);
+        auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            ds_ci.depthWriteEnable = true;
+
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.pDepthStencilState = &ds_ci;
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08711");
+    }
+
+    if (shader_tile_image_features.shaderTileImageStencilReadAccess) {
+        auto fs =
+            VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageStencilReadSpv, "main", nullptr);
+
+        VkStencilOpState stencil_state = {};
+        stencil_state.failOp = VK_STENCIL_OP_KEEP;
+        stencil_state.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil_state.passOp = VK_STENCIL_OP_REPLACE;
+        stencil_state.compareOp = VK_COMPARE_OP_LESS;
+        stencil_state.compareMask = 0xff;
+        stencil_state.writeMask = 0xff;
+        stencil_state.reference = 0xf;
+
+        ds_ci = {};
+        ds_ci.front = stencil_state;
+        ds_ci.back = stencil_state;
+
+        auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.pDepthStencilState = &ds_ci;
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08712");
+    }
+
+    if (shader_tile_image_features.shaderTileImageColorReadAccess) {
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageColorReadSpv, "main", nullptr);
+
+        VkAttachmentReference attachmentRefs[1] = {};
+        attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+        attachmentRefs[0].attachment = 0;
+
+        VkSubpassDescription subpass = {};
+        subpass.flags = 0;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &attachmentRefs[0];
+
+        VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+        rp_ci.subpassCount = 1;
+        rp_ci.pSubpasses = &subpass;
+        rp_ci.attachmentCount = 1;
+        VkAttachmentDescription attach_desc[1] = {};
+        attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+        attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+        rp_ci.pAttachments = attach_desc;
+
+        vk_testing::RenderPass render_pass(*m_device, rp_ci);
+
+        // Check if the colorAttachmentRead capability enable, renderpass should be null
+        auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.renderPass = render_pass.handle();
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-renderPass-08710");
+
+        // sampleShading enable and minSampleShading not equal to 1.0
+        auto ms_ci = LvlInitStruct<VkPipelineMultisampleStateCreateInfo>();
+        ms_ci.sampleShadingEnable = VK_TRUE;
+        ms_ci.minSampleShading = 0;
+        ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+        pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+        auto pipeline_createinfo_with_ms = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.gp_ci_.pMultisampleState = &ms_ci;
+            helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+            helper.gp_ci_.pNext = &pipeline_rendering_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo_with_ms, kErrorBit,
+                                          "VUID-RuntimeSpirv-minSampleShading-08732");
+    }
+}
+
 TEST_F(VkLayerTest, DynamicSampleLocations) {
     TEST_DESCRIPTION("Validate dynamic sample locations.");
 
