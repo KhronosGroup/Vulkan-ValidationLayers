@@ -380,7 +380,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
+TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributes) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");

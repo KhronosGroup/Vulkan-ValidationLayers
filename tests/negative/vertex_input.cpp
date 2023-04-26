@@ -651,6 +651,42 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, BindVertexOffset) {
+    TEST_DESCRIPTION("set the pOffset in vkCmdBindVertexBuffers to 3 and use R16");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj vtx_buf;
+    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vtx_buf.init(*m_device, info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attribs = {0, 0, VK_FORMAT_R16_UNORM, 0};
+
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    VkDeviceSize offset = 3;
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02721");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
 
@@ -670,7 +706,8 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "location 0 not consumed by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
+                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
 TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
@@ -695,8 +732,8 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
 
-    m_errorMonitor->SetUnexpectedError("Vertex shader consumes input at location 1 but not provided");
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "location 0 not consumed by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
+                                      "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
 TEST_F(NegativeVertexInput, AttributeNotProvided) {
@@ -717,7 +754,7 @@ TEST_F(NegativeVertexInput, AttributeNotProvided) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Vertex shader consumes input at location 0 but not provided");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-07904");
 }
 
 TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
@@ -751,7 +788,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "location 0 does not match vertex shader input type");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Input-08733");
 }
 
 TEST_F(NegativeVertexInput, AttributeBindingConflict) {
