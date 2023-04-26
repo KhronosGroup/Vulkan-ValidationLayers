@@ -21,6 +21,8 @@ target_sources(VkLayer_utils PRIVATE
     error_message/logging.cpp
     external/xxhash.h
     external/xxhash.cpp
+    generated/lvt_function_pointers.cpp
+    generated/lvt_function_pointers.h
     generated/vk_format_utils.h
     generated/vk_format_utils.cpp
     generated/vk_validation_error_messages.h
@@ -37,6 +39,8 @@ target_sources(VkLayer_utils PRIVATE
     generated/vk_extension_helper.h
     generated/vk_typemap_helper.h
     utils/cast_utils.h
+    utils/convert_to_renderpass2.cpp
+    utils/convert_to_renderpass2.h
     utils/hash_util.h
     utils/hash_vk_types.h
     utils/vk_layer_extension_utils.cpp
@@ -304,7 +308,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     sync/sync_vuid_maps.cpp
     sync/sync_vuid_maps.h
     layer_options.cpp
-    utils/convert_to_renderpass2.cpp
     vk_layer_settings_ext.h
 )
 
