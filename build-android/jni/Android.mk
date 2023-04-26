@@ -37,7 +37,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
-LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -fvisibility=hidden
+LOCAL_CPPFLAGS += -std=c++17 -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 include $(BUILD_STATIC_LIBRARY)
 
@@ -149,104 +149,13 @@ LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
-LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable -frtti -fvisibility=hidden
+LOCAL_CPPFLAGS += -std=c++17 -frtti -fvisibility=hidden
 LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -DXXH_NO_LONG_LONG
 LOCAL_LDLIBS    := -llog -landroid
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := VkLayerValidationTests
-LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
-                   $(SRC_DIR)/tests/negative/instanceless.cpp \
-                   $(SRC_DIR)/tests/negative/pipeline_shader.cpp \
-                   $(SRC_DIR)/tests/negative/buffer.cpp \
-                   $(SRC_DIR)/tests/negative/external_memory_sync.cpp \
-                   $(SRC_DIR)/tests/negative/image.cpp \
-                   $(SRC_DIR)/tests/negative/memory.cpp \
-                   $(SRC_DIR)/tests/negative/object_lifetime.cpp \
-                   $(SRC_DIR)/tests/negative/sampler.cpp \
-                   $(SRC_DIR)/tests/negative/sparse.cpp \
-                   $(SRC_DIR)/tests/negative/sync_object.cpp \
-                   $(SRC_DIR)/tests/negative/ycbcr.cpp \
-                   $(SRC_DIR)/tests/negative/others.cpp \
-                   $(SRC_DIR)/tests/negative/query.cpp \
-                   $(SRC_DIR)/tests/negative/atomics.cpp \
-                   $(SRC_DIR)/tests/negative/descriptor_buffer.cpp \
-                   $(SRC_DIR)/tests/negative/descriptors.cpp \
-                   $(SRC_DIR)/tests/negative/renderpass.cpp \
-                   $(SRC_DIR)/tests/negative/robustness.cpp \
-                   $(SRC_DIR)/tests/negative/command.cpp \
-                   $(SRC_DIR)/tests/negative/dynamic_state.cpp \
-                   $(SRC_DIR)/tests/negative/fragment_shading_rate.cpp \
-                   $(SRC_DIR)/tests/negative/multiview.cpp \
-                   $(SRC_DIR)/tests/negative/transform_feedback.cpp \
-                   $(SRC_DIR)/tests/negative/subgroups.cpp \
-                   $(SRC_DIR)/tests/negative/subpass.cpp \
-                   $(SRC_DIR)/tests/negative/mesh.cpp \
-                   $(SRC_DIR)/tests/negative/protected_memory.cpp \
-                   $(SRC_DIR)/tests/negative/geometry_tessellation.cpp \
-                   $(SRC_DIR)/tests/negative/vertex_input.cpp \
-                   $(SRC_DIR)/tests/negative/gpu_av.cpp \
-                   $(SRC_DIR)/tests/negative/debug_printf.cpp \
-                   $(SRC_DIR)/tests/negative/best_practices.cpp \
-                   $(SRC_DIR)/tests/negative/arm_best_practices.cpp \
-                   $(SRC_DIR)/tests/negative/wsi.cpp \
-                   $(SRC_DIR)/tests/negative/imageless_framebuffer.cpp \
-                   $(SRC_DIR)/tests/negative/graphics_library.cpp \
-                   $(SRC_DIR)/tests/negative/android_hardware_buffer.cpp \
-                   $(SRC_DIR)/tests/negative/ray_tracing.cpp \
-                   $(SRC_DIR)/tests/negative/ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
-                   $(SRC_DIR)/tests/positive/command.cpp \
-                   $(SRC_DIR)/tests/positive/descriptor_buffer.cpp \
-                   $(SRC_DIR)/tests/positive/descriptors.cpp \
-                   $(SRC_DIR)/tests/positive/dynamic_state.cpp \
-                   $(SRC_DIR)/tests/positive/fragment_shading_rate.cpp \
-                   $(SRC_DIR)/tests/positive/image_buffer.cpp \
-                   $(SRC_DIR)/tests/positive/instance.cpp \
-                   $(SRC_DIR)/tests/positive/layer_utils.cpp \
-                   $(SRC_DIR)/tests/positive/format_utils.cpp \
-                   $(SRC_DIR)/tests/positive/other.cpp \
-                   $(SRC_DIR)/tests/positive/pipeline.cpp \
-                   $(SRC_DIR)/tests/positive/render_pass.cpp \
-                   $(SRC_DIR)/tests/positive/robustness.cpp \
-                   $(SRC_DIR)/tests/positive/shaderval.cpp \
-                   $(SRC_DIR)/tests/positive/sync.cpp \
-                   $(SRC_DIR)/tests/positive/tooling.cpp \
-                   $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
-                   $(SRC_DIR)/tests/positive/atomics.cpp \
-                   $(SRC_DIR)/tests/positive/ray_tracing.cpp \
-                   $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
-                   $(SRC_DIR)/tests/negative/sync_val.cpp \
-                   $(SRC_DIR)/tests/containers/small_vector.cpp \
-                   $(SRC_DIR)/tests/framework/binding.cpp \
-                   $(SRC_DIR)/tests/framework/test_framework_android.cpp \
-                   $(SRC_DIR)/tests/framework/error_monitor.cpp \
-                   $(SRC_DIR)/tests/framework/render.cpp \
-                   $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
-                   $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp \
-                   $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers
-LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
-LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
-LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
-LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
-LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING -fvisibility=hidden
-LOCAL_LDLIBS := -llog -landroid -ldl
-LOCAL_LDFLAGS   += -Wl,-Bsymbolic
-LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
-include $(BUILD_EXECUTABLE)
-
-# Note: The following module is similar in name to the executable, but differs so that loader won't enumerate the resulting .so
 include $(CLEAR_VARS)
 LOCAL_MODULE := VulkanLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
@@ -329,11 +238,20 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
-LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK -DUSE_ROBIN_HOOD_HASHING
+LOCAL_CPPFLAGS += -std=c++17 -fvisibility=hidden
+LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUSE_ROBIN_HOOD_HASHING
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
 LOCAL_LDLIBS := -llog -landroid -ldl
+
+# Building tests as a shared library (.so) with the intent of being tested as an APK instead of an executable.
+LOCAL_CPPFLAGS += -DVVL_TESTS_APK_GLUE
+
+# Force export ANativeActivity_onCreate(),
+# Refer to: https://github.com/android-ndk/ndk/issues/381.
+#
+# NOTE! This has been fixed for a while now (2017). Is it still reasonable to force export this function via the linker?
 LOCAL_LDFLAGS := -u ANativeActivity_onCreate
+
 include $(BUILD_SHARED_LIBRARY)
 
 $(call import-module,android/native_app_glue)

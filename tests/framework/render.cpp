@@ -693,7 +693,7 @@ bool VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurface
     }
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VVL_TESTS_APK_GLUE)
     if (IsExtensionsEnabled(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
         VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
         surface_create_info.window = VkTestFramework::window;
