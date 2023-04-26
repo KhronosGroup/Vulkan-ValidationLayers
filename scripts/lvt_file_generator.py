@@ -65,7 +65,7 @@ static inline dl_handle open_library(const char *libPath) {
     // variable to force all symbols to be resolved here.
     return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
 }
-static inline const char *open_library_error(const char *libPath) { return dlerror(); }
+static inline const char *open_library_error(const char * /*libPath*/) { return dlerror(); }
 static inline void *get_proc_address(dl_handle library, const char *name) {
     assert(library);
     assert(name);
@@ -276,7 +276,7 @@ class LvtFileOutputGenerator(OutputGenerator):
 
 void InitCore() {
 
-#if(WIN32)
+#if defined(WIN32)
     const char filename[] = "vulkan-1.dll";
     auto lib_handle = open_library(filename);
 #elif(__APPLE__)
@@ -341,7 +341,15 @@ void InitCore() {
             if ext.protection_macro is not None:
                 table += f'#ifdef {ext.protection_macro}\n'
             table += ' ' * 8 + '{\n'
-            table += ' ' * 12 +  f'"{name}", [](VkInstance instance, VkDevice device) {{\n'
+            # Select proper signature to prevent unused parameter compiler warning
+            has_instance_level = any(cmd.dispatch_param_type == 'VkPhysicalDevice' for cmd in ext.commands)
+            has_device_level = any(cmd.dispatch_param_type != 'VkPhysicalDevice' for cmd in ext.commands)
+            if has_instance_level and has_device_level:
+                table += ' ' * 12 +  f'"{name}", [](VkInstance instance, VkDevice device) {{\n'
+            elif has_instance_level:
+                table += ' ' * 12 +  f'"{name}", [](VkInstance instance, VkDevice) {{\n'
+            else:
+                table += ' ' * 12 +  f'"{name}", [](VkInstance, VkDevice device) {{\n'
             for cmd in ext.commands:
                 # NOTE: On Android GDPA does not work for physical-device-level functionality but GIPA works.
                 # It's stated in the spec that GIPA _can_ be used to get physical-device-level functionality.
