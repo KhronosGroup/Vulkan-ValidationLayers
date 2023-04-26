@@ -728,7 +728,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if requires is not None:
             base_req_exts.append(f'({requires})')
         if len(base_req_exts) > 0:
-            base_required_extension_expressions.append(parseExpr('+'.join(base_req_exts)))
+            # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
+            expr_str = re.sub(r',VK_VERSION_1_\d+', '', '+'.join(base_req_exts))
+            base_required_extension_expressions.append(parseExpr(expr_str))
         # Build dictionary of extension dependencies for each item in this extension
         self.required_extension_expressions = dict()
         for require_element in interface.findall('require'):
