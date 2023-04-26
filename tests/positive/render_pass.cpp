@@ -930,13 +930,6 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero, skipping tests";
-    }
-
     auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;

@@ -308,14 +308,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -372,14 +364,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -560,12 +544,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -766,12 +744,6 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    // In addition to the extension being supported we need to have at least one available
-    // Some implementations report an invalid maxPushDescriptors of 0
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    bool push_descriptor_found = push_descriptor_prop.maxPushDescriptors > 0;
-
     ASSERT_NO_FATAL_FAILURE(InitState());
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
@@ -797,23 +769,21 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
     }
 
-    if (push_descriptor_found) {
-        // push descriptors
-        {
-            const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
-                {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-                {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            };
-            const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
-                nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR),
-                size32(non_sampler_bindings), non_sampler_bindings);
-            vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
-        }
+    // push descriptors
+    {
+        const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
+            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+        };
+        const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
+            nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR),
+            size32(non_sampler_bindings), non_sampler_bindings);
+        vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
     }
 }
 
@@ -826,14 +796,6 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();

@@ -4633,13 +4633,6 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
-
     // Create ordinary and push descriptor set layout
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj ds_layout(m_device, {binding});
@@ -4741,13 +4734,6 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0.
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
 
     auto const min_alignment = m_device->props.limits.minUniformBufferOffsetAlignment;
     if (min_alignment == 0) {

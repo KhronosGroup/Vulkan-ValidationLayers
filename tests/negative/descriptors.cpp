@@ -1950,21 +1950,6 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    const bool update_template_support =
-        IsExtensionsEnabled(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) && !IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY);
-    if (!update_template_support) {
-        printf("Descriptor Update Template Extensions not supported, template cases skipped.\n");
-    }
-
-    // Note: Includes workaround for some implementations which incorrectly return 0 maxPushDescriptors
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    bool push_descriptor_support = push_descriptor_prop.maxPushDescriptors > 0;
-
-    if (!push_descriptor_support) {
-        printf("Push Descriptor Extension not supported, push descriptor cases skipped.\n");
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
@@ -2015,62 +2000,49 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
 
     VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    if (update_template_support) {
-        auto result = vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
-        ASSERT_VK_SUCCESS(result);
-    }
+    ASSERT_VK_SUCCESS(vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template));
 
     std::unique_ptr<VkDescriptorSetLayoutObj> push_dsl = nullptr;
     std::unique_ptr<VkPipelineLayoutObj> pipeline_layout = nullptr;
     VkDescriptorUpdateTemplate push_template = VK_NULL_HANDLE;
-    if (push_descriptor_support) {
-        push_dsl.reset(
-            new VkDescriptorSetLayoutObj(m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
-        pipeline_layout.reset(new VkPipelineLayoutObj(m_device, {push_dsl.get()}));
-        ASSERT_TRUE(push_dsl->initialized());
 
-        if (update_template_support) {
-            auto push_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
-            push_template_ci.descriptorUpdateEntryCount = 1;
-            push_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-            push_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
-            push_template_ci.descriptorSetLayout = VK_NULL_HANDLE;
-            push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            push_template_ci.pipelineLayout = pipeline_layout->handle();
-            push_template_ci.set = 0;
-            auto result = vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template);
-            ASSERT_VK_SUCCESS(result);
-        }
-    }
+    push_dsl.reset(new VkDescriptorSetLayoutObj(m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+    pipeline_layout.reset(new VkPipelineLayoutObj(m_device, {push_dsl.get()}));
+    ASSERT_TRUE(push_dsl->initialized());
+
+    auto push_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
+    push_template_ci.descriptorUpdateEntryCount = 1;
+    push_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    push_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    push_template_ci.descriptorSetLayout = VK_NULL_HANDLE;
+    push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    push_template_ci.pipelineLayout = pipeline_layout->handle();
+    push_template_ci.set = 0;
+    ASSERT_VK_SUCCESS(vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &push_template_ci, nullptr, &push_template));
 
     auto do_test = [&](const char *desired_failure) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
 
-        if (push_descriptor_support) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
-            m_commandBuffer->begin();
-            vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
-                                        &descriptor_write);
-            m_commandBuffer->end();
-            m_errorMonitor->VerifyFound();
-        }
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
+        m_commandBuffer->begin();
+        vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
+                                    &descriptor_write);
+        m_commandBuffer->end();
+        m_errorMonitor->VerifyFound();
 
-        if (update_template_support) {
-            update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
-            vk::UpdateDescriptorSetWithTemplateKHR(m_device->device(), descriptor_set.set_, update_template, &update_template_data);
-            m_errorMonitor->VerifyFound();
-            if (push_descriptor_support) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
-                m_commandBuffer->begin();
-                vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), push_template, pipeline_layout->handle(), 0,
-                                                        &update_template_data);
-                m_commandBuffer->end();
-                m_errorMonitor->VerifyFound();
-            }
-        }
+        update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
+        vk::UpdateDescriptorSetWithTemplateKHR(m_device->device(), descriptor_set.set_, update_template, &update_template_data);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, desired_failure);
+        m_commandBuffer->begin();
+        vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), push_template, pipeline_layout->handle(), 0,
+                                                &update_template_data);
+        m_commandBuffer->end();
+        m_errorMonitor->VerifyFound();
     };
 
     // Cause error due to offset out of range
@@ -2088,12 +2060,8 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     buff_info.range = buff_ci.size + 1;
     do_test("VUID-VkDescriptorBufferInfo-range-00342");
 
-    if (update_template_support) {
-        vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
-        if (push_descriptor_support) {
-            vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), push_template, nullptr);
-        }
-    }
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), push_template, nullptr);
 }
 
 TEST_F(VkLayerTest, DSBufferLimitErrors) {
@@ -2682,10 +2650,6 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
     // Get the push descriptor limits
     auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
@@ -2725,13 +2689,6 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -3256,13 +3213,6 @@ TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();

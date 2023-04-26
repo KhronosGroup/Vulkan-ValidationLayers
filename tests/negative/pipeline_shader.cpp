@@ -4991,13 +4991,6 @@ TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        // Some implementations report an invalid maxPushDescriptors of 0
-        GTEST_SKIP() << "maxPushDescriptors is zero";
-    }
-
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
