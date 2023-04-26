@@ -108,6 +108,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/ycbcr.cpp
     containers/small_vector.cpp
 )
+get_target_property(TEST_SOURCES vk_layer_validation_tests SOURCES)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${TEST_SOURCES})
 
 if (VVL_ENABLE_ASAN)
     target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_ENABLE_ASAN=1)

@@ -310,6 +310,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     layer_options.cpp
     vk_layer_settings_ext.h
 )
+get_target_property(LAYER_SOURCES VkLayer_khronos_validation SOURCES)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
 if(MSVC)
     target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
