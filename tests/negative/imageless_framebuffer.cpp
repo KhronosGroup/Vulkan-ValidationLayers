@@ -1345,13 +1345,6 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    // Note: Includes workaround for some implementations which incorrectly return 0 maxPushDescriptors
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    GetPhysicalDeviceProperties2(push_descriptor_prop);
-    if (push_descriptor_prop.maxPushDescriptors < 1) {
-        GTEST_SKIP() << "maxPushDescriptors < 1, push descriptor cases skipped.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
