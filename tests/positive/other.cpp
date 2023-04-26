@@ -992,3 +992,34 @@ TEST_F(VkPositiveLayerTest, UseInteractionApi) {
     auto device_group_present_caps = LvlInitStruct<VkDeviceGroupPresentCapabilitiesKHR>();
     vkGetDeviceGroupPresentCapabilitiesKHR(m_device->device(), &device_group_present_caps);
 }
+
+TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
+    TEST_DESCRIPTION(
+        "Enable an extension (e.g., VK_KHR_fragment_shading_rate) that depends on multiple core versions _or_ regular extensions");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 required";
+    }
+
+    auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    GetPhysicalDeviceFeatures2(fsr_features);
+    if (!fsr_features.pipelineFragmentShadingRate) {
+        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::pipelineFragmentShadingRate not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &fsr_features));
+
+    VkExtent2D fragment_size = {1, 1};
+    std::array combiner_ops = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR, VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+
+    m_commandBuffer->begin();
+    vk::CmdSetFragmentShadingRateKHR(*m_commandBuffer, &fragment_size, combiner_ops.data());
+    m_commandBuffer->end();
+}
