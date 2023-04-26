@@ -62,27 +62,12 @@ target_include_directories(vk_layer_validation_tests PRIVATE ${native_app_glue_d
 
 # TODO, look into CMAKE_CROSSCOMPILING_EMULATOR.
 
-# TODO, look into linker option "-u ANativeActivity_onCreate". Do we need to set this linker option?
-
 # TODO, look into Android testing on github actions. https://github.com/microsoft/GSL/blob/main/.github/workflows/android.yml
 
 # TODO, we've been requested by Google to test with an NDK that's no older than 6 months or so.
 
 # Look into 
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3088/files
-#
-#    # Necessary for vulkan_wrapper.h
-#    target_include_directories(${layer_test_target_} PRIVATE ${ANDROID_NDK_HOME}/sources/third_party/vulkan/src/common)
-#
-#    set(_app_glue_dir ${ANDROID_NDK_HOME}/sources/android/native_app_glue)
-#    target_sources(${layer_test_target_} PRIVATE ${_app_glue_dir}/android_native_app_glue.c)
-#    target_include_directories(${layer_test_target_} PRIVATE ${_app_glue_dir})
-#    target_compile_definitions(${layer_test_target_} PRIVATE VALIDATION_APK VK_PROTOTYPES)
-#
-#    # TODO use target_link_options if using cmake >= 3.13
-#    target_link_libraries(${layer_test_target_} PRIVATE "-u ANativeActivity_onCreate")
-#
-#    target_link_libraries(${layer_test_target_} PRIVATE SPIRV-Tools log android)
 #
 #    set(_android_jar ${ANDROID_SDK_HOME}/platforms/android-${ANDROID_PLATFORM}/android.jar)
 #    set(_aapt ${ANDROID_SDK_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/aapt)
