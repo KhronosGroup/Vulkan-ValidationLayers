@@ -1059,7 +1059,7 @@ void VkLayerTest::AddSurfaceExtension() {
     AddWsiExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VVL_TESTS_APK_GLUE)
     AddWsiExtensions(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
 #endif
 
@@ -3521,7 +3521,7 @@ void print_android(const char *c) {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VVL_TESTS_APK_GLUE)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
 static bool active = false;

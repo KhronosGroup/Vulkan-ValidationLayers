@@ -20,7 +20,7 @@
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
-#if defined(VALIDATION_APK)
+#if defined(VVL_TESTS_APK_GLUE)
 #include <android_native_app_glue.h>
 #endif
 #endif
