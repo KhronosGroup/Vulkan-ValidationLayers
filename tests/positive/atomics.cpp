@@ -14,7 +14,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
+class PositiveAtomic : public VkPositiveLayerTest {};
+
+TEST_F(PositiveAtomic, ImageInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -91,7 +93,7 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64DrawtimeSparse) {
+TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -170,7 +172,7 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64DrawtimeSparse) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
+TEST_F(PositiveAtomic, Float) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -425,7 +427,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
+TEST_F(PositiveAtomic, Float2) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -709,7 +711,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
+TEST_F(PositiveAtomic, PhysicalPointer) {
     TEST_DESCRIPTION("Make sure atomic validation handles if from a OpConvertUToPtr (physical pointer)");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -786,7 +788,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
 
-TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
+TEST_F(PositiveAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 

@@ -11,7 +11,9 @@
 
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkPositiveLayerTest, FragmentShadingRateStageInVariousAPIs) {
+class PositiveFragmentShadingRate : public VkPositiveLayerTest {};
+
+TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature enabled");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -47,7 +49,7 @@ TEST_F(VkPositiveLayerTest, FragmentShadingRateStageInVariousAPIs) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, FragmentShadingRateStageWithPipelineBarrier) {
+TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     TEST_DESCRIPTION("Test pipeline barrier with VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR stage");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);

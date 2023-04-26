@@ -13,7 +13,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, PipelineRobustnessDisabled) {
+class NegativeRobustness : public VkLayerTest {};
+
+TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness but with pipelineRobustness == VK_FALSE");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -74,7 +76,7 @@ TEST_F(VkLayerTest, PipelineRobustnessDisabled) {
 
 // Need to fix check to check if feature is exposed
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
-TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
+TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustBufferAccess2 being unsupported");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -144,7 +146,7 @@ TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
 
 // Need to fix check to check if feature is exposed
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
-TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustImageAccess2Unsupported) {
+TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustImageAccess2 being unsupported");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
@@ -192,7 +194,7 @@ TEST_F(VkLayerTest, DISABLED_PipelineRobustnessRobustImageAccess2Unsupported) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineRobustnessRobustImageAccessNotExposed) {
+TEST_F(NegativeRobustness, PipelineRobustnessRobustImageAccessNotExposed) {
     TEST_DESCRIPTION("Check if VK_EXT_image_robustness is not exposed");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

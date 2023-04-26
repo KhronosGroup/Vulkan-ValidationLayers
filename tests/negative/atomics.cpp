@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
+class NegativeAtomic : public VkLayerTest {};
+
+TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
 
     VkPhysicalDeviceFeatures features{};
@@ -68,7 +70,7 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
     }
 }
 
-TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
+TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if fragmentStoresAndAtomics disable.");
 
     VkPhysicalDeviceFeatures features{};
@@ -121,7 +123,7 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
     }
 }
 
-TEST_F(VkLayerTest, ShaderAtomicInt64) {
+TEST_F(NegativeAtomic, Int64) {
     TEST_DESCRIPTION("Test VK_KHR_shader_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -215,7 +217,7 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-RuntimeSpirv-None-06279"});
 }
 
-TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
+TEST_F(NegativeAtomic, ImageInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -320,7 +322,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     }
 }
 
-TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime64) {
+TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 64 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
@@ -380,7 +382,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime64) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime32) {
+TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
@@ -439,7 +441,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64Drawtime32) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ShaderImageAtomicInt64DrawtimeSparse) {
+TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -519,7 +521,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64DrawtimeSparse) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ShaderImageAtomicInt64Mesh32) {
+TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view in Mesh shaders.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
@@ -594,7 +596,7 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64Mesh32) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ShaderAtomicFloat) {
+TEST_F(NegativeAtomic, Float) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -857,7 +859,7 @@ TEST_F(VkLayerTest, ShaderAtomicFloat) {
                             "VUID-RuntimeSpirv-None-06282"});
 }
 
-TEST_F(VkLayerTest, ShaderAtomicFloat2) {
+TEST_F(NegativeAtomic, Float2) {
     TEST_DESCRIPTION("Test VK_EXT_shader_atomic_float2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -1167,7 +1169,7 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2) {
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06282"});
 }
 
-TEST_F(VkLayerTest, ShaderAtomicFloat2WidthMismatch) {
+TEST_F(NegativeAtomic, Float2WidthMismatch) {
     TEST_DESCRIPTION("VK_EXT_shader_atomic_float2 but enable wrong bitwidth.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
@@ -1235,7 +1237,7 @@ TEST_F(VkLayerTest, ShaderAtomicFloat2WidthMismatch) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, std::vector<string>{"VUID-RuntimeSpirv-None-06338"});
 }
 
-TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
+TEST_F(NegativeAtomic, InvalidStorageOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");

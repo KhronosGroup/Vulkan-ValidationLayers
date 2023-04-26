@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, SubgroupSupportedProperties) {
+class NegativeSubgroup : public VkLayerTest {};
+
+TEST_F(NegativeSubgroup, Properties) {
     TEST_DESCRIPTION(
         "Test shader validation support for subgroup VkPhysicalDeviceSubgroupProperties such as supportedStages, and "
         "supportedOperations, quadOperationsInAllStages.");
@@ -268,7 +270,7 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     }
 }
 
-TEST_F(VkLayerTest, SubgroupRequired) {
+TEST_F(NegativeSubgroup, Features) {
     TEST_DESCRIPTION("Test that the minimum required functionality for subgroups is present.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -309,7 +311,7 @@ TEST_F(VkLayerTest, SubgroupRequired) {
     ASSERT_TRUE(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT);
 }
 
-TEST_F(VkLayerTest, SubgroupExtendedTypesEnabled) {
+TEST_F(NegativeSubgroup, ExtendedTypesEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -358,7 +360,7 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesEnabled) {
     pipe.CreateComputePipeline();
 }
 
-TEST_F(VkLayerTest, SubgroupExtendedTypesDisabled) {
+TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -411,7 +413,7 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
+TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     TEST_DESCRIPTION("Test Subgroub Size Control");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -544,7 +546,7 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     }
 }
 
-TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
+TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesNotEnabled) {
     TEST_DESCRIPTION("Use subgroup size control features when they are not enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -599,7 +601,7 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestSubgroupUniformControlFlow) {
+TEST_F(NegativeSubgroup, SubgroupUniformControlFlow) {
     TEST_DESCRIPTION("Test SubgroupUniformControlFlow spirv execution mode");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -656,7 +658,7 @@ TEST_F(VkLayerTest, TestSubgroupUniformControlFlow) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ComputeLocalWorkgroupSize) {
+TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     TEST_DESCRIPTION("Test size of local workgroud with requiredSubgroupSize.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -746,7 +748,7 @@ TEST_F(VkLayerTest, ComputeLocalWorkgroupSize) {
     }
 }
 
-TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
+TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     TEST_DESCRIPTION("Test using subgroupSizeControl feature when it's not enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -774,7 +776,7 @@ TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CooperativeMatrixNV) {
+TEST_F(NegativeSubgroup, CooperativeMatrixNV) {
     TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

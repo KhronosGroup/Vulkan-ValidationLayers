@@ -12,9 +12,11 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_format_utils.h"
 
+class PositiveFormatUtils : public VkPositiveLayerTest {};
+
 // These test check utils in the layer without needing to create a full Vulkan instance
 
-TEST_F(VkPositiveLayerTest, FormatsSameComponentBits) {
+TEST_F(PositiveFormatUtils, FormatsSameComponentBits) {
     ASSERT_TRUE(FormatsSameComponentBits(VK_FORMAT_G8_B8R8_2PLANE_422_UNORM, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM));
     ASSERT_TRUE(FormatsSameComponentBits(VK_FORMAT_ASTC_10x10_UNORM_BLOCK, VK_FORMAT_ASTC_12x10_SRGB_BLOCK));
     // Order doesn't matter
@@ -34,4 +36,3 @@ TEST_F(VkPositiveLayerTest, FormatsSameComponentBits) {
     // UNDEFINED is always bad
     ASSERT_FALSE(FormatsSameComponentBits(VK_FORMAT_UNDEFINED, VK_FORMAT_B8G8R8_UINT));
 }
-

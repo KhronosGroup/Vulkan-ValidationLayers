@@ -16,6 +16,8 @@
 
 #include "../framework/layer_validation_tests.h"
 
+class NegativeViewportInheritance : public VkLayerTest {};
+
 // Common data structures needed for tests.
 class ViewportInheritanceTestData {
     // Borrowed owner device.
@@ -400,7 +402,7 @@ class ViewportInheritanceTestData {
     }
 };
 
-TEST_F(VkLayerTest, ViewportInheritance) {
+TEST_F(NegativeViewportInheritance, BasicUsage) {
     TEST_DESCRIPTION("Simple correct and incorrect usage of VK_NV_inherited_viewport_scissor");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -636,7 +638,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     }
 }
 
-TEST_F(VkLayerTest, ViewportInheritanceMissingFeature) {
+TEST_F(NegativeViewportInheritance, MissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -663,7 +665,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMissingFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
+TEST_F(NegativeViewportInheritance, MultiViewport) {
     TEST_DESCRIPTION("VK_NV_inherited_viewport_scissor tests with multiple viewports/scissors");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -893,7 +895,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     }
 }
 
-TEST_F(VkLayerTest, ViewportInheritanceScissorMissingFeature) {
+TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     TEST_DESCRIPTION("Error using VK_NV_inherited_viewport_scissor without enabling multiViewport feature.");
     m_instance_extension_names.push_back("VK_KHR_get_physical_device_properties2");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -918,7 +920,7 @@ TEST_F(VkLayerTest, ViewportInheritanceScissorMissingFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
+TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle) {
     TEST_DESCRIPTION("Bind pipeline with missing dynamic state discard rectangle.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -992,7 +994,6 @@ TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
     vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     m_errorMonitor->VerifyFound();
 }
-
 
 // SPIR-V blobs for graphics pipeline.
 
