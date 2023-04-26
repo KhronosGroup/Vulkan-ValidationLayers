@@ -1309,13 +1309,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
     }
 }
 
-void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                      const uint32_t *pDynamicOffsets) {
-    ValidationStateTracker::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet,
-                                                                descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
-                                                                pDynamicOffsets);
+void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint) {
     if (aborted) return;
     auto cb_node = GetWrite<gpuav_state::CommandBuffer>(commandBuffer);
     if (!cb_node) {
@@ -1511,6 +1505,24 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
             cb_node->di_input_buffer_list.emplace_back(di_input_block);
         }
     }
+}
+
+void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                      const uint32_t *pDynamicOffsets) {
+    ValidationStateTracker::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet,
+                                                                descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
+                                                                pDynamicOffsets);
+    UpdateBoundDescriptors(commandBuffer, pipelineBindPoint);
+}
+
+void GpuAssisted::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                              VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                              const VkWriteDescriptorSet* pDescriptorWrites) {
+    ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set,
+                                                                 descriptorWriteCount, pDescriptorWrites);
+    UpdateBoundDescriptors(commandBuffer, pipelineBindPoint);
 }
 
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
