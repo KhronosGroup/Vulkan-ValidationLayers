@@ -436,30 +436,6 @@ class VkBufferTest {
     VkDeviceMemory VulkanMemory;
 };
 
-struct CreatePipelineHelper;
-class VkVerticesObj {
-  public:
-    VkVerticesObj(VkDeviceObj *aVulkanDevice, unsigned aAttributeCount, unsigned aBindingCount, unsigned aByteStride,
-                  VkDeviceSize aVertexCount, const float *aVerticies);
-    ~VkVerticesObj();
-    bool AddVertexInputToPipe(VkPipelineObj &aPipelineObj);
-    bool AddVertexInputToPipeHelpr(CreatePipelineHelper *pipelineHelper);
-    void BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned aOffsetCount = 0, VkDeviceSize *aOffsetList = nullptr);
-
-  protected:
-    static uint32_t BindIdGenerator;
-
-    bool BoundCurrent;
-    unsigned AttributeCount;
-    unsigned BindingCount;
-    uint32_t BindId;
-
-    VkPipelineVertexInputStateCreateInfo PipelineVertexInputStateCreateInfo;
-    VkVertexInputAttributeDescription *VertexInputAttributeDescription;
-    VkVertexInputBindingDescription *VertexInputBindingDescription;
-    VkConstantBufferObj VulkanMemoryBuffer;
-};
-
 struct OneOffDescriptorSet {
     VkDeviceObj *device_;
     VkDescriptorPool pool_;

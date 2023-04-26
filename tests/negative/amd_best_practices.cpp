@@ -735,16 +735,14 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkVerticesObj vertex_buffer(m_device, 1, 1, sizeof(vbo_data), 1, vbo_data);
+    VkBufferObj vertex_buffer;
+    auto info = vertex_buffer.create_info(64, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertex_buffer.init(*m_device, info);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
     pipe.InitState();
-
-    vertex_buffer.AddVertexInputToPipeHelpr(&pipe);
-
     pipe.CreateGraphicsPipeline();
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
@@ -760,7 +758,8 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     secondary_cmd_buf.begin(&binfo);
 
     vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vertex_buffer.BindVertexBuffers(secondary_cmd_buf.handle());
+    VkDeviceSize offset = 0;
+    vk::CmdBindVertexBuffers(secondary_cmd_buf.handle(), 0, 1, &vertex_buffer.handle(), &offset);
     secondary_cmd_buf.Draw(1, 0, 0, 0);
     secondary_cmd_buf.Draw(1, 0, 0, 0);
     secondary_cmd_buf.Draw(1, 0, 0, 0);
