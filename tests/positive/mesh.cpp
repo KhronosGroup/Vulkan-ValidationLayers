@@ -14,7 +14,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, MeshShaderEXT) {
+class PositiveMesh : public VkPositiveLayerTest {};
+
+TEST_F(PositiveMesh, BasicUsage) {
     TEST_DESCRIPTION("Test basic VK_EXT_mesh_shader.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
@@ -66,7 +68,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderEXT) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
+TEST_F(PositiveMesh, MeshShaderOnly) {
     TEST_DESCRIPTION("Test using a mesh shader without a vertex shader.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -121,7 +123,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
     helper.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
+TEST_F(PositiveMesh, PointSize) {
     TEST_DESCRIPTION("Test writing point size in a mesh shader.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -173,7 +175,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
     helper.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
+TEST_F(PositiveMesh, TaskAndMeshShader) {
     TEST_DESCRIPTION("Test task and mesh shader");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -267,7 +269,7 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit);
 }
 
-TEST_F(VkPositiveLayerTest, MeshPerTaskNV) {
+TEST_F(PositiveMesh, MeshPerTaskNV) {
     TEST_DESCRIPTION("Make sure PerTaskNV in handled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);

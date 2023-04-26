@@ -17,12 +17,14 @@
 #include <algorithm>
 #include <chrono>
 
+class PositiveTooling : public VkPositiveLayerTest {};
+
 //
 // POSITIVE VALIDATION TESTS
 //
 // These tests do not expect to encounter ANY validation errors pass only if this is true
 
-TEST_F(VkPositiveLayerTest, ToolingExtension) {
+TEST_F(PositiveTooling, BasicUsage) {
     TEST_DESCRIPTION("Call Tooling Extension and verify layer results");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

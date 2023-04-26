@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, MeshShaderEXT) {
+class NegativeMesh : public VkLayerTest {};
+
+TEST_F(NegativeMesh, BasicUsage) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -237,7 +239,7 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
     }
 }
 
-TEST_F(VkLayerTest, MeshShaderEXTDisabled) {
+TEST_F(NegativeMesh, ExtensionDisabled) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader VUs with EXT_mesh_shader disabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -350,7 +352,7 @@ TEST_F(VkLayerTest, MeshShaderEXTDisabled) {
                                                            "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 }
 
-TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
+TEST_F(NegativeMesh, RuntimeSpirv) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader spirv related VUIDs.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -530,7 +532,7 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
     CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit, error_vuids_1);
 }
 
-TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
+TEST_F(NegativeMesh, RuntimeSpirvNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader spirv related VUIDs");
 
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -591,7 +593,7 @@ TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
                                       vector<std::string>({"VUID-RuntimeSpirv-MeshNV-07113", "VUID-RuntimeSpirv-MeshNV-07114"}));
 }
 
-TEST_F(VkLayerTest, MeshShaderNV) {
+TEST_F(NegativeMesh, BasicUsageNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -692,7 +694,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     vk::DestroyBuffer(m_device->device(), buffer, 0);
 }
 
-TEST_F(VkLayerTest, MeshShaderDisabledNV) {
+TEST_F(NegativeMesh, ExtensionDisabledNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader VUs with NV_mesh_shader disabled.");
 
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -858,7 +860,7 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
                                                            "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 }
 
-TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
+TEST_F(NegativeMesh, DrawCmds) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader draw commands.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1028,7 +1030,7 @@ TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MeshShaderEXTMultiDrawIndirect) {
+TEST_F(NegativeMesh, MultiDrawIndirect) {
     TEST_DESCRIPTION("Test VK_EXT_mesh_shader indirect draw command.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1175,7 +1177,7 @@ TEST_F(VkLayerTest, MeshShaderEXTMultiDrawIndirect) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MeshShaderNVDrawCmds) {
+TEST_F(NegativeMesh, DrawCmdsNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader draw commands.");
 
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);

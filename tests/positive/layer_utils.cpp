@@ -14,9 +14,11 @@
 #include "generated/vk_extension_helper.h"
 #include "utils/vk_layer_utils.h"
 
+class PositiveLayerUtils : public VkPositiveLayerTest {};
+
 // These test check utils in the layer without needing to create a full Vulkan instance
 
-TEST_F(VkPositiveLayerTest, GetEffectiveExtent) {
+TEST_F(PositiveLayerUtils, GetEffectiveExtent) {
     TEST_DESCRIPTION("Test unlikely GetEffectiveExtent edge cases");
 
     auto ci = LvlInitStruct<VkImageCreateInfo>();
@@ -88,7 +90,7 @@ TEST_F(VkPositiveLayerTest, GetEffectiveExtent) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, IsOnlyOneValidPlaneAspect) {
+TEST_F(PositiveLayerUtils, IsOnlyOneValidPlaneAspect) {
     const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
     ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, 0));
     ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_COLOR_BIT));
@@ -98,7 +100,7 @@ TEST_F(VkPositiveLayerTest, IsOnlyOneValidPlaneAspect) {
     ASSERT_FALSE(IsOnlyOneValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_2_BIT));
 }
 
-TEST_F(VkPositiveLayerTest, IsValidPlaneAspect) {
+TEST_F(PositiveLayerUtils, IsValidPlaneAspect) {
     const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
     ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, 0));
     ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_COLOR_BIT));
@@ -108,7 +110,7 @@ TEST_F(VkPositiveLayerTest, IsValidPlaneAspect) {
     ASSERT_FALSE(IsValidPlaneAspect(two_plane_format, VK_IMAGE_ASPECT_PLANE_2_BIT));
 }
 
-TEST_F(VkPositiveLayerTest, IsMultiplePlaneAspect) {
+TEST_F(PositiveLayerUtils, IsMultiplePlaneAspect) {
     ASSERT_FALSE(IsMultiplePlaneAspect(0));
     ASSERT_FALSE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_COLOR_BIT));
     ASSERT_FALSE(IsMultiplePlaneAspect(VK_IMAGE_ASPECT_PLANE_0_BIT));
