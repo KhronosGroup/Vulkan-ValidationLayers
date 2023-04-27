@@ -88,7 +88,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
             }
         }
 
-        if (!found_expected && allowed_message_strings_.size()) {
+        if (!found_expected && !allowed_message_strings_.empty()) {
             for (auto allowed_msg_it = allowed_message_strings_.begin(); allowed_msg_it != allowed_message_strings_.end();
                  ++allowed_msg_it) {
                 if (error_string.find(*allowed_msg_it) != std::string::npos) {
