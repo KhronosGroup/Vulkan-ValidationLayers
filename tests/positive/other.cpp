@@ -730,6 +730,10 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
 
     VkInstance test_instance = VK_NULL_HANDLE;
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &test_instance));
+    for (const char *instance_ext_name : m_instance_extension_names) {
+        vk::InitInstanceExtension(test_instance, instance_ext_name);
+    }
+
     DebugReporter debug_reporter;
     debug_reporter.Create(test_instance);
 

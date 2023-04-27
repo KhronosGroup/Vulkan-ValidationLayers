@@ -87,3 +87,42 @@ class ErrorMonitor {
     std::atomic<bool> *bailout_{};
     bool message_found_{};
 };
+
+struct DebugReporter {
+    void Create(VkInstance instance) noexcept;
+    void Destroy(VkInstance instance) noexcept;
+
+    ErrorMonitor error_monitor_;
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
+                                                        size_t, int32_t, const char *, const char *msg, void *user_data);
+
+    VkDebugReportCallbackCreateInfoEXT debug_create_info_ = {
+        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
+        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+            VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+        &DebugCallback, &error_monitor_};
+
+    VkDebugReportCallbackEXT debug_obj_ = VK_NULL_HANDLE;
+#else
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                        VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                        const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
+
+    const VkDebugUtilsMessageSeverityFlagsEXT message_severity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info_ = {
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        nullptr,
+        0,
+        message_severity,
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+        &DebugCallback,
+        &error_monitor_};
+
+    VkDebugUtilsMessengerEXT debug_obj_ = VK_NULL_HANDLE;
+#endif
+};

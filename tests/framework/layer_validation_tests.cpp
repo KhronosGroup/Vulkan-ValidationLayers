@@ -1019,10 +1019,11 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
 VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
 VkLayerTest::VkLayerTest() {
-    // TODO: not quite sure why most of this is here instead of in super
-
-    // Add default instance extensions to the list
-    m_instance_extension_names.push_back(debug_reporter_.debug_extension_name);
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#else
+    m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+#endif
 
     instance_layers_.push_back(kValidationLayerName);
 
