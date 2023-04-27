@@ -490,7 +490,3 @@ group("vulkan_validation_layers") {
     }
   }
 }
-
-group("tests") {
-  # TODO(fxbug.dev/13288)
-}
