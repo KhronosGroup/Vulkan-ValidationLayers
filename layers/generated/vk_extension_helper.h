@@ -559,6 +559,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_ray_query{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
+    ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_relaxed_block_layout{kNotEnabled};
     ExtEnabled vk_khr_sampler_mirror_clamp_to_edge{kNotEnabled};
     ExtEnabled vk_khr_sampler_ycbcr_conversion{kNotEnabled};
@@ -1090,6 +1091,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_pipeline, {{
                            {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
+            {VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_ray_tracing_position_fetch, {{
                            {&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_relaxed_block_layout, {})},
             {VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_sampler_mirror_clamp_to_edge, {})},
@@ -1672,6 +1675,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_RAY_QUERY_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME,
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
     VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,

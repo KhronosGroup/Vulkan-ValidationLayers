@@ -1383,6 +1383,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             shader_object_feature) {
             enabled_features.shader_object_features = *shader_object_feature;
         }
+
+        const auto ray_tracing_position_fetch_features = LvlFindInChain<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR>(pCreateInfo->pNext);
+        if (ray_tracing_position_fetch_features) {
+            enabled_features.ray_tracing_position_fetch_features = *ray_tracing_position_fetch_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

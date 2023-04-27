@@ -326,6 +326,9 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
     {spv::OpPtrEqual, {"OpPtrEqual", true, true, 0, 0, 0}},
     {spv::OpPtrNotEqual, {"OpPtrNotEqual", true, true, 0, 0, 0}},
     {spv::OpPtrDiff, {"OpPtrDiff", true, true, 0, 0, 0}},
+    {spv::OpColorAttachmentReadEXT, {"OpColorAttachmentReadEXT", true, true, 0, 0, 0}},
+    {spv::OpDepthAttachmentReadEXT, {"OpDepthAttachmentReadEXT", true, true, 0, 0, 0}},
+    {spv::OpStencilAttachmentReadEXT, {"OpStencilAttachmentReadEXT", true, true, 0, 0, 0}},
     {spv::OpTerminateInvocation, {"OpTerminateInvocation", false, false, 0, 0, 0}},
     {spv::OpSubgroupBallotKHR, {"OpSubgroupBallotKHR", true, true, 0, 0, 0}},
     {spv::OpSubgroupFirstInvocationKHR, {"OpSubgroupFirstInvocationKHR", true, true, 0, 0, 0}},
@@ -411,6 +414,7 @@ static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
     {spv::OpTraceNV, {"OpTraceNV", false, false, 0, 0, 0}},
     {spv::OpTraceMotionNV, {"OpTraceMotionNV", false, false, 0, 0, 0}},
     {spv::OpTraceRayMotionNV, {"OpTraceRayMotionNV", false, false, 0, 0, 0}},
+    {spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR, {"OpRayQueryGetIntersectionTriangleVertexPositionsKHR", true, true, 0, 0, 0}},
     {spv::OpTypeAccelerationStructureKHR, {"OpTypeAccelerationStructureKHR", false, true, 0, 0, 0}},
     {spv::OpExecuteCallableNV, {"OpExecuteCallableNV", false, false, 0, 0, 0}},
     {spv::OpTypeCooperativeMatrixNV, {"OpTypeCooperativeMatrixNV", false, true, 0, 3, 0}},
@@ -778,6 +782,8 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "Image";
         case spv::StorageClassStorageBuffer:
             return "StorageBuffer";
+        case spv::StorageClassTileImageEXT:
+            return "TileImageEXT";
         case spv::StorageClassCallableDataNV:
             return "CallableDataNV";
         case spv::StorageClassIncomingCallableDataNV:
@@ -1117,6 +1123,8 @@ const char* string_SpvDim(uint32_t dim) {
             return "Buffer";
         case spv::DimSubpassData:
             return "SubpassData";
+        case spv::DimTileImageDataEXT:
+            return "TileImageDataEXT";
         default:
             return "Unknown Dim";
     }

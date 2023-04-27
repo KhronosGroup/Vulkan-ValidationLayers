@@ -2118,6 +2118,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
