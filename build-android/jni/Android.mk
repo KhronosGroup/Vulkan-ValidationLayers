@@ -243,9 +243,6 @@ LOCAL_CPPFLAGS += -DVK_ENABLE_BETA_EXTENSIONS -DVK_USE_PLATFORM_ANDROID_KHR -DUS
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
 LOCAL_LDLIBS := -llog -landroid -ldl
 
-# Building tests as a shared library (.so) with the intent of being tested as an APK instead of an executable.
-LOCAL_CPPFLAGS += -DVVL_TESTS_APK_GLUE
-
 # Force export ANativeActivity_onCreate(),
 # Refer to: https://github.com/android-ndk/ndk/issues/381.
 #

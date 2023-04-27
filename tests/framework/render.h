@@ -21,18 +21,15 @@
 #include "generated/lvt_function_pointers.h"
 #include "error_monitor.h"
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-#include "test_framework_android.h"
-class VkImageObj;
-#else
+#if defined(VVL_TESTS_USE_CMAKE)
 #include "test_framework.h"
+#else
+#include "test_framework_android.h"
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
-#if defined(VVL_TESTS_APK_GLUE)
 #include <android_native_app_glue.h>
-#endif
 #endif
 
 #include <algorithm>
@@ -128,6 +125,7 @@ struct DebugReporter {
 #endif
 };
 
+class VkImageObj;
 class VkCommandPoolObj;
 class VkCommandBufferObj;
 class VkDepthStencilObj;
@@ -684,8 +682,7 @@ class VkShaderObj : public vk_testing::ShaderModule {
                                                       const VkSpecializationInfo *spec_info = nullptr,
                                                       const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
 
-    // TODO (ncesario) remove ifndef once android build consolidation changes go in
-#ifndef __ANDROID__
+#if defined(VVL_TESTS_USE_CMAKE)
     struct GlslangTargetEnv {
         GlslangTargetEnv(const spv_target_env env) {
             switch (env) {
