@@ -58,6 +58,10 @@ class VkTestFramework : public ::testing::Test {
     static inline bool m_do_everything_spv = false;
     static inline int m_phys_device_index = -1;
 
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    static inline ANativeWindow *window = nullptr;
+#endif
+
   private:
     int m_compile_options = 0;
     int m_num_shader_strings = 0;

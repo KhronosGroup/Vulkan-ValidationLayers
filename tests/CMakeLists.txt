@@ -116,6 +116,9 @@ if (VVL_ENABLE_ASAN)
     target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_ENABLE_ASAN=1)
 endif()
 
+# TODO: Remove once Android.mk is gone.
+target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_TESTS_USE_CMAKE)
+
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
 
 target_include_directories(vk_layer_validation_tests PRIVATE .)
