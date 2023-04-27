@@ -16,7 +16,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
+class NegativeRenderPass : public VkLayerTest {};
+
+TEST_F(NegativeRenderPass, AttachmentIndexOutOfRange) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -37,7 +39,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
                          "VUID-VkRenderPassCreateInfo2-attachment-03051");
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
+TEST_F(NegativeRenderPass, AttachmentReadOnlyButCleared) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -101,7 +103,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // reset
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
+TEST_F(NegativeRenderPass, AttachmentMismatchingLayoutsColor) {
     TEST_DESCRIPTION("Attachment is used simultaneously as two color attachments with different layouts.");
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -129,7 +131,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
                          "subpass 0 already uses attachment 0 with a different image layout");
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
+TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
     TEST_DESCRIPTION("VkAttachmentDescription's finalLayout must not be UNDEFINED or PREINITIALIZED");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -408,7 +410,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
+TEST_F(NegativeRenderPass, AttachmentsMisc) {
     TEST_DESCRIPTION(
         "Ensure that CreateRenderPass produces the expected validation errors when a subpass's attachments violate the valid usage "
         "conditions.");
@@ -635,7 +637,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidRenderPassCreateRenderPassShaderResolveQCOM) {
+TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
     TEST_DESCRIPTION("Ensure RenderPass create meets the requirements for QCOM_render_pass_shader_resolve");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -723,7 +725,7 @@ TEST_F(VkLayerTest, InvalidRenderPassCreateRenderPassShaderResolveQCOM) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
+TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
     TEST_DESCRIPTION("Attachment reference uses PREINITIALIZED or UNDEFINED layouts");
 
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
@@ -799,7 +801,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayoutSeparateDepthStencilLayoutsFeature) {
+TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsFeature) {
     TEST_DESCRIPTION("Attachment reference uses PREINITIALIZED or UNDEFINED layouts");
 
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
@@ -953,7 +955,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayoutSeparateDept
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidSync2Layout) {
+TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
     TEST_DESCRIPTION("Attachment reference uses sync2 and ATTACHMENT_OPTIMAL_KHR or READ_ONLY_OPTIMAL_KHR layouts");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -996,7 +998,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidSync2Layout) {
                          "VUID-VkAttachmentReference2-synchronization2-06910");
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
+TEST_F(NegativeRenderPass, MixedAttachmentSamplesAMD) {
     TEST_DESCRIPTION("Verify error messages for supported and unsupported sample counts in render pass attachments.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1069,7 +1071,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
                          "VUID-VkSubpassDescription-pColorAttachments-01506", "VUID-VkSubpassDescription2-pColorAttachments-03070");
 }
 
-TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
+TEST_F(NegativeRenderPass, BeginRenderArea) {
     TEST_DESCRIPTION("Generate INVALID_RENDER_AREA error by beginning renderpass with extent outside of framebuffer");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1117,7 +1119,7 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
                         vuid);
 }
 
-TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
+TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1147,7 +1149,7 @@ TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassBeginIncompatibleFramebufferRenderPass) {
+TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     TEST_DESCRIPTION("Test that renderpass begin is compatible with the framebuffer renderpass ");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -1202,7 +1204,7 @@ TEST_F(VkLayerTest, RenderPassBeginIncompatibleFramebufferRenderPass) {
                         "VUID-VkRenderPassBeginInfo-renderPass-00904", nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
+TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     TEST_DESCRIPTION(
         "Test that renderpass initial/final layouts match up with the usage bits set for each attachment of the framebuffer");
 
@@ -1386,7 +1388,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassBeginLayoutsStencilBufferImageUsageMismatches) {
+TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
     TEST_DESCRIPTION("Test that separate stencil initial/final layouts match up with the usage bits in framebuffer attachment");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1480,7 +1482,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsStencilBufferImageUsageMismatches) {
          "VUID-vkCmdBeginRenderPass2-stencilInitialLayout-02845");
 }
 
-TEST_F(VkLayerTest, RenderPassBeginInvalidStencilFormat) {
+TEST_F(NegativeRenderPass, BeginStencilFormat) {
     TEST_DESCRIPTION("Test that separate stencil initial/final layouts match up with the usage bits in framebuffer attachment");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1541,7 +1543,7 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidStencilFormat) {
     test(VK_FORMAT_S8_UINT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "VUID-VkRenderPassCreateInfo2-attachment-06246");
 }
 
-TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
+TEST_F(NegativeRenderPass, BeginClearOpMismatch) {
     TEST_DESCRIPTION(
         "Begin a renderPass where clearValueCount is less than the number of renderPass attachments that use "
         "loadOp VK_ATTACHMENT_LOAD_OP_CLEAR.");
@@ -1585,7 +1587,7 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
                         "VUID-VkRenderPassBeginInfo-clearValueCount-00902", "VUID-VkRenderPassBeginInfo-clearValueCount-00902");
 }
 
-TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
+TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
     TEST_DESCRIPTION("Test that attachment indices and subpass indices specifed by sample locations structures are valid");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1673,7 +1675,7 @@ TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
                         "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
+TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     TEST_DESCRIPTION("Delete in-use renderPass.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1723,7 +1725,7 @@ TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
     m_errorMonitor->SetUnexpectedError("Was it created? Has it already been destroyed?");
 }
 
-TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
+TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     TEST_DESCRIPTION("Create a framebuffer against a render pass using depth stencil resolve, with mismatched information");
 
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -1822,7 +1824,7 @@ TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, FramebufferIncompatible) {
+TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     TEST_DESCRIPTION(
         "Bind a secondary command buffer with a framebuffer that does not match the framebuffer for the active renderpass.");
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1892,7 +1894,7 @@ TEST_F(VkLayerTest, FramebufferIncompatible) {
     vk::EndCommandBuffer(m_commandBuffer->handle());
 }
 
-TEST_F(VkLayerTest, NullRenderPass) {
+TEST_F(NegativeRenderPass, NullRenderPass) {
     // Bind a NULL RenderPass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdBeginRenderPass: required parameter pRenderPassBegin specified as NULL");
 
@@ -1909,7 +1911,7 @@ TEST_F(VkLayerTest, NullRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, FramebufferCreateErrors) {
+TEST_F(NegativeRenderPass, Framebuffer) {
     TEST_DESCRIPTION("VUIDs related to framebuffer creation");
 
     AddOptionalExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
@@ -2340,7 +2342,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, EndCommandBufferWithinRenderPass) {
+TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
     TEST_DESCRIPTION("End a command buffer with an active render pass");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00060");
@@ -2363,7 +2365,7 @@ TEST_F(VkLayerTest, EndCommandBufferWithinRenderPass) {
     // TODO: Add test for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
 }
 
-TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPass) {
+TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     TEST_DESCRIPTION(
         "Hit RenderPass incompatible cases. Initial case is drawing with an active renderpass that's not compatible with the bound "
         "pipeline state object's creation renderpass");
@@ -2430,7 +2432,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap) {
+TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap) {
     TEST_DESCRIPTION(
         "Hit RenderPass incompatible case: drawing with an active renderpass that's not compatible with the bound pipeline state "
         "object's creation renderpass since only the former uses a Fragment Density Map.");
@@ -2544,7 +2546,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassFragmentDensityMap
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RenderPassMissingAttachment) {
+TEST_F(NegativeRenderPass, MissingAttachment) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2607,7 +2609,7 @@ TEST_F(VkLayerTest, RenderPassMissingAttachment) {
     m_commandBuffer->end();
 }
 
-class RenderPassCreatePotentialFormatFeaturesTest : public VkLayerTest {
+class RenderPassCreatePotentialFormatFeaturesTest : public NegativeRenderPass {
   public:
     void Test(bool const useLinearColorAttachment);
 };
@@ -2760,7 +2762,7 @@ TEST_F(RenderPassCreatePotentialFormatFeaturesTest, LinearColorAttachment) {
     Test(true);
 }
 
-TEST_F(VkLayerTest, DepthStencilResolveMode) {
+TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     TEST_DESCRIPTION("Test valid usage of the VkResolveModeFlagBits");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2934,7 +2936,7 @@ TEST_F(VkLayerTest, DepthStencilResolveMode) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidRenderArea) {
+TEST_F(NegativeRenderPass, RenderArea) {
     TEST_DESCRIPTION("Begin render pass with render area that is not within the framebuffer.");
 
     AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -2998,7 +3000,7 @@ TEST_F(VkLayerTest, InvalidRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
+TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     TEST_DESCRIPTION("Begin render pass with device group render area that is not within the framebuffer.");
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
@@ -3052,7 +3054,7 @@ TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RenderPassBeginNullValues) {
+TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3066,7 +3068,7 @@ TEST_F(VkLayerTest, RenderPassBeginNullValues) {
                         "VUID-VkRenderPassBeginInfo-clearValueCount-04962", nullptr);
 }
 
-TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
+TEST_F(NegativeRenderPass, DepthStencilResolveAttachmentFormat) {
     TEST_DESCRIPTION("Create subpass with VkSubpassDescriptionDepthStencilResolve that has an ");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3125,7 +3127,7 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidRenderPassAttachmentFormat) {
+TEST_F(NegativeRenderPass, RenderPassAttachmentFormat) {
     TEST_DESCRIPTION("Test creating render pass with attachment format VK_FORMAT_UNDEFINED");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -3180,7 +3182,7 @@ TEST_F(VkLayerTest, InvalidRenderPassAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
+TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     TEST_DESCRIPTION("Use same image as depth stencil attachment in read only layer and as sampler");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3328,7 +3330,7 @@ TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestColorAttachmentImageViewUsage) {
+TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
     TEST_DESCRIPTION("Create image view with missing usage bits.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -3381,7 +3383,7 @@ TEST_F(VkLayerTest, TestColorAttachmentImageViewUsage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateRenderPassWithInvalidStencilLoadOp) {
+TEST_F(NegativeRenderPass, StencilLoadOp) {
     TEST_DESCRIPTION("Create render pass with invalid stencil load op.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3434,7 +3436,7 @@ TEST_F(VkLayerTest, CreateRenderPassWithInvalidStencilLoadOp) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateRenderPassWithViewMask) {
+TEST_F(NegativeRenderPass, ViewMask) {
     TEST_DESCRIPTION("Create render pass with view mask, but multiview feature disabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3470,7 +3472,7 @@ TEST_F(VkLayerTest, CreateRenderPassWithViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestAllViewMasksZero) {
+TEST_F(NegativeRenderPass, AllViewMasksZero) {
     TEST_DESCRIPTION("Test VkRenderPassMultiviewCreateInfo with all view mask elements being 0.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3509,7 +3511,7 @@ TEST_F(VkLayerTest, TestAllViewMasksZero) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidRenderPassAttachmentUndefinedLayout) {
+TEST_F(NegativeRenderPass, AttachmentUndefinedLayout) {
     TEST_DESCRIPTION("Create render pass with invalid attachment undefined layout.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3554,7 +3556,7 @@ TEST_F(VkLayerTest, InvalidRenderPassAttachmentUndefinedLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
+TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     TEST_DESCRIPTION("Test VK_EXT_multisampled_render_to_single_sampled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -4033,7 +4035,7 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     vk::DestroyDevice(second_device, nullptr);
 }
 
-TEST_F(VkLayerTest, AttachmentDescriptionUndefinedFormat) {
+TEST_F(NegativeRenderPass, AttachmentDescriptionUndefinedFormat) {
     TEST_DESCRIPTION("Create a render pass with an attachment description format set to VK_FORMAT_UNDEFINED");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4062,7 +4064,7 @@ TEST_F(VkLayerTest, AttachmentDescriptionUndefinedFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IncompatibleRenderPass) {
+TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4154,7 +4156,7 @@ TEST_F(VkLayerTest, IncompatibleRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, IncompatibleRenderPass2) {
+TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

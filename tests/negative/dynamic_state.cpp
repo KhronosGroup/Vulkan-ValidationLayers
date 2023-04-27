@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
+class NegativeDynamicState : public VkLayerTest {};
+
+TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");
 
@@ -26,7 +28,7 @@ TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicLineWidthNotBound) {
+TEST_F(NegativeDynamicState, LineWidthNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Line Width dynamic state is required but not correctly bound.");
 
@@ -37,7 +39,7 @@ TEST_F(VkLayerTest, DynamicLineWidthNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicLineStippleNotBound) {
+TEST_F(NegativeDynamicState, LineStippleNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Line Stipple dynamic state is required but not correctly bound.");
 
@@ -60,7 +62,7 @@ TEST_F(VkLayerTest, DynamicLineStippleNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicViewportNotBound) {
+TEST_F(NegativeDynamicState, ViewportNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Viewport dynamic state is required but not correctly bound.");
 
@@ -71,7 +73,7 @@ TEST_F(VkLayerTest, DynamicViewportNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicScissorNotBound) {
+TEST_F(NegativeDynamicState, ScissorNotBound) {
     TEST_DESCRIPTION("Run a simple draw calls to validate failure when Scissor dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -81,7 +83,7 @@ TEST_F(VkLayerTest, DynamicScissorNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicBlendConstantsNotBound) {
+TEST_F(NegativeDynamicState, BlendConstantsNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Blend Constants dynamic state is required but not correctly bound.");
 
@@ -92,7 +94,7 @@ TEST_F(VkLayerTest, DynamicBlendConstantsNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
+TEST_F(NegativeDynamicState, DepthBoundsNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bounds dynamic state is required but not correctly bound.");
 
@@ -106,7 +108,7 @@ TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicStencilReadNotBound) {
+TEST_F(NegativeDynamicState, StencilReadNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Read dynamic state is required but not correctly bound.");
 
@@ -117,7 +119,7 @@ TEST_F(VkLayerTest, DynamicStencilReadNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicStencilWriteNotBound) {
+TEST_F(NegativeDynamicState, StencilWriteNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Write dynamic state is required but not correctly bound.");
 
@@ -128,7 +130,7 @@ TEST_F(VkLayerTest, DynamicStencilWriteNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DynamicStencilRefNotBound) {
+TEST_F(NegativeDynamicState, StencilRefNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Stencil Ref dynamic state is required but not correctly bound.");
 
@@ -139,7 +141,7 @@ TEST_F(VkLayerTest, DynamicStencilRefNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SetDynScissorParamTests) {
+TEST_F(NegativeDynamicState, SetScissorParam) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetScissor without multiViewport feature");
 
     VkPhysicalDeviceFeatures features{};
@@ -195,7 +197,7 @@ TEST_F(VkLayerTest, SetDynScissorParamTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
+TEST_F(NegativeDynamicState, SetScissorParamMultiviewport) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetScissor with multiViewport feature enabled");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -248,7 +250,7 @@ void ExtendedDynStateCalls(ErrorMonitor *error_monitor, VkCommandBuffer cmd_buf,
     error_monitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -338,7 +340,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -678,7 +680,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
+TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -720,7 +722,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -780,7 +782,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     m_commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -826,7 +828,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     m_commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -872,7 +874,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     m_commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2Enabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -943,7 +945,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Enabled) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1012,7 +1014,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpEnabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1077,7 +1079,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState3Disabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state3 VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1483,7 +1485,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     m_commandBuffer.end();
 }
 
-TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
+TEST_F(NegativeDynamicState, ExtendedDynamicState3Enabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state3 VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1925,7 +1927,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
+TEST_F(NegativeDynamicState, VertexInputDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when disabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1964,7 +1966,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
+TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2168,7 +2170,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
+TEST_F(NegativeDynamicState, VertexInputDynamicStateDivisor) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when VK_EXT_vertex_attribute_divisor is enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2225,7 +2227,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRasterizationSamples) {
+TEST_F(NegativeDynamicState, RasterizationSamples) {
     TEST_DESCRIPTION("Make sure VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT is updating rasterizationSamples");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
@@ -2277,7 +2279,7 @@ TEST_F(VkLayerTest, DynamicRasterizationSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicColorBlendAttchment) {
+TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     TEST_DESCRIPTION("Test all color blend attachments are dynamically set at draw time.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
@@ -2346,7 +2348,7 @@ TEST_F(VkLayerTest, DynamicColorBlendAttchment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRasterizationLine) {
+TEST_F(NegativeDynamicState, RasterizationLine) {
     TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -2493,7 +2495,7 @@ TEST_F(VkLayerTest, DynamicRasterizationLine) {
     }
 }
 
-TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXTDynaimcState3) {
+TEST_F(NegativeDynamicState, PipelineColorWriteCreateInfoEXTDynaimcState3) {
     TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext with VK_EXT_extended_dynamic_state3");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
@@ -2517,7 +2519,7 @@ TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXTDynaimcState3) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5208
-TEST_F(VkLayerTest, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
+TEST_F(NegativeDynamicState, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     TEST_DESCRIPTION(
         "Test drawing with dual source blending with too many fragment output attachments, but using dynamic blending.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2610,7 +2612,7 @@ TEST_F(VkLayerTest, DISABLED_MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ValidateColorWriteDynamicStateDisabled) {
+TEST_F(NegativeDynamicState, ColorWriteDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2637,7 +2639,7 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
+TEST_F(NegativeDynamicState, ColorWriteNotSet) {
     TEST_DESCRIPTION("Validate dynamic state color write enable was set before draw command");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
@@ -2705,7 +2707,7 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
+TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
     TEST_DESCRIPTION("Invalid usage of attachmentCount for vkCmdSetColorWriteEnableEXT");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2755,7 +2757,7 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableAttachmentCount) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
+TEST_F(NegativeDynamicState, ColorWriteEnableFeature) {
     TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with feature not enabled");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2783,7 +2785,7 @@ TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
+TEST_F(NegativeDynamicState, DiscardRectanglesNotSet) {
     TEST_DESCRIPTION("Validate dynamic state for VK_EXT_discard_rectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -2830,7 +2832,7 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
+TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
     TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -2892,7 +2894,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferResetBitmask) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
+TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferReset) {
     TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2968,7 +2970,7 @@ TEST_F(VkLayerTest, DynamicStateNotSetWithCommandBufferReset) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidSampleLocations) {
+TEST_F(NegativeDynamicState, SampleLocations) {
     TEST_DESCRIPTION("Test invalid cases of VK_EXT_sample_location");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -3204,7 +3206,7 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SetDynViewportParamTests) {
+TEST_F(NegativeDynamicState, SetViewportParam) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport without multiViewport feature");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3291,7 +3293,7 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     }
 }
 
-TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
+TEST_F(NegativeDynamicState, SetViewportParamMaintenance1) {
     TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with a negative viewport extension enabled.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -3304,7 +3306,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
     NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
 }
 
-TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
+TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport with multiViewport feature enabled");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3350,7 +3352,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
+TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTOffsets) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -3391,7 +3393,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
+TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -3421,7 +3423,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
+TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCount) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3453,7 +3455,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DiscardRectanglesVersion) {
+TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -3495,7 +3497,7 @@ TEST_F(VkLayerTest, DiscardRectanglesVersion) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ExtensionDynamicStatesSetWOExtensionEnabled) {
+TEST_F(NegativeDynamicState, ExtensionDynamicStatesSetWOExtensionEnabled) {
     TEST_DESCRIPTION("Create a graphics pipeline with Extension dynamic states without enabling the required Extensions.");
 
     GTEST_SKIP() << "Not possible to hit the desired failure messages given invalid enums.";
@@ -3532,7 +3534,7 @@ TEST_F(VkLayerTest, ExtensionDynamicStatesSetWOExtensionEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, DynamicViewportAndScissorUndefinedDrawState) {
+TEST_F(NegativeDynamicState, ViewportAndScissorUndefinedDrawState) {
     TEST_DESCRIPTION("Test viewport and scissor dynamic state that is not set before draw");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3587,7 +3589,7 @@ TEST_F(VkLayerTest, DynamicViewportAndScissorUndefinedDrawState) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DuplicateDynamicStates) {
+TEST_F(NegativeDynamicState, Duplicate) {
     TEST_DESCRIPTION("Create a pipeline with duplicate dynamic states set.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3616,7 +3618,7 @@ TEST_F(VkLayerTest, DuplicateDynamicStates) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
+TEST_F(NegativeDynamicState, NonGraphics) {
     TEST_DESCRIPTION("Create a pipeline with non graphics dynamic states set.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3647,7 +3649,7 @@ TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidViewportCountWithExtendedDynamicState) {
+TEST_F(NegativeDynamicState, ViewportCountWithExtendedDynamicState) {
     TEST_DESCRIPTION("Create a pipeline with invalid viewport count with extended dynamic state.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
@@ -3681,7 +3683,7 @@ TEST_F(VkLayerTest, InvalidViewportCountWithExtendedDynamicState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayNonDynamic) {
+TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayNonDynamic) {
     TEST_DESCRIPTION("Validate VkPipelineColorBlendStateCreateInfo array with no extensions");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3691,7 +3693,7 @@ TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayNonDynamic) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354");
 }
 
-TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayDynamic) {
+TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayDynamic) {
     TEST_DESCRIPTION("Validate VkPipelineColorBlendStateCreateInfo array with VK_EXT_extended_dynamic_state3");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
@@ -3731,7 +3733,7 @@ TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayDynamic) {
     }
 }
 
-TEST_F(VkLayerTest, VerifyDynamicStateSettingCommands) {
+TEST_F(NegativeDynamicState, SettingCommands) {
     TEST_DESCRIPTION("Verify if pipeline doesn't setup dynamic state, but set dynamic commands");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

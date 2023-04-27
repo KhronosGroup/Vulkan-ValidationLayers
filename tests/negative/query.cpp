@@ -18,7 +18,7 @@
 
 class NegativeQuery : public VkLayerTest {};
 
-TEST_F(NegativeQuery, QueryPerformanceCreation) {
+TEST_F(NegativeQuery, PerformanceCreation) {
     TEST_DESCRIPTION("Create performance query without support");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -106,7 +106,7 @@ TEST_F(NegativeQuery, QueryPerformanceCreation) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeQuery, QueryPerformanceCounterCommandbufferScope) {
+TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     TEST_DESCRIPTION("Insert a performance query begin/end with respect to the command buffer counter scope");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -286,7 +286,7 @@ TEST_F(NegativeQuery, QueryPerformanceCounterCommandbufferScope) {
     vkReleaseProfilingLockKHR(device());
 }
 
-TEST_F(NegativeQuery, QueryPerformanceCounterRenderPassScope) {
+TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     TEST_DESCRIPTION("Insert a performance query begin/end with respect to the render pass counter scope");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -402,7 +402,7 @@ TEST_F(NegativeQuery, QueryPerformanceCounterRenderPassScope) {
     vkReleaseProfilingLockKHR(device());
 }
 
-TEST_F(NegativeQuery, QueryPerformanceReleaseProfileLockBeforeSubmit) {
+TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     TEST_DESCRIPTION("Verify that we get an error if we release the profiling lock during the recording of performance queries");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -568,7 +568,7 @@ TEST_F(NegativeQuery, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     vkReleaseProfilingLockKHR(device());
 }
 
-TEST_F(NegativeQuery, QueryPerformanceIncompletePasses) {
+TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     TEST_DESCRIPTION("Verify that we get an error if we don't submit a command buffer for each passes before getting the results.");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -815,7 +815,7 @@ TEST_F(NegativeQuery, QueryPerformanceIncompletePasses) {
     vkReleaseProfilingLockKHR(device());
 }
 
-TEST_F(NegativeQuery, QueryPerformanceResetAndBegin) {
+TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     TEST_DESCRIPTION("Verify that we get an error if we reset & begin a performance query within the same primary command buffer.");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -964,7 +964,7 @@ TEST_F(NegativeQuery, QueryPerformanceResetAndBegin) {
     vkReleaseProfilingLockKHR(device());
 }
 
-TEST_F(NegativeQuery, HostQueryResetNotEnabled) {
+TEST_F(NegativeQuery, HostResetNotEnabled) {
     TEST_DESCRIPTION("Use vkResetQueryPoolEXT without enabling the feature");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -985,7 +985,7 @@ TEST_F(NegativeQuery, HostQueryResetNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostQueryResetBadFirstQuery) {
+TEST_F(NegativeQuery, HostResetFirstQuery) {
     TEST_DESCRIPTION("Bad firstQuery in vkResetQueryPoolEXT");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -1014,7 +1014,7 @@ TEST_F(NegativeQuery, HostQueryResetBadFirstQuery) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostQueryResetBadRange) {
+TEST_F(NegativeQuery, HostyResetBadRange) {
     TEST_DESCRIPTION("Bad range in vkResetQueryPoolEXT");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -1042,7 +1042,7 @@ TEST_F(NegativeQuery, HostQueryResetBadRange) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostQueryResetInvalidQueryPool) {
+TEST_F(NegativeQuery, HostyResetQueryPool) {
     TEST_DESCRIPTION("Invalid queryPool in vkResetQueryPoolEXT");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -1075,7 +1075,7 @@ TEST_F(NegativeQuery, HostQueryResetInvalidQueryPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, HostQueryResetWrongDevice) {
+TEST_F(NegativeQuery, HostyResetDevice) {
     TEST_DESCRIPTION("Device not matching queryPool in vkResetQueryPoolEXT");
 
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -1121,7 +1121,7 @@ TEST_F(NegativeQuery, HostQueryResetWrongDevice) {
     vk::DestroyDevice(second_device, nullptr);
 }
 
-TEST_F(NegativeQuery, InvalidCmdBufferQueryPoolDestroyed) {
+TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a query pool dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1168,7 +1168,7 @@ TEST_F(NegativeQuery, BeginQueryOnTimestampPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, InvalidQueryPoolCreate) {
+TEST_F(NegativeQuery, PoolCreate) {
     TEST_DESCRIPTION("Attempt to create a query pool for PIPELINE_STATISTICS without enabling pipeline stats for the device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1208,7 +1208,7 @@ TEST_F(NegativeQuery, InvalidQueryPoolCreate) {
     vk::DestroyDevice(local_device, nullptr);
 }
 
-TEST_F(NegativeQuery, InvalidQuerySizes) {
+TEST_F(NegativeQuery, Sizes) {
     TEST_DESCRIPTION("Invalid size of using queries commands.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1310,7 +1310,7 @@ TEST_F(NegativeQuery, InvalidQuerySizes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, QueryPreciseBit) {
+TEST_F(NegativeQuery, PreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1406,7 +1406,7 @@ TEST_F(NegativeQuery, QueryPreciseBit) {
     vk::DestroyCommandPool(test_device.handle(), command_pool, nullptr);
 }
 
-TEST_F(NegativeQuery, QueryPoolPartialTimestamp) {
+TEST_F(NegativeQuery, PoolPartialTimestamp) {
     TEST_DESCRIPTION("Request partial result on timestamp query.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1487,7 +1487,7 @@ TEST_F(NegativeQuery, PerformanceQueryIntel) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, QueryPoolInUseDestroyedSignaled) {
+TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use query pool.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1530,7 +1530,7 @@ TEST_F(NegativeQuery, QueryPoolInUseDestroyedSignaled) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
-TEST_F(NegativeQuery, WriteTimeStampInvalidQuery) {
+TEST_F(NegativeQuery, WriteTimeStamp) {
     TEST_DESCRIPTION("Test for invalid query slot in query pool.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1571,7 +1571,7 @@ TEST_F(NegativeQuery, WriteTimeStampInvalidQuery) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeQuery, InvalidCmdEndQueryIndexedEXTIndex) {
+TEST_F(NegativeQuery, CmdEndQueryIndexedEXTIndex) {
     TEST_DESCRIPTION("Test InvalidCmdEndQueryIndexedEXT with invalid index");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -1616,7 +1616,7 @@ TEST_F(NegativeQuery, InvalidCmdEndQueryIndexedEXTIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, InvalidCmdEndQueryIndexedEXTPrimitiveGenerated) {
+TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
     TEST_DESCRIPTION("Test InvalidCmdEndQueryIndexedEXT with invalid index");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1684,7 +1684,7 @@ TEST_F(NegativeQuery, InvalidCmdEndQueryIndexedEXTPrimitiveGenerated) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, BeginQueryTypeTransformFeedbackStream) {
+TEST_F(NegativeQuery, TransformFeedbackStream) {
     TEST_DESCRIPTION(
         "Call CmdBeginQuery with query type transform feedback stream when transformFeedbackQueries is not supported.");
 
@@ -1718,7 +1718,7 @@ TEST_F(NegativeQuery, BeginQueryTypeTransformFeedbackStream) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeQuery, GetQueryPoolResultsFlags) {
+TEST_F(NegativeQuery, GetResultsFlags) {
     TEST_DESCRIPTION("Test GetQueryPoolResults with invalid pData and stride");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
@@ -1747,7 +1747,7 @@ TEST_F(NegativeQuery, GetQueryPoolResultsFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, QueryPoolResultStatusOnly) {
+TEST_F(NegativeQuery, ResultStatusOnly) {
     TEST_DESCRIPTION("Request result status only query result.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1826,7 +1826,7 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
-TEST_F(NegativeQuery, BeginQueryWithMultiview) {
+TEST_F(NegativeQuery, MultiviewBeginQuery) {
     TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2017,7 +2017,7 @@ TEST_F(NegativeQuery, TestGetQueryPoolResultsDataAndStride) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PrimitivesGeneratedQuery) {
+TEST_F(NegativeQuery, PrimitivesGenerated) {
     TEST_DESCRIPTION("Test unsupported primitives generated queries");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2089,7 +2089,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedQuery) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PrimitivesGeneratedQueryFeature) {
+TEST_F(NegativeQuery, PrimitivesGeneratedFeature) {
     TEST_DESCRIPTION("Test missing primitives generated query feature");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -2119,7 +2119,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedQueryFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PrimitivesGeneratedQueryAndDiscardEnabled) {
+TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithRasterizerDiscard feature.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2175,7 +2175,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedQueryAndDiscardEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, PrimitivesGeneratedQueryStreams) {
+TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     TEST_DESCRIPTION("Test missing primitivesGeneratedQueryWithNonZeroStreams feature.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2243,7 +2243,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedQueryStreams) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeQuery, CommandBufferMissingOcclusionQueryEnabled) {
+TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
     TEST_DESCRIPTION(
         "Test executing secondary command buffer without VkCommandBufferInheritanceInfo::occlusionQueryEnable enabled while "
         "occlusion query is active.");
@@ -2289,7 +2289,7 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusionQueryEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, EndQueryWithMultiview) {
+TEST_F(NegativeQuery, MultiviewEndQuery) {
     TEST_DESCRIPTION("Test CmdEndQuery in subpass with multiview");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

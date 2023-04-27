@@ -13,7 +13,7 @@
 
 #include "../framework/layer_validation_tests.h"
 
-void VkDebugPrintfTest::InitDebugPrintfFramework() {
+void NegativeDebugPrintf::InitDebugPrintfFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
@@ -27,7 +27,7 @@ void VkDebugPrintfTest::InitDebugPrintfFramework() {
     InitFramework(m_errorMonitor, &features);
 }
 
-TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
+TEST_F(NegativeDebugPrintf, BasicUsage) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
@@ -331,7 +331,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         m_errorMonitor->VerifyFound();
     }
 }
-TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
+TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     TEST_DESCRIPTION("Test debug printf in mesh and task shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -421,7 +421,7 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
+TEST_F(NegativeDebugPrintf, GPL) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
@@ -755,7 +755,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
     }
 }
 
-TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
+TEST_F(NegativeDebugPrintf, GPLFragment) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -909,7 +909,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
+TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

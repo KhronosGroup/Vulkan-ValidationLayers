@@ -14,7 +14,9 @@
 
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
+class NegativeRayTracing : public VkLayerTest {};
+
+TEST_F(NegativeRayTracing, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -179,7 +181,7 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
+TEST_F(NegativeRayTracing, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -681,7 +683,7 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingLibraryFlags) {
+TEST_F(NegativeRayTracing, LibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -822,7 +824,7 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     vk::DestroyPipeline(m_device->handle(), invalid_library, nullptr);
 }
 
-TEST_F(VkLayerTest, RayTracingValidateGetCaptureReplayShaderGroupHandlesKHR) {
+TEST_F(NegativeRayTracing, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -899,7 +901,7 @@ TEST_F(VkLayerTest, RayTracingValidateGetCaptureReplayShaderGroupHandlesKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
+TEST_F(NegativeRayTracing, DeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1018,7 +1020,7 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineWrongBindPoint) {
+TEST_F(NegativeRayTracing, BindPoint) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the ray-tracing bind point");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1045,7 +1047,7 @@ TEST_F(VkLayerTest, RayTracingPipelineWrongBindPoint) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
+TEST_F(NegativeRayTracing, MaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1118,7 +1120,7 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingInvalidPipelineFlags) {
+TEST_F(NegativeRayTracing, PipelineFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1172,7 +1174,7 @@ TEST_F(VkLayerTest, RayTracingInvalidPipelineFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingTestWrongPipelineType) {
+TEST_F(NegativeRayTracing, PipelineType) {
     TEST_DESCRIPTION("Use a compute pipeline in GetRayTracingShaderGroupStackSizeKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1200,7 +1202,7 @@ TEST_F(VkLayerTest, RayTracingTestWrongPipelineType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineLibraryGroupHandlesEXT) {
+TEST_F(NegativeRayTracing, LibraryGroupHandlesEXT) {
     TEST_DESCRIPTION("Validate VK_EXT_pipeline_library_group_handles");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
@@ -1281,7 +1283,7 @@ TEST_F(VkLayerTest, RayTracingPipelineLibraryGroupHandlesEXT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NVRayTracingValidatePipeline) {
+TEST_F(NegativeRayTracing, BasicUsageNV) {
     TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1417,7 +1419,7 @@ TEST_F(VkLayerTest, NVRayTracingValidatePipeline) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingPipelineShaderGroups) {
+TEST_F(NegativeRayTracing, ShaderGroupsNV) {
     TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
 
     if (!InitFrameworkForRayTracingTest(this, false)) {
@@ -1892,7 +1894,7 @@ TEST_F(VkLayerTest, NVRayTracingPipelineShaderGroups) {
     }
 }
 
-TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
+TEST_F(NegativeRayTracing, StageCreationFeedbackCountNV) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -1926,7 +1928,7 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
 
-TEST_F(VkLayerTest, NVRayTracingMissingEntrypoint) {
+TEST_F(NegativeRayTracing, MissingEntrypointNV) {
     TEST_DESCRIPTION("Test NV ray tracing pipeline with missing entrypoint.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     if (!InitFrameworkForRayTracingTest(this, false)) {

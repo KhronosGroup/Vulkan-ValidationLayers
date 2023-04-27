@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 
-TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
+class NegativeDescriptorBuffer : public VkLayerTest {};
+
+TEST_F(NegativeDescriptorBuffer, SetLayout) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -181,7 +183,7 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
+TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     TEST_DESCRIPTION("Tests for when descriptor buffer is not enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -540,7 +542,7 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
+TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     TEST_DESCRIPTION("Descriptor buffer binding and offsets.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -836,7 +838,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
+TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     TEST_DESCRIPTION("Dispatch pipeline with descriptor set bound while descriptor buffer expected");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -909,7 +911,7 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DescriptorBufferInconsistentSet) {
+TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     TEST_DESCRIPTION("Dispatch pipeline with descriptor buffer bound while of descriptor set expected");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -980,7 +982,7 @@ TEST_F(VkLayerTest, DescriptorBufferInconsistentSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
+TEST_F(NegativeDescriptorBuffer, BindPoint) {
     TEST_DESCRIPTION("Descriptor buffer invalid bind point.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1054,7 +1056,7 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
+TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
     TEST_DESCRIPTION("Descriptor buffer vkDescriptorGetInfo().");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -1275,7 +1277,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorBufferVarious) {
+TEST_F(NegativeDescriptorBuffer, Various) {
     TEST_DESCRIPTION("Descriptor buffer various tests.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -1454,7 +1456,7 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorBufferInvalidExtensionCombination) {
+TEST_F(NegativeDescriptorBuffer, ExtensionCombination) {
     TEST_DESCRIPTION("Descriptor invalid extension combination.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -1500,7 +1502,7 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidExtensionCombination) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorBufferSetBufferAddressSpaceLimits) {
+TEST_F(NegativeDescriptorBuffer, SetBufferAddressSpaceLimits) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);

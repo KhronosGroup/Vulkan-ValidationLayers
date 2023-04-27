@@ -16,7 +16,9 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
+class NegativeSparse : public VkLayerTest {};
+
+TEST_F(NegativeSparse, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -73,7 +75,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
     }
 }
 
-TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedTypes) {
+TEST_F(NegativeSparse, ResidencyImageCreateUnsupportedTypes) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported types");
 
     // Determine which device feature are available
@@ -121,7 +123,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedTypes) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00972");
 }
 
-TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
+TEST_F(NegativeSparse, ResidencyImageCreateUnsupportedSamples) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported tiling or sample counts");
 
     // Determine which device feature are available
@@ -177,7 +179,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00976");
 }
 
-TEST_F(VkLayerTest, SparseResidencyFlagMissing) {
+TEST_F(NegativeSparse, ResidencyFlag) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBindInfo without sparse residency flag");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -223,7 +225,7 @@ TEST_F(VkLayerTest, SparseResidencyFlagMissing) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidSparseImageUsageBits) {
+TEST_F(NegativeSparse, ImageUsageBits) {
     TEST_DESCRIPTION("Try to use VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT with sparse image");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -260,7 +262,7 @@ TEST_F(VkLayerTest, InvalidSparseImageUsageBits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SparseMemoryBindOffset) {
+TEST_F(NegativeSparse, MemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -353,7 +355,7 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidQueueBindSparseMemoryType) {
+TEST_F(NegativeSparse, QueueBindSparseMemoryType) {
     TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -450,7 +452,7 @@ TEST_F(VkLayerTest, InvalidQueueBindSparseMemoryType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSize) {
+TEST_F(NegativeSparse, QueueBindSparseMemoryBindSize) {
     TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind size");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -497,7 +499,7 @@ TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindResourceOffset) {
+TEST_F(NegativeSparse, QueueBindSparseMemoryBindResourceOffset) {
     TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind resource offset");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -546,7 +548,7 @@ TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindResourceOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSizeResourceOffset) {
+TEST_F(NegativeSparse, QueueBindSparseMemoryBindSizeResourceOffset) {
     TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind size due to resource offset");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -595,7 +597,7 @@ TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSizeResourceOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSizeMemoryOffset) {
+TEST_F(NegativeSparse, QueueBindSparseMemoryBindSizeMemoryOffset) {
     TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind size due to memory offset");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -644,7 +646,7 @@ TEST_F(VkLayerTest, QueueBindSparseInvalidSparseMemoryBindSizeMemoryOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
+TEST_F(NegativeSparse, ImageMemoryBind) {
     TEST_DESCRIPTION("Try to bind sparse resident image with invalid VkSparseImageMemoryBind");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -768,7 +770,7 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
-TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
+TEST_F(NegativeSparse, OverlappingBufferCopy) {
     TEST_DESCRIPTION("Test overlapping sparse buffers' copy with overlapping device memory");
 
     ASSERT_NO_FATAL_FAILURE(Init());

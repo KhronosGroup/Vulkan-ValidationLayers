@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-TEST_F(VkLayerTest, InvalidMemoryMapping) {
+class NegativeMemory : public VkLayerTest {};
+
+TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
     bool pass;
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -188,7 +190,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     vk::FreeMemory(m_device->device(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, MapMemory2) {
+TEST_F(NegativeMemory, MapMemory2) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
 
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
@@ -258,7 +260,7 @@ TEST_F(VkLayerTest, MapMemory2) {
     vk::FreeMemory(m_device->device(), memory, NULL);
 }
 
-TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
+TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
     VkResult err;
     bool pass;
@@ -300,7 +302,7 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     vk::FreeMemory(m_device->device(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, RebindMemoryMultiObjectDebugUtils) {
+TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     VkResult err;
     bool pass;
 
@@ -372,7 +374,7 @@ TEST_F(VkLayerTest, RebindMemoryMultiObjectDebugUtils) {
     vk::FreeMemory(m_device->device(), mem2, NULL);
 }
 
-TEST_F(VkLayerTest, QueryMemoryCommitmentWithoutLazyProperty) {
+TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -404,7 +406,7 @@ TEST_F(VkLayerTest, QueryMemoryCommitmentWithoutLazyProperty) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
+TEST_F(NegativeMemory, BindImageMemoryType) {
     VkResult err;
 
     TEST_DESCRIPTION("Test validation check for an invalid memory type index during bind[Buffer|Image]Memory time");
@@ -477,7 +479,7 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
-TEST_F(VkLayerTest, BindInvalidMemory) {
+TEST_F(NegativeMemory, BindMemory) {
     VkResult err;
     bool pass;
 
@@ -821,7 +823,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
     }
 }
 
-TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
+TEST_F(NegativeMemory, BindMemoryNoCheck) {
     TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
@@ -1039,7 +1041,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
     }
 }
 
-TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
+TEST_F(NegativeMemory, BindMemory2BindInfos) {
     TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and invalid VkBindImageMemoryInfo* pBindInfos");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
@@ -1227,7 +1229,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
     }
 }
 
-TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
+TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     VkResult err;
     bool pass;
 
@@ -1289,7 +1291,7 @@ TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     vk::FreeMemory(m_device->device(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
+TEST_F(NegativeMemory, AllocationCount) {
     VkResult err = VK_SUCCESS;
     const int max_mems = 32;
     VkDeviceMemory mems[max_mems + 1];
@@ -1329,7 +1331,7 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
     }
 }
 
-TEST_F(VkLayerTest, ImageMemoryNotBound) {
+TEST_F(NegativeMemory, ImageMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to draw with an image which has not had memory bound to it.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1386,7 +1388,7 @@ TEST_F(VkLayerTest, ImageMemoryNotBound) {
     vk::FreeMemory(m_device->device(), image_mem, nullptr);
 }
 
-TEST_F(VkLayerTest, BufferMemoryNotBound) {
+TEST_F(NegativeMemory, BufferMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to copy from a buffer which has not had memory bound to it.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1441,7 +1443,7 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
     vk::FreeMemory(m_device->handle(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, DedicatedAllocationBinding) {
+TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
@@ -1516,7 +1518,7 @@ TEST_F(VkLayerTest, DedicatedAllocationBinding) {
     vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
 }
 
-TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
+TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
@@ -1599,7 +1601,7 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
     vk::BindImageMemory(m_device->handle(), post_delete_image.handle(), dedicated_image_memory.handle(), 0);
 }
 
-TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
+TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
     AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1657,7 +1659,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
+TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
     TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
     AddRequiredExtensions(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1691,7 +1693,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
+TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1776,7 +1778,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
+TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1842,7 +1844,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, InvalidMemoryType) {
+TEST_F(NegativeMemory, MemoryType) {
     // Attempts to allocate from a memory type that doesn't exist
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1863,7 +1865,7 @@ TEST_F(VkLayerTest, InvalidMemoryType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AllocationBeyondHeapSize) {
+TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
     // Attempts to allocate a single piece of memory that's larger than the heap size
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1884,7 +1886,7 @@ TEST_F(VkLayerTest, AllocationBeyondHeapSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
+TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
     // Attempts to allocate device coherent memory without enabling the extension/feature
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
@@ -1931,7 +1933,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DedicatedAllocation) {
+TEST_F(NegativeMemory, DedicatedAllocation) {
     TEST_DESCRIPTION("Create invalid requests to dedicated allocation of memory");
 
     // Both VK_KHR_dedicated_allocation and VK_KHR_sampler_ycbcr_conversion supported in 1.1
@@ -2088,7 +2090,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidMemoryRequirements) {
+TEST_F(NegativeMemory, MemoryRequirements) {
     TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
@@ -2202,7 +2204,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
+TEST_F(NegativeMemory, MemoryAllocatepNextChain) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -2259,7 +2261,7 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 }
 
-TEST_F(VkLayerTest, DeviceImageMemoryRequirementsSwapchain) {
+TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
     TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2301,7 +2303,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsSwapchain) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDrmFormatModifier) {
+TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDrmFormatModifier) {
     TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2346,7 +2348,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDrmFormatModifier) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDisjoint) {
+TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
     TEST_DESCRIPTION("Validate usage of VkDeviceImageMemoryRequirementsKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2397,7 +2399,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDisjoint) {
     vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
 }
 
-TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
+TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     TEST_DESCRIPTION("Test VkBindBufferMemoryDeviceGroupInfo.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

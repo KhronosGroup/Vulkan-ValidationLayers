@@ -16,7 +16,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
+class NegativeMultiview : public VkLayerTest {};
+
+TEST_F(NegativeMultiview, MaxInstanceIndex) {
     TEST_DESCRIPTION("Verify if instance index in CmdDraw is greater than maxMultiviewInstanceIndex.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -62,7 +64,7 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
+TEST_F(NegativeMultiview, ClearColorAttachments) {
     TEST_DESCRIPTION("Test cmdClearAttachments with active render pass that uses multiview");
 
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -172,7 +174,7 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNextSubpass) {
+TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     TEST_DESCRIPTION(
         "Validate all required resources are bound if multiview is enabled after vkCmdBeginRenderPass and vkCmdNextSubpass");
 
@@ -674,7 +676,7 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     }
 }
 
-TEST_F(VkLayerTest, InvalidBeginTransformFeedbackInMultiviewRenderPass) {
+TEST_F(NegativeMultiview, BeginTransformFeedback) {
     TEST_DESCRIPTION("Test beginning transform feedback in a render pass with multiview enabled");
 
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -779,7 +781,7 @@ TEST_F(VkLayerTest, InvalidBeginTransformFeedbackInMultiviewRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, FeaturesMultiview) {
+TEST_F(NegativeMultiview, Features) {
     TEST_DESCRIPTION("Checks VK_KHR_multiview features.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -828,7 +830,7 @@ TEST_F(VkLayerTest, FeaturesMultiview) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
+TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
     TEST_DESCRIPTION("Create a subpass with overlapping correlation masks");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -873,7 +875,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
+TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
     TEST_DESCRIPTION("Create a subpass with the wrong number of view masks, or inconsistent setting of view masks");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -901,7 +903,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
                          "VUID-VkRenderPassCreateInfo2-viewMask-03058");
 }
 
-TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
+TEST_F(NegativeMultiview, RenderPassCreateSubpassMissingAttributesBitNVX) {
     TEST_DESCRIPTION("Create a subpass with the VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX flag missing");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -926,7 +928,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
                          "VUID-VkSubpassDescription2-flags-03076");
 }
 
-TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
+TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     TEST_DESCRIPTION(
         "Hit RenderPass incompatible cases: drawing with an active renderpass that's not compatible with the bound pipeline state "
         "object's creation renderpass since only the former uses Multiview.");
@@ -1178,7 +1180,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
+TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     TEST_DESCRIPTION("Create a render pass with some view masks 0 and some not 0");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1209,7 +1211,7 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02513", nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
+TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     TEST_DESCRIPTION("Create a render pass with invalid multiview pViewOffsets");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1242,7 +1244,7 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02512", nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMask) {
+TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
     TEST_DESCRIPTION("Create a render pass with invalid view mask");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1277,7 +1279,7 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMask) {
                          nullptr);
 }
 
-TEST_F(VkLayerTest, TestUsingDisabledMultiviewFeatures) {
+TEST_F(NegativeMultiview, FeaturesDisabled) {
     TEST_DESCRIPTION("Create graphics pipeline using multiview features which are not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

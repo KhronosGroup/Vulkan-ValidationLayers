@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-TEST_F(VkLayerTest, BufferExtents) {
+class NegativeBuffer : public VkLayerTest {};
+
+TEST_F(NegativeBuffer, Extents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
@@ -112,7 +114,7 @@ TEST_F(VkLayerTest, BufferExtents) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, UpdateBufferAlignment) {
+TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     TEST_DESCRIPTION("Check alignment parameters for vkCmdUpdateBuffer");
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
@@ -146,7 +148,7 @@ TEST_F(VkLayerTest, UpdateBufferAlignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, FillBufferAlignmentAndSize) {
+TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     TEST_DESCRIPTION("Check alignment and size parameters for vkCmdFillBuffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -185,7 +187,7 @@ TEST_F(VkLayerTest, FillBufferAlignmentAndSize) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidBufferViewObject) {
+TEST_F(NegativeBuffer, BufferViewObject) {
     // Create a single TEXEL_BUFFER descriptor and send it an invalid bufferView
     // First, cause the bufferView to be invalid due to underlying buffer being destroyed
     // Then destroy view itself and verify that same error is hit
@@ -236,7 +238,7 @@ TEST_F(VkLayerTest, InvalidBufferViewObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
+TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
     TEST_DESCRIPTION("Attempt to create a buffer view with a buffer that has no memory bound to it.");
 
     VkResult err;
@@ -264,7 +266,7 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
+TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
 
     // Attempt to enable texel buffer alignmnet extension
@@ -379,7 +381,7 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-00934"});
 }
 
-TEST_F(VkLayerTest, TexelBufferAlignmentIn12) {
+TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     TEST_DESCRIPTION("texelBufferAlignment is not enabled by default in 1.2.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -410,7 +412,7 @@ TEST_F(VkLayerTest, TexelBufferAlignmentIn12) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-00926"});
 }
 
-TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
+TEST_F(NegativeBuffer, TexelBufferAlignment) {
     TEST_DESCRIPTION("Test VK_EXT_texel_buffer_alignment.");
     AddRequiredExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -496,7 +498,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
     }
 }
 
-TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
+TEST_F(NegativeBuffer, FillBufferWithinRenderPass) {
     // Call CmdFillBuffer within an active renderpass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-renderpass");
 
@@ -518,7 +520,7 @@ TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
+TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
     // Call CmdUpdateBuffer within an active renderpass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdUpdateBuffer-renderpass");
 
@@ -543,7 +545,7 @@ TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, IdxBufferAlignmentError) {
+TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
     // Bind a BeginRenderPass within an active RenderPass
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -568,7 +570,7 @@ TEST_F(VkLayerTest, IdxBufferAlignmentError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, VertexBufferInvalid) {
+TEST_F(NegativeBuffer, VertexBuffer) {
     TEST_DESCRIPTION(
         "Submit a command buffer using deleted vertex buffer, delete a buffer twice, use an invalid offset for each buffer type, "
         "and attempt to bind a null buffer");
@@ -649,7 +651,7 @@ TEST_F(VkLayerTest, VertexBufferInvalid) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BadVertexBufferOffset) {
+TEST_F(NegativeBuffer, VertexBufferOffset) {
     TEST_DESCRIPTION("Submit an offset past the end of a vertex buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -678,7 +680,7 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BadIndexBufferOffset) {
+TEST_F(NegativeBuffer, IndexBufferOffset) {
     TEST_DESCRIPTION("Submit bad offsets binding the index buffer");
 
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
@@ -714,7 +716,7 @@ TEST_F(VkLayerTest, BadIndexBufferOffset) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidCreateBufferSize) {
+TEST_F(NegativeBuffer, CreateBufferSize) {
     TEST_DESCRIPTION("Attempt to create VkBuffer with size of zero");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -725,7 +727,7 @@ TEST_F(VkLayerTest, InvalidCreateBufferSize) {
     CreateBufferTest(*this, &info, "VUID-VkBufferCreateInfo-size-00912");
 }
 
-TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
+TEST_F(NegativeBuffer, DedicatedAllocationBufferFlags) {
     TEST_DESCRIPTION("Verify that flags are valid with VkDedicatedAllocationBufferCreateInfoNV");
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
@@ -754,7 +756,7 @@ TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
+TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
     TEST_DESCRIPTION(
         "Use a command buffer with vkCmdFillBuffer that was allocated from a command pool that does not support graphics or "
         "compute opeartions");
@@ -781,7 +783,7 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
     cb.end();
 }
 
-TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
+TEST_F(NegativeBuffer, ConditionalRenderingBufferUsage) {
     TEST_DESCRIPTION("Use a buffer without conditional rendering usage when needed.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
@@ -808,7 +810,7 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingBufferUsage) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
+TEST_F(NegativeBuffer, ConditionalRenderingOffset) {
     TEST_DESCRIPTION("Begin conditional rendering with invalid offset.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
@@ -843,7 +845,7 @@ TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
+TEST_F(NegativeBuffer, BeginConditionalRendering) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
@@ -871,7 +873,7 @@ TEST_F(VkLayerTest, InvalidBeginConditionalRendering) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
+TEST_F(NegativeBuffer, CompletelyOverlappingBufferCopy) {
     TEST_DESCRIPTION("Test copying between buffers with completely overlapping source and destination regions.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -901,7 +903,7 @@ TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
+TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
     TEST_DESCRIPTION("Test copying between interleaved source and destination regions.");
     ASSERT_NO_FATAL_FAILURE(Init());
 

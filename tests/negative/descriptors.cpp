@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 
-TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
+class NegativeDescriptors : public VkLayerTest {};
+
+TEST_F(NegativeDescriptors, DescriptorPoolConsistency) {
     TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-parent");
@@ -46,7 +48,7 @@ TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
+TEST_F(NegativeDescriptors, AllocDescriptorFromEmptyPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
@@ -111,7 +113,7 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, FreeDescriptorFromOneShotPool) {
+TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -151,7 +153,7 @@ TEST_F(VkLayerTest, FreeDescriptorFromOneShotPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorPool) {
+TEST_F(NegativeDescriptors, DescriptorPool) {
     // Attempt to clear Descriptor Pool with bad object.
     // ObjectTracker should catch this.
 
@@ -163,7 +165,7 @@ TEST_F(VkLayerTest, InvalidDescriptorPool) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSet) {
+TEST_F(NegativeDescriptors, DescriptorSet) {
     // Attempt to bind an invalid Descriptor Set to a valid Command Buffer
     // ObjectTracker should catch this.
     // Create a valid cmd buffer
@@ -205,7 +207,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSetLayout) {
+TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     // Attempt to create a Pipeline Layout with an invalid Descriptor Set Layout.
     // ObjectTracker should catch this.
     constexpr uint64_t fake_layout_handle = 0xbaad6001;
@@ -221,7 +223,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
+TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
     TEST_DESCRIPTION(
         "This test verifies some requirements of chapter 13.2.3 of the Vulkan Spec "
         "1) A uniform buffer update must have a valid buffer index. "
@@ -348,7 +350,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WriteDescriptorSetIdentitySwizzle) {
+TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     TEST_DESCRIPTION("Test descriptors that need to have identity swizzle set");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -385,7 +387,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetIdentitySwizzle) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
+TEST_F(NegativeDescriptors, WriteDescriptorSetConsecutiveUpdates) {
     TEST_DESCRIPTION(
         "Verifies that updates rolling over to next descriptor work correctly by destroying buffer from consecutive update known "
         "to be used in descriptor set and verifying that error is flagged.");
@@ -482,7 +484,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
+TEST_F(NegativeDescriptors, CmdBufferDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor set with a buffer dependency being "
         "destroyed.");
@@ -552,9 +554,9 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-// This is similar to the InvalidCmdBufferDescriptorSetBufferDestroyed test above except that the buffer
+// This is similar to the CmdBufferDescriptorSetBufferDestroyed test above except that the buffer
 // is destroyed before recording the Draw cmd.
-TEST_F(VkLayerTest, InvalidDrawDescriptorSetBufferDestroyed) {
+TEST_F(NegativeDescriptors, DrawDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to bind a descriptor set that is invalid at Draw time due to its buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -614,7 +616,7 @@ TEST_F(VkLayerTest, InvalidDrawDescriptorSetBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
+TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor sets with a combined image sampler having "
         "their image, sampler, and descriptor set each respectively destroyed and then attempting to submit associated cmd "
@@ -899,7 +901,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
+TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a bound descriptor sets with a combined image sampler where sampler has been deleted.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -996,7 +998,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
+TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch within/without a command buffer");
 
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -1162,7 +1164,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
+TEST_F(NegativeDescriptors, DescriptorPoolInUseResetSignaled) {
     TEST_DESCRIPTION("Reset a DescriptorPool with a DescriptorSet that is in use.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -1223,7 +1225,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
+TEST_F(NegativeDescriptors, DescriptorImageUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt an image descriptor set update where image's bound memory has been freed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -1277,7 +1279,7 @@ TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
+TEST_F(NegativeDescriptors, DynamicOffsetCases) {
     // Create a descriptorSet w/ dynamic descriptor and then hit 3 offset error
     // cases:
     // 1. No dynamicOffset supplied
@@ -1351,7 +1353,7 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DescriptorBufferUpdateNoMemoryBound) {
+TEST_F(NegativeDescriptors, DescriptorBufferUpdateNoMemoryBound) {
     TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00329");
@@ -1383,7 +1385,7 @@ TEST_F(VkLayerTest, DescriptorBufferUpdateNoMemoryBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
+TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     const VkDeviceSize partial_size = m_device->props.limits.minUniformBufferOffsetAlignment;
@@ -1514,7 +1516,7 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicOffsetWithNullBuffer) {
+TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     TEST_DESCRIPTION("Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive, but all have null buffers");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1593,7 +1595,7 @@ TEST_F(VkLayerTest, DynamicOffsetWithNullBuffer) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, UpdateDescriptorSetMismatchType) {
+TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     uint32_t qfi = 0;
@@ -1617,7 +1619,7 @@ TEST_F(VkLayerTest, UpdateDescriptorSetMismatchType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorSetCompatibility) {
+TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     // Test various desriptorSet errors with bad binding combinations
     using std::vector;
     VkResult err;
@@ -1826,7 +1828,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DSUsageBitsErrors) {
+TEST_F(NegativeDescriptors, DSUsageBits) {
     TEST_DESCRIPTION("Attempt to update descriptor sets for images and buffers that do not have correct usage bits sets.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1937,7 +1939,7 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
     }
 }
 
-TEST_F(VkLayerTest, DSBufferInfoErrors) {
+TEST_F(NegativeDescriptors, DSBufferInfo) {
     TEST_DESCRIPTION(
         "Attempt to update buffer descriptor set that has incorrect parameters in VkDescriptorBufferInfo struct. This includes:\n"
         "1. offset value greater than or equal to buffer size\n"
@@ -2064,7 +2066,7 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), push_template, nullptr);
 }
 
-TEST_F(VkLayerTest, DSBufferLimitErrors) {
+TEST_F(NegativeDescriptors, DSBufferLimit) {
     TEST_DESCRIPTION(
         "Attempt to update buffer descriptor set that has VkDescriptorBufferInfo values that violate device limits.\n"
         "Test cases include:\n"
@@ -2170,7 +2172,7 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
     }
 }
 
-TEST_F(VkLayerTest, DSTypeMismatch) {
+TEST_F(NegativeDescriptors, DSTypeMismatch) {
     // Create DS w/ layout of one type and attempt Update w/ mis-matched type
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, " binding #0 with type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER but update type is VK_DESCRIPTOR_TYPE_SAMPLER");
@@ -2189,7 +2191,7 @@ TEST_F(VkLayerTest, DSTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DSUpdateOutOfBounds) {
+TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
     // For overlapping Update, have arrayIndex exceed that of layout
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
 
@@ -2223,7 +2225,7 @@ TEST_F(VkLayerTest, DSUpdateOutOfBounds) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDSUpdateIndex) {
+TEST_F(NegativeDescriptors, DSUpdateIndex) {
     // Create layout w/ count of 1 and attempt update to that layout w/ binding index 2
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstBinding-00315");
@@ -2241,7 +2243,7 @@ TEST_F(VkLayerTest, InvalidDSUpdateIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DSUpdateEmptyBinding) {
+TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
     // Create layout w/ empty binding and attempt to update it
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2261,7 +2263,7 @@ TEST_F(VkLayerTest, DSUpdateEmptyBinding) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDSUpdateStruct) {
+TEST_F(NegativeDescriptors, DSUpdateStruct) {
     // Call UpdateDS w/ struct type other than valid VK_STRUCTUR_TYPE_UPDATE_*
     // types
 
@@ -2292,7 +2294,7 @@ TEST_F(VkLayerTest, InvalidDSUpdateStruct) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SampleDescriptorUpdateError) {
+TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
     // Create a single Sampler descriptor and send it an invalid Sampler
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00325");
 
@@ -2308,7 +2310,7 @@ TEST_F(VkLayerTest, SampleDescriptorUpdateError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageViewDescriptorUpdateError) {
+TEST_F(NegativeDescriptors, ImageViewDescriptorUpdate) {
     // Create a single combined Image/Sampler descriptor and send it an invalid
     // imageView
 
@@ -2329,7 +2331,7 @@ TEST_F(VkLayerTest, ImageViewDescriptorUpdateError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InputAttachmentDescriptorUpdateError) {
+TEST_F(NegativeDescriptors, InputAttachmentDescriptorUpdate) {
     ASSERT_NO_FATAL_FAILURE(Init());
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -2344,7 +2346,7 @@ TEST_F(VkLayerTest, InputAttachmentDescriptorUpdateError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InputAttachmentDepthStencilAspect) {
+TEST_F(NegativeDescriptors, InputAttachmentDepthStencilAspect) {
     TEST_DESCRIPTION("Checks for InputAttachment image view with more than one aspect.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2373,7 +2375,7 @@ TEST_F(VkLayerTest, InputAttachmentDepthStencilAspect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
+TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     // Create DS w/ layout of 2 types, write update 1 and attempt to copy-update
     // into the other
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " binding #1 with type VK_DESCRIPTOR_TYPE_SAMPLER. Types do not match.");
@@ -2444,7 +2446,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
+TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
     TEST_DESCRIPTION(
         "Attempt to bind a slice of a 3D texture in a descriptor set. This is explicitly disallowed by KHR_maintenance1 to keep "
         "things simple for drivers.");
@@ -2486,7 +2488,7 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
+TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Attempt updates to descriptor sets with destroyed descriptor set layouts");
     // TODO: Update to match the descriptor set layout specific VUIDs/VALIDATION_ERROR_* when present
     const auto kWriteDestroyedLayout = "VUID-VkWriteDescriptorSet-dstSet-00320";
@@ -2564,7 +2566,7 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCreateDescriptorPool) {
+TEST_F(NegativeDescriptors, CreateDescriptorPool) {
     TEST_DESCRIPTION("Attempt to create descriptor pool with invalid parameters");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2603,7 +2605,7 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPool) {
     }
 }
 
-TEST_F(VkLayerTest, DuplicateDescriptorBinding) {
+TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
     TEST_DESCRIPTION("Create a descriptor set layout with a duplicate binding number.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2636,7 +2638,7 @@ TEST_F(VkLayerTest, DuplicateDescriptorBinding) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
+TEST_F(NegativeDescriptors, IPushDescriptorSetLayout) {
     TEST_DESCRIPTION("Create a push descriptor set layout with invalid bindings.");
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -2682,7 +2684,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
+TEST_F(NegativeDescriptors, PushDescriptorImageLayout) {
     TEST_DESCRIPTION("Use a push descriptor with a mismatched image layout.");
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -2777,7 +2779,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
     }
 }
 
-TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
+TEST_F(NegativeDescriptors, PushDescriptorSetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create a push descriptor set layout without loading the needed extension.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2795,7 +2797,7 @@ TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
+TEST_F(NegativeDescriptors, DescriptorIndexingSetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create an update_after_bind set layout without loading the needed extension.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2809,7 +2811,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
+TEST_F(NegativeDescriptors, DescriptorIndexingSetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -2963,7 +2965,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
+TEST_F(NegativeDescriptors, DescriptorIndexingUpdateAfterBind) {
     TEST_DESCRIPTION("Exercise errors for updating a descriptor set after it is bound.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -3126,7 +3128,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
+TEST_F(NegativeDescriptors, DescriptorIndexingSetNonIdenticalWrite) {
     TEST_DESCRIPTION("VkWriteDescriptorSet must have identical VkDescriptorBindingFlagBits");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -3204,7 +3206,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
+TEST_F(NegativeDescriptors, AllocatePushDescriptorSet) {
     TEST_DESCRIPTION("Attempt to allocate a push descriptor set.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 
@@ -3239,7 +3241,7 @@ TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
+TEST_F(NegativeDescriptors, CreateDescriptorUpdateTemplate) {
     TEST_DESCRIPTION("Verify error messages for invalid vkCreateDescriptorUpdateTemplate calls.");
 
 #ifdef __ANDROID__
@@ -3339,7 +3341,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350");
 }
 
-TEST_F(VkLayerTest, InlineUniformBlockEXT) {
+TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     TEST_DESCRIPTION("Test VK_EXT_inline_uniform_block.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3549,7 +3551,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
 }
 
-TEST_F(VkLayerTest, InlineUniformBlockEXTFeature) {
+TEST_F(NegativeDescriptors, InlineUniformBlockEXTFeature) {
     TEST_DESCRIPTION("Test VK_EXT_inline_uniform_block features.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -3578,7 +3580,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXTFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WrongdstArrayElement) {
+TEST_F(NegativeDescriptors, DstArrayElement) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -3634,7 +3636,7 @@ TEST_F(VkLayerTest, WrongdstArrayElement) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorSetLayoutMisc) {
+TEST_F(NegativeDescriptors, DescriptorSetLayoutMisc) {
     TEST_DESCRIPTION("Various invalid ways to create a VkDescriptorSetLayout.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3665,7 +3667,7 @@ TEST_F(VkLayerTest, DescriptorSetLayoutMisc) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NullDescriptorsDisabled) {
+TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr));
 
@@ -3702,7 +3704,7 @@ TEST_F(VkLayerTest, NullDescriptorsDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NullDescriptorsEnabled) {
+TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -3787,7 +3789,7 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
+TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments and descriptor set use the same image subresources");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3958,7 +3960,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
+TEST_F(NegativeDescriptors, CreateDescriptorPoolFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -3990,7 +3992,7 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MissingMutableDescriptorTypeFeature) {
+TEST_F(NegativeDescriptors, MissingMutableDescriptorTypeFeature) {
     TEST_DESCRIPTION("Create mutable descriptor pool with feature not enabled.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4022,7 +4024,7 @@ TEST_F(VkLayerTest, MissingMutableDescriptorTypeFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MutableDescriptorPoolsWithPartialOverlap) {
+TEST_F(NegativeDescriptors, MutableDescriptorPoolsWithPartialOverlap) {
     TEST_DESCRIPTION("Create mutable descriptor pools with partial overlap.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4092,7 +4094,7 @@ TEST_F(VkLayerTest, MutableDescriptorPoolsWithPartialOverlap) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
+TEST_F(NegativeDescriptors, CreateDescriptorPoolAllocateFlags) {
     TEST_DESCRIPTION("Create descriptor pool with invalid flags.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4143,7 +4145,7 @@ TEST_F(VkLayerTest, InvalidCreateDescriptorPoolAllocateFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
+TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     TEST_DESCRIPTION("Update a descriptor set containing multiple bindings with only one update");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4245,7 +4247,7 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &writeDesc, 0, nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidWriteMutableDescriptorSet) {
+TEST_F(NegativeDescriptors, WriteMutableDescriptorSet) {
     TEST_DESCRIPTION("Write mutable descriptor set with invalid type.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4337,7 +4339,7 @@ TEST_F(VkLayerTest, InvalidWriteMutableDescriptorSet) {
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
 }
 
-TEST_F(VkLayerTest, MutableDescriptors) {
+TEST_F(NegativeDescriptors, MutableDescriptors) {
     TEST_DESCRIPTION("Test mutable descriptors");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4415,7 +4417,7 @@ TEST_F(VkLayerTest, MutableDescriptors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorUpdateTemplate) {
+TEST_F(NegativeDescriptors, DescriptorUpdateTemplate) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4494,7 +4496,7 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplate) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MutableDescriptorSetLayout) {
+TEST_F(NegativeDescriptors, MutableDescriptorSetLayout) {
     TEST_DESCRIPTION("Create mutable descriptor set layout.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4574,7 +4576,7 @@ TEST_F(VkLayerTest, MutableDescriptorSetLayout) {
     }
 }
 
-TEST_F(VkLayerTest, MutableDescriptorSetLayoutMissingFeature) {
+TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
     TEST_DESCRIPTION("Create mutable descriptor set layout without mutableDescriptorType feature enabled.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -4623,7 +4625,7 @@ TEST_F(VkLayerTest, MutableDescriptorSetLayoutMissingFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
+TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -4780,7 +4782,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestDescriptorReadFromWriteAttachment) {
+TEST_F(NegativeDescriptors, DescriptorReadFromWriteAttachment) {
     TEST_DESCRIPTION("Validate reading from a descriptor that uses same image view as framebuffer write attachment");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4930,7 +4932,7 @@ TEST_F(VkLayerTest, TestDescriptorReadFromWriteAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestDescriptorWriteFromReadAttachment) {
+TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     TEST_DESCRIPTION("Validate writting to a descriptor that uses same image view as framebuffer read attachment");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -5101,7 +5103,7 @@ TEST_F(VkLayerTest, TestDescriptorWriteFromReadAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
+TEST_F(NegativeDescriptors, AllocatingVariableDescriptorSets) {
     TEST_DESCRIPTION("Test allocating large variable descriptor sets");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -5156,7 +5158,7 @@ TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
+TEST_F(NegativeDescriptors, DescriptorSetLayoutBindings) {
     TEST_DESCRIPTION("Create descriptor set layout with incompatible bindings.");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -5206,7 +5208,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
+TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -5251,7 +5253,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
+TEST_F(NegativeDescriptors, BindingDescriptorSetFromHostOnlyPool) {
     TEST_DESCRIPTION(
         "Try to bind a descriptor set that was allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
 
@@ -5309,7 +5311,7 @@ TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyMutableDescriptors) {
+TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
@@ -5616,7 +5618,7 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     }
 }
 
-TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
+TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     TEST_DESCRIPTION("Validate updating mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);

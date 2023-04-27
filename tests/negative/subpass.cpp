@@ -16,7 +16,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
+class NegativeSubpass : public VkLayerTest {};
+
+TEST_F(NegativeSubpass, NonGraphicsPipeline) {
     TEST_DESCRIPTION("Create a subpass with the compute pipeline bind point");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -37,7 +39,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
                          "VUID-VkSubpassDescription-pipelineBindPoint-00844", "VUID-VkSubpassDescription2-pipelineBindPoint-03062");
 }
 
-TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
+TEST_F(NegativeSubpass, InputAttachmentParameters) {
     TEST_DESCRIPTION("Create a subpass with parameters in the input attachment ref which are invalid");
 
     // Check for VK_KHR_get_physical_device_properties2
@@ -91,7 +93,7 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
     TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02801"});
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
+TEST_F(NegativeSubpass, SubpassDependencies) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -311,7 +313,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassNextSubpassExcessive) {
+TEST_F(NegativeSubpass, NextSubpassExcessive) {
     TEST_DESCRIPTION("Test that an error is produced when CmdNextSubpass is called too many times in a renderpass instance");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -345,7 +347,7 @@ TEST_F(VkLayerTest, RenderPassNextSubpassExcessive) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, RenderPassEndBeforeFinalSubpass) {
+TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     TEST_DESCRIPTION("Test that an error is produced when CmdEndRenderPass is called before the final subpass has been reached");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -391,7 +393,7 @@ TEST_F(VkLayerTest, RenderPassEndBeforeFinalSubpass) {
     }
 }
 
-TEST_F(VkLayerTest, BadSubpassIndices) {
+TEST_F(NegativeSubpass, SubpassIndices) {
     TEST_DESCRIPTION("Create render pass with valid stages");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -443,7 +445,7 @@ TEST_F(VkLayerTest, BadSubpassIndices) {
     }
 }
 
-TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithSubpass) {
+TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     TEST_DESCRIPTION("Use a pipeline for the wrong subpass in a render pass instance");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -519,7 +521,7 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithSubpass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ImageBarrierSubpassConflict) {
+TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     TEST_DESCRIPTION("Check case where subpass index references different image from image barrier");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -584,7 +586,7 @@ TEST_F(VkLayerTest, ImageBarrierSubpassConflict) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
+TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     TEST_DESCRIPTION("Validate subpass input isn't bound to fragment shader or descriptor set");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -716,7 +718,7 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
+TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
     TEST_DESCRIPTION("Test creating render with invalid view mask bit");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -771,7 +773,7 @@ TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
+TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     TEST_DESCRIPTION("Test using pipeline with incompatible subpass index for current renderpass subpass");
 
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -879,7 +881,7 @@ TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, IgnoreSubpassDependencyMasksSync2) {
+TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     // Testing from the spec:
     // If a VkMemoryBarrier2 is included in the pNext chain,
     // srcStageMask, dstStageMask, srcAccessMask, and dstAccessMask parameters are ignored.
@@ -959,7 +961,7 @@ TEST_F(VkLayerTest, IgnoreSubpassDependencyMasksSync2) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
+TEST_F(NegativeSubpass, InputAttachmentReferences) {
     TEST_DESCRIPTION("Create a subpass with the meta data aspect mask set for an input attachment");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -1017,7 +1019,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01927", nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
+TEST_F(NegativeSubpass, InputAttachmentLayout) {
     TEST_DESCRIPTION("Create renderpass where an input attachment is also uses as another type");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1098,7 +1100,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
     vk_testing::RenderPass render_pass(*m_device, rpci);
 }
 
-TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
+TEST_F(NegativeSubpass, InputAttachmentMissing) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description");
@@ -1124,7 +1126,7 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
-TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
+TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description -- array case");
@@ -1150,7 +1152,7 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
-TEST_F(VkLayerTest, CreatePipelineInputAttachmentSharingVariable) {
+TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
     TEST_DESCRIPTION("Make sure if 2 loads use same variable, both are tracked");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1210,7 +1212,7 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentSharingVariable) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
-TEST_F(VkLayerTest, SubpassInputWithoutFormat) {
+TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     TEST_DESCRIPTION("Non-InputAttachment shader input with unknown image format");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

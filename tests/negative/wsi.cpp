@@ -19,7 +19,9 @@
 #include "wayland-client.h"
 #endif
 
-TEST_F(VkLayerTest, InitSwapchainPotentiallyIncompatibleFlag) {
+class NegativeWsi : public VkLayerTest {};
+
+TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
     TEST_DESCRIPTION("Initialize swapchain with potentially incompatible flags");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -102,7 +104,7 @@ TEST_F(VkLayerTest, InitSwapchainPotentiallyIncompatibleFlag) {
     }
 }
 
-TEST_F(VkLayerTest, BindImageMemorySwapchain) {
+TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     TEST_DESCRIPTION("Invalid bind image with a swapchain");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -204,7 +206,7 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
 }
 
-TEST_F(VkLayerTest, ValidSwapchainImage) {
+TEST_F(NegativeWsi, SwapchainImage) {
     TEST_DESCRIPTION("Swapchain images with invalid parameters");
     const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
 
@@ -291,7 +293,7 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
     }
 }
 
-TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
+TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image with a invalid layout between device group");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -421,7 +423,7 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     // peer_image is a presentable image and controlled by the implementation
 }
 
-TEST_F(VkLayerTest, ValidSwapchainImageParams) {
+TEST_F(NegativeWsi, SwapchainImageParams) {
     TEST_DESCRIPTION("Swapchain with invalid implied image creation parameters");
     const char *vuid = "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778";
 
@@ -522,7 +524,7 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     m_swapchain = VK_NULL_HANDLE;
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
+TEST_F(NegativeWsi, SwapchainAcquireImageNoSync) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with VK_NULL_HANDLE semaphore and fence");
 
     AddSurfaceExtension();
@@ -544,7 +546,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
     }
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
+TEST_F(NegativeWsi, SwapchainAcquireImageNoSync2KHR) {
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -578,7 +580,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
     }
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
+TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with non-binary semaphore");
 
     AddSurfaceExtension();
@@ -617,7 +619,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
+TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with non-binary semaphore");
 
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
@@ -672,7 +674,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
+TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain.");
 
     AddSurfaceExtension();
@@ -708,7 +710,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
+TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
     TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
 
     AddSurfaceExtension();
@@ -729,7 +731,7 @@ TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SwapchainNotSupported) {
+TEST_F(NegativeWsi, SwapchainNotSupported) {
     TEST_DESCRIPTION("Test creating a swapchain when GetPhysicalDeviceSurfaceSupportKHR returns VK_FALSE");
 
     AddSurfaceExtension();
@@ -817,7 +819,7 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
+TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain via vkAcquireNextImage2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -866,7 +868,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
+TEST_F(NegativeWsi, SwapchainImageFormatList) {
     TEST_DESCRIPTION("Test VK_KHR_image_format_list and VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR with swapchains");
 
     AddSurfaceExtension();
@@ -971,7 +973,7 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
 
-TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
+TEST_F(NegativeWsi, SwapchainMinImageCountNonShared) {
     TEST_DESCRIPTION("Use invalid minImageCount for non shared swapchain creation");
     AddSurfaceExtension();
 
@@ -1020,7 +1022,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
 
-TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
+TEST_F(NegativeWsi, SwapchainMinImageCountShared) {
     TEST_DESCRIPTION("Use invalid minImageCount for shared swapchain creation");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1097,7 +1099,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
 
-TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
+TEST_F(NegativeWsi, SwapchainUsageNonShared) {
     TEST_DESCRIPTION("Use invalid imageUsage for non-shared swapchain creation");
     AddSurfaceExtension();
 
@@ -1144,7 +1146,7 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
+TEST_F(NegativeWsi, SwapchainUsageShared) {
     TEST_DESCRIPTION("Use invalid imageUsage for shared swapchain creation");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1218,7 +1220,7 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDeviceMask) {
+TEST_F(NegativeWsi, DeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -1403,7 +1405,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, DisplayPlaneSurface) {
+TEST_F(NegativeWsi, DisplayPlaneSurface) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects to test VkDisplaySurfaceCreateInfoKHR.");
 
     AddSurfaceExtension();
@@ -1542,7 +1544,7 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
+TEST_F(NegativeWsi, WarningSwapchainCreateInfoPreTransform) {
     TEST_DESCRIPTION("Print warning when preTransform doesn't match curretTransform");
 
     AddSurfaceExtension();
@@ -1562,7 +1564,7 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
+TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     TEST_DESCRIPTION("Test semaphoreCounts in DeviceGroupSubmitInfo");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1642,7 +1644,7 @@ TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
+TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with signaled semaphore");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -1685,7 +1687,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
+TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
@@ -1731,7 +1733,7 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, LeakASwapchain) {
+TEST_F(NegativeWsi, LeakASwapchain) {
     TEST_DESCRIPTION("Leak a VkSwapchainKHR.");
     // Because this test intentionally leaks swapchains & surfaces, we need to disable leak checking because drivers may leak memory
     // that cannot be cleaned up from this test.
@@ -1764,7 +1766,7 @@ TEST_F(VkLayerTest, LeakASwapchain) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PresentIdWait) {
+TEST_F(NegativeWsi, PresentIdWait) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
@@ -1867,7 +1869,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
     DestroySurfaceContext(surface_context);
 }
 
-TEST_F(VkLayerTest, PresentIdWaitFeatures) {
+TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
@@ -1918,7 +1920,7 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
+TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     TEST_DESCRIPTION("Test for getting swapchain images count and presenting before getting swapchain images.");
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1972,7 +1974,7 @@ TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
+TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
     TEST_DESCRIPTION("Test if physical device supports surface.");
     AddOptionalExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -2109,7 +2111,7 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     }
 }
 
-TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsAcquire) {
+TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     TEST_DESCRIPTION("Test swapchain Maintenance1 extensions.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -2435,7 +2437,7 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsAcquire) {
     }
 }
 
-TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsCaps) {
+TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     TEST_DESCRIPTION("Test swapchain and surface Maintenance1 extensions.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -2588,7 +2590,7 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsCaps) {
     }
 }
 
-TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
+TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     TEST_DESCRIPTION("Test acquiring swapchain images with Maint1 features.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2757,7 +2759,7 @@ TEST_F(VkLayerTest, SwapchainMaintenance1ExtensionTestsRelease) {
 }
 
 #if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
-TEST_F(VkLayerTest, AcquireFullScreenExclusiveModeEXT) {
+TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2841,7 +2843,7 @@ TEST_F(VkLayerTest, AcquireFullScreenExclusiveModeEXT) {
 #endif
 
 #if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
-TEST_F(VkLayerTest, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
+TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2874,7 +2876,7 @@ TEST_F(VkLayerTest, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
 }
 #endif
 
-TEST_F(VkLayerTest, TestCreatingWin32Surface) {
+TEST_F(NegativeWsi, CreatingWin32Surface) {
     TEST_DESCRIPTION("Test creating win32 surface with invalid hwnd");
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -2894,7 +2896,7 @@ TEST_F(VkLayerTest, TestCreatingWin32Surface) {
 #endif
 }
 
-TEST_F(VkLayerTest, CreatingWaylandSurface) {
+TEST_F(NegativeWsi, CreatingWaylandSurface) {
     TEST_DESCRIPTION("Test creating wayland surface with invalid display/surface");
 
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
@@ -2986,7 +2988,7 @@ TEST_F(VkLayerTest, CreatingWaylandSurface) {
 #endif
 }
 
-TEST_F(VkLayerTest, CreatingXcbSurface) {
+TEST_F(NegativeWsi, CreatingXcbSurface) {
     TEST_DESCRIPTION("Test creating xcb surface with invalid connection/window");
 
 #ifndef VK_USE_PLATFORM_XCB_KHR
@@ -3042,7 +3044,7 @@ TEST_F(VkLayerTest, CreatingXcbSurface) {
 #endif
 }
 
-TEST_F(VkLayerTest, CreatingX11Surface) {
+TEST_F(NegativeWsi, CreatingX11Surface) {
     TEST_DESCRIPTION("Test creating invalid x11 surface");
 
 #ifndef VK_USE_PLATFORM_XLIB_KHR
@@ -3098,7 +3100,7 @@ TEST_F(VkLayerTest, CreatingX11Surface) {
 #endif
 }
 
-TEST_F(VkLayerTest, UseSwapchainImageBeforeWait) {
+TEST_F(NegativeWsi, UseSwapchainImageBeforeWait) {
     TEST_DESCRIPTION("Test using a swapchain image that was acquired but not waited on.");
 
     AddSurfaceExtension();
@@ -3138,7 +3140,7 @@ TEST_F(VkLayerTest, UseSwapchainImageBeforeWait) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
+TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     TEST_DESCRIPTION("Create swapchain with extent greater than maxImageExtent of SurfaceCapabilities");
 
     AddSurfaceExtension();
@@ -3182,7 +3184,7 @@ TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
+TEST_F(NegativeWsi, SurfaceQueryImageCompressionControlWithoutExtension) {
     TEST_DESCRIPTION("Test querying surface image compression control without extension.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
@@ -3225,7 +3227,7 @@ TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
 }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-TEST_F(VkLayerTest, PhysicalDeviceSurfaceCapabilities) {
+TEST_F(NegativeWsi, PhysicalDeviceSurfaceCapabilities) {
     TEST_DESCRIPTION("Test pNext in GetPhysicalDeviceSurfaceCapabilities2KHR");
 
     AddSurfaceExtension();
@@ -3259,7 +3261,7 @@ TEST_F(VkLayerTest, PhysicalDeviceSurfaceCapabilities) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
         //
-TEST_F(VkLayerTest, QueuePresentWaitingSameSemaphore) {
+TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
@@ -3314,7 +3316,7 @@ TEST_F(VkLayerTest, QueuePresentWaitingSameSemaphore) {
     vk::QueueWaitIdle(other);
 }
 
-TEST_F(VkLayerTest, QueuePresentBinarySemaphoreNotSignaled) {
+TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     TEST_DESCRIPTION("Submit a present operation with a waiting binary semaphore not previously signaled.");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
@@ -3374,7 +3376,7 @@ TEST_F(VkLayerTest, QueuePresentBinarySemaphoreNotSignaled) {
     ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 }
 
-TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
+TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with retired swapchain");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 

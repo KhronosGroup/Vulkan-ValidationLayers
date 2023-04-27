@@ -384,7 +384,7 @@ class VkGpuAssistedLayerTest : public VkLayerTest {
     bool CanEnableGpuAV();
 };
 
-class VkDebugPrintfTest : public VkLayerTest {
+class NegativeDebugPrintf : public VkLayerTest {
   public:
     void InitDebugPrintfFramework();
 

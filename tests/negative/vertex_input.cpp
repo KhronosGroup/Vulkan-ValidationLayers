@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, CreatePipelineBadVertexAttributeFormat) {
+class NegativeVertexInput : public VkLayerTest {};
+
+TEST_F(NegativeVertexInput, AttributeFormat) {
     TEST_DESCRIPTION("Test that pipeline validation catches invalid vertex attribute formats");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -45,7 +47,7 @@ TEST_F(VkLayerTest, CreatePipelineBadVertexAttributeFormat) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkVertexInputAttributeDescription-format-00623");
 }
 
-TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
+TEST_F(NegativeVertexInput, DivisorExtension) {
     TEST_DESCRIPTION("Test VUIDs added with VK_EXT_vertex_attribute_divisor extension.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -132,7 +134,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
     }
 }
 
-TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
+TEST_F(NegativeVertexInput, DivisorDisabled) {
     TEST_DESCRIPTION("Test instance divisor feature disabled for VK_EXT_vertex_attribute_divisor extension.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -178,7 +180,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
                                       "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229");
 }
 
-TEST_F(VkLayerTest, VertexAttributeDivisorInstanceRateZero) {
+TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
     TEST_DESCRIPTION("Test instanceRateZero feature of VK_EXT_vertex_attribute_divisor extension.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -216,7 +218,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorInstanceRateZero) {
         "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
-TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_binding_00618) {
+TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-binding-00618: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
@@ -235,7 +237,7 @@ TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_binding_00618) {
     CreatePipelineHelper::OneshotTest(*this, set_binding, kErrorBit, "VUID-VkVertexInputBindingDescription-binding-00618");
 }
 
-TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_stride_00619) {
+TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindingStride) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-stride-00619: stride must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputBindingStride");
@@ -254,7 +256,7 @@ TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_stride_00619) {
     CreatePipelineHelper::OneshotTest(*this, set_binding, kErrorBit, "VUID-VkVertexInputBindingDescription-stride-00619");
 }
 
-TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
+TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-location-00620: location must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputAttributes");
@@ -276,7 +278,7 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
                                                      "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
-TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
+TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-binding-00621: binding must be less than "
         "VkPhysicalDeviceLimits::maxVertexInputBindings");
@@ -298,7 +300,7 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
                                                      "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
-TEST_F(VkLayerTest, VertexInputAttributeDescriptionOffset) {
+TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
@@ -331,7 +333,7 @@ TEST_F(VkLayerTest, VertexInputAttributeDescriptionOffset) {
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit, "VUID-VkVertexInputAttributeDescription-offset-00622");
 }
 
-TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
+TEST_F(NegativeVertexInput, BindingDescriptions) {
     TEST_DESCRIPTION(
         "Attempt to create a graphics pipeline where:"
         "1) count of vertex bindings exceeds device's maxVertexInputBindings limit"
@@ -368,7 +370,7 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     CreatePipelineHelper::OneshotTest(*this, set_Info, kErrorBit, vuids);
 }
 
-TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
+TEST_F(NegativeVertexInput, AttributeDescriptions) {
     TEST_DESCRIPTION(
         "Attempt to create a graphics pipeline where:"
         "1) count of vertex attributes exceeds device's maxVertexInputAttributes limit"
@@ -408,7 +410,7 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
     CreatePipelineHelper::OneshotTest(*this, set_Info, kErrorBit, vuids);
 }
 
-TEST_F(VkLayerTest, UsingProvokingVertexModeLastVertexExtWithoutEnabled) {
+TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     TEST_DESCRIPTION("Test using VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't enable provokingVertexLast.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -427,7 +429,7 @@ TEST_F(VkLayerTest, UsingProvokingVertexModeLastVertexExtWithoutEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
+TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     TEST_DESCRIPTION(
         "Test using different VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't support provokingVertexModePerPipeline.");
 
@@ -496,7 +498,7 @@ TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, VerifyVertextBinding) {
+TEST_F(NegativeVertexInput, VertextBinding) {
     TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -542,7 +544,7 @@ TEST_F(VkLayerTest, VerifyVertextBinding) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
+TEST_F(NegativeVertexInput, AttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -649,7 +651,7 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
+TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -671,7 +673,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "location 0 not consumed by vertex shader");
 }
 
-TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
+TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
     TEST_DESCRIPTION(
         "Test that a warning is produced for a location mismatch on vertex attributes. This flushes out bad behavior in the "
         "interface walker");
@@ -697,7 +699,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "location 0 not consumed by vertex shader");
 }
 
-TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
+TEST_F(NegativeVertexInput, AttributeNotProvided) {
     TEST_DESCRIPTION("Test that an error is produced for a vertex shader input which is not provided by a vertex attribute");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -718,7 +720,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Vertex shader consumes input at location 0 but not provided");
 }
 
-TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
+TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a mismatch between the fundamental type (float/int/uint) of an attribute and the "
         "vertex shader input that consumes it");
@@ -752,7 +754,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "location 0 does not match vertex shader input type");
 }
 
-TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
+TEST_F(NegativeVertexInput, AttributeBindingConflict) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a vertex attribute setup where multiple bindings provide the same location");
 

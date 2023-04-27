@@ -18,9 +18,9 @@
 #include <array>
 #include <chrono>
 
-class VkGraphicsLibraryLayerTest : public VkLayerTest {};
+class NegativeGraphicsLibrary : public VkLayerTest {};
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLs) {
+TEST_F(NegativeGraphicsLibrary, DSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -49,7 +49,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
+TEST_F(NegativeGraphicsLibrary, GPLDSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts with VK_EXT_grahpics_pipeline_library enabled");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -85,7 +85,7 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
+TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
     TEST_DESCRIPTION("Link pre-raster and FS subsets with invalid VkPipelineLayout create flags");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -164,7 +164,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkCreate) {
+TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
     TEST_DESCRIPTION("Create pre-raster subset while linking FS subset with invalid VkPipelineLayout create flags");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -237,7 +237,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkCreate) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSets) {
+TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
     TEST_DESCRIPTION(
         "Attempt to bind invalid descriptor sets with and without VK_EXT_graphics_pipeline_library and independent sets");
 
@@ -264,7 +264,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSets) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
+TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
     TEST_DESCRIPTION("Attempt to bind invalid descriptor sets with and with VK_EXT_graphics_pipeline_library");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -299,7 +299,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
+TEST_F(NegativeGraphicsLibrary, MissingDSState) {
     TEST_DESCRIPTION("Create a library with fragment shader state, but no fragment output state, and invalid DS state");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -349,7 +349,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, MissingDSStateWithFragOutputState) {
+TEST_F(NegativeGraphicsLibrary, MissingDSStateWithFragOutputState) {
     TEST_DESCRIPTION("Create a library with both fragment shader state and fragment output state, and invalid DS state");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -456,7 +456,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingDSStateWithFragOutputState) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, MissingColorBlendState) {
+TEST_F(NegativeGraphicsLibrary, MissingColorBlendState) {
     TEST_DESCRIPTION("Create a library with fragment output state and invalid ColorBlendState state");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -530,7 +530,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingColorBlendState) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
+TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
     TEST_DESCRIPTION("Test various VUIDs that were previously implicit, but now explicit due to VK_EXT_graphics_pipeline_library");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -562,7 +562,7 @@ TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
+TEST_F(NegativeGraphicsLibrary, CreateStateGPL) {
     TEST_DESCRIPTION("Create invalid graphics pipeline state with VK_EXT_graphics_pipeline_library enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -630,7 +630,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
+TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
     TEST_DESCRIPTION("Create graphics pipeline libraries with mismatching link-time optimization flags");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -706,7 +706,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInCreate) {
+TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
     TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -792,7 +792,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInCreate) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInLink) {
+TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
     TEST_DESCRIPTION("Link pre-raster state with invalid null DSL + shader stage bindings while creating FS state");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -878,7 +878,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInLink) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsLinkOnly) {
+TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
     TEST_DESCRIPTION("Link pre-raster and FS subsets with invalid null DSL + shader stage bindings");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -970,7 +970,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsLinkOnly) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, CreateGraphicsPipelineWithMissingMultisampleState) {
+TEST_F(NegativeGraphicsLibrary, MissingMultisampleState) {
     TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1004,7 +1004,7 @@ TEST_F(VkGraphicsLibraryLayerTest, CreateGraphicsPipelineWithMissingMultisampleS
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, PreRasterStateNoLayout) {
+TEST_F(NegativeGraphicsLibrary, PreRasterStateNoLayout) {
     TEST_DESCRIPTION("Create a pre-raster graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1048,7 +1048,7 @@ TEST_F(VkGraphicsLibraryLayerTest, PreRasterStateNoLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
+TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     TEST_DESCRIPTION("Link pipelines with DSLs that only differ by immutable samplers");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1193,7 +1193,7 @@ TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, PreRasterWithFS) {
+TEST_F(NegativeGraphicsLibrary, PreRasterWithFS) {
     TEST_DESCRIPTION("Create a library with no FS state, but an FS");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1248,7 +1248,7 @@ TEST_F(VkGraphicsLibraryLayerTest, PreRasterWithFS) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, FragmentStateWithPreRaster) {
+TEST_F(NegativeGraphicsLibrary, FragmentStateWithPreRaster) {
     TEST_DESCRIPTION("Create a library with no pre-raster state, but that contains a pre-raster shader.");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1302,7 +1302,7 @@ TEST_F(VkGraphicsLibraryLayerTest, FragmentStateWithPreRaster) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, MissingShaderStages) {
+TEST_F(NegativeGraphicsLibrary, MissingShaderStages) {
     TEST_DESCRIPTION("Create a library with pre-raster state, but no pre-raster shader");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1335,7 +1335,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingShaderStages) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, DescriptorBufferLibrary) {
+TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     TEST_DESCRIPTION("Descriptor buffer and graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1442,7 +1442,7 @@ TEST_F(VkGraphicsLibraryLayerTest, DescriptorBufferLibrary) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
+TEST_F(NegativeGraphicsLibrary, DSLShaderStageMask) {
     TEST_DESCRIPTION(
         "Attempt to bind invalid descriptor sets with and without VK_EXT_graphics_pipeline_library and independent sets");
 
@@ -1542,7 +1542,7 @@ TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
+TEST_F(NegativeGraphicsLibrary, Tessellation) {
     TEST_DESCRIPTION("Test various errors when creating a graphics pipeline with tessellation stages active.");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1756,7 +1756,7 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, PipelineExecutableProperties) {
+TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
     TEST_DESCRIPTION("VK_KHR_pipeline_executable_properties with GPL");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1848,7 +1848,7 @@ TEST_F(VkGraphicsLibraryLayerTest, PipelineExecutableProperties) {
     }
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, BindEmptyDS) {
+TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     TEST_DESCRIPTION("Bind an empty descriptor set");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -1996,7 +1996,7 @@ TEST_F(VkGraphicsLibraryLayerTest, BindEmptyDS) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, BindLibraryPipeline) {
+TEST_F(NegativeGraphicsLibrary, BindLibraryPipeline) {
     TEST_DESCRIPTION("Test binding a pipeline that was created with library flag");
 
     AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -2027,7 +2027,7 @@ TEST_F(VkGraphicsLibraryLayerTest, BindLibraryPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifier) {
+TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     TEST_DESCRIPTION("Test for VK_EXT_shader_module_identifier extension.");
     TEST_DESCRIPTION("Create a pipeline using a shader module identifier");
     SetTargetApiVersion(VK_API_VERSION_1_3);  // Pipeline cache control needed
@@ -2141,7 +2141,7 @@ TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifier) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifierFeatures) {
+TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     TEST_DESCRIPTION("Test for VK_EXT_shader_module_identifier extension with missing features.");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
@@ -2197,7 +2197,7 @@ TEST_F(VkGraphicsLibraryLayerTest, ShaderModuleIdentifierFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, InvalidLayouts) {
+TEST_F(NegativeGraphicsLibrary, Layouts) {
     TEST_DESCRIPTION("Various invalid layouts");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -2268,7 +2268,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLayouts) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkGraphicsLibraryLayerTest, IncompatibleLayouts) {
+TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);

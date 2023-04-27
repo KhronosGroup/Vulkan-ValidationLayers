@@ -13,9 +13,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class VkPortabilitySubsetTest : public VkLayerTest {};
+class NegativePortabilitySubset : public VkLayerTest {};
 
-TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
+TEST_F(NegativePortabilitySubset, Device) {
     TEST_DESCRIPTION("Portability: CreateDevice called and VK_KHR_portability_subset not enabled");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -53,7 +53,7 @@ TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
+TEST_F(NegativePortabilitySubset, Event) {
     TEST_DESCRIPTION("Portability: CreateEvent when not supported");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -74,7 +74,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateImage) {
+TEST_F(NegativePortabilitySubset, Image) {
     TEST_DESCRIPTION("Portability: CreateImage - VUIDs 04459, 04460");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -115,7 +115,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImage) {
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-multisampleArrayImage-04460");
 }
 
-TEST_F(VkPortabilitySubsetTest, ImageViewFormatSwizzle) {
+TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
     TEST_DESCRIPTION("Portability: If imageViewFormatSwizzle is not enabled");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -169,7 +169,7 @@ TEST_F(VkPortabilitySubsetTest, ImageViewFormatSwizzle) {
     CreateImageViewTest(*this, &ci);
 }
 
-TEST_F(VkPortabilitySubsetTest, ImageViewFormatReinterpretationComponentCount) {
+TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount) {
     TEST_DESCRIPTION("Portability: If ImageViewFormatReinterpretation is not enabled");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -216,7 +216,7 @@ TEST_F(VkPortabilitySubsetTest, ImageViewFormatReinterpretationComponentCount) {
     CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateSampler) {
+TEST_F(NegativePortabilitySubset, Sampler) {
     TEST_DESCRIPTION("Portability: CreateSampler - VUID 04467");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -236,7 +236,7 @@ TEST_F(VkPortabilitySubsetTest, CreateSampler) {
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467");
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
+TEST_F(NegativePortabilitySubset, TriangleFans) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04452");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -267,7 +267,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
+TEST_F(NegativePortabilitySubset, VertexInputStride) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04456");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -314,7 +314,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
+TEST_F(NegativePortabilitySubset, VertexAttributes) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04457");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -356,7 +356,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
+TEST_F(NegativePortabilitySubset, RasterizationState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04458");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -405,7 +405,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
+TEST_F(NegativePortabilitySubset, DepthStencilState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04453");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -447,7 +447,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState) {
+TEST_F(NegativePortabilitySubset, ColorBlendAttachmentState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUIDs 04454, 04455");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -491,6 +491,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
     m_errorMonitor->VerifyFound();
 }
 
+class VkPortabilitySubsetTest : public VkLayerTest {};
 TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     TEST_DESCRIPTION("Portability: UpdateDescriptorSets - VUID 04450");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);

@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-TEST_F(VkLayerTest, ImageBarrierSubpassConflicts) {
+class NegativeSyncObject : public VkLayerTest {};
+
+TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     TEST_DESCRIPTION("Add a pipeline barrier within a subpass that has conflicting state");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -209,7 +211,7 @@ TEST_F(VkLayerTest, ImageBarrierSubpassConflicts) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 }
 
-TEST_F(VkLayerTest, BufferMemoryBarrierNoBuffer) {
+TEST_F(NegativeSyncObject, BufferMemoryBarrierNoBuffer) {
     // Try to add a buffer memory barrier with no buffer.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "required parameter pBufferMemoryBarriers[0].buffer specified as VK_NULL_HANDLE");
@@ -231,7 +233,7 @@ TEST_F(VkLayerTest, BufferMemoryBarrierNoBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidBarriers) {
+TEST_F(NegativeSyncObject, Barriers) {
     TEST_DESCRIPTION("A variety of ways to get VK_INVALID_BARRIER ");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -785,7 +787,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     bad_command_buffer.end();
 }
 
-TEST_F(VkLayerTest, Sync2InvalidBarriers) {
+TEST_F(NegativeSyncObject, Sync2Barriers) {
     TEST_DESCRIPTION("Synchronization2 test for invalid Memory Barriers");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -1237,7 +1239,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
+TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -1339,7 +1341,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
+TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1398,7 +1400,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     excl_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, submit_family);
 }
 
-TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
+TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     TEST_DESCRIPTION("VkImageMemoryBarrier with an invalid subresourceRange");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1589,7 +1591,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
     // clang-format on
 }
 
-TEST_F(VkLayerTest, Sync2InvalidBarrierQueueFamily) {
+TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families with synchronization2");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -1657,7 +1659,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarrierQueueFamily) {
     excl_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, submit_family);
 }
 
-TEST_F(VkLayerTest, TestInvalidBarrierQueues) {
+TEST_F(NegativeSyncObject, BarrierQueues) {
     TEST_DESCRIPTION("Test buffer memory with both src and dst queue VK_QUEUE_FAMILY_EXTERNAL.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1683,7 +1685,7 @@ TEST_F(VkLayerTest, TestInvalidBarrierQueues) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestBarrierAccessSync2) {
+TEST_F(NegativeSyncObject, BarrierAccessSync2) {
     TEST_DESCRIPTION("Test barrier VkAccessFlagBits2.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1880,7 +1882,7 @@ TEST_F(VkLayerTest, TestBarrierAccessSync2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
+TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
     TEST_DESCRIPTION("Test barrier with access decode read bit.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1929,7 +1931,7 @@ TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Sync2LayoutFeature) {
+TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
@@ -1967,7 +1969,7 @@ TEST_F(VkLayerTest, Sync2LayoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SubmitSignaledFence) {
+TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     vk_testing::Fence testFence;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "submitted in SIGNALED state.  Fences must be reset before being submitted");
@@ -2000,7 +2002,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
+TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
 
     AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -2088,7 +2090,7 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
     }
 }
 
-TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
+TEST_F(NegativeSyncObject, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using QueueSubmit2KHR when synchronization2 is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -2111,7 +2113,7 @@ TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
     }
 }
 
-TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
+TEST_F(NegativeSyncObject, WaitEventsDifferentQueues) {
     TEST_DESCRIPTION("Using CmdWaitEvents with invalid barrier queues");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2167,7 +2169,7 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoCore) {
+TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoCore) {
     TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with a 1.2 core version");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2200,7 +2202,7 @@ TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoCore) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoExtension) {
+TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoExtension) {
     TEST_DESCRIPTION("Invalid usage of VkSemaphoreTypeCreateInfo with extension");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);  // before timelineSemaphore was added to core
@@ -2235,7 +2237,7 @@ TEST_F(VkLayerTest, InvalidVkSemaphoreTypeCreateInfoExtension) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
+TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     TEST_DESCRIPTION("Submit mixtures of timeline and binary semaphores");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2336,7 +2338,7 @@ TEST_F(VkLayerTest, MixedTimelineAndBinarySemaphores) {
     vk::DestroySemaphore(m_device->device(), extra_binary, nullptr);
 }
 
-TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
+TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     TEST_DESCRIPTION("Submit a queue with a timeline semaphore but not a VkTimelineSemaphoreSubmitInfoKHR.");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2393,7 +2395,7 @@ TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
-TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
+TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     TEST_DESCRIPTION("Submit a queue with a timeline semaphore using a wrong payload value.");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2522,7 +2524,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
+TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     TEST_DESCRIPTION("Submit a queue with a timeline semaphore using a wrong payload value.");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2664,7 +2666,7 @@ TEST_F(VkLayerTest, QueueBindSparseTimelineSemaphoreBadValue) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
+TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
     TEST_DESCRIPTION("Submit a queue with a timeline semaphore using a wrong payload value.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -2770,7 +2772,7 @@ TEST_F(VkLayerTest, Sync2QueueSubmitTimelineSemaphoreBadValue) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
+TEST_F(NegativeSyncObject, QueueSubmitBinarySemaphoreNotSignaled) {
     TEST_DESCRIPTION("Submit a queue with a waiting binary semaphore not previously signaled.");
 
     AddOptionalExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2915,7 +2917,7 @@ TEST_F(VkLayerTest, QueueSubmitBinarySemaphoreNotSignaled) {
     }
 }
 
-TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
+TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreOutOfOrder) {
     TEST_DESCRIPTION("Submit out-of-order timeline semaphores.");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -3019,7 +3021,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
     vk::DestroyDevice(dev, nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
+TEST_F(NegativeSyncObject, WaitSemaphoresType) {
     TEST_DESCRIPTION("Wait for a non Timeline Semaphore");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3061,7 +3063,7 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
     vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
+TEST_F(NegativeSyncObject, SignalSemaphoreType) {
     TEST_DESCRIPTION("Signal a non Timeline Semaphore");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -3094,7 +3096,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreType) {
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
+TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     TEST_DESCRIPTION("Signal a Timeline Semaphore with invalid values");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -3232,7 +3234,7 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     vk::DestroySemaphore(m_device->device(), semaphore[1], nullptr);
 }
 
-TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
+TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     TEST_DESCRIPTION("Signal a Timeline Semaphore with invalid values");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -3343,7 +3345,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 }
 
-TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
+TEST_F(NegativeSyncObject, SemaphoreCounterType) {
     TEST_DESCRIPTION("Get payload from a non Timeline Semaphore");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -3375,7 +3377,7 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
-TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
+TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -3398,7 +3400,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferPass) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
+TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -3424,7 +3426,7 @@ TEST_F(VkLayerTest, EventStageMaskOneCommandBufferFail) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
+TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferPass) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -3453,7 +3455,7 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferPass) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
+TEST_F(NegativeSyncObject, EventStageMaskTwoCommandBufferFail) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -3485,7 +3487,7 @@ TEST_F(VkLayerTest, EventStageMaskTwoCommandBufferFail) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
+TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     TEST_DESCRIPTION("Call VkQueueSubmit with a semaphore that is already signaled but not waited on by the queue.");
 
     ASSERT_NO_FATAL_FAILURE(Init());

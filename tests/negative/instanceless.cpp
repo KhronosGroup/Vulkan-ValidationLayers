@@ -35,7 +35,9 @@
 
 static VkInstance dummy_instance;
 
-TEST_F(VkLayerTest, InstanceExtensionDependencies) {
+class NegativeInstanceless : public VkLayerTest {};
+
+TEST_F(NegativeInstanceless, InstanceExtensionDependencies) {
     TEST_DESCRIPTION("Test enabling instance extension without dependencies met.");
 
     if (!InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
@@ -50,7 +52,7 @@ TEST_F(VkLayerTest, InstanceExtensionDependencies) {
     Monitor().VerifyFound();
 }
 
-TEST_F(VkLayerTest, InstanceBadStype) {
+TEST_F(NegativeInstanceless, InstanceBadStype) {
     TEST_DESCRIPTION("Test creating instance with bad sType.");
 
     auto ici = GetInstanceCreateInfo();
@@ -61,7 +63,7 @@ TEST_F(VkLayerTest, InstanceBadStype) {
     Monitor().VerifyFound();
 }
 
-TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
+TEST_F(NegativeInstanceless, InstanceDuplicatePnextStype) {
     TEST_DESCRIPTION("Test creating instance with duplicate sType in the pNext chain.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)) {
@@ -79,7 +81,7 @@ TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
     Monitor().VerifyFound();
 }
 
-TEST_F(VkLayerTest, InstanceAppInfoBadStype) {
+TEST_F(NegativeInstanceless, InstanceAppInfoBadStype) {
     TEST_DESCRIPTION("Test creating instance with invalid sType in VkApplicationInfo.");
 
     auto ici = GetInstanceCreateInfo();
@@ -94,7 +96,7 @@ TEST_F(VkLayerTest, InstanceAppInfoBadStype) {
     Monitor().VerifyFound();
 }
 
-TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
+TEST_F(NegativeInstanceless, InstanceValidationFeaturesBadFlags) {
     TEST_DESCRIPTION("Test creating instance with invalid flags in VkValidationFeaturesEXT.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)) {
@@ -141,7 +143,7 @@ TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
     }
 }
 
-TEST_F(VkLayerTest, InstanceBadValidationFlags) {
+TEST_F(NegativeInstanceless, InstanceValidationFlags) {
     TEST_DESCRIPTION("Test creating instance with invalid VkValidationFlagsEXT.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME)) {
@@ -213,7 +215,7 @@ void* VKAPI_PTR DummyRealloc(void* pUserData, void* pOriginal, size_t size, size
 void VKAPI_PTR DummyInfoAlloc(void*, size_t, VkInternalAllocationType, VkSystemAllocationScope) {}
 void VKAPI_PTR DummyInfoFree(void*, size_t, VkInternalAllocationType, VkSystemAllocationScope) {}
 
-TEST_F(VkLayerTest, DestroyInstanceAllocationCallbacksCompatibility) {
+TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
     TEST_DESCRIPTION("Test vkDestroyInstance with incompatible allocation callbacks.");
 
     const auto ici = GetInstanceCreateInfo();
@@ -231,7 +233,7 @@ TEST_F(VkLayerTest, DestroyInstanceAllocationCallbacksCompatibility) {
 }
 
 // TODO - Currently can not be ran with Profile layer
-TEST_F(VkLayerTest, DISABLED_DestroyInstanceHandleLeak) {
+TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!IsPlatform(kMockICD)) {
