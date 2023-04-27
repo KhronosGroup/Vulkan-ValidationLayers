@@ -916,8 +916,18 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    vi_lib.CreateGraphicsPipeline();
+
+    // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
     pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
@@ -949,28 +959,19 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
         ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
     }
 
-    // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
-    CreatePipelineHelper vi_lib(*this);
-    vi_lib.InitVertexInputLibInfo();
-    vi_lib.InitState();
-    vi_lib.CreateGraphicsPipeline();
-
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pr_lib(*this);
-    {
-        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
-        vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
-        pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci, &pipeline_rendering_info);
-        pr_lib.rs_state_ci_.rasterizerDiscardEnable =
-            VK_TRUE;  // This should cause the bad info in pipeline_rendering_info to be ignored
-        pr_lib.InitState();
-        pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
-        pr_lib.CreateGraphicsPipeline();
-    }
+    pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci, &pipeline_rendering_info);
+    pr_lib.rs_state_ci_.rasterizerDiscardEnable =
+        VK_TRUE;  // This should cause the bad info in pipeline_rendering_info to be ignored
+    pr_lib.InitState();
+    pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pr_lib.CreateGraphicsPipeline();
 
     VkPipeline libraries[3] = {
-        vi_lib.pipeline_,
-        pr_lib.pipeline_,
-        fs_lib.pipeline_,
+        vi_lib.pipeline_, pr_lib.pipeline_, fs_lib.pipeline_,
+        // fragment output not needed due to rasterization being disabled
     };
     auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size32(libraries);
@@ -980,6 +981,129 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
+}
+
+TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
+    TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&dynamic_rendering_features);
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    vi_lib.CreateGraphicsPipeline();
+
+    // Create an executable pipeline with rasterization enabled and make a draw call using dynamic rendering
+    CreatePipelineHelper fs_lib(*this);
+    {
+        VkStencilOpState stencil = {};
+        stencil.failOp = VK_STENCIL_OP_KEEP;
+        stencil.passOp = VK_STENCIL_OP_KEEP;
+        stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+        stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+        auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        ds_ci.depthTestEnable = VK_FALSE;
+        ds_ci.depthWriteEnable = VK_TRUE;
+        ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+        ds_ci.depthBoundsTestEnable = VK_FALSE;
+        ds_ci.stencilTestEnable = VK_TRUE;
+        ds_ci.front = stencil;
+        ds_ci.back = stencil;
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+        fs_lib.InitState();
+        fs_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+        fs_lib.gp_ci_.pDepthStencilState = &ds_ci;
+        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline());
+    }
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    CreatePipelineHelper pr_lib(*this);
+    pr_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
+    pr_lib.InitState();
+    pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pr_lib.CreateGraphicsPipeline();
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+    pipeline_rendering_info.depthAttachmentFormat = m_depth_stencil_fmt;
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
+    fo_lib.InitState();
+    fo_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+
+    // Create an executable pipeline with rasterization disabled
+    VkPipeline libraries[4] = {
+        vi_lib.pipeline_,
+        pr_lib.pipeline_,
+        fs_lib.pipeline_,
+        fo_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+
+    auto color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    auto depth_attachment = LvlInitStruct<VkRenderingAttachmentInfo>();
+    depth_attachment.imageView = *m_depthStencil->BindInfo();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
 }
 
 TEST_F(PositiveGraphicsLibrary, DepthState) {
