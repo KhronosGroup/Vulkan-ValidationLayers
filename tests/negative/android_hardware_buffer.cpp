@@ -20,7 +20,9 @@
 
 #ifdef AHB_VALIDATION_SUPPORT
 
-TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
+class NegativeAndroidHardwareBuffer : public VkLayerTest {};
+
+TEST_F(NegativeAndroidHardwareBuffer, ImageCreate) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -134,7 +136,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
+TEST_F(NegativeAndroidHardwareBuffer, FetchUnboundImageInfo) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer retreive image properties while memory unbound.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -181,7 +183,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferGpuDataBuffer) {
+TEST_F(NegativeAndroidHardwareBuffer, GpuDataBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer missing USAGE_GPU_DATA_BUFFER.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -228,7 +230,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuDataBuffer) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferAllocationSize) {
+TEST_F(NegativeAndroidHardwareBuffer, AllocationSize) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer correct allocationSize is used.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -287,7 +289,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferAllocationSize) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageColor) {
+TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageColor) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer correct usage for dedicated allocated color image.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -355,7 +357,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageColor) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageDS) {
+TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageDS) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer correct usage for dedicated allocated depth/stencil image.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -433,7 +435,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDedicatedUsageDS) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferMipmapChain) {
+TEST_F(NegativeAndroidHardwareBuffer, MipmapChain) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer correct mipmap chain.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -503,7 +505,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMipmapChain) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferImageDimensions) {
+TEST_F(NegativeAndroidHardwareBuffer, ImageDimensions) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer dimension and VkImage match.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -571,7 +573,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageDimensions) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferUnknownFormat) {
+TEST_F(NegativeAndroidHardwareBuffer, UnknownFormat) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer uses VK_FORMAT_UNDEFINED for external.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -636,7 +638,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferUnknownFormat) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
+TEST_F(NegativeAndroidHardwareBuffer, GpuUsage) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer has a GPU usage flag.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -723,7 +725,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferGpuUsage) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferExportMemoryAllocate) {
+TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocate) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer VkExportMemoryAllocateInfo instead of import.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -791,7 +793,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportMemoryAllocate) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
+TEST_F(NegativeAndroidHardwareBuffer, CreateYCbCrSampler) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -836,7 +838,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     vk_testing::SamplerYcbcrConversion conversion(*m_device, sycci);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
+TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer GetPhysicalDeviceImageFormatProperties.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -877,7 +879,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
 }
 
 #if DISABLEUNTILAHBWORKS
-TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
+TEST_F(NegativeAndroidHardwareBuffer, CreateImageView) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image view creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1042,7 +1044,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
 }
 #endif  // DISABLEUNTILAHBWORKS
 
-TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
+TEST_F(NegativeAndroidHardwareBuffer, ImportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1096,7 +1098,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferExportBufferHandleType) {
+TEST_F(NegativeAndroidHardwareBuffer, ExportBufferHandleType) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer export memory as AHB has a valid handleType.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1127,7 +1129,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportBufferHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferExportImageNonBound) {
+TEST_F(NegativeAndroidHardwareBuffer, ExportImageNonBound) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer export memory as AHB has image bound already.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1192,7 +1194,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExportImageNonBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
+TEST_F(NegativeAndroidHardwareBuffer, InvalidBindBufferMemory) {
     TEST_DESCRIPTION("Validate binding AndroidHardwareBuffer VkBuffer act same as non-AHB buffers.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1269,7 +1271,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
+TEST_F(NegativeAndroidHardwareBuffer, ImportBufferHandleType) {
     TEST_DESCRIPTION("Don't use proper resource handleType for import buffer");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
@@ -1337,7 +1339,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
+TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     TEST_DESCRIPTION("Don't use proper resource handleType for import image");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
@@ -1421,7 +1423,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportImageHandleType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferDeviceImageMemoryReq) {
+TEST_F(NegativeAndroidHardwareBuffer, DeviceImageMemoryReq) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1458,7 +1460,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferDeviceImageMemoryReq) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferNullAHBProperties) {
+TEST_F(NegativeAndroidHardwareBuffer, NullAHBProperties) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer calls must have non-null AHB objects passed in.");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
@@ -1491,7 +1493,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferNullAHBProperties) {
     vk::GetAndroidHardwareBufferPropertiesANDROID(m_device->device(), ahb, &ahb_props);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferNullAHBImport) {
+TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer calls must have non-null AHB objects passed in.");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);

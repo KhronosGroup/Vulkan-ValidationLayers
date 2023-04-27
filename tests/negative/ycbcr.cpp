@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-TEST_F(VkLayerTest, CreateYCbCrSampler) {
+class NegativeYcbcr : public VkLayerTest {};
+
+TEST_F(NegativeYcbcr, Sampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -146,7 +148,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
+TEST_F(NegativeYcbcr, Swizzle) {
     TEST_DESCRIPTION("Verify Invalid use of siwizzle components when dealing with YCbCr.");
 
     // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
@@ -310,7 +312,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
+TEST_F(NegativeYcbcr, Formats) {
     TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
 
     // Enable KHR multiplane req'd extensions
@@ -412,7 +414,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     image_create_info = reset_create_info;
 }
 
-TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
+TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     // Image copy tests on single-plane _422 formats with block alignment errors
 
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -507,7 +509,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
+TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     // Image copy tests on multiplane images with aspect errors
 
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -621,7 +623,7 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CreateSamplerYcbcrConversionEnable) {
+TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
     TEST_DESCRIPTION("Checks samplerYcbcrConversion is enabled before calling vkCreateSamplerYcbcrConversion");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -654,7 +656,7 @@ TEST_F(VkLayerTest, CreateSamplerYcbcrConversionEnable) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearColorImageWithInvalidFormat) {
+TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     TEST_DESCRIPTION("Record clear color with an invalid image formats");
 
     // Enable KHR multiplane req'd extensions
@@ -703,7 +705,7 @@ TEST_F(VkLayerTest, ClearColorImageWithInvalidFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, WriteDescriptorSetYcbcr) {
+TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     TEST_DESCRIPTION("Attempt to use VkSamplerYcbcrConversion ImageView to update descriptors that are not allowed.");
 
     // Enable KHR multiplane req'd extensions
@@ -768,7 +770,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetYcbcr) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
+TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     TEST_DESCRIPTION("Query layout of a multiplane image using illegal aspect flag masks");
 
     // Enable KHR multiplane req'd extensions
@@ -832,7 +834,7 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
     vk::DestroyImage(device(), image_3plane, NULL);
 }
 
-TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
+TEST_F(NegativeYcbcr, BindMemory) {
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -964,7 +966,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
     }
 }
 
-TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
+TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and disjoint memory being bound");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
@@ -1268,7 +1270,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     }
 }
 
-TEST_F(VkLayerTest, MismatchedImageViewAndSamplerYcbcrFormat) {
+TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     TEST_DESCRIPTION("Create image view with a different format that SamplerYcbcr was created with.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1320,7 +1322,7 @@ TEST_F(VkLayerTest, MismatchedImageViewAndSamplerYcbcrFormat) {
     CreateImageViewTest(*this, &view_info, "VUID-VkImageViewCreateInfo-pNext-06658");
 }
 
-TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
+TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
 
     // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
@@ -1455,7 +1457,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     }
 }
 
-TEST_F(VkLayerTest, MultiplaneImageViewAspectMasks) {
+TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     TEST_DESCRIPTION("Create a VkImageView with multiple planar aspect masks");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1537,7 +1539,7 @@ TEST_F(VkLayerTest, MultiplaneImageViewAspectMasks) {
     }
 }
 
-TEST_F(VkLayerTest, MultiplaneAspectBits) {
+TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     TEST_DESCRIPTION("Attempt to update descriptor sets for images that do not have correct aspect bits sets.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);

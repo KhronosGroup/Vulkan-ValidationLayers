@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
+class NegativeGeometryTessellation : public VkLayerTest {};
+
+TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     TEST_DESCRIPTION(
         "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are disabled on the "
         "device.");
@@ -65,7 +67,7 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     vk::DestroyCommandPool(test_device.handle(), command_pool, NULL);
 }
 
-TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
+TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
     TEST_DESCRIPTION("Validate geometry shader feature is enabled if geometry shader stage is used");
 
     VkPhysicalDeviceFeatures deviceFeatures = {};
@@ -90,7 +92,7 @@ TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
 
-TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
+TEST_F(NegativeGeometryTessellation, TessellationShaderEnabled) {
     TEST_DESCRIPTION(
         "Validate tessellation shader feature is enabled if tessellation control or tessellation evaluation shader stage is used");
 
@@ -145,7 +147,7 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
 
-TEST_F(VkLayerTest, PointSizeGeomShaderDontWrite) {
+TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
@@ -180,7 +182,7 @@ TEST_F(VkLayerTest, PointSizeGeomShaderDontWrite) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725");
 }
 
-TEST_F(VkLayerTest, PointSizeGeomShaderWrite) {
+TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
@@ -259,7 +261,7 @@ TEST_F(VkLayerTest, PointSizeGeomShaderWrite) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Geometry-07726");
 }
 
-TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
+TEST_F(NegativeGeometryTessellation, BuiltinBlockOrderMismatchVsGs) {
     TEST_DESCRIPTION("Use different order of gl_Position and gl_PointSize in builtin block interface between VS and GS.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -350,7 +352,7 @@ TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpVariable-08746");
 }
 
-TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
+TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
     TEST_DESCRIPTION("Use different number of elements in builtin block interface between VS and GS.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -391,7 +393,7 @@ TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpVariable-08746");
 }
 
-TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
+TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of per-vertex input and/or output components to the tessellation control "
         "stage exceeds the device limit");
@@ -508,7 +510,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
     }
 }
 
-TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComponents) {
+TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputComponents) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of input and/or output components to the tessellation evaluation stage "
         "exceeds the device limit");
@@ -627,7 +629,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
     }
 }
 
-TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
+TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of input and/or output components to the geometry stage exceeds the device "
         "limit");
@@ -736,7 +738,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
     }
 }
 
-TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInstanceVertexCount) {
+TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of output vertices/instances in the geometry stage exceeds the device "
         "limit");
@@ -795,7 +797,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInstanceVertexCount) {
     }
 }
 
-TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
+TEST_F(NegativeGeometryTessellation, TessellationPatchDecorationMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a variable output from the TCS without the patch decoration, but consumed in the TES "
         "with the decoration.");
@@ -843,7 +845,7 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpVariable-08746");
 }
 
-TEST_F(VkLayerTest, CreatePipelineTessErrors) {
+TEST_F(NegativeGeometryTessellation, Tessellation) {
     TEST_DESCRIPTION("Test various errors when creating a graphics pipeline with tessellation stages active.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -935,7 +937,7 @@ TEST_F(VkLayerTest, CreatePipelineTessErrors) {
 }
 
 /*// TODO : This test should be good, but needs Tess support in compiler to run
-TEST_F(VkLayerTest, InvalidPatchControlPoints)
+TEST_F(NegativeGeometryTessellation, PatchControlPoints)
 {
     // Attempt to Create Gfx Pipeline w/o a VS
     VkResult err;

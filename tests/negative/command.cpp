@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
+class NegativeCommand : public VkLayerTest {};
+
+TEST_F(NegativeCommand, CommandPoolConsistency) {
     TEST_DESCRIPTION("Allocate command buffers from one command pool and attempt to delete them from another.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent");
@@ -40,7 +42,7 @@ TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
+TEST_F(NegativeCommand, SecondaryCommandBufferBarrier) {
     TEST_DESCRIPTION("Add an invalid image barrier in a secondary command buffer");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -117,7 +119,7 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferNotBound) {
+TEST_F(NegativeCommand, IndexBufferNotBound) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -126,7 +128,7 @@ TEST_F(VkLayerTest, IndexBufferNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferBadSize) {
+TEST_F(NegativeCommand, IndexBufferSize) {
     TEST_DESCRIPTION("Run indexed draw call with bad index buffer size.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -135,7 +137,7 @@ TEST_F(VkLayerTest, IndexBufferBadSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferBadOffset) {
+TEST_F(NegativeCommand, IndexBufferOffset) {
     TEST_DESCRIPTION("Run indexed draw call with bad index buffer offset.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -144,7 +146,7 @@ TEST_F(VkLayerTest, IndexBufferBadOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferBadBindSize) {
+TEST_F(NegativeCommand, IndexBufferBindSize) {
     TEST_DESCRIPTION("Run bind index buffer with a size greater than the index buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -153,7 +155,7 @@ TEST_F(VkLayerTest, IndexBufferBadBindSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferBadBindOffset) {
+TEST_F(NegativeCommand, IndexBufferBindOffset) {
     TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -162,7 +164,7 @@ TEST_F(VkLayerTest, IndexBufferBadBindOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, MissingClearAttachment) {
+TEST_F(NegativeCommand, MissingClearAttachment) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
@@ -171,7 +173,7 @@ TEST_F(VkLayerTest, MissingClearAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SecondaryCommandbufferAsPrimary) {
+TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit.");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-00075");
 
@@ -195,7 +197,7 @@ TEST_F(VkLayerTest, SecondaryCommandbufferAsPrimary) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
+TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -224,7 +226,7 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CommandBufferTwoSubmits) {
+TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
 
@@ -261,7 +263,7 @@ TEST_F(VkLayerTest, CommandBufferTwoSubmits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
+TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -304,7 +306,7 @@ TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidPushConstants) {
+TEST_F(NegativeCommand, PushConstants) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -469,7 +471,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, NoBeginCommandBuffer) {
+TEST_F(NegativeCommand, NoBeginCommandBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00059");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -480,7 +482,7 @@ TEST_F(VkLayerTest, NoBeginCommandBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SecondaryCommandBufferRerecordedExplicitReset) {
+TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedExplicitReset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "was destroyed or rerecorded");
@@ -504,7 +506,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferRerecordedExplicitReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SecondaryCommandBufferRerecordedNoReset) {
+TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "was destroyed or rerecorded");
@@ -527,7 +529,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferRerecordedNoReset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CascadedInvalidation) {
+TEST_F(NegativeCommand, CascadedInvalidation) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
@@ -552,7 +554,7 @@ TEST_F(VkLayerTest, CascadedInvalidation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CommandBufferResetErrors) {
+TEST_F(NegativeCommand, CommandBufferReset) {
     // Cause error due to Begin while recording CB
     // Then cause 2 errors for attempting to reset CB w/o having
     // VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT set for the pool from
@@ -590,7 +592,7 @@ TEST_F(VkLayerTest, CommandBufferResetErrors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CommandBufferPrimaryFlags) {
+TEST_F(NegativeCommand, CommandBufferPrimaryFlags) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // Calls AllocateCommandBuffers
@@ -604,7 +606,7 @@ TEST_F(VkLayerTest, CommandBufferPrimaryFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
+TEST_F(NegativeCommand, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdClearAttachments: This call must be issued inside an active render pass");
@@ -628,7 +630,7 @@ TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearColorAttachmentsZeroLayercount) {
+TEST_F(NegativeCommand, ClearColorAttachmentsZeroLayercount) {
     TEST_DESCRIPTION("Call CmdClearAttachments with a pRect having a layerCount of zero.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-layerCount-01934");
@@ -652,7 +654,7 @@ TEST_F(VkLayerTest, ClearColorAttachmentsZeroLayercount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearColorAttachmentsZeroExtent) {
+TEST_F(NegativeCommand, ClearColorAttachmentsZeroExtent) {
     TEST_DESCRIPTION("Call CmdClearAttachments with a pRect having a rect2D extent of zero.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -684,7 +686,7 @@ TEST_F(VkLayerTest, ClearColorAttachmentsZeroExtent) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearAttachmentsInvalidAspectMasks) {
+TEST_F(NegativeCommand, ClearAttachmentsAspectMasks) {
     TEST_DESCRIPTION("Check VkClearAttachment invalid aspect masks.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -726,7 +728,7 @@ TEST_F(VkLayerTest, ClearAttachmentsInvalidAspectMasks) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearAttachmentsImplicitCheck) {
+TEST_F(NegativeCommand, ClearAttachmentsImplicitCheck) {
     TEST_DESCRIPTION("Check VkClearAttachment implicit VUs.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -758,7 +760,7 @@ TEST_F(VkLayerTest, ClearAttachmentsImplicitCheck) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearAttachmentsDepth) {
+TEST_F(NegativeCommand, ClearAttachmentsDepth) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid depth aspect masks.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -791,7 +793,7 @@ TEST_F(VkLayerTest, ClearAttachmentsDepth) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ClearAttachmentsStencil) {
+TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     TEST_DESCRIPTION("Call CmdClearAttachments with invalid stencil aspect masks.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -820,7 +822,7 @@ TEST_F(VkLayerTest, ClearAttachmentsStencil) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
+TEST_F(NegativeCommand, ExecuteCommandsPrimaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a primary command buffer (should only be secondary)");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -845,7 +847,7 @@ TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ExecuteCommandsToSecondaryCB) {
+TEST_F(NegativeCommand, ExecuteCommandsToSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -861,7 +863,7 @@ TEST_F(VkLayerTest, ExecuteCommandsToSecondaryCB) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NonSimultaneousSecondaryMarksPrimary) {
+TEST_F(NegativeCommand, NonSimultaneousSecondaryMarksPrimary) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const char *simultaneous_use_message = "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBufferSimultaneousUse";
 
@@ -884,7 +886,7 @@ TEST_F(VkLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SimultaneousUseSecondaryTwoExecutes) {
+TEST_F(NegativeCommand, SimultaneousUseSecondaryTwoExecutes) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     const char *simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00092";
@@ -905,7 +907,7 @@ TEST_F(VkLayerTest, SimultaneousUseSecondaryTwoExecutes) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SimultaneousUseSecondarySingleExecute) {
+TEST_F(NegativeCommand, SimultaneousUseSecondarySingleExecute) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // variation on previous test executing the same CB twice in the same
@@ -929,7 +931,7 @@ TEST_F(VkLayerTest, SimultaneousUseSecondarySingleExecute) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SimultaneousUseOneShot) {
+TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     TEST_DESCRIPTION("Submit the same command buffer twice in one submit looking for simultaneous use and one time submit errors");
     const char *simultaneous_use_message = "is already in use and is not marked for simultaneous use";
     const char *one_shot_message = "VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted";
@@ -972,7 +974,7 @@ TEST_F(VkLayerTest, SimultaneousUseOneShot) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
+TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     TEST_DESCRIPTION(
         "Test that an error is produced when an image view type does not match the dimensionality declared in the shader");
 
@@ -1024,7 +1026,7 @@ TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
+TEST_F(NegativeCommand, DrawTimeImageMultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION(
         "Test that an error is produced when a multisampled images are consumed via singlesample images types in the shader, or "
         "vice versa.");
@@ -1077,7 +1079,7 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawTimeImageComponentTypeMismatchWithPipeline) {
+TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
     TEST_DESCRIPTION(
         "Test that an error is produced when the component type of an imageview disagrees with the type in the shader.");
 
@@ -1129,7 +1131,7 @@ TEST_F(VkLayerTest, DrawTimeImageComponentTypeMismatchWithPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
+TEST_F(NegativeCommand, CopyImageLayerCountMismatch) {
     TEST_DESCRIPTION(
         "Try to copy between images with the source subresource having a different layerCount than the destination subresource");
     AddOptionalExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1196,7 +1198,7 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
+TEST_F(NegativeCommand, CompressedImageMipCopy) {
     TEST_DESCRIPTION("Image/Buffer copies for higher mip levels");
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
@@ -1441,7 +1443,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageBufferCopyTests) {
+TEST_F(NegativeCommand, ImageBufferCopy) {
     TEST_DESCRIPTION("Image to buffer and buffer to image tests");
 
     // Enable KHR multiplane req'd extensions for multi-planar copy tests
@@ -2069,7 +2071,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     }
 }
 
-TEST_F(VkLayerTest, MiscImageLayerTests) {
+TEST_F(NegativeCommand, MiscImageLayer) {
     TEST_DESCRIPTION("Image-related tests that don't belong elsewhere");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2158,7 +2160,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
+TEST_F(NegativeCommand, CopyImageTypeExtentMismatch) {
     TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2440,7 +2442,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
+TEST_F(NegativeCommand, CopyImageTypeExtentMismatchMaintenance1) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -2573,7 +2575,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
+TEST_F(NegativeCommand, CopyImageCompressedBlockAlignment) {
     // Image copy tests on compressed images with block alignment errors
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2711,7 +2713,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
+TEST_F(NegativeCommand, CopyImageSrcSizeExceeded) {
     // Image copy with source region specified greater than src image size
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2796,7 +2798,7 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
+TEST_F(NegativeCommand, CopyImageDstSizeExceeded) {
     // Image copy with dest region specified greater than dest image size
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2880,7 +2882,7 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageZeroSize) {
+TEST_F(NegativeCommand, CopyImageZeroSize) {
     TEST_DESCRIPTION("Image Copy with empty regions");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2974,7 +2976,7 @@ TEST_F(VkLayerTest, CopyImageZeroSize) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
+TEST_F(NegativeCommand, CopyImageMultiPlaneSizeExceeded) {
     TEST_DESCRIPTION("Image Copy for multi-planar format that exceed size of plane for both src and dst");
 
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -3097,7 +3099,7 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
+TEST_F(NegativeCommand, CopyImageFormatSizeMismatch) {
     // Enable KHR multiplane req'd extensions
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3262,7 +3264,7 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     }
 }
 
-TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
+TEST_F(NegativeCommand, CopyImageDepthStencilFormatMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
@@ -3309,7 +3311,7 @@ TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
+TEST_F(NegativeCommand, CopyImageSampleCountMismatch) {
     TEST_DESCRIPTION("Image copies with sample count mis-matches");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3393,7 +3395,7 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageAspectMismatch) {
+TEST_F(NegativeCommand, CopyImageAspectMismatch) {
     TEST_DESCRIPTION("Image copies with aspect mask errors");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3541,7 +3543,7 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ResolveImageLowSampleCount) {
+TEST_F(NegativeCommand, ResolveImageLowSampleCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-00257");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3600,7 +3602,7 @@ TEST_F(VkLayerTest, ResolveImageLowSampleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ResolveImageHighSampleCount) {
+TEST_F(NegativeCommand, ResolveImageHighSampleCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00259");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3665,7 +3667,7 @@ TEST_F(VkLayerTest, ResolveImageHighSampleCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
+TEST_F(NegativeCommand, ResolveImageFormatMismatch) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-01386");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3732,7 +3734,7 @@ TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ResolveImageLayoutMismatch) {
+TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -3811,7 +3813,7 @@ TEST_F(VkLayerTest, ResolveImageLayoutMismatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ResolveInvalidSubresource) {
+TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
@@ -4003,7 +4005,7 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ResolveImageImageType) {
+TEST_F(NegativeCommand, ResolveImageImageType) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -4100,7 +4102,7 @@ TEST_F(VkLayerTest, ResolveImageImageType) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
+TEST_F(NegativeCommand, ResolveImageSizeExceeded) {
     TEST_DESCRIPTION("Resolve Image with subresource region greater than size of src/dst image");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -4211,7 +4213,7 @@ TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearImageErrors) {
+TEST_F(NegativeCommand, ClearImage) {
     TEST_DESCRIPTION("Call ClearColorImage w/ a depth|stencil image and ClearDepthStencilImage with a color image.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4284,7 +4286,7 @@ TEST_F(VkLayerTest, ClearImageErrors) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CommandQueueFlags) {
+TEST_F(NegativeCommand, CommandQueueFlags) {
     TEST_DESCRIPTION(
         "Allocate a command buffer on a queue that does not support graphics and try to issue a graphics-only command");
 
@@ -4309,7 +4311,7 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
+TEST_F(NegativeCommand, DepthStencilImageCopyNoGraphicsQueueFlags) {
     TEST_DESCRIPTION(
         "Allocate a command buffer on a queue that does not support graphics and try to issue a depth/stencil image copy to "
         "buffer");
@@ -4356,7 +4358,7 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
+TEST_F(NegativeCommand, ImageCopyTransferQueueFlags) {
     TEST_DESCRIPTION(
         "Allocate a command buffer on a queue that does not support graphics/compute and try to issue an invalid image copy to "
         "buffer");
@@ -4403,7 +4405,7 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ExecuteDiffertQueueFlagsSecondaryCB) {
+TEST_F(NegativeCommand, ExecuteDiffertQueueFlagsSecondaryCB) {
     TEST_DESCRIPTION("Allocate a command buffer from two different queues and try to use a secondary command buffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4458,7 +4460,7 @@ TEST_F(VkLayerTest, ExecuteDiffertQueueFlagsSecondaryCB) {
     command_buffer_primary.end();
 }
 
-TEST_F(VkLayerTest, ExecuteUnrecordedSecondaryCB) {
+TEST_F(NegativeCommand, ExecuteUnrecordedSecondaryCB) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB in the initial state");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -4471,7 +4473,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedSecondaryCB) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ExecuteSecondaryCBWithLayoutMismatch) {
+TEST_F(NegativeCommand, ExecuteSecondaryCBWithLayoutMismatch) {
     TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a CB with incorrect initial layout.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -4531,7 +4533,7 @@ TEST_F(VkLayerTest, ExecuteSecondaryCBWithLayoutMismatch) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BadRenderPassScopeSecondaryCmdBuffer) {
+TEST_F(NegativeCommand, RenderPassScopeSecondaryCmdBuffer) {
     TEST_DESCRIPTION(
         "Test secondary buffers executed in wrong render pass scope wrt VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT");
 
@@ -4578,7 +4580,7 @@ TEST_F(VkLayerTest, BadRenderPassScopeSecondaryCmdBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
+TEST_F(NegativeCommand, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     TEST_DESCRIPTION(
         "Create a secondary command buffer with CmdClearAttachments call that has a rect outside of renderPass renderArea");
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4623,7 +4625,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
+TEST_F(NegativeCommand, PushDescriptorSetCmdPush) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 
@@ -4725,7 +4727,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
+TEST_F(NegativeCommand, PushDescriptorSetCmdBufferOffsetUnaligned) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set buffer with unaligned offset.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 
@@ -4765,7 +4767,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MultiDrawTests) {
+TEST_F(NegativeCommand, MultiDraw) {
     TEST_DESCRIPTION("Test validation of multi_draw extension");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -4865,7 +4867,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     }
 }
 
-TEST_F(VkLayerTest, MultiDrawFeatures) {
+TEST_F(NegativeCommand, MultiDrawFeatures) {
     TEST_DESCRIPTION("Test validation of multi draw feature enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
@@ -4904,7 +4906,7 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndirectDrawTests) {
+TEST_F(NegativeCommand, IndirectDraw) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect and vkCmdDrawIndexedIndirect");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4978,7 +4980,7 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawIndirectCountKHR) {
+TEST_F(NegativeCommand, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -5073,7 +5075,7 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
+TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndexedIndirectCountKHR");
 
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -5182,7 +5184,7 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawIndirectCountFeature) {
+TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     TEST_DESCRIPTION("Test covered valid usage for the 1.2 drawIndirectCount feature");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5233,7 +5235,7 @@ TEST_F(VkLayerTest, DrawIndirectCountFeature) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ExclusiveScissorNV) {
+TEST_F(NegativeCommand, ExclusiveScissorNV) {
     TEST_DESCRIPTION("Test VK_NV_scissor_exclusive with multiViewport disabled.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -5372,7 +5374,7 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
     }
 }
 
-TEST_F(VkLayerTest, ViewportWScalingNV) {
+TEST_F(NegativeCommand, ViewportWScalingNV) {
     TEST_DESCRIPTION("Verify VK_NV_clip_space_w_scaling");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
@@ -5492,7 +5494,7 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
+TEST_F(NegativeCommand, DrawWithoutUpdatePushConstants) {
     TEST_DESCRIPTION("Not every bytes in used push constant ranges has been set before Draw ");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5610,7 +5612,7 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
+TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     TEST_DESCRIPTION("Verify if sampler is filter cubic, image view needs to support it.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
@@ -5714,7 +5716,7 @@ TEST_F(VkLayerTest, VerifyFilterCubicSamplerInCmdDraw) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
+TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
     TEST_DESCRIPTION("Verify if sampler is filter cubic with the VK_IMG_filter cubic extension that it's a valid ImageViewType.");
 
     AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
@@ -5790,7 +5792,7 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidCmdUpdateBufferSize) {
+TEST_F(NegativeCommand, CmdUpdateBufferSize) {
     TEST_DESCRIPTION("Update buffer with invalid dataSize");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5808,7 +5810,7 @@ TEST_F(VkLayerTest, InvalidCmdUpdateBufferSize) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdUpdateBufferDstOffset) {
+TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
     TEST_DESCRIPTION("Update buffer with invalid dst offset");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5826,7 +5828,7 @@ TEST_F(VkLayerTest, InvalidCmdUpdateBufferDstOffset) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
+TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
     TEST_DESCRIPTION(
         "Attempt to bind descriptor set to a bind point not supported by command pool the command buffer was allocated from");
 
@@ -5882,7 +5884,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
     command_buffer.end();
 }
 
-TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
+TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -5905,7 +5907,7 @@ TEST_F(VkLayerTest, CmdClearColorImageNullColor) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestEndCommandBufferWithConditionalRendering) {
+TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
     TEST_DESCRIPTION("Call EndCommandBuffer when conditional rendering is active");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
@@ -5934,7 +5936,7 @@ TEST_F(VkLayerTest, TestEndCommandBufferWithConditionalRendering) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
+TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     TEST_DESCRIPTION("Test pipeline blend enabled with missing image views format features");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5980,7 +5982,7 @@ TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
+TEST_F(NegativeCommand, EndConditionalRendering) {
     TEST_DESCRIPTION("Invalid calls to vkCmdEndConditionalRenderingEXT.");
 
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
@@ -6078,7 +6080,7 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 }
 
-TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginRenderPass) {
+TEST_F(NegativeCommand, RenderPassContentsWhenCallingCmdExecuteCommandsWithBeginRenderPass) {
     TEST_DESCRIPTION(
         "Test CmdExecuteCommands inside a render pass begun with CmdBeginRenderPass that hasn't set "
         "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
@@ -6118,7 +6120,7 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BadExecuteCommandsSubpassIndices) {
+TEST_F(NegativeCommand, ExecuteCommandsSubpassIndices) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -6192,7 +6194,7 @@ TEST_F(VkLayerTest, BadExecuteCommandsSubpassIndices) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
+TEST_F(NegativeCommand, IncompatibleRenderPassesInExecuteCommands) {
     TEST_DESCRIPTION("Test invalid subpass when calling CmdExecuteCommands");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -6253,7 +6255,7 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyCommands2V13) {
+TEST_F(NegativeCommand, CopyCommands2V13) {
     TEST_DESCRIPTION("Ensure copy_commands2 promotions are validated");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -6383,7 +6385,7 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ResolveInvalidUsage) {
+TEST_F(NegativeCommand, ResolveUsage) {
     TEST_DESCRIPTION("Resolve image with missing usage flags.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -6519,7 +6521,7 @@ TEST_F(VkLayerTest, ResolveInvalidUsage) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CopyImageRemainingLayers) {
+TEST_F(NegativeCommand, CopyImageRemainingLayers) {
     TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -6600,7 +6602,7 @@ TEST_F(VkLayerTest, CopyImageRemainingLayers) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
+TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     TEST_DESCRIPTION("invalid depth stencil state for subpass that uses read only image layout.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -6740,7 +6742,7 @@ TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
+TEST_F(NegativeCommand, ClearColorImageWithRange) {
     TEST_DESCRIPTION("Record clear color with an invalid VkImageSubresourceRange");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -6824,7 +6826,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
     }
 }
 
-TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
+TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
 
     AddOptionalExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
@@ -6914,7 +6916,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
+TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     TEST_DESCRIPTION("Record clear depth with an invalid VkImageSubresourceRange");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -7000,7 +7002,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
     }
 }
 
-TEST_F(VkLayerTest, ClearColorImageWithinRenderPass) {
+TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
     // Call CmdClearColorImage within an active RenderPass
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-renderpass");
 
@@ -7040,7 +7042,7 @@ TEST_F(VkLayerTest, ClearColorImageWithinRenderPass) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
+TEST_F(NegativeCommand, ClearDepthStencilImage) {
     // Hit errors related to vk::CmdClearDepthStencilImage()
     // 1. Use an image that doesn't have VK_IMAGE_USAGE_TRANSFER_DST_BIT set
     // 2. Call CmdClearDepthStencilImage within an active RenderPass
@@ -7088,7 +7090,7 @@ TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearDepthRangeUnrestricted) {
+TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     TEST_DESCRIPTION("Test clearing without VK_EXT_depth_range_unrestricted");
 
     // Extension doesn't have feature bit, so not enabling extension invokes restrictions
@@ -7133,7 +7135,7 @@ TEST_F(VkLayerTest, ClearDepthRangeUnrestricted) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, ClearColorImageInvalidImageLayout) {
+TEST_F(NegativeCommand, ClearColorImageImageLayout) {
     TEST_DESCRIPTION("Check ClearImage layouts with SHARED_PRESENTABLE_IMAGE extension active.");
 
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);

@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, InvalidProtectedQueue) {
+class NegativeProtectedMemory : public VkLayerTest {};
+
+TEST_F(NegativeProtectedMemory, Queue) {
     TEST_DESCRIPTION("Try creating queue without VK_QUEUE_PROTECTED_BIT capability");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -78,7 +80,7 @@ TEST_F(VkLayerTest, InvalidProtectedQueue) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidProtectedSubmit) {
+TEST_F(NegativeProtectedMemory, Submit) {
     TEST_DESCRIPTION("Setting protectedSubmit with a queue not created with VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -165,7 +167,7 @@ TEST_F(VkLayerTest, InvalidProtectedSubmit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidProtectedMemory) {
+TEST_F(NegativeProtectedMemory, Memory) {
     TEST_DESCRIPTION("Validate cases where protectedMemory feature is enabled and usages are invalid");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -317,7 +319,7 @@ TEST_F(VkLayerTest, InvalidProtectedMemory) {
     vk::FreeMemory(device(), memory_unprotected, nullptr);
 }
 
-TEST_F(VkLayerTest, UniqueQueueDeviceCreationBothProtected) {
+TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     TEST_DESCRIPTION("Vulkan 1.1 unique queue detection where both are protected and same queue family");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -394,7 +396,7 @@ TEST_F(VkLayerTest, UniqueQueueDeviceCreationBothProtected) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
+TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     TEST_DESCRIPTION("General testing of vkGetDeviceQueue and general Device creation cases");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -528,7 +530,7 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
     vk::DestroyDevice(test_device, nullptr);
 }
 
-TEST_F(VkLayerTest, PipelineProtectedAccess) {
+TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     TEST_DESCRIPTION("Test VUIDs from VK_EXT_pipeline_protected_access");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -662,7 +664,7 @@ TEST_F(VkLayerTest, PipelineProtectedAccess) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
+TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     TEST_DESCRIPTION("Test making commands in unprotected command buffers that can't be used");
 
     // protect memory added in VK 1.1
@@ -745,7 +747,7 @@ TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
+TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     TEST_DESCRIPTION("Test where there is mixing of protectedMemory backed resource in command buffers");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

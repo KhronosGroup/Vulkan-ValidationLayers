@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
+class NegativeImagelessFramebuffer : public VkLayerTest {};
+
+TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     TEST_DESCRIPTION(
         "Begin a renderPass where the image views specified do not match the parameters used to create the framebuffer and render "
         "pass.");
@@ -355,7 +357,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
     }
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferFeatureEnableTest) {
+TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     TEST_DESCRIPTION("Use imageless framebuffer functionality without enabling the feature");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
@@ -414,7 +416,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferFeatureEnableTest) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferCreationTests) {
+TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     TEST_DESCRIPTION("Create an imageless framebuffer in various invalid ways");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -538,7 +540,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferCreationTests) {
     framebufferCreateInfo.height -= 1;
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferAttachmentImageUsageMismatchTests) {
+TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     TEST_DESCRIPTION("Create an imageless framebuffer with mismatched attachment image usage");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
@@ -686,7 +688,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferAttachmentImageUsageMismatchTests) {
     framebufferAttachmentImageInfos[3].usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferAttachmentMultiviewImageLayerCountMismatchTests) {
+TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch) {
     TEST_DESCRIPTION("Create an imageless framebuffer against a multiview-enabled render pass with mismatched layer counts");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
@@ -841,7 +843,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferAttachmentMultiviewImageLayerCountMismat
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
+TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     TEST_DESCRIPTION(
         "Create an imageless framebuffer against a render pass using depth stencil resolve, with mismatched information");
 
@@ -960,7 +962,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferUsage) {
+TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1037,7 +1039,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferUsage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferDimensions) {
+TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1153,7 +1155,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateImagelessFramebufferDimensions) {
     }
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageView3D) {
+TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     TEST_DESCRIPTION("Misuse of VK_IMAGE_VIEW_TYPE_3D.");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
@@ -1271,7 +1273,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageView3D) {
                         "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114");
 }
 
-TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
+TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
@@ -1334,7 +1336,7 @@ TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     }
 }
 
-TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
+TEST_F(NegativeImagelessFramebuffer, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
     TEST_DESCRIPTION("Test VkDescriptorUpdateTemplateEntry with descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT");
 
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
@@ -1384,7 +1386,7 @@ TEST_F(VkLayerTest, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImagelessFramebufferWith3DImage) {
+TEST_F(NegativeImagelessFramebuffer, Image3D) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

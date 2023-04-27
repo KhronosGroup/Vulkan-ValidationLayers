@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, TransformFeedbackFeatureEnabled) {
+class NegativeTransformFeedback : public VkLayerTest {};
+
+TEST_F(NegativeTransformFeedback, FeatureEnabled) {
     TEST_DESCRIPTION("VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback must be enabled");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -66,7 +68,7 @@ TEST_F(VkLayerTest, TransformFeedbackFeatureEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, TransformFeedbackNoBoundPipeline) {
+TEST_F(NegativeTransformFeedback, NoBoundPipeline) {
     TEST_DESCRIPTION("Call vkCmdBeginTransformFeedbackEXT without a bound pipeline");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -98,7 +100,7 @@ TEST_F(VkLayerTest, TransformFeedbackNoBoundPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
+TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdBindTransformFeedbackBuffersEXT");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -265,7 +267,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
     }
 }
 
-TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
+TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdBeginTransformFeedbackEXT");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -368,7 +370,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
     }
 }
 
-TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
+TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdEndTransformFeedbackEXT");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -476,7 +478,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
     }
 }
 
-TEST_F(VkLayerTest, ExecuteSecondaryCommandBuffersDuringTransformFeedback) {
+TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Call CmdExecuteCommandBuffers when transform feedback is active");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -532,7 +534,7 @@ TEST_F(VkLayerTest, ExecuteSecondaryCommandBuffersDuringTransformFeedback) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BindPipelineDuringTransformFeedback) {
+TEST_F(NegativeTransformFeedback, BindPipeline) {
     TEST_DESCRIPTION("Call CmdBindPipeline when transform feedback is active");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -569,7 +571,7 @@ TEST_F(VkLayerTest, BindPipelineDuringTransformFeedback) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
+TEST_F(NegativeTransformFeedback, EndRenderPass) {
     TEST_DESCRIPTION("Call CmdEndRenderPass when transform feedback is active");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -610,7 +612,7 @@ TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
+TEST_F(NegativeTransformFeedback, DrawIndirectByteCountEXT) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectByteCountEXT");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -712,7 +714,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
+TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT but it doesn't enable geometryStreams.");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -743,7 +745,7 @@ TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
+TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     TEST_DESCRIPTION("Test runtime spirv transform feedback.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1136,7 +1138,7 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     }
 }
 
-TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
+TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1185,7 +1187,7 @@ TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdNextSubpassDuringTransformFeedback) {
+TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     TEST_DESCRIPTION("Call CmdNextSubpass while transform feeback is active");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 

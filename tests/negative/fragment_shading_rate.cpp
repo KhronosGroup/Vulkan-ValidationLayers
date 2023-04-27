@@ -15,7 +15,9 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
+class NegativeFragmentShadingRate : public VkLayerTest {};
+
+TEST_F(NegativeFragmentShadingRate, Values) {
     TEST_DESCRIPTION("Specify invalid fragment shading rate values");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -78,7 +80,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
+TEST_F(NegativeFragmentShadingRate, ValuesNoFeatures) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -107,7 +109,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
+TEST_F(NegativeFragmentShadingRate, CombinerOpsNoFeatures) {
     TEST_DESCRIPTION("Specify combiner operations when only pipeline rate is supported");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -154,7 +156,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
+TEST_F(NegativeFragmentShadingRate, CombinerOpsNoPipelineRate) {
     TEST_DESCRIPTION("Specify pipeline rate when only attachment or primitive rate are supported");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -200,7 +202,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
     fragmentSize.height = 1;
 }
 
-TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
+TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -261,7 +263,7 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDynamic) {
+TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewportLimitDynamic) {
     TEST_DESCRIPTION("Test dynamic validation of the primitiveFragmentShadingRateWithMultipleViewports limit");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -331,7 +333,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimitDy
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     TEST_DESCRIPTION("Create a subpass with the wrong attachment information for a fragment density map ");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -416,7 +418,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", nullptr);
 }
 
-TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     TEST_DESCRIPTION("Specify a fragment density map attachment with incorrect layerCount");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -499,7 +501,7 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Fragment Density Maps are used.");
 
     // VK_EXT_fragment_density_map2 requires VK_EXT_fragment_density_map
@@ -693,7 +695,7 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     }
 }
 
-TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDisabled) {
     TEST_DESCRIPTION("Checks for when the fragment density map features are not enabled.");
 
     // VK_EXT_fragment_density_map2 requires VK_EXT_fragment_density_map
@@ -738,7 +740,7 @@ TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-02572");
 }
 
-TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachment) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
     TEST_DESCRIPTION(
         "Test creating a framebuffer with fragment density map reference to an attachment with layer count different from 1");
 
@@ -823,7 +825,7 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
+TEST_F(NegativeFragmentShadingRate, DeviceFeatureCombinations) {
     TEST_DESCRIPTION(
         "Specify invalid combinations of fragment shading rate, shading rate image, and fragment density map features");
 
@@ -939,7 +941,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateDeviceFeatureCombinations) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferUsage) {
+TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1005,7 +1007,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferUsage) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferDimensions) {
+TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment with too small dimensions");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1122,7 +1124,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferDimensions) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
+TEST_F(NegativeFragmentShadingRate, Attachments) {
     TEST_DESCRIPTION("Specify a fragment shading rate attachment with too small dimensions");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1257,7 +1259,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
     }
 }
 
-TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) {
+TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) {
     TEST_DESCRIPTION(
         "Test incompatible fragment shading rate attachments "
         "calling CmdExecuteCommands");
@@ -1470,7 +1472,7 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
     secondary.reset();
 }
 
-TEST_F(VkLayerTest, InvalidShadingRateUsage) {
+TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     TEST_DESCRIPTION("Specify invalid usage of the fragment shading rate image view usage.");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -1559,7 +1561,7 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRatePipeline) {
+TEST_F(NegativeFragmentShadingRate, Pipeline) {
     TEST_DESCRIPTION("Specify invalid fragment shading rate values");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1607,7 +1609,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipeline) {
     fsr_ci.fragmentSize.height = 1;
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineFeatureUsage) {
+TEST_F(NegativeFragmentShadingRate, PipelineFeatureUsage) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1643,7 +1645,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineFeatureUsage) {
     fsr_ci.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineCombinerOpsLimit) {
+TEST_F(NegativeFragmentShadingRate, PipelineCombinerOpsLimit) {
     TEST_DESCRIPTION("Specify invalid use of combiner ops when non trivial ops aren't supported");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1699,7 +1701,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineCombinerOpsLimit) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimit) {
+TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     TEST_DESCRIPTION("Test static validation of the primitiveFragmentShadingRateWithMultipleViewports limit");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1882,7 +1884,7 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimit) 
     }
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateOps) {
+TEST_F(NegativeFragmentShadingRate, Ops) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
@@ -1923,7 +1925,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateOps) {
     CreatePipelineHelper::OneshotTest(*this, set_fsr_ci, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568");
 }
 
-TEST_F(VkLayerTest, FragmentDensityMappAttachmentCount) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapAttachmentCount) {
     TEST_DESCRIPTION("Test attachmentCount of VkRenderPassFragmentDensityMapCreateInfoEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1976,7 +1978,7 @@ TEST_F(VkLayerTest, FragmentDensityMappAttachmentCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     TEST_DESCRIPTION("Ensure RenderPass end meets the requirements for VK_QCOM_fragment_density_map_offset");
 
     AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
@@ -2313,7 +2315,7 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     }
 }
 
-TEST_F(VkLayerTest, ShadingRateImageNV) {
+TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     TEST_DESCRIPTION("Test VK_NV_shading_rate_image.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2607,7 +2609,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateStageUsage) {
+TEST_F(NegativeFragmentShadingRate, StageUsage) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature disabled");
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -2640,7 +2642,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateStageUsage) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidFragmentShadingRateStageUsageNV) {
+TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     TEST_DESCRIPTION(
         "Specify shading rate pipeline stage with shading rate features disabled and NV shading rate extension enabled");
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);

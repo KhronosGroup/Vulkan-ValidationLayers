@@ -17,7 +17,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-TEST_F(VkLayerTest, InvalidUsageBits) {
+class NegativeImage : public VkLayerTest {};
+
+TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
         "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "
         "expecting errors from both the image and the buffer (2 calls)");
@@ -96,7 +98,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     }
 }
 
-TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
+TEST_F(NegativeImage, CopyBufferToCompressedImage) {
     TEST_DESCRIPTION("Copy buffer to compressed image when buffer is larger than image.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -178,7 +180,7 @@ TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CreateUnknownObject) {
+TEST_F(NegativeImage, UnknownObject) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-parameter");
 
     TEST_DESCRIPTION("Pass an invalid image object handle into a Vulkan API call.");
@@ -195,7 +197,7 @@ TEST_F(VkLayerTest, CreateUnknownObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageSampleCounts) {
+TEST_F(NegativeImage, SampleCounts) {
     TEST_DESCRIPTION("Use bad sample counts in image transfer calls to trigger validation errors.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -314,7 +316,7 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
     }
 }
 
-TEST_F(VkLayerTest, BlitImageFormatTypes) {
+TEST_F(NegativeImage, BlitFormatTypes) {
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -544,7 +546,7 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BlitImageFilters) {
+TEST_F(NegativeImage, BlitFilters) {
     AddOptionalExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool cubic_support = IsExtensionsEnabled(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
@@ -623,7 +625,7 @@ TEST_F(VkLayerTest, BlitImageFilters) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BlitImageLayout) {
+TEST_F(NegativeImage, BlitLayout) {
     TEST_DESCRIPTION("Incorrect vkCmdBlitImage layouts");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -779,7 +781,7 @@ TEST_F(VkLayerTest, BlitImageLayout) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkLayerTest, BlitImageOffsets) {
+TEST_F(NegativeImage, BlitOffsets) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
@@ -920,7 +922,7 @@ TEST_F(VkLayerTest, BlitImageOffsets) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BlitImageOverlap) {
+TEST_F(NegativeImage, BlitOverlap) {
     TEST_DESCRIPTION("Try to blit an image on same region.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -974,7 +976,7 @@ TEST_F(VkLayerTest, BlitImageOverlap) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MiscBlitImageTests) {
+TEST_F(NegativeImage, MiscBlitTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
@@ -1132,7 +1134,7 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BlitToDepthImageTests) {
+TEST_F(NegativeImage, BlitToDepth) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     const VkFormat f_depth = VK_FORMAT_D32_SFLOAT;
@@ -1189,7 +1191,7 @@ TEST_F(VkLayerTest, BlitToDepthImageTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MinImageTransferGranularity) {
+TEST_F(NegativeImage, MinImageTransferGranularity) {
     TEST_DESCRIPTION("Tests for validation of Queue Family property minImageTransferGranularity.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1316,7 +1318,7 @@ TEST_F(VkLayerTest, MinImageTransferGranularity) {
     command_buffer.end();
 }
 
-TEST_F(VkLayerTest, Bad2DArrayImageType) {
+TEST_F(NegativeImage, Array2DImageType) {
     TEST_DESCRIPTION("Create an image with a flag specifying 2D_ARRAY_COMPATIBLE but not of imageType 3D.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1345,7 +1347,7 @@ TEST_F(VkLayerTest, Bad2DArrayImageType) {
     CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-flags-00950");
 }
 
-TEST_F(VkLayerTest, Bad2DViewImageType) {
+TEST_F(NegativeImage, View2DImageType) {
     TEST_DESCRIPTION("Create an image with a flag specifying 2D_VIEW_COMPATIBLE but not of imageType 3D.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -1376,7 +1378,7 @@ TEST_F(VkLayerTest, Bad2DViewImageType) {
 }
 
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
-TEST_F(VkLayerTest, InvalidImageLayout) {
+TEST_F(NegativeImage, ImageLayout) {
     TEST_DESCRIPTION(
         "Hit all possible validation checks associated with the UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout error. "
         "Generally these involve having images in the wrong layout when they're copied or transitioned.");
@@ -1670,7 +1672,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidStorageImageLayout) {
+TEST_F(NegativeImage, StorageImageLayout) {
     TEST_DESCRIPTION("Attempt to update a STORAGE_IMAGE descriptor w/o GENERAL layout.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1704,7 +1706,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CopyInvalidImageMemory) {
+TEST_F(NegativeImage, CopyImageMemory) {
     TEST_DESCRIPTION("Validate 4 invalid image memory VUIDs ");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
@@ -1797,7 +1799,7 @@ TEST_F(VkLayerTest, CopyInvalidImageMemory) {
     }
 }
 
-TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
+TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with a view type that does not match the image type it is being created from.");
 
@@ -1987,7 +1989,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     vk::DestroyImage(m_device->device(), imageSparse, nullptr);
 }
 
-TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
+TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2136,7 +2138,7 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     CreateImageViewTest(*this, &ivci, optimal_error_codes[i]);
 }
 
-TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
+TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     TEST_DESCRIPTION("Usage modification via a chained VkImageViewUsageCreateInfo struct");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -2219,7 +2221,7 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
 }
 
-TEST_F(VkLayerTest, CreateImageViewNoSeparateStencilUsage) {
+TEST_F(NegativeImage, ImageViewNoSeparateStencilUsage) {
     TEST_DESCRIPTION("Verify CreateImageView create info for the case VK_EXT_separate_stencil_usage is not supported.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -2275,7 +2277,7 @@ TEST_F(VkLayerTest, CreateImageViewNoSeparateStencilUsage) {
     CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02661");
 }
 
-TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
+TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
     TEST_DESCRIPTION("Verify CreateImageView with stencil usage.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -2355,7 +2357,7 @@ TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
+TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
     VkResult err;
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2397,7 +2399,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
     vk::DestroyImage(m_device->device(), image, NULL);
 }
 
-TEST_F(VkLayerTest, InvalidImageViewAspect) {
+TEST_F(NegativeImage, ImageViewAspect) {
     TEST_DESCRIPTION("Create an image and try to create a view with an invalid aspectMask");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2420,7 +2422,7 @@ TEST_F(VkLayerTest, InvalidImageViewAspect) {
     CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
 }
 
-TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
+TEST_F(NegativeImage, GetImageSubresourceLayout) {
     TEST_DESCRIPTION("Test vkGetImageSubresourceLayout() valid usages");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2568,7 +2570,7 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
     }
 }
 
-TEST_F(VkLayerTest, ImageWithUndefinedFormat) {
+TEST_F(NegativeImage, UndefinedFormat) {
     TEST_DESCRIPTION("Create image with undefined format");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2588,7 +2590,7 @@ TEST_F(VkLayerTest, ImageWithUndefinedFormat) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-00943");
 }
 
-TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
+TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2626,7 +2628,7 @@ TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
                         "Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.");
 }
 
-TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
+TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2662,7 +2664,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
     CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01019");
 }
 
-TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
+TEST_F(NegativeImage, ImageViewDifferentClass) {
     TEST_DESCRIPTION("Passing bad parameters to CreateImageView");
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -2738,7 +2740,7 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     }
 }
 
-TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
+TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
     TEST_DESCRIPTION("Passing bad image subrange to CreateImageView");
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool maintenance1 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -3131,7 +3133,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
     }
 }
 
-TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
+TEST_F(NegativeImage, ImageViewLayerCount) {
     TEST_DESCRIPTION("Image and ImageView arrayLayers/layerCount parameters not being compatibile");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3277,7 +3279,7 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
     }
 }
 
-TEST_F(VkLayerTest, CreateImageMiscErrors) {
+TEST_F(NegativeImage, ImageMisc) {
     TEST_DESCRIPTION("Misc leftover valid usage errors in VkImageCreateInfo struct");
 
     VkPhysicalDeviceFeatures features{};
@@ -3403,7 +3405,7 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
     }
 }
 
-TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
+TEST_F(NegativeImage, ImageMinLimits) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters violation minimum limit, such as being zero.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3505,7 +3507,7 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
     }
 }
 
-TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
+TEST_F(NegativeImage, ImageMaxLimits) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
 
     // Check for VK_KHR_get_physical_device_properties2
@@ -3661,7 +3663,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
     }
 }
 
-TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
+TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     // Create a single Image descriptor and cause it to first hit an error due
     //  to using a DS format, then cause it to hit error due to COLOR_BIT not
     //  set in aspect
@@ -3715,7 +3717,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CornerSampledImageNV) {
+TEST_F(NegativeImage, CornerSampledImageNV) {
     TEST_DESCRIPTION("Test VK_NV_corner_sampled_image.");
     AddRequiredExtensions(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3790,7 +3792,7 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-mipLevels-00958");
 }
 
-TEST_F(VkLayerTest, ImageStencilCreate) {
+TEST_F(NegativeImage, Stencil) {
     TEST_DESCRIPTION("Verify ImageStencil create info.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3915,7 +3917,7 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02798");
 }
 
-TEST_F(VkLayerTest, AstcDecodeMode) {
+TEST_F(NegativeImage, AstcDecodeMode) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_astc_decode_mode");
     AddRequiredExtensions(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3976,7 +3978,7 @@ TEST_F(VkLayerTest, AstcDecodeMode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
+TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
     // original issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203
 
@@ -4055,7 +4057,7 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     CreateImageViewTest(*this, &imgViewInfo, {});
 }
 
-TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
+TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761 with depth format");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4121,7 +4123,7 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleDepthFormat) {
     CreateImageViewTest(*this, &imgViewInfo, error_vuid);
 }
 
-TEST_F(VkLayerTest, CreateImageViewMissingYcbcrConversion) {
+TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
     TEST_DESCRIPTION("Do not use VkSamplerYcbcrConversionInfo when required for an image view.");
 
     // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
@@ -4156,7 +4158,7 @@ TEST_F(VkLayerTest, CreateImageViewMissingYcbcrConversion) {
     CreateImageViewTest(*this, &view_info, "VUID-VkImageViewCreateInfo-format-06415");
 }
 
-TEST_F(VkLayerTest, InvalidImageFormatList) {
+TEST_F(NegativeImage, ImageFormatList) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list");
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
@@ -4248,7 +4250,7 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     CreateImageViewTest(*this, &imageViewInfo, {});
 }
 
-TEST_F(VkLayerTest, InvalidImageFormatListSizeCompatible) {
+TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     TEST_DESCRIPTION("Tests for VK_KHR_image_format_list with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT");
 
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
@@ -4300,7 +4302,7 @@ TEST_F(VkLayerTest, InvalidImageFormatListSizeCompatible) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
+TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -4370,7 +4372,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
+TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid splitInstanceBindRegionCount");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4462,7 +4464,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
+TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with an image using VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, but levelCount and "
         "layerCount are not 1.");
@@ -4518,7 +4520,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
 }
 
-TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
+TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4614,7 +4616,7 @@ TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
+TEST_F(NegativeImage, BlockTexelViewType) {
     TEST_DESCRIPTION(
         "Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT and non-compressed format and ImageView with view type "
         "VK_IMAGE_VIEW_TYPE_3D.");
@@ -4665,7 +4667,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
     CreateImageViewTest(*this, &ivci);
 }
 
-TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
+TEST_F(NegativeImage, BlockTexelViewFormat) {
     TEST_DESCRIPTION("Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT with non compatible formats.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -4719,7 +4721,7 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
     CreateImageViewTest(*this, &ivci);
 }
 
-TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
+TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -4791,7 +4793,7 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-01670");
 }
 
-TEST_F(VkLayerTest, CreateImageSharingModeConcurrentInvalidQueueFamilies) {
+TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo when sharingMode is VK_SHARING_MODE_CONCURRENT");
 
     AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4854,7 +4856,7 @@ TEST_F(VkLayerTest, CreateImageSharingModeConcurrentInvalidQueueFamilies) {
     }
 }
 
-TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
+TEST_F(NegativeImage, ImageFormatInfoDrmFormatModifier) {
     TEST_DESCRIPTION("Validate VkPhysicalDeviceImageFormatInfo2.");
 
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
@@ -4908,7 +4910,7 @@ TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
+TEST_F(NegativeImage, MultiSampleImageView) {
     TEST_DESCRIPTION("Begin conditional rendering when it is already active.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -4963,7 +4965,7 @@ TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Image2DViewOf3D) {
+TEST_F(NegativeImage, Image2DViewOf3D) {
     TEST_DESCRIPTION("Checks for invalid use of 2D views of 3D images");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
@@ -5046,7 +5048,7 @@ TEST_F(VkLayerTest, Image2DViewOf3D) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Image2DViewOf3DFeature) {
+TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     TEST_DESCRIPTION("Checks for image image_2d_view_of_3d features");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
@@ -5107,7 +5109,7 @@ TEST_F(VkLayerTest, Image2DViewOf3DFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageViewMinLod) {
+TEST_F(NegativeImage, ImageViewMinLod) {
     TEST_DESCRIPTION("Checks for image view minimum level of detail.");
 
     AddRequiredExtensions(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
@@ -5167,7 +5169,7 @@ TEST_F(VkLayerTest, ImageViewMinLod) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageViewMinLodFeature) {
+TEST_F(NegativeImage, ImageViewMinLodFeature) {
     TEST_DESCRIPTION("Checks for image view minimum level of detail feature enabled.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkImageObj image(m_device);
@@ -5190,7 +5192,7 @@ TEST_F(VkLayerTest, ImageViewMinLodFeature) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455");
 }
 
-TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
+TEST_F(NegativeImage, ColorWthDepthAspect) {
     TEST_DESCRIPTION("Test creating an image with color format but depth aspect.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5215,7 +5217,7 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestImageCopyMissingUsage) {
+TEST_F(NegativeImage, ImageCopyMissingUsage) {
     TEST_DESCRIPTION("Test copying from src image without VK_IMAGE_USAGE_TRANSFER_SRC_BIT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5305,7 +5307,7 @@ TEST_F(VkLayerTest, TestImageCopyMissingUsage) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
+TEST_F(NegativeImage, GetImageSubresourceLayoutDrmPlane) {
     TEST_DESCRIPTION("Try to get image subresource layout for drm image plane 3 when it only has 2");
 
     // Try to enable 1.2 since all required extensions were promoted
@@ -5376,7 +5378,7 @@ TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ImageDrmFormatModifer) {
+TEST_F(NegativeImage, DrmFormatModifer) {
     TEST_DESCRIPTION("General testing of VK_EXT_image_drm_format_modifier");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
@@ -5499,7 +5501,7 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidImageCompressionControl) {
+TEST_F(NegativeImage, ImageCompressionControl) {
     TEST_DESCRIPTION("Checks image compression controls with invalid parameters.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5722,7 +5724,7 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
     }
 }
 
-TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
+TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     TEST_DESCRIPTION("Try to change layout of non sparse image with no memory bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5738,7 +5740,7 @@ TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
+TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
@@ -5842,7 +5844,7 @@ TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SlicedCreateInfoDeviceFeature) {
+TEST_F(NegativeImage, SlicedDeviceFeature) {
     TEST_DESCRIPTION("Test SlicedCreateInfo feature support validation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5893,7 +5895,7 @@ TEST_F(VkLayerTest, SlicedCreateInfoDeviceFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SlicedCreateInfoInvalidImageType) {
+TEST_F(NegativeImage, SlicedImageType) {
     TEST_DESCRIPTION("Test SlicedCreateInfo ImageType validation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5951,7 +5953,7 @@ TEST_F(VkLayerTest, SlicedCreateInfoInvalidImageType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SlicedCreateInfoInvalidMipLevel) {
+TEST_F(NegativeImage, SlicedMipLevel) {
     TEST_DESCRIPTION("When using VkImageViewSlicedCreateInfoEXT the image view must reference exactly 1 mip level");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6044,7 +6046,7 @@ TEST_F(VkLayerTest, SlicedCreateInfoInvalidMipLevel) {
     }
 }
 
-TEST_F(VkLayerTest, SlicedCreateInfoInvalidUsage) {
+TEST_F(NegativeImage, SlicedUsage) {
     TEST_DESCRIPTION("Test invalid sliceCount/sliceOffset of VkImageViewSlicedCreateInfoEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -6151,7 +6153,7 @@ TEST_F(VkLayerTest, SlicedCreateInfoInvalidUsage) {
     }
 }
 
-TEST_F(VkLayerTest, ImageViewTextureSampleWeighted) {
+TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     TEST_DESCRIPTION("Checks for image view texture sample weighted.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME);

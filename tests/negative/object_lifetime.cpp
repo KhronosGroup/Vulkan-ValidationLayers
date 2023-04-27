@@ -16,7 +16,9 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
+class NegativeObjectLifetime : public VkLayerTest {};
+
+TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -65,7 +67,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
     vk::FreeMemory(m_device->handle(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto buf_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -112,7 +114,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     vk_testing::Image image;
@@ -160,7 +162,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
+TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -230,7 +232,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
+TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -296,7 +298,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     TEST_DESCRIPTION("Delete bufferView bound to cmd buffer, then attempt to submit cmd buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -399,7 +401,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferImageDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an image dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     {
@@ -445,7 +447,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferImageDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferFramebufferImageDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a framebuffer image dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -513,7 +515,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferFramebufferImageDestroyed) {
     vk::DestroyImageView(m_device->device(), view, nullptr);
 }
 
-TEST_F(VkLayerTest, FramebufferAttachmentMemoryFreed) {
+TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     TEST_DESCRIPTION("Attempt to create framebuffer with attachment which memory was freed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
@@ -568,7 +570,7 @@ TEST_F(VkLayerTest, FramebufferAttachmentMemoryFreed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete a DescriptorPool with a DescriptorSet that is in use.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -633,7 +635,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     // TODO : It seems Validation layers think ds_pool was already destroyed, even though it wasn't?
 }
 
-TEST_F(VkLayerTest, FramebufferInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use framebuffer.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
@@ -675,7 +677,7 @@ TEST_F(VkLayerTest, FramebufferInUseDestroyedSignaled) {
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
 
-TEST_F(VkLayerTest, PushDescriptorUniformDestroySignaled) {
+TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     TEST_DESCRIPTION("Destroy a uniform buffer in use by a push descriptor set");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -743,7 +745,7 @@ TEST_F(VkLayerTest, PushDescriptorUniformDestroySignaled) {
     vbo.reset();
 }
 
-TEST_F(VkLayerTest, FramebufferImageInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use image that's child of framebuffer.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
@@ -799,7 +801,7 @@ TEST_F(VkLayerTest, FramebufferImageInUseDestroyedSignaled) {
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
 
-TEST_F(VkLayerTest, EventInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -821,7 +823,7 @@ TEST_F(VkLayerTest, EventInUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     TEST_DESCRIPTION(
         "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are in use. "
         "Call VkQueueSubmit with an event that has been deleted.");
@@ -892,7 +894,7 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
-TEST_F(VkLayerTest, PipelineInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use pipeline.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -933,7 +935,7 @@ TEST_F(VkLayerTest, PipelineInUseDestroyedSignaled) {
     vk::DestroyPipeline(m_device->handle(), delete_this_pipeline, nullptr);
 }
 
-TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use imageView.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1005,7 +1007,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
-TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use bufferView.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1090,7 +1092,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     vk::DestroyBufferView(m_device->device(), view, NULL);
 }
 
-TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
+TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use sampler.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1163,7 +1165,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     vk::DestroySampler(m_device->device(), sampler, NULL);  // Destroyed for real
 }
 
-TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
+TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
