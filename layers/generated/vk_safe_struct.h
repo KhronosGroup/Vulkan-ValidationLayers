@@ -5727,7 +5727,7 @@ struct safe_VkVideoDecodeH265SessionParametersCreateInfoKHR {
 struct safe_VkVideoDecodeH265PictureInfoKHR {
     VkStructureType sType;
     const void* pNext{};
-    StdVideoDecodeH265PictureInfo* pStdPictureInfo{};
+    const StdVideoDecodeH265PictureInfo* pStdPictureInfo{};
     uint32_t sliceSegmentCount;
     const uint32_t* pSliceSegmentOffsets{};
     safe_VkVideoDecodeH265PictureInfoKHR(const VkVideoDecodeH265PictureInfoKHR* in_struct);
@@ -6344,6 +6344,21 @@ struct safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR {
     void initialize(const safe_VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR* copy_src);
     VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR *>(this); }
     VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 rayTracingPositionFetch;
+    safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR(const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR(const safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR& operator=(const safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR();
+    ~safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR();
+    void initialize(const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR* copy_src);
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *>(this); }
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR const *>(this); }
 };
 
 struct safe_VkDebugReportCallbackCreateInfoEXT {

@@ -9812,13 +9812,15 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelGatherOffset) {
               ; set up composite to be validated
        %uint = OpTypeInt 32 0
         %int = OpTypeInt 32 1
+     %v2uint = OpTypeVector %uint 2
       %v2int = OpTypeVector %int 2
    %int_n100 = OpConstant %int -100
   %uint_n100 = OpConstant %uint 4294967196
     %int_100 = OpConstant %int 100
+     %uint_0 = OpConstant %uint 0
       %int_0 = OpConstant %int 0
  %offset_100 = OpConstantComposite %v2int %int_n100 %int_100
-%offset_n100 = OpConstantComposite %v2int %int_0 %uint_n100
+%offset_n100 = OpConstantComposite %v2uint %uint_0 %uint_n100
 
                ; Function main
        %main = OpFunction %void None %3
@@ -9890,13 +9892,15 @@ TEST_F(VkLayerTest, TestMinAndMaxTexelOffset) {
               ; set up composite to be validated
        %uint = OpTypeInt 32 0
         %int = OpTypeInt 32 1
+     %v2uint = OpTypeVector %uint 2
       %v2int = OpTypeVector %int 2
+     %uint_0 = OpConstant %uint 0
       %int_0 = OpConstant %int 0
    %int_n100 = OpConstant %int -100
   %uint_n100 = OpConstant %uint 4294967196
     %int_100 = OpConstant %int 100
  %offset_100 = OpConstantComposite %v2int %int_n100 %int_100
-%offset_n100 = OpConstantComposite %v2int %int_0 %uint_n100
+%offset_n100 = OpConstantComposite %v2uint %uint_0 %uint_n100
          %24 = OpConstantComposite %v2int %int_0 %int_0
 
        %main = OpFunction %void None %3

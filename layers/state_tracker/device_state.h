@@ -102,6 +102,7 @@ struct DeviceFeatures {
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT pipeline_library_group_handles_features;
     VkPhysicalDeviceImageSlicedViewOf3DFeaturesEXT sliced_3d_features;
     VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features;
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR ray_tracing_position_fetch_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

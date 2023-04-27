@@ -103,6 +103,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.image_processing_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_core_builtins_features.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_position_fetch_features.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
@@ -222,6 +224,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityRayTracingMotionBlurNV, {0, &VkPhysicalDeviceRayTracingMotionBlurFeaturesNV::rayTracingMotionBlur, nullptr, ""}},
     {spv::CapabilityRayTracingNV, {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing, ""}},
     {spv::CapabilityRayTracingOpacityMicromapEXT, {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
+    {spv::CapabilityRayTracingPositionFetchKHR, {0, &VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::rayTracingPositionFetch, nullptr, ""}},
     {spv::CapabilityRayTraversalPrimitiveCullingKHR, {0, &VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTraversalPrimitiveCulling, nullptr, ""}},
     {spv::CapabilityRayTraversalPrimitiveCullingKHR, {0, &VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery, nullptr, ""}},
     {spv::CapabilityRoundingModeRTE, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTEFloat16 & VK_TRUE) != 0"}},
@@ -360,6 +363,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_ray_cull_mask", {0, nullptr, &DeviceExtensions::vk_khr_ray_tracing_maintenance1, ""}},
     {"SPV_KHR_ray_query", {0, nullptr, &DeviceExtensions::vk_khr_ray_query, ""}},
     {"SPV_KHR_ray_tracing", {0, nullptr, &DeviceExtensions::vk_khr_ray_tracing_pipeline, ""}},
+    {"SPV_KHR_ray_tracing_position_fetch", {0, nullptr, &DeviceExtensions::vk_khr_ray_tracing_position_fetch, ""}},
     {"SPV_KHR_shader_ballot", {0, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_ballot, ""}},
     {"SPV_KHR_shader_clock", {0, nullptr, &DeviceExtensions::vk_khr_shader_clock, ""}},
     {"SPV_KHR_shader_draw_parameters", {VK_API_VERSION_1_1, nullptr, nullptr, ""}},
@@ -552,6 +556,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "RayTracingNV";
          case spv::CapabilityRayTracingOpacityMicromapEXT:
             return "RayTracingOpacityMicromapEXT";
+         case spv::CapabilityRayTracingPositionFetchKHR:
+            return "RayTracingPositionFetchKHR";
          case spv::CapabilityRayTraversalPrimitiveCullingKHR:
             return "RayTraversalPrimitiveCullingKHR";
          case spv::CapabilityRoundingModeRTE:

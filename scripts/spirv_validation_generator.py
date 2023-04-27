@@ -145,6 +145,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR', 'layer' : 'ray_tracing_maintenance1_features'},
             {'vulkan' : 'VkPhysicalDeviceImageProcessingFeaturesQCOM', 'layer' : 'image_processing_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM', 'layer' : 'shader_core_builtins_features'},
+            {'vulkan' : 'VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR', 'layer' : 'ray_tracing_position_fetch_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs

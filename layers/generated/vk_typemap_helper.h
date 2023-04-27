@@ -3142,6 +3142,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAI
     typedef VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR Type;
 };
 
+// Map type VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR> {
+    typedef VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR Type;
+};
+
 // Map type VkDebugReportCallbackCreateInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkDebugReportCallbackCreateInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
