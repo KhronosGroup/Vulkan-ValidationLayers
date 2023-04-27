@@ -228,6 +228,20 @@ static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE &pipe
     return result;
 }
 
+static bool IgnoreColorAttachments(PIPELINE_STATE &pipe_state) {
+    bool ignore = false;
+    // According to the spec, pAttachments is to be ignored if the pipeline is created with
+    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
+    // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
+    if (pipe_state.ColorBlendState() && pipe_state.DynamicState()) {
+        ignore = (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
+                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
+                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
+                  pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
+    }
+    return ignore;
+}
+
 static bool UsesShaderModuleId(const PIPELINE_STATE &pipe_state) {
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
         const auto module_id_info = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
@@ -557,6 +571,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
+      ignore_color_attachments(IgnoreColorAttachments(*this)),
       csm_states(csm_states) {
     if (library_create_info) {
         // accumulate dynamic state
@@ -589,6 +604,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                 dyn_state_ci->pDynamicStates = new VkDynamicState[dyn_states.size()];
                 std::copy(&dyn_states.front(), &dyn_states.front() + dyn_states.size(),
                           const_cast<VkDynamicState *>(dyn_state_ci->pDynamicStates));
+                ignore_color_attachments = IgnoreColorAttachments(*this);
             }
         }
 
@@ -633,6 +649,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       max_active_slot(GetMaxActiveSlot(active_slots)),
       descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
+      ignore_color_attachments(IgnoreColorAttachments(*this)),
       csm_states(csm_states),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
@@ -656,6 +673,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       max_active_slot(GetMaxActiveSlot(active_slots)),
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
+      ignore_color_attachments(IgnoreColorAttachments(*this)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &
@@ -681,6 +699,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       max_active_slot(GetMaxActiveSlot(active_slots)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
+      ignore_color_attachments(IgnoreColorAttachments(*this)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &
