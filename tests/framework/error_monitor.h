@@ -36,6 +36,11 @@ class ErrorMonitor {
     ErrorMonitor();
     ~ErrorMonitor() noexcept = default;
 
+    ErrorMonitor(const ErrorMonitor &) = delete;
+    ErrorMonitor &operator=(const ErrorMonitor &) = delete;
+    ErrorMonitor(ErrorMonitor &&) noexcept = delete;
+    ErrorMonitor &operator=(ErrorMonitor &&) noexcept = delete;
+
     // Set monitor to pristine state
     void Reset();
 
