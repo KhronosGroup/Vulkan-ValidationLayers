@@ -2418,8 +2418,8 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             render_pass = Get<RENDER_PASS_STATE>(create_info.renderPass);
         } else if (enabled_features.core13.dynamicRendering) {
             auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
-            render_pass =
-                std::make_shared<RENDER_PASS_STATE>(dynamic_rendering, PIPELINE_STATE::EnablesRasterizationStates(create_info));
+            render_pass = std::make_shared<RENDER_PASS_STATE>(dynamic_rendering,
+                                                              PIPELINE_STATE::EnablesRasterizationStates(*this, create_info));
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
             const bool has_link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
