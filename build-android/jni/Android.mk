@@ -227,6 +227,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/sparse.cpp \
                    $(SRC_DIR)/tests/positive/sync_object.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
+                   $(SRC_DIR)/tests/positive/vertex_input.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
                    $(SRC_DIR)/tests/positive/atomics.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \

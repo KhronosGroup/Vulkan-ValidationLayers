@@ -66,6 +66,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/sync_object.cpp
     positive/sync_val.cpp
     positive/tooling.cpp
+    positive/vertex_input.cpp
     positive/video.cpp
     positive/wsi.cpp
     positive/ycbcr.cpp
