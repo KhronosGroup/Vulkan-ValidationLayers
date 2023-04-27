@@ -1521,7 +1521,7 @@ TEST_F(VkLayerTest, DescriptorBufferSetBufferAddressSpaceLimits) {
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
     // After a few GB, can have memory issues running these tests
     // descriptorBufferAddressSpaceSize is always the largest of the 3 buffer address size limits
-    const VkDeviceSize max_limit = 1 << 31;
+    constexpr VkDeviceSize max_limit = static_cast<VkDeviceSize>(1) << 31;
     if (descriptor_buffer_properties.descriptorBufferAddressSpaceSize > max_limit) {
         GTEST_SKIP() << "descriptorBufferAddressSpaceSize are too large";
     }
