@@ -155,11 +155,12 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDynamicState dynamic_states[3] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
+    // pAttachments should be ignored with these four states set
+    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT,
+                                        VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
     VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
     dynamic_create_info.pDynamicStates = dynamic_states;
-    dynamic_create_info.dynamicStateCount = 3;
+    dynamic_create_info.dynamicStateCount = 4;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -167,4 +168,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->end();
 }
