@@ -484,21 +484,37 @@ class PIPELINE_STATE : public BASE_NODE {
         return false;
     }
 
-    template <typename CreateInfo>
-    static bool EnablesRasterizationStates(const CreateInfo &create_info) {
-        if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
-            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
-                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
-                    return create_info.pRasterizationState != nullptr;
+    template <typename ValidationObject, typename CreateInfo>
+    static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
+        // If this is an executable pipeline created from linking graphics libraries, we need to find the pre-raster library to
+        // check if rasterization is enabled
+        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        if (link_info) {
+            const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
+            for (const auto handle : libs) {
+                auto lib = vo.template Get<PIPELINE_STATE>(handle);
+                if (lib && lib->pre_raster_state) {
+                    return EnablesRasterizationStates(lib->pre_raster_state);
                 }
             }
+
+            // Getting here indicates this is a set of linked libraries, but does not link to a valid pre-raster library. Assume
+            // rasterization is enabled in this case
+            return true;
         }
 
-        if (create_info.pRasterizationState) {
-            return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
-        } else {
-            return false;
+        // Check if rasterization is enabled if this is a graphics library (only known in pre-raster libraries)
+        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        if (lib_info) {
+            if (lib_info && (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
+                return EnablesRasterizationStates(create_info);
+            }
+            // Assume rasterization is enabled for non-pre-raster state libraries
+            return true;
         }
+
+        // This is a "legacy pipeline"
+        return EnablesRasterizationStates(create_info);
     }
 
   protected:
@@ -517,6 +533,29 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
                                                                           const std::shared_ptr<const RENDER_PASS_STATE> &rp);
+
+    template <typename CreateInfo>
+    static bool EnablesRasterizationStates(const CreateInfo &create_info) {
+        if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
+            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
+                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                    // If RASTERIZER_DISCARD_ENABLE is dynamic, then we must return true (i.e., rasterization is enabled)
+                    // NOTE: create_info must contain pre-raster state, otherwise it is an invalid pipeline and will trigger
+                    //       an error outside of this function.
+                    return true;
+                }
+            }
+        }
+
+        // Return rasterization state from create info if it will not be set dynamically
+        if (create_info.pRasterizationState) {
+            return create_info.pRasterizationState->rasterizerDiscardEnable == VK_FALSE;
+        }
+
+        // Getting here indicates create_info represents a pipeline that does not contain pre-raster state
+        // Return true, though the return value _shouldn't_ matter in such cases
+        return true;
+    }
 
     static bool EnablesRasterizationStates(const std::shared_ptr<PreRasterState> pre_raster_state) {
         if (!pre_raster_state) {
