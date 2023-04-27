@@ -205,22 +205,14 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
 
     // NOTE: see PIPELINE_LAYOUT and safe_VkGraphicsPipelineCreateInfo constructors. pColorBlendState and pDepthStencilState
     // are only non-null if they are enabled.
-    if (create_info.pColorBlendState) {
-        // According to the spec, pAttachments is to be ignored if if the pipeline is created with
-        // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, and
-        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
-        auto p_dynamic = create_info.pDynamicState;
-        if (!(p_dynamic && (pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
-                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
-                            pipe_state.IsDynamic(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)))) {
-            // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-            uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
-            for (uint32_t j = 0; j < num_color_attachments; j++) {
-                if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
-                    uint32_t attachment = subpass.pColorAttachments[j].attachment;
-                    if (attachment != VK_ATTACHMENT_UNUSED) {
-                        result.push_back({attachment, VK_IMAGE_ASPECT_COLOR_BIT});
-                    }
+    if (create_info.pColorBlendState && !(pipe_state.ignore_color_attachments)) {
+        // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
+        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+        for (uint32_t j = 0; j < num_color_attachments; j++) {
+            if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
+                uint32_t attachment = subpass.pColorAttachments[j].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    result.push_back({attachment, VK_IMAGE_ASPECT_COLOR_BIT});
                 }
             }
         }
@@ -490,7 +482,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
             const auto* blend_state = pipeline_state->ColorBlendState();
             const auto* stencil_state = pipeline_state->DepthStencilState();
 
-            if (blend_state) {
+            if (blend_state && !(pipeline_state->ignore_color_attachments)) {
                 // assume the pipeline is depth-only unless any of the attachments have color writes enabled
                 render_pass_state.depthOnly = true;
                 for (size_t i = 0; i < blend_state->attachmentCount; i++) {
