@@ -175,3 +175,51 @@ bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
                return msg.find(str) != std::string::npos;
            }) != ignore_message_strings_.end();
 }
+
+void DebugReporter::Create(VkInstance instance) noexcept {
+    assert(instance);
+    assert(!debug_obj_);
+
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    assert(vk::CreateDebugUtilsMessengerEXT != nullptr);
+    const VkResult err = vk::CreateDebugUtilsMessengerEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
+#else
+    assert(vk::CreateDebugReportCallbackEXT != nullptr);
+    const VkResult err = vk::CreateDebugReportCallbackEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
+#endif
+    if (err) {
+        debug_obj_ = VK_NULL_HANDLE;
+    }
+}
+
+void DebugReporter::Destroy(VkInstance instance) noexcept {
+    assert(instance);
+    assert(debug_obj_);  // valid to call with null object, but probably bug
+
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    vk::DestroyDebugUtilsMessengerEXT(instance, debug_obj_, nullptr);
+#else
+    vk::DestroyDebugReportCallbackEXT(instance, debug_obj_, nullptr);
+#endif
+    debug_obj_ = VK_NULL_HANDLE;
+}
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT,
+                                                            uint64_t, size_t, int32_t, const char *, const char *message,
+                                                            void *user_data) {
+#else
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                                            void *user_data) {
+    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
+    const char *message = callback_data->pMessage;
+#endif
+    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
+
+    if (message_flags & error_monitor->GetMessageFlags()) {
+        return error_monitor->CheckForDesiredMsg(message);
+    }
+    return VK_FALSE;
+}

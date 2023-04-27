@@ -1139,6 +1139,7 @@ void InitCore() {
 }
 
 void InitInstanceExtension(VkInstance instance, const char* extension_name) {
+    assert(instance);
     static const vvl::unordered_map<std::string, std::function<void(VkInstance)>> initializers = {
         {
             "VK_EXT_acquire_drm_display", [](VkInstance instance) {

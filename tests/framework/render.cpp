@@ -39,48 +39,6 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
     return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
 }
 
-void DebugReporter::Create(VkInstance instance) noexcept {
-    assert(instance);
-    assert(!debug_obj_);
-
-    auto DebugCreate = reinterpret_cast<DebugCreateFnType>(vk::GetInstanceProcAddr(instance, debug_create_fn_name_));
-    if (!DebugCreate) return;
-
-    const VkResult err = DebugCreate(instance, &debug_create_info_, nullptr, &debug_obj_);
-    if (err) debug_obj_ = VK_NULL_HANDLE;
-}
-
-void DebugReporter::Destroy(VkInstance instance) noexcept {
-    assert(instance);
-    assert(debug_obj_);  // valid to call with null object, but probably bug
-
-    auto DebugDestroy = reinterpret_cast<DebugDestroyFnType>(vk::GetInstanceProcAddr(instance, debug_destroy_fn_name_));
-    assert(DebugDestroy);
-
-    DebugDestroy(instance, debug_obj_, nullptr);
-    debug_obj_ = VK_NULL_HANDLE;
-}
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT,
-                                                            uint64_t, size_t, int32_t, const char *, const char *message,
-                                                            void *user_data) {
-#else
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
-                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                            void *user_data) {
-    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
-    const char *message = callback_data->pMessage;
-#endif
-    ErrorMonitor *errMonitor = (ErrorMonitor *)user_data;
-
-    if (message_flags & errMonitor->GetMessageFlags()) {
-        return errMonitor->CheckForDesiredMsg(message);
-    }
-    return VK_FALSE;
-}
-
 VkRenderFramework::VkRenderFramework()
     : instance_(NULL),
       m_device(NULL),

@@ -311,6 +311,7 @@ void InitCore() {
 
         # Instance extension functions
         table += 'void InitInstanceExtension(VkInstance instance, const char* extension_name) {\n'
+        table += '    assert(instance);\n'
         table += '    static const vvl::unordered_map<std::string, std::function<void(VkInstance)>> initializers = {\n'
         for name in sorted(self.extensionInfo.keys()):
             ext = self.extensionInfo[name]
