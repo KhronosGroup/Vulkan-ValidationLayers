@@ -106,14 +106,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
-        if (VK_IMAGE_TYPE_2D != pCreateInfo->imageType) {
-            skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00949",
-                             "vkCreateImage(): Image type must be VK_IMAGE_TYPE_2D when VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT "
-                             "flag bit is set");
-        }
-    }
-
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     const VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;

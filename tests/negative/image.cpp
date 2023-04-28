@@ -17,7 +17,25 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeImage : public VkLayerTest {};
+class NegativeImage : public VkLayerTest {
+  public:
+    // A reasonable well supported default VkImageCreateInfo for image creation
+    static VkImageCreateInfo DefaultImageInfo() {
+        auto ci = LvlInitStruct<VkImageCreateInfo>();
+        ci.flags = 0;                          // assumably any is supported
+        ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
+        ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
+        ci.extent = {64, 64, 1};               // limit is 256 for 3D, or 4096
+        ci.mipLevels = 1;                      // any is supported
+        ci.arrayLayers = 1;                    // limit is 256
+        ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
+        // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
+        ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+        ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
+        ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        return ci;
+    }
+};
 
 TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
@@ -3285,36 +3303,9 @@ TEST_F(NegativeImage, ImageMisc) {
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    auto tmp_img_ci = LvlInitStruct<VkImageCreateInfo>();
-    tmp_img_ci.flags = 0;                          // assumably any is supported
-    tmp_img_ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
-    tmp_img_ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
-    tmp_img_ci.extent = {64, 64, 1};               // limit is 256 for 3D, or 4096
-    tmp_img_ci.mipLevels = 1;                      // any is supported
-    tmp_img_ci.arrayLayers = 1;                    // limit is 256
-    tmp_img_ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
-    // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
-    tmp_img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    tmp_img_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
-    tmp_img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    const VkImageCreateInfo safe_image_ci = tmp_img_ci;
+    const VkImageCreateInfo safe_image_ci = DefaultImageInfo();
 
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &safe_image_ci));
-
-    {
-        VkImageCreateInfo image_ci = safe_image_ci;
-        image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-        image_ci.arrayLayers = 6;
-        image_ci.imageType = VK_IMAGE_TYPE_1D;
-        image_ci.extent = {64, 1, 1};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00949");
-
-        image_ci = safe_image_ci;
-        image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-        image_ci.imageType = VK_IMAGE_TYPE_3D;
-        image_ci.extent = {4, 4, 4};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00949");
-    }
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
@@ -3412,19 +3403,11 @@ TEST_F(NegativeImage, ImageMinLimits) {
 
     VkImage null_image;  // throwaway target for all the vk::CreateImage
 
-    VkImageCreateInfo tmp_img_ci = LvlInitStruct<VkImageCreateInfo>();
-    tmp_img_ci.flags = 0;                          // assumably any is supported
-    tmp_img_ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
-    tmp_img_ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
-    tmp_img_ci.extent = {1, 1, 1};                 // limit is 256 for 3D, or 4096
-    tmp_img_ci.mipLevels = 1;                      // any is supported
-    tmp_img_ci.arrayLayers = 1;                    // limit is 256
-    tmp_img_ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
-    // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
-    tmp_img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    tmp_img_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
-    tmp_img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    const VkImageCreateInfo safe_image_ci = tmp_img_ci;
+    const VkImageCreateInfo safe_image_ci = []() {
+        auto ci = NegativeImage::DefaultImageInfo();
+        ci.extent = {1, 1, 1};
+        return ci;
+    }();
 
     enum Dimension { kWidth = 0x1, kHeight = 0x2, kDepth = 0x4 };
 
@@ -3519,19 +3502,11 @@ TEST_F(NegativeImage, ImageMaxLimits) {
     const bool push_fragment_density_offset_support = IsExtensionsEnabled(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
-    VkImageCreateInfo tmp_img_ci = LvlInitStruct<VkImageCreateInfo>();
-    tmp_img_ci.flags = 0;                          // assumably any is supported
-    tmp_img_ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
-    tmp_img_ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
-    tmp_img_ci.extent = {1, 1, 1};                 // limit is 256 for 3D, or 4096
-    tmp_img_ci.mipLevels = 1;                      // any is supported
-    tmp_img_ci.arrayLayers = 1;                    // limit is 256
-    tmp_img_ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
-    // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
-    tmp_img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    tmp_img_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
-    tmp_img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    const VkImageCreateInfo safe_image_ci = tmp_img_ci;
+    const VkImageCreateInfo safe_image_ci = []() {
+        auto ci = NegativeImage::DefaultImageInfo();
+        ci.extent = {1, 1, 1};
+        return ci;
+    }();
 
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &safe_image_ci));
 
@@ -6346,4 +6321,25 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-06943");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
+    TEST_DESCRIPTION("If flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, imageType must be VK_IMAGE_TYPE_2D");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!IsPlatform(kMockICD)) {
+        // The following create info is malformed will cause validation issues on various GPUs.
+        // EX: MoltenVK, GalaxyS10, and Pixel6.
+        GTEST_SKIP() << "Only run on MockICD.";
+    }
+
+    auto ci = NegativeImage::DefaultImageInfo();
+    ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+    ci.imageType = VK_IMAGE_TYPE_1D;
+    ci.extent.width = 1;
+    ci.extent.height = 1;
+    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
+
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
 }
