@@ -93,6 +93,6 @@ class Instruction {
 
     // Max capacity needs to be uint32_t because an instruction can have a string operand that is (2^16)-1 bytes long
     small_vector<uint32_t, word_vector_length, uint32_t> words_;
-    uint32_t result_id_index_;
-    uint32_t type_id_index_;
+    uint32_t result_id_index_ = 0;
+    uint32_t type_id_index_ = 0;
 };

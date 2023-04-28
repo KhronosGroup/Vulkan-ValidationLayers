@@ -97,6 +97,7 @@ class FormatUtilsOutputGenerator(OutputGenerator):
         self.packedFormats = []
         self.ycbcrFormats = dict()
         self.planarFormats = dict()
+        self.formats64bit = []
 
         # Lots of switch statements share same ending
         self.commonBoolSwitch  = '''            found = true;
@@ -218,10 +219,13 @@ extern "C" {
         # some formats (VK_FORMAT_D16_UNORM_S8_UINT) are not same numeric
         baseNumeric = elem.find('component').get('numericFormat')
         sameNumeric = True
+        has64Bit = False
         for component in elem.iterfind('component'):
             componentBits = component.get('bits')
             if componentBits == 'compressed':
                 componentBits = 'COMPRESSED_COMPONENT'
+            elif componentBits == '64':
+                has64Bit = True
 
             self.allFormats[formatName]['components'].append({
                 'type' : component.get('name'),
@@ -245,6 +249,9 @@ extern "C" {
                     'bits' : componentBits,
                     'numericFormat' : component.get('numericFormat')
                 }
+
+        if has64Bit:
+            self.formats64bit.append(formatName)
 
         for plane in elem.iterfind('plane'):
             if formatName not in self.planarFormats:
@@ -696,7 +703,17 @@ FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
 bool FormatElementIsTexel(VkFormat format);
 uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-
+'''
+             # Could loop the components, but faster to just list these
+            output += '''// True if Format contains a 64-bit component\n'
+constexpr bool FormatIs64bit(VkFormat format) {'
+    bool found = false;'
+    switch (format) {'
+'''
+            for f in sorted(self.formats64bit):
+                output += f'        case {f}:\n'
+            output += self.commonBoolSwitch
+            output += '''
 // Components
 bool FormatHasComponentSize(VkFormat format, uint32_t size);
 bool FormatHasRed(VkFormat format);
