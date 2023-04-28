@@ -17,7 +17,7 @@
 #include "state_tracker/shader_module.h"
 #include "generated/spirv_grammar_helper.h"
 
-Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(0), type_id_(0) {
+Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_index_(0), type_id_index_(0) {
     words_.emplace_back(*it++);
     words_.reserve(Length());
     for (uint32_t i = 1; i < Length(); i++) {
@@ -26,12 +26,12 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(
 
     const bool has_result = OpcodeHasResult(Opcode());
     if (OpcodeHasType(Opcode())) {
-        type_id_ = 1;
+        type_id_index_ = 1;
         if (has_result) {
-            result_id_ = 2;
+            result_id_index_ = 2;
         }
     } else if (has_result) {
-        result_id_ = 1;
+        result_id_index_ = 1;
     }
 }
 
