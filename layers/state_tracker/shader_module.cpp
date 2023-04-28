@@ -1687,7 +1687,60 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
 }
 
 NumericType ResourceInterfaceVariable::FindImageFormatType(const SHADER_MODULE_STATE& module_state, const Instruction& base_type) {
-    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
+    if (base_type.Opcode() == spv::OpTypeImage) {
+        if (base_type.Length() > 8u) {
+            switch (base_type.Word(8)) {
+                case spv::ImageFormatRgba32f:
+                case spv::ImageFormatRgba16f:
+                case spv::ImageFormatR32f:
+                case spv::ImageFormatRgba8:
+                case spv::ImageFormatRgba8Snorm:
+                case spv::ImageFormatRg32f:
+                case spv::ImageFormatRg16f:
+                case spv::ImageFormatR11fG11fB10f:
+                case spv::ImageFormatR16f:
+                case spv::ImageFormatRgba16:
+                case spv::ImageFormatRgb10A2:
+                case spv::ImageFormatRg16:
+                case spv::ImageFormatRg8:
+                case spv::ImageFormatR16:
+                case spv::ImageFormatR8:
+                case spv::ImageFormatRgba16Snorm:
+                case spv::ImageFormatRg16Snorm:
+                case spv::ImageFormatRg8Snorm:
+                case spv::ImageFormatR16Snorm:
+                case spv::ImageFormatR8Snorm:
+                    return NumericTypeFloat;
+                case spv::ImageFormatRgba32i:
+                case spv::ImageFormatRgba16i:
+                case spv::ImageFormatRgba8i:
+                case spv::ImageFormatR32i:
+                case spv::ImageFormatRg32i:
+                case spv::ImageFormatRg16i:
+                case spv::ImageFormatRg8i:
+                case spv::ImageFormatR16i:
+                case spv::ImageFormatR8i:
+                    return NumericTypeSint;
+                case spv::ImageFormatRgba32ui:
+                case spv::ImageFormatRgba16ui:
+                case spv::ImageFormatRgba8ui:
+                case spv::ImageFormatR32ui:
+                case spv::ImageFormatRgb10a2ui:
+                case spv::ImageFormatRg32ui:
+                case spv::ImageFormatRg16ui:
+                case spv::ImageFormatRg8ui:
+                case spv::ImageFormatR16ui:
+                case spv::ImageFormatR8ui:
+                case spv::ImageFormatR64ui:
+                case spv::ImageFormatR64i:
+                    return NumericTypeUint;
+                default:
+                    break;
+            }
+        }
+        return module_state.GetNumericType(base_type.Word(2));
+    }
+    return NumericTypeUnknown;
 }
 
 bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable& variable) {
