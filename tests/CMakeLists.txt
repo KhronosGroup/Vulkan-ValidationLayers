@@ -14,7 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-add_executable(vk_layer_validation_tests)
+if (ANDROID)
+    add_library(vk_layer_validation_tests MODULE)
+else()
+    add_executable(vk_layer_validation_tests)
+endif()
 target_sources(vk_layer_validation_tests PRIVATE
     framework/android_hardware_buffer.h
     framework/layer_validation_tests.h
@@ -172,18 +176,13 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
 )
 
-if (CMAKE_CROSSCOMPILING)
-    # Fixes how gtest_discover_tests find tests when cross-compiling.
-    set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE "PRE_TEST")
-endif()
-
-include(GoogleTest)
-gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
-
 if (ANDROID)
     add_subdirectory(android)
     return()
 endif()
+
+include(GoogleTest)
+gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 
 option(INSTALL_TESTS "Install tests")
 if(INSTALL_TESTS)
