@@ -50,10 +50,10 @@ class Instruction {
 
     uint32_t Opcode() const { return words_[0] & 0x0ffffu; }
 
-    // operand id index, return 0 if no result
-    uint32_t ResultId() const { return result_id_; }
-    // operand id index, return 0 if no type
-    uint32_t TypeId() const { return type_id_; }
+    // operand id, return 0 if no result
+    uint32_t ResultId() const { return (result_id_index_ == 0) ? 0 : words_[result_id_index_]; }
+    // operand id, return 0 if no type
+    uint32_t TypeId() const { return (type_id_index_ == 0) ? 0 : words_[type_id_index_]; }
 
     // Used when need to print information for an error message
     std::string Describe() const;
@@ -93,6 +93,6 @@ class Instruction {
 
     // Max capacity needs to be uint32_t because an instruction can have a string operand that is (2^16)-1 bytes long
     small_vector<uint32_t, word_vector_length, uint32_t> words_;
-    uint32_t result_id_;
-    uint32_t type_id_;
+    uint32_t result_id_index_;
+    uint32_t type_id_index_;
 };

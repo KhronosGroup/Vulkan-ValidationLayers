@@ -575,8 +575,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     // Also process the entry points
     for (const Instruction& insn : instructions) {
         // Build definition list
-        if (insn.ResultId() != 0) {
-            definitions[insn.Word(insn.ResultId())] = &insn;
+        const uint32_t result_id = insn.ResultId();
+        if (result_id != 0) {
+            definitions[result_id] = &insn;
         }
 
         switch (insn.Opcode()) {
@@ -1639,7 +1640,7 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
             count += module_state.GetComponentsConsumedByType(member_id);
         }
     } else {
-        const uint32_t base_type_id = variable.base_type.Word(variable.base_type.ResultId());
+        const uint32_t base_type_id = variable.base_type.ResultId();
         count += module_state.GetComponentsConsumedByType(base_type_id);
     }
     return count;
@@ -1737,7 +1738,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                     is_write_without_format = true;
                     for (const auto& entry : static_data_.image_write_load_id_map) {
                         for (const Instruction* insn : image_write_loads) {
-                            if (insn->Word(insn->ResultId()) == entry.second) {
+                            if (insn->ResultId() == entry.second) {
                                 const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
                                 write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
                             }
@@ -1820,7 +1821,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
                             // access chain index representing sampler index is not a constant, skip.
                             break;
                         }
-                        sampler_id = const_def->Word(const_def->ResultId());
+                        sampler_id = const_def->ResultId();
                         sampler_index = const_def->GetConstantValue();
                     }
                     const auto sampler_dec = module_state.GetDecorationSet(sampler_id);
@@ -1997,7 +1998,7 @@ const Instruction* SHADER_MODULE_STATE::GetBaseTypeInstruction(uint32_t type) co
 // Returns type_id if id has type or zero otherwise
 uint32_t SHADER_MODULE_STATE::GetTypeId(uint32_t id) const {
     const Instruction* type = FindDef(id);
-    return type ? type->Word(type->TypeId()) : 0;
+    return type ? type->TypeId() : 0;
 }
 
 // Return zero if nothing is found
