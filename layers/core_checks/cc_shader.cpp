@@ -1579,59 +1579,6 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-shaderRoundingModeRTZFloat64-06307",
                              "Shader requires RoundingModeRTZ for bit width 64 but it is not enabled on the device");
         }
-
-        const bool denorm_behavior_32_bit_only =
-            phys_dev_props_core12.denormBehaviorIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY;
-        const bool denorm_behavior_independence =
-            phys_dev_props_core12.denormBehaviorIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE;
-        if (denorm_behavior_32_bit_only || denorm_behavior_independence) {
-            const char *vuid = denorm_behavior_32_bit_only ? "VUID-RuntimeSpirv-denormBehaviorIndependence-06289"
-                                                           : "VUID-RuntimeSpirv-denormBehaviorIndependence-06290";
-
-            if (has_denorm_flush_to_zero_width_16 != has_denorm_preserve_width_16) {
-                skip |=
-                    LogError(module_state.vk_shader_module(), vuid,
-                             "Shader uses different denormals execution modes for 16 bit floats but roundingModeIndependence is %s",
-                             string_VkShaderFloatControlsIndependence(phys_dev_props_core12.denormBehaviorIndependence));
-            }
-            if (has_denorm_flush_to_zero_width_32 != has_denorm_preserve_width_32 && !denorm_behavior_32_bit_only) {
-                skip |=
-                    LogError(module_state.vk_shader_module(), vuid,
-                             "Shader uses different denormals execution modes for 32 bit floats but roundingModeIndependence is %s",
-                             string_VkShaderFloatControlsIndependence(phys_dev_props_core12.denormBehaviorIndependence));
-            }
-            if (has_denorm_flush_to_zero_width_64 != has_denorm_preserve_width_64) {
-                skip |=
-                    LogError(module_state.vk_shader_module(), vuid,
-                             "Shader uses different denormals execution modes for 64 bit floats but roundingModeIndependence is %s",
-                             string_VkShaderFloatControlsIndependence(phys_dev_props_core12.denormBehaviorIndependence));
-            }
-        }
-
-        const bool rounding_mode_32_bit_only =
-            phys_dev_props_core12.roundingModeIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY;
-        const bool rounding_mode_independence =
-            phys_dev_props_core12.roundingModeIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE;
-        if (rounding_mode_32_bit_only || rounding_mode_independence) {
-            const char *vuid = rounding_mode_32_bit_only ? "VUID-RuntimeSpirv-roundingModeIndependence-06291"
-                                                         : "VUID-RuntimeSpirv-roundingModeIndependence-06292";
-
-            if (has_rounding_mode_rte_width_16 != has_rounding_mode_rtz_width_16) {
-                skip |= LogError(module_state.vk_shader_module(), vuid,
-                                 "Shader uses different rounding modes for 16 bit floats but roundingModeIndependence is %s",
-                                 string_VkShaderFloatControlsIndependence(phys_dev_props_core12.roundingModeIndependence));
-            }
-            if (has_rounding_mode_rte_width_32 != has_rounding_mode_rtz_width_32 && !rounding_mode_32_bit_only) {
-                skip |= LogError(module_state.vk_shader_module(), vuid,
-                                 "Shader uses different rounding modes for 32 bit floats but roundingModeIndependence is %s",
-                                 string_VkShaderFloatControlsIndependence(phys_dev_props_core12.roundingModeIndependence));
-            }
-            if (has_rounding_mode_rte_width_64 != has_rounding_mode_rtz_width_64) {
-                skip |= LogError(module_state.vk_shader_module(), vuid,
-                                 "Shader uses different rounding modes for 64 bit floats but roundingModeIndependence is %s",
-                                 string_VkShaderFloatControlsIndependence(phys_dev_props_core12.roundingModeIndependence));
-            }
-        }
     }
 
     if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_id_bit)) {
