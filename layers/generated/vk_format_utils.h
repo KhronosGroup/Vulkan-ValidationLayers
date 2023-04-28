@@ -247,6 +247,30 @@ FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
 bool FormatElementIsTexel(VkFormat format);
 uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+// True if Format contains a 64-bit component
+'
+constexpr bool FormatIs64bit(VkFormat format) {'
+    bool found = false;'
+    switch (format) {'
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_SINT:
+        case VK_FORMAT_R64G64B64A64_UINT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_R64G64B64_SINT:
+        case VK_FORMAT_R64G64B64_UINT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_R64G64_SINT:
+        case VK_FORMAT_R64G64_UINT:
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_R64_SINT:
+        case VK_FORMAT_R64_UINT:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
 
 // Components
 bool FormatHasComponentSize(VkFormat format, uint32_t size);

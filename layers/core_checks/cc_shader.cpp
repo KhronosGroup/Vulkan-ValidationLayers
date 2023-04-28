@@ -32,20 +32,6 @@
 #include "generated/spirv_grammar_helper.h"
 #include "external/xxhash.h"
 
-static uint32_t GetLocationsConsumedByFormat(VkFormat format) {
-    switch (format) {
-        case VK_FORMAT_R64G64B64A64_SFLOAT:
-        case VK_FORMAT_R64G64B64A64_SINT:
-        case VK_FORMAT_R64G64B64A64_UINT:
-        case VK_FORMAT_R64G64B64_SFLOAT:
-        case VK_FORMAT_R64G64B64_SINT:
-        case VK_FORMAT_R64G64B64_UINT:
-            return 2;
-        default:
-            return 1;
-    }
-}
-
 bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                            const EntryPoint &entrypoint) const {
     bool skip = false;
@@ -55,7 +41,14 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
     std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
     if (vi) {
         for (uint32_t i = 0; i < vi->vertexAttributeDescriptionCount; ++i) {
-            const auto num_locations = GetLocationsConsumedByFormat(vi->pVertexAttributeDescriptions[i].format);
+            // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
+            // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are
+            // "standard" color formats being used
+            const VkFormat format = vi->pVertexAttributeDescriptions[i].format;
+            const uint32_t format_size = FormatElementSize(format);
+            // Vulkan Spec: Location is made up of 16 bytes, never can have 0 Locations
+            const uint32_t bytes_in_location = 16;
+            const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;
             for (uint32_t j = 0; j < num_locations; ++j) {
                 attribs[vi->pVertexAttributeDescriptions[i].location + j] = &vi->pVertexAttributeDescriptions[i];
             }
@@ -93,16 +86,48 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                              "] Vertex shader consumes input at location %" PRIu32 " but not provided",
                              pipeline.create_index, location);
         } else if (attrib && input) {
-            const auto attrib_type = GetFormatType(attrib->format);
-            const auto input_type = module_state.GetNumericType(input->type_id);
+            const VkFormat attribute_format = attrib->format;
+            const auto attrib_type = GetFormatType(attribute_format);
+            const uint32_t input_base_type_id = input->base_type.ResultId();
+            const auto input_type = module_state.GetNumericType(input_base_type_id);
 
             // Type checking
             if (!(attrib_type & input_type)) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-08733",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
-                                 pipeline.create_index, string_VkFormat(attrib->format), location,
-                                 module_state.DescribeType(input->type_id).c_str());
+                                 pipeline.create_index, string_VkFormat(attribute_format), location,
+                                 module_state.DescribeType(input_base_type_id).c_str());
+            } else {
+                // 64-bit can't be used if the other is not also 64-bit.
+                const bool attribute64 = FormatIs64bit(attribute_format);
+                const bool input64 = module_state.GetBaseTypeInstruction(input_base_type_id)->GetBitWidth() == 64;
+                if (attribute64 && !input64) {
+                    skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Attribute-64bit",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
+                                     " is a 64-bit format (%s) but vertex shader input is 32-bit type (%s)",
+                                     pipeline.create_index, location, string_VkFormat(attribute_format),
+                                     module_state.DescribeType(input_base_type_id).c_str());
+                } else if (!attribute64 && input64) {
+                    skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Input-64bit",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
+                                     " is a not a 64-bit format (%s) but vertex shader input is 64-bit type (%s)",
+                                     pipeline.create_index, location, string_VkFormat(attribute_format),
+                                     module_state.DescribeType(input_base_type_id).c_str());
+                } else if (attribute64 && input64) {
+                    // Unlike 32-bit, the components for 64-bit inputs have to match exactly
+                    const uint32_t attribute_components = FormatComponentCount(attribute_format);
+                    const uint32_t input_components = module_state.GetNumComponentsInBaseType(&input->base_type);
+                    if (attribute_components != input_components) {
+                        skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Component-64bit",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
+                                         " is a %" PRIu32 "-wide 64-bit format (%s) but vertex shader input is %" PRIu32
+                                         "-wide 64-bit type (%s), 64-bit vertex input don't have default values and require "
+                                         "matching components.",
+                                         pipeline.create_index, location, attribute_components, string_VkFormat(attribute_format),
+                                         input_components, module_state.DescribeType(input_base_type_id).c_str());
+                    }
+                }
             }
         } else {            // !attrib && !input
             assert(false);  // at least one exists in the map
