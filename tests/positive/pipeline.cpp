@@ -5972,3 +5972,103 @@ TEST_F(VkPositiveLayerTest, ViewportSwizzleNV) {
         CreatePipelineHelper::OneshotTest(*this, break_vp_count, kErrorBit);
     }
 }
+
+TEST_F(VkPositiveLayerTest, ImageDescriptorType) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *spv_source = R"(
+                    OpCapability Shader
+                    OpCapability StorageImageExtendedFormats
+                    %std450 = OpExtInstImport "GLSL.std.450"
+                    OpMemoryModel Logical GLSL450
+                    OpEntryPoint GLCompute %main "main" %id %src_image_ptr %dst_image_ptr
+                    OpExecutionMode %main LocalSize 1 1 1
+                    OpDecorate %id BuiltIn GlobalInvocationId
+                    OpDecorate %src_image_ptr DescriptorSet 0
+                    OpDecorate %src_image_ptr Binding 0
+                    OpDecorate %src_image_ptr NonWritable
+                    OpDecorate %dst_image_ptr DescriptorSet 0
+                    OpDecorate %dst_image_ptr Binding 1
+                    OpDecorate %dst_image_ptr NonReadable
+       %type_void = OpTypeVoid
+        %type_i32 = OpTypeInt 32 1
+        %type_u32 = OpTypeInt 32 0
+   %type_vec2_i32 = OpTypeVector %type_i32 2
+   %type_vec2_u32 = OpTypeVector %type_u32 2
+   %type_vec3_i32 = OpTypeVector %type_i32 3
+   %type_vec3_u32 = OpTypeVector %type_u32 3
+   %type_vec4_i32 = OpTypeVector %type_i32 4
+   %type_vec4_u32 = OpTypeVector %type_u32 4
+   %type_fun_void = OpTypeFunction %type_void
+  %type_src_image = OpTypeImage %type_u32 2D 0 0 0 2 Rgba32i
+  %type_dst_image = OpTypeImage %type_u32 2D 0 0 0 2 Rgba32ui
+%type_ptr_in_vec3_u32 = OpTypePointer Input %type_vec3_u32
+ %type_ptr_in_u32 = OpTypePointer Input %type_u32
+%type_ptr_uniform_const_src_image = OpTypePointer UniformConstant %type_src_image
+%type_ptr_uniform_const_dst_image = OpTypePointer UniformConstant %type_dst_image
+              %id = OpVariable %type_ptr_in_vec3_u32 Input
+   %src_image_ptr = OpVariable %type_ptr_uniform_const_src_image UniformConstant
+   %dst_image_ptr = OpVariable %type_ptr_uniform_const_dst_image UniformConstant
+            %main = OpFunction %type_void None %type_fun_void
+           %label = OpLabel
+       %src_image = OpLoad %type_src_image %src_image_ptr
+       %dst_image = OpLoad %type_dst_image %dst_image_ptr
+           %idvec = OpLoad %type_vec3_u32 %id
+           %id_xy = OpVectorShuffle %type_vec2_u32 %idvec %idvec 0 1
+           %coord = OpBitcast %type_vec2_i32 %id_xy
+           %value = OpImageRead %type_vec4_u32 %src_image %coord SignExtend
+                    OpImageWrite %dst_image %coord %value
+                    OpReturn
+                    OpFunctionEnd
+        )";
+
+    auto cs =
+        VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_1_SPIRV_1_4);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_ = std::move(cs);
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    VkImageObj image1(m_device);
+    image1.Init(32, 32, 1, VK_FORMAT_R32G32B32A32_SINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view1 = image1.targetView(VK_FORMAT_R32G32B32A32_SINT);
+
+    VkImageObj image2(m_device);
+    image2.Init(32, 32, 1, VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view2 = image2.targetView(VK_FORMAT_R32G32B32A32_UINT);
+
+    vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view1, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(1, view2, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+}
