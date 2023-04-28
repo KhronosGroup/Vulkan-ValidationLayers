@@ -72,24 +72,29 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "pCreateInfo->extent.depth must be 1.");
         }
 
-        if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D) {
-            if (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
-                if (pCreateInfo->extent.width != pCreateInfo->extent.height) {
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+            const VkImageType type = pCreateInfo->imageType;
+            const auto width = pCreateInfo->extent.width;
+            const auto height = pCreateInfo->extent.height;
+            if (type != VK_IMAGE_TYPE_2D) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00949",
+                                 "vkCreateImage(): Image type %s is incompatible with VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.",
+                                 string_VkImageType(type));
+            } else {
+                if (width != height) {
                     skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
-                                     "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, but "
-                                     "pCreateInfo->extent.width (=%" PRIu32 ") and pCreateInfo->extent.height (=%" PRIu32
-                                     ") are not equal.",
+                                     "vkCreateImage(): extent.width (=%" PRIu32 ") not equal to extent.height (=%" PRIu32 ").",
                                      pCreateInfo->extent.width, pCreateInfo->extent.height);
                 }
 
                 if (pCreateInfo->arrayLayers < 6) {
                     skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
-                                     "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, but "
-                                     "pCreateInfo->arrayLayers (=%" PRIu32 ") is not greater than or equal to 6.",
-                                     pCreateInfo->arrayLayers);
+                                     "vkCreateImage(): arrayLayers (=%" PRIu32 ") is less than 6.", pCreateInfo->arrayLayers);
                 }
             }
+        }
 
+        if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D) {
             if (pCreateInfo->extent.depth != 1) {
                 skip |= LogError(
                     device, "VUID-VkImageCreateInfo-imageType-00957",
