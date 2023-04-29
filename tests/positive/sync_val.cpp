@@ -13,9 +13,9 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class VkPositiveSyncValTest : public VkSyncValTest {};
+class PositiveSyncVal : public VkSyncValTest {};
 
-TEST_F(VkPositiveSyncValTest, SyncCmdClearAttachmentLayer) {
+TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     TEST_DESCRIPTION(
         "Clear one attachment layer and copy to a different one."
         "This checks for bug regression that produced a false-positive WAW hazard.");

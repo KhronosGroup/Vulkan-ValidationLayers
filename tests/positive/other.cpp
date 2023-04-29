@@ -25,11 +25,6 @@
 
 #include "utils/cast_utils.h"
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
-
 TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter with stateless validation disabled");
 
@@ -48,7 +43,6 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     vk_testing::Event event(*m_device, event_info);
 }
 
-// This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     VkResult err;
 
@@ -340,7 +334,6 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
 }
 
 TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
-    // This is a positive test. No failures are expected.
     TEST_DESCRIPTION("Use vkResetQueryPoolEXT normally");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

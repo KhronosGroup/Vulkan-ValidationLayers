@@ -33,6 +33,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/android_hardware_buffer.cpp
     positive/atomics.cpp
     positive/best_practices.cpp
+    positive/buffer.cpp
     positive/command.cpp
     positive/descriptor_buffer.cpp
     positive/descriptors.cpp
@@ -43,23 +44,27 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/format_utils.cpp
     positive/gpu_av.cpp
     positive/graphics_library.cpp
-    positive/image_buffer.cpp
+    positive/image.cpp
     positive/instance.cpp
     positive/layer_utils.cpp
     positive/memory.cpp
     positive/mesh.cpp
     positive/other.cpp
     positive/pipeline.cpp
+    positive/query.cpp
     positive/ray_tracing.cpp
     positive/ray_tracing_pipeline.cpp
     positive/render_pass.cpp
     positive/robustness.cpp
+    positive/sampler.cpp
     positive/shaderval.cpp
-    positive/sync.cpp
+    positive/sparse.cpp
+    positive/sync_object.cpp
     positive/sync_val.cpp
     positive/tooling.cpp
     positive/video.cpp
     positive/wsi.cpp
+    positive/ycbcr.cpp
     negative/amd_best_practices.cpp
     negative/android_hardware_buffer.cpp
     negative/arm_best_practices.cpp

@@ -14,7 +14,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
+class PositiveDynamicState : public VkPositiveLayerTest {};
+
+TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -48,7 +50,7 @@ TEST_F(VkPositiveLayerTest, DiscardRectanglesVersion) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
+TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
     TEST_DESCRIPTION("DynamicViewportWithCount/ScissorWithCount without multiViewport feature not enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -88,42 +90,7 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
-    TEST_DESCRIPTION("Test using dynamic vertex input and not setting pVertexInputState in the graphics pipeline create info");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
-    if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        GTEST_SKIP() << "Feature vertexInputDynamicState is not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
-    pipe.InitState();
-    pipe.gp_ci_.pVertexInputState = nullptr;
-    pipe.CreateGraphicsPipeline();
-}
-
-TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
+TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -176,7 +143,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
+TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -236,7 +203,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DiscardRectanglesWithDynamicState) {
+TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     TEST_DESCRIPTION("Don't check discard rectangles if dynamic state is not set");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -269,7 +236,7 @@ TEST_F(VkPositiveLayerTest, DiscardRectanglesWithDynamicState) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
+TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     TEST_DESCRIPTION("Create a graphics pipeline with no color attachments, but use dynamic color write enable.");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);

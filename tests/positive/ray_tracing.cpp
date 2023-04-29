@@ -15,6 +15,8 @@
 #include "../framework/ray_tracing_objects.h"
 #include "generated/vk_extension_helper.h"
 
+class PositiveRayTracing : public VkPositiveLayerTest {};
+
 TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 
@@ -60,7 +62,7 @@ TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes
                                             &max_primitives_count, &build_sizes_info);
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
+TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     TEST_DESCRIPTION("Test device side accelerationStructureReference");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -80,7 +82,7 @@ TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
-    
+
     if (bda_features.bufferDeviceAddress == VK_FALSE) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
     }
@@ -104,7 +106,7 @@ TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingHostAccelerationStructureReference) {
+TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
     TEST_DESCRIPTION("Test host side accelerationStructureReference");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -139,7 +141,7 @@ TEST_F(VkPositiveLayerTest, RayTracingHostAccelerationStructureReference) {
     top_level_build_geometry.BuildHost(instance(), *m_device);
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingStridedDeviceAddressRegion) {
+TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     TEST_DESCRIPTION("Test different valid VkStridedDeviceAddressRegionKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

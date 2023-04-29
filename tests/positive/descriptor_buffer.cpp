@@ -11,7 +11,9 @@
 
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(VkPositiveLayerTest, DescriptorBufferSetCreateBuffer) {
+class PositiveDescriptorBuffer : public VkLayerTest {};
+
+TEST_F(PositiveDescriptorBuffer, BasicUsage) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
