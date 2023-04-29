@@ -167,6 +167,13 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/memory.cpp \
                    $(SRC_DIR)/tests/negative/object_lifetime.cpp \
                    $(SRC_DIR)/tests/negative/sampler.cpp \
+                   $(SRC_DIR)/tests/negative/shader_compute.cpp \
+                   $(SRC_DIR)/tests/negative/shader_interface.cpp \
+                   $(SRC_DIR)/tests/negative/shader_limits.cpp \
+                   $(SRC_DIR)/tests/negative/shader_push_constants.cpp \
+                   $(SRC_DIR)/tests/negative/shader_spirv.cpp \
+                   $(SRC_DIR)/tests/negative/shader_storage_image.cpp \
+                   $(SRC_DIR)/tests/negative/shader_storage_texel.cpp \
                    $(SRC_DIR)/tests/negative/sparse.cpp \
                    $(SRC_DIR)/tests/negative/sync_object.cpp \
                    $(SRC_DIR)/tests/negative/ycbcr.cpp \
