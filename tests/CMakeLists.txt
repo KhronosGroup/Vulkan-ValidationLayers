@@ -105,6 +105,13 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/renderpass.cpp
     negative/robustness.cpp
     negative/sampler.cpp
+    negative/shader_compute.cpp
+    negative/shader_interface.cpp
+    negative/shader_limits.cpp
+    negative/shader_push_constants.cpp
+    negative/shader_spirv.cpp
+    negative/shader_storage_image.cpp
+    negative/shader_storage_texel.cpp
     negative/sparse.cpp
     negative/subgroups.cpp
     negative/subpass.cpp
