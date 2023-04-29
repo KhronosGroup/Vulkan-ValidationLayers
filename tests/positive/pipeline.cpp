@@ -23,11 +23,6 @@
 
 #include "utils/cast_utils.h"
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
-
 TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
     TEST_DESCRIPTION("Smoke test for complex types across VS/FS boundary");
     ASSERT_NO_FATAL_FAILURE(Init());

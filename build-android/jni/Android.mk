@@ -199,26 +199,31 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/ray_tracing.cpp \
                    $(SRC_DIR)/tests/negative/ray_tracing_pipeline.cpp \
                    $(SRC_DIR)/tests/negative/ray_tracing_gpu.cpp \
+                   $(SRC_DIR)/tests/positive/buffer.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptor_buffer.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/dynamic_state.cpp \
-                   $(SRC_DIR)/tests/positive/image_buffer.cpp \
+                   $(SRC_DIR)/tests/positive/image.cpp \
                    $(SRC_DIR)/tests/positive/gpu_av.cpp \
                    $(SRC_DIR)/tests/positive/instance.cpp \
                    $(SRC_DIR)/tests/positive/layer_utils.cpp \
                    $(SRC_DIR)/tests/positive/format_utils.cpp \
                    $(SRC_DIR)/tests/positive/other.cpp \
                    $(SRC_DIR)/tests/positive/pipeline.cpp \
+                   $(SRC_DIR)/tests/positive/query.cpp \
                    $(SRC_DIR)/tests/positive/render_pass.cpp \
                    $(SRC_DIR)/tests/positive/robustness.cpp \
+                   $(SRC_DIR)/tests/positive/sampler.cpp \
                    $(SRC_DIR)/tests/positive/shaderval.cpp \
-                   $(SRC_DIR)/tests/positive/sync.cpp \
+                   $(SRC_DIR)/tests/positive/sparse.cpp \
+                   $(SRC_DIR)/tests/positive/sync_object.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
                    $(SRC_DIR)/tests/positive/atomics.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing.cpp \
                    $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
+                   $(SRC_DIR)/tests/positive/ycbcr.cpp \
                    $(SRC_DIR)/tests/negative/sync_val.cpp \
                    $(SRC_DIR)/tests/containers/small_vector.cpp \
                    $(SRC_DIR)/tests/framework/binding.cpp \

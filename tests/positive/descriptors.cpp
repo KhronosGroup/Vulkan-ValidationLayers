@@ -16,17 +16,11 @@
 #include "generated/vk_extension_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
-#include <algorithm>
 #include <array>
-#include <chrono>
-#include <thread>
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
+class PositiveDescriptors : public VkPositiveLayerTest {};
 
-TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
+TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
     unsigned int i;
 
@@ -55,7 +49,7 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
     vk::UpdateDescriptorSets(m_device->device(), 0, NULL, copy_size, copy_ds_update);
 }
 
-TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
+TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     TEST_DESCRIPTION("Create DSLayouts and DescriptorSets and then delete the DSLayouts before the DescriptorSets.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -94,8 +88,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     vk::FreeDescriptorSets(m_device->device(), ds_pool_one.handle(), 1, &descriptorSet);
 }
 
-// This is a positive test. No failures are expected.
-TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
+TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     TEST_DESCRIPTION(
         "Ensure that the vkUpdateDescriptorSets validation code is ignoring VkWriteDescriptorSet members that are not related to "
         "the descriptor type specified by VkWriteDescriptorSet::descriptorType.  Correct validation behavior will result in the "
@@ -230,7 +223,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
+TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     TEST_DESCRIPTION("Bind a DescriptorSet with only an immutable sampler and make sure that we don't warn for no update.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -256,8 +249,7 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
     m_commandBuffer->end();
 }
 
-// This is a positive test. No failures are expected.
-TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
+TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     TEST_DESCRIPTION("Update last descriptor in a set that includes an empty binding");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -296,8 +288,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 }
 
-// This is a positive test. No failures are expected.
-TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
+TEST_F(PositiveDescriptors, PushDescriptorNullDstSet) {
     TEST_DESCRIPTION("Use null dstSet in CmdPushDescriptorSetKHR");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -353,8 +344,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
                                 &descriptor_write);
 }
 
-// This is a positive test. No failures are expected.
-TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
+TEST_F(PositiveDescriptors, PushDescriptorUnboundSet) {
     TEST_DESCRIPTION("Ensure that no validation errors are produced for not bound push descriptor sets");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -425,8 +415,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     m_commandBuffer->end();
 }
 
-// This is a positive test. No failures are expected.
-TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
+TEST_F(PositiveDescriptors, BindingPartiallyBound) {
     TEST_DESCRIPTION("Ensure that no validation errors for invalid descriptors if binding is PARTIALLY_BOUND");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -532,7 +521,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     m_commandBuffer->QueueCommandBuffer();
 }
 
-TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
+TEST_F(PositiveDescriptors, PushDescriptorSetUpdatingSetNumber) {
     TEST_DESCRIPTION(
         "Ensure that no validation errors are produced when the push descriptor set number changes "
         "between two vk::CmdPushDescriptorSetKHR calls.");
@@ -648,7 +637,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
+TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     // Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive
     // We previously had a bug where dynamic offset of inactive bindings was still being used
 
@@ -734,7 +723,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
+TEST_F(PositiveDescriptors, CreateDescriptorSetBindingWithIgnoredSamplers) {
     TEST_DESCRIPTION("Test that layers conditionally do ignore the pImmutableSamplers on vkCreateDescriptorSetLayout");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -787,7 +776,7 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
+TEST_F(PositiveDescriptors, PushingDescriptorSetWithImmutableSampler) {
     TEST_DESCRIPTION("Use a push descriptor with an immutable sampler.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -937,7 +926,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
 }
 
-TEST_F(VkPositiveLayerTest, CopyAccelerationStructureMutableDescriptors) {
+TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     TEST_DESCRIPTION("Copy acceleration structure descriptor in a mutable descriptor.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1043,7 +1032,7 @@ TEST_F(VkPositiveLayerTest, CopyAccelerationStructureMutableDescriptors) {
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
 }
 
-TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
+TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
     TEST_DESCRIPTION("Test reading from a descriptor that uses same image view as framebuffer input attachment");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1202,7 +1191,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
+TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
     TEST_DESCRIPTION("Update a descriptor set with an image view that includes VkImageViewUsageCreateInfo");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -1242,7 +1231,7 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
     ds.UpdateDescriptorSets();
 }
 
-TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
+TEST_F(PositiveDescriptors, MultipleThreadsUsingHostOnlyDescriptorSet) {
     TEST_DESCRIPTION("Test using host only descriptor set in multiple threads");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1313,7 +1302,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
     for (auto &t : threads) t.join();
 }
 
-TEST_F(VkPositiveLayerTest, BindingEmptyDescriptorSets) {
+TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     OneOffDescriptorSet empty_ds(m_device, {});
@@ -1325,7 +1314,7 @@ TEST_F(VkPositiveLayerTest, BindingEmptyDescriptorSets) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DrawingWithUnboundUnusedSetWithInputAttachments) {
+TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     TEST_DESCRIPTION(
         "Test issuing draw command with pipeline layout that has 2 descriptor sets with input attachment descriptors. "
         "The second descriptor set is unused and unbound. Its purpose is to catch regression of the following bug or similar "
@@ -1424,7 +1413,7 @@ TEST_F(VkPositiveLayerTest, DrawingWithUnboundUnusedSetWithInputAttachments) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, UpdateDescritorSetsNoLongerInUse) {
+TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
     TEST_DESCRIPTION("Use descriptor in the draw call and then update descriptor when it is no longer in use");
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));

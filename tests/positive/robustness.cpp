@@ -13,7 +13,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
+class PositiveRobustness : public VkPositiveLayerTest {};
+
+TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
     TEST_DESCRIPTION("Validate using NV acceleration structure descriptor writing with null descriptor.");
 
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
@@ -49,7 +51,7 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
+TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     TEST_DESCRIPTION("Test nullDescriptor works wih CmdBindVertexBuffers variants");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -96,7 +98,7 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, PipelineRobustnessRobustImageAccessExposed) {
+TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {
     TEST_DESCRIPTION("Check if VK_EXT_image_robustness is exposed feature doesn't need to be enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);

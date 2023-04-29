@@ -19,8 +19,9 @@
 #include <chrono>
 
 class VkPositiveGraphicsLibraryLayerTest : public VkLayerTest {};
+class PositiveGraphicsLibrary : public VkLayerTest {};
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
+TEST_F(PositiveGraphicsLibrary, VertexInput) {
     TEST_DESCRIPTION("Create a vertex input graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -48,7 +49,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
+TEST_F(PositiveGraphicsLibrary, PreRaster) {
     TEST_DESCRIPTION("Create a pre-raster graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -88,7 +89,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary) {
+TEST_F(PositiveGraphicsLibrary, FragmentShader) {
     TEST_DESCRIPTION("Create a fragment shader graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -128,7 +129,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary) {
+TEST_F(PositiveGraphicsLibrary, FragmentOutput) {
     TEST_DESCRIPTION("Create a fragment output graphics library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -157,7 +158,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentMixedAttachmentSamplesAMD) {
+TEST_F(PositiveGraphicsLibrary, FragmentMixedAttachmentSamplesAMD) {
     TEST_DESCRIPTION("Create a fragment graphics library with mixed attachement sample support");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -195,7 +196,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentMixedAttachmentSamplesAMD) {
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
+TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     TEST_DESCRIPTION("Create an executable library by linking one or more graphics libraries");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -294,7 +295,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
+TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     TEST_DESCRIPTION("Make a draw with a pipeline layout derived from null DSLs");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -435,7 +436,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputAttributeDescriptionOffset) {
+TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
     TEST_DESCRIPTION("Test VUID-VkVertexInputAttributeDescription-offset-00622: is not trigged with graphics library");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -493,7 +494,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputAttributeDescriptionOffset
     frag_shader_lib.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexAttributeDivisorInstanceRateZero) {
+TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
     TEST_DESCRIPTION("VK_EXT_vertex_attribute_divisor is not checked with VK_EXT_graphics_pipeline_library");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -601,7 +602,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, NotAttachmentDynamicBlendEnable) {
     pipe.CreateGraphicsPipeline(true, false);
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, DynamicPrimitiveTopolgy) {
+TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgy) {
     TEST_DESCRIPTION("VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY works when GPL is used");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -727,7 +728,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DynamicPrimitiveTopolgy) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, LinkingInputAttachment) {
+TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
     TEST_DESCRIPTION("Make sure OpCapability InputAttachment is not detected at linking time");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -835,7 +836,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, LinkingInputAttachment) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, TessellationWithoutPreRasterization) {
+TEST_F(PositiveGraphicsLibrary, TessellationWithoutPreRasterization) {
     TEST_DESCRIPTION("have Tessellation stages with null pTessellationState but not Pre-Rasterization");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -888,7 +889,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, TessellationWithoutPreRasterization) 
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) {
+TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -981,7 +982,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FSIgnoredPointerGPLDynamicRendering) 
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, DepthState) {
+TEST_F(PositiveGraphicsLibrary, DepthState) {
     TEST_DESCRIPTION("Create a GPL with depth state");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);

@@ -12,18 +12,12 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "generated/vk_extension_helper.h"
 
-#include <algorithm>
 #include <array>
-#include <chrono>
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
+class PositiveRenderPass : public VkPositiveLayerTest {};
 
-TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentUsedTwiceOK) {
+TEST_F(PositiveRenderPass, AttachmentUsedTwiceOK) {
     TEST_DESCRIPTION("Attachment is used simultaneously as color and input, with the same layout. This is OK.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -41,7 +35,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentUsedTwiceOK) {
     vk_testing::RenderPass rp(*m_device, rpci);
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
+TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     TEST_DESCRIPTION(
         "Ensure that CmdBeginRenderPass with an attachment's initialLayout of VK_IMAGE_LAYOUT_UNDEFINED works when the command "
         "buffer has prior knowledge of that attachment's layout.");
@@ -103,7 +97,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateInitialLayoutUndefined) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOnly) {
+TEST_F(PositiveRenderPass, AttachmentLayoutWithLoadOpThenReadOnly) {
     TEST_DESCRIPTION(
         "Positive test where we create a renderpass with an attachment that uses LOAD_OP_CLEAR, the first subpass has a valid "
         "layout, and a second subpass then uses a valid *READ_ONLY* layout.");
@@ -140,7 +134,7 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOn
     vk_testing::RenderPass rp(*m_device, rpci);
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
+TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     TEST_DESCRIPTION("Ensure that CmdBeginRenderPass applies the layout transitions for the first subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -198,7 +192,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassBeginTransitionsAttachmentUnused) {
+TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
     TEST_DESCRIPTION(
         "Ensure that layout transitions work correctly without errors, when an attachment reference is VK_ATTACHMENT_UNUSED");
 
@@ -229,7 +223,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginTransitionsAttachmentUnused) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
+TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     TEST_DESCRIPTION("Create a stencil-only attachment with a LOAD_OP set to CLEAR. stencil[Load|Store]Op used to be ignored.");
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -361,7 +355,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassBeginInlineAndSecondaryCommandBuffers) {
+TEST_F(PositiveRenderPass, BeginInlineAndSecondaryCommandBuffers) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -375,7 +369,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginInlineAndSecondaryCommandBuffers) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndefined) {
+TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     TEST_DESCRIPTION(
         "Create a render pass with depth-stencil attachment where layout transition from UNDEFINED TO DS_READ_ONLY_OPTIMAL is set "
         "by render pass and verify that transition has correctly occurred at queue submit time with no validation errors.");
@@ -440,7 +434,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
     m_commandBuffer->QueueCommandBuffer(false);
 }
 
-TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
+TEST_F(PositiveRenderPass, DestroyPipeline) {
     TEST_DESCRIPTION("Draw using a pipeline whose create renderPass has been destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
@@ -523,7 +517,7 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
+TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     TEST_DESCRIPTION("Use a 1D image view for an imageless framebuffer with base mip level > 0.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -636,7 +630,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
+TEST_F(PositiveRenderPass, ValidStages) {
     TEST_DESCRIPTION("Create render pass with valid stages");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -686,7 +680,7 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
     PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported);
 }
 
-TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
+TEST_F(PositiveRenderPass, SingleMipTransition) {
     TEST_DESCRIPTION("Ensure that the validation message contains the correct miplevel");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -866,7 +860,7 @@ TEST_F(VkPositiveLayerTest, RenderPassSingleMipTransition) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
+TEST_F(PositiveRenderPass, ViewMasks) {
     TEST_DESCRIPTION("Create render pass with view mask, with multiview feature enabled in Vulkan11Features.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -907,7 +901,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
 }
 
-TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
+TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     TEST_DESCRIPTION("Begin render pass with view mask and a push descriptor.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1022,7 +1016,7 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, BeginRenderPassDedicatedStencilLayout) {
+TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     TEST_DESCRIPTION("Render pass using a dedicated stencil layout, different from depth layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1121,7 +1115,7 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassDedicatedStencilLayout) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, QueriesInMultiviewRenderPass) {
+TEST_F(PositiveRenderPass, QueriesInMultiview) {
     TEST_DESCRIPTION("Use queries in a render pass instance with multiview enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1245,80 +1239,7 @@ TEST_F(VkPositiveLayerTest, QueriesInMultiviewRenderPass) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkPositiveLayerTest, FragmentShadingRateAttachment) {
-    TEST_DESCRIPTION("Create framebuffer with a fragment shading rate attachment that has layout count 1.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
-    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>(&fsr_features);
-    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
-    if (multiview_features.multiview == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported";
-        return;
-    }
-    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
-        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::attachmentFragmentShadingRate not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    VkAttachmentReference2 attach = LvlInitStruct<VkAttachmentReference2>();
-    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
-    attach.attachment = 0;
-
-    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    GetPhysicalDeviceProperties2(fsr_properties);
-
-    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = LvlInitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
-    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
-    fsr_attachment.pFragmentShadingRateAttachment = &attach;
-
-    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>(&fsr_attachment);
-    subpass.viewMask = 0x2;
-
-    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
-    attach_desc.format = VK_FORMAT_R8_UINT;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
-    rpci.subpassCount = 1;
-    rpci.pSubpasses = &subpass;
-    rpci.attachmentCount = 1;
-    rpci.pAttachments = &attach_desc;
-
-    vk_testing::RenderPass rp(*m_device, rpci, true);
-    ASSERT_TRUE(rp.initialized());
-
-    VkImageObj image(m_device);
-    image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL,
-                       0);
-    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
-
-    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
-    fb_info.renderPass = rp.handle();
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView;
-    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
-    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
-    fb_info.layers = 1;
-
-    vk_testing::Framebuffer fb(*m_device, fb_info);
-    ASSERT_TRUE(fb.initialized());
-}
-
-TEST_F(VkPositiveLayerTest, StoreOpNoneExt) {
+TEST_F(PositiveRenderPass, StoreOpNoneExt) {
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -1345,4 +1266,178 @@ TEST_F(VkPositiveLayerTest, StoreOpNoneExt) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
 
     vk_testing::RenderPass rp(*m_device, rpci);
+}
+
+TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepthOnlyImageView) {
+    TEST_DESCRIPTION(
+        "Validate that when an imageView of a depth/stencil image is used as a depth/stencil framebuffer attachment, the "
+        "aspectMask is ignored and both depth and stencil image subresources are used.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, &format_properties);
+    if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Image format does not support sampling";
+    }
+
+    VkAttachmentDescription attachment = {0,
+                                          VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_STORE,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, &att_ref, 0, nullptr};
+
+    VkSubpassDependency dep = {0,
+                               0,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_DEPENDENCY_BY_REGION_BIT};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 1, &dep};
+    vk_testing::RenderPass rp(*m_device, rpci);
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                       0x26,  // usage
+                       VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    image.SetLayout(0x6, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+    VkImageView view = image.targetView(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view, 32, 32, 1};
+    vk_testing::Framebuffer fb(*m_device, fci);
+
+    m_commandBuffer->begin();
+
+    VkImageMemoryBarrier imb = LvlInitStruct<VkImageMemoryBarrier>();
+    imb.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    imb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    imb.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    imb.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imb.srcQueueFamilyIndex = 0;
+    imb.dstQueueFamilyIndex = 0;
+    imb.image = image.handle();
+    imb.subresourceRange.aspectMask = 0x6;
+    imb.subresourceRange.baseMipLevel = 0;
+    imb.subresourceRange.levelCount = 0x1;
+    imb.subresourceRange.baseArrayLayer = 0;
+    imb.subresourceRange.layerCount = 0x1;
+
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer(false);
+}
+
+TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
+    TEST_DESCRIPTION(
+        "Test no false overlap is reported with multi attachment framebuffer (attachments are slices of a 3D image). Multiple "
+        "subpasses that draw to a single slice of a 3D image");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required extensions not supported.";
+    }
+
+    constexpr unsigned depth_count = 2u;
+
+    // 3D image with 2 depths
+    auto image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_info.imageType = VK_IMAGE_TYPE_3D;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.extent = {64, 64, depth_count};
+    image_info.mipLevels = 1u;
+    image_info.arrayLayers = 1u;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image_3d{m_device};
+    image_3d.init(&image_info);
+    image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // 2D image views to be used as color attchments for framebuffer
+    auto view_info = LvlInitStruct<VkImageViewCreateInfo>();
+    view_info.image = image_3d.handle();
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = image_info.format;
+    view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+    view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+    view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+    view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+    view_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView image_views[depth_count];
+    VkImageView views[depth_count] = {VK_NULL_HANDLE};
+    for (unsigned i = 0; i < depth_count; ++i) {
+        view_info.subresourceRange.baseArrayLayer = i;
+        image_views[i].init(*m_device, view_info);
+        views[i] = image_views[i].handle();
+    }
+
+    // Render pass with 2 subpasses
+    VkAttachmentReference attach[depth_count] = {};
+    VkSubpassDescription subpasses[depth_count] = {};
+
+    for (unsigned i = 0; i < depth_count; ++i) {
+        attach[i].attachment = i;
+        attach[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        subpasses[i].pColorAttachments = &attach[i];
+        subpasses[i].colorAttachmentCount = 1;
+    }
+
+    VkAttachmentDescription attach_desc[depth_count] = {};
+    for (unsigned i = 0; i < depth_count; ++i) {
+        attach_desc[i].format = image_info.format;
+        attach_desc[i].samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc[i].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attach_desc[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    auto rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.subpassCount = depth_count;
+    rp_info.pSubpasses = subpasses;
+    rp_info.attachmentCount = depth_count;
+    rp_info.pAttachments = attach_desc;
+
+    vk_testing::RenderPass renderpass;
+    renderpass.init(*m_device, rp_info);
+
+    auto fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = renderpass.handle();
+    fb_info.attachmentCount = depth_count;
+    fb_info.pAttachments = views;
+    fb_info.width = image_info.extent.width;
+    fb_info.height = image_info.extent.height;
+    fb_info.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fb_info);
+
+    auto rp_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin_info.renderPass = renderpass.handle();
+    rp_begin_info.framebuffer = framebuffer.handle();
+    rp_begin_info.renderArea = {{0, 0}, {image_info.extent.width, image_info.extent.height}};
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    for (unsigned i = 0; i < (depth_count - 1); ++i) {
+        vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    }
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
 }

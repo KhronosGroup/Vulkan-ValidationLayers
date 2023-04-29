@@ -19,11 +19,6 @@
 #include <mutex>
 #include <thread>
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
-
 TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     // This is a positive test, no errors expected
     // Verifies the ability to relax block layout rules with a shader that requires them to be relaxed

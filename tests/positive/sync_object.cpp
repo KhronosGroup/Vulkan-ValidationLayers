@@ -23,12 +23,9 @@
 #include <poll.h>
 #endif
 
-//
-// POSITIVE VALIDATION TESTS
-//
-// These tests do not expect to encounter ANY validation errors pass only if this is true
+class PositiveSyncObject : public VkLayerTest {};
 
-TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
+TEST_F(PositiveSyncObject, ThreadSafetyDisplayObjects) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -62,7 +59,7 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
     vkGetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
+TEST_F(PositiveSyncObject, ThreadSafetyDisplayPlaneObjects) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPlanePropertiesKHR in thread-safety.");
 
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -95,7 +92,7 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersImage) {
+TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -145,7 +142,7 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersImage) {
     ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, nullptr, &image_barrier);
 }
 
-TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersBuffer) {
+TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
@@ -193,7 +190,7 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersBuffer) {
     ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, &buffer_barrier, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, LayoutFromPresentWithoutAccessMemoryRead) {
+TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
     // Transition an image away from PRESENT_SRC_KHR without ACCESS_MEMORY_READ
     // in srcAccessMask.
 
@@ -236,7 +233,7 @@ TEST_F(VkPositiveLayerTest, LayoutFromPresentWithoutAccessMemoryRead) {
                            &barrier);
 }
 
-TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
+TEST_F(PositiveSyncObject, QueueSubmitSemaphoresAndLayoutTracking) {
     TEST_DESCRIPTION("Submit multiple command buffers with chained semaphore signals and layout transitions");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -325,8 +322,7 @@ TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-// This is a positive test. We used to expect error in this case but spec now allows it
-TEST_F(VkPositiveLayerTest, ResetUnsignaledFence) {
+TEST_F(PositiveSyncObject, ResetUnsignaledFence) {
     vk_testing::Fence testFence;
     VkFenceCreateInfo fenceInfo = LvlInitStruct<VkFenceCreateInfo>();
 
@@ -337,7 +333,7 @@ TEST_F(VkPositiveLayerTest, ResetUnsignaledFence) {
     ASSERT_VK_SUCCESS(result);
 }
 
-TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
+TEST_F(PositiveSyncObject, FenceCreateSignaledWaitHandling) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // A fence created signaled
@@ -358,8 +354,7 @@ TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
     // Should have both retired! (get destroyed now)
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
+TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
     TEST_DESCRIPTION(
         "Two command buffers with two separate fences are each run through a Submit & WaitForFences cycle 3 times. This previously "
         "revealed a bug so running this positive test to prevent a regression.");
@@ -420,8 +415,8 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
         vk::DestroyFence(m_device->device(), fences[i], nullptr);
     }
 }
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWI) {
+
+TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWI) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues followed by a QueueWaitIdle.");
 
@@ -503,8 +498,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWIFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWIFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence followed "
         "by a QueueWaitIdle.");
@@ -590,8 +584,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceTwoWFF) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceTwoWFF) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence followed "
         "by two consecutive WaitForFences calls on the same fence.");
@@ -678,7 +671,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
+TEST_F(PositiveSyncObject, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     ASSERT_NO_FATAL_FAILURE(Init());
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         GTEST_SKIP() << "Test requires two queues";
@@ -736,8 +729,7 @@ TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     ;
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence, "
         "followed by a WaitForFences call.");
@@ -823,8 +815,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAndOneFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, ordered by a timeline semaphore,"
         " the second having a fence, followed by a WaitForFences call.");
@@ -935,8 +926,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, sharing a signal/wait semaphore, the second "
         "having a fence, followed by a WaitForFences call.");
@@ -1015,8 +1005,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, no fences, followed by a third QueueSubmit "
         "with NO SubmitInfos but with a fence, followed by a WaitForFences call.");
@@ -1095,8 +1084,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
+TEST_F(PositiveSyncObject, TwoQueueSubmitsOneQueueOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, the second having a fence, followed by a "
         "WaitForFences call.");
@@ -1172,8 +1160,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-// This is a positive test.  No errors should be generated.
-TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
+TEST_F(PositiveSyncObject, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers each in a separate SubmitInfo sent in a single QueueSubmit call followed by a WaitForFences call.");
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1256,7 +1243,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 2, &command_buffer[0]);
 }
 
-TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
+TEST_F(PositiveSyncObject, LongSemaphoreChain) {
     ASSERT_NO_FATAL_FAILURE(Init());
     VkResult err;
 
@@ -1297,7 +1284,7 @@ TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
     for (auto semaphore : semaphores) vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
+TEST_F(PositiveSyncObject, ExternalSemaphore) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
@@ -1381,9 +1368,10 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkPositiveLayerTest, ExternalTimelineSemaphore) {
-    TEST_DESCRIPTION("Export and import a timeline semaphore. "
-                     "Should be roughly equivalant to the CTS *cross_instance*timeline_semaphore* tests");
+TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
+    TEST_DESCRIPTION(
+        "Export and import a timeline semaphore. "
+        "Should be roughly equivalant to the CTS *cross_instance*timeline_semaphore* tests");
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
@@ -1488,7 +1476,7 @@ TEST_F(VkPositiveLayerTest, ExternalTimelineSemaphore) {
     ASSERT_EQ(import_value, signal_value);
 }
 
-TEST_F(VkPositiveLayerTest, ExternalFence) {
+TEST_F(PositiveSyncObject, ExternalFence) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
@@ -1557,7 +1545,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkPositiveLayerTest, ExternalFenceSyncFdLoop) {
+TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
@@ -1619,7 +1607,7 @@ TEST_F(VkPositiveLayerTest, ExternalFenceSyncFdLoop) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkPositiveLayerTest, ExternalFenceSubmitCmdBuffer) {
+TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
@@ -1698,8 +1686,7 @@ TEST_F(VkPositiveLayerTest, ExternalFenceSubmitCmdBuffer) {
     ASSERT_VK_SUCCESS(err);
 }
 
-TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
-
+TEST_F(PositiveSyncObject, ThreadNullFenceCollision) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1721,7 +1708,6 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
     m_errorMonitor->SetBailout(NULL);
 }
 
-// This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
@@ -1769,7 +1755,7 @@ TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
 }
 
-TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
+TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     TEST_DESCRIPTION("Attempt vkCmdPipelineBarrier with 2 layout transitions of the same image.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1818,7 +1804,7 @@ TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
+TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     TEST_DESCRIPTION("Signal a timeline semaphore on 2 queues.");
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
@@ -1842,7 +1828,7 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
         q1 = m_device->graphics_queues()[1];
     }
     if (q1 == nullptr) {
-        for (auto *q: m_device->compute_queues()) {
+        for (auto *q : m_device->compute_queues()) {
             if (q != q0) {
                 q1 = q;
                 break;
@@ -1850,7 +1836,7 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
         }
     }
     if (q1 == nullptr) {
-        for (auto *q: m_device->dma_queues()) {
+        for (auto *q : m_device->dma_queues()) {
             if (q != q0) {
                 q1 = q;
                 break;
@@ -1953,7 +1939,7 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     vk::DeviceWaitIdle(m_device->device());
 }
 
-TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
+TEST_F(PositiveSyncObject, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     TEST_DESCRIPTION("Reset query pool from a different command buffer and wait on fence after both are submitted");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2056,7 +2042,7 @@ void WaitTimelineSem(FenceSemRaceData *data) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
+TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2119,7 +2105,7 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
     thread.join();
 }
 
-TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
+TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     TEST_DESCRIPTION("Submit a CB and Fence but synchronize with vkQueueWaitIdle() (Issue 2756)");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -2332,4 +2318,3 @@ TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
 
     data.Run(*m_commandPool, *m_errorMonitor);
 }
-

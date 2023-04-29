@@ -18,7 +18,9 @@
 #include <array>
 #include <chrono>
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingSimple) {
+class PositiveDynamicRendering : public VkPositiveLayerTest {};
+
+TEST_F(PositiveDynamicRendering, BasicUsage) {
     TEST_DESCRIPTION("Most simple way to use dynamic rendering");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -54,7 +56,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSimple) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
+TEST_F(PositiveDynamicRendering, Draw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -123,7 +125,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingDrawMultiBind) {
+TEST_F(PositiveDynamicRendering, DrawMultiBind) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering and multiple CmdBindPipeline calls.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -214,7 +216,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDrawMultiBind) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
+TEST_F(PositiveDynamicRendering, BeginQuery) {
     TEST_DESCRIPTION("Test calling vkCmdBeginQuery with a dynamic render pass.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -257,7 +259,7 @@ TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
+TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
     TEST_DESCRIPTION("Create dynamic rendering pipeline with rasterizer discard.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -316,7 +318,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     pipe.CreateVKPipeline(pl.handle(), render_pass, &create_info);
 }
 
-TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
+TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
     TEST_DESCRIPTION("Use stencil attachment with integer format and depth stencil resolve extension");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -386,7 +388,7 @@ TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencil
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
+TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     TEST_DESCRIPTION("Test creating an image with subsampled bit.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -452,7 +454,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
+TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
     TEST_DESCRIPTION("Resume and suspend at vkCmdBeginRendering time");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -553,7 +555,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipeline) {
+TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -628,7 +630,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipeline) {
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipelineNoInfo) {
+TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -697,7 +699,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipelineNoInfo) {
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingWithDualSourceBlending) {
+TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     TEST_DESCRIPTION("Test drawing with dynamic rendering and dual source blending.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -773,7 +775,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingWithDualSourceBlending) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendPrimaryResumeInSecondary) {
+TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     TEST_DESCRIPTION("Suspend in primary and resume in secondary");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -868,7 +870,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendPrimaryResumeInSecondary) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendSecondaryResumeInPrimary) {
+TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     TEST_DESCRIPTION("Suspend in secondary and resume in primary");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
