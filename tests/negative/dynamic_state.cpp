@@ -15,7 +15,11 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeDynamicState : public VkLayerTest {};
+class NegativeDynamicState : public VkLayerTest {
+  public:
+    // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
+    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
+};
 
 TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
@@ -3766,4 +3770,78 @@ TEST_F(NegativeDynamicState, SettingCommands) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+void NegativeDynamicState::ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {dynamic_state};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetCullMode) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_CULL_MODE, "VUID-vkCmdDraw-None-07840");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetFrontFace) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_FRONT_FACE, "VUID-vkCmdDraw-None-07841");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetPrimitiveTopology) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, "VUID-vkCmdDraw-None-07842");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetDepthTestEnable) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE, "VUID-vkCmdDraw-None-07843");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetDepthWriteEnable) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, "VUID-vkCmdDraw-None-07844");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetDepthCompareOp) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP, "VUID-vkCmdDraw-None-07845");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetDepthBoundsTestEnable) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, "VUID-vkCmdDraw-None-07846");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetStencilTestEnable) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE, "VUID-vkCmdDraw-None-07847");
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetStencilOp) {
+    ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_STENCIL_OP, "VUID-vkCmdDraw-None-07848");
 }
