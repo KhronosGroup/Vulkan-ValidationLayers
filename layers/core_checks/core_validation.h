@@ -55,7 +55,6 @@ struct DrawDispatchVuid {
     const char* viewport_scissor_count_03419 = kVUIDUndefined;
     const char* primitive_topology_class_03420 = kVUIDUndefined;
     const char* primitive_topology_class_ds3_07500 = kVUIDUndefined;
-    const char* dynamic_primitive_topology_07842 = kVUIDUndefined;
     const char* corner_sampled_address_mode_02696 = kVUIDUndefined;
     const char* imageview_atomic_02691 = kVUIDUndefined;
     const char* bufferview_atomic_07888 = kVUIDUndefined;
@@ -169,6 +168,15 @@ struct DrawDispatchVuid {
     const char* dynamic_stencil_write_mask_07838 = kVUIDUndefined;
     const char* dynamic_stencil_reference_07839 = kVUIDUndefined;
     const char* dynamic_state_inherited_07850 = kVUIDUndefined;
+    const char* dynamic_cull_mode_07840 = kVUIDUndefined;
+    const char* dynamic_front_face_07841 = kVUIDUndefined;
+    const char* dynamic_primitive_topology_07842 = kVUIDUndefined;
+    const char* dynamic_depth_test_enable_07843 = kVUIDUndefined;
+    const char* dynamic_depth_write_enable_07844 = kVUIDUndefined;
+    const char* dynamic_depth_compare_op_07845 = kVUIDUndefined;
+    const char* dynamic_depth_bound_test_enable_07846 = kVUIDUndefined;
+    const char* dynamic_stencil_test_enable_07847 = kVUIDUndefined;
+    const char* dynamic_stencil_op_07848 = kVUIDUndefined;
     const char* primitives_generated_06708 = kVUIDUndefined;
     const char* primitives_generated_streams_06709 = kVUIDUndefined;
     const char* mesh_shader_stages_06480 = kVUIDUndefined;
@@ -393,6 +401,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit, const Location& loc) const;
     bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE& cb_state, CBDynamicStatus status, CMD_TYPE cmd_type,
                                  const char* msg_code) const;
+    bool ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
     bool ValidateDrawDynamicState(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
