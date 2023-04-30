@@ -33,8 +33,9 @@ bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDyn
     return false;
 }
 
-bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                          CMD_TYPE cmd_type) const {
+// Makes sure the vkCmdSet* call was called correctly prior to a draw
+bool CoreChecks::ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+                                               CMD_TYPE cmd_type) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
 
@@ -101,7 +102,6 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET, cmd_type,
                                     vuid.dynamic_coverage_reduction_mode_07647);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations_06666);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology_07842);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_ENABLE_EXT_SET, cmd_type,
                                     vuid.dynamic_discard_rectangle_enable_07880);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_MODE_EXT_SET, cmd_type,
@@ -110,7 +110,19 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_ENABLE_NV_SET, cmd_type,
                                     vuid.dynamic_exclusive_scissor_enable_07879);
 
-    const auto rp_state = pipeline.RasterizationState();
+    // VK_EXT_extended_dynamic_state
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CULL_MODE_SET, cmd_type, vuid.dynamic_cull_mode_07840);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_FRONT_FACE_SET, cmd_type, vuid.dynamic_front_face_07841);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology_07842);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_TEST_ENABLE_SET, cmd_type, vuid.dynamic_depth_test_enable_07843);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_WRITE_ENABLE_SET, cmd_type, vuid.dynamic_depth_write_enable_07844);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_COMPARE_OP_SET, cmd_type, vuid.dynamic_depth_compare_op_07845);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE_SET, cmd_type,
+                                    vuid.dynamic_depth_bound_test_enable_07846);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_TEST_ENABLE_SET, cmd_type, vuid.dynamic_stencil_test_enable_07847);
+    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_OP_SET, cmd_type, vuid.dynamic_stencil_op_07848);
+
+    const auto *rp_state = pipeline.RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
         skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_depth_bias_07834);
     }
@@ -132,7 +144,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_BLEND_CONSTANTS_SET, cmd_type, vuid.dynamic_blend_constants_07835);
     }
 
-    const auto ds_state = pipeline.DepthStencilState();
+    const auto *ds_state = pipeline.DepthStencilState();
     if (ds_state) {
         if (ds_state->depthBoundsTestEnable == VK_TRUE) {
             skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_SET, cmd_type, vuid.dynamic_depth_bounds_07836);
@@ -146,6 +158,18 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                 ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_REFERENCE_SET, cmd_type, vuid.dynamic_stencil_reference_07839);
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+                                          CMD_TYPE cmd_type) const {
+    bool skip = false;
+    skip = ValidateDynamicStateSetStatus(cb_state, pipeline, cmd_type);
+    // Dynamic state was not set, will produce garbage when trying to read to values
+    if (skip) return skip;
+
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
 
     // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
     const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
@@ -214,6 +238,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+    const auto *rp_state = pipeline.RasterizationState();
     const auto *viewport_state = pipeline.ViewportState();
     if ((!rp_state || (rp_state->rasterizerDiscardEnable == VK_FALSE)) && viewport_state &&
         (cb_state.inheritedViewportDepths.size() == 0)) {
