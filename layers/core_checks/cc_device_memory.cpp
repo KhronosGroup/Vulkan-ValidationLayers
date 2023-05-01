@@ -480,215 +480,209 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
 
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const void *pNext,
                                           const char *api_name) const {
+    bool skip = false;
+
+    // Validate device group information
+    if (const auto *bind_buffer_memory_device_group_info = LvlFindInChain<VkBindBufferMemoryDeviceGroupInfo>(pNext)) {
+        if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
+            bind_buffer_memory_device_group_info->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
+            device_group_create_info.physicalDeviceCount > 0) {
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606",
+                             "%s: The number of physical devices in the logical device is %" PRIu32
+                             ", but VkBindBufferMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
+                             api_name, device_group_create_info.physicalDeviceCount,
+                             bind_buffer_memory_device_group_info->deviceIndexCount);
+        } else {
+            for (uint32_t i = 0; i < bind_buffer_memory_device_group_info->deviceIndexCount; ++i) {
+                if (bind_buffer_memory_device_group_info->pDeviceIndices[i] >= device_group_create_info.physicalDeviceCount) {
+                    const LogObjectList objlist(buffer, mem);
+                    skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607",
+                                     "%s: The number of physical devices in the logical device is %" PRIu32
+                                     ", but VkBindBufferMemoryDeviceGroupInfo::pDeviceIndices[%" PRIu32 "] is %" PRIu32 ".",
+                                     api_name, device_group_create_info.physicalDeviceCount, i,
+                                     bind_buffer_memory_device_group_info->pDeviceIndices[i]);
+                }
+            }
+        }
+    }
+
     auto buffer_state = Get<BUFFER_STATE>(buffer);
+    if (!buffer_state) {
+        return false;
+    }
     const bool bind_buffer_mem_2 = strcmp(api_name, "vkBindBufferMemory()") != 0;
 
-    bool skip = false;
-    if (buffer_state) {
-        // Track objects tied to memory
-        skip = ValidateSetMemBinding(mem, *buffer_state, api_name);
+    // Track objects tied to memory
+    skip = ValidateSetMemBinding(mem, *buffer_state, api_name);
 
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(mem);
+    // Validate memory requirements alignment
+    if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
+        const char *vuid =
+            bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01036" : "VUID-vkBindBufferMemory-memoryOffset-01036";
+        const LogObjectList objlist(buffer, mem);
+        skip |= LogError(objlist, vuid,
+                         "%s: memoryOffset is 0x%" PRIxLEAST64
+                         " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                         ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                         api_name, memoryOffset, buffer_state->requirements.alignment);
+    }
 
-        // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-            const char *vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01036" : "VUID-vkBindBufferMemory-memoryOffset-01036";
-            const LogObjectList objlist(buffer, mem);
-            skip |= LogError(objlist, vuid,
-                             "%s: memoryOffset is 0x%" PRIxLEAST64
-                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                             api_name, memoryOffset, buffer_state->requirements.alignment);
-        }
+    if (auto mem_info = Get<DEVICE_MEMORY_STATE>(mem)) {
+        // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
+        // because they require buffer information.
+        if (mem_info->export_handle_types != 0) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+            external_info.flags = buffer_state->createInfo.flags;
+            external_info.usage = buffer_state->createInfo.usage;
+            auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
+            bool export_supported = true;
 
-        if (mem_info) {
-            // Validate bound memory range information
-            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info.get(), memoryOffset, api_name);
-
-            const char *mem_type_vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
-            skip |= ValidateMemoryTypes(mem_info.get(), buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
-
-            // Validate memory requirements size
-            if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
-                const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01037" : "VUID-vkBindBufferMemory-size-01037";
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(objlist, vuid,
-                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                 api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
-            }
-
-            // Validate dedicated allocation
-            if (mem_info->IsDedicatedBuffer() &&
-                ((mem_info->dedicated->handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
-                const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
-                const LogObjectList objlist(buffer, mem, mem_info->dedicated->handle);
-                skip |= LogError(objlist, vuid,
-                                 "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
-                                 "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
-                                 api_name, report_data->FormatHandle(mem).c_str(),
-                                 report_data->FormatHandle(mem_info->dedicated->handle).c_str(),
-                                 report_data->FormatHandle(buffer).c_str(), memoryOffset);
-            }
-
-            auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
-            if (enabled_features.core12.bufferDeviceAddress &&
-                (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
-                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(objlist, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
-                                 "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT bit set, "
-                                 "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
-                                 api_name);
-            }
-
-            if (enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay &&
-                (buffer_state->createInfo.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
-                const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-descriptorBufferCaptureReplay-08112"
-                                                     : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(
-                    objlist, vuid,
-                    "%s: If buffer was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
-                    "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
-                    api_name);
-            }
-
-            // Validate export memory handles
-            if (mem_info->export_handle_types != 0) {
-                auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
-                external_info.flags = buffer_state->createInfo.flags;
-                external_info.usage = buffer_state->createInfo.usage;
-                auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
-                bool export_supported = true;
-
-                // Check export operation support
-                auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
-                    external_info.handleType = flag;
-                    DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_info, &external_properties);
-                    if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
-                         VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
-                        export_supported = false;
-                        const LogObjectList objlist(buffer, mem);
-                        skip |= LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
-                                         "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
-                                         "set, which does not support VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT with the buffer "
-                                         "create flags (%s) and usage flags (%s).",
-                                         api_name, report_data->FormatHandle(mem).c_str(),
-                                         string_VkExternalMemoryHandleTypeFlagBits(flag),
-                                         string_VkBufferCreateFlags(external_info.flags).c_str(),
-                                         string_VkBufferUsageFlags(external_info.usage).c_str());
-                    }
-                };
-                IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
-
-                // The types of external memory handles must be compatible
-                const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
-                if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
-                    const LogObjectList objlist(buffer, mem);
-                    skip |= LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
-                                     "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes (%s) that are not "
-                                     "reported as compatible by vkGetPhysicalDeviceExternalBufferProperties with the buffer create "
-                                     "flags (%s) and usage flags (%s).",
-                                     api_name, report_data->FormatHandle(mem).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
-                                     string_VkBufferCreateFlags(external_info.flags).c_str(),
-                                     string_VkBufferUsageFlags(external_info.usage).c_str());
-                }
-
-                // Check if the memory meets the buffer's external memory requirements
-                if ((mem_info->export_handle_types & buffer_state->external_memory_handle_types) == 0) {
-                    const char *vuid =
-                        bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02726" : "VUID-vkBindBufferMemory-memory-02726";
+            // Check export operation support
+            auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
+                external_info.handleType = flag;
+                DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_info, &external_properties);
+                if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
+                     VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
+                    export_supported = false;
                     const LogObjectList objlist(buffer, mem);
                     skip |=
-                        LogError(objlist, vuid,
-                                 "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least one "
-                                 "handle from VkBuffer (%s) handleType %s.",
+                        LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
+                                 "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
+                                 "set, which does not support VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT with the buffer "
+                                 "create flags (%s) and usage flags (%s).",
+                                 api_name, report_data->FormatHandle(mem).c_str(), string_VkExternalMemoryHandleTypeFlagBits(flag),
+                                 string_VkBufferCreateFlags(external_info.flags).c_str(),
+                                 string_VkBufferUsageFlags(external_info.usage).c_str());
+                }
+            };
+            IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
+
+            // The types of external memory handles must be compatible
+            const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
+            if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
+                const LogObjectList objlist(buffer, mem);
+                skip |= LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
+                                 "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes (%s) that are not "
+                                 "reported as compatible by vkGetPhysicalDeviceExternalBufferProperties with the buffer create "
+                                 "flags (%s) and usage flags (%s).",
                                  api_name, report_data->FormatHandle(mem).c_str(),
                                  string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
-                                 report_data->FormatHandle(buffer).c_str(),
-                                 string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
-                }
-            }
-
-            // Validate import memory handles
-            if (mem_info->IsImportAHB() == true) {
-                skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle_types, mem, buffer);
-            } else if (mem_info->IsImport() == true) {
-                if ((mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
-                    const char *vuid = nullptr;
-                    if ((bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                        vuid = "VUID-VkBindBufferMemoryInfo-memory-02985";
-                    } else if ((!bind_buffer_mem_2) &&
-                               IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                        vuid = "VUID-vkBindBufferMemory-memory-02985";
-                    } else if ((bind_buffer_mem_2) &&
-                               !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                        vuid = "VUID-VkBindBufferMemoryInfo-memory-02727";
-                    } else if ((!bind_buffer_mem_2) &&
-                               !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                        vuid = "VUID-vkBindBufferMemory-memory-02727";
-                    }
-                    const LogObjectList objlist(buffer, mem);
-                    skip |= LogError(objlist, vuid,
-                                     "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
-                                     "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
-                                     api_name, report_data->FormatHandle(mem).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
-                                     report_data->FormatHandle(buffer).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
-                }
-            }
-
-            // Validate mix of protected buffer and memory
-            if ((buffer_state->unprotected == false) && (mem_info->unprotected == true)) {
-                const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01898" : "VUID-vkBindBufferMemory-None-01898";
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(objlist, vuid,
-                                 "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkBuffer (%s) was set "
-                                 "to use protected memory.",
-                                 api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
-            } else if ((buffer_state->unprotected == true) && (mem_info->unprotected == false)) {
-                const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01899" : "VUID-vkBindBufferMemory-None-01899";
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(objlist, vuid,
-                                 "%s: The VkDeviceMemory (%s) was created with protected memory but the VkBuffer (%s) was not set "
-                                 "to use protected memory.",
-                                 api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
+                                 string_VkBufferCreateFlags(external_info.flags).c_str(),
+                                 string_VkBufferUsageFlags(external_info.usage).c_str());
             }
         }
-        const auto *bind_buffer_memory_device_group_info = LvlFindInChain<VkBindBufferMemoryDeviceGroupInfo>(pNext);
-        if (bind_buffer_memory_device_group_info) {
-            if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
-                bind_buffer_memory_device_group_info->deviceIndexCount != device_group_create_info.physicalDeviceCount &&
-                device_group_create_info.physicalDeviceCount > 0) {
-                const LogObjectList objlist(buffer, mem);
-                skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606",
-                                 "%s: The number of physical devices in the logical device is %" PRIu32
-                                 ", but VkBindBufferMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
-                                 api_name, device_group_create_info.physicalDeviceCount,
-                                 bind_buffer_memory_device_group_info->deviceIndexCount);
-            } else {
-                for (uint32_t i = 0; i < bind_buffer_memory_device_group_info->deviceIndexCount; ++i) {
-                    if (bind_buffer_memory_device_group_info->pDeviceIndices[i] >= device_group_create_info.physicalDeviceCount) {
-                        const LogObjectList objlist(buffer, mem);
-                        skip |= LogError(objlist, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607",
-                                         "%s: The number of physical devices in the logical device is %" PRIu32
-                                         ", but VkBindBufferMemoryDeviceGroupInfo::pDeviceIndices[%" PRIu32 "] is %" PRIu32 ".",
-                                         api_name, device_group_create_info.physicalDeviceCount, i,
-                                         bind_buffer_memory_device_group_info->pDeviceIndices[i]);
-                    }
-                }
+
+        // Validate bound memory range information
+        skip |= ValidateInsertBufferMemoryRange(buffer, mem_info.get(), memoryOffset, api_name);
+
+        const char *mem_type_vuid =
+            bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01035" : "VUID-vkBindBufferMemory-memory-01035";
+        skip |= ValidateMemoryTypes(mem_info.get(), buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+
+        // Validate memory requirements size
+        if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01037" : "VUID-vkBindBufferMemory-size-01037";
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
+                             "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                             " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                             api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+        }
+
+        // Validate dedicated allocation
+        if (mem_info->IsDedicatedBuffer() && ((mem_info->dedicated->handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
+            const LogObjectList objlist(buffer, mem, mem_info->dedicated->handle);
+            skip |= LogError(objlist, vuid,
+                             "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
+                             "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                             api_name, report_data->FormatHandle(mem).c_str(),
+                             report_data->FormatHandle(mem_info->dedicated->handle).c_str(),
+                             report_data->FormatHandle(buffer).c_str(), memoryOffset);
+        }
+
+        auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+        if (enabled_features.core12.bufferDeviceAddress &&
+            (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
+            (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
+                             "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT bit set, "
+                             "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
+                             api_name);
+        }
+
+        if (enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay &&
+            (buffer_state->createInfo.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+            (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-descriptorBufferCaptureReplay-08112"
+                                                 : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
+            const LogObjectList objlist(buffer, mem);
+            skip |=
+                LogError(objlist, vuid,
+                         "%s: If buffer was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
+                         "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
+                         api_name);
+        }
+
+        // Validate export memory handles. Check if the memory meets the buffer's external memory requirements
+        if (mem_info->IsExport() && (mem_info->export_handle_types & buffer_state->external_memory_handle_types) == 0) {
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02726" : "VUID-vkBindBufferMemory-memory-02726";
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
+                             "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least one "
+                             "handle from VkBuffer (%s) handleType %s.",
+                             api_name, report_data->FormatHandle(mem).c_str(),
+                             string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
+                             report_data->FormatHandle(buffer).c_str(),
+                             string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
+        }
+
+        // Validate import memory handles
+        if (mem_info->IsImportAHB()) {
+            skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle_types, mem, buffer);
+        } else if (mem_info->IsImport() &&
+                   (mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
+            const char *vuid = nullptr;
+            if ((bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                vuid = "VUID-VkBindBufferMemoryInfo-memory-02985";
+            } else if ((!bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                vuid = "VUID-vkBindBufferMemory-memory-02985";
+            } else if ((bind_buffer_mem_2) && !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                vuid = "VUID-VkBindBufferMemoryInfo-memory-02727";
+            } else if ((!bind_buffer_mem_2) &&
+                       !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+                vuid = "VUID-vkBindBufferMemory-memory-02727";
             }
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
+                             "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
+                             "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
+                             api_name, report_data->FormatHandle(mem).c_str(),
+                             string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
+                             report_data->FormatHandle(buffer).c_str(),
+                             string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
+        }
+
+        // Validate mix of protected buffer and memory
+        if ((buffer_state->unprotected == false) && (mem_info->unprotected == true)) {
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01898" : "VUID-vkBindBufferMemory-None-01898";
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
+                             "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkBuffer (%s) was set "
+                             "to use protected memory.",
+                             api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
+        } else if ((buffer_state->unprotected == true) && (mem_info->unprotected == false)) {
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01899" : "VUID-vkBindBufferMemory-None-01899";
+            const LogObjectList objlist(buffer, mem);
+            skip |= LogError(objlist, vuid,
+                             "%s: The VkDeviceMemory (%s) was created with protected memory but the VkBuffer (%s) was not set "
+                             "to use protected memory.",
+                             api_name, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(buffer).c_str());
         }
     }
     return skip;
