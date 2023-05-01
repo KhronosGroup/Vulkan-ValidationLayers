@@ -109,6 +109,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/shader_interface.cpp
     negative/shader_limits.cpp
     negative/shader_push_constants.cpp
+    negative/shader_mesh.cpp
     negative/shader_spirv.cpp
     negative/shader_storage_image.cpp
     negative/shader_storage_texel.cpp

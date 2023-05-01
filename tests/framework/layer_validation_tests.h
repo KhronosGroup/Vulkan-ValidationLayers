@@ -183,6 +183,14 @@ static char const bindStateFragColorOutputText[] = R"glsl(
     }
 )glsl";
 
+[[maybe_unused]] static const char *bindStateMeshShaderText = R"glsl(
+    #version 460
+    #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
+    layout(max_vertices = 3, max_primitives=1) out;
+    layout(triangles) out;
+    void main() {}
+)glsl";
+
 [[maybe_unused]] static const char *bindStateRTShaderText = R"glsl(
     #version 460
     #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
