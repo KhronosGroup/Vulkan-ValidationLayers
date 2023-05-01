@@ -46,8 +46,8 @@ struct DedicatedBinding {
 class DEVICE_MEMORY_STATE : public BASE_NODE {
   public:
     const safe_VkMemoryAllocateInfo alloc_info;
-    const VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    const VkExternalMemoryHandleTypeFlags import_handle_type_flags;
+    const VkExternalMemoryHandleTypeFlags export_handle_types;
+    const std::optional<VkExternalMemoryHandleTypeFlagBits> import_handle_type;
     const bool unprotected;     // can't be used for protected memory
     const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
     const std::optional<DedicatedBinding> dedicated;
@@ -63,11 +63,11 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
                         std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
-    bool IsImport() const { return import_handle_type_flags != 0; }
+    bool IsImport() const { return import_handle_type.has_value(); }
     bool IsImportAHB() const {
-        return (import_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+        return IsImport() && import_handle_type == VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
-    bool IsExport() const { return export_handle_type_flags != 0; }
+    bool IsExport() const { return export_handle_types != 0; }
 
     bool IsDedicatedBuffer() const { return dedicated && dedicated->handle.type == kVulkanObjectTypeBuffer; }
 
@@ -322,8 +322,8 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 class BINDABLE : public BASE_NODE {
   public:
     template <typename Handle>
-    BINDABLE(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_type)
-        : BASE_NODE(h, t), external_memory_handle(handle_type), sparse(is_sparse), unprotected(is_unprotected) {}
+    BINDABLE(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_types)
+        : BASE_NODE(h, t), external_memory_handle_types(handle_types), sparse(is_sparse), unprotected(is_unprotected) {}
 
     virtual ~BINDABLE() {
         if (!Destroyed()) {
@@ -334,7 +334,7 @@ class BINDABLE : public BASE_NODE {
     void Destroy() override { BASE_NODE::Destroy(); }
 
     bool IsExternalAHB() const {
-        return (external_memory_handle & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
+        return (external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
     }
 
     const DEVICE_MEMORY_STATE *MemState() const {
@@ -390,7 +390,7 @@ class BINDABLE : public BASE_NODE {
 
   public:
     // Tracks external memory types creating resource
-    const VkExternalMemoryHandleTypeFlags external_memory_handle;
+    const VkExternalMemoryHandleTypeFlags external_memory_handle_types;
     const bool sparse;       // Is this object being bound with sparse memory or not?
     const bool unprotected;  // can't be used for protected memory
   protected:

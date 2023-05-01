@@ -148,7 +148,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
     bool skip = false;
     auto buffer_state = Get<BUFFER_STATE>(buffer);
 
-    if (!buffer_state->memory_requirements_checked && !buffer_state->external_memory_handle) {
+    if (!buffer_state->memory_requirements_checked && !buffer_state->external_memory_handle_types) {
         skip |= LogWarning(device, kVUID_BestPractices_BufferMemReqNotCalled,
                            "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
                            api_name, report_data->FormatHandle(buffer).c_str());
@@ -213,7 +213,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     auto image_state = Get<IMAGE_STATE>(image);
 
     if (image_state->disjoint == false) {
-        if (!image_state->memory_requirements_checked[0] && !image_state->external_memory_handle) {
+        if (!image_state->memory_requirements_checked[0] && !image_state->external_memory_handle_types) {
             skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
                                "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
                                api_name, report_data->FormatHandle(image).c_str());

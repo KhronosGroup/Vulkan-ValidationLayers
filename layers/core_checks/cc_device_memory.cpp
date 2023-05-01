@@ -561,7 +561,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             }
 
             // Validate export memory handles
-            if (mem_info->export_handle_type_flags != 0) {
+            if (mem_info->export_handle_types != 0) {
                 auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
                 external_info.flags = buffer_state->createInfo.flags;
                 external_info.usage = buffer_state->createInfo.usage;
@@ -586,25 +586,24 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                          string_VkBufferUsageFlags(external_info.usage).c_str());
                     }
                 };
-                IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_type_flags, check_export_support);
+                IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
 
                 // The types of external memory handles must be compatible
                 const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
-                if (export_supported &&
-                    (mem_info->export_handle_type_flags & compatible_types) != mem_info->export_handle_type_flags) {
+                if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
                     const LogObjectList objlist(buffer, mem);
                     skip |= LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
                                      "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes (%s) that are not "
                                      "reported as compatible by vkGetPhysicalDeviceExternalBufferProperties with the buffer create "
                                      "flags (%s) and usage flags (%s).",
                                      api_name, report_data->FormatHandle(mem).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
                                      string_VkBufferCreateFlags(external_info.flags).c_str(),
                                      string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
 
                 // Check if the memory meets the buffer's external memory requirements
-                if ((mem_info->export_handle_type_flags & buffer_state->external_memory_handle) == 0) {
+                if ((mem_info->export_handle_types & buffer_state->external_memory_handle_types) == 0) {
                     const char *vuid =
                         bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02726" : "VUID-vkBindBufferMemory-memory-02726";
                     const LogObjectList objlist(buffer, mem);
@@ -613,17 +612,17 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least one "
                                  "handle from VkBuffer (%s) handleType %s.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
-                                 string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
                                  report_data->FormatHandle(buffer).c_str(),
-                                 string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
+                                 string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
                 }
             }
 
             // Validate import memory handles
             if (mem_info->IsImportAHB() == true) {
-                skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle, mem, buffer);
+                skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle_types, mem, buffer);
             } else if (mem_info->IsImport() == true) {
-                if ((mem_info->import_handle_type_flags & buffer_state->external_memory_handle) == 0) {
+                if ((mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
                     const char *vuid = nullptr;
                     if ((bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-VkBindBufferMemoryInfo-memory-02985";
@@ -642,9 +641,9 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                      "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
                                      "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
                                      api_name, report_data->FormatHandle(mem).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(mem_info->import_handle_type_flags).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
                                      report_data->FormatHandle(buffer).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
+                                     string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle_types).c_str());
                 }
             }
 
@@ -1193,8 +1192,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 // Validate bound memory range information
                 // if memory is exported to an AHB then the mem_info->allocationSize must be zero and this check is not needed
                 if ((mem_info->IsExport() == false) ||
-                    ((mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) ==
-                     0)) {
+                    ((mem_info->export_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0)) {
                     skip |= ValidateInsertImageMemoryRange(bind_info.image, mem_info.get(), bind_info.memoryOffset, error_prefix);
                 }
 
@@ -1255,7 +1253,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Validate export memory handles
-                if (mem_info->export_handle_type_flags != 0) {
+                if (mem_info->export_handle_types != 0) {
                     auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
                     auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
                     image_info.format = image_state->createInfo.format;
@@ -1299,12 +1297,11 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                              string_VkImageCreateFlags(image_info.flags).c_str());
                         }
                     };
-                    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_type_flags, check_export_support);
+                    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
 
                     // The types of external memory handles must be compatible
                     const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
-                    if (export_supported &&
-                        (mem_info->export_handle_type_flags & compatible_types) != mem_info->export_handle_type_flags) {
+                    if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |=
                             LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
@@ -1312,14 +1309,14 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      "reported as compatible by vkGetPhysicalDeviceImageFormatProperties2 with the image create "
                                      "format (%s), type (%s), tiling (%s), usage (%s), flags (%s).",
                                      api_name, report_data->FormatHandle(bind_info.memory).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
                                      string_VkFormat(image_info.format), string_VkImageType(image_info.type),
                                      string_VkImageTiling(image_info.tiling), string_VkImageUsageFlags(image_info.usage).c_str(),
                                      string_VkImageCreateFlags(image_info.flags).c_str());
                     }
 
                     // Check if the memory meets the image's external memory requirements
-                    if ((mem_info->export_handle_type_flags & image_state->external_memory_handle) == 0) {
+                    if ((mem_info->export_handle_types & image_state->external_memory_handle_types) == 0) {
                         const char *vuid =
                             bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02728" : "VUID-vkBindImageMemory-memory-02728";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
@@ -1328,18 +1325,18 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least "
                                      "one handle from VkImage (%s) handleType %s.",
                                      error_prefix, report_data->FormatHandle(bind_info.memory).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_types).c_str(),
                                      report_data->FormatHandle(bind_info.image).c_str(),
-                                     string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
+                                     string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
                     }
                 }
 
                 // Validate import memory handles
                 if (mem_info->IsImportAHB() == true) {
-                    skip |= ValidateImageImportedHandleANDROID(api_name, image_state->external_memory_handle, bind_info.memory,
-                                                               bind_info.image);
+                    skip |= ValidateImageImportedHandleANDROID(api_name, image_state->external_memory_handle_types,
+                                                               bind_info.memory, bind_info.image);
                 } else if (mem_info->IsImport() == true) {
-                    if ((mem_info->import_handle_type_flags & image_state->external_memory_handle) == 0) {
+                    if ((mem_info->import_handle_type.value() & image_state->external_memory_handle_types) == 0) {
                         const char *vuid = nullptr;
                         if ((bind_image_mem_2) &&
                             IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
@@ -1359,9 +1356,9 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s "
                                          "which is not set in the VkImage (%s) VkExternalMemoryImageCreateInfo::handleType (%s)",
                                          api_name, report_data->FormatHandle(bind_info.memory).c_str(),
-                                         string_VkExternalMemoryHandleTypeFlags(mem_info->import_handle_type_flags).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()),
                                          report_data->FormatHandle(bind_info.image).c_str(),
-                                         string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
+                                         string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
                     }
                 }
 

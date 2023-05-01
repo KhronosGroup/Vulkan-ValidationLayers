@@ -137,12 +137,12 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfo::handleTypes when memory was created.
     if (!mem_info->IsExport() ||
-        (0 == (mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))) {
+        (0 == (mem_info->export_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))) {
         skip |= LogError(device, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882",
                          "vkGetMemoryAndroidHardwareBufferANDROID: %s was not allocated for export, or the "
                          "export handleTypes (0x%" PRIx32
                          ") did not contain VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
-                         report_data->FormatHandle(pInfo->memory).c_str(), mem_info->export_handle_type_flags);
+                         report_data->FormatHandle(pInfo->memory).c_str(), mem_info->export_handle_types);
     }
 
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
@@ -436,36 +436,36 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return skip;
 }
 
-bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                                      VkDeviceMemory memory, VkBuffer buffer) const {
     bool skip = false;
-    if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
+    if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindBufferMemory()") == 0) ? "VUID-vkBindBufferMemory-memory-02986"
                                                                             : "VUID-VkBindBufferMemoryInfo-memory-02986";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(objlist, vuid,
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
-                         "VkExternalMemoryBufferreateInfo::handleType (%s)",
+                         "VkExternalMemoryBufferCreateInfo::handleTypes (%s)",
                          func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(buffer).c_str(),
-                         string_VkExternalMemoryHandleTypeFlags(handleType).c_str());
+                         string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
 }
 
-bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                                     VkDeviceMemory memory, VkImage image) const {
     bool skip = false;
-    if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
+    if ((handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindImageMemory()") == 0) ? "VUID-vkBindImageMemory-memory-02990"
                                                                            : "VUID-VkBindImageMemoryInfo-memory-02990";
         const LogObjectList objlist(image, memory);
         skip |= LogError(objlist, vuid,
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
-                         "VkExternalMemoryImageCreateInfo::handleType (%s)",
+                         "VkExternalMemoryImageCreateInfo::handleTypes (%s)",
                          func_name, report_data->FormatHandle(memory).c_str(), report_data->FormatHandle(image).c_str(),
-                         string_VkExternalMemoryHandleTypeFlags(handleType).c_str());
+                         string_VkExternalMemoryHandleTypeFlags(handle_types).c_str());
     }
     return skip;
 }
@@ -620,12 +620,12 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
 
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
 
-bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                                      VkDeviceMemory memory, VkBuffer buffer) const {
     return false;
 }
 
-bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handleType,
+bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                                     VkDeviceMemory memory, VkImage image) const {
     return false;
 }
