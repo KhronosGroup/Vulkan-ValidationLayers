@@ -80,30 +80,24 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                              func_name, i);
         }
         if (!separate_depth_stencil_layouts) {
-            if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(initial_layout) || IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
                                  "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
-            if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(final_layout) || IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285"
                                : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
                                  "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
         }
@@ -114,7 +108,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
-                                 "attachmentFeedbackLoopLayout feature is not enabled",
+                                 "attachmentFeedbackLoopLayout feature is not enabled.",
                                  func_name, i);
             }
             if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
@@ -123,7 +117,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
-                                 "attachmentFeedbackLoopLayout feature is not enabled",
+                                 "attachmentFeedbackLoopLayout feature is not enabled.",
                                  func_name, i);
             }
         }
@@ -136,7 +130,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                     device, vuid,
                     "%s: pCreateInfo->pAttachments[%" PRIu32
                     "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
-                    "synchronization2 feature is not enabled",
+                    "synchronization2 feature is not enabled.",
                     func_name, i);
             }
             if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR || final_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
@@ -146,121 +140,107 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                     device, vuid,
                     "%s: pCreateInfo->pAttachments[%" PRIu32
                     "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
-                    "synchronization2 feature is not enabled",
+                    "synchronization2 feature is not enabled.",
                     func_name, i);
             }
         }
         if (!FormatIsDepthOrStencil(attachment_format)) {  // color format
-            if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(initial_layout) || IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03286" : "VUID-VkAttachmentDescription-format-03286";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
                                  "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
-            if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(final_layout) || IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03287" : "VUID-VkAttachmentDescription-format-03287";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, "
                                  "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
         } else if (FormatIsDepthAndStencil(attachment_format)) {
-            if (initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06906" : "VUID-VkAttachmentDescription-format-06906";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be "
                                  "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
-            if (final_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06907" : "VUID-VkAttachmentDescription-format-06907";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be "
                                  "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
 
             if (!attachment_description_stencil_layout) {
-                if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                    initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                if (IsImageLayoutDepthOnly(initial_layout)) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06249" : "VUID-VkAttachmentDescription-format-06242";
                     skip |=
                         LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be "
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided",
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided.",
                                  func_name, i);
                 }
-                if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                    final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                if (IsImageLayoutDepthOnly(final_layout)) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06250" : "VUID-VkAttachmentDescription-format-06243";
                     skip |=
                         LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be "
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided",
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided.",
                                  func_name, i);
                 }
             }
         } else if (FormatIsDepthOnly(attachment_format)) {
-            if (initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutStencilOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03290" : "VUID-VkAttachmentDescription-format-03290";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be "
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or"
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
-            if (final_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutStencilOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03291" : "VUID-VkAttachmentDescription-format-03291";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be "
                                  "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
         } else if (FormatIsStencilOnly(attachment_format) && !attachment_description_stencil_layout) {
-            if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(initial_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06247" : "VUID-VkAttachmentDescription-format-03292";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].initialLayout must not be "
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or"
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
-            if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(final_layout)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06248" : "VUID-VkAttachmentDescription-format-03293";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pAttachments[%" PRIu32
                                  "].finalLayout must not be "
                                  "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
-                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL",
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL.",
                                  func_name, i);
             }
         }
