@@ -1179,65 +1179,65 @@
                     "shadingRateMaxCoarseSamples": 32
                 },
                 "VkPhysicalDeviceMeshShaderPropertiesNV": {
-                    "maxDrawMeshTasksCount": 4294967000,
-                    "maxTaskWorkGroupInvocations": 4294967000,
+                    "maxDrawMeshTasksCount": 65535,
+                    "maxTaskWorkGroupInvocations": 32,
                     "maxTaskWorkGroupSize": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        32,
+                        1,
+                        1
                     ],
-                    "maxTaskTotalMemorySize": 4294967000,
-                    "maxTaskOutputCount": 4294967000,
-                    "maxMeshWorkGroupInvocations": 4294967000,
+                    "maxTaskTotalMemorySize": 16384,
+                    "maxTaskOutputCount": 65535,
+                    "maxMeshWorkGroupInvocations": 32,
                     "maxMeshWorkGroupSize": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        128,
+                        128,
+                        128
                     ],
-                    "maxMeshTotalMemorySize": 4294967000,
-                    "maxMeshOutputVertices": 4294967000,
-                    "maxMeshOutputPrimitives": 4294967000,
-                    "maxMeshMultiviewViewCount": 4294967000
+                    "maxMeshTotalMemorySize": 16384,
+                    "maxMeshOutputVertices": 256,
+                    "maxMeshOutputPrimitives": 256,
+                    "maxMeshMultiviewViewCount": 4
                 },
                 "VkPhysicalDeviceMeshShaderPropertiesEXT": {
-                    "maxTaskWorkGroupTotalCount": 4294967000,
+                    "maxTaskWorkGroupTotalCount": 4194304,
                     "maxTaskWorkGroupCount": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        65535,
+                        65535,
+                        65535
                     ],
-                    "maxTaskWorkGroupInvocations": 4294967000,
+                    "maxTaskWorkGroupInvocations": 32,
                     "maxTaskWorkGroupSize": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        128,
+                        128,
+                        128
                     ],
-                    "maxTaskPayloadSize": 4294967000,
-                    "maxTaskSharedMemorySize": 4294967000,
-                    "maxTaskPayloadAndSharedMemorySize": 4294967000,
-                    "maxMeshWorkGroupTotalCount": 4294967000,
+                    "maxTaskPayloadSize": 16384,
+                    "maxTaskSharedMemorySize": 32768,
+                    "maxTaskPayloadAndSharedMemorySize": 32768,
+                    "maxMeshWorkGroupTotalCount": 4194304,
                     "maxMeshWorkGroupCount": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        65535,
+                        65535,
+                        65535
                     ],
-                    "maxMeshWorkGroupInvocations": 4294967000,
+                    "maxMeshWorkGroupInvocations": 128,
                     "maxMeshWorkGroupSize": [
-                        4294967000,
-                        4294967000,
-                        4294967000
+                        128,
+                        128,
+                        128
                     ],
-                    "maxMeshSharedMemorySize": 4294967000,
-                    "maxMeshPayloadAndSharedMemorySize": 4294967000,
-                    "maxMeshOutputMemorySize": 4294967000,
-                    "maxMeshPayloadAndOutputMemorySize": 4294967000,
-                    "maxMeshOutputComponents": 4294967000,
-                    "maxMeshOutputVertices": 4294967000,
-                    "maxMeshOutputPrimitives": 4294967000,
-                    "maxMeshOutputLayers": 4294967000,
-                    "maxMeshMultiviewViewCount": 4294967000,
-                    "maxPreferredTaskWorkGroupInvocations": 4294967000,
-                    "maxPreferredMeshWorkGroupInvocations": 4294967000
+                    "maxMeshSharedMemorySize": 28672,
+                    "maxMeshPayloadAndSharedMemorySize": 28672,
+                    "maxMeshOutputMemorySize": 32768,
+                    "maxMeshPayloadAndOutputMemorySize": 48128,
+                    "maxMeshOutputComponents": 128,
+                    "maxMeshOutputVertices": 256,
+                    "maxMeshOutputPrimitives": 256,
+                    "maxMeshOutputLayers": 8,
+                    "maxMeshMultiviewViewCount": 8,
+                    "maxPreferredTaskWorkGroupInvocations": 4096,
+                    "maxPreferredMeshWorkGroupInvocations": 4096
                 },
                 "VkPhysicalDeviceAccelerationStructurePropertiesKHR": {
                     "maxGeometryCount": 16777215,

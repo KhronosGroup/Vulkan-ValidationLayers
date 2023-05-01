@@ -363,6 +363,99 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryBooleanAtLimit) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(VkPositiveLayerTest, MeshSharedMemoryAtLimit) {
+    TEST_DESCRIPTION("Validate mesh shader shared memory is valid at the exact maxMeshSharedMemorySize");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.meshShader) {
+        GTEST_SKIP() << "Mesh shader not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    auto mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream mesh_source;
+    mesh_source << R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        shared int a[)glsl";
+    mesh_source << (max_shared_ints);
+    mesh_source << R"glsl(];
+        void main(){}
+    )glsl";
+
+    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(VkPositiveLayerTest, TaskSharedMemoryAtLimit) {
+    TEST_DESCRIPTION("Validate Task shader shared memory is valid at the exact maxTaskSharedMemorySize");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
+    if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
+        GTEST_SKIP() << "Mesh and Task shader not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    auto mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream task_source;
+    task_source << R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        shared int a[)glsl";
+    task_source << (max_shared_ints);
+    task_source << R"glsl(];
+        void main(){}
+    )glsl";
+
+    VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(this, bindStateMeshShaderText, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
