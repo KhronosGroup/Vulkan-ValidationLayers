@@ -1622,10 +1622,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         }
 
         if (has_depth_mask) {
-            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                img_barrier.oldLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL ||
-                img_barrier.newLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                img_barrier.newLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutStencilOnly(img_barrier.oldLayout) || IsImageLayoutStencilOnly(img_barrier.newLayout)) {
                 auto vuid = GetImageBarrierVUID(loc, ImageError::kSeparateDepthWithStencilLayout);
                 skip |= LogError(
                     img_barrier.image, vuid,
@@ -1636,10 +1633,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
             }
         }
         if (has_stencil_mask) {
-            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                img_barrier.oldLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                img_barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                img_barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+            if (IsImageLayoutDepthOnly(img_barrier.oldLayout) || IsImageLayoutDepthOnly(img_barrier.newLayout)) {
                 auto vuid = GetImageBarrierVUID(loc, ImageError::kSeparateStencilhWithDepthLayout);
                 skip |= LogError(
                     img_barrier.image, vuid,
