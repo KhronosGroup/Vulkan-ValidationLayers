@@ -37,7 +37,7 @@
                 "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers",
                 "-DSPIRV_WERROR=OFF"
             ],
-            "commit": "d5f69dba559822c2c968a959238ab037b5556af6"
+            "commit": "9e627132a8f17dedab6580f666cebc141396a344"
         },
         {
             "name": "robin-hood-hashing",
