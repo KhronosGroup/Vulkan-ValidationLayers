@@ -40,103 +40,132 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE &cb_state,
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
 
     // Check all state with no additional requirements
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET, cmd_type, vuid.patch_control_points_04875);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZER_DISCARD_ENABLE_SET, cmd_type, vuid.rasterizer_discard_enable_04876);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_ENABLE_SET, cmd_type, vuid.depth_bias_enable_04877);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LOGIC_OP_EXT_SET, cmd_type, vuid.logic_op_04878);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET, cmd_type, vuid.primitive_restart_enable_04879);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET, cmd_type,
-                                    vuid.vertex_input_binding_stride_04884);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, cmd_type, vuid.vertex_input_04914);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_color_write_enable_07749);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET, cmd_type,
-                                    vuid.dynamic_tessellation_domain_origin_07619);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clamp_enable_07620);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_POLYGON_MODE_EXT_SET, cmd_type, vuid.dynamic_polygon_mode_07621);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET, cmd_type,
-                                    vuid.dynamic_rasterization_samples_07622);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, cmd_type, vuid.dynamic_sample_mask_07623);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET, cmd_type,
-                                    vuid.dynamic_alpha_to_coverage_enable_07624);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_alpha_to_one_enable_07625);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_logic_op_enable_07626);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET, cmd_type,
-                                    vuid.dynamic_rasterization_stream_07630);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET, cmd_type,
-                                    vuid.dynamic_conservative_rasterization_mode_07631);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET, cmd_type,
-                                    vuid.dynamic_extra_primitive_overestimation_size_07632);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clip_enable_07633);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET, cmd_type,
-                                    vuid.dynamic_sample_locations_enable_07634);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET, cmd_type,
-                                    vuid.dynamic_provoking_vertex_mode_07636);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET, cmd_type,
-                                    vuid.dynamic_line_rasterization_mode_07637);
-    skip |=
-        ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_line_stipple_enable_07638);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET, cmd_type,
-                                    vuid.dynamic_depth_clip_negative_one_to_one_07639);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_viewport_w_scaling_enable_07640);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET, cmd_type, vuid.dynamic_viewport_swizzle_07641);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_to_color_enable_07642);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_to_color_location_07643);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_modulation_mode_07644);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_modulation_table_enable_07645);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_modulation_table_07646);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_shading_rate_image_enable_07649);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_representative_fragment_test_enable_07648);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET, cmd_type,
-                                    vuid.dynamic_coverage_reduction_mode_07647);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations_06666);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_ENABLE_EXT_SET, cmd_type,
-                                    vuid.dynamic_discard_rectangle_enable_07880);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_MODE_EXT_SET, cmd_type,
-                                    vuid.dynamic_discard_rectangle_mode_07881);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_NV_SET, cmd_type, vuid.dynamic_exclusive_scissor_07878);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_ENABLE_NV_SET, cmd_type,
-                                    vuid.dynamic_exclusive_scissor_enable_07879);
 
     // VK_EXT_extended_dynamic_state
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CULL_MODE_SET, cmd_type, vuid.dynamic_cull_mode_07840);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_FRONT_FACE_SET, cmd_type, vuid.dynamic_front_face_07841);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology_07842);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_TEST_ENABLE_SET, cmd_type, vuid.dynamic_depth_test_enable_07843);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_WRITE_ENABLE_SET, cmd_type, vuid.dynamic_depth_write_enable_07844);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_COMPARE_OP_SET, cmd_type, vuid.dynamic_depth_compare_op_07845);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE_SET, cmd_type,
-                                    vuid.dynamic_depth_bound_test_enable_07846);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_TEST_ENABLE_SET, cmd_type, vuid.dynamic_stencil_test_enable_07847);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_OP_SET, cmd_type, vuid.dynamic_stencil_op_07848);
-
-    const auto *rp_state = pipeline.RasterizationState();
-    if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
-        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_depth_bias_07834);
+    {
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CULL_MODE_SET, cmd_type, vuid.dynamic_cull_mode_07840);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_FRONT_FACE_SET, cmd_type, vuid.dynamic_front_face_07841);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.dynamic_primitive_topology_07842);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_TEST_ENABLE_SET, cmd_type, vuid.dynamic_depth_test_enable_07843);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_WRITE_ENABLE_SET, cmd_type, vuid.dynamic_depth_write_enable_07844);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_COMPARE_OP_SET, cmd_type, vuid.dynamic_depth_compare_op_07845);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE_SET, cmd_type,
+                                        vuid.dynamic_depth_bound_test_enable_07846);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_TEST_ENABLE_SET, cmd_type, vuid.dynamic_stencil_test_enable_07847);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_OP_SET, cmd_type, vuid.dynamic_stencil_op_07848);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET, cmd_type,
+                                        vuid.vertex_input_binding_stride_04884);
     }
 
-    // Any line topology
-    if (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
-        pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
-        pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
-        pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
-        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_WIDTH_SET, cmd_type, vuid.dynamic_line_width_07833);
-        const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
-        if (line_state && line_state->stippledLineEnable) {
-            skip |=
-                ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_EXT_SET, cmd_type, vuid.dynamic_line_stipple_ext_07849);
+    // VK_EXT_extended_dynamic_state2
+    {
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET, cmd_type, vuid.patch_control_points_04875);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZER_DISCARD_ENABLE_SET, cmd_type,
+                                        vuid.rasterizer_discard_enable_04876);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_ENABLE_SET, cmd_type, vuid.depth_bias_enable_04877);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LOGIC_OP_EXT_SET, cmd_type, vuid.logic_op_04878);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET, cmd_type,
+                                        vuid.primitive_restart_enable_04879);
+    }
+
+    // VK_EXT_extended_dynamic_state3
+    {
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_depth_clamp_enable_07620);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_POLYGON_MODE_EXT_SET, cmd_type, vuid.dynamic_polygon_mode_07621);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET, cmd_type,
+                                        vuid.dynamic_rasterization_samples_07622);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, cmd_type, vuid.dynamic_sample_mask_07623);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET, cmd_type,
+                                        vuid.dynamic_tessellation_domain_origin_07619);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_alpha_to_coverage_enable_07624);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_alpha_to_one_enable_07625);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_logic_op_enable_07626);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET, cmd_type,
+                                        vuid.dynamic_rasterization_stream_07630);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET, cmd_type,
+                                        vuid.dynamic_conservative_rasterization_mode_07631);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET, cmd_type,
+                                        vuid.dynamic_extra_primitive_overestimation_size_07632);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clip_enable_07633);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_sample_locations_enable_07634);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET, cmd_type,
+                                        vuid.dynamic_provoking_vertex_mode_07636);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET, cmd_type,
+                                        vuid.dynamic_line_rasterization_mode_07637);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_line_stipple_enable_07638);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET, cmd_type,
+                                        vuid.dynamic_depth_clip_negative_one_to_one_07639);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_viewport_w_scaling_enable_07640);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET, cmd_type, vuid.dynamic_viewport_swizzle_07641);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_to_color_enable_07642);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_to_color_location_07643);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_modulation_mode_07644);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_modulation_table_enable_07645);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_modulation_table_07646);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_shading_rate_image_enable_07649);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_representative_fragment_test_enable_07648);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET, cmd_type,
+                                        vuid.dynamic_coverage_reduction_mode_07647);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations_06666);
+        skip |=
+            ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_NV_SET, cmd_type, vuid.dynamic_exclusive_scissor_07878);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_EXCLUSIVE_SCISSOR_ENABLE_NV_SET, cmd_type,
+                                        vuid.dynamic_exclusive_scissor_enable_07879);
+    }
+
+    // VK_EXT_discard_rectangles
+    {
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_discard_rectangle_enable_07880);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_MODE_EXT_SET, cmd_type,
+                                        vuid.dynamic_discard_rectangle_mode_07881);
+    }
+
+    // VK_EXT_vertex_input_dynamic_state
+    { skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, cmd_type, vuid.vertex_input_04914); }
+
+    // VK_EXT_color_write_enable
+    {
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type,
+                                        vuid.dynamic_color_write_enable_07749);
+    }
+
+    if (const auto *rp_state = pipeline.RasterizationState(); rp_state) {
+        if (rp_state->depthBiasEnable == VK_TRUE) {
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_depth_bias_07834);
+        }
+
+        // Any line topology
+        if (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
+            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
+            pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_WIDTH_SET, cmd_type, vuid.dynamic_line_width_07833);
+            const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
+            if (line_state && line_state->stippledLineEnable) {
+                skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_EXT_SET, cmd_type,
+                                                vuid.dynamic_line_stipple_ext_07849);
+            }
         }
     }
 
@@ -144,8 +173,7 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE &cb_state,
         skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_BLEND_CONSTANTS_SET, cmd_type, vuid.dynamic_blend_constants_07835);
     }
 
-    const auto *ds_state = pipeline.DepthStencilState();
-    if (ds_state) {
+    if (const auto *ds_state = pipeline.DepthStencilState(); ds_state) {
         if (ds_state->depthBoundsTestEnable == VK_TRUE) {
             skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_SET, cmd_type, vuid.dynamic_depth_bounds_07836);
         }
