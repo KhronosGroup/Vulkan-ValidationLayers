@@ -1301,9 +1301,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char* func_name) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties) const;
-    bool ValidateBufferImportedHandleANDROID(const char* func_name, VkExternalMemoryHandleTypeFlags handleType,
+    bool ValidateBufferImportedHandleANDROID(const char* func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                              VkDeviceMemory memory, VkBuffer buffer) const;
-    bool ValidateImageImportedHandleANDROID(const char* func_name, VkExternalMemoryHandleTypeFlags handleType,
+    bool ValidateImageImportedHandleANDROID(const char* func_name, VkExternalMemoryHandleTypeFlags handle_types,
                                             VkDeviceMemory memory, VkImage image) const;
     bool PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator,

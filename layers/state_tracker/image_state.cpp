@@ -90,7 +90,7 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
     return NormalizeSubresourceRange(image_create_info, subres_range);
 }
 
-static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkImageCreateInfo *pCreateInfo) {
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {
     const auto *external_memory_info = LvlFindInChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
@@ -188,7 +188,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),
@@ -221,7 +221,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),

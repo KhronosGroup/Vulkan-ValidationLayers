@@ -19,12 +19,16 @@
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_state.h"
 
-static VkExternalMemoryHandleTypeFlags GetExportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
+// It is allowed to export memory into the handles of different types,
+// that's why we use set of flags (VkExternalMemoryHandleTypeFlags)
+static VkExternalMemoryHandleTypeFlags GetExportHandleTypes(const VkMemoryAllocateInfo *p_alloc_info) {
     auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(p_alloc_info->pNext);
     return export_info ? export_info->handleTypes : 0;
 }
 
-static VkExternalMemoryHandleTypeFlags GetImportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
+// Import works with a single handle type, that's why VkExternalMemoryHandleTypeFlagBits type is used.
+// Since FlagBits-type cannot have a value of 0, we use std::optional to indicate the presense of an import operation.
+static std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     auto win32_import = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(p_alloc_info->pNext);
     if (win32_import) {
@@ -47,7 +51,7 @@ static VkExternalMemoryHandleTypeFlags GetImportHandleType(const VkMemoryAllocat
         return VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-    return 0;
+    return {};
 }
 
 static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap,
@@ -82,8 +86,8 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAlloc
                                          std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count)
     : BASE_NODE(mem, kVulkanObjectTypeDeviceMemory),
       alloc_info(p_alloc_info),
-      export_handle_type_flags(GetExportHandleType(p_alloc_info)),
-      import_handle_type_flags(GetImportHandleType(p_alloc_info)),
+      export_handle_types(GetExportHandleTypes(p_alloc_info)),
+      import_handle_type(GetImportHandleType(p_alloc_info)),
       unprotected((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) == 0),
       multi_instance(IsMultiInstance(p_alloc_info, memory_heap, physical_device_count)),
       dedicated(std::move(dedicated_binding)),
