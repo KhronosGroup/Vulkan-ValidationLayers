@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 
 class NegativeDynamicState : public VkLayerTest {
+    // helper functions for tests in this file
   public:
     // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
     void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
@@ -566,11 +567,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkBufferObj buffer;
-    buffer.init(*m_device, 16, 0, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    std::vector<VkBuffer> buffers(m_device->props.limits.maxVertexInputBindings + 1ull, buffer.handle());
-    std::vector<VkDeviceSize> offsets(buffers.size(), 0);
 
     {
         m_commandBuffer->begin();
