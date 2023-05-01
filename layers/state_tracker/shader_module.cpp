@@ -924,8 +924,8 @@ bool SHADER_MODULE_STATE::FindLocalSize(const EntryPoint& entrypoint, uint32_t& 
     return false;  // not found
 }
 
-uint32_t SHADER_MODULE_STATE::CalculateComputeSharedMemory() const {
-    uint32_t total_shared_size = 0;
+uint32_t SHADER_MODULE_STATE::CalculateWorkgroupSharedMemory() const {
+    uint32_t total_size = 0;
     // when using WorkgroupMemoryExplicitLayoutKHR
     // either all or none the structs are decorated with Block,
     // if using block, all must decorated with Aliased.
@@ -945,13 +945,13 @@ uint32_t SHADER_MODULE_STATE::CalculateComputeSharedMemory() const {
             const uint32_t variable_shared_size = GetTypeBytesSize(type);
 
             if (find_max_block) {
-                total_shared_size = std::max(total_shared_size, variable_shared_size);
+                total_size = std::max(total_size, variable_shared_size);
             } else {
-                total_shared_size += variable_shared_size;
+                total_size += variable_shared_size;
             }
         }
     }
-    return total_shared_size;
+    return total_size;
 }
 
 // If the instruction at id is a constant or copy of a constant, returns a valid iterator pointing to that instruction.
