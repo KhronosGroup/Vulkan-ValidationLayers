@@ -571,7 +571,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     bool FindLocalSize(const EntryPoint &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
-    uint32_t CalculateComputeSharedMemory() const;
+    uint32_t CalculateWorkgroupSharedMemory() const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;

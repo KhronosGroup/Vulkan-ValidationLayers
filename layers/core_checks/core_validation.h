@@ -877,7 +877,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderResolveQCOM(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                    const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state, VkPipelineShaderStageCreateFlags flags) const;
-    bool ValidateComputeSharedMemory(const SHADER_MODULE_STATE& module_state, uint32_t total_shared_size) const;
+    bool ValidateWorkgroupSharedMemory(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
+                                       uint32_t total_workgroup_shared_memory) const;
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE& pipeline) const;

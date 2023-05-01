@@ -1875,21 +1875,49 @@ bool CoreChecks::ValidateTransformFeedbackDecorations(const SHADER_MODULE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_state, uint32_t total_shared_size) const {
+bool CoreChecks::ValidateWorkgroupSharedMemory(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
+                                               uint32_t total_workgroup_shared_memory) const {
     bool skip = false;
 
     // If not found before with spec constants, find here
-    if (total_shared_size == 0) {
-        total_shared_size = module_state.CalculateComputeSharedMemory();
+    if (total_workgroup_shared_memory == 0) {
+        total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
     }
 
-    if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
-        skip |=
-            LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Workgroup-06530",
-                     "Shader uses %" PRIu32
-                     " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
-                     total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
+    switch (stage) {
+        case VK_SHADER_STAGE_COMPUTE_BIT: {
+            if (total_workgroup_shared_memory > phys_dev_props.limits.maxComputeSharedMemorySize) {
+                skip |= LogError(
+                    module_state.vk_shader_module(), "VUID-RuntimeSpirv-Workgroup-06530",
+                    "Shader uses %" PRIu32
+                    " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
+                    total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize);
+            }
+            break;
+        }
+        case VK_SHADER_STAGE_MESH_BIT_EXT: {
+            if (total_workgroup_shared_memory > phys_dev_ext_props.mesh_shader_props_ext.maxMeshSharedMemorySize) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-maxMeshSharedMemorySize-08754",
+                                 "Shader uses %" PRIu32
+                                 " bytes of shared memory, more than allowed by maxMeshSharedMemorySize (%" PRIu32 ")",
+                                 total_workgroup_shared_memory, phys_dev_ext_props.mesh_shader_props_ext.maxMeshSharedMemorySize);
+            }
+            break;
+        }
+        case VK_SHADER_STAGE_TASK_BIT_EXT: {
+            if (total_workgroup_shared_memory > phys_dev_ext_props.mesh_shader_props_ext.maxTaskSharedMemorySize) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-maxTaskSharedMemorySize-08759",
+                                 "Shader uses %" PRIu32
+                                 " bytes of shared memory, more than allowed by maxTaskSharedMemorySize (%" PRIu32 ")",
+                                 total_workgroup_shared_memory, phys_dev_ext_props.mesh_shader_props_ext.maxTaskSharedMemorySize);
+            }
+            break;
+        }
+        default:
+            assert(false);  // other stages should not have called this function
+            break;
     }
+
     return skip;
 }
 
@@ -2416,7 +2444,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
-    uint32_t total_shared_size = 0;
+    uint32_t total_workgroup_shared_memory = 0;
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants) {
@@ -2551,7 +2579,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
             spec_mod.FindLocalSize(*spec_entrypoint, local_size_x, local_size_y, local_size_z);
 
-            total_shared_size = spec_mod.CalculateComputeSharedMemory();
+            total_workgroup_shared_memory = spec_mod.CalculateWorkgroupSharedMemory();
 
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
@@ -2632,8 +2660,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= ValidateConservativeRasterization(module_state, entrypoint, pipeline);
     } else if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
-        skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
+        skip |= ValidateWorkgroupSharedMemory(module_state, stage, total_workgroup_shared_memory);
     } else if (stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+        skip |= ValidateWorkgroupSharedMemory(module_state, stage, total_workgroup_shared_memory);
         skip |= ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
     }
 
