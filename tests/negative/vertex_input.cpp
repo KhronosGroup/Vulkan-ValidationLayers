@@ -23,8 +23,7 @@ TEST_F(NegativeVertexInput, AttributeFormat) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkVertexInputBindingDescription input_binding;
-    memset(&input_binding, 0, sizeof(input_binding));
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attribs;
     memset(&input_attribs, 0, sizeof(input_attribs));
@@ -651,7 +650,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, BindVertexOffset) {
+TEST_F(NegativeVertexInput, BindVertexOffset) {
     TEST_DESCRIPTION("set the pOffset in vkCmdBindVertexBuffers to 3 and use R16");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -663,7 +662,7 @@ TEST_F(VkLayerTest, BindVertexOffset) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
-    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
     VkVertexInputAttributeDescription input_attribs = {0, 0, VK_FORMAT_R16_UNORM, 0};
 
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -693,8 +692,7 @@ TEST_F(NegativeVertexInput, AttributeNotConsumed) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkVertexInputBindingDescription input_binding;
-    memset(&input_binding, 0, sizeof(input_binding));
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
@@ -718,8 +716,7 @@ TEST_F(NegativeVertexInput, AttributeLocationMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkVertexInputBindingDescription input_binding;
-    memset(&input_binding, 0, sizeof(input_binding));
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
@@ -765,8 +762,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkVertexInputBindingDescription input_binding;
-    memset(&input_binding, 0, sizeof(input_binding));
+    VkVertexInputBindingDescription input_binding = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
 
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
@@ -799,8 +795,7 @@ TEST_F(NegativeVertexInput, AttributeBindingConflict) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     /* Two binding descriptions for binding 0 */
-    VkVertexInputBindingDescription input_bindings[2];
-    memset(input_bindings, 0, sizeof(input_bindings));
+    VkVertexInputBindingDescription input_bindings[2] = {{0, 4, VK_VERTEX_INPUT_RATE_VERTEX}, {0, 4, VK_VERTEX_INPUT_RATE_VERTEX}};
 
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
