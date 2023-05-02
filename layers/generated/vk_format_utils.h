@@ -248,10 +248,10 @@ bool FormatElementIsTexel(VkFormat format);
 uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 // True if Format contains a 64-bit component
-'
-constexpr bool FormatIs64bit(VkFormat format) {'
-    bool found = false;'
-    switch (format) {'
+
+constexpr bool FormatIs64bit(VkFormat format) {
+    bool found = false;
+    switch (format) {
         case VK_FORMAT_R64G64B64A64_SFLOAT:
         case VK_FORMAT_R64G64B64A64_SINT:
         case VK_FORMAT_R64G64B64A64_UINT:
