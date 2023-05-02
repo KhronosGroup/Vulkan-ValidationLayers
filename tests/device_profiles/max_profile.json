@@ -5081,6 +5081,15 @@
                         ]
                     }
                 },
+                "VK_FORMAT_R64_SFLOAT": {
+                    "VkFormatProperties3": {
+                        "linearTilingFeatures": [],
+                        "optimalTilingFeatures": [],
+                        "bufferFeatures": [
+                            "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT",
+                        ]
+                    }
+                },
                 "VK_FORMAT_R64G64B64A64_SFLOAT": {
                     "VkFormatProperties3": {
                         "linearTilingFeatures": [
