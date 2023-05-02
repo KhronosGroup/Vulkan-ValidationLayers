@@ -705,10 +705,10 @@ uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_I
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 '''
              # Could loop the components, but faster to just list these
-            output += '''// True if Format contains a 64-bit component\n'
-constexpr bool FormatIs64bit(VkFormat format) {'
-    bool found = false;'
-    switch (format) {'
+            output += '''// True if Format contains a 64-bit component\n
+constexpr bool FormatIs64bit(VkFormat format) {
+    bool found = false;
+    switch (format) {
 '''
             for f in sorted(self.formats64bit):
                 output += f'        case {f}:\n'
