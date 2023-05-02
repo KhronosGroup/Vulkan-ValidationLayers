@@ -531,19 +531,18 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
     if (auto mem_info = Get<DEVICE_MEMORY_STATE>(mem)) {
         // Validate VkExportMemoryAllocateInfo's VUs that can't be checked during vkAllocateMemory
         // because they require buffer information.
-        if (mem_info->export_handle_types != 0) {
+        if (mem_info->IsExport()) {
             auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
             external_info.flags = buffer_state->createInfo.flags;
             external_info.usage = buffer_state->createInfo.usage;
             auto external_properties = LvlInitStruct<VkExternalBufferProperties>();
             bool export_supported = true;
 
-            // Check export operation support
-            auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
+            auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                 external_info.handleType = flag;
                 DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_info, &external_properties);
-                if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
-                     VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
+                const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
+                if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                     export_supported = false;
                     const LogObjectList objlist(buffer, mem);
                     skip |=
@@ -555,8 +554,25 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  string_VkBufferCreateFlags(external_info.flags).c_str(),
                                  string_VkBufferUsageFlags(external_info.usage).c_str());
                 }
+                if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
+                    auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
+                    auto dedicated_info_nv = LvlFindInChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
+                    const bool has_dedicated_info = dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE;
+                    const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->buffer != VK_NULL_HANDLE;
+                    if (!has_dedicated_info && !has_dedicated_info_nv) {
+                        const LogObjectList objlist(buffer, mem);
+                        skip |= LogError(objlist, "VUID-VkMemoryAllocateInfo-pNext-00639",
+                                         "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
+                                         "set, which requires dedicated allocation for the buffer created with flags (%s) and "
+                                         "usage flags (%s), but the memory is allocated without dedicated allocation support.",
+                                         api_name, report_data->FormatHandle(mem).c_str(),
+                                         string_VkExternalMemoryHandleTypeFlagBits(flag),
+                                         string_VkBufferCreateFlags(external_info.flags).c_str(),
+                                         string_VkBufferUsageFlags(external_info.usage).c_str());
+                    }
+                }
             };
-            IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
+            IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, validate_export_handle_types);
 
             // The types of external memory handles must be compatible
             const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
@@ -1247,7 +1263,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 }
 
                 // Validate export memory handles
-                if (mem_info->export_handle_types != 0) {
+                if (mem_info->IsExport()) {
                     auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
                     auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
                     image_info.format = image_state->createInfo.format;
@@ -1259,8 +1275,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
                     bool export_supported = true;
 
-                    // Check export operation support
-                    auto check_export_support = [&](VkExternalMemoryHandleTypeFlagBits flag) {
+                    auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                         external_info.handleType = flag;
                         auto result =
                             DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
@@ -1276,8 +1291,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 string_VkImageType(image_info.type), string_VkImageTiling(image_info.tiling),
                                 string_VkImageUsageFlags(image_info.usage).c_str(),
                                 string_VkImageCreateFlags(image_info.flags).c_str(), string_VkResult(result));
-                        } else if ((external_properties.externalMemoryProperties.externalMemoryFeatures &
-                                    VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
+                            return;  // this exits lambda, not parent function
+                        }
+                        const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
+                        if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(objlist, "VUID-VkExportMemoryAllocateInfo-handleTypes-00656",
@@ -1290,8 +1307,29 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                              string_VkImageUsageFlags(image_info.usage).c_str(),
                                              string_VkImageCreateFlags(image_info.flags).c_str());
                         }
+                        if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0) {
+                            auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(mem_info->alloc_info.pNext);
+                            auto dedicated_info_nv =
+                                LvlFindInChain<VkDedicatedAllocationMemoryAllocateInfoNV>(mem_info->alloc_info.pNext);
+                            const bool has_dedicated_info = dedicated_info && dedicated_info->image != VK_NULL_HANDLE;
+                            const bool has_dedicated_info_nv = dedicated_info_nv && dedicated_info_nv->image != VK_NULL_HANDLE;
+                            if (!has_dedicated_info && !has_dedicated_info_nv) {
+                                const LogObjectList objlist(bind_info.image, bind_info.memory);
+                                skip |=
+                                    LogError(objlist, "VUID-VkMemoryAllocateInfo-pNext-00639",
+                                             "%s: The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes with the %s "
+                                             "flag set, which requires dedicated allocation for the image created with format "
+                                             "(%s), type (%s), tiling (%s), usage (%s), flags (%s), but the memory is allocated "
+                                             "without dedicated allocation support.",
+                                             api_name, report_data->FormatHandle(bind_info.memory).c_str(),
+                                             string_VkExternalMemoryHandleTypeFlagBits(flag), string_VkFormat(image_info.format),
+                                             string_VkImageType(image_info.type), string_VkImageTiling(image_info.tiling),
+                                             string_VkImageUsageFlags(image_info.usage).c_str(),
+                                             string_VkImageCreateFlags(image_info.flags).c_str());
+                            }
+                        }
                     };
-                    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, check_export_support);
+                    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(mem_info->export_handle_types, validate_export_handle_types);
 
                     // The types of external memory handles must be compatible
                     const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
