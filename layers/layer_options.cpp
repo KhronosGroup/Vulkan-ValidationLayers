@@ -17,6 +17,7 @@
  */
 
 #include "layer_options.h"
+#include "layer_settings_utils.h"
 #include "xxhash.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
@@ -55,7 +56,7 @@ const char *SETTING_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 const char *SETTING_FINE_GRAINED_LOCKING = "fine_grained_locking";
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
-void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
+static void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
         case VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE:
             disable_data[command_buffer_state] = true;
@@ -75,7 +76,7 @@ void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDis
 }
 
 // Set the local disable flag for a single VK_VALIDATION_FEATURE_DISABLE_* flag
-void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidationFeatureDisableEXT feature_disable) {
+static void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidationFeatureDisableEXT feature_disable) {
     switch (feature_disable) {
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
             disable_data[shader_validation] = true;
@@ -108,7 +109,7 @@ void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidatio
 }
 
 // Set the local enable flag for the appropriate VALIDATION_CHECK_ENABLE enum
-void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnables enable_id) {
+static void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnables enable_id) {
     switch (enable_id) {
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM:
             enable_data[vendor_specific_arm] = true;
@@ -137,7 +138,7 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
 }
 
 // Set the local enable flag for a single VK_VALIDATION_FEATURE_ENABLE_* flag
-void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFeatureEnableEXT feature_enable) {
+static void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
             enable_data[gpu_validation] = true;
@@ -159,7 +160,7 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
     }
 }
 
-void SetValidationFeatureEnable2(CHECK_ENABLED &enable_data, const VkValidationFeatureEnable feature_enable) {
+static void SetValidationFeatureEnable2(CHECK_ENABLED &enable_data, const VkValidationFeatureEnable feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION:
             enable_data[sync_validation] = true;
@@ -170,7 +171,7 @@ void SetValidationFeatureEnable2(CHECK_ENABLED &enable_data, const VkValidationF
 }
 
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
-void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *val_flags_struct) {
+static void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
         switch (val_flags_struct->pDisabledValidationChecks[i]) {
             case VK_VALIDATION_CHECK_SHADERS_EXT:
@@ -187,7 +188,7 @@ void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *va
 }
 
 // Process Validation Features flags specified through the ValidationFeature extension
-void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
+static void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
                            const VkValidationFeaturesEXT *val_features_struct) {
     for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
         SetValidationFeatureDisable(disable_data, val_features_struct->pDisabledValidationFeatures[i]);
@@ -195,82 +196,6 @@ void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_d
     for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
         SetValidationFeatureEnable(enable_data, val_features_struct->pEnabledValidationFeatures[i]);
     }
-}
-
-std::string GetNextToken(std::string *token_list, const std::string &delimiter, size_t *pos) {
-    std::string token;
-    *pos = token_list->find(delimiter);
-    if (*pos != std::string::npos) {
-        token = token_list->substr(0, *pos);
-    } else {
-        *pos = token_list->length() - delimiter.length();
-        token = *token_list;
-    }
-    token_list->erase(0, *pos + delimiter.length());
-
-    // Remove quotes from quoted strings
-    if ((token.length() > 0) && (token[0] == '\"')) {
-        token.erase(token.begin());
-        if ((token.length() > 0) && (token[token.length() - 1] == '\"')) {
-            token.erase(--token.end());
-        }
-    }
-    return token;
-}
-
-// Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, CHECK_ENABLED &enables) {
-    size_t pos = 0;
-    std::string token;
-    while (list_of_enables.length() != 0) {
-        token = GetNextToken(&list_of_enables, delimiter, &pos);
-        if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
-            auto result = VkValFeatureEnableLookup.find(token);
-            if (result != VkValFeatureEnableLookup.end()) {
-                SetValidationFeatureEnable(enables, result->second);
-            } else {
-                auto result2 = VkValFeatureEnableLookup2.find(token);
-                if (result2 != VkValFeatureEnableLookup2.end()) {
-                    SetValidationFeatureEnable2(enables, result2->second);
-                }
-            }
-        } else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
-            auto result = ValidationEnableLookup.find(token);
-            if (result != ValidationEnableLookup.end()) {
-                SetValidationEnable(enables, result->second);
-            }
-        }
-    }
-}
-
-// Given a string representation of a list of disable enum values, call the appropriate setter function
-void SetLocalDisableSetting(std::string list_of_disables, const std::string &delimiter, CHECK_DISABLED &disables) {
-    size_t pos = 0;
-    std::string token;
-    while (list_of_disables.length() != 0) {
-        token = GetNextToken(&list_of_disables, delimiter, &pos);
-        if (token.find("VK_VALIDATION_FEATURE_DISABLE_") != std::string::npos) {
-            auto result = VkValFeatureDisableLookup.find(token);
-            if (result != VkValFeatureDisableLookup.end()) {
-                SetValidationFeatureDisable(disables, result->second);
-            }
-        } else if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
-            auto result = ValidationDisableLookup.find(token);
-            if (result != ValidationDisableLookup.end()) {
-                SetValidationDisable(disables, result->second);
-            }
-        }
-    }
-}
-
-uint32_t TokenToUint(std::string &token) {
-    uint32_t int_id = 0;
-    if ((token.find("0x") == 0) || token.find("0X") == 0) {  // Handle hex format
-        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 16));
-    } else {
-        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 10));  // Decimal format
-    }
-    return int_id;
 }
 
 void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::vector<uint32_t> &filter_list) {
@@ -393,33 +318,93 @@ static std::optional<std::string> GetSettingValue(const char *setting) {
     return {};
 }
 
-static void SetValidationSetting(CHECK_DISABLED &disable_data, const DisableFlags feature_disable, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
+// Given a string representation of a list of enable enum values, call the appropriate setter function
+static void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, CHECK_ENABLED &enables) {
+    size_t pos = 0;
+    std::string token;
+    while (list_of_enables.length() != 0) {
+        token = GetNextToken(&list_of_enables, delimiter, &pos);
+        if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
+            auto result = VkValFeatureEnableLookup.find(token);
+            if (result != VkValFeatureEnableLookup.end()) {
+                SetValidationFeatureEnable(enables, result->second);
+            } else {
+                auto result2 = VkValFeatureEnableLookup2.find(token);
+                if (result2 != VkValFeatureEnableLookup2.end()) {
+                    SetValidationFeatureEnable2(enables, result2->second);
+                }
+            }
+        } else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
+            auto result = ValidationEnableLookup.find(token);
+            if (result != ValidationEnableLookup.end()) {
+                SetValidationEnable(enables, result->second);
+            }
+        }
+    }
+}
+
+// Given a string representation of a list of disable enum values, call the appropriate setter function
+static void SetLocalDisableSetting(std::string list_of_disables, const std::string &delimiter, CHECK_DISABLED &disables) {
+    size_t pos = 0;
+    std::string token;
+    while (list_of_disables.length() != 0) {
+        token = GetNextToken(&list_of_disables, delimiter, &pos);
+        if (token.find("VK_VALIDATION_FEATURE_DISABLE_") != std::string::npos) {
+            auto result = VkValFeatureDisableLookup.find(token);
+            if (result != VkValFeatureDisableLookup.end()) {
+                SetValidationFeatureDisable(disables, result->second);
+            }
+        } else if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
+            auto result = ValidationDisableLookup.find(token);
+            if (result != ValidationDisableLookup.end()) {
+                SetValidationDisable(disables, result->second);
+            }
+        }
+    }
+}
+
+static bool SetValidationSetting(CHECK_DISABLED &disable_data, const DisableFlags feature_disable, const char *setting) {
+    const std::optional<std::string>& setting_value = GetSettingValue(setting);
 
     if (setting_value) {
         disable_data[feature_disable] = setting_value != "true";
+        return true;
     }
+
+    return false;
 }
 
-static void SetValidationSetting(CHECK_ENABLED &enable_data, const EnableFlags feature_enable, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
+static bool SetValidationSetting(CHECK_ENABLED &enable_data, const EnableFlags feature_enable, const char *setting) {
+    const std::optional<std::string>& setting_value = GetSettingValue(setting);
 
     if (setting_value) {
         enable_data[feature_enable] = setting_value == "true";
+        return true;
     }
+
+    return false;
 }
 
-static void SetValidationGPUBasedSetting(CHECK_ENABLED &enable_data, const char *setting) {
-    const std::optional<std::string> setting_value = GetSettingValue(setting);
+static bool SetValidationGPUBasedSetting(CHECK_ENABLED &enable_data, const char *setting) {
+    const std::optional<std::string>& setting_value = GetSettingValue(setting);
 
     if (setting_value) {
         enable_data[gpu_validation] = setting_value->find("GPU_BASED_GPU_ASSISTED") != std::string::npos;
         enable_data[debug_printf] = setting_value->find("GPU_BASED_DEBUG_PRINTF") != std::string::npos;
+        return true;
     }
+
+    return false;
 }
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
+#if defined(_WIN32)
+    const std::string env_delimiter = ";";
+#else
+    const std::string env_delimiter = ":";
+#endif
+
     // If not cleared, garbage has been seen in some Android run effecting the error message
     custom_stype_info.clear();
 
@@ -470,40 +455,55 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
 
-#if defined(_WIN32)
-    std::string env_delimiter = ";";
-#else
-    std::string env_delimiter = ":";
-#endif
-    // Process layer enable settings
-    SetLocalEnableSetting(GetConfigValue(SETTING_ENABLES), ",", settings_data->enables);
-    SetLocalEnableSetting(GetEnvVarValue(SETTING_ENABLES), env_delimiter, settings_data->enables);
+    // Process layer enable/disable settings, if these legacy settings are set, don't read the new settings
+    const std::string config_enable_values = GetConfigValue(SETTING_ENABLES);
+    const std::string envvar_enable_values = GetEnvVarValue(SETTING_ENABLES);
+    SetLocalEnableSetting(config_enable_values, ",", settings_data->enables);
+    SetLocalEnableSetting(envvar_enable_values, env_delimiter, settings_data->enables);
 
-    SetValidationSetting(settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
-    SetValidationSetting(settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
-    SetValidationSetting(settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
-    SetValidationSetting(settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
-    SetValidationSetting(settings_data->enables, vendor_specific_nvidia, SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
-    SetValidationSetting(settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
-    SetValidationSetting(settings_data->enables, sync_validation_queue_submit, SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
-    SetValidationGPUBasedSetting(settings_data->enables, SETTING_VALIDATE_GPU_BASED);
-    SetValidationSetting(settings_data->enables, gpu_validation_reserve_binding_slot, SETTING_RESERVE_BINDING_SLOT);
+    const std::string config_disable_values = GetConfigValue(SETTING_DISABLES);
+    const std::string envvar_disable_values = GetEnvVarValue(SETTING_DISABLES);
+    SetLocalDisableSetting(config_disable_values, ",", settings_data->disables);
+    SetLocalDisableSetting(envvar_disable_values, env_delimiter, settings_data->disables);
 
-    // Process layer disable settings
-    SetLocalDisableSetting(GetConfigValue(SETTING_DISABLES), ",", settings_data->disables);
-    SetLocalDisableSetting(GetEnvVarValue(SETTING_DISABLES), env_delimiter, settings_data->disables);
+    // When legacy enable/disable settings are not used, check whether the new settings are used
+    if (config_enable_values.empty() && envvar_enable_values.empty() && config_disable_values.empty() &&
+        envvar_disable_values.empty()) {
+        if (SetValidationSetting(settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES)) {
+            SetValidationSetting(settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
+            SetValidationSetting(settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
+            SetValidationSetting(settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
+            SetValidationSetting(settings_data->enables, vendor_specific_nvidia, SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
+        }
+        if (SetValidationSetting(settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC)) {
+            SetValidationSetting(settings_data->enables, sync_validation_queue_submit, SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
+        }
+        if (SetValidationGPUBasedSetting(settings_data->enables, SETTING_VALIDATE_GPU_BASED)) {
+            if (settings_data->enables[gpu_validation]) {
+                SetValidationSetting(settings_data->enables, gpu_validation_reserve_binding_slot, SETTING_RESERVE_BINDING_SLOT);
+            }
+        }
 
-    SetValidationSetting(settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
-    SetValidationSetting(settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
-    SetValidationSetting(settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
-    SetValidationSetting(settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
-    SetValidationSetting(settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
-    SetValidationSetting(settings_data->disables, query_validation, SETTING_CHECK_QUERY);
-    SetValidationSetting(settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
-    SetValidationSetting(settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
-    SetValidationSetting(settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
-    SetValidationSetting(settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
-    SetValidationSetting(settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+        SetValidationSetting(settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
+        SetValidationSetting(settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
+        if (SetValidationSetting(settings_data->disables, core_checks, SETTING_VALIDATE_CORE)) {
+            SetValidationSetting(settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
+            SetValidationSetting(settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
+            SetValidationSetting(settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
+            SetValidationSetting(settings_data->disables, query_validation, SETTING_CHECK_QUERY);
+
+            if (SetValidationSetting(settings_data->disables, shader_validation, SETTING_CHECK_SHADERS)) {
+                SetValidationSetting(settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+            }
+        }
+
+        SetValidationSetting(settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
+        SetValidationSetting(settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
+    }
+
+    // Fine Grained Locking
+    *settings_data->fine_grained_locking =
+        SetBool(GetConfigValue(SETTING_FINE_GRAINED_LOCKING), GetConfigValue(SETTING_FINE_GRAINED_LOCKING), true);
 
     // Process message filter ID list
     CreateFilterMessageIdList(GetConfigValue(SETTING_MESSAGE_ID_FILTER), ",", settings_data->message_filter_list);
@@ -519,8 +519,4 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (config_limit_setting != 0) {
         *settings_data->duplicate_message_limit = config_limit_setting;
     }
-
-    // Fine Grained Locking
-    *settings_data->fine_grained_locking =
-        SetBool(GetConfigValue(SETTING_FINE_GRAINED_LOCKING), GetConfigValue(SETTING_FINE_GRAINED_LOCKING), true);
 }

@@ -51,6 +51,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/image.cpp
     positive/instance.cpp
     positive/layer_utils.cpp
+    positive/layer_settings_utils.cpp
     positive/memory.cpp
     positive/mesh.cpp
     positive/other.cpp

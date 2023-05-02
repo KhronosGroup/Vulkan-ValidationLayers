@@ -308,6 +308,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     sync/sync_vuid_maps.cpp
     sync/sync_vuid_maps.h
     layer_options.cpp
+    layer_options.h
+    layer_settings_utils.h
     vk_layer_settings_ext.h
 )
 get_target_property(LAYER_SOURCES VkLayer_khronos_validation SOURCES)
