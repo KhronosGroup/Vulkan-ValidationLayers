@@ -367,8 +367,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
-                         "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471", nullptr);
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471",
+                         nullptr);
 
     // Set wrong VkImageLayout
     ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -376,7 +376,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", nullptr);
 
     // Set wrong load operation
@@ -395,7 +395,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", nullptr);
 
     // Set wrong store operation
@@ -414,7 +414,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     rpfdmi = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", nullptr);
 }
 

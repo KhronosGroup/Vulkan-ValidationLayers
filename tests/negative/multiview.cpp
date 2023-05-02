@@ -860,7 +860,7 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
 
     // Correlation masks must not overlap
     correlationMasks[1] = 0x3u;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                          "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841",
                          "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056");
 
@@ -899,7 +899,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
     // Not enough view masks
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-01928",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-01928",
                          "VUID-VkRenderPassCreateInfo2-viewMask-03058");
 }
 
@@ -924,7 +924,7 @@ TEST_F(NegativeMultiview, RenderPassCreateSubpassMissingAttributesBitNVX) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-flags-00856",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-flags-00856",
                          "VUID-VkSubpassDescription2-flags-03076");
 }
 
@@ -1208,7 +1208,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02513", nullptr);
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02513", nullptr);
 }
 
 TEST_F(NegativeMultiview, RenderPassViewOffsets) {
@@ -1241,7 +1241,7 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     VkSubpassDependency dependency = {};
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02512", nullptr);
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-02512", nullptr);
 }
 
 TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
@@ -1275,8 +1275,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697",
-                         nullptr);
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", nullptr);
 }
 
 TEST_F(NegativeMultiview, FeaturesDisabled) {

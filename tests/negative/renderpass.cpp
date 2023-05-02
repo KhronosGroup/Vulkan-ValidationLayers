@@ -35,7 +35,7 @@ TEST_F(NegativeRenderPass, AttachmentIndexOutOfRange) {
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
     // "... must be less than the total number of attachments ..."
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true, "VUID-VkRenderPassCreateInfo-attachment-00834",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkRenderPassCreateInfo-attachment-00834",
                          "VUID-VkRenderPassCreateInfo2-attachment-03051");
 }
 
@@ -76,13 +76,13 @@ TEST_F(NegativeRenderPass, AttachmentReadOnlyButCleared) {
     description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-00836",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-00836",
                          "VUID-VkRenderPassCreateInfo2-pAttachments-02522");
 
     if (maintenance2Supported == true) {
         depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkRenderPassCreateInfo-pAttachments-01566", "VUID-VkRenderPassCreateInfo2-pAttachments-02522");
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-01566",
+                             "VUID-VkRenderPassCreateInfo2-pAttachments-02522");
     }
 
     description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // reset
@@ -91,13 +91,13 @@ TEST_F(NegativeRenderPass, AttachmentReadOnlyButCleared) {
     description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-02511",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-02511",
                          "VUID-VkRenderPassCreateInfo2-pAttachments-02523");
 
     if (maintenance2Supported == true) {
         depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkRenderPassCreateInfo-pAttachments-01567", "VUID-VkRenderPassCreateInfo2-pAttachments-02523");
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-01567",
+                             "VUID-VkRenderPassCreateInfo2-pAttachments-02523");
     }
 
     description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // reset
@@ -126,8 +126,7 @@ TEST_F(NegativeRenderPass, AttachmentMismatchingLayoutsColor) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true,
-                         "subpass 0 already uses attachment 0 with a different image layout",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "subpass 0 already uses attachment 0 with a different image layout",
                          "subpass 0 already uses attachment 0 with a different image layout");
 }
 
@@ -171,11 +170,11 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
                          "VUID-VkAttachmentDescription2-finalLayout-00843");
 
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
                          "VUID-VkAttachmentDescription2-finalLayout-00843");
 
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -189,31 +188,31 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
 
     if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
                              "VUID-VkAttachmentDescription2-format-03286");
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
                              "VUID-VkAttachmentDescription2-format-03286");
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
                              "VUID-VkAttachmentDescription2-format-03286");
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03286",
                              "VUID-VkAttachmentDescription2-format-03286");
 
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
                              "VUID-VkAttachmentDescription2-format-03287");
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
                              "VUID-VkAttachmentDescription2-format-03287");
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
                              "VUID-VkAttachmentDescription2-format-03287");
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03287",
                              "VUID-VkAttachmentDescription2-format-03287");
 
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -222,20 +221,20 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
             attach_desc.format = depth_format;
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03290", "VUID-VkAttachmentDescription2-format-03290");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03290",
+                                 "VUID-VkAttachmentDescription2-format-03290");
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03290", "VUID-VkAttachmentDescription2-format-03290");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03290",
+                                 "VUID-VkAttachmentDescription2-format-03290");
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03291", "VUID-VkAttachmentDescription2-format-03291");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03291",
+                                 "VUID-VkAttachmentDescription2-format-03291");
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03291", "VUID-VkAttachmentDescription2-format-03291");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03291",
+                                 "VUID-VkAttachmentDescription2-format-03291");
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         }
@@ -244,20 +243,20 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
             attach_desc.format = stencil_format;
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03292", "VUID-VkAttachmentDescription2-format-06247");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03292",
+                                 "VUID-VkAttachmentDescription2-format-06247");
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03292", "VUID-VkAttachmentDescription2-format-06247");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03292",
+                                 "VUID-VkAttachmentDescription2-format-06247");
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03293", "VUID-VkAttachmentDescription2-format-06248");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03293",
+                                 "VUID-VkAttachmentDescription2-format-06248");
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                                 "VUID-VkAttachmentDescription-format-03293", "VUID-VkAttachmentDescription2-format-06248");
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03293",
+                                 "VUID-VkAttachmentDescription2-format-06248");
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         }
@@ -308,22 +307,22 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
             attach_desc.format = depth_format;
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284");
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284");
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285");
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285");
 
@@ -333,22 +332,22 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
             attach_desc.format = stencil_format;
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284");
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03284");
 
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285");
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR;
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
                                  "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285",
                                  "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03285");
 
@@ -360,12 +359,12 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03280",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03280",
                          "VUID-VkAttachmentDescription2-format-03280");
 
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03282",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03282",
                          "VUID-VkAttachmentDescription2-format-03282");
 
     // invalid formats without synchronization2
@@ -373,23 +372,19 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkAttachmentDescription-synchronization2-06908",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-synchronization2-06908",
                              "VUID-VkAttachmentDescription2-synchronization2-06908");
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkAttachmentDescription-synchronization2-06908",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-synchronization2-06908",
                              "VUID-VkAttachmentDescription2-synchronization2-06908");
 
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkAttachmentDescription-synchronization2-06909",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-synchronization2-06909",
                              "VUID-VkAttachmentDescription2-synchronization2-06909");
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkAttachmentDescription-synchronization2-06909",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-synchronization2-06909",
                              "VUID-VkAttachmentDescription2-synchronization2-06909");
 
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -400,12 +395,12 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
         attach_desc.format = depth_stencil_format;
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03281",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03281",
                              "VUID-VkAttachmentDescription2-format-03281");
 
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03283",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03283",
                              "VUID-VkAttachmentDescription2-format-03283");
     }
 }
@@ -500,7 +495,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         VkRenderPassCreateInfo test_rpci = rpci;
         test_rpci.pSubpasses = &test_subpass;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &test_rpci, rp2Supported,
+        TestRenderPassCreate(m_errorMonitor, *m_device, test_rpci, rp2Supported,
                              "VUID-VkSubpassDescription-colorAttachmentCount-00845",
                              "VUID-VkSubpassDescription2-colorAttachmentCount-03063");
     }
@@ -509,8 +504,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_8_BIT;
     depth.attachment = VK_ATTACHMENT_UNUSED;  // Avoids triggering 01418
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pColorAttachments-06868",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-06868",
                          "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     depth.attachment = 3;
@@ -520,8 +514,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     attachments[subpass.pDepthStencilAttachment->attachment].samples = VK_SAMPLE_COUNT_8_BIT;
     subpass.colorAttachmentCount = 1;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pDepthStencilAttachment-01418",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-01418",
                          "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     attachments[subpass.pDepthStencilAttachment->attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
@@ -530,8 +523,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     // Test resolve attachment with UNUSED color attachment
     color[0].attachment = VK_ATTACHMENT_UNUSED;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pResolveAttachments-00847",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00847",
                          "VUID-VkSubpassDescription2-pResolveAttachments-03065");
 
     color[0].attachment = 1;
@@ -541,8 +533,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     subpass.colorAttachmentCount = 1;           // avoid mismatch (00337), and avoid double report
     subpass.pDepthStencilAttachment = nullptr;  // avoid mismatch (01418)
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pResolveAttachments-00848",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00848",
                          "VUID-VkSubpassDescription2-pResolveAttachments-03066");
 
     attachments[subpass.pColorAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
@@ -552,8 +543,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     // Test resolve to a multi-sampled resolve attachment
     attachments[subpass.pResolveAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pResolveAttachments-00849",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00849",
                          "VUID-VkSubpassDescription2-pResolveAttachments-03067");
 
     attachments[subpass.pResolveAttachments[0].attachment].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -561,8 +551,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     // Test with color/resolve format mismatch
     attachments[subpass.pColorAttachments[0].attachment].format = VK_FORMAT_R8G8B8A8_SRGB;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pResolveAttachments-00850",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pResolveAttachments-00850",
                          "VUID-VkSubpassDescription2-pResolveAttachments-03068");
 
     attachments[subpass.pColorAttachments[0].attachment].format = attachments[subpass.pResolveAttachments[0].attachment].format;
@@ -570,15 +559,14 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
     // Test for UNUSED preserve attachments
     preserve[0] = VK_ATTACHMENT_UNUSED;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-attachment-00853",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-attachment-00853",
                          "VUID-VkSubpassDescription2-attachment-03073");
 
     preserve[0] = 5;
     // Test for preserve attachments used elsewhere in the subpass
     color[0].attachment = preserve[0];
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pPreserveAttachments-00854",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pPreserveAttachments-00854",
                          "VUID-VkSubpassDescription2-pPreserveAttachments-03074");
 
     color[0].attachment = 1;
@@ -594,8 +582,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         auto rpci_multipass = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(),
                                                                     size32(subpasses), subpasses.data(), 0u, nullptr);
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_multipass, rp2Supported,
-                             "VUID-VkSubpassDescription-loadOp-00846", "VUID-VkSubpassDescription2-loadOp-03064");
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci_multipass, rp2Supported, "VUID-VkSubpassDescription-loadOp-00846",
+                             "VUID-VkSubpassDescription2-loadOp-03064");
 
         attachments[input[0].attachment].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     }
@@ -611,8 +599,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
 
         // only test rp1 so can ignore the expected 2nd error
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pColorAttachments-02648");
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, false,
-                             "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci_same, false, "VUID-VkSubpassDescription-pDepthStencilAttachment-04438",
+                             nullptr);
 
         if (rp2Supported) {
             safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci_same);
@@ -625,8 +613,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         subpass_same.pDepthStencilAttachment = &depth_1bit.data()[1];
 
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pColorAttachments-02648");
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_same, false,
-                             "VUID-VkSubpassDescription-pDepthStencilAttachment-04438", nullptr);
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci_same, false, "VUID-VkSubpassDescription-pDepthStencilAttachment-04438",
+                             nullptr);
 
         if (rp2Supported) {
             safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci_same);
@@ -706,7 +694,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
     VkRenderPassCreateInfo test_rpci = rpci;
     test_rpci.pSubpasses = &test_subpass;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &test_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03341",
+    TestRenderPassCreate(m_errorMonitor, *m_device, test_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03341",
                          "VUID-VkRenderPassCreateInfo2-flags-04907");
 
     // Create a resolve subpass which is not the last subpass in the subpass dependency chain.
@@ -720,7 +708,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
         auto test2_rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 2u, subpasses,
                                                                 size32(dependency), dependency.data());
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &test2_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03343",
+        TestRenderPassCreate(m_errorMonitor, *m_device, test2_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03343",
                              "VUID-VkRenderPassCreateInfo2-flags-04909");
     }
 }
@@ -762,12 +750,12 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
 
     // Use UNDEFINED layout
     refs[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
                          "VUID-VkAttachmentReference2-layout-03077");
 
     // Use PREINITIALIZED layout
     refs[0].layout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
                          "VUID-VkAttachmentReference2-layout-03077");
 
     if (rp2Supported) {
@@ -848,12 +836,12 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsF
 
     // Use UNDEFINED layout
     refs[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
                          "VUID-VkAttachmentReference2-layout-03077");
 
     // Use PREINITIALIZED layout
     refs[0].layout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
                          "VUID-VkAttachmentReference2-layout-03077");
 
     if (rp2Supported) {
@@ -989,12 +977,12 @@ TEST_F(NegativeRenderPass, AttachmentReferenceSync2Layout) {
 
     // Use ATTACHMENT_OPTIMAL_KHR layout
     refs[0].layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
                          "VUID-VkAttachmentReference2-synchronization2-06910");
 
     // Use READ_ONLY_OPTIMAL_KHR layout
     refs[0].layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
                          "VUID-VkAttachmentReference2-synchronization2-06910");
 }
 
@@ -1067,8 +1055,8 @@ TEST_F(NegativeRenderPass, MixedAttachmentSamplesAMD) {
     attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pColorAttachments-01506", "VUID-VkSubpassDescription2-pColorAttachments-03070");
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-01506",
+                         "VUID-VkSubpassDescription2-pColorAttachments-03070");
 }
 
 TEST_F(NegativeRenderPass, BeginRenderArea) {
@@ -2693,10 +2681,10 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     // Color attachment
     subpass.pColorAttachments = &references[1];
     if (useLinearColorAttachment) {
-        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06497",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06497",
                              "VUID-VkSubpassDescription2-linearColorAttachment-06500");
     } else {
-        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
                              "VUID-VkSubpassDescription2-pColorAttachments-02898");
     }
     subpass = originalSubpass;
@@ -2705,17 +2693,17 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &references[1];
     if (useLinearColorAttachment) {
-        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06496",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06496",
                              "VUID-VkSubpassDescription2-linearColorAttachment-06499");
     } else {
-        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
+        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
                              "VUID-VkSubpassDescription2-pInputAttachments-02897");
     }
     subpass = originalSubpass;
 
     // Depth Stencil attachment
     subpass.pDepthStencilAttachment = &references[3];
-    TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-02650",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-02650",
                          "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
     subpass = originalSubpass;
 
@@ -3544,7 +3532,7 @@ TEST_F(NegativeRenderPass, AttachmentUndefinedLayout) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-06699",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkAttachmentDescription-format-06699",
                          "VUID-VkAttachmentDescription2-format-06699");
 
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
