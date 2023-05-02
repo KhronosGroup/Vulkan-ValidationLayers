@@ -194,11 +194,12 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
     for (const auto &desc : pipeline.vertex_input_state->binding_descriptions) {
         const uint32_t min_alignment = phys_dev_ext_props.portability_props.minVertexInputBindingStrideAlignment;
         if ((desc.stride < min_alignment) || (min_alignment == 0) || ((desc.stride % min_alignment) != 0)) {
-            skip |= LogError(device, "VUID-VkVertexInputBindingDescription-stride-04456",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] (portability error): Vertex input stride must be at least as large as and a "
-                             "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment.",
-                             pipeline.create_index);
+            skip |= LogError(
+                device, "VUID-VkVertexInputBindingDescription-stride-04456",
+                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] (portability error): Vertex input stride (%" PRIu32
+                ") must be at least as large as and a "
+                "multiple of VkPhysicalDevicePortabilitySubsetPropertiesKHR::minVertexInputBindingStrideAlignment (%" PRIu32 ").",
+                pipeline.create_index, desc.stride, min_alignment);
         }
     }
 
@@ -209,11 +210,12 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const PIPELINE_STATE &pipel
             if (vertex_binding_map_it != pipeline.vertex_input_state->binding_to_index_map.cend()) {
                 const auto &desc = pipeline.vertex_input_state->binding_descriptions[vertex_binding_map_it->second];
                 if ((attrib.offset + FormatElementSize(attrib.format)) > desc.stride) {
-                    skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] (portability error): (attribute.offset + "
-                                     "sizeof(vertex_description.format)) is larger than the vertex stride",
-                                     pipeline.create_index);
+                    skip |= LogError(
+                        device, "VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457",
+                        "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] (portability error): attribute.offset (%" PRIu32
+                        ") + "
+                        "sizeof(vertex_description.format) (%" PRIu32 ") is larger than the vertex stride (%" PRIu32 ")",
+                        pipeline.create_index, attrib.offset, FormatElementSize(attrib.format), desc.stride);
                 }
             }
         }
