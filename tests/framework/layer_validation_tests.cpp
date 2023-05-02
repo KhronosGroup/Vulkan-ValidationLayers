@@ -209,44 +209,39 @@ void ReleaseNullFence(ThreadTestData *data) {
     }
 }
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
+void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    VkResult err;
-
-    if (nullptr != rp1_vuid) {
+    if (rp1_vuid) {
         // If the second VUID is not provided, set it equal to the first VUID.  In this way,
         // we can check both vkCreateRenderPass and vkCreateRenderPass2 with the same VUID
         // if rp2_supported is true;
-        if (rp2_supported && nullptr == rp2_vuid) {
+        if (rp2_supported && !rp2_vuid) {
             rp2_vuid = rp1_vuid;
         }
 
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
-        err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
-        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+        vk_testing::RenderPass rp(device, create_info);
         error_monitor->VerifyFound();
     }
 
-    if (rp2_supported && nullptr != rp2_vuid) {
-        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(*create_info);
+    if (rp2_supported && rp2_vuid) {
+        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(create_info);
 
-        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-        // For API version >= 1.2 where the extension was not enabled
+        const auto vkCreateRenderPass2KHR =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
+        // For API version < 1.2 where the extension was not enabled
         if (vkCreateRenderPass2KHR) {
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
-            if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+            vk_testing::RenderPass rp2_khr(device, *create_info2.ptr(), true);
             error_monitor->VerifyFound();
         }
 
-        // For api version >= 1.2, try core entrypoint
-        PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
+        const auto vkCreateRenderPass2 =
+            reinterpret_cast<PFN_vkCreateRenderPass2>(vk::GetDeviceProcAddr(device, "vkCreateRenderPass2"));
+        // For API version >= 1.2, try core entrypoint
         if (vkCreateRenderPass2) {
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-            err = vkCreateRenderPass2(device, create_info2.ptr(), nullptr, &render_pass);
-            if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+            vk_testing::RenderPass rp2_core(device, *create_info2.ptr(), false);
             error_monitor->VerifyFound();
         }
     }

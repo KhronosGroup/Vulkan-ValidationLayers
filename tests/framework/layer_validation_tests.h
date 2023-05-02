@@ -876,7 +876,7 @@ class ThreadTimeoutHelper {
 
 void ReleaseNullFence(ThreadTestData *);
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
+void TestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device, const VkRenderPassCreateInfo &create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
 void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device,
                                   const VkRenderPassCreateInfo &create_info, bool rp2_supported);
