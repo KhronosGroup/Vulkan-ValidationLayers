@@ -46,7 +46,7 @@ struct DedicatedBinding {
 class DEVICE_MEMORY_STATE : public BASE_NODE {
   public:
     const safe_VkMemoryAllocateInfo alloc_info;
-    const VkExternalMemoryHandleTypeFlags export_handle_types;
+    const VkExternalMemoryHandleTypeFlags export_handle_types;  // from VkExportMemoryAllocateInfo::handleTypes
     const std::optional<VkExternalMemoryHandleTypeFlagBits> import_handle_type;
     const bool unprotected;     // can't be used for protected memory
     const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
