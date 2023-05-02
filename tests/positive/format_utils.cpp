@@ -36,3 +36,9 @@ TEST_F(PositiveFormatUtils, FormatsSameComponentBits) {
     // UNDEFINED is always bad
     ASSERT_FALSE(FormatsSameComponentBits(VK_FORMAT_UNDEFINED, VK_FORMAT_B8G8R8_UINT));
 }
+
+TEST_F(PositiveFormatUtils, FormatIs64bit) {
+    ASSERT_TRUE(FormatIs64bit(VK_FORMAT_R64_SFLOAT));
+    ASSERT_TRUE(FormatIs64bit(VK_FORMAT_R64G64B64A64_SINT));
+    ASSERT_FALSE(FormatIs64bit(VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM));
+}
