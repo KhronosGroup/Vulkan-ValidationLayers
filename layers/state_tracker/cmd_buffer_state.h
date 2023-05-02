@@ -22,6 +22,7 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/video_session_state.h"
 #include "generated/command_validation.h"
+#include "generated/dynamic_state_helper.h"
 #include "utils/hash_vk_types.h"
 #include "containers/subresource_adapter.h"
 #include "state_tracker/image_layout_map.h"
@@ -498,9 +499,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
-    void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicStatus state);
+    void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicState dynamic_state);
     void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &state_bits);
-    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicStatus state, uint32_t attachment_count);
+    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicState dynamic_state, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);

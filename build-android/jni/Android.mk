@@ -81,6 +81,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_synchronization.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_validation_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_grammar_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/dynamic_state_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/debug_printf.cpp

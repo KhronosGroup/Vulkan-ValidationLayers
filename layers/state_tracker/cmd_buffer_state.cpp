@@ -1055,8 +1055,8 @@ void CMD_BUFFER_STATE::UpdateDrawCmd(CMD_TYPE cmd_type) {
     uint32_t &used = usedViewportScissorCount;
     used = std::max(used, pipelineStaticViewportCount);
     used = std::max(used, pipelineStaticScissorCount);
-    usedDynamicViewportCount |= dynamic_status[CB_DYNAMIC_VIEWPORT_WITH_COUNT_SET];
-    usedDynamicScissorCount |= dynamic_status[CB_DYNAMIC_SCISSOR_WITH_COUNT_SET];
+    usedDynamicViewportCount |= dynamic_status[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT];
+    usedDynamicScissorCount |= dynamic_status[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT];
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
@@ -1372,7 +1372,7 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
 
 void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { command_count++; }
 
-void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicStatus state) {
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicState state) {
     CBDynamicFlags state_bits;
     state_bits.set(state);
     RecordStateCmd(cmd_type, state_bits);
@@ -1384,7 +1384,7 @@ void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &s
     static_status &= ~state_bits;
 }
 
-void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicStatus state, uint32_t attachment_count) {
+void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicState state, uint32_t attachment_count) {
     RecordStateCmd(cmd_type, state);
     dynamicColorWriteEnableAttachmentCount = std::max(dynamicColorWriteEnableAttachmentCount, attachment_count);
 }
