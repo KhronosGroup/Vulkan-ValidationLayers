@@ -1067,6 +1067,9 @@ VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysica
                                                                        const VkBufferCreateInfo &buffer_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features);
 
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
+                                        VkExternalMemoryHandleTypeFlagBits handle_type);
+
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysicalDevice gpu,
                                                                        const VkImageCreateInfo &image_create_info,
                                                                        VkExternalMemoryFeatureFlags requested_features);
@@ -1074,6 +1077,9 @@ VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(VkPhysica
 VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkLayerTest &test,
                                                                            const VkImageCreateInfo &image_create_info,
                                                                            VkExternalMemoryFeatureFlagsNV requested_features);
+
+bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
+                                        VkExternalMemoryHandleTypeFlagBits handle_type);
 
 VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalDevice gpu,
                                                                      VkExternalFenceFeatureFlags requested_features);

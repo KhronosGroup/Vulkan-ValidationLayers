@@ -5032,7 +5032,7 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
                                 sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    draw_buffer.bind_memory(*m_device, 0, 0);
+    draw_buffer.allocate_and_bind_memory(*m_device);
 
     vk_testing::Buffer count_buffer_unbound;
     count_buffer_unbound.init_no_mem(*m_device, count_buffer_create_info);

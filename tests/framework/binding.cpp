@@ -657,18 +657,17 @@ VkMemoryRequirements Buffer::memory_requirements() const {
     return reqs;
 }
 
+void Buffer::allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+    assert(!internal_mem_.initialized());
+    internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    bind_memory(internal_mem_, 0);
+}
+
 void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
     EXPECT(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
-}
-
-void Buffer::bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset) {
-    if (!internal_mem_.initialized()) {
-        internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props));
-    }
-    bind_memory(internal_mem_, mem_offset);
 }
 
 VkDeviceAddress Buffer::address(uint32_t vk_api_version /*= VK_API_VERSION_1_2*/) const {
@@ -730,6 +729,12 @@ VkMemoryRequirements Image::memory_requirements() const {
     vk::GetImageMemoryRequirements(device(), handle(), &reqs);
 
     return reqs;
+}
+
+void Image::allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+    assert(!internal_mem_.initialized());
+    internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    bind_memory(internal_mem_, 0);
 }
 
 void Image::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {

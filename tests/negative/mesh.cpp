@@ -1134,7 +1134,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     VkBufferObj draw_buffer;
     draw_buffer.init_no_mem(*m_device, buffer_create_info);
     ASSERT_TRUE(draw_buffer.initialized());
-    draw_buffer.bind_memory(*m_device, 0, 0);
+    draw_buffer.allocate_and_bind_memory(*m_device);
 
     VkBufferCreateInfo count_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     count_buffer_create_info.size = 64;

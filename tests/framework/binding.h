@@ -511,10 +511,12 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     // vkGetObjectMemoryRequirements()
     VkMemoryRequirements memory_requirements() const;
 
-    // vkBindObjectMemory()
+    // Allocate and bind memory
+    // The assumption that this object was created in no_mem configuration
+    void allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
+
+    // Bind to existing memory object
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
-    // Bind to internal_mem_ reference
-    void bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset);
 
     const VkBufferCreateInfo &create_info() const { return create_info_; }
     static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
@@ -606,7 +608,11 @@ class Image : public internal::NonDispHandle<VkImage> {
     // vkGetObjectMemoryRequirements()
     VkMemoryRequirements memory_requirements() const;
 
-    // vkBindObjectMemory()
+    // Allocate and bind memory
+    // The assumption that this object was created in no_mem configuration
+    void allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
+
+    // Bind to existing memory object
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
     // vkGetImageSubresourceLayout()
