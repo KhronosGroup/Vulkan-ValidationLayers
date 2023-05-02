@@ -1434,6 +1434,28 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                      function_name, j, i);
                 }
 
+                const VkImageLayout attachment_layout = attachment_ref.layout;
+                if (IsValueIn(attachment_layout,
+                              {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06912" : "VUID-VkSubpassDescription-attachment-06912";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+                if (IsValueIn(attachment_layout,
+                              {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06918" : "VUID-VkSubpassDescription-attachment-06918";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+                if (attachment_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06921" : "VUID-VkSubpassDescription-attachment-06921";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment_index < pCreateInfo->attachmentCount) {
                     const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_index].format;
@@ -1545,6 +1567,36 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount,
                                                     error_type.c_str(), function_name);
 
+                    const VkImageLayout attachment_layout = attachment_ref.layout;
+                    if (IsValueIn(attachment_layout,
+                                  {VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
+                        const char *vuid =
+                            use_rp2 ? "VUID-VkSubpassDescription2-attachment-06914" : "VUID-VkSubpassDescription-attachment-06914";
+                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    }
+                    if (IsValueIn(attachment_layout, {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+                                                      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
+                        const char *vuid =
+                            use_rp2 ? "VUID-VkSubpassDescription2-attachment-06917" : "VUID-VkSubpassDescription-attachment-06917";
+                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    }
+                    if (IsValueIn(attachment_layout,
+                                  {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                                   VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
+                        const char *vuid =
+                            use_rp2 ? "VUID-VkSubpassDescription2-attachment-06920" : "VUID-VkSubpassDescription-attachment-06920";
+                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    }
+                    if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+                        const char *vuid =
+                            use_rp2 ? "VUID-VkSubpassDescription2-attachment-06923" : "VUID-VkSubpassDescription-attachment-06923";
+                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    }
+
                     // safe to dereference pCreateInfo->pAttachments[]
                     if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
                         const VkFormat attachment_format = pCreateInfo->pAttachments[attachment_ref.attachment].format;
@@ -1608,6 +1660,24 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             if (attachment != VK_ATTACHMENT_UNUSED) {
                 skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
+
+                const VkImageLayout attachment_layout = subpass.pDepthStencilAttachment->layout;
+                if (IsValueIn(attachment_layout,
+                              {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06915" : "VUID-VkSubpassDescription-attachment-06915";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+
+                if (use_rp2 && IsValueIn(attachment_layout,
+                                         {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
+                    if (LvlFindInChain<VkAttachmentReferenceStencilLayoutKHR>(subpass.pDepthStencilAttachment->pNext)) {
+                        const char *vuid = "VUID-VkSubpassDescription2-attachment-06251";
+                        skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                         error_type.c_str(), string_VkImageLayout(attachment_layout));
+                    }
+                }
 
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment < pCreateInfo->attachmentCount) {
@@ -1791,6 +1861,36 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 skip |= ValidateAttachmentIndex(rp_version, attachment_index, pCreateInfo->attachmentCount, error_type.c_str(),
                                                 function_name);
+
+                const VkImageLayout attachment_layout = attachment_ref.layout;
+                if (IsValueIn(attachment_layout,
+                              {VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06913" : "VUID-VkSubpassDescription-attachment-06913";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+                if (IsValueIn(attachment_layout, {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+                                                  VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06916" : "VUID-VkSubpassDescription-attachment-06916";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+                if (IsValueIn(attachment_layout,
+                              {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                               VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL})) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06919" : "VUID-VkSubpassDescription-attachment-06919";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
+                if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+                    const char *vuid =
+                        use_rp2 ? "VUID-VkSubpassDescription2-attachment-06922" : "VUID-VkSubpassDescription-attachment-06922";
+                    skip |= LogError(device, vuid, "%s: Input attachment %s layout (%s) is invalid.", function_name,
+                                     error_type.c_str(), string_VkImageLayout(attachment_layout));
+                }
 
                 // safe to dereference pCreateInfo->pAttachments[]
                 if (attachment_index < pCreateInfo->attachmentCount) {
