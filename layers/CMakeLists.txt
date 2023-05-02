@@ -223,6 +223,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     generated/chassis.cpp
     generated/valid_param_values.cpp
     generated/command_validation.cpp
+    generated/dynamic_state_helper.cpp
     generated/enum_flag_bits.h
     generated/layer_chassis_dispatch.cpp
     generated/object_tracker.cpp

@@ -148,6 +148,8 @@ core_validation_sources = [
   "layers/external/vma/vma.h",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
+  "layers/generated/dynamic_state_helper.cpp",
+  "layers/generated/dynamic_state_helper.h",
   "layers/generated/gpu_as_inspection_comp.h",
   "layers/generated/gpu_pre_dispatch_comp.h",
   "layers/generated/gpu_pre_draw_vert.h",

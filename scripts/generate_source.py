@@ -83,6 +83,8 @@ def main(argv):
                                               "spirv_grammar_helper.h",
                                               "command_validation.cpp",
                                               "command_validation.h",
+                                              "dynamic_state_helper.cpp",
+                                              "dynamic_state_helper.h",
                                               "vk_format_utils.cpp",
                                               "vk_format_utils.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),

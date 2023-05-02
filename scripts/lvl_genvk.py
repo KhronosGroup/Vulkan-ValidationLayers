@@ -619,6 +619,23 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
+    genOpts['dynamic_state_helper.cpp'] = [
+          DynamicStateOutputGenerator,
+          DynamicStateOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'dynamic_state_helper.cpp',
+            directory         = directory)
+        ]
+
+    # generator for command_validation.h
+    genOpts['dynamic_state_helper.h'] = [
+          DynamicStateOutputGenerator,
+          DynamicStateOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'dynamic_state_helper.h',
+            directory         = directory)
+        ]
+
     # Options for format_utils code-generated header
     genOpts['vk_format_utils.cpp'] = [
           FormatUtilsOutputGenerator,
@@ -780,6 +797,7 @@ if __name__ == '__main__':
     from spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
     from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
     from format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
+    from dynamic_state_generator import DynamicStateOutputGenerator, DynamicStateOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
