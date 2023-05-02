@@ -935,7 +935,9 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
 class RenderPass : public internal::NonDispHandle<VkRenderPass> {
   public:
     RenderPass() = default;
+    // vkCreateRenderPass()
     RenderPass(const Device &dev, const VkRenderPassCreateInfo &info) { init(dev, info); }
+    // vkCreateRenderPass2()
     RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr = false) { init(dev, info, khr); }
     ~RenderPass() noexcept;
     void destroy() noexcept;

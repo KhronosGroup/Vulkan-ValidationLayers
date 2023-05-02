@@ -252,21 +252,11 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 }
 
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
-                                  bool rp2_supported) {
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    VkResult err;
-
-    err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
-    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-
+void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device,
+                                  const VkRenderPassCreateInfo &create_info, bool rp2_supported) {
+    vk_testing::RenderPass rp(device, create_info);
     if (rp2_supported) {
-        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-        safe_VkRenderPassCreateInfo2 create_info2 = ConvertVkRenderPassCreateInfoToV2KHR(*create_info);
-
-        err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
-        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+        vk_testing::RenderPass rp2(device, *ConvertVkRenderPassCreateInfoToV2KHR(create_info).ptr(), true);
     }
 }
 

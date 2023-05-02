@@ -856,7 +856,7 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
         nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<uint32_t>(correlationMasks.size()), correlationMasks.data());
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
-    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false);
+    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, false);
 
     // Correlation masks must not overlap
     correlationMasks[1] = 0x3u;

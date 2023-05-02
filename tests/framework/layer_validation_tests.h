@@ -1029,8 +1029,8 @@ void ReleaseNullFence(ThreadTestData *);
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
-                                  bool rp2_supported);
+void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vk_testing::Device &device,
+                                  const VkRenderPassCreateInfo &create_info, bool rp2_supported);
 void PositiveTestRenderPass2KHRCreate(const vk_testing::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vk_testing::Device &device,
                               const VkRenderPassCreateInfo2KHR &create_info, const std::initializer_list<const char *> &vuids);

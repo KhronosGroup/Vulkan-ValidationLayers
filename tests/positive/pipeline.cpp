@@ -4519,7 +4519,7 @@ TEST_F(VkPositiveLayerTest, RenderPassInputResolve) {
                                    0,
                                    nullptr};
 
-    PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported);
+    PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported);
 }
 
 TEST_F(VkPositiveLayerTest, SpecializationUnused) {
