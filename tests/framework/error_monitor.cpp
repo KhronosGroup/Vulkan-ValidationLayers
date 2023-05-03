@@ -17,9 +17,103 @@
  */
 #include "error_monitor.h"
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+// Note. VK_EXT_debug_report is deprecated by the VK_EXT_debug_utils extension.
+// However, we still support this old extension due to CI running old Android devices.
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
+                                                    size_t, int32_t, const char *, const char *message, void *user_data) {
+    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
+
+    if (message_flags & error_monitor->GetMessageFlags()) {
+        return error_monitor->CheckForDesiredMsg(message);
+    }
+    return VK_FALSE;
+}
+#else
+static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
+                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        return VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    }
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        if (da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+            return VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        } else {
+            return VK_DEBUG_REPORT_WARNING_BIT_EXT;
+        }
+    }
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        return VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+    }
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        return VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+    }
+
+    return 0;
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                    VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
+    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
+    const char *message = callback_data->pMessage;
+    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
+
+    if (message_flags & error_monitor->GetMessageFlags()) {
+        return error_monitor->CheckForDesiredMsg(message);
+    }
+    return VK_FALSE;
+}
+#endif
+
 ErrorMonitor::ErrorMonitor() {
     MonitorReset();
     ExpectSuccess(kErrorBit);
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    debug_create_info_ = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+                          nullptr,
+                          0,
+                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
+                          VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+                          &DebugCallback,
+                          this};
+#else
+    debug_create_info_ = {VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
+                          VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
+                              VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+                              VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+                          &DebugCallback, this};
+#endif
+}
+
+void ErrorMonitor::CreateCallback(VkInstance instance) noexcept {
+    assert(instance);
+    assert(!debug_obj_);
+
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    assert(vk::CreateDebugUtilsMessengerEXT != nullptr);
+    const VkResult result = vk::CreateDebugUtilsMessengerEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
+#else
+    assert(vk::CreateDebugReportCallbackEXT != nullptr);
+    const VkResult result = vk::CreateDebugReportCallbackEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
+#endif
+    if (result != VK_SUCCESS) {
+        assert(false);
+        debug_obj_ = VK_NULL_HANDLE;
+    }
+}
+
+void ErrorMonitor::DestroyCallback(VkInstance instance) noexcept {
+    assert(instance);
+    assert(debug_obj_);  // valid to call with null object, but probably bug
+
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    vk::DestroyDebugUtilsMessengerEXT(instance, debug_obj_, nullptr);
+#else
+    vk::DestroyDebugReportCallbackEXT(instance, debug_obj_, nullptr);
+#endif
+    debug_obj_ = VK_NULL_HANDLE;
 }
 
 void ErrorMonitor::MonitorReset() {
@@ -174,52 +268,4 @@ bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
     return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const &str) {
                return msg.find(str) != std::string::npos;
            }) != ignore_message_strings_.end();
-}
-
-void DebugReporter::Create(VkInstance instance) noexcept {
-    assert(instance);
-    assert(!debug_obj_);
-
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
-    assert(vk::CreateDebugUtilsMessengerEXT != nullptr);
-    const VkResult err = vk::CreateDebugUtilsMessengerEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
-#else
-    assert(vk::CreateDebugReportCallbackEXT != nullptr);
-    const VkResult err = vk::CreateDebugReportCallbackEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
-#endif
-    if (err) {
-        debug_obj_ = VK_NULL_HANDLE;
-    }
-}
-
-void DebugReporter::Destroy(VkInstance instance) noexcept {
-    assert(instance);
-    assert(debug_obj_);  // valid to call with null object, but probably bug
-
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
-    vk::DestroyDebugUtilsMessengerEXT(instance, debug_obj_, nullptr);
-#else
-    vk::DestroyDebugReportCallbackEXT(instance, debug_obj_, nullptr);
-#endif
-    debug_obj_ = VK_NULL_HANDLE;
-}
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT,
-                                                            uint64_t, size_t, int32_t, const char *, const char *message,
-                                                            void *user_data) {
-#else
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
-                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                            void *user_data) {
-    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
-    const char *message = callback_data->pMessage;
-#endif
-    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
-
-    if (message_flags & error_monitor->GetMessageFlags()) {
-        return error_monitor->CheckForDesiredMsg(message);
-    }
-    return VK_FALSE;
 }

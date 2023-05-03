@@ -727,8 +727,8 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
 
-    DebugReporter debug_reporter;
-    debug_reporter.Create(test_instance);
+    ErrorMonitor monitor;
+    monitor.CreateCallback(test_instance);
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, nullptr);
@@ -743,7 +743,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
         vk::GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamilyPropertyCount, nullptr);
     }
 
-    debug_reporter.Destroy(test_instance);
+    monitor.DestroyCallback(test_instance);
     vk::DestroyInstance(test_instance, nullptr);
 }
 

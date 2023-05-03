@@ -237,21 +237,6 @@ typedef struct _debug_report_data {
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
                                                                std::unordered_map<void *, debug_report_data *> &data_map);
 
-static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
-                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) return VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        if (da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
-            return VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        else
-            return VK_DEBUG_REPORT_WARNING_BIT_EXT;
-    }
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) return VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) return VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-
-    return 0;
-}
-
 static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;

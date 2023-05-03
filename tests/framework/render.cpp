@@ -68,7 +68,7 @@ VkRenderFramework::VkRenderFramework()
 
 VkRenderFramework::~VkRenderFramework() {
     ShutdownFramework();
-    debug_reporter_.error_monitor_.Finish();
+    m_errorMonitor->Finish();
 }
 
 VkPhysicalDevice VkRenderFramework::gpu() const {
@@ -144,29 +144,17 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
 }
 
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    return {
-        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        &debug_reporter_.debug_create_info_,
-        VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
-        &app_info_,
-        static_cast<uint32_t>(instance_layers_.size()),
-        instance_layers_.data(),
-        static_cast<uint32_t>(m_instance_extension_names.size()),
-        m_instance_extension_names.data(),
-    };
-#else
-    return {
-        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        &debug_reporter_.debug_create_info_,
-        0,
-        &app_info_,
-        static_cast<uint32_t>(instance_layers_.size()),
-        instance_layers_.data(),
-        static_cast<uint32_t>(m_instance_extension_names.size()),
-        m_instance_extension_names.data(),
-    };
+    auto info = LvlInitStruct<VkInstanceCreateInfo>();
+    info.pNext = m_errorMonitor->GetDebugCreateInfo();
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
+    info.pApplicationInfo = &app_info_;
+    info.enabledLayerCount = size32(instance_layers_);
+    info.ppEnabledLayerNames = instance_layers_.data();
+    info.enabledExtensionCount = size32(m_instance_extension_names);
+    info.ppEnabledExtensionNames = m_instance_extension_names.data();
+    return info;
 }
 
 inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
@@ -316,7 +304,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         }
     }
 
-    debug_reporter_.Create(instance_);
+    m_errorMonitor->CreateCallback(instance_);
 
     if (print_driver_info && !driver_printed) {
         auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
@@ -494,7 +482,7 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_device;
     m_device = nullptr;
 
-    debug_reporter_.Destroy(instance_);
+    m_errorMonitor->DestroyCallback(instance_);
 
     DestroySurface(m_surface);
     DestroySurfaceContext(m_surface_context);
@@ -504,7 +492,7 @@ void VkRenderFramework::ShutdownFramework() {
     vk::ResetAllExtensions();
 }
 
-ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
+ErrorMonitor &VkRenderFramework::Monitor() { return monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
     vk::GetPhysicalDeviceFeatures(gpu(), features);
