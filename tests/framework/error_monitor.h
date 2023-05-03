@@ -36,6 +36,9 @@ class ErrorMonitor {
     ErrorMonitor();
     ~ErrorMonitor() noexcept = default;
 
+    void CreateCallback(VkInstance instance) noexcept;
+    void DestroyCallback(VkInstance instance) noexcept;
+
     ErrorMonitor(const ErrorMonitor &) = delete;
     ErrorMonitor &operator=(const ErrorMonitor &) = delete;
     ErrorMonitor(ErrorMonitor &&) noexcept = delete;
@@ -65,6 +68,8 @@ class ErrorMonitor {
     void VerifyFound();
     void Finish();
 
+    const auto *GetDebugCreateInfo() const { return &debug_create_info_; }
+
   private:
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
@@ -78,6 +83,14 @@ class ErrorMonitor {
     void MonitorReset();
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }
 
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    VkDebugUtilsMessengerEXT debug_obj_ = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info_{};
+#else
+    VkDebugReportCallbackEXT debug_obj_ = VK_NULL_HANDLE;
+    VkDebugReportCallbackCreateInfoEXT debug_create_info_{};
+#endif
+
     VkFlags message_flags_{};
     std::unordered_multiset<std::string> desired_message_strings_;
     std::unordered_multiset<std::string> failure_message_strings_;
@@ -86,43 +99,4 @@ class ErrorMonitor {
     mutable std::mutex mutex_;
     std::atomic<bool> *bailout_{};
     bool message_found_{};
-};
-
-struct DebugReporter {
-    void Create(VkInstance instance) noexcept;
-    void Destroy(VkInstance instance) noexcept;
-
-    ErrorMonitor error_monitor_;
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
-                                                        size_t, int32_t, const char *, const char *msg, void *user_data);
-
-    VkDebugReportCallbackCreateInfoEXT debug_create_info_ = {
-        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
-        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-            VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-        &DebugCallback, &error_monitor_};
-
-    VkDebugReportCallbackEXT debug_obj_ = VK_NULL_HANDLE;
-#else
-    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT message_types,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
-
-    const VkDebugUtilsMessageSeverityFlagsEXT message_severity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-
-    VkDebugUtilsMessengerCreateInfoEXT debug_create_info_ = {
-        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-        nullptr,
-        0,
-        message_severity,
-        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-        &DebugCallback,
-        &error_monitor_};
-
-    VkDebugUtilsMessengerEXT debug_obj_ = VK_NULL_HANDLE;
-#endif
 };
