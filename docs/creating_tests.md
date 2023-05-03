@@ -91,12 +91,6 @@ if (!AreRequiredExtensionsEnabled()) {
     GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
 }
 
-// If the optional extension has a command, it will need a vkGetDeviceProcAddr call
-PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2KHR = nullptr;
-if (copy_commands2) {
-    vkCmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
-}
-
 // Validate core copy command
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
 vk::CmdCopyBuffer( /* */ );
@@ -105,7 +99,7 @@ m_errorMonitor->VerifyFound();
 // optional test using VK_KHR_copy_commands2
 if (copy_commands2) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vkCmdCopyBuffer2KHR( /* */  );
+    vk::CmdCopyBuffer2KHR( /* */  );
     m_errorMonitor->VerifyFound();
 }
 ```
@@ -130,19 +124,16 @@ if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
 
 ### Getting Function Pointers
 
-A common case for checking the version is in order to find how to correctly get extension function pointers.
+When using a version that has promoted the function, one can just directly use the call.
+
+In the case of enabling the extensions, all the functions for those extensions will call `vkGetDeviceProcAddr` automatically.
 
 ```cpp
-// Create aliased function pointers for 1.0 and 1.1+ contexts
-PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
-if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-    vkBindImageMemory2Function = vk::BindImageMemory2;
-} else {
-    vkBindImageMemory2Function = reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
-}
+// If VK_API_VERSION_1_1 or later is set
+vk::BindImageMemory2(...);
 
-// later in code
-vkBindImageMemory2Function(device(), 1, &bind_image_info);
+// If VK_KHR_bind_memory2 is enabled
+vk::BindImageMemory2KHR(...);
 ```
 
 ## Error Monitor
