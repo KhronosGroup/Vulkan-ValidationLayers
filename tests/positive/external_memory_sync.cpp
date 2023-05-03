@@ -12,6 +12,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "utils/vk_layer_utils.h"
 
 class PositiveExternalMemorySync : public VkPositiveLayerTest {};
 
@@ -179,4 +180,41 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
+}
+
+TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
+    TEST_DESCRIPTION("Create external buffer that requires dedicated allocation.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    const auto buffer_info =
+        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto exportable_types =
+        FindSupportedExternalMemoryHandleTypes(gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!exportable_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+
+    auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
+        gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
+    if (!exportable_dedicated_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type that requires dedicated allocation";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_dedicated_types);
+
+    external_buffer_info.handleTypes = handle_type;
+    vk_testing::Buffer buffer(*m_device, buffer_info, vk_testing::no_mem);
+
+    auto dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    dedicated_info.buffer = buffer;
+
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&dedicated_info);
+    export_memory_info.handleTypes = handle_type;
+
+    buffer.allocate_and_bind_memory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
 }

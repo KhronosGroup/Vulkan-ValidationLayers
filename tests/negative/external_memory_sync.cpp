@@ -1777,3 +1777,73 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     ::CloseHandle(handle);
 }
 #endif
+
+TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
+    TEST_DESCRIPTION("Bind external buffer that requires dedicated allocation to non-dedicated memory.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    const auto buffer_info =
+        vk_testing::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr, &external_buffer_info);
+    const auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
+        gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
+    if (!exportable_dedicated_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type that requires dedicated allocation";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_dedicated_types);
+
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = handle_type;
+    external_buffer_info.handleTypes = handle_type;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00639");
+    // pNext chain contains VkExportMemoryAllocateInfo but not VkMemoryDedicatedAllocateInfo
+    vk_testing::Buffer buffer(*m_device, buffer_info, 0, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
+    TEST_DESCRIPTION("Bind external image that requires dedicated allocation to non-dedicated memory.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    auto image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto exportable_dedicated_types = FindSupportedExternalMemoryHandleTypes(
+        gpu(), image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT);
+    // This test does not support the AHB handle type, which does not
+    // allow to query memory requirements before memory is bound
+    exportable_dedicated_types &= ~VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    if (!exportable_dedicated_types) {
+        GTEST_SKIP() << "Unable to find exportable handle type that requires dedicated allocation";
+    }
+    const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_dedicated_types);
+
+    auto export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
+    export_memory_info.handleTypes = handle_type;
+    external_image_info.handleTypes = handle_type;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-00639");
+    // pNext chain contains VkExportMemoryAllocateInfo but not VkMemoryDedicatedAllocateInfo
+    vk_testing::Image image(*m_device, image_info, 0, &export_memory_info);
+    m_errorMonitor->VerifyFound();
+}
