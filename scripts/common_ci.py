@@ -137,11 +137,14 @@ def BuildLoader():
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
 
     print("Run CMake for Loader")
-    cmake_cmd = f'cmake -S {LOADER_DIR} -B {LOADER_BUILD_DIR} '
-    cmake_cmd += '-D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE=Release'
-    # This enables better stack traces from leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
+    cmake_cmd = f'cmake -S {LOADER_DIR} -B {LOADER_BUILD_DIR}'
+    cmake_cmd += ' -D UPDATE_DEPS=ON -D BUILD_TESTS=OFF -D CMAKE_BUILD_TYPE=Release'
+
+    # This enables better stack traces from tools like leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
+    cmake_cmd += ' -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+    
     if not IsWindows():
-        cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+        cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON'
     RunShellCmd(cmake_cmd)
 
     print("Build Loader")
