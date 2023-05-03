@@ -1220,6 +1220,90 @@ TEST_F(NegativeWsi, SwapchainUsageShared) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, SwapchainPresentShared) {
+    TEST_DESCRIPTION("Present shared presentable image without Acquire to generate failure.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    AddSurfaceExtension();
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+    InitSwapchainInfo();
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present";
+    }
+
+    VkPresentModeKHR shared_present_mode = m_surface_non_shared_present_mode;
+    for (size_t i = 0; i < m_surface_present_modes.size(); i++) {
+        const VkPresentModeKHR present_mode = m_surface_present_modes[i];
+        if ((present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR) ||
+            (present_mode == VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR)) {
+            shared_present_mode = present_mode;
+            break;
+        }
+    }
+    if (shared_present_mode == m_surface_non_shared_present_mode) {
+        GTEST_SKIP() << "Cannot find supported shared present mode";
+    }
+
+    auto shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
+    auto capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = m_surface;
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+
+    // This was recently added to CTS, but some drivers might not correctly advertise the flag
+    if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
+        GTEST_SKIP() << "Driver was suppose to support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
+    }
+
+    auto swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = 1;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+
+    uint32_t image_count;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> images(image_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+
+    uint32_t image_index = 0;
+
+    // Try to Present without Acquire...
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01430");
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.waitSemaphoreCount = 0;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, DeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
