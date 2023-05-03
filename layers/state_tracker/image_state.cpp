@@ -574,9 +574,10 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
 void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
-    acquired_images--;
-    images[image_index].acquired = false;
-    if (shared_presentable) {
+    if (!shared_presentable) {
+        acquired_images--;
+        images[image_index].acquired = false;
+    } else {
         IMAGE_STATE *image_state = images[image_index].image_state;
         if (image_state) {
             image_state->layout_locked = true;
