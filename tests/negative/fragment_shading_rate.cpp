@@ -371,7 +371,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
                          nullptr);
 
     // Set wrong VkImageLayout
-    ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    ref = {0, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL};
     subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
     rpfdmi = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = LvlInitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
