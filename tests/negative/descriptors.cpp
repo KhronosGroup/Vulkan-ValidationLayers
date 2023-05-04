@@ -2566,6 +2566,127 @@ TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, PushDescriptorDestroyDescriptorSetLayout) {
+    TEST_DESCRIPTION("Delete the DescriptorSetLayout and then call vkCmdPushDescriptorSetKHR");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_ci);
+
+    VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    auto dsl_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    dsl_ci.bindingCount = 1;
+    dsl_ci.pBindings = &ds_binding;
+    vk::CreateDescriptorSetLayout(m_device->device(), &dsl_ci, nullptr, &ds_layout);
+
+    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout;
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    m_commandBuffer->begin();
+
+    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-dstSet-00320");
+    vk::CmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, nullptr);
+}
+
+TEST_F(NegativeDescriptors, PushDescriptorTemplateDestroyDescriptorSetLayout) {
+    TEST_DESCRIPTION("Delete the DescriptorSetLayout and then call vkCmdPushDescriptorSetWithTemplateKHR");
+
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = 32;
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_ci);
+
+    VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    auto dsl_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    dsl_ci.bindingCount = 1;
+    dsl_ci.pBindings = &ds_binding;
+    vk::CreateDescriptorSetLayout(m_device->device(), &dsl_ci, nullptr, &ds_layout);
+
+    auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout;
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buff_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    auto update_template_ci = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfoKHR>();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.descriptorSetLayout = ds_layout;
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    update_template_ci.pipelineLayout = pipeline_layout;
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    vk::CreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.buff_info = {buffer.handle(), 0, 32};
+
+    m_commandBuffer->begin();
+    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_commandBuffer->handle(), update_template, pipeline_layout, 0, &update_template_data);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    vk::DestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, nullptr);
+}
+
 TEST_F(NegativeDescriptors, CreateDescriptorPool) {
     TEST_DESCRIPTION("Attempt to create descriptor pool with invalid parameters");
 
