@@ -273,6 +273,7 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
+    VkImageLayout m_depth_stencil_layout;
     VkClearColorValue m_clear_color;
     bool m_clear_via_load_op;
     float m_depth_clear_color;

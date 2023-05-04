@@ -6645,6 +6645,7 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     render_pass.init(*m_device, rp_ci);
 
     auto depth_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    depth_state_info.depthTestEnable = VK_TRUE;
     depth_state_info.depthWriteEnable = VK_TRUE;
 
     auto stencil_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
