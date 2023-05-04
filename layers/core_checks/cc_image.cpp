@@ -953,7 +953,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
                     color_attachment_count = subpass_desc->colorAttachmentCount;
 
-                    if (subpass_desc->pDepthStencilAttachment &&
+                    if (framebuffer && subpass_desc->pDepthStencilAttachment &&
                         (subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
                         depth_view_state =
                             cb_state.GetActiveAttachmentImageViewState(subpass_desc->pDepthStencilAttachment->attachment);
