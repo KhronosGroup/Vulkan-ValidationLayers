@@ -336,12 +336,6 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
 class Fence : public internal::NonDispHandle<VkFence> {
   public:
-#ifdef _WIN32
-    using ExternalHandle = HANDLE;
-#else
-    using ExternalHandle = int;
-#endif
-
     Fence() = default;
     Fence(const Device &dev) { init(dev, create_info()); }
     Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
@@ -357,8 +351,12 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
     VkResult reset();
 
-    VkResult export_handle(ExternalHandle &handle, VkExternalFenceHandleTypeFlagBits handle_type);
-    VkResult import_handle(ExternalHandle handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    VkResult export_handle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type);
+    VkResult import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
+#endif
+    VkResult export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type);
+    VkResult import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
 
     static VkFenceCreateInfo create_info(VkFenceCreateFlags flags);
     static VkFenceCreateInfo create_info();
@@ -366,12 +364,6 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
 class Semaphore : public internal::NonDispHandle<VkSemaphore> {
   public:
-#ifdef _WIN32
-    using ExternalHandle = HANDLE;
-#else
-    using ExternalHandle = int;
-#endif
-
     Semaphore() = default;
     Semaphore(const Device &dev) { init(dev, LvlInitStruct<VkSemaphoreCreateInfo>()); }
     Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
@@ -381,9 +373,13 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     // vkCreateSemaphore()
     void init(const Device &dev, const VkSemaphoreCreateInfo &info);
 
-    VkResult export_handle(ExternalHandle &ext_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
-    VkResult import_handle(ExternalHandle ext_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    VkResult export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    VkResult import_handle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
                            VkSemaphoreImportFlags flags = 0);
+#endif
+    VkResult export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    VkResult import_handle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags = 0);
 
     static VkSemaphoreCreateInfo create_info(VkFlags flags);
 };

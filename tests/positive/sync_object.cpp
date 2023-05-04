@@ -23,7 +23,14 @@
 #include <poll.h>
 #endif
 
-class PositiveSyncObject : public VkLayerTest {};
+class PositiveSyncObject : public VkLayerTest {
+  protected:
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    using ExternalHandle = HANDLE;
+#else
+    using ExternalHandle = int;
+#endif
+};
 
 TEST_F(PositiveSyncObject, ThreadSafetyDisplayObjects) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
@@ -1330,7 +1337,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     sci.pNext = nullptr;
     vk_testing::Semaphore import_semaphore(*m_device, sci);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
     err = import_semaphore.import_handle(ext_handle, handle_type);
@@ -1432,7 +1439,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     stci.pNext = nullptr;
     vk_testing::Semaphore import_semaphore(*m_device, sci);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
     err = import_semaphore.import_handle(ext_handle, handle_type);
@@ -1518,7 +1525,7 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     vk_testing::Fence import_fence(*m_device, fci);
 
     // Export fence payload to an opaque handle
-    vk_testing::Fence::ExternalHandle ext_fence{};
+    ExternalHandle ext_fence{};
     err = export_fence.export_handle(ext_fence, handle_type);
     ASSERT_VK_SUCCESS(err);
     err = import_fence.import_handle(ext_fence, handle_type);
@@ -1595,11 +1602,11 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
         ASSERT_VK_SUCCESS(err);
 
         vk::QueueSubmit(m_device->m_queue, 0, nullptr, export_fence.handle());
-        vk_testing::Fence::ExternalHandle ext_handle{};
-        err = export_fence.export_handle(ext_handle, handle_type);
+        int fd_handle = -1;
+        err = export_fence.export_handle(fd_handle, handle_type);
         ASSERT_VK_SUCCESS(err);
 #ifndef VK_USE_PLATFORM_WIN32_KHR
-        close(ext_handle);
+        close(fd_handle);
 #endif
     }
 
@@ -1652,15 +1659,15 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, export_fence.handle());
         ASSERT_VK_SUCCESS(err);
 
-        vk_testing::Fence::ExternalHandle ext_handle{};
-        err = export_fence.export_handle(ext_handle, handle_type);
+        int fd_handle = -1;
+        err = export_fence.export_handle(fd_handle, handle_type);
         ASSERT_VK_SUCCESS(err);
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         // Wait until command buffer is finished using the exported handle.
-        if (ext_handle != -1) {
+        if (fd_handle != -1) {
             struct pollfd fds;
-            fds.fd = ext_handle;
+            fds.fd = fd_handle;
             fds.events = POLLIN;
             int timeout_ms = static_cast<int>(kWaitTimeout / 1000000);
             while (true) {
@@ -1672,9 +1679,13 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
                 ASSERT_FALSE(ret == 0);                                         // Timeout.
                 ASSERT_TRUE(ret == -1 && (errno == EINTR || errno == EAGAIN));  // Retry...
             }
-            close(ext_handle);
+            close(fd_handle);
         }
 #else
+        // On Windows this test works with MockICD driver and it's fine not to close fd_handle,
+        // because it's a dummy value. In case we get access to a real POSIX environment on
+        // Windows and VK_KHR_external_fence_fd will be provided through regular graphics drivers,
+        // then we need to do a proper POSIX clean-up sequence as shown above.
         err = vk::QueueWaitIdle(m_device->m_queue);
         ASSERT_VK_SUCCESS(err);
 #endif

@@ -17,7 +17,14 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeExternalMemorySync : public VkLayerTest {};
+class NegativeExternalMemorySync : public VkLayerTest {
+  protected:
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    using ExternalHandle = HANDLE;
+#else
+    using ExternalHandle = int;
+#endif
+};
 
 TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
@@ -518,7 +525,7 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
     stci.pNext = nullptr;
     vk_testing::Semaphore import_semaphore(*m_device, sci);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
 
@@ -592,17 +599,17 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     // Create a semaphore to import payload into
     vk_testing::Semaphore import_semaphore(*m_device);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    int fd_handle = -1;
 
     // timeline not allowed
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03253");
-    timeline_sem.export_handle(ext_handle, handle_type);
+    timeline_sem.export_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
     // must have pending signal
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254");
-    binary_sem.export_handle(ext_handle, handle_type);
+    binary_sem.export_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
     auto si = LvlInitStruct<VkSubmitInfo>();
@@ -612,15 +619,15 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     err = vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
 
-    err = binary_sem.export_handle(ext_handle, handle_type);
+    err = binary_sem.export_handle(fd_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
 
     // must be temporary
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-07307");
-    import_semaphore.import_handle(ext_handle, handle_type);
+    import_semaphore.import_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
+    err = import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
     ASSERT_VK_SUCCESS(err);
 
     err = vk::QueueWaitIdle(m_device->m_queue);
@@ -671,7 +678,7 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     vk_testing::Fence import_fence(*m_device, fci);
 
     // Export fence payload to an opaque handle
-    vk_testing::Fence::ExternalHandle ext_fence{};
+    ExternalHandle ext_fence{};
     err = export_fence.export_handle(ext_fence, handle_type);
     ASSERT_VK_SUCCESS(err);
     err = import_fence.import_handle(ext_fence, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT_KHR);
@@ -748,7 +755,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     fci.pNext = nullptr;
     vk_testing::Fence import_fence(*m_device, fci);
 
-    vk_testing::Fence::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
 
     // windows vs unix mismatch
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_export_type_vuid);
@@ -827,23 +834,23 @@ TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     fci.pNext = nullptr;
     vk_testing::Fence import_fence(*m_device, fci);
 
-    vk_testing::Fence::ExternalHandle ext_handle{};
+    int fd_handle = -1;
 
     // SYNC_FD must have a pending signal for export
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFenceGetFdInfoKHR-handleType-01454");
-    export_fence.export_handle(ext_handle, handle_type);
+    export_fence.export_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
     vk::QueueSubmit(m_device->m_queue, 0, nullptr, export_fence.handle());
 
-    export_fence.export_handle(ext_handle, handle_type);
+    export_fence.export_handle(fd_handle, handle_type);
 
     // must be temporary
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceFdInfoKHR-handleType-07306");
-    import_fence.import_handle(ext_handle, handle_type);
+    import_fence.import_handle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    import_fence.import_handle(ext_handle, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT);
+    import_fence.import_handle(fd_handle, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT);
 
     import_fence.wait(1000000000);
 }
@@ -897,7 +904,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
     sci.pNext = nullptr;
     vk_testing::Semaphore import_semaphore(*m_device, sci);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
     err = export_semaphore.export_handle(ext_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
     err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
@@ -997,7 +1004,7 @@ TEST_F(NegativeExternalMemorySync, Semaphore) {
     // Create a semaphore for importing
     vk_testing::Semaphore import_semaphore(*m_device);
 
-    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    ExternalHandle ext_handle{};
 
     // windows vs unix mismatch
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_export_type_vuid);
