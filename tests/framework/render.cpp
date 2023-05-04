@@ -51,6 +51,7 @@ VkRenderFramework::VkRenderFramework()
       m_height(256),  // default window height
       m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
       m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
+      m_depth_stencil_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
       m_clear_via_load_op(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
@@ -926,8 +927,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         att.stencilLoadOp = (m_clear_via_load_op) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        att.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        att.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        att.initialLayout = m_depth_stencil_layout;
+        att.finalLayout = m_depth_stencil_layout;
         attachments.push_back(att);
 
         clear.depthStencil.depth = m_depth_clear_color;
@@ -937,7 +938,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         bindings.push_back(*dsBinding);
 
         ds_reference.attachment = targets;
-        ds_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        ds_reference.layout = m_depth_stencil_layout;
         subpass.pDepthStencilAttachment = &ds_reference;
     } else {
         subpass.pDepthStencilAttachment = NULL;

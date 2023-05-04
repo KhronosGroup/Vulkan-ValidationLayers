@@ -14,7 +14,25 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveDynamicState : public VkPositiveLayerTest {};
+class PositiveDynamicState : public VkPositiveLayerTest {
+  public:
+    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
+};
+
+void PositiveDynamicState::InitBasicExtendedDynamicState() {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+}
 
 TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     TEST_DESCRIPTION("check version of VK_EXT_discard_rectangles");
@@ -314,6 +332,82 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
+    InitBasicExtendedDynamicState();
+    if (::testing::Test::IsSkipped()) return;
+
+    m_depth_stencil_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    m_clear_via_load_op = false;
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj ds_image(m_device);
+    ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+                  0);
+    auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT};
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_state.depthWriteEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.ds_ci_ = ds_state;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
+    TEST_DESCRIPTION("setting vkCmdSetDepthTestEnable to false cancels what ever is written to vkCmdSetDepthWriteEnable.");
+    InitBasicExtendedDynamicState();
+    if (::testing::Test::IsSkipped()) return;
+
+    m_depth_stencil_layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    m_clear_via_load_op = false;
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    VkImageObj ds_image(m_device);
+    ds_image.Init(m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+                  0);
+    auto ds_view = ds_image.targetView(m_depth_stencil_fmt, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(1, &ds_view));
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT};
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.ds_ci_ = ds_state;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdSetDepthWriteEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
