@@ -185,6 +185,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     CBDynamicFlags static_status;   // All state bits provided by current graphics pipeline
                                     // rather than dynamic state
     CBDynamicFlags dynamic_status;  // dynamic state set up in pipeline
+
+    // These are values that are being set with vkCmdSet* tied to a command buffer
     struct DynamicStateValue {
         // VK_DYNAMIC_STATE_STENCIL_WRITE_MASK
         uint32_t write_mask_front;
