@@ -725,6 +725,7 @@ def main(argv):
     import common_codegen
 
     layer_source_files = [common_codegen.repo_relative(path) for path in [
+        'layers/error_message/unimplementable_validation.h',
         'layers/state_tracker/cmd_buffer_state.cpp', # some Video VUIDs are in here
         'layers/state_tracker/descriptor_sets.cpp',
         'layers/state_tracker/shader_module.cpp',
