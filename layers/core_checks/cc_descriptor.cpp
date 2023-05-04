@@ -4776,14 +4776,21 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     }
 
     if (dsl && template_state) {
-        // Create an empty proxy in order to use the existing descriptor set update validation
-        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
-        // Decode the template into a set of write updates
-        cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
-                                                                dsl->GetDescriptorSetLayout());
-        // Validate the decoded update against the proxy_ds
-        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                              decoded_template.desc_writes.data(), "vkCmdPushDescriptorSetWithTemplateKHR()");
+        if (!Get<cvdescriptorset::DescriptorSetLayout>(dsl->GetDescriptorSetLayout())) {
+            const LogObjectList objlist(cb_state->commandBuffer(), descriptorUpdateTemplate, layout);
+            skip |= LogError(objlist, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686",
+                             "vkCmdPushDescriptorSetWithTemplateKHR(): pData does not point to a valid layout, it possible the "
+                             "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
+        } else {
+            // Create an empty proxy in order to use the existing descriptor set update validation
+            cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
+            // Decode the template into a set of write updates
+            cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
+                                                                    dsl->GetDescriptorSetLayout());
+            // Validate the decoded update against the proxy_ds
+            skip |= ValidatePushDescriptorsUpdate(&proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                                  decoded_template.desc_writes.data(), "vkCmdPushDescriptorSetWithTemplateKHR()");
+        }
     }
 
     return skip;
