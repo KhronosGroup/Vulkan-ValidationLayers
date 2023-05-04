@@ -326,6 +326,7 @@ class VkLayerTest : public VkRenderFramework {
   protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
+    uint32_t m_attempted_api_version = 0;
 
     void SetTargetApiVersion(uint32_t target_api_version);
     uint32_t DeviceValidationVersion() const;
