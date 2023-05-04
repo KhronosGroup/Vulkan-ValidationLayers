@@ -477,8 +477,12 @@ class PIPELINE_STATE : public BASE_NODE {
     static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state,
                                         CreateShaderModuleStates *csm_states);
 
+<<<<<<< HEAD
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const { return dynamic_state.test(ConvertToCBDynamicState(state)); }
+=======
+    bool IsDynamic(const VkDynamicState state) const;
+>>>>>>> 579d51609 (layers: DepthTestEnable overrides DepthWriteEnable)
 
     template <typename ValidationObject, typename CreateInfo>
     static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
@@ -718,6 +722,10 @@ struct LAST_BOUND_STATE {
     void UnbindAndResetPushDescriptorSet(std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds);
 
     inline bool IsUsing() const { return pipeline_state != nullptr; }
+
+    // Dynamic State helpers that require both the Pipeline and CommandBuffer state are here
+    bool IsDepthTestEnable() const;
+    bool IsDepthWriteEnable() const;
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,

@@ -2932,14 +2932,19 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, c
         }
         const auto ds_state = pipeline.DepthStencilState();
         if (ds_state) {
-            const auto &dynamic_state_value = cb_state.dynamic_state_value;
+            if (IsImageLayoutDepthReadOnly(ds_attachment->layout) && state.IsDepthWriteEnable()) {
+                const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(), cb_state.commandBuffer());
+                skip |= LogError(objlist, vuid.depth_read_only_06886,
+                                 "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
+                                 "the depth aspect of the depth/stencil attachment in the render pass is read only.",
+                                 caller, string_VkImageLayout(ds_attachment->layout));
+            }
+
             // Set with static values and update for anything dynamically set
-            const bool depth_write_enable = pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                                ? dynamic_state_value.depth_write_enable
-                                                : ds_state->depthWriteEnable;
             VkStencilOpState front = ds_state->front;
             VkStencilOpState back = ds_state->back;
 
+            const auto &dynamic_state_value = cb_state.dynamic_state_value;
             if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
                 front.writeMask = dynamic_state_value.write_mask_front;
                 back.writeMask = dynamic_state_value.write_mask_back;
@@ -2951,14 +2956,6 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, c
                 back.failOp = dynamic_state_value.fail_op_back;
                 back.passOp = dynamic_state_value.pass_op_back;
                 back.depthFailOp = dynamic_state_value.depth_fail_op_back;
-            }
-
-            if (depth_write_enable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
-                const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(), cb_state.commandBuffer());
-                skip |= LogError(objlist, vuid.depth_read_only_06886,
-                                 "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
-                                 "the depth aspect of the depth/stencil attachment in the render pass is read only.",
-                                 caller, string_VkImageLayout(ds_attachment->layout));
             }
 
             const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&

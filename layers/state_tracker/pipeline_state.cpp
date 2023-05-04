@@ -860,3 +860,17 @@ void LAST_BOUND_STATE::Reset() {
     push_descriptor_set.reset();
     per_set.clear();
 }
+
+bool LAST_BOUND_STATE::IsDepthTestEnable() const {
+    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) ? cb_state.dynamic_state_value.depth_test_enable
+                                                                         : pipeline_state->DepthStencilState()->depthTestEnable;
+}
+
+bool LAST_BOUND_STATE::IsDepthWriteEnable() const {
+    // "Depth writes are always disabled when depthTestEnable is VK_FALSE"
+    if (!IsDepthTestEnable()) {
+        return false;
+    }
+    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ? cb_state.dynamic_state_value.depth_write_enable
+                                                                          : pipeline_state->DepthStencilState()->depthWriteEnable;
+}
