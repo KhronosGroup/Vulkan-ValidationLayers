@@ -171,7 +171,7 @@ static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
     }
 }
 
-static CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
+CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
     switch (dynamic_state) {
         case VK_DYNAMIC_STATE_VIEWPORT:
             return CB_DYNAMIC_STATE_VIEWPORT;

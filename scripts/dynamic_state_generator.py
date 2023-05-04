@@ -161,6 +161,7 @@ typedef enum CBDynamicState {\n'''
 } CBDynamicState;
 
 using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATE_STATUS_NUM>;
+CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
 const char* DynamicStateToString(CBDynamicState dynamic_state);
 std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
 struct VkPipelineDynamicStateCreateInfo;
@@ -184,7 +185,7 @@ static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
 }
 '''
         output += '''
-static CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
+CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
     switch (dynamic_state) {\n'''
         for name in self.dynamic_states:
             state_name = name[11:] # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
