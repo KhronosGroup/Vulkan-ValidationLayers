@@ -1427,3 +1427,192 @@ If depthTestEnable is TRUE, otherwise, any, since with depth testing disabled th
 ### Host Synchronization commands
 
 **TODO/KNOWN LIMITATION:** Host synchronization not supported in phases 1 and 2.
+
+
+
+
+
+## Aliasing Support WIP Design
+
+Vulkan does not restrict device memory to be bound to only a single resource (buffer or image), but has the following restrictions as to when memory multiply bound and be interpreted in consistent ways.
+
+> Buffers, and linear image subresources in either the `VK_IMAGE_LAYOUT_PREINITIALIZED` or `VK_IMAGE_LAYOUT_GENERAL` layouts, are host-accessible subresources.
+>
+> ...
+>
+> If two aliases are both host-accessible, then they interpret the contents of the memory in consistent ways, and data written to one alias can be read by the other alias.
+
+> If two aliases are both images that were created with identical creation parameters, both were created with the `VK_IMAGE_CREATE_ALIAS_BIT` flag set, and both are bound identically to memory, ..., then they interpret the contents of the memory in consistent ways, and data written to one alias can be read by the other alias.
+
+When memory can be interpreted a consistent way, hazard detection, and state update can be done equivalently from all consistent aliases.  However, when consistent interpretation is not possible, accesses to any address in one bound resource must be interpreted as impacting *every* address in the aliased region.  If one does not know the organization of a resource, the effect must be treated as if they apply to the entire bound region.
+
+This violates some assumptions of the non-aliased model in the following ways:
+
+1) that a single *opaque range* mapping of a tiled image (or other opaque layout resources) is sufficient to store needed state
+2) that only a single, most recent write and barrier state is sufficient to characterize the `ResourceAccessState`
+5) that only a single, most recent read per stage is sufficient to characterize the `ResourceAccessState`
+
+These all arise from the need to integrate the read, write, and synchronization operations over the entire bound range into a single, pessimistic `ResourceAccessState` reflecting the accesses and barriers defining the potential hazards.
+
+
+
+### Memory Model
+
+To support hazard detection between Linear and opaque accesses, opaque resources (specifically tiled images) will have two distinct ranges in the `ValidationStateTracker::fake_memory` space, a Linear range and an opaque range.  The Linear range corresponds to the range of addresses needed for `VkMemoryRequirements::size` bytes at `VkBindImageMemoryInfo::memoryOffset`, offset by the FBA of `VkBindImageMemoryInfo::memory`. The opaque ranges for tiled images that have a consistent memory interpretation (a Consistent Alias Group) remains unchanged from the opaque range used in the pre-alias design.  All tiled images belong to a group of at least the image itself, with a unique opaque range. Note that since swapchain images are both always tiled, and do not map to any `VkDeviceMemory`, they do not have a valid Linear range, but only an opaque range shared by all images referencing the same swapchain/swapchain index pair.
+
+The effect of operations for the various resources:
+
+| Range  | Buffers/Linear Images                   | Tiled Images (or other opaque resources)                     |
+| ------ | --------------------------------------- | ------------------------------------------------------------ |
+| Linear | accesses affect byte-accurate locations | access at any location touches entire bound region (N/A swapchain images) |
+| Opaque | N/A                                     | accesses affect byte accurate location within the Synchronization Validation internal representation, limited to consistent aliases |
+
+Tiled images will have opaque ranges reserved which are uniquely mapped to all consistent aliases of a given `VkDeviceMemory` range (or swapchain image).  It is possible that multiple inconsistent tiled images may be mapped to the same `VkDeviceMemory` Thus, a given Linear range may map in a 1-N relationship to opaque ranges.  Hazard detection between *inconsistent* memory aliases is performed based on the Linear range, comprising the entire bound `VkDeviceMemory` range of an opaque resource.
+
+Memory Example:
+
+To understand this better, consider a single device memory allocation ***M***  of size 512 with the following allocations bound to it:
+
+| Type             | Name     | Bound Range | Notes                    |
+| ---------------- | -------- | ----------- | ------------------------ |
+| Buffer (liinear) | ***B***  | [0, 512)    |                          |
+| Image (Tiled)    | ***I0*** | [128, 256)  |                          |
+| Image (Tiled)    | ***I1*** | [128, 256)  | Consistent with ***I1*** |
+| Image (Linear)   | ***I2*** | [192 384)   |                          |
+
+The resources can be thought mapping to `fake_memory` in three ways --  in relation to other consistent aliases within the opaque range, and with inconsistent aliases within the allocation to which they are bound (if any), and within `fake_memory` as a whole.  Note that no accesses should span across different `VkDeviceMemory` ranges or opaque ranges. 
+
+<img src="images/sync_alias_example_1.svg" alt="sync_alias_example_1" width=150% />
+
+These three representations are needed to model the read (r) and write (w) accesses shown below.
+
+<img src="images/sync_alias_example1_ops.svg" alt="sync_alias_example1_ops" width=200% />
+
+The effect of each operation is shown above.  Accesses to linear resources (w<sub>c</sub> and r<sub>d</sub>) are tracked in a byte accurate way within ***M***.  Likewise, accesses to non-linear, tiled resources (w<sub>a</sub> and r<sub>b</sub>) are tracked in a bytewise *consistent* way within ***A0***. Since the actual organization of tiled images is arbitrary, any arbitrary, consistent representation can be used within ***A0*** for accurate synchronization validation, even though it may not reflect any implementation. Because the memory organization is arbitrary for tiled images, any pixel could exists at any address within the linear bound range.  Accesses to any portion of a non-linear image must be treated (for purposes of validation) as accesses to all bytes within the bound range -- "any access affects all locations". The linear representation of a set of accesses is the union of accesses found within the opaque representation. The Synchronization Validation internal representation allows for byte accurate hazard detection between consistent aliases of the same memory range.  The linear representation allows for byte accurate hazard detection between linear resources (buffers and non-tiled images), a between non-linear resources and/or between linear and non-linear resources.  
+
+We can see the usage of the various representation for hazard detection between the above operations.
+
+| Access pair <br/>(before, after) | Opaque | Linear | Comments |
+| -------- | ---- | -------- | -------- |
+| w<sub>a</sub>, r<sub>b</sub> | No hazard | N/A | Since a consistent interpretation is possible (***A0***), only that representation need be tested. |
+| w<sub>a</sub>, w<sub>c</sub> | N/A | WAW | w<sub>a</sub> must be considered to affect the entire bound range, thus the portion of w<sub>c</sub> overlapping I1 constitutes a hazard |
+| w<sub>a</sub>, r<sub>d</sub> | N/A | RAW | the portion of r<sub>d</sub> overlapping constitutes a hazard for the same reason |
+| r<sub>b</sub>, r<sub>d</sub> | N/A | No hazard | r<sub>b</sub> and r<sub>d</sub> pose no hazard as they are both reads, regardless of representation |
+| w<sub>c</sub>, r<sub>d</sub> | N/A | No hazard | As w<sub>c</sub> and r<sub>d</sub> are known at byte accuracy within *M* and do not overlap they do not hazard. |
+| w<sub>c</sub>, r<sub>b</sub> | N/A | RAW | r<sub>b</sub> must be considered to affect the entire bound range, thus the portion of w<sub>c</sub> overlapping I1 constitutes a hazard |
+
+Were ***I2*** to be tiled instead of linear, an additional representation ***A1*** would be needed to provided a consistent interpretation for operations involving ***I2*** with itself. Also in that case the  (w<sub>c</sub>, r<sub>d</sub>) access pair *would* constitute a hazard, given the same "any access affects all locations" logic applied to operations in ***A1***.
+
+### Consistent Alias Group
+
+#### Access tagging 
+
+The Consistent Alias Group represents any number of images which satisfy the aliasing criteria for non-linear (tiled) images (or other opaque resources).  The are denoted by a unique id (`AliasID`), which is the starting address of the opaque range.  As the opaque base address and range are already created at `vkBindImageMemory*`  and `vkGetSwapchainImagesKHR` time, the needed unique `AliasID` is known.   Each read and write access in the integrated state (see below) must be tagged with the `AliasID`.
+
+The `AliasID` of `AliasID::kLinear` (with a value of 0, as 0 is reserved in the "fake" memory space) is reserved for all resources that are linearly mapped (buffers, non-tiled images).
+
+#### Optimization
+
+The most common scenario for memory usage is non-aliased.  As memory aliasing can be detected at memory bind time, the "integrate/update" phase can be both disabled and deferred when no inconsistent aliases exist.  This information can be tracked at the `VkBuffer`/`VkImage` state level. 
+
+#### Layer Derived Classes
+
+To facilitate storage of `AliasID`, `has_inconsistent_alias`, and `opaque_base_address` information for a given image, the IMAGE_STATE needs to be derived with a child `SyncValImageState` class.
+
+### Integrated State
+
+The contents of the Linear range of a tiled (opaque) resource reflects an integration of all access/barrier operation found with the opaque range for the resource. This integrated state updates the entire Linear range for the resource. It reflects all read and write operations, but not opaquely apply synchronization operations.  The integration is lossy, as the specific subresource and pixel information of a given access is not retained, only it's existence *somewhere* within the opaque range.  As such, the Linear range update for tiled image resources cannot be incremental. The integration operation must be repeated for the whole of the opaque range, and applied to the entire Linear range. 
+
+The integrated state is constructed by traversing all `ResourceAccessState` objects within the opaque range.  Any access within the opaque range must be assumed to have happened at all locations within the Linear range. However, all image synchronization operations done within the opaque range must be assumed to *not* be applied at some location within the Linear range, and thus treated as if they were *not* applied at any location within the Linear range. All unique read and write operations (stage/access/tag) are retained in the integrated state (both for current and first access information).  To preserve the WAW detection logic ignoring WAW testing when intervening reads are present, as a "has_reads" flag read which is `true` IFF all references to a write/tag pair in the integrated range have intervening reads. For each unique read or write operation (stage/access/tag) the effective barrier and ordering rules are the intersection of the barriers and ordering rules (see **Note:**) of all references to the unique operation within the integrated range.
+
+**Note:** `enum class SyncOrdering` is already (incidentally) a bit mask for `kColorAttachment`, `kDepthStencilAttachment`, and `kRaster`. This allows easy intersection of the ordering rules bitwise. This needs to be documented in the definition of of the `SyncOrdering`.
+
+
+
+### Hazard Detection
+
+For buffers and linear images, hazard detection is unchanged relative to pre-aliasing support.  Accesses are validated against the Linear address `VkDeviceMemory` range affected.  The effect of inconsistent memory alias access, if any, is recorded in the Linear range by the update mechanism noted below.
+
+For tiled images every hazard detection and update operation now must be performed in against both Linear and opaque ranges. Hazard detection is first performed against the opaque range. The hazard check is done on the exact byte accurate location within the Synchronization Validation internal representation of the access or barrier operation. The second hazard check applies the same access or barrier, but against the entire Linear range. Since the mapping of tiled image to Linear addresses is unknown, every access is considered to conflict with the entire bound Linear range.  During this check the Linear `ResourceAccessState` information reflecting accesses *consistent* with the tiled image must be ignored.  This requirement means that accesses must be tagged with an  `AliasID` for each read and write state. Any access within the Linear range tagged with the `AliasID` of the accessing resource is skipped during hazard checking.
+
+For all resource accesses, hazard detection must change to reflect the possibility of more than a single write operation or more than a single read operation per stage, in a given `ResourceAccessState` (resulting from Integration above).
+
+
+
+### Updates to `ResourceAccessState`
+
+#### Storage
+
+The `ResourceAccessState` needs the following additional information
+
+| Item              | Update                                                       |
+| ----------------- | ------------------------------------------------------------ |
+| Write information | Encapsulate all write information into a `WriteState` structure and store as `small_vector` of size 1.  Allow multiple write entries unique on `WriteState::access/WriteState::tag` |
+| `WriteState`      | Add `bool has_reads` (or reads_since stage/access mask) and  `AliasID alias_id` |
+| `ReadState`       | Add `AliasID alias_id`                                       |
+| `last_reads`      | Treat read stage as potentially non-unique, for integrated instances.  `ReadState::access/ReadState::tag` should be unique. |
+
+#### Update (from usage)
+
+Updates of `ResourceAccessState` needs to be modified to include the `AliasID` of the access in addition to the usage and tag information.  Updates for read stages with extant `ReadState`entries only update reads with the matching `AliasID` and pipeline stage.  Writes reset the` ResourceAccessState` to reflect the write usage regardless of `AliasID`.
+
+#### Update (from Integrated `ResourceAccessState`)
+
+When updating the Linear range associated with an opaque range update, the integrated access state is applied to the entire Linear range.  This operation differs for read and write operations.
+
+For updates associated with read operations, only the read stages of the Linear range entry matching the `AliasID` are updated from the the integrated state.  If the last write operation of the Linear range entry has the same `AliasID` as the integrated access state, all of the integrated access state matching the `AliasID` of the access are updated, with new read entries added.  However, if the last write `AliasID` of the Linear range entry does not match the `AliasID` of the integrated access state, then only read elements with tags greater than the last write tag are updated, and/or added. (most recent access logic).   
+
+If the update is associate with a write operation, the integrated state *replaces* all state information in the linear address range. This implies that even when more than one write operation is present, all write operations always have the same `AliasID` . We could save storage by not including an `AliasID` in the per write state.
+
+#### Barrier
+
+Barriers are applied regardless of `AliasID`. Barrier treatment varies by type of barrier.
+
+| Barrier Type       | Barrier Application                                          |
+| ------------------ | ------------------------------------------------------------ |
+| **Memory**         | Applied to all ranges, regardless of range type (Linear vs. opaque).  No integration/update from the opaque ranges to Linear ranges are required. |
+| **Buffer**         | Applied to Linear range of the buffer.  Applied to any opaque resource with a Linear range that is fully covered by the buffer region. No integration/update from the opaque range is required. |
+| **Image (linear)** | Applied to Linear range of image at byte accuracy. Applied to any opaque resource with a Linear range which is fully covered by any contiguous range affected.   No integration/update from opaque range is required. |
+| **Image (tiled)**  | Applied to opaque range. Integration/update from opaque range*is* required. Barrier hazard detection needs to be performed against Linear range in the case of Image Layout Transitions.  Since the source stage/access scope is only known to apply to the image, (and the image may not occupy every byte of the Linear range), the barrier hazard check is against all accesses not matching the `AliasID` of the image barrier without applying the source stage/access barrier. (i.e. only not a hazard if no accesses not matching `AliasID` are present in the Linear range for the image) |
+
+#### Resolve
+
+The updated resolve logic (for used combining parallel `AccessContext` graphs)
+
+| Rule               | Action (for equal stage/access)                              |
+| ------------------ | ------------------------------------------------------------ |
+| Newer write tag    | Only the state information from the `ResourceAccessState` is conserved. Note that due to update operations all retained writes (if more than one) are from the same `AliasID`.<br/><br/>As with the existing logic, read operations of the ignored state are dropped, even if newer than the conserved write operation.  This reflects the MRA logic that data can be lost IFF a) that data would have generated a hazard and b) that such loss would not exist if the hazard was eliminated. |
+| Equal read tag     | The barriers are the union of the barriers of the two access states |
+| Differing read tag | Conserve both (this affects both aliased and non-aliased operations, will need to test for false positives) |
+
+   
+
+#### Detect Hazard
+
+##### Current Usage
+
+As hazard detection of the Linear range requires additional scoping to avoid false positives against the `AliasID` corresponding to the updated tiled image.  `ResourceAccessContext::DetectHazard` member functions will require addition of an `AliasID` argument when they are performed on Linear ranges.
+
+As only accesses consistent with the recorded `AliasID` are present in the opaque ranges, no additional scope test is needed for hazard detection on opaque ranges.  However, when detecting hazard conditions from accesses to non-tiled resources, no accesses within the Linear resources are ignored.
+
+***Implementation Idea:*** As opposed to having a flag controlling "ignore" behavior, simply passing an `AliasID ignore_id` argument, with a `AliasID::kInvalid` defined that is never used (effective disabling the `AliasID` masking).
+
+***Note:*** *we may want to reduce the number of implementations of `DetectHazard` member to the most general case for maintenance reason, specifically if this same change/scoping test would have to be added to multiple specialized forms, some of which logically reduce to one another. That or find some refactoring s.t. the permutations of scope and ordering tests do not require the same number of variants.*
+
+##### Recorded Usage
+
+The `DetectHazard` taking recorded usage (in the `DetectFirstUseHazard` path) will also need modification to 
+
+* Accept argument to specific the scope rule used for Linear or opaque ranges (***Note:*** *likely need to tag all `ResourceAccessStates` a with Linear/opaque boolean*)
+* Pass extracted recorded `AliasID` and scope rule information from first use information to underlying `DetectHazard` overrides. 
+
+### AccessContext Updates
+
+There are several `AccessContext::DetectHazard` member that apply to images.  These differ by hazard detection functors used, and the parameters supplied to the range generators.  Eventually all of these call into the generic `AccessContext::DetectHazard` operating on a single range.  In order to avoid duplication of the aliasing logic, each of these need to be modified to supply a range generation object factory callable encapsulating the member specific range generation function arguments and creation, and taking the object base address as an argument.
+
+A unified `DetectHazard<Detector, RangeGenFactory>(Detector &, RangeGenFactory &, const SyncValImageState &)` function will identify the need for alias detection (when the `SyncValImageState::alias_id` is not  `AliasID::kLinear`).  In order to support `DetectImageBarrierHazard` the `Detector` concept will need to include an `AliasDetector` method which returns a (reference) to a `Detector` compatible with detection of the tiled access with the `kLinear` representation. 
+
+The `UpdateAccessState` functions supporting image operation, will need a similar refactor to the `DetectHazard` call.
+
+
+
