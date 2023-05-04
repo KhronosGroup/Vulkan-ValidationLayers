@@ -564,6 +564,14 @@ TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+        GetPhysicalDeviceFeatures2(portability_features);
+        
+        if(portability_features.imageView2DOn3DImage == VK_FALSE)
+            GTEST_SKIP() << "Required feature 'imageView2DOn3DImage' not supported by portability extension.";
+        }
 
     for (uint32_t i = 0; i < 2; ++i) {
         VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
@@ -659,6 +667,9 @@ TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 

@@ -1244,6 +1244,10 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priorities[0];
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
@@ -1252,6 +1256,9 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     device_create_info.enabledLayerCount = 0;
     device_create_info.ppEnabledLayerNames = NULL;
     device_create_info.pEnabledFeatures = &features;
+    
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
 
     VkDevice second_device;
     ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, NULL, &second_device));
@@ -1369,10 +1376,22 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&pd_features2);
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
+    
     VkDevice testDevice;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-pNext");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");
@@ -1435,9 +1454,15 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
         }
     }
 
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features12);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
     VkDevice testDevice;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-02829");
@@ -1522,6 +1547,9 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
         m_errorMonitor->SetUnexpectedError("VUID-VkDeviceCreateInfo-pNext-pNext");
     }
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features11);
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
@@ -1540,6 +1568,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -1549,6 +1578,10 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     device_extensions.push_back(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
     device_extensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
+    
     // Create a device that enables variablePointers but not variablePointersStorageBuffer
     auto variable_features = LvlInitStruct<VkPhysicalDeviceVariablePointersFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(variable_features);
@@ -1971,7 +2004,14 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
-    const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
+    device_extensions.push_back("VK_KHR_maintenance1");
+    device_extensions.push_back("VK_AMD_negative_viewport_height");
+    
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
@@ -1979,8 +2019,8 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
     device_create_info.ppEnabledLayerNames = NULL;
-    device_create_info.enabledExtensionCount = 2;
-    device_create_info.ppEnabledExtensionNames = (const char *const *)extension_names;
+    device_create_info.enabledExtensionCount = device_extensions.size();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
     device_create_info.pEnabledFeatures = &features;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374");
@@ -2008,15 +2048,21 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     vk_testing::PhysicalDevice physical_device(gpu_);
     VkPhysicalDeviceFeatures features = physical_device.features();
     vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
-    const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
+    device_extensions.push_back(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
+    
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
     device_create_info.ppEnabledLayerNames = NULL;
-    device_create_info.enabledExtensionCount = 1;
-    device_create_info.ppEnabledExtensionNames = (const char *const *)extension_names;
+    device_create_info.enabledExtensionCount = device_extensions.size();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
     device_create_info.pEnabledFeatures = &features;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840");
@@ -2031,6 +2077,10 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
     TEST_DESCRIPTION("Reset an event then set it after the reset has been submitted.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk_testing::Event event(*m_device, event_create_info);
 
@@ -2291,6 +2341,9 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     // Used to have a valid pointed to set object too
     VkCommandBuffer unused_command_buffer;
@@ -2537,11 +2590,18 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     device_create_info.pNext = &pd_features2;
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
 
     {
         VkDevice testDevice;
@@ -2636,14 +2696,19 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priority;
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
+    device_extensions.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
-    const char *enabled_ext = VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
 
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features12);
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_info;
-    device_create_info.enabledExtensionCount = 1;
-    device_create_info.ppEnabledExtensionNames = &enabled_ext;
+    device_create_info.enabledExtensionCount = device_extensions.size();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
 
     VkDevice testDevice;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-pNext-04748");

@@ -1335,6 +1335,9 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
         GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
     }
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     GetPhysicalDeviceFeatures2(features11);

@@ -1351,6 +1351,14 @@ TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required extensions not supported.";
     }
+    
+    if(InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+        GetPhysicalDeviceFeatures2(portability_features);
+        
+        if(portability_features.imageView2DOn3DImage == VK_FALSE)
+            GTEST_SKIP() << "Required feature 'imageView2DOn3DImage' not supported by portability extension.";
+        }
 
     constexpr unsigned depth_count = 2u;
 

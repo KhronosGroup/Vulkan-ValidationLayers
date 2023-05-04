@@ -697,6 +697,10 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::vector<const char *> device_extension_names;
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     auto features = m_device->phy().features();
     // Artificially disable support for non-solid fill modes
     features.fillModeNonSolid = false;

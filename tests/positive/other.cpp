@@ -368,9 +368,15 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = q_priority;
 
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    
     VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.ppEnabledExtensionNames = device_extensions.data();
+    device_ci.enabledExtensionCount = device_extensions.size();
 
     VkDevice test_device;
     vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
@@ -409,7 +415,12 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
     if (nullptr != vkTrimCommandPoolKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
 
-    const char *const extension = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME};
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
+    device_extensions.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    
     const float q_priority[] = {1.0f};
     VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_ci.queueFamilyIndex = 0;
@@ -417,8 +428,8 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     queue_ci.pQueuePriorities = q_priority;
 
     VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
-    device_ci.enabledExtensionCount = 1;
-    device_ci.ppEnabledExtensionNames = &extension;
+    device_ci.enabledExtensionCount = device_extensions.size();
+    device_ci.ppEnabledExtensionNames = device_extensions.data();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
 
