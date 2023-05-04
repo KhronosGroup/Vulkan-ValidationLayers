@@ -25,6 +25,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/pipeline_sub_state.h"
+#include "generated/dynamic_state_helper.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
@@ -193,6 +194,9 @@ class PIPELINE_STATE : public BASE_NODE {
     // are updated at various times. Locking requirements are TBD.
     const ActiveSlotMap active_slots;
     const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
+
+    // Which state is dynamic from pipeline creation
+    CBDynamicFlags dynamic_state;
 
     const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool descriptor_buffer_mode = false;
@@ -474,15 +478,7 @@ class PIPELINE_STATE : public BASE_NODE {
                                         CreateShaderModuleStates *csm_states);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
-    bool IsDynamic(const VkDynamicState state) const {
-        const auto *dynamic_state = DynamicState();
-        if ((pipeline_type == VK_PIPELINE_BIND_POINT_GRAPHICS) && dynamic_state) {
-            for (uint32_t i = 0; i < dynamic_state->dynamicStateCount; i++) {
-                if (state == dynamic_state->pDynamicStates[i]) return true;
-            }
-        }
-        return false;
-    }
+    bool IsDynamic(const VkDynamicState state) const { return dynamic_state.test(ConvertToCBDynamicState(state)); }
 
     template <typename ValidationObject, typename CreateInfo>
     static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
