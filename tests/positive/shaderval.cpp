@@ -1077,6 +1077,9 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     const char *LoosePointSizeWrite = R"(
                                        OpCapability Shader
@@ -1975,6 +1978,9 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     std::stringstream spv_source;
     spv_source << R"(

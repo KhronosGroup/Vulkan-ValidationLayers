@@ -19,6 +19,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     VkVertexInputBindingDescription input_binding;
     memset(&input_binding, 0, sizeof(input_binding));
@@ -59,6 +62,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     VkVertexInputBindingDescription input_binding;
     memset(&input_binding, 0, sizeof(input_binding));

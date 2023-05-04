@@ -1724,6 +1724,9 @@ TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk_testing::Event event(*m_device, event_create_info);
 

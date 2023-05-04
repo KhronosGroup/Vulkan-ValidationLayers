@@ -35,6 +35,9 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     features.pDisabledValidationFeatures = disables;
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
 
     // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
     // validation was disabled via the features extension, so no errors should be forthcoming.
