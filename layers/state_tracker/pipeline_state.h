@@ -722,6 +722,9 @@ struct LAST_BOUND_STATE {
     // Dynamic State helpers that require both the Pipeline and CommandBuffer state are here
     bool IsDepthTestEnable() const;
     bool IsDepthWriteEnable() const;
+    bool IsStencilTestEnable() const;
+    VkStencilOpState GetStencilOpStateFront() const;
+    VkStencilOpState GetStencilOpStateBack() const;
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,

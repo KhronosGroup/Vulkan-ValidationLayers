@@ -2941,23 +2941,8 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bou
                                  caller, string_VkImageLayout(ds_attachment->layout));
             }
 
-            // Set with static values and update for anything dynamically set
-            VkStencilOpState front = ds_state->front;
-            VkStencilOpState back = ds_state->back;
-
-            const auto &dynamic_state_value = cb_state.dynamic_state_value;
-            if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
-                front.writeMask = dynamic_state_value.write_mask_front;
-                back.writeMask = dynamic_state_value.write_mask_back;
-            }
-            if (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
-                front.failOp = dynamic_state_value.fail_op_front;
-                front.passOp = dynamic_state_value.pass_op_front;
-                front.depthFailOp = dynamic_state_value.depth_fail_op_front;
-                back.failOp = dynamic_state_value.fail_op_back;
-                back.passOp = dynamic_state_value.pass_op_back;
-                back.depthFailOp = dynamic_state_value.depth_fail_op_back;
-            }
+            VkStencilOpState front = last_bound_state.GetStencilOpStateFront();
+            VkStencilOpState back = last_bound_state.GetStencilOpStateBack();
 
             const bool all_keep_op = ((front.failOp == VK_STENCIL_OP_KEEP) && (front.passOp == VK_STENCIL_OP_KEEP) &&
                                       (front.depthFailOp == VK_STENCIL_OP_KEEP) && (back.failOp == VK_STENCIL_OP_KEEP) &&
