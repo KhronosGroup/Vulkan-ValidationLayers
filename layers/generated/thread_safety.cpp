@@ -10285,6 +10285,20 @@ void ThreadSafety::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(
     FinishReadObjectParentInstance(device, "vkGetDynamicRenderingTilePropertiesQCOM");
 }
 
+void ThreadSafety::PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkImageAspectFlags                          aspectMask) {
+    StartWriteObject(commandBuffer, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkImageAspectFlags                          aspectMask) {
+    FinishWriteObject(commandBuffer, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

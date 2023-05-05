@@ -337,6 +337,14 @@ static CBDynamicFlags GetGraphicsDynamicState(PIPELINE_STATE &pipe_state) {
                     break;
                 }
 
+                // VkRenderPass and subpass parameter
+                case VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT: {
+                    if (has_pre_raster_state || has_fragment_shader_state || has_fragment_output_state) {
+                        flags.set(ConvertToCBDynamicState(vk_dynamic_state));
+                    }
+                    break;
+                }
+
                 // not valid and shouldn't see
                 case VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR:
                 case VK_DYNAMIC_STATE_MAX_ENUM:

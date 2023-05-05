@@ -6797,6 +6797,14 @@ void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(
     VkTilePropertiesQCOM*                       pProperties,
     VkResult                                    result) override;
 
+void PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkImageAspectFlags                          aspectMask) override;
+
+void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkImageAspectFlags                          aspectMask) override;
+
 void PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

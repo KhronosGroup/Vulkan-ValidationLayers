@@ -17454,6 +17454,62 @@ void safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::initialize(con
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    attachmentFeedbackLoopDynamicState(in_struct->attachmentFeedbackLoopDynamicState)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT),
+    pNext(nullptr),
+    attachmentFeedbackLoopDynamicState()
+{}
+
+safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    attachmentFeedbackLoopDynamicState = copy_src.attachmentFeedbackLoopDynamicState;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::operator=(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    attachmentFeedbackLoopDynamicState = copy_src.attachmentFeedbackLoopDynamicState;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::~safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::initialize(const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    attachmentFeedbackLoopDynamicState = in_struct->attachmentFeedbackLoopDynamicState;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::initialize(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    attachmentFeedbackLoopDynamicState = copy_src->attachmentFeedbackLoopDynamicState;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceMeshShaderFeaturesEXT::safe_VkPhysicalDeviceMeshShaderFeaturesEXT(const VkPhysicalDeviceMeshShaderFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     taskShader(in_struct->taskShader),

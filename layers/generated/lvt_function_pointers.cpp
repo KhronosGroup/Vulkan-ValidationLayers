@@ -314,6 +314,8 @@ PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT;
 PFN_vkAcquireXlibDisplayEXT AcquireXlibDisplayEXT;
 PFN_vkGetRandROutputDisplayEXT GetRandROutputDisplayEXT;
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+// VK_EXT_attachment_feedback_loop_dynamic_state
+PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 // VK_EXT_buffer_device_address
 PFN_vkGetBufferDeviceAddressEXT GetBufferDeviceAddressEXT;
 // VK_EXT_calibrated_timestamps
@@ -1397,6 +1399,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #endif // VK_USE_PLATFORM_ANDROID_KHR
         {
+            "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance, VkDevice device) {
+                CmdSetAttachmentFeedbackLoopEnableEXT = reinterpret_cast<PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT"));
+            }
+        },
+        {
             "VK_EXT_buffer_device_address", [](VkInstance, VkDevice device) {
                 GetBufferDeviceAddressEXT = reinterpret_cast<PFN_vkGetBufferDeviceAddressEXT>(GetDeviceProcAddr(device, "vkGetBufferDeviceAddressEXT"));
             }
@@ -2185,6 +2192,8 @@ void ResetAllExtensions() {
     AcquireXlibDisplayEXT = nullptr;
     GetRandROutputDisplayEXT = nullptr;
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+    // VK_EXT_attachment_feedback_loop_dynamic_state
+    CmdSetAttachmentFeedbackLoopEnableEXT = nullptr;
     // VK_EXT_buffer_device_address
     GetBufferDeviceAddressEXT = nullptr;
     // VK_EXT_calibrated_timestamps

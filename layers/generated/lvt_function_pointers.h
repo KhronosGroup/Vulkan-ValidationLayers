@@ -276,6 +276,8 @@ extern PFN_vkGetDrmDisplayEXT GetDrmDisplayEXT;
 extern PFN_vkAcquireXlibDisplayEXT AcquireXlibDisplayEXT;
 extern PFN_vkGetRandROutputDisplayEXT GetRandROutputDisplayEXT;
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+// VK_EXT_attachment_feedback_loop_dynamic_state
+extern PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 // VK_EXT_buffer_device_address
 extern PFN_vkGetBufferDeviceAddressEXT GetBufferDeviceAddressEXT;
 // VK_EXT_calibrated_timestamps

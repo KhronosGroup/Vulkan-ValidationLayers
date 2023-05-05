@@ -391,6 +391,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_shader_core_properties{kNotEnabled};
     ExtEnabled vk_ext_4444_formats{kNotEnabled};
     ExtEnabled vk_ext_astc_decode_mode{kNotEnabled};
+    ExtEnabled vk_ext_attachment_feedback_loop_dynamic_state{kNotEnabled};
     ExtEnabled vk_ext_attachment_feedback_loop_layout{kNotEnabled};
     ExtEnabled vk_ext_blend_operation_advanced{kNotEnabled};
     ExtEnabled vk_ext_border_color_swizzle{kNotEnabled};
@@ -716,6 +717,9 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_dynamic_state, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_ext_attachment_feedback_loop_layout, VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME}}})},
             {VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_layout, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {{
@@ -1483,6 +1487,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_ARM_SHADER_CORE_PROPERTIES_EXTENSION_NAME,
     VK_EXT_4444_FORMATS_EXTENSION_NAME,
     VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME,
+    VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME,
     VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME,
     VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME,
     VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME,
