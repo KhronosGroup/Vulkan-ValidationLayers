@@ -361,14 +361,15 @@ bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_sta
         const auto color_blend_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
         if (color_blend_state) {
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
-            if (cb_state.dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
+            uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
+            if (dynamic_attachment_count < blend_attachment_count) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(
                     objlist, vuid.dynamic_color_write_enable_count_07750,
                     "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
                     " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
                     "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",
-                    CommandTypeString(cmd_type), blend_attachment_count, cb_state.dynamicColorWriteEnableAttachmentCount);
+                    CommandTypeString(cmd_type), blend_attachment_count, dynamic_attachment_count);
             }
         }
     }

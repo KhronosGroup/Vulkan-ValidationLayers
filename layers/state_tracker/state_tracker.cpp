@@ -5441,16 +5441,8 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    if (pipeline_state) {
-        const auto *dynamic_state = pipeline_state->DynamicState();
-        if (dynamic_state) {
-            for (uint32_t i = 0; i < dynamic_state->dynamicStateCount; ++i) {
-                if (dynamic_state->pDynamicStates[i] == VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
-                    status_flags.set(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
-                    break;
-                }
-            }
-        }
+    if (pipeline_state && pipeline_state->IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+        status_flags.set(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
     cb_state->RecordStateCmd(CMD_SETVERTEXINPUTEXT, status_flags);
 }
@@ -5458,7 +5450,8 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
 void ValidationStateTracker::PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                      const VkBool32 *pColorWriteEnables) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordColorWriteEnableStateCmd(CMD_SETCOLORWRITEENABLEEXT, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, attachmentCount);
+    cb_state->RecordStateCmd(CMD_SETCOLORWRITEENABLEEXT, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    cb_state->dynamic_state_value.color_write_enable_attachment_count = attachmentCount;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR

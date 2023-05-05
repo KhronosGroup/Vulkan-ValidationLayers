@@ -153,7 +153,6 @@ void CMD_BUFFER_STATE::ResetCBState() {
     trashedScissorCount = false;
     usedDynamicViewportCount = false;
     usedDynamicScissorCount = false;
-    dynamicColorWriteEnableAttachmentCount = 0;
 
     activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
     activeRenderPass = nullptr;
@@ -1382,11 +1381,6 @@ void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &s
     RecordCmd(cmd_type);
     status |= state_bits;
     static_status &= ~state_bits;
-}
-
-void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicState state, uint32_t attachment_count) {
-    RecordStateCmd(cmd_type, state);
-    dynamicColorWriteEnableAttachmentCount = std::max(dynamicColorWriteEnableAttachmentCount, attachment_count);
 }
 
 void CMD_BUFFER_STATE::RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
