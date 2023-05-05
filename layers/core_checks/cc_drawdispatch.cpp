@@ -1646,7 +1646,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksNV-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksNV-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksNV-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksNV-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksNV-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksNV-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksNV-None-07845";
@@ -1794,7 +1793,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07845";
@@ -1945,7 +1943,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07845";
@@ -2090,7 +2087,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksEXT-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksEXT-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksEXT-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksEXT-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksEXT-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksEXT-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksEXT-None-07845";
@@ -2238,7 +2234,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07845";
@@ -2389,7 +2384,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         dynamic_state_inherited_07850            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07850";
         dynamic_cull_mode_07840                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07840";
         dynamic_front_face_07841                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07841";
-        dynamic_primitive_topology_07842         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07842";
         dynamic_depth_test_enable_07843          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07843";
         dynamic_depth_write_enable_07844         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07844";
         dynamic_depth_compare_op_07845           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07845";
