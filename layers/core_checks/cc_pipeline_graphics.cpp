@@ -2579,18 +2579,19 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
     bool skip = false;
+    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const auto &current_vtx_bfr_binding_info = cb_state.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
     if (cb_state.activeRenderPass) {
         if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-            ValidatePipelineDynamicRenderpassDraw(state, cb_state, cmd_type, pipeline);
+            ValidatePipelineDynamicRenderpassDraw(last_bound_state, cmd_type);
         } else {
-            ValidatePipelineRenderpassDraw(state, cb_state, cmd_type, pipeline);
+            ValidatePipelineRenderpassDraw(last_bound_state, cmd_type);
         }
 
         if (pipeline.fragment_output_state && pipeline.fragment_output_state->dual_source_blending) {
@@ -2676,8 +2677,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 skip |= LogError(objlist, vuid.vertex_binding_04007,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(), vertex_binding, i,
-                                 vertex_binding);
+                                 caller, report_data->FormatHandle(pipeline.pipeline()).c_str(), vertex_binding, i, vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
@@ -2685,8 +2685,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
-                                 caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 vertex_binding, i, vertex_binding);
+                                 caller, vertex_binding, report_data->FormatHandle(pipeline.pipeline()).c_str(), vertex_binding, i,
+                                 vertex_binding);
             }
         }
 
@@ -2887,9 +2887,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 }
 
 // Verify that PSO creation renderPass is compatible with active (non-dynamic) renderPass
-bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type,
-                                                const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
     bool skip = false;
+    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
@@ -2932,7 +2933,7 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, c
         }
         const auto ds_state = pipeline.DepthStencilState();
         if (ds_state) {
-            if (IsImageLayoutDepthReadOnly(ds_attachment->layout) && state.IsDepthWriteEnable()) {
+            if (IsImageLayoutDepthReadOnly(ds_attachment->layout) && last_bound_state.IsDepthWriteEnable()) {
                 const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(), cb_state.commandBuffer());
                 skip |= LogError(objlist, vuid.depth_read_only_06886,
                                  "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
@@ -2993,9 +2994,10 @@ bool CoreChecks::ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE &state, c
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE &cb_state,
-                                                       CMD_TYPE cmd_type, const PIPELINE_STATE &pipeline) const {
+bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
     bool skip = false;
+    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
     const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
@@ -3007,7 +3009,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &s
             skip |= LogError(objlist, vuid.dynamic_rendering_06198,
                              "%s: Currently bound pipeline %s must have been created with a "
                              "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
-                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                             caller, report_data->FormatHandle(pipeline.pipeline()).c_str());
         }
 
         const auto pipeline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
@@ -3017,8 +3019,8 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &s
             skip |= LogError(objlist, vuid.dynamic_rendering_view_mask_06178,
                              "%s: Currently bound pipeline %s viewMask ([%" PRIu32
                              ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
-                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                             pipeline_rendering_ci.viewMask, rendering_view_mask);
+                             caller, report_data->FormatHandle(pipeline.pipeline()).c_str(), pipeline_rendering_ci.viewMask,
+                             rendering_view_mask);
         }
 
         const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
@@ -3028,7 +3030,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &s
             skip |= LogError(objlist, vuid.dynamic_rendering_color_count_06179,
                              "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
                              ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
-                             caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
+                             caller, report_data->FormatHandle(pipeline.pipeline()).c_str(),
                              pipeline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
         }
 
@@ -3082,7 +3084,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &s
                 skip |= LogError(objlist, vuid.dynamic_rendering_fsr_06183,
                                  "%s: Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                                 caller, report_data->FormatHandle(pipeline.pipeline()).c_str());
             }
         }
 
@@ -3095,7 +3097,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &s
                 skip |= LogError(objlist, vuid.dynamic_rendering_fdm_06184,
                                  "%s: Currently bound graphics pipeline %s must have been created with "
                                  "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
-                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
+                                 caller, report_data->FormatHandle(pipeline.pipeline()).c_str());
             }
         }
     }
