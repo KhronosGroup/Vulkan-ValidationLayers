@@ -2593,7 +2593,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                                                             const CMD_BUFFER_STATE &cmd_buffer, CMD_TYPE cmd_type) const {
     bool skip = false;
     const auto &sync_state = exec_context.GetSyncState();
-    const auto *pipe = cmd_buffer.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto last_bound_state = cmd_buffer.lastBound[lv_bind_point];
+    const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe) {
         return skip;
     }
@@ -2641,18 +2643,11 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
         const IMAGE_VIEW_STATE &view_state = *view_gen.GetViewState();
         bool depth_write = false, stencil_write = false;
 
-        const bool depth_write_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                            ? cmd_buffer.dynamic_state_value.depth_write_enable
-                                            : ds_state->depthWriteEnable;
-        const bool depth_test_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
-                                           ? cmd_buffer.dynamic_state_value.depth_test_enable
-                                           : ds_state->depthTestEnable;
-        const bool stencil_test_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                             ? cmd_buffer.dynamic_state_value.stencil_test_enable
-                                             : ds_state->stencilTestEnable;
+        const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();  // implicitly means DepthTestEnable is set
+        const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (!FormatIsStencilOnly(view_state.create_info.format) && depth_test_enable && depth_write_enable &&
+        if (!FormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
@@ -2699,7 +2694,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
 }
 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd_buffer, const ResourceUsageTag tag) {
-    const auto *pipe = cmd_buffer.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto last_bound_state = cmd_buffer.lastBound[lv_bind_point];
+    const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe) {
         return;
     }
@@ -2737,18 +2734,11 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE
         const bool has_depth = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT);
         const bool has_stencil = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
 
-        const bool depth_write_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                            ? cmd_buffer.dynamic_state_value.depth_write_enable
-                                            : ds_state->depthWriteEnable;
-        const bool depth_test_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
-                                           ? cmd_buffer.dynamic_state_value.depth_test_enable
-                                           : ds_state->depthTestEnable;
-        const bool stencil_test_enable = pipe->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                                             ? cmd_buffer.dynamic_state_value.stencil_test_enable
-                                             : ds_state->stencilTestEnable;
+        const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();  // implicitly means DepthTestEnable is set
+        const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && !FormatIsStencilOnly(view_state.create_info.format) && depth_test_enable && depth_write_enable &&
+        if (has_depth && !FormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
             IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }

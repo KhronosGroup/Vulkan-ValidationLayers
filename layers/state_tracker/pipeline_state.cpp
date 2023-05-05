@@ -882,3 +882,34 @@ bool LAST_BOUND_STATE::IsDepthWriteEnable() const {
     return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) ? cb_state.dynamic_state_value.depth_write_enable
                                                                           : pipeline_state->DepthStencilState()->depthWriteEnable;
 }
+
+bool LAST_BOUND_STATE::IsStencilTestEnable() const {
+    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE) ? cb_state.dynamic_state_value.stencil_test_enable
+                                                                           : pipeline_state->DepthStencilState()->stencilTestEnable;
+}
+
+VkStencilOpState LAST_BOUND_STATE::GetStencilOpStateFront() const {
+    VkStencilOpState front = pipeline_state->DepthStencilState()->front;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+        front.writeMask = cb_state.dynamic_state_value.write_mask_front;
+    }
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
+        front.failOp = cb_state.dynamic_state_value.fail_op_front;
+        front.passOp = cb_state.dynamic_state_value.pass_op_front;
+        front.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_front;
+    }
+    return front;
+}
+
+VkStencilOpState LAST_BOUND_STATE::GetStencilOpStateBack() const {
+    VkStencilOpState back = pipeline_state->DepthStencilState()->back;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+        back.writeMask = cb_state.dynamic_state_value.write_mask_back;
+    }
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_STENCIL_OP)) {
+        back.failOp = cb_state.dynamic_state_value.fail_op_back;
+        back.passOp = cb_state.dynamic_state_value.pass_op_back;
+        back.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_back;
+    }
+    return back;
+}
