@@ -1939,7 +1939,7 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::QueuePresentKHR(m_device->m_queue, &present);
     m_errorMonitor->VerifyFound();
 
-    VkSwapchainKHR swapchain3;
+    VkSwapchainKHR swapchain3 = {};
     // Retire swapchain2
     CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain3, swapchain2);
     present_id.swapchainCount = 2;
