@@ -17,28 +17,50 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeYcbcr : public VkLayerTest {};
+class NegativeYcbcr : public VkLayerTest {
+  public:
+    void InitBasicYcbcr();
+};
+
+void NegativeYcbcr::InitBasicYcbcr() {
+    // VK_KHR_sampler_ycbcr_conversion was added in 1.2
+    const bool use_12 = m_attempted_api_version >= VK_API_VERSION_1_2;
+    if (!use_12) {
+        AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < m_attempted_api_version) {
+        GTEST_SKIP() << "At least Vulkan version 1." << VK_VERSION_MINOR(m_attempted_api_version) << " is required";
+    }
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    VkPhysicalDeviceFeatures2 features2;
+    if (use_12) {
+        features2 = GetPhysicalDeviceFeatures2(features11);
+        if (features11.samplerYcbcrConversion != VK_TRUE) {
+            GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
+        }
+    } else {
+        features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
+        if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
+            GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
+        }
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+}
 
 TEST_F(NegativeYcbcr, Sampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    GetPhysicalDeviceFeatures2(ycbcr_features);
-    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -150,20 +172,9 @@ TEST_F(NegativeYcbcr, Sampler) {
 
 TEST_F(NegativeYcbcr, Swizzle) {
     TEST_DESCRIPTION("Verify Invalid use of siwizzle components when dealing with YCbCr.");
-
-    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto features2 = GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
@@ -314,15 +325,8 @@ TEST_F(NegativeYcbcr, Swizzle) {
 
 TEST_F(NegativeYcbcr, Formats) {
     TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
-
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -416,13 +420,8 @@ TEST_F(NegativeYcbcr, Formats) {
 
 TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     // Image copy tests on single-plane _422 formats with block alignment errors
-
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     // Select a _422 format and verify support
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
@@ -511,13 +510,8 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
 TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     // Image copy tests on multiplane images with aspect errors
-
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     // Select multi-plane formats and verify support
     VkFormat mp3_format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
@@ -658,15 +652,8 @@ TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
 
 TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     TEST_DESCRIPTION("Record clear color with an invalid image formats");
-
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageObj mp_image(m_device);
@@ -707,22 +694,8 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
 
 TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     TEST_DESCRIPTION("Attempt to use VkSamplerYcbcrConversion ImageView to update descriptors that are not allowed.");
-
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-
-    // Enable Sampler YCbCr Conversion
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    auto features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
-    if (ycbcr_features.samplerYcbcrConversion == VK_FALSE) {
-        GTEST_SKIP() << "samplerYcbcrConversion feature not supported. Skipped.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
@@ -772,14 +745,8 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
 
 TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     TEST_DESCRIPTION("Query layout of a multiplane image using illegal aspect flag masks");
-
-    // Enable KHR multiplane req'd extensions
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -835,14 +802,8 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
 }
 
 TEST_F(NegativeYcbcr, BindMemory) {
-    // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     // Try to bind an image created with Disjoint bit
     VkFormatProperties format_properties;
@@ -1272,21 +1233,9 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
 
 TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     TEST_DESCRIPTION("Create image view with a different format that SamplerYcbcr was created with.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "SamplerYcbcrConversion not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -1327,21 +1276,13 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
 
     // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
+
     // This test hits a bug in the driver, CTS was written, but incase using an old driver
     if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
         GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
     }
-
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion) {
-        GTEST_SKIP() << "samplerYcbcrConversion not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11));
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
@@ -1461,17 +1402,8 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     TEST_DESCRIPTION("Create a VkImageView with multiple planar aspect masks");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    GetPhysicalDeviceFeatures2(features11);
-    if (!features11.samplerYcbcrConversion) {
-        GTEST_SKIP() << "samplerYcbcrConversion not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features11));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, can hit issues with imageViewFormatReinterpretation";
@@ -1542,22 +1474,8 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
 TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     TEST_DESCRIPTION("Attempt to update descriptor sets for images that do not have correct aspect bits sets.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    GetPhysicalDeviceFeatures2(ycbcr_features);
-    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
+    InitBasicYcbcr();
+    if (::testing::Test::IsSkipped()) return;
 
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {

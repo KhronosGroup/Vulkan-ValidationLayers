@@ -6680,3 +6680,19 @@ TEST_F(NegativeDynamicRendering, EndTwice) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeDynamicRendering, MissingMultisampleState) {
+    TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00751");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
