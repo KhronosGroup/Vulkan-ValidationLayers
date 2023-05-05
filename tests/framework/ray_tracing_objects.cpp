@@ -579,7 +579,8 @@ void BuildGeometryInfoKHR::BuildCommon(VkInstance instance, const vk_testing::De
         // Allocate on host scratch buffer
         host_scratch_ = nullptr;
         if (scratch_size > 0) {
-            host_scratch_ = std::make_unique<uint8_t[]>(scratch_size);
+            assert(scratch_size < vvl::kU32Max);
+            host_scratch_ = std::make_unique<uint8_t[]>(static_cast<size_t>(scratch_size));
         }
         vk_info_.scratchData.hostAddress = host_scratch_.get();
     }
