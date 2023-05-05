@@ -3327,8 +3327,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
     const char *function = CommandTypeString(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto &last_bound = cb_state.lastBound[lv_bind_point];
-    const auto *last_pipeline = last_bound.pipeline_state;
+    const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
+    const auto *last_pipeline = last_bound_state.pipeline_state;
 
     if (!last_pipeline || !last_pipeline->pipeline()) {
         // For now, don't validate anything and just return
@@ -3344,7 +3344,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
     bool skip = false;
 
-    for (const auto &ds : last_bound.per_set) {
+    for (const auto &ds : last_bound_state.per_set) {
         if (pipeline.descriptor_buffer_mode) {
             if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
@@ -3369,8 +3369,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     }
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        skip |= ValidateDrawDynamicState(cb_state, pipeline, cmd_type);
-        skip |= ValidatePipelineDrawtimeState(last_bound, cb_state, cmd_type, pipeline);
+        skip |= ValidateDrawDynamicState(last_bound_state, cmd_type);
+        skip |= ValidatePipelineDrawtimeState(last_bound_state, cmd_type);
 
         if (cb_state.activeRenderPass && cb_state.activeFramebuffer) {
             // Verify attachments for unprotected/protected command buffer.
@@ -3402,7 +3402,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (!pipeline.descriptor_buffer_mode) {
-        if (!pipeline.active_slots.empty() && !IsBoundSetCompat(pipeline.max_active_slot, last_bound, *pipeline_layout)) {
+        if (!pipeline.active_slots.empty() && !IsBoundSetCompat(pipeline.max_active_slot, last_bound_state, *pipeline_layout)) {
             LogObjectList objlist(pipeline.pipeline());
             const auto layouts = pipeline.PipelineLayoutStateUnion();
             std::ostringstream pipe_layouts_log;
@@ -3416,17 +3416,17 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
             } else {
                 pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
             }
-            objlist.add(last_bound.pipeline_layout);
+            objlist.add(last_bound_state.pipeline_layout);
             skip |= LogError(objlist, vuid.compatible_pipeline_02697,
                              "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                              ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
                              function, report_data->FormatHandle(pipeline.pipeline()).c_str(), pipe_layouts_log.str().c_str(),
-                             pipeline.max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
+                             pipeline.max_active_slot, report_data->FormatHandle(last_bound_state.pipeline_layout).c_str());
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
             for (const auto &set_binding_pair : pipeline.active_slots) {
                 uint32_t set_index = set_binding_pair.first;
-                const auto set_info = last_bound.per_set[set_index];
+                const auto set_info = last_bound_state.per_set[set_index];
                 if (!set_info.bound_descriptor_set) {
                     skip |= LogError(cb_state.commandBuffer(), vuid.compatible_pipeline_02697,
                                      "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,

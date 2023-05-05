@@ -403,8 +403,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit, const Location& loc) const;
     bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE& cb_state, CBDynamicState dynamic_state, CMD_TYPE cmd_type,
                                  const char* msg_code) const;
-    bool ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
-    bool ValidateDrawDynamicState(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
+    bool ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
@@ -733,12 +733,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE& cb_state, int current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
-    bool ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type,
-                                        const PIPELINE_STATE& pipeline) const;
-    bool ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE& pipeline) const;
-    bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type,
-                                       const PIPELINE_STATE& pipeline) const;
+    bool ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
+    bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
     bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
     static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,

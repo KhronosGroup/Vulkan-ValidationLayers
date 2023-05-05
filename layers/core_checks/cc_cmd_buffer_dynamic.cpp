@@ -34,9 +34,10 @@ bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE &cb_state, CBDyn
 }
 
 // Makes sure the vkCmdSet* call was called correctly prior to a draw
-bool CoreChecks::ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                               CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
     bool skip = false;
+    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(cmd_type);
 
     // Check all state with no additional requirements
@@ -192,10 +193,11 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const CMD_BUFFER_STATE &cb_state,
     return skip;
 }
 
-bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
-                                          CMD_TYPE cmd_type) const {
+bool CoreChecks::ValidateDrawDynamicState(const LAST_BOUND_STATE &last_bound_state, CMD_TYPE cmd_type) const {
     bool skip = false;
-    skip = ValidateDynamicStateSetStatus(cb_state, pipeline, cmd_type);
+    const CMD_BUFFER_STATE &cb_state = last_bound_state.cb_state;
+    const PIPELINE_STATE &pipeline = *last_bound_state.pipeline_state;
+    skip = ValidateDynamicStateSetStatus(last_bound_state, cmd_type);
     // Dynamic state was not set, will produce garbage when trying to read to values
     if (skip) return skip;
 
