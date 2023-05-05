@@ -88,13 +88,13 @@ def CheckVVL(config):
 
     # Verify consistency of generated source code
     print("Check Generated Source Code Consistency")
-    gen_check_cmd = f'python3 scripts/generate_source.py --verify {vulkan_registry} {spirv_unified}'
+    gen_check_cmd = f'python scripts/generate_source.py --verify {vulkan_registry} {spirv_unified}'
     RunShellCmd(gen_check_cmd)
 
     print('Run vk_validation_stats.py')
     valid_usage_json = vulkan_registry + "/validusage.json"
     text_file = RepoRelative(f'{VVL_BUILD_DIR}/layers/vuid_coverage_database.txt')
-    gen_check_cmd = f'python3 scripts/vk_validation_stats.py {valid_usage_json} -text {text_file}'
+    gen_check_cmd = f'python scripts/vk_validation_stats.py {valid_usage_json} -text {text_file}'
     RunShellCmd(gen_check_cmd)
 
 #
@@ -166,13 +166,9 @@ def BuildMockICD():
 
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
 
-    print("Running update_deps.py for ICD")
-    RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config release', VT_DIR)
-
     print("Run CMake for ICD")
     cmake_cmd = f'cmake -S {VT_DIR} -B {ICD_BUILD_DIR} -D CMAKE_BUILD_TYPE=Release '
-    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -D INSTALL_ICD=ON '
-    cmake_cmd += f'-C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake'
+    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -D INSTALL_ICD=ON -D UPDATE_DEPS=ON'
     RunShellCmd(cmake_cmd)
 
     print("Build Mock ICD")
