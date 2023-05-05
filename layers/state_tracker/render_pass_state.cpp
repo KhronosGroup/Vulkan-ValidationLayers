@@ -298,6 +298,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkPipelineRenderingCreateInfo const *pPipel
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
+      rasterization_enabled(rasterization_enabled),
       dynamic_rendering_pipeline_create_info((pPipelineRenderingCreateInfo && rasterization_enabled)
                                                  ? pPipelineRenderingCreateInfo
                                                  : &VkPipelineRenderingCreateInfo_default) {}
@@ -366,6 +367,7 @@ RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo, bool
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
       has_multiview_enabled(false),
+      rasterization_enabled(rasterization_enabled),
       dynamic_rendering_begin_rendering_info((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr) {}
 
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo)

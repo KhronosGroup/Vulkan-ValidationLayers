@@ -348,7 +348,7 @@ class VIDEO_SESSION_STATE : public BASE_NODE {
         }
     }
 
-    uint32_t GetVideoDecodeOperationCount(VkVideoDecodeInfoKHR const *pDecodeInfo) { return 1; }
+    uint32_t GetVideoDecodeOperationCount(VkVideoDecodeInfoKHR const *) { return 1; }
 
   private:
     MemoryBindingMap GetMemoryBindings(ValidationStateTracker *dev_data, VkVideoSessionKHR vs);

@@ -176,7 +176,14 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                                                 dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
             }
 
-            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment);
+            auto& graphics_info = pCreateInfos[idx0];
+            auto state_info = dynamic_cast<ValidationStateTracker*>(layer_data);
+            PNextCopyState pnext_copy_state = {
+                [state_info, &graphics_info](VkBaseOutStructure* safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+                    return PIPELINE_STATE::PnextRenderingInfoCustomCopy(state_info, graphics_info, safe_struct, in_struct);
+                }
+            };
+            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment, &pnext_copy_state);
 
             if (pCreateInfos[idx0].basePipelineHandle) {
                 local_pCreateInfos[idx0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[idx0].basePipelineHandle);
@@ -1677,6 +1684,7 @@ void DispatchGetDescriptorEXT(
             write('#include "chassis.h"', file=self.outFile)
             write('#include "layer_chassis_dispatch.h"', file=self.outFile)
             write('#include "vk_safe_struct.h"', file=self.outFile)
+            write('#include "state_tracker/pipeline_state.h"', file=self.outFile)
             self.newline()
             write('std::shared_mutex dispatch_lock;', file=self.outFile)
             self.newline()
