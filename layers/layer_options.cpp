@@ -475,35 +475,53 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 #else
     std::string env_delimiter = ":";
 #endif
-    // Process layer enable settings
-    SetLocalEnableSetting(GetConfigValue(SETTING_ENABLES), ",", settings_data->enables);
-    SetLocalEnableSetting(GetEnvVarValue(SETTING_ENABLES), env_delimiter, settings_data->enables);
 
-    SetValidationSetting(settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
-    SetValidationSetting(settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
-    SetValidationSetting(settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
-    SetValidationSetting(settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
-    SetValidationSetting(settings_data->enables, vendor_specific_nvidia, SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
-    SetValidationSetting(settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
-    SetValidationSetting(settings_data->enables, sync_validation_queue_submit, SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
-    SetValidationGPUBasedSetting(settings_data->enables, SETTING_VALIDATE_GPU_BASED);
-    SetValidationSetting(settings_data->enables, gpu_validation_reserve_binding_slot, SETTING_RESERVE_BINDING_SLOT);
+    // Read legacy enables and disables settings
+    const std::string &config_value_disables = GetConfigValue(SETTING_DISABLES);
+    const std::string &envvar_value_disables = GetEnvVarValue(SETTING_DISABLES);
+    const bool use_disables_fine_gain_settings = config_value_disables.empty() && envvar_value_disables.empty();
+    const std::string &config_value_enables = GetConfigValue(SETTING_ENABLES);
+    const std::string &envvar_value_enables = GetEnvVarValue(SETTING_ENABLES);
+    const bool use_enables_fine_gain_settings = config_value_enables.empty() && envvar_value_enables.empty();
+    const bool use_fine_gain_settings = use_disables_fine_gain_settings && use_enables_fine_gain_settings;
+
+    // Process layer enable settings
+    SetLocalEnableSetting(config_value_enables, ",", settings_data->enables);
+    SetLocalEnableSetting(envvar_value_enables, env_delimiter, settings_data->enables);
+
+    // Only read the legacy enables flags when used, not their replacement.
+    // Avoid Android C.I. performance regression from reading Android env variables
+    if (use_fine_gain_settings) {
+        SetValidationSetting(settings_data->enables, best_practices, SETTING_VALIDATE_BEST_PRACTICES);
+        SetValidationSetting(settings_data->enables, vendor_specific_arm, SETTING_VALIDATE_BEST_PRACTICES_ARM);
+        SetValidationSetting(settings_data->enables, vendor_specific_amd, SETTING_VALIDATE_BEST_PRACTICES_AMD);
+        SetValidationSetting(settings_data->enables, vendor_specific_img, SETTING_VALIDATE_BEST_PRACTICES_IMG);
+        SetValidationSetting(settings_data->enables, vendor_specific_nvidia, SETTING_VALIDATE_BEST_PRACTICES_NVIDIA);
+        SetValidationSetting(settings_data->enables, sync_validation, SETTING_VALIDATE_SYNC);
+        SetValidationSetting(settings_data->enables, sync_validation_queue_submit, SETTING_VALIDATE_SYNC_QUEUE_SUBMIT);
+        SetValidationGPUBasedSetting(settings_data->enables, SETTING_VALIDATE_GPU_BASED);
+        SetValidationSetting(settings_data->enables, gpu_validation_reserve_binding_slot, SETTING_RESERVE_BINDING_SLOT);
+    }
 
     // Process layer disable settings
-    SetLocalDisableSetting(GetConfigValue(SETTING_DISABLES), ",", settings_data->disables);
-    SetLocalDisableSetting(GetEnvVarValue(SETTING_DISABLES), env_delimiter, settings_data->disables);
+    SetLocalDisableSetting(config_value_disables, ",", settings_data->disables);
+    SetLocalDisableSetting(envvar_value_disables, env_delimiter, settings_data->disables);
 
-    SetValidationSetting(settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
-    SetValidationSetting(settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
-    SetValidationSetting(settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
-    SetValidationSetting(settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
-    SetValidationSetting(settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
-    SetValidationSetting(settings_data->disables, query_validation, SETTING_CHECK_QUERY);
-    SetValidationSetting(settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
-    SetValidationSetting(settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
-    SetValidationSetting(settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
-    SetValidationSetting(settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
-    SetValidationSetting(settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+    // Only read the legacy disables flags when used, not their replacement.
+    // Avoid Android C.I. performance regression from reading Android env variables
+    if (use_fine_gain_settings) {
+        SetValidationSetting(settings_data->disables, stateless_checks, SETTING_STATELESS_PARAM);
+        SetValidationSetting(settings_data->disables, thread_safety, SETTING_THREAD_SAFETY);
+        SetValidationSetting(settings_data->disables, core_checks, SETTING_VALIDATE_CORE);
+        SetValidationSetting(settings_data->disables, command_buffer_state, SETTING_CHECK_COMMAND_BUFFER);
+        SetValidationSetting(settings_data->disables, object_in_use, SETTING_CHECK_OBJECT_IN_USE);
+        SetValidationSetting(settings_data->disables, query_validation, SETTING_CHECK_QUERY);
+        SetValidationSetting(settings_data->disables, image_layout_validation, SETTING_CHECK_IMAGE_LAYOUT);
+        SetValidationSetting(settings_data->disables, handle_wrapping, SETTING_UNIQUE_HANDLES);
+        SetValidationSetting(settings_data->disables, object_tracking, SETTING_OBJECT_LIFETIME);
+        SetValidationSetting(settings_data->disables, shader_validation, SETTING_CHECK_SHADERS);
+        SetValidationSetting(settings_data->disables, shader_validation_caching, SETTING_CHECK_SHADERS_CACHING);
+    }
 
     // Process message filter ID list
     CreateFilterMessageIdList(GetConfigValue(SETTING_MESSAGE_ID_FILTER), ",", settings_data->message_filter_list);
