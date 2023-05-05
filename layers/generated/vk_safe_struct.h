@@ -13324,6 +13324,21 @@ struct safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM {
     VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM const *ptr() const { return reinterpret_cast<VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 attachmentFeedbackLoopDynamicState;
+    safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& operator=(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT();
+    ~safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT();
+    void initialize(const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* copy_src);
+    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT *>(this); }
+    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT const *>(this); }
+};
+
 struct safe_VkAccelerationStructureGeometryTrianglesDataKHR {
     VkStructureType sType;
     const void* pNext{};

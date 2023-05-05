@@ -1499,6 +1499,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDynamicRenderingTilePropertiesQCOM,
     InterceptIdPreCallRecordGetDynamicRenderingTilePropertiesQCOM,
     InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM,
+    InterceptIdPreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT,
+    InterceptIdPreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
+    InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -3201,6 +3204,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDynamicRenderingTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

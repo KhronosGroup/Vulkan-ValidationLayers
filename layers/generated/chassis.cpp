@@ -14733,6 +14733,28 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkImageAspectFlags                          aspectMask) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+    }
+    DispatchCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
+    }
+}
+
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -16011,6 +16033,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdBindShadersEXT", {kFuncTypeDev, (void*)CmdBindShadersEXT}},
     {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
     {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
+    {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {kFuncTypeDev, (void*)CmdSetAttachmentFeedbackLoopEnableEXT}},
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},
