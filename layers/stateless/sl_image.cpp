@@ -80,17 +80,17 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 skip |= LogError(device, "VUID-VkImageCreateInfo-flags-00949",
                                  "vkCreateImage(): Image type %s is incompatible with VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.",
                                  string_VkImageType(type));
-            } else {
-                if (width != height) {
-                    skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
-                                     "vkCreateImage(): extent.width (=%" PRIu32 ") not equal to extent.height (=%" PRIu32 ").",
-                                     pCreateInfo->extent.width, pCreateInfo->extent.height);
-                }
+            }
 
-                if (pCreateInfo->arrayLayers < 6) {
-                    skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-00954",
-                                     "vkCreateImage(): arrayLayers (=%" PRIu32 ") is less than 6.", pCreateInfo->arrayLayers);
-                }
+            if (width != height) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-08865",
+                                 "vkCreateImage(): extent.width (=%" PRIu32 ") not equal to extent.height (=%" PRIu32 ").",
+                                 pCreateInfo->extent.width, pCreateInfo->extent.height);
+            }
+
+            if (pCreateInfo->arrayLayers < 6) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-08866",
+                                 "vkCreateImage(): arrayLayers (=%" PRIu32 ") is less than 6.", pCreateInfo->arrayLayers);
             }
         }
 

@@ -2173,9 +2173,14 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(VkDevice device, const IMAGE_
     }
 
     const VkFormat image_format = image_state.createInfo.format;
-    if (FormatIsColor(image_format) && aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+    const bool tiling_linear_optimal =
+        image_state.createInfo.tiling == VK_IMAGE_TILING_LINEAR || image_state.createInfo.tiling == VK_IMAGE_TILING_OPTIMAL;
+    if (FormatIsColor(image_format) && !FormatIsMultiplane(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) &&
+        tiling_linear_optimal) {
         const char *vuid =
-            is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-04461" : "VUID-vkGetImageSubresourceLayout-format-04461";
+            IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+                ? (is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-08886" : "VUID-vkGetImageSubresourceLayout-format-08886")
+                : (is_ext ? "VUID-vkGetImageSubresourceLayout2EXT-format-08887" : "VUID-vkGetImageSubresourceLayout-format-08887");
         skip |= LogError(image_state.image(), vuid,
                          "%s: format of image is %s which is a color format but VkImageSubresource.aspectMask is %s", caller,
                          string_VkFormat(image_format), string_VkImageAspectFlags(aspect_mask).c_str());

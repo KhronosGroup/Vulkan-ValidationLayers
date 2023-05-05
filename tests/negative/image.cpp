@@ -2475,7 +2475,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
         subres.arrayLayer = 0;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-aspectMask-00997");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04461");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-08887");
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -2568,7 +2568,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
         VkImageSubresource subres = {};
         subres.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;  // ERROR: triggers VU 00997 and 04464
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04461");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-08887");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04464");
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
@@ -2581,7 +2581,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout) {
         VkImageSubresource subres = {};
         subres.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;  // ERROR: triggers VU 00997 and 04464
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04461");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-08887");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-format-04464");
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
@@ -3454,11 +3454,11 @@ TEST_F(NegativeImage, ImageMinLimits) {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         bad_image_ci.arrayLayers = 5;  // arrayLayers must be greater than or equal to 6
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00954");
+        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-flags-08866");
 
         bad_image_ci.arrayLayers = 6;
         bad_image_ci.extent = {64, 63, 1};  // extent.width and extent.height must be equal
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00954");
+        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-flags-08865");
     }
 
     {
@@ -5585,7 +5585,9 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04461");
+            const char *vuid = multi_plane_extensions ? "VUID-vkGetImageSubresourceLayout2EXT-format-08886"
+                                                      : "VUID-vkGetImageSubresourceLayout2EXT-format-08887";
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
 
@@ -5651,7 +5653,9 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         VkImageObj image(m_device);
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04461");
+            const char *vuid = multi_plane_extensions ? "VUID-vkGetImageSubresourceLayout2EXT-format-08886"
+                                                      : "VUID-vkGetImageSubresourceLayout2EXT-format-08887";
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-format-04464");
             VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
@@ -6338,8 +6342,10 @@ TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
     ci.imageType = VK_IMAGE_TYPE_1D;
     ci.extent.width = 1;
     ci.extent.height = 1;
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-08866");
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
 
     ci.imageType = VK_IMAGE_TYPE_3D;
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-08866");
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
 }
