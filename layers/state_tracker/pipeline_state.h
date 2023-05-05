@@ -108,23 +108,29 @@ class PIPELINE_STATE : public BASE_NODE {
         template <typename CI>
         struct Traits {};
 
-        CreateInfo(const VkGraphicsPipelineCreateInfo *ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate) : graphics() {
+        CreateInfo(const VkGraphicsPipelineCreateInfo &ci, std::shared_ptr<const RENDER_PASS_STATE> rpstate,
+                   const ValidationStateTracker *state_data)
+            : graphics() {
             bool use_color = false;
             bool use_depth_stencil = false;
 
-            if (ci->renderPass == VK_NULL_HANDLE) {
-                auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(ci->pNext);
+            if (ci.renderPass == VK_NULL_HANDLE) {
+                auto dynamic_rendering = LvlFindInChain<VkPipelineRenderingCreateInfo>(ci.pNext);
                 if (dynamic_rendering) {
                     use_color = (dynamic_rendering->colorAttachmentCount > 0);
                     use_depth_stencil = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
                                         (dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
                 }
             } else if (rpstate) {
-                use_color = rpstate->UsesColorAttachment(ci->subpass);
-                use_depth_stencil = rpstate->UsesDepthStencilAttachment(ci->subpass);
+                use_color = rpstate->UsesColorAttachment(ci.subpass);
+                use_depth_stencil = rpstate->UsesDepthStencilAttachment(ci.subpass);
             }
 
-            graphics.initialize(ci, use_color, use_depth_stencil);
+            PNextCopyState copy_state = {
+                [state_data, &ci](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+                    return PIPELINE_STATE::PnextRenderingInfoCustomCopy(state_data, ci, safe_struct, in_struct);
+                }};
+            graphics.initialize(&ci, use_color, use_depth_stencil, &copy_state);
         }
         CreateInfo(const VkComputePipelineCreateInfo *ci) : compute(ci) {}
         CreateInfo(const VkRayTracingPipelineCreateInfoKHR *ci) : raytracing(ci) {}
@@ -521,6 +527,88 @@ class PIPELINE_STATE : public BASE_NODE {
 
         // This is a "legacy pipeline"
         return EnablesRasterizationStates(create_info);
+    }
+
+    template <typename CreateInfo>
+    static bool ContainsSubState(const ValidationObject *vo, const CreateInfo &create_info,
+                                 VkGraphicsPipelineLibraryFlagsEXT sub_state) {
+        constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
+        VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
+
+        // Check linked libraries
+        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        if (link_info) {
+            auto state_tracker = dynamic_cast<const ValidationStateTracker *>(vo);
+            if (state_tracker) {
+                const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
+                for (const auto handle : libs) {
+                    auto lib = state_tracker->Get<PIPELINE_STATE>(handle);
+                    current_state |= lib->graphics_lib_type;
+                }
+            }
+        }
+
+        // Check if this is a graphics library
+        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        if (lib_info) {
+            current_state |= lib_info->flags;
+        }
+
+        if (!link_info && !lib_info) {
+            // This is not a graphics pipeline library, and therefore contains all necessary state
+            return true;
+        }
+
+        return (current_state & sub_state) != null_lib;
+    }
+
+    // Version used at dispatch time for stateless VOs
+    template <typename CreateInfo>
+    static bool ContainsSubState(const CreateInfo &create_info, VkGraphicsPipelineLibraryFlagsEXT sub_state) {
+        constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
+        VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;
+
+        auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
+        // Cannot check linked library state in stateless VO
+
+        // Check if this is a graphics library
+        auto lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
+        if (lib_info) {
+            current_state |= lib_info->flags;
+        }
+
+        if (!link_info && !lib_info) {
+            // This is not a graphics pipeline library, and therefore (should) contains all necessary state
+            return true;
+        }
+
+        return (current_state & sub_state) != null_lib;
+    }
+
+    // This is a helper that is meant to be used during safe_VkPipelineRenderingCreateInfo construction to determine whether or not
+    // certain fields should be ignored based on graphics pipeline state
+    static bool PnextRenderingInfoCustomCopy(const ValidationStateTracker *state_data,
+                                             const VkGraphicsPipelineCreateInfo &graphics_info, VkBaseOutStructure *safe_struct,
+                                             const VkBaseOutStructure *in_struct) {
+        // "safe_struct" is assumed to be non-null as it should be the "this" member of calling class instance
+        assert(safe_struct);
+        if (safe_struct->sType == VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO) {
+            const bool has_fo_state = PIPELINE_STATE::ContainsSubState(
+                state_data, graphics_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
+            if (!has_fo_state) {
+                // Clear out all pointers except for viewMask. Since viewMask is a scalar, it has already been copied at this point
+                // in safe_VkPipelineRenderingCreateInfo construction.
+                auto pri = reinterpret_cast<safe_VkPipelineRenderingCreateInfo *>(safe_struct);
+                pri->colorAttachmentCount = 0u;
+                pri->depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+                pri->stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+                // Signal that we do not want the "normal" safe struct initialization to run
+                return true;
+            }
+        }
+        // Signal that the custom initialization was not used
+        return false;
     }
 
   protected:

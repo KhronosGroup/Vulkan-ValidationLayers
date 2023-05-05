@@ -72,6 +72,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             # safe_VkDescriptorDataEXT needs to know what field of union is intialized
             'VkDescriptorDataEXT' :
                 ', const VkDescriptorType type',
+            'VkPipelineRenderingCreateInfo' : ''
         }
 
         # Some bits are helper that include multiple bits, but it is more useful to use the flag name instead
@@ -496,16 +497,23 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
     #
     # Combine safe struct helper header file preamble with body text and return
     def GenerateSafeStructHelperHeader(self):
-        safe_struct_helper_header = '\n'
-        safe_struct_helper_header += '#pragma once\n'
-        safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
-        safe_struct_helper_header += '#include <stdlib.h>\n'
-        safe_struct_helper_header += '#include <algorithm>\n'
-        safe_struct_helper_header += '\n'
-        safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
-        safe_struct_helper_header += 'void FreePnextChain(const void *pNext);\n'
-        safe_struct_helper_header += 'char *SafeStringCopy(const char *in_string);\n'
-        safe_struct_helper_header += '\n'
+        safe_struct_helper_header = '''
+#pragma once
+#include <vulkan/vulkan.h>
+#include <cstdlib>
+#include <algorithm>
+#include <functional>
+
+// State that elements in a pNext chain may need to be aware of
+struct PNextCopyState {
+    // Custom initialization function. Returns true if the structure passed to init was initialized, false otherwise
+    std::function<bool(VkBaseOutStructure* /* safe_sruct */, const VkBaseOutStructure* /* in_struct */)> init;
+};
+
+void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state = {});
+void FreePnextChain(const void *pNext);
+char *SafeStringCopy(const char *in_string);
+'''
         safe_struct_helper_header += self.GenerateSafeStructHeader()
         return safe_struct_helper_header
     #
@@ -543,13 +551,13 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
                         safe_struct_header += '%s;\n' % member.cdecl
                 if (isUnion and item.name == 'VkDescriptorDataEXT'):
                     safe_struct_header += '    char type_at_end[sizeof(%s)+sizeof(%s)];\n' % (item.name, 'VkDescriptorGetInfoEXT::type')
-                safe_struct_header += '    safe_%s(const %s* in_struct%s);\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
+                safe_struct_header += '    safe_%s(const %s* in_struct%s, PNextCopyState* copy_state = {});\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
                 safe_struct_header += '    safe_%s(const safe_%s& copy_src);\n' % (item.name, item.name)
                 safe_struct_header += '    safe_%s& operator=(const safe_%s& copy_src);\n' % (item.name, item.name)
                 safe_struct_header += '    safe_%s();\n' % item.name
                 safe_struct_header += '    ~safe_%s();\n' % item.name
-                safe_struct_header += '    void initialize(const %s* in_struct%s);\n' % (item.name, self.custom_construct_params.get(item.name, ''))
-                safe_struct_header += '    void initialize(const safe_%s* copy_src);\n' % (item.name)
+                safe_struct_header += '    void initialize(const %s* in_struct%s, PNextCopyState* copy_state = {});\n' % (item.name, self.custom_construct_params.get(item.name, ''))
+                safe_struct_header += '    void initialize(const safe_%s* copy_src, PNextCopyState* copy_state = {});\n' % (item.name)
                 safe_struct_header += '    %s *ptr() { return reinterpret_cast<%s *>(this); }\n' % (item.name, item.name)
                 safe_struct_header += '    %s const *ptr() const { return reinterpret_cast<%s const *>(this); }\n' % (item.name, item.name)
                 if item.name == 'VkShaderModuleCreateInfo':
@@ -1052,33 +1060,34 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         string_copy_proc += '    return std::strcpy(dest, in_string);\n'
         string_copy_proc += '}\n'
 
-        build_pnext_proc = '\n'
-        build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
-        build_pnext_proc += '    if (!pNext) return nullptr;\n'
-        build_pnext_proc += '\n'
-        build_pnext_proc += '    void *safe_pNext{};\n'
-        build_pnext_proc += '    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);\n'
-        build_pnext_proc += '\n'
-        build_pnext_proc += '    switch (header->sType) {\n'
-        # Add special-case code to copy beloved secret loader structs
-        build_pnext_proc += '        // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
-        build_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {\n'
-        build_pnext_proc += '            VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;\n'
-        build_pnext_proc += '            // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses\n'
-        build_pnext_proc += '            memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));\n'
-        build_pnext_proc += '            struct_copy->pNext = SafePnextCopy(header->pNext);\n'
-        build_pnext_proc += '            safe_pNext = struct_copy;\n'
-        build_pnext_proc += '            break;\n'
-        build_pnext_proc += '        }\n'
-        build_pnext_proc += '        // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
-        build_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {\n'
-        build_pnext_proc += '            VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;\n'
-        build_pnext_proc += '            // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses\n'
-        build_pnext_proc += '            memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));\n'
-        build_pnext_proc += '            struct_copy->pNext = SafePnextCopy(header->pNext);\n'
-        build_pnext_proc += '            safe_pNext = struct_copy;\n'
-        build_pnext_proc += '            break;\n'
-        build_pnext_proc += '        }\n'
+        build_pnext_proc = '''
+void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
+    if (!pNext) return nullptr;
+
+    void *safe_pNext{};
+    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
+
+    switch (header->sType) {
+        // Add special-case code to copy beloved secret loader structs
+        // Special-case Loader Instance Struct passed to/from layer in pNext chain
+        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
+            VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;
+            // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses
+            memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));
+            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
+            safe_pNext = struct_copy;
+            break;
+        }
+        // Special-case Loader Device Struct passed to/from layer in pNext chain
+        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
+            VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;
+            // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses
+            memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));
+            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
+            safe_pNext = struct_copy;
+            break;
+        }
+'''
 
         free_pnext_proc = '\n'
         free_pnext_proc += 'void FreePnextChain(const void *pNext) {\n'
@@ -1108,7 +1117,7 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
             assorted_chain_structs = tuple(s for s in chain_structs if s.ifdef_protect == ifdef)
             for struct in assorted_chain_structs:
                 build_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
-                build_pnext_proc += '            safe_pNext = new safe_%s(reinterpret_cast<const %s *>(pNext));\n' % (struct.name, struct.name)
+                build_pnext_proc += '            safe_pNext = new safe_%s(reinterpret_cast<const %s *>(pNext), copy_state);\n' % (struct.name, struct.name)
                 build_pnext_proc += '            break;\n'
 
                 free_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
@@ -1128,12 +1137,12 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         build_pnext_proc += '                    // Deep copy the rest of the pNext chain\n'
         build_pnext_proc += '                    VkBaseOutStructure *custom_struct = reinterpret_cast<VkBaseOutStructure *>(safe_pNext);\n'
         build_pnext_proc += '                    if (custom_struct->pNext) {\n'
-        build_pnext_proc += '                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext));\n'
+        build_pnext_proc += '                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext, copy_state));\n'
         build_pnext_proc += '                    }\n'
         build_pnext_proc += '                }\n'
         build_pnext_proc += '            }\n'
         build_pnext_proc += '            if (!safe_pNext) {\n'
-        build_pnext_proc += '                safe_pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '                safe_pNext = SafePnextCopy(header->pNext, copy_state);\n'
         build_pnext_proc += '            }\n'
         build_pnext_proc += '            break;\n'
         build_pnext_proc += '    }\n'
@@ -1535,6 +1544,19 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                     '    }\n'
                     '\n'
                     '    *pType = type;\n',
+                'VkPipelineRenderingCreateInfo': '''
+    bool custom_init = copy_state && copy_state->init;
+    if (custom_init) {
+        custom_init = copy_state->init(reinterpret_cast<VkBaseOutStructure*>(this), reinterpret_cast<const VkBaseOutStructure*>(in_struct));
+    }
+    if (!custom_init) {
+        // The custom iniitalization was not used, so do the regular initialization
+        if (in_struct->pColorAttachmentFormats) {
+            pColorAttachmentFormats = new VkFormat[in_struct->colorAttachmentCount];
+            memcpy ((void *)pColorAttachmentFormats, (void *)in_struct->pColorAttachmentFormats, sizeof(VkFormat)*in_struct->colorAttachmentCount);
+        }
+    }
+'''
             }
 
             custom_copy_txt = {
@@ -1683,6 +1705,12 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                     '    }\n'
                     '\n'
                     '    *pType = type;\n',
+                'VkPipelineRenderingCreateInfo': '''
+    if (copy_src.pColorAttachmentFormats) {
+        pColorAttachmentFormats = new VkFormat[copy_src.colorAttachmentCount];
+        memcpy ((void *)pColorAttachmentFormats, (void *)copy_src.pColorAttachmentFormats, sizeof(VkFormat)*copy_src.colorAttachmentCount);
+    }
+'''
             }
 
             custom_destruct_txt = {
@@ -1760,7 +1788,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
             for member in item.members:
                 m_type = member.type
                 if member.name == 'pNext':
-                    copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext);\n'
+                    copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext, copy_state);\n'
                 if member.type in self.structNames:
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
@@ -1911,36 +1939,38 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
             if (self.structOrUnion[item.name] == 'union'):
                 if (item.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'
-                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), construct_txt))
+                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s, [[maybe_unused]] PNextCopyState* copy_state)\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), construct_txt))
                 else:
                     # Unions don't allow multiple members in the initialization list, so just call initialize
-                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n    initialize(in_struct);\n}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, '')))
+                    safe_struct_body.append("\n%s::%s(const %s* in_struct%s, PNextCopyState*)\n{\n    initialize(in_struct);\n}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, '')))
             else:
-                safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
+                safe_struct_body.append("\n%s::%s(const %s* in_struct%s, [[maybe_unused]] PNextCopyState* copy_state) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
             if '' != default_init_list:
                 default_init_list = " :%s" % (default_init_list[:-1])
             default_init_body = '\n' + custom_defeault_construct_txt[item.name] if item.name in custom_defeault_construct_txt else ''
             safe_struct_body.append("\n%s::%s()%s\n{%s}" % (ss_name, ss_name, default_init_list, default_init_body))
             # Create slight variation of init and construct txt for copy constructor that takes a copy_src object reference vs. struct ptr
             copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
+            copy_construct_init = copy_construct_init.replace(', copy_state', '')
             if item.name == 'VkDescriptorGetInfoEXT':
                 copy_construct_init = copy_construct_init.replace(', copy_src.type', '')
             copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*copy_src.', construct_txt) # Pass object to copy constructors
             copy_construct_txt = copy_construct_txt.replace('in_struct->', 'copy_src.')              # Modify remaining struct refs for copy_src object
+            copy_construct_txt = copy_construct_txt .replace(', copy_state', '')              # Modify remaining struct refs for copy_src object
             if item.name in custom_copy_txt:
                 copy_construct_txt = custom_copy_txt[item.name]
             copy_assign_txt = '    if (&copy_src == this) return *this;\n\n' + destruct_txt + '\n' + copy_construct_init + copy_construct_txt + '\n    return *this;'
             safe_struct_body.append("\n%s::%s(const %s& copy_src)\n{\n%s%s}" % (ss_name, ss_name, ss_name, copy_construct_init, copy_construct_txt)) # Copy constructor
             safe_struct_body.append("\n%s& %s::operator=(const %s& copy_src)\n{\n%s\n}" % (ss_name, ss_name, ss_name, copy_assign_txt)) # Copy assignment operator
             safe_struct_body.append("\n%s::~%s()\n{\n%s}" % (ss_name, ss_name, destruct_txt))
-            safe_struct_body.append("\nvoid %s::initialize(const %s* in_struct%s)\n{\n%s%s%s}" % (ss_name, item.name, self.custom_construct_params.get(item.name, ''),
+            safe_struct_body.append("\nvoid %s::initialize(const %s* in_struct%s, [[maybe_unused]] PNextCopyState* copy_state)\n{\n%s%s%s}" % (ss_name, item.name, self.custom_construct_params.get(item.name, ''),
                                     destruct_txt, init_func_txt, construct_txt))
             # Copy initializer uses same txt as copy constructor but has a ptr and not a reference
             init_copy = copy_construct_init.replace('copy_src.', 'copy_src->')
             init_copy = re.sub(r'&copy_src(?!->)', 'copy_src', init_copy)           # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
             init_construct = copy_construct_txt.replace('copy_src.', 'copy_src->')
             init_construct = re.sub(r'&copy_src(?!->)', 'copy_src', init_construct) # Replace '&copy_src' with 'copy_src' unless it's followed by a dereference
-            safe_struct_body.append("\nvoid %s::initialize(const %s* copy_src)\n{\n%s%s}" % (ss_name, ss_name, init_copy, init_construct))
+            safe_struct_body.append("\nvoid %s::initialize(const %s* copy_src, [[maybe_unused]] PNextCopyState* copy_state)\n{\n%s%s}" % (ss_name, ss_name, init_copy, init_construct))
             if item.ifdef_protect is not None:
                 safe_struct_body.append("#endif // %s\n" % item.ifdef_protect)
         return "\n".join(safe_struct_body)

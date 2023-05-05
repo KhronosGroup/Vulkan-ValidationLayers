@@ -699,7 +699,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states)
     : BASE_NODE(static_cast<VkPipeline>(VK_NULL_HANDLE), kVulkanObjectTypePipeline),
       rp_state(rpstate),
-      create_info(pCreateInfo, rpstate),
+      create_info(*pCreateInfo, rpstate, state_data),
       create_index(create_index),
       rendering_create_info(LvlFindInChain<VkPipelineRenderingCreateInfo>(PNext())),
       library_create_info(LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext())),
