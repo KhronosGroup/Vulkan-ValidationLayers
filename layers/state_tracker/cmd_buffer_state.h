@@ -216,6 +216,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
         bool stippled_line_enable;
 
+        uint32_t color_write_enable_attachment_count;
+
         // maxColorAttachments is at max 8 on all known implementations currently
         std::bitset<32> color_blend_enable_attachments;    // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT
         std::bitset<32> color_blend_equation_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
@@ -376,7 +378,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
-    uint32_t dynamicColorWriteEnableAttachmentCount{0};
     std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
 
     mutable std::shared_mutex lock;
@@ -503,7 +504,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     virtual void RecordCmd(CMD_TYPE cmd_type);
     void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicState dynamic_state);
     void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &state_bits);
-    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBDynamicState dynamic_state, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
