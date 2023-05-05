@@ -176,7 +176,7 @@ jobs:
             external/${{ matrix.config }}/mimalloc/build/install
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
-        run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
   android_cmake:
       runs-on: ubuntu-22.04
