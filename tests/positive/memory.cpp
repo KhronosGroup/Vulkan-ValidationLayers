@@ -401,3 +401,87 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
         worker.join();
     }
 }
+
+TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
+    TEST_DESCRIPTION("Test vkGetDeviceBufferMemoryRequirements");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    uint32_t queue_family_index = 0;
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+
+    vk_testing::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_create_info);
+    ASSERT_TRUE(buffer.initialized());
+
+    auto info = LvlInitStruct<VkDeviceBufferMemoryRequirements>();
+    info.pCreateInfo = &buffer_create_info;
+    auto memory_reqs2 = LvlInitStruct<VkMemoryRequirements2>();
+    vk::GetDeviceBufferMemoryRequirements(m_device->device(), &info, &memory_reqs2);
+
+    auto memory_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    memory_info.allocationSize = memory_reqs2.memoryRequirements.size;
+
+    const bool pass = m_device->phy().set_memory_type(memory_reqs2.memoryRequirements.memoryTypeBits, &memory_info, 0);
+    ASSERT_TRUE(pass);
+
+    vk_testing::DeviceMemory buffer_memory(*m_device, memory_info);
+
+    VkResult err = vk::BindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
+    ASSERT_VK_SUCCESS(err);
+}
+
+TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
+    TEST_DESCRIPTION("Test vkGetDeviceImageMemoryRequirements");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    vk_testing::Image image;
+    image.init_no_mem(*m_device, image_create_info);
+    ASSERT_TRUE(image.initialized());
+
+    auto info = LvlInitStruct<VkDeviceImageMemoryRequirements>();
+    info.pCreateInfo = &image_create_info;
+    auto mem_reqs = LvlInitStruct<VkMemoryRequirements2>();
+    vk::GetDeviceImageMemoryRequirements(m_device->device(), &info, &mem_reqs);
+
+    auto mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    mem_alloc.memoryTypeIndex = 0;
+    mem_alloc.allocationSize = mem_reqs.memoryRequirements.size;
+    const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, 0);
+    ASSERT_TRUE(pass);
+
+    vk_testing::DeviceMemory mem(*m_device, mem_alloc);
+
+    VkResult err = vk::BindImageMemory(m_device->device(), image, mem, 0);
+    ASSERT_VK_SUCCESS(err);
+}
