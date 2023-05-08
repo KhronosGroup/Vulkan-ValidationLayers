@@ -426,6 +426,91 @@ class VkLayerTest : public VkRenderFramework {
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
     const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
 
+    struct BaseFeatureCheck {
+        BaseFeatureCheck(std::function<bool()> c) : check(c) {}
+        operator bool() const { return check(); }
+        std::function<bool()> check;
+    };
+
+    struct BoolFeatureCheck : public BaseFeatureCheck {
+        template <typename FeatureStruct, typename MemberPointer>
+        BoolFeatureCheck(const FeatureStruct &s, MemberPointer p)
+            : BaseFeatureCheck([&s, p]() -> bool { return s.*p == VK_TRUE; }) {}
+    };
+
+    struct InitInfo {
+        std::vector<const char *> required_extensions;
+        std::vector<BoolFeatureCheck> bool_feature_checks;
+        std::vector<PlatformType> skipped_platforms;
+        std::vector<std::function<bool()>> required_feature_checks;
+        std::vector<const char *> optional_extensions;
+        uint32_t api_version{VK_API_VERSION_1_0};
+    };
+
+    struct InitResult {
+        bool valid{true};
+        std::stringstream err_msg;
+
+        operator bool() const { return valid; }
+    };
+
+    template <typename FeatureChain>
+    InitResult Init(const InitInfo &info, FeatureChain *features = nullptr) {
+        InitResult result;
+        SetTargetApiVersion(info.api_version);
+
+        for (const auto &p : info.skipped_platforms) {
+            AddFeatureCheck([this, p]() -> bool {
+                if (IsPlatform(p)) {
+                    printf("Test not supported on platform\n");
+                    return false;
+                }
+                return true;
+            });
+        }
+        for (const auto &e : info.required_extensions) {
+            AddRequiredExtensions(e);
+        }
+        for (const auto &b : info.bool_feature_checks) {
+            feature_checks.emplace_back(b);
+        }
+        for (const auto &c : info.required_feature_checks) {
+            AddFeatureCheck(c);
+        }
+        for (const auto &e : info.optional_extensions) {
+            AddOptionalExtensions(e);
+        }
+
+        InitFramework();
+
+        if (DeviceValidationVersion() < info.api_version) {
+            result.valid = false;
+            result.err_msg << "Vulkan API version too low\n";
+        }
+
+        if (!AreRequiredExtensionsEnabled()) {
+            result.valid = false;
+            result.err_msg << RequiredExtensionsNotSupported() << " not supported\n";
+        }
+
+        if (features) {
+            GetPhysicalDeviceFeatures2(*features);
+        }
+
+        for (const auto &c : feature_checks) {
+            if (!c) {
+                result.valid = false;
+                result.err_msg << "Required feature not supported\n";
+            }
+        }
+
+        if (result) {
+            InitState(nullptr, features);
+        }
+
+        return result;
+    }
+
     void VKTriangleTest(BsoFailSelect failCase);
 
     void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,
@@ -473,6 +558,16 @@ class VkLayerTest : public VkRenderFramework {
 
     bool IsDriver(VkDriverId driver_id);
 
+    template <typename Check>
+    void AddFeatureCheck(Check c) {
+        feature_checks.emplace_back(c);
+    }
+
+    template <typename FeatureStruct, typename FeatureMemberPointer>
+    void AddBoolFeatureCheck(const FeatureStruct &f, FeatureMemberPointer mp) {
+        feature_checks.emplace_back([&f, mp]() -> bool { return f.*mp == VK_TRUE; });
+    }
+
   protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
@@ -493,6 +588,8 @@ class VkLayerTest : public VkRenderFramework {
     bool LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT);
 
     VkLayerTest();
+
+    std::vector<BaseFeatureCheck> feature_checks;
 };
 
 template <>

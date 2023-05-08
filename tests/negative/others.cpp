@@ -150,26 +150,22 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
 TEST_F(VkLayerTest, PrivateDataExtTest) {
     TEST_DESCRIPTION("Test private data extension use.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_PRIVATE_DATA_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
     auto private_data_features = LvlInitStruct<VkPhysicalDevicePrivateDataFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(private_data_features);
-    if (private_data_features.privateData == VK_FALSE) {
-        GTEST_SKIP() << "privateData feature is not supported";
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    InitInfo init_info = {{// Required extensions
+                           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_EXT_PRIVATE_DATA_EXTENSION_NAME},
+                          {
+                              // Feature checks
+                              {private_data_features, &VkPhysicalDevicePrivateDataFeaturesEXT::privateData},
+                          },
+                          {
+                              // Unsupported platforms
+                              kMockICD,
+                          }};
+
+    if (const auto result = Init(init_info, &private_data_features); !result) {
+        GTEST_SKIP() << "Test not supported:\n" << result.err_msg.str();
+    }
 
     VkPrivateDataSlotEXT data_slot;
     VkPrivateDataSlotCreateInfoEXT data_create_info = LvlInitStruct<VkPrivateDataSlotCreateInfoEXT>();
