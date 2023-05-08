@@ -54,14 +54,21 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/memory.cpp
     positive/mesh.cpp
     positive/other.cpp
+    positive/pipeline_topology.cpp
     positive/pipeline.cpp
+    positive/protected_memory.cpp
     positive/query.cpp
     positive/ray_tracing.cpp
     positive/ray_tracing_pipeline.cpp
     positive/render_pass.cpp
     positive/robustness.cpp
     positive/sampler.cpp
-    positive/shaderval.cpp
+    positive/shader_compute.cpp
+    positive/shader_interface.cpp
+    positive/shader_limits.cpp
+    positive/shader_spirv.cpp
+    positive/shader_storage_image.cpp
+    positive/shader_storage_texel.cpp
     positive/sparse.cpp
     positive/sync_object.cpp
     positive/sync_val.cpp

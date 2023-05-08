@@ -644,3 +644,405 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
         vk::QueuePresentKHR(m_device->m_queue, &present);
     }
 }
+
+TEST_F(PositiveWsi, CreateSurface) {
+    TEST_DESCRIPTION("Create and destroy a surface without ever creating a swapchain");
+
+    AddSurfaceExtension();
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+    DestroySwapchain();  // cleans up both surface and swapchain, if they were created
+}
+
+TEST_F(PositiveWsi, SwapchainImageFormatProps) {
+    TEST_DESCRIPTION("Try using special format props on a swapchain image");
+
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    // HACK: I know InitSwapchain() will pick first supported format
+    VkSurfaceFormatKHR format_tmp;
+    {
+        uint32_t format_count = 1;
+        const VkResult err = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, &format_tmp);
+        ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
+    }
+    const VkFormat format = format_tmp.format;
+
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_props);
+    if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+        GTEST_SKIP() << "We need VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT feature";
+    }
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineLayoutObj pipeline_layout(DeviceObj());
+    VkRenderpassObj render_pass(DeviceObj(), format);
+
+    VkPipelineObj pipeline(DeviceObj());
+    pipeline.AddShader(&vs);
+    pipeline.AddShader(&fs);
+    VkPipelineColorBlendAttachmentState pcbas = {};
+    pcbas.blendEnable = VK_TRUE;  // !!!
+    pcbas.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    pipeline.AddColorAttachment(0, pcbas);
+    pipeline.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+    pipeline.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+
+    ASSERT_VK_SUCCESS(pipeline.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle()));
+
+    uint32_t image_count;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    std::vector<VkImage> swapchain_images(image_count);
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data()));
+
+    VkFenceObj fence;
+    fence.init(*DeviceObj(), VkFenceObj::create_info());
+
+    uint32_t image_index;
+    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
+    fence.wait(vvl::kU32Max);
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = swapchain_images[image_index];
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = format;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView image_view(*m_device, ivci);
+
+    VkFramebufferCreateInfo fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.renderPass = render_pass.handle();
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &image_view.handle();
+    fbci.width = 1;
+    fbci.height = 1;
+    fbci.layers = 1;
+    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+
+    VkCommandBufferObj cmdbuff(DeviceObj(), m_commandPool);
+    cmdbuff.begin();
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = render_pass.handle();
+    rpbi.framebuffer = framebuffer.handle();
+    rpbi.renderArea = {{0, 0}, {1, 1}};
+    cmdbuff.BeginRenderPass(rpbi);
+
+    vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+}
+
+TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
+    TEST_DESCRIPTION("Try using special format props on a swapchain image");
+
+    AddSurfaceExtension();
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface";
+    }
+    InitSwapchainInfo();
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present";
+    }
+
+    auto surface = m_surface;
+    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
+    swapchain_create_info.surface = surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+
+    swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
+    uint32_t bogus_int = 99;
+    swapchain_create_info.pQueueFamilyIndices = &bogus_int;
+
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+
+    // Create another device, create another swapchain, and use this one for oldSwapchain
+    // It is legal to include an 'oldSwapchain' object that is from a different device
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+
+    VkDevice test_device;
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
+
+    swapchain_create_info.oldSwapchain = m_swapchain;
+    VkSwapchainKHR new_swapchain = VK_NULL_HANDLE;
+    vk::CreateSwapchainKHR(test_device, &swapchain_create_info, nullptr, &new_swapchain);
+
+    if (new_swapchain != VK_NULL_HANDLE) {
+        vk::DestroySwapchainKHR(test_device, new_swapchain, nullptr);
+    }
+
+    vk::DestroyDevice(test_device, nullptr);
+
+    if (m_surface != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
+        m_surface = VK_NULL_HANDLE;
+    }
+}
+
+TEST_F(VkPositiveLayerTest, InitSwapchain) {
+    TEST_DESCRIPTION("Make sure InitSwapchain is not producing anying invalid usage");
+
+    AddSurfaceExtension();
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (InitSwapchain()) {
+        DestroySwapchain();
+    }
+}
+
+TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
+    TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = m_surface_formats[0].format;
+    image_create_info.extent.width = m_surface_capabilities.minImageExtent.width;
+    image_create_info.extent.height = m_surface_capabilities.minImageExtent.height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
+    image_swapchain_create_info.swapchain = m_swapchain;
+
+    image_create_info.pNext = &image_swapchain_create_info;
+    std::vector<vk_testing::Image> images(m_surface_capabilities.minImageCount);
+
+    int i = 0;
+    for (auto &image : images) {
+        image.init_no_mem(*m_device, image_create_info);
+        auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
+        bind_swapchain_info.swapchain = m_swapchain;
+        bind_swapchain_info.imageIndex = i++;
+
+        auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+        bind_info.image = image.handle();
+        bind_info.memory = VK_NULL_HANDLE;
+        bind_info.memoryOffset = 0;
+
+        vk::BindImageMemory2KHR(m_device->device(), 1, &bind_info);
+    }
+}
+
+TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
+    TEST_DESCRIPTION(
+        "Make sure images from protected swapchain are considered protected image when writing to it as a color attachment");
+
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+    // Protected swapchains are guaranteed in Android Loader
+    // VK_KHR_surface_protected_capabilities is needed for other platforms
+    // Without device to test with, blocking this test from non-Android platforms for now
+    GTEST_SKIP() << "VK_KHR_surface_protected_capabilities test logic not implemented, skipping test for non-Android";
+#endif
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    GetPhysicalDeviceFeatures2(protected_memory_features);
+
+    if (protected_memory_features.protectedMemory == VK_FALSE) {
+        GTEST_SKIP() << "protectedMemory feature not supported, skipped.";
+    };
+
+    // Turns m_commandBuffer into a unprotected command buffer
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &protected_memory_features));
+
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Cannot create surface, skipping test";
+    }
+    InitSwapchainInfo();
+
+    // Create protected swapchain
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present, skipping test";
+    }
+
+    auto surface = m_surface;
+    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
+    swapchain_create_info.flags = VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR;
+    swapchain_create_info.surface = surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = imageUsage;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = preTransform;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+    swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
+    uint32_t bogus_int = 99;
+    swapchain_create_info.pQueueFamilyIndices = &bogus_int;
+    ASSERT_VK_SUCCESS(vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
+
+    // Get VkImage from swapchain which should be protected
+    uint32_t image_count;
+    std::vector<VkImage> swapchain_images;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    swapchain_images.resize(image_count, VK_NULL_HANDLE);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data());
+    VkImage protected_image = swapchain_images.at(0);  // only need 1 image to test
+
+    // Create a protected image view
+    VkImageViewCreateInfo image_view_create_info = {
+        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        nullptr,
+        0,
+        protected_image,
+        VK_IMAGE_VIEW_TYPE_2D,
+        swapchain_create_info.imageFormat,
+        {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY},
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+    };
+    vk_testing::ImageView image_view(*m_device, image_view_create_info);
+
+    // A renderpass and framebuffer that contains a protected color image view
+    VkAttachmentDescription attachments[1] = {{0, swapchain_create_info.imageFormat, VK_SAMPLE_COUNT_1_BIT,
+                                               VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                               VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                               VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    VkAttachmentReference references[1] = {{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, references, nullptr, nullptr, 0, nullptr};
+    VkSubpassDependency dependency = {0,
+                                      0,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                      VK_ACCESS_SHADER_WRITE_BIT,
+                                      VK_ACCESS_SHADER_WRITE_BIT,
+                                      VK_DEPENDENCY_BY_REGION_BIT};
+    // Use framework render pass and framebuffer so pipeline helper uses it
+    m_renderPass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachments, 1, &subpass, 1, &dependency};
+    ASSERT_VK_SUCCESS(vk::CreateRenderPass(device(), &m_renderPass_info, nullptr, &m_renderPass));
+    m_framebuffer_info = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                          nullptr,
+                          0,
+                          m_renderPass,
+                          1,
+                          &image_view.handle(),
+                          swapchain_create_info.imageExtent.width,
+                          swapchain_create_info.imageExtent.height,
+                          1};
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &m_framebuffer_info, nullptr, &m_framebuffer));
+
+    // basic pipeline to allow for a valid vkCmdDraw()
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Create a protected command buffer/pool to use
+    VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
+    VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);
+
+    protectedCommandBuffer.begin();
+    VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};
+    VkRenderPassBeginInfo render_pass_begin =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, render_area, 0u, nullptr);
+    vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    // This should be valid since the framebuffer color attachment is a protected swapchain image
+    vk::CmdDraw(protectedCommandBuffer.handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(protectedCommandBuffer.handle());
+    protectedCommandBuffer.end();
+}

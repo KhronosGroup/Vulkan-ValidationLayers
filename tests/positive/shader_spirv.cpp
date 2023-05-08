@@ -1,0 +1,1968 @@
+/*
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+#include "../framework/layer_validation_tests.h"
+
+class PositiveShaderSpirv : public VkPositiveLayerTest {};
+
+TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
+    TEST_DESCRIPTION("Create a shader that uses SPV_KHR_non_semantic_info.");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // compute shader using a non-semantic extended instruction set.
+
+    const char *spv_source = R"(
+                   OpCapability Shader
+                   OpExtension "SPV_KHR_non_semantic_info"
+   %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint GLCompute %main "main"
+                   OpExecutionMode %main LocalSize 1 1 1
+           %void = OpTypeVoid
+              %1 = OpExtInst %void %non_semantic 55 %void
+           %func = OpTypeFunction %void
+           %main = OpFunction %void None %func
+              %2 = OpLabel
+                   OpReturn
+                   OpFunctionEnd
+        )";
+
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+}
+
+TEST_F(PositiveShaderSpirv, GroupDecorations) {
+    TEST_DESCRIPTION("Test shader validation support for group decorations.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string spv_source = R"(
+              OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 430
+               OpName %main "main"
+               OpName %gl_GlobalInvocationID "gl_GlobalInvocationID"
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %4 BufferBlock
+               OpDecorate %5 Offset 0
+          %4 = OpDecorationGroup
+          %5 = OpDecorationGroup
+               OpGroupDecorate %4 %_struct_6 %_struct_7 %_struct_8 %_struct_9 %_struct_10 %_struct_11
+               OpGroupMemberDecorate %5 %_struct_6 0 %_struct_7 0 %_struct_8 0 %_struct_9 0 %_struct_10 0 %_struct_11 0
+               OpDecorate %12 DescriptorSet 0
+               OpDecorate %13 DescriptorSet 0
+               OpDecorate %13 NonWritable
+               OpDecorate %13 Restrict
+         %14 = OpDecorationGroup
+         %12 = OpDecorationGroup
+         %13 = OpDecorationGroup
+               OpGroupDecorate %12 %15
+               OpGroupDecorate %12 %15
+               OpGroupDecorate %12 %15
+               OpDecorate %15 DescriptorSet 0
+               OpDecorate %15 Binding 5
+               OpGroupDecorate %14 %16
+               OpDecorate %16 DescriptorSet 0
+               OpDecorate %16 Binding 0
+               OpGroupDecorate %12 %17
+               OpDecorate %17 Binding 1
+               OpGroupDecorate %13 %18 %19
+               OpDecorate %18 Binding 2
+               OpDecorate %19 Binding 3
+               OpGroupDecorate %14 %20
+               OpGroupDecorate %12 %20
+               OpGroupDecorate %13 %20
+               OpDecorate %20 Binding 4
+       %bool = OpTypeBool
+       %void = OpTypeVoid
+         %23 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
+     %v3uint = OpTypeVector %uint 3
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+%_ptr_Uniform_float = OpTypePointer Uniform %float
+%_runtimearr_int = OpTypeRuntimeArray %int
+%_runtimearr_float = OpTypeRuntimeArray %float
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+      %int_0 = OpConstant %int 0
+  %_struct_6 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_6 = OpTypePointer Uniform %_struct_6
+         %15 = OpVariable %_ptr_Uniform__struct_6 Uniform
+  %_struct_7 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_7 = OpTypePointer Uniform %_struct_7
+         %16 = OpVariable %_ptr_Uniform__struct_7 Uniform
+  %_struct_8 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_8 = OpTypePointer Uniform %_struct_8
+         %17 = OpVariable %_ptr_Uniform__struct_8 Uniform
+  %_struct_9 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_9 = OpTypePointer Uniform %_struct_9
+         %18 = OpVariable %_ptr_Uniform__struct_9 Uniform
+ %_struct_10 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
+         %19 = OpVariable %_ptr_Uniform__struct_10 Uniform
+ %_struct_11 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_11 = OpTypePointer Uniform %_struct_11
+         %20 = OpVariable %_ptr_Uniform__struct_11 Uniform
+       %main = OpFunction %void None %23
+         %40 = OpLabel
+         %41 = OpLoad %v3uint %gl_GlobalInvocationID
+         %42 = OpCompositeExtract %uint %41 0
+         %43 = OpAccessChain %_ptr_Uniform_float %16 %int_0 %42
+         %44 = OpAccessChain %_ptr_Uniform_float %17 %int_0 %42
+         %45 = OpAccessChain %_ptr_Uniform_float %18 %int_0 %42
+         %46 = OpAccessChain %_ptr_Uniform_float %19 %int_0 %42
+         %47 = OpAccessChain %_ptr_Uniform_float %20 %int_0 %42
+         %48 = OpAccessChain %_ptr_Uniform_float %15 %int_0 %42
+         %49 = OpLoad %float %43
+         %50 = OpLoad %float %44
+         %51 = OpLoad %float %45
+         %52 = OpLoad %float %46
+         %53 = OpLoad %float %47
+         %54 = OpFAdd %float %49 %50
+         %55 = OpFAdd %float %54 %51
+         %56 = OpFAdd %float %55 %52
+         %57 = OpFAdd %float %56 %53
+               OpStore %48 %57
+               OpReturn
+               OpFunctionEnd
+)";
+
+    // CreateDescriptorSetLayout
+    VkDescriptorSetLayoutBinding dslb[6] = {};
+    size_t dslb_size = size(dslb);
+    for (size_t i = 0; i < dslb_size; i++) {
+        dslb[i].binding = i;
+        dslb[i].descriptorCount = 1;
+        dslb[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        dslb[i].pImmutableSamplers = NULL;
+        dslb[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
+    }
+    if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < dslb_size) {
+        GTEST_SKIP() << "Needed storage buffer bindings (" << dslb_size << ") exceeds this devices limit of "
+                     << m_device->props.limits.maxPerStageDescriptorStorageBuffers;
+    }
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(dslb_size);
+    memcpy(pipe.dsl_bindings_.data(), dslb, dslb_size * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, CapabilityExtension1of2) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
+    TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 1 of 2");
+
+    AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // These tests require that the device support multiViewport
+    if (!m_device->phy().features().multiViewport) {
+        GTEST_SKIP() << "Device does not support multiViewport, test skipped.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Vertex shader using viewport array capability
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, CapabilityExtension2of2) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
+    TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 2 of 2");
+
+    // Need to use SPV_EXT_shader_viewport_index_layer
+    AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // These tests require that the device support multiViewport
+    if (!m_device->phy().features().multiViewport) {
+        GTEST_SKIP() << "Device does not support multiViewport, test skipped.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Vertex shader using viewport array capability
+    char const *vsSource = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.0 before shaderDrawParameters feature was added");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
+        GTEST_SKIP() << "requires Vulkan 1.0 exactly";
+    }
+
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+
+    if (VK_SUCCESS == vs.InitFromGLSLTry()) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    }
+}
+
+TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature11) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.1 using the extension");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
+
+    // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
+    if (VK_SUCCESS == vs.InitFromGLSLTry(false)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    }
+}
+
+TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
+    TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.2 with feature bit enabled");
+
+    // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    features11.shaderDrawParameters = VK_TRUE;
+    auto features2 = GetPhysicalDeviceFeatures2(features11);
+
+    GetPhysicalDeviceFeatures2(features2);
+
+    if (features11.shaderDrawParameters != VK_TRUE) {
+        printf("shaderDrawParameters not supported, skipping test\n");
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 460
+        void main(){
+           gl_Position = vec4(float(gl_BaseVertex));
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
+
+    // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
+    if (VK_SUCCESS == vs.InitFromGLSLTry(false)) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+    }
+}
+
+TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
+    TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.0");
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
+    auto scalar_block_layout_features =
+        LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
+    auto features2 = GetPhysicalDeviceFeatures2(scalar_block_layout_features);
+
+    if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
+        uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
+        GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_ARB_separate_shader_objects:enable
+#extension GL_EXT_samplerless_texture_functions:require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
+
+layout(std430, set=0,binding=0)uniform UniformBufferObject{
+    mat4 view;
+    mat4 proj;
+    vec4 lightPositions[1];
+    int SliceCutoffs[6];
+}ubo;
+
+// this specialization constant triggers the validation layer to recompile the shader
+// which causes the error related to the above uniform
+layout(constant_id = 0) const float spec = 10.0f;
+
+layout(location=0) out vec4 frag_color;
+void main() {
+    frag_color = vec4(ubo.lightPositions[0]) * spec;
+}
+    )glsl";
+
+    // Force a random value to replace the default to trigger shader val logic to replace it
+    float data = 2.0f;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
+    TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.2");
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
+        GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_ARB_separate_shader_objects:enable
+#extension GL_EXT_samplerless_texture_functions:require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
+
+layout(std430, set=0,binding=0)uniform UniformBufferObject{
+    mat4 view;
+    mat4 proj;
+    vec4 lightPositions[1];
+    int SliceCutoffs[6];
+}ubo;
+
+// this specialization constant triggers the validation layer to recompile the shader
+// which causes the error related to the above uniform
+layout(constant_id = 0) const float spec = 10.0f;
+
+layout(location=0) out vec4 frag_color;
+void main() {
+    frag_color = vec4(ubo.lightPositions[0]) * spec;
+}
+    )glsl";
+
+    // Force a random value to replace the default to trigger shader val logic to replace it
+    float data = 2.0f;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(float)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(float), &data};
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                         &specialization_info);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
+    TEST_DESCRIPTION("Make sure a specialization constant entry can stide over a word boundry");
+
+    // require to make enable logic simpler
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
+    if (float16int8_features.shaderInt8 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt8 feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, need real device to produce output to check";
+    }
+
+    // glslang currenlty turned the GLSL to
+    //      %19 = OpSpecConstantOp %uint UConvert %a
+    // which causes issue (to be fixed outside scope of this test)
+    // but move the UConvert to inside the function as
+    //      %19 = OpUConvert %uint %a
+    //
+    // #version 450
+    // #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
+    // layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+    // // All spec constants will write zero by default
+    // layout (constant_id = 0) const uint8_t a = uint8_t(0);
+    // layout (constant_id = 1) const uint b = 0;
+    // layout (constant_id = 3) const uint c = 0;
+    // layout (constant_id = 4) const uint d = 0;
+    // layout (constant_id = 5) const uint8_t e = uint8_t(0);
+    //
+    // layout(set = 0, binding = 0) buffer ssbo {
+    //     uint data[5];
+    // };
+    //
+    // void main() {
+    //     data[0] = 0; // clear full word
+    //     data[0] = uint(a);
+    //     data[1] = b;
+    //     data[2] = c;
+    //     data[3] = d;
+    //     data[4] = 0; // clear full word
+    //     data[4] = uint(e);
+    // }
+    std::string cs_src = R"(
+               OpCapability Shader
+               OpCapability Int8
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpSourceExtension "GL_EXT_shader_explicit_arithmetic_types_int8"
+               OpDecorate %_arr_uint_uint_5 ArrayStride 4
+               OpMemberDecorate %ssbo 0 Offset 0
+               OpDecorate %ssbo BufferBlock
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+               OpDecorate %a SpecId 0
+               OpDecorate %b SpecId 1
+               OpDecorate %c SpecId 3
+               OpDecorate %d SpecId 4
+               OpDecorate %e SpecId 5
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_5 = OpConstant %uint 5
+%_arr_uint_uint_5 = OpTypeArray %uint %uint_5
+       %ssbo = OpTypeStruct %_arr_uint_uint_5
+%_ptr_Uniform_ssbo = OpTypePointer Uniform %ssbo
+          %_ = OpVariable %_ptr_Uniform_ssbo Uniform
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+      %uchar = OpTypeInt 8 0
+          %a = OpSpecConstant %uchar 0
+      %int_1 = OpConstant %int 1
+          %b = OpSpecConstant %uint 0
+      %int_2 = OpConstant %int 2
+          %c = OpSpecConstant %uint 0
+      %int_3 = OpConstant %int 3
+          %d = OpSpecConstant %uint 0
+      %int_4 = OpConstant %int 4
+          %e = OpSpecConstant %uchar 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpUConvert %uint %a
+         %33 = OpUConvert %uint %e
+         %16 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_0
+               OpStore %16 %uint_0
+         %20 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_0
+               OpStore %20 %19
+         %23 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_1
+               OpStore %23 %b
+         %26 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_2
+               OpStore %26 %c
+         %29 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_3
+               OpStore %29 %d
+         %31 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_4
+               OpStore %31 %uint_0
+         %34 = OpAccessChain %_ptr_Uniform_uint %_ %int_0 %int_4
+               OpStore %34 %33
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // Use strange combinations of size and offsets around word boundry
+    VkSpecializationMapEntry entries[5] = {
+        {0, 1, 1},  // OpTypeInt 8
+        {1, 1, 4},  // OpTypeInt 32
+        {3, 2, 4},  // OpTypeInt 32
+        {4, 3, 4},  // OpTypeInt 32
+        {5, 3, 1},  // OpTypeInt 8
+    };
+
+    uint8_t data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    VkSpecializationInfo specialization_info = {
+        5,
+        entries,
+        sizeof(uint8_t) * 8,
+        reinterpret_cast<void *>(data),
+    };
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(this, cs_src.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                   &specialization_info));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    // Submit shader to see SSBO output
+    VkBufferObj buffer;
+    auto bci = LvlInitStruct<VkBufferCreateInfo>();
+    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    bci.size = 1024;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer.init(*m_device, bci, mem_props);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    // Make sure spec constants were updated correctly
+    void *pData;
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
+    uint32_t *ssbo_data = reinterpret_cast<uint32_t *>(pData);
+    ASSERT_EQ(ssbo_data[0], 0x02);
+    ASSERT_EQ(ssbo_data[1], 0x05040302);
+    ASSERT_EQ(ssbo_data[2], 0x06050403);
+    ASSERT_EQ(ssbo_data[3], 0x07060504);
+    ASSERT_EQ(ssbo_data[4], 0x04);
+    vk::UnmapMemory(m_device->device(), buffer.memory().handle());
+}
+
+TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
+    TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
+}
+
+TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
+    TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberDecorate %storageBuffer 0 Offset 0
+               OpDecorate %storageBuffer BufferBlock
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+               OpDecorate %sc SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+%storageBuffer = OpTypeStruct %int
+%_ptr_Uniform_storageBuffer = OpTypePointer Uniform %storageBuffer
+          %_ = OpVariable %_ptr_Uniform_storageBuffer Uniform
+      %int_0 = OpConstant %int 0
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
+         %sc = OpSpecConstant %uint 10
+%_arr_int_sc = OpTypeArray %int %sc
+%_ptr_Workgroup__arr_int_sc = OpTypePointer Workgroup %_arr_int_sc
+  %wg_normal = OpVariable %_ptr_Workgroup__arr_int_sc Workgroup
+      %int_3 = OpConstant %int 3
+%_ptr_Workgroup_int = OpTypePointer Workgroup %int
+         %xx = OpSpecConstant %uint 1
+         %yy = OpSpecConstant %uint 1
+         %zz = OpSpecConstant %uint 1
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %xx %yy %zz
+         %57 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 2
+         %58 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 1
+         %59 = OpSpecConstantOp %uint IMul %57 %58
+         %60 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 0
+         %61 = OpSpecConstantOp %uint IMul %59 %60
+%_arr_int_21 = OpTypeArray %int %61
+%_ptr_Workgroup__arr_int_21 = OpTypePointer Workgroup %_arr_int_21
+      %wg_op = OpVariable %_ptr_Workgroup__arr_int_21 Workgroup
+%_ptr_Function__arr_int_sc = OpTypePointer Function %_arr_int_sc
+%_ptr_Function_int = OpTypePointer Function %int
+         %34 = OpSpecConstantOp %uint IAdd %sc %uint_1
+%_arr_int_34 = OpTypeArray %int %34
+%_ptr_Function__arr_int_34 = OpTypePointer Function %_arr_int_34
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+%func_normal = OpVariable %_ptr_Function__arr_int_sc Function
+    %func_op = OpVariable %_ptr_Function__arr_int_34 Function
+         %18 = OpAccessChain %_ptr_Workgroup_int %wg_normal %int_3
+         %19 = OpLoad %int %18
+         %25 = OpAccessChain %_ptr_Workgroup_int %wg_op %int_3
+         %26 = OpLoad %int %25
+         %27 = OpIAdd %int %19 %26
+         %31 = OpAccessChain %_ptr_Function_int %func_normal %int_3
+         %32 = OpLoad %int %31
+         %33 = OpIAdd %int %27 %32
+         %38 = OpAccessChain %_ptr_Function_int %func_op %int_3
+         %39 = OpLoad %int %38
+         %40 = OpIAdd %int %33 %39
+         %42 = OpAccessChain %_ptr_Uniform_int %_ %int_0
+               OpStore %42 %40
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    uint32_t data = 5;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    // Use default value for spec constant
+    const auto set_info_nospec = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                         SPV_SOURCE_ASM, nullptr));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_nospec, kErrorBit | kWarningBit);
+
+    // Use spec constant to update value
+    const auto set_info_spec = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                         SPV_SOURCE_ASM, &specialization_info));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit | kWarningBit);
+}
+
+TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
+    TEST_DESCRIPTION("Make sure variables with a OpTypeStruct can handle a runtime array inside");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // %float = OpTypeFloat 32
+    // %ra = OpTypeRuntimeArray %float
+    // %struct = OpTypeStruct %ra
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer sb {
+            float values[];
+        };
+        void main(){
+            values[gl_LocalInvocationIndex] = gl_LocalInvocationIndex;
+        }
+    )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
+
+TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
+    TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, using COMBINED_IMAGE_SAMPLER, but texelFetch, don't throw error");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
+    // Verify that it is allowed on this implementation if
+    // VK_KHR_format_feature_flags2 is available.
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
+
+        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+            GTEST_SKIP() << "R8G8B8A8_UNORM does not support OpImage*Dref* operations";
+        }
+    }
+
+    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpCapability ImageBuffer
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %float = OpTypeFloat 32
+        %int = OpTypeInt 32 1
+    %v4float = OpTypeVector %float 4
+      %v3int = OpTypeVector %int 3
+ %image_type = OpTypeImage %float 3D 0 0 0 1 Unknown
+%sampled_image = OpTypeSampledImage %image_type
+        %ptr = OpTypePointer UniformConstant %sampled_image
+        %var = OpVariable %ptr UniformConstant
+      %int_1 = OpConstant %int 1
+      %cords = OpConstantComposite %v3int %int_1 %int_1 %int_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %sampled_image %var
+      %image = OpImage %image_type %load
+      %fetch = OpImageFetch %v4float %image %cords
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    VkImageObj image_3d(m_device);
+    image_3d.Init(image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+
+    // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
+    // This causes DesiredFailure.
+    VkImageView view = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                           VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.maxLod = 0;
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderSpirv, GeometryShaderPassthroughNV) {
+    TEST_DESCRIPTION("Test to validate VK_NV_geometry_shader_passthrough");
+
+    AddRequiredExtensions(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+
+    if (!available_features.geometryShader) {
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::geometryShader is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vs_src[] = R"glsl(
+        #version 450
+
+        out gl_PerVertex {
+            vec4 gl_Position;
+        };
+
+        layout(location = 0) out ColorBlock {vec4 vertexColor;};
+
+        const vec2 positions[3] = { vec2( 0.0f, -0.5f),
+                                    vec2( 0.5f,  0.5f),
+                                    vec2(-0.5f,  0.5f)
+                                  };
+
+        const vec4 colors[3] = { vec4(1.0f, 0.0f, 0.0f, 1.0f),
+                                 vec4(0.0f, 1.0f, 0.0f, 1.0f),
+                                 vec4(0.0f, 0.0f, 1.0f, 1.0f)
+                               };
+        void main()
+        {
+            vertexColor = colors[gl_VertexIndex % 3];
+            gl_Position = vec4(positions[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+
+    const char gs_src[] = R"glsl(
+        #version 450
+        #extension GL_NV_geometry_shader_passthrough: require
+
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices = 3) out;
+
+        layout(passthrough) in gl_PerVertex {vec4 gl_Position;};
+        layout(location = 0, passthrough) in ColorBlock {vec4 vertexColor;};
+
+        void main()
+        {
+           gl_Layer = 0;
+        }
+    )glsl";
+
+    const char fs_src[] = R"glsl(
+        #version 450
+
+        layout(location = 0) in ColorBlock {vec4 vertexColor;};
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            outColor = vertexColor;
+        }
+    )glsl";
+
+    const VkPipelineLayoutObj pl(m_device);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+
+    VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.AddShader(&vs);
+
+    VkShaderObj gs(this, gs_src, VK_SHADER_STAGE_GEOMETRY_BIT);
+    pipe.AddShader(&gs);
+
+    VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipe.AddShader(&fs);
+
+    // Create pipeline and make sure that the usage of NV_geometry_shader_passthrough
+    // in the fragment shader does not cause any errors.
+    pipe.CreateVKPipeline(pl.handle(), renderPass());
+}
+
+TEST_F(PositiveShaderSpirv, SpecializeInt8) {
+    TEST_DESCRIPTION("Test int8 specialization.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
+    if (float16int8_features.shaderInt8 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt8 feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *fs_src = R"(
+               OpCapability Shader
+               OpCapability Int8
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %v "v"
+               OpDecorate %v SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 8 1
+          %v = OpSpecConstant %int 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    const VkSpecializationMapEntry entry = {
+        0,               // id
+        0,               // offset
+        sizeof(uint8_t)  // size
+    };
+    uint8_t const data = 0x42;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint8_t),
+        &data,
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializeInt16) {
+    TEST_DESCRIPTION("Test int16 specialization.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    GetPhysicalDeviceFeatures2(features2);
+    if (features2.features.shaderInt16 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt16 feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *fs_src = R"(
+               OpCapability Shader
+               OpCapability Int16
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %v "v"
+               OpDecorate %v SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 16 1
+          %v = OpSpecConstant %int 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint16_t)  // size
+    };
+    uint16_t const data = 0x4342;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint16_t),
+        &data,
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializeInt32) {
+    TEST_DESCRIPTION("Test int32 specialization.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *fs_src = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %v "v"
+               OpDecorate %v SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+          %v = OpSpecConstant %int 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint32_t)  // size
+    };
+    uint32_t const data = 0x45444342;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint32_t),
+        &data,
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializeInt64) {
+    TEST_DESCRIPTION("Test int64 specialization.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    GetPhysicalDeviceFeatures2(features2);
+    if (features2.features.shaderInt64 == VK_FALSE) {
+        GTEST_SKIP() << "shaderInt64 feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *fs_src = R"(
+               OpCapability Shader
+               OpCapability Int64
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %v "v"
+               OpDecorate %v SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 64 1
+          %v = OpSpecConstant %int 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint64_t)  // size
+    };
+    uint64_t const data = 0x4948474645444342;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint64_t),
+        &data,
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, SpecializationUnused) {
+    TEST_DESCRIPTION("Make sure an unused spec constant is valid to us");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // layout (constant_id = 2) const int a = 3;
+    const char *cs_src = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpDecorate %a SpecId 2
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+          %a = OpSpecConstant %int 3
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkSpecializationMapEntry entries[4] = {
+        {0, 0, 1},  // unused
+        {1, 0, 1},  // usued
+        {2, 0, 4},  // OpTypeInt 32
+        {3, 0, 4},  // usued
+    };
+
+    int32_t data = 0;
+    VkSpecializationInfo specialization_info = {
+        4,
+        entries,
+        1 * sizeof(decltype(data)),
+        &data,
+    };
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(
+            new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, &specialization_info));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+
+    // Even if the ID is never seen in VkSpecializationMapEntry the OpSpecConstant will use the default and still is valid
+    specialization_info.mapEntryCount = 1;
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+
+    // try another random unused value other than zero
+    entries[0].constantID = 100;
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+}
+
+TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
+    TEST_DESCRIPTION("Test VK_KHR_float_controls");
+
+    // Need 1.1 to get SPIR-V 1.3 since OpExecutionModeId was added in SPIR-V 1.2
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+
+    auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&shader_float_control);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+
+    bool signed_zero_inf_nan_preserve = (shader_float_control.shaderSignedZeroInfNanPreserveFloat32 == VK_TRUE);
+    bool denorm_preserve = (shader_float_control.shaderDenormPreserveFloat32 == VK_TRUE);
+    bool denorm_flush_to_zero = (shader_float_control.shaderDenormFlushToZeroFloat32 == VK_TRUE);
+    bool rounding_mode_rte = (shader_float_control.shaderRoundingModeRTEFloat32 == VK_TRUE);
+    bool rounding_mode_rtz = (shader_float_control.shaderRoundingModeRTZFloat32 == VK_TRUE);
+
+    // same body for each shader, only the start is different
+    // this is just "float a = 1.0 + 2.0;" in SPIR-V
+    const std::string source_body = R"(
+             OpExecutionMode %main LocalSize 1 1 1
+             OpSource GLSL 450
+             OpName %main "main"
+     %void = OpTypeVoid
+        %3 = OpTypeFunction %void
+    %float = OpTypeFloat 32
+%pFunction = OpTypePointer Function %float
+  %float_3 = OpConstant %float 3
+     %main = OpFunction %void None %3
+        %5 = OpLabel
+        %6 = OpVariable %pFunction Function
+             OpStore %6 %float_3
+             OpReturn
+             OpFunctionEnd
+)";
+
+    if (signed_zero_inf_nan_preserve) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability SignedZeroInfNanPreserve
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main SignedZeroInfNanPreserve 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    if (denorm_preserve) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability DenormPreserve
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main DenormPreserve 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    if (denorm_flush_to_zero) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability DenormFlushToZero
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main DenormFlushToZero 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    if (rounding_mode_rte) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability RoundingModeRTE
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main RoundingModeRTE 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    if (rounding_mode_rtz) {
+        const std::string spv_source = R"(
+            OpCapability Shader
+            OpCapability RoundingModeRTZ
+            OpExtension "SPV_KHR_float_controls"
+       %1 = OpExtInstImport "GLSL.std.450"
+            OpMemoryModel Logical GLSL450
+            OpEntryPoint GLCompute %main "main"
+            OpExecutionMode %main RoundingModeRTZ 32
+)" + source_body;
+
+        const auto set_info = [&](CreateComputePipelineHelper &helper) {
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+        };
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+}
+
+TEST_F(PositiveShaderSpirv, Storage8and16bit) {
+    TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool support_8_bit = IsExtensionsEnabled(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    bool support_16_bit = IsExtensionsEnabled(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+
+    if ((support_8_bit == false) && (support_16_bit == false)) {
+        GTEST_SKIP() << "Extension not supported";
+    }
+
+    auto storage_8_bit_features = LvlInitStruct<VkPhysicalDevice8BitStorageFeaturesKHR>();
+    auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeaturesKHR>(&storage_8_bit_features);
+    auto float_16_int_8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&storage_16_bit_features);
+    auto features2 = GetPhysicalDeviceFeatures2(float_16_int_8_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // 8 bit int test (not 8 bit float support in Vulkan)
+    if ((support_8_bit == true) && (float_16_int_8_features.shaderInt8 == VK_TRUE)) {
+        if (storage_8_bit_features.storageBuffer8BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(set = 0, binding = 0) buffer SSBO { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_8_bit_features.uniformAndStorageBuffer8BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(set = 0, binding = 0) uniform UBO { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_8_bit_features.storagePushConstant8 == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_8bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+                layout(push_constant) uniform PushConstant { int8_t x; } data;
+                void main(){
+                   int8_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+    }
+
+    // 16 bit float tests
+    if ((support_16_bit == true) && (float_16_int_8_features.shaderFloat16 == VK_TRUE)) {
+        if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(set = 0, binding = 0) buffer SSBO { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(set = 0, binding = 0) uniform UBO { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(push_constant) uniform PushConstant { float16_t x; } data;
+                void main(){
+                   float16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(location = 0) out float16_t outData;
+                void main(){
+                   outData = float16_t(1);
+                   gl_Position = vec4(0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            // Need to match in/out
+            char const *fsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+                layout(location = 0) in float16_t x;
+                layout(location = 0) out vec4 uFragColor;
+                void main(){
+                   uFragColor = vec4(0,1,0,1);
+                }
+            )glsl";
+            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+    }
+
+    // 16 bit int tests
+    if ((support_16_bit == true) && (features2.features.shaderInt16 == VK_TRUE)) {
+        if (storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(set = 0, binding = 0) buffer SSBO { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(set = 0, binding = 0) uniform UBO { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(push_constant) uniform PushConstant { int16_t x; } data;
+                void main(){
+                   int16_t a = data.x + data.x;
+                   gl_Position = vec4(float(a) * 0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+
+        if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
+            char const *vsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(location = 0) out int16_t outData;
+                void main(){
+                   outData = int16_t(1);
+                   gl_Position = vec4(0.0);
+                }
+            )glsl";
+            VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+            // Need to match in/out
+            char const *fsSource = R"glsl(
+                #version 450
+                #extension GL_EXT_shader_16bit_storage: enable
+                #extension GL_EXT_shader_explicit_arithmetic_types_int16: enable
+                layout(location = 0) flat in int16_t x;
+                layout(location = 0) out vec4 uFragColor;
+                void main(){
+                   uFragColor = vec4(0,1,0,1);
+                }
+            )glsl";
+            VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+        }
+    }
+}
+
+TEST_F(PositiveShaderSpirv, ReadShaderClock) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_clock");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto shader_clock_features = LvlInitStruct<VkPhysicalDeviceShaderClockFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(shader_clock_features);
+    if ((shader_clock_features.shaderDeviceClock == VK_FALSE) && (shader_clock_features.shaderSubgroupClock == VK_FALSE)) {
+        // shaderSubgroupClock should be supported, but extra check
+        GTEST_SKIP() << "no support for shaderDeviceClock or shaderSubgroupClock";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Device scope using GL_EXT_shader_realtime_clock
+    char const *vsSourceDevice = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_realtime_clock: enable
+        void main(){
+           uvec2 a = clockRealtime2x32EXT();
+           gl_Position = vec4(float(a.x) * 0.0);
+        }
+    )glsl";
+    VkShaderObj vs_device(this, vsSourceDevice, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // Subgroup scope using ARB_shader_clock
+    char const *vsSourceScope = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_clock: enable
+        void main(){
+           uvec2 a = clock2x32ARB();
+           gl_Position = vec4(float(a.x) * 0.0);
+        }
+    )glsl";
+    VkShaderObj vs_subgroup(this, vsSourceScope, VK_SHADER_STAGE_VERTEX_BIT);
+
+    if (shader_clock_features.shaderDeviceClock == VK_TRUE) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    if (shader_clock_features.shaderSubgroupClock == VK_TRUE) {
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+}
+
+TEST_F(PositiveShaderSpirv, PhysicalStorageBuffer) {
+    TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *vertex_source = R"glsl(
+#version 450
+
+#extension GL_EXT_buffer_reference : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+  vec3 v;
+};
+
+layout(push_constant, scalar) uniform pc {
+  VectorBuffer vb;
+} pcs;
+
+void main() {
+    gl_Position = vec4(pcs.vb.v, 1.0);
+}
+        )glsl";
+    const VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fragment_source = R"glsl(
+#version 450
+
+#extension GL_EXT_buffer_reference : enable
+#extension GL_EXT_scalar_block_layout : enable
+
+layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+  vec3 v;
+};
+
+layout(push_constant, scalar) uniform pushConstants {
+  layout(offset=8) VectorBuffer vb;
+} pcs;
+
+layout(location=0) out vec4 o;
+void main() {
+    o = vec4(pcs.vb.v, 1.0);
+}
+    )glsl";
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::array<VkPushConstantRange, 2> push_ranges;
+    push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_ranges[0].size = sizeof(uint64_t);
+    push_ranges[0].offset = 0;
+    push_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_ranges[1].size = sizeof(uint64_t);
+    push_ranges[1].offset = sizeof(uint64_t);
+
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr,           0, 0, nullptr,
+        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
+    TEST_DESCRIPTION("Make sure shader can have a buffer_reference that contains itself.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *cs_src = R"glsl(
+#version 450 core
+#extension GL_EXT_buffer_reference : enable
+
+layout(buffer_reference) buffer T1;
+
+layout(set = 0, binding = 0, std140) uniform T2 {
+   layout(offset = 0) T1 a[2];
+};
+
+// This struct calls itself which needs to be properly handled in the shader validation or it will infinite loop
+layout(buffer_reference, std140) buffer T1 {
+   layout(offset = 0) T1 b[2];
+};
+
+void main() {}
+        )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+}
+
+TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
+    TEST_DESCRIPTION("Reproduces a use case involving GL_EXT_nonuniform_qualifier and image samplers found in Doom Eternal trace");
+
+    // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.shaderStorageTexelBufferArrayNonUniformIndexing) {
+        GTEST_SKIP()
+            << "VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayNonUniformIndexing not supported and is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *vertex_source = R"glsl(
+#version 450
+
+layout(location=0) out int idx;
+
+void main() {
+    idx = 0;
+    gl_Position = vec4(0.0);
+}
+        )glsl";
+    const VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fragment_source = R"glsl(
+#version 450
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout(set=0, binding=0) uniform sampler s;
+layout(set=0, binding=1) uniform texture2D t[1];
+layout(location=0) in flat int idx;
+
+layout(location=0) out vec4 frag_color;
+
+void main() {
+    // Using nonuniformEXT on the index into the image array creates the OpCopyObject instead of an OpLoad, which
+    // was causing problems with how constants are identified.
+	frag_color = texture(sampler2D(t[nonuniformEXT(idx)], s), vec2(0.0));
+}
+
+    )glsl";
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}

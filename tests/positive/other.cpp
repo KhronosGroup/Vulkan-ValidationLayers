@@ -1020,3 +1020,52 @@ TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
     vk::CmdSetFragmentShadingRateKHR(*m_commandBuffer, &fragment_size, combiner_ops.data());
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
+    TEST_DESCRIPTION("Pass duplicate structs to whose vk.xml definition contains allowduplicate=true");
+
+    VkInstance instance;
+
+    VkInstanceCreateInfo ici = LvlInitStruct<VkInstanceCreateInfo>();
+    ici.enabledLayerCount = instance_layers_.size();
+    ici.ppEnabledLayerNames = instance_layers_.data();
+
+    auto dbgUtils0 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
+    auto dbgUtils1 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>(&dbgUtils0);
+    ici.pNext = &dbgUtils1;
+
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
+
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance, nullptr));
+}
+
+TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
+    TEST_DESCRIPTION("Test to see if instance extensions are called during CreateInstance.");
+
+    // See https://github.com/KhronosGroup/Vulkan-Loader/issues/537 for more details.
+    // This is specifically meant to ensure a crash encountered in profiles does not occur, but also to
+    // attempt to ensure that no extension calls have been added to CreateInstance hooks.
+    // NOTE: it is certainly possible that a layer will call an extension during the Createinstance hook
+    //       and the loader will _not_ crash (e.g., nvidia, android seem to not crash in this case, but AMD does).
+    //       So, this test will only catch an erroneous extension _if_ run on HW/a driver that crashes in this use
+    //       case.
+
+    for (const auto &ext : InstanceExtensions::get_info_map()) {
+        // Add all "real" instance extensions
+        if (InstanceExtensionSupported(ext.first.c_str())) {
+            bool version_required = false;
+            for (const auto &req : ext.second.requirements) {
+                std::string name(req.name);
+                if (name.find("VK_VERSION") != std::string::npos) {
+                    version_required = true;
+                    break;
+                }
+            }
+            if (!version_required) {
+                m_instance_extension_names.emplace_back(ext.first.c_str());
+            }
+        }
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+}
