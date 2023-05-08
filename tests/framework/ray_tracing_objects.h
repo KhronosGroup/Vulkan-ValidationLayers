@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,7 +176,7 @@ class BuildGeometryInfoKHR {
     auto& GetGeometries() { return geometries_; }
     auto& GetSrcAS() { return src_as_; }
     auto& GetDstAS() { return dst_as_; }
-    auto& GetBottomLevelAS() { return bottom_level_as_; }
+    auto& GetBottomLevelAS() { return blas_; }
     const auto& GetScratchBuffer() const { return device_scratch_; }
     VkAccelerationStructureBuildSizesInfoKHR GetSizeInfo(VkDevice device, bool use_ppGeometries = true);
 
@@ -195,7 +192,7 @@ class BuildGeometryInfoKHR {
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
     vk_testing::Buffer device_scratch_;
     std::unique_ptr<uint8_t[]> host_scratch_;
-    std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as_;
+    std::shared_ptr<BuildGeometryInfoKHR> blas_;
 };
 
 // Helper functions providing simple, valid objects.

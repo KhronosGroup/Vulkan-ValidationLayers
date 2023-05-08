@@ -419,16 +419,16 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto invalid_as = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
-    invalid_as->SetDeviceBufferInitNoMem(true);
-    invalid_as->Build(*m_device);
+    auto blas_no_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    blas_no_mem->SetDeviceBufferInitNoMem(true);
+    blas_no_mem->Build(*m_device);
 
-    auto valid_as = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
-    valid_as->Build(*m_device);
+    auto valid_blas = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    valid_blas->Build(*m_device);
 
     auto copy_info = LvlInitStruct<VkCopyAccelerationStructureInfoKHR>();
-    copy_info.src = invalid_as->handle();
-    copy_info.dst = valid_as->handle();
+    copy_info.src = blas_no_mem->handle();
+    copy_info.dst = valid_blas->handle();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
 
     m_commandBuffer->begin();
@@ -438,8 +438,8 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
     vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
     m_errorMonitor->VerifyFound();
 
-    copy_info.src = valid_as->handle();
-    copy_info.dst = invalid_as->handle();
+    copy_info.src = valid_blas->handle();
+    copy_info.dst = blas_no_mem->handle();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureKHR-buffer-03738");
     vk::CmdCopyAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
@@ -485,21 +485,21 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
-    auto as = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
-    as->SetDeviceBuffer(std::move(buffer));
-    as->Build(*m_device);
+    auto blas = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    blas->SetDeviceBuffer(std::move(buffer));
+    blas->Build(*m_device);
 
-    auto as_no_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
-    as_no_mem->SetDeviceBufferInitNoMem(true);
-    as_no_mem->Build(*m_device);
+    auto blas_no_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    blas_no_mem->SetDeviceBufferInitNoMem(true);
+    blas_no_mem->Build(*m_device);
 
-    auto as_host_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
-    as_host_mem->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    as_host_mem->Build(*m_device);
+    auto blas_host_mem = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096);
+    blas_host_mem->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    blas_host_mem->Build(*m_device);
 
     auto copy_info = LvlInitStruct<VkCopyAccelerationStructureInfoKHR>();
-    copy_info.src = as_no_mem->handle();
-    copy_info.dst = as->handle();
+    copy_info.src = blas_no_mem->handle();
+    copy_info.dst = blas->handle();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
 
     m_commandBuffer->begin();
@@ -509,8 +509,8 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    copy_info.src = as->handle();
-    copy_info.dst = as_no_mem->handle();
+    copy_info.src = blas->handle();
+    copy_info.dst = blas_no_mem->handle();
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyAccelerationStructureInfoKHR-buffer-03719");
@@ -519,15 +519,15 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    copy_info.src = as->handle();
-    copy_info.dst = as_host_mem->handle();
+    copy_info.src = blas->handle();
+    copy_info.dst = blas_host_mem->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyAccelerationStructureKHR-buffer-03727");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
     m_errorMonitor->VerifyFound();
 
-    copy_info.src = as_host_mem->handle();
-    copy_info.dst = as->handle();
+    copy_info.src = blas_host_mem->handle();
+    copy_info.dst = blas->handle();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCopyAccelerationStructureKHR-buffer-03728");
     vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
@@ -569,13 +569,13 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     VkBufferObj dst_buffer;
     dst_buffer.init_no_mem(*m_device, buffer_ci);
 
-    auto as = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(VK_API_VERSION_1_2, 0);
-    as->SetDeviceBuffer(std::move(dst_buffer));
-    as->Build(*m_device);
+    auto blas = rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(VK_API_VERSION_1_2, 0);
+    blas->SetDeviceBuffer(std::move(dst_buffer));
+    blas->Build(*m_device);
 
     VkCopyMemoryToAccelerationStructureInfoKHR copy_info = LvlInitStruct<VkCopyMemoryToAccelerationStructureInfoKHR>();
     copy_info.src.deviceAddress = src_buffer.address();
-    copy_info.dst = as->handle();
+    copy_info.dst = blas->handle();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
 
     // Acceleration structure buffer is not bound to memory
@@ -638,15 +638,15 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
     bot_level_as.BuildHost(instance(), *m_device);
     m_errorMonitor->VerifyFound();
 
-    auto host_bot_level_as = rt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
+    auto host_cached_blas = rt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(DeviceValidationVersion(), *m_device);
 
-    host_bot_level_as.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
-    host_bot_level_as.SetSrcAS(rt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), 4096));
-    host_bot_level_as.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    host_cached_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    host_cached_blas.SetSrcAS(rt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), 4096));
+    host_cached_blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     // .mode is UPDATE and .srcAccelerationStructure buffer is not bound to host visible memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03723");
-    host_bot_level_as.BuildHost(instance(), *m_device);
+    host_cached_blas.BuildHost(instance(), *m_device);
     m_errorMonitor->VerifyFound();
 }
 
@@ -748,16 +748,16 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     ASSERT_TRUE(device_memory.initialized());
     vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer.handle(), device_memory.handle(), 0);
 
-    auto bot_level_as = rt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), buffer_ci.size);
-    bot_level_as->SetDeviceBuffer(std::move(non_host_visible_buffer));
-    bot_level_as->Build(*m_device);
+    auto blas = rt::as::blueprint::AccelStructSimpleOnHostBottomLevel(DeviceValidationVersion(), buffer_ci.size);
+    blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
+    blas->Build(*m_device);
 
     uint8_t output[4096];
     VkDeviceOrHostAddressConstKHR output_data;
     output_data.hostAddress = reinterpret_cast<void *>(output);
 
     auto info = LvlInitStruct<VkCopyMemoryToAccelerationStructureInfoKHR>();
-    info.dst = bot_level_as->handle();
+    info.dst = blas->handle();
     info.src = output_data;
     info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
 
