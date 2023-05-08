@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google, Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (c) 2023 Valve Corporation
+ * Copyright (c) 2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -333,7 +330,7 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(vk_testing::Buffer 
 }
 
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as) {
-    bottom_level_as_ = std::move(bottom_level_as);
+    blas_ = std::move(bottom_level_as);
     return *this;
 }
 
@@ -355,8 +352,8 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null
 
 void BuildGeometryInfoKHR::BuildCmdBuffer(VkInstance instance, const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
                                           bool use_ppGeometries /*= true*/) {
-    if (bottom_level_as_) {
-        bottom_level_as_->BuildCmdBuffer(instance, device, cmd_buffer, use_ppGeometries);
+    if (blas_) {
+        blas_->BuildCmdBuffer(instance, device, cmd_buffer, use_ppGeometries);
     }
     BuildCommon(instance, device, true);
     VkCmdBuildAccelerationStructuresKHR(device, cmd_buffer, true);
@@ -364,16 +361,16 @@ void BuildGeometryInfoKHR::BuildCmdBuffer(VkInstance instance, const vk_testing:
 
 void BuildGeometryInfoKHR::BuildCmdBufferIndirect(VkInstance instance, const vk_testing::Device &device,
                                                   VkCommandBuffer cmd_buffer) {
-    if (bottom_level_as_) {
-        bottom_level_as_->BuildCmdBufferIndirect(instance, device, cmd_buffer);
+    if (blas_) {
+        blas_->BuildCmdBufferIndirect(instance, device, cmd_buffer);
     }
     BuildCommon(instance, device, true);
     VkCmdBuildAccelerationStructuresIndirectKHR(device, cmd_buffer);
 }
 
 void BuildGeometryInfoKHR::BuildHost(VkInstance instance, const vk_testing::Device &device) {
-    if (bottom_level_as_) {
-        bottom_level_as_->BuildHost(instance, device);
+    if (blas_) {
+        blas_->BuildHost(instance, device);
     }
     BuildCommon(instance, device, false);
     VkBuildAccelerationStructuresKHR(instance, device);
