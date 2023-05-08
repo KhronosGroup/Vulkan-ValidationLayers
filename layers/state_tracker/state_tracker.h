@@ -665,6 +665,10 @@ class ValidationStateTracker : public ValidationObject {
 
     virtual std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
                                                                              const VkDescriptorPoolCreateInfo* pCreateInfo);
+    virtual std::shared_ptr<cvdescriptorset::DescriptorSet> CreateDescriptorSet(
+        VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
+        uint32_t variable_count);
+
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                             VkResult result) override;

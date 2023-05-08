@@ -1015,8 +1015,7 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !IsBoundSetCompat(set, last_bound, pipeline_layout)) {
-        last_bound.UnbindAndResetPushDescriptorSet(
-            std::make_shared<cvdescriptorset::DescriptorSet>(VK_NULL_HANDLE, nullptr, dsl, 0, dev_data));
+        last_bound.UnbindAndResetPushDescriptorSet(dev_data->CreateDescriptorSet(VK_NULL_HANDLE, nullptr, dsl, 0));
     }
 
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);

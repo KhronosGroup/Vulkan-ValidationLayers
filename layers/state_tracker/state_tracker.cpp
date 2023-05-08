@@ -2606,6 +2606,12 @@ std::shared_ptr<DESCRIPTOR_POOL_STATE> ValidationStateTracker::CreateDescriptorP
     return std::make_shared<DESCRIPTOR_POOL_STATE>(this, pool, pCreateInfo);
 }
 
+std::shared_ptr<cvdescriptorset::DescriptorSet> ValidationStateTracker::CreateDescriptorSet(
+    VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> &layout,
+    uint32_t variable_count) {
+    return std::make_shared<cvdescriptorset::DescriptorSet>(set, pool, layout, variable_count, this);
+}
+
 void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkDescriptorPool *pDescriptorPool, VkResult result) {
