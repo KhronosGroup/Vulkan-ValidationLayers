@@ -903,3 +903,572 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
         vk_testing::ImageView image_view(*m_device, ivci);
     }
 }
+
+TEST_F(PositiveImage, DrmFormatModifier) {
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
+    TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // for extension dependencies
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, skipping tests";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // we just hope that one of these formats supports modifiers
+    // for more detailed checking, we could also check multi-planar formats.
+    auto format_list = {
+        VK_FORMAT_B8G8R8A8_UNORM,
+        VK_FORMAT_B8G8R8A8_SRGB,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
+    };
+
+    for (auto format : format_list) {
+        std::vector<uint64_t> mods;
+
+        // get general features and modifiers
+        VkDrmFormatModifierPropertiesListEXT modp = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmtp = LvlInitStruct<VkFormatProperties2>(&modp);
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+
+        if (modp.drmFormatModifierCount > 0) {
+            // the first call to vkGetPhysicalDeviceFormatProperties2 did only
+            // retrieve the number of modifiers, we now have to retrieve
+            // the modifiers
+            std::vector<VkDrmFormatModifierPropertiesEXT> mod_props(modp.drmFormatModifierCount);
+            modp.pDrmFormatModifierProperties = mod_props.data();
+
+            vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+
+            for (auto i = 0u; i < modp.drmFormatModifierCount; ++i) {
+                auto &mod = modp.pDrmFormatModifierProperties[i];
+                auto features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+
+                if ((mod.drmFormatModifierTilingFeatures & features) != features) {
+                    continue;
+                }
+
+                mods.push_back(mod.drmFormatModifier);
+            }
+        }
+
+        if (mods.empty()) {
+            continue;
+        }
+
+        // create image
+        auto ci = LvlInitStruct<VkImageCreateInfo>();
+        ci.flags = 0;
+        ci.imageType = VK_IMAGE_TYPE_2D;
+        ci.format = format;
+        ci.extent = {128, 128, 1};
+        ci.mipLevels = 1;
+        ci.arrayLayers = 1;
+        ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+        ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        VkImageDrmFormatModifierListCreateInfoEXT mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+        mod_list.pDrmFormatModifiers = mods.data();
+        mod_list.drmFormatModifierCount = mods.size();
+        ci.pNext = &mod_list;
+
+        VkImage image;
+        VkResult err = vk::CreateImage(device(), &ci, nullptr, &image);
+        ASSERT_VK_SUCCESS(err);
+
+        // bind memory
+        VkPhysicalDeviceMemoryProperties phys_mem_props;
+        vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+        VkMemoryRequirements mem_reqs;
+        vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
+        VkDeviceMemory mem_obj = VK_NULL_HANDLE;
+        VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
+            if ((mem_reqs.memoryTypeBits & (1 << type)) &&
+                ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+                VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+                alloc_info.allocationSize = mem_reqs.size;
+                alloc_info.memoryTypeIndex = type;
+                ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, nullptr, &mem_obj));
+                break;
+            }
+        }
+
+        ASSERT_NE((VkDeviceMemory)VK_NULL_HANDLE, mem_obj);
+        ASSERT_VK_SUCCESS(vk::BindImageMemory(device(), image, mem_obj, 0));
+
+        // create image view
+        VkImageViewCreateInfo ivci = {
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            nullptr,
+            0,
+            image,
+            VK_IMAGE_VIEW_TYPE_2D,
+            format,
+            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+             VK_COMPONENT_SWIZZLE_IDENTITY},
+            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        };
+
+        CreateImageViewTest(*this, &ivci);
+
+        // for more detailed checking, we could export the image to dmabuf
+        // and then import it again (using VkImageDrmFormatModifierExplicitCreateInfoEXT)
+
+        vk::FreeMemory(device(), mem_obj, nullptr);
+        vk::DestroyImage(device(), image, nullptr);
+    }
+}
+
+TEST_F(PositiveImage, CopyImageSubresource) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkImageUsageFlags usage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 2, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.InitNoLayout(image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageSubresourceLayers src_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkImageSubresourceLayers dst_layer{VK_IMAGE_ASPECT_COLOR_BIT, 1, 3, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{128 / 2, 128 / 2, 1};  // <-- image type is 2D
+    VkImageCopy region = {src_layer, zero_offset, dst_layer, zero_offset, full_extent};
+    auto init_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    auto src_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    auto dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    auto final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    m_commandBuffer->begin();
+
+    auto cb = m_commandBuffer->handle();
+
+    VkImageSubresourceRange src_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageMemoryBarrier image_barriers[2];
+
+    image_barriers[0] = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barriers[0].srcAccessMask = 0;
+    image_barriers[0].dstAccessMask = 0;
+    image_barriers[0].image = image.handle();
+    image_barriers[0].subresourceRange = src_range;
+    image_barriers[0].oldLayout = init_layout;
+    image_barriers[0].newLayout = dst_layout;
+
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+                           image_barriers);
+    VkClearColorValue clear_color{};
+    vk::CmdClearColorImage(cb, image.handle(), dst_layout, &clear_color, 1, &src_range);
+    m_commandBuffer->end();
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    m_commandBuffer->begin();
+
+    image_barriers[0].oldLayout = dst_layout;
+    image_barriers[0].newLayout = src_layout;
+
+    VkImageSubresourceRange dst_range{VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 3, 1};
+    image_barriers[1] = LvlInitStruct<VkImageMemoryBarrier>();
+    image_barriers[1].srcAccessMask = 0;
+    image_barriers[1].dstAccessMask = 0;
+    image_barriers[1].image = image.handle();
+    image_barriers[1].subresourceRange = dst_range;
+    image_barriers[1].oldLayout = init_layout;
+    image_barriers[1].newLayout = dst_layout;
+
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2,
+                           image_barriers);
+
+    vk::CmdCopyImage(cb, image.handle(), src_layout, image.handle(), dst_layout, 1, &region);
+
+    image_barriers[0].oldLayout = src_layout;
+    image_barriers[0].newLayout = final_layout;
+    image_barriers[1].oldLayout = dst_layout;
+    image_barriers[1].newLayout = final_layout;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 2,
+                           image_barriers);
+    m_commandBuffer->end();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+
+TEST_F(PositiveImage, DescriptorSubresourceLayout) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    VkDescriptorSet descriptorSet = descriptor_set.set_;
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    // Create image, view, and sampler
+    const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageObj image(m_device);
+    auto usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image.Init(image_ci);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 3, 1};
+    VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
+    vk_testing::ImageView view;
+    auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
+    image_view_create_info.image = image.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = format;
+    image_view_create_info.subresourceRange = view_range;
+
+    view.init(*m_device, image_view_create_info);
+    ASSERT_TRUE(view.initialized());
+
+    // Create Sampler
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    // Setup structure for descriptor update with sampler, for update in do_test below
+    VkDescriptorImageInfo img_info = {};
+    img_info.sampler = sampler.handle();
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptorSet;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &img_info;
+
+    // Create PSO to be used for draw-time errors below
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+
+    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buf.handle();
+
+    enum TestType {
+        kInternal,  // Image layout mismatch is *within* a given command buffer
+        kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
+    };
+    std::array<TestType, 2> test_list = {{kInternal, kExternal}};
+
+    auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageAspectFlags aspect_mask,
+                       VkImageLayout descriptor_layout) {
+        // Set up the descriptor
+        img_info.imageView = view->handle();
+        img_info.imageLayout = descriptor_layout;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        for (TestType test_type : test_list) {
+            auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+
+            cmd_buf.begin();
+            image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.image = image->handle();
+            image_barrier.subresourceRange = full_range;
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image_barrier.newLayout = init_layout;
+
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            image_barrier.subresourceRange = first_range;
+            image_barrier.oldLayout = init_layout;
+            image_barrier.newLayout = descriptor_layout;
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            image_barrier.subresourceRange = view_range;
+            image_barrier.oldLayout = init_layout;
+            image_barrier.newLayout = descriptor_layout;
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            if (test_type == kExternal) {
+                // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
+                cmd_buf.end();
+                vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+                vk::QueueWaitIdle(m_device->m_queue);
+                cmd_buf.begin();
+            }
+
+            cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                      &descriptorSet, 0, NULL);
+            vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
+            vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
+
+            cmd_buf.Draw(1, 0, 0, 0);
+
+            cmd_buf.EndRenderPass();
+            cmd_buf.end();
+
+            // Submit cmd buffer
+            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_device->m_queue);
+        }
+    };
+    do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
+    TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    VkDescriptorSet descriptorSet = descriptor_set.set_;
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    // Create image, view, and sampler
+    const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageObj image_3d(m_device);
+    VkImageObj other_image(m_device);
+    auto usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    static const uint32_t kWidth = 128;
+    static const uint32_t kHeight = 128;
+
+    auto image_ci_3d = LvlInitStruct<VkImageCreateInfo>();
+    image_ci_3d.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_ci_3d.imageType = VK_IMAGE_TYPE_3D;
+    image_ci_3d.format = format;
+    image_ci_3d.extent.width = kWidth;
+    image_ci_3d.extent.height = kHeight;
+    image_ci_3d.extent.depth = 8;
+    image_ci_3d.mipLevels = 1;
+    image_ci_3d.arrayLayers = 1;
+    image_ci_3d.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci_3d.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci_3d.usage = usage;
+    image_3d.Init(image_ci_3d);
+    ASSERT_TRUE(image_3d.initialized());
+
+    other_image.Init(kWidth, kHeight, 1, format, usage, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(other_image.initialized());
+
+    // The image view is a 2D slice of the 3D image at depth = 4, which we request by
+    // asking for arrayLayer = 4
+    VkImageSubresourceRange view_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 4, 1};
+    // But, the spec says:
+    //    Automatic layout transitions apply to the entire image subresource attached
+    //    to the framebuffer. If the attachment view is a 2D or 2D array view of a
+    //    3D image, even if the attachment view only refers to a subset of the slices
+    //    of the selected mip level of the 3D image, automatic layout transitions apply
+    //    to the entire subresource referenced which is the entire mip level in this case.
+    VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView view_2d, other_view;
+    auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
+    image_view_create_info.image = image_3d.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = format;
+    image_view_create_info.subresourceRange = view_range;
+
+    view_2d.init(*m_device, image_view_create_info);
+    ASSERT_TRUE(view_2d.initialized());
+
+    image_view_create_info.image = other_image.handle();
+    image_view_create_info.subresourceRange = full_range;
+    other_view.init(*m_device, image_view_create_info);
+    ASSERT_TRUE(other_view.initialized());
+
+    std::vector<VkAttachmentDescription> attachments = {
+        {0, format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+    };
+
+    std::vector<VkAttachmentReference> color = {
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+
+    VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, (uint32_t)color.size(), color.data(), nullptr, nullptr, 0, nullptr};
+
+    std::vector<VkSubpassDependency> deps = {
+        {VK_SUBPASS_EXTERNAL, 0,
+         (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT),
+         (VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT),
+         (VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+          VK_ACCESS_TRANSFER_WRITE_BIT),
+         (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_MEMORY_WRITE_BIT), 0},
+        {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+         (VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT), VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT), 0},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                                   nullptr,
+                                   0,
+                                   (uint32_t)attachments.size(),
+                                   attachments.data(),
+                                   1,
+                                   &subpass,
+                                   (uint32_t)deps.size(),
+                                   deps.data()};
+    // Create Sampler
+    vk_testing::Sampler sampler;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler.init(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    // Setup structure for descriptor update with sampler, for update in do_test below
+    VkDescriptorImageInfo img_info = {};
+    img_info.sampler = sampler.handle();
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptorSet;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &img_info;
+
+    vk_testing::RenderPass rp(*m_device, rpci);
+
+    // Create PSO to be used for draw-time errors below
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), rp.handle());
+
+    VkViewport viewport = {0, 0, kWidth, kHeight, 0, 1};
+    VkRect2D scissor = {{0, 0}, {kWidth, kHeight}};
+
+    VkCommandBufferObj cmd_buf(m_device, m_commandPool);
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buf.handle();
+
+    enum TestType {
+        kInternal,  // Image layout mismatch is *within* a given command buffer
+        kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
+    };
+    std::array<TestType, 2> test_list = {{kInternal, kExternal}};
+
+    auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageObj *o_image, vk_testing::ImageView *o_view,
+                       VkImageAspectFlags aspect_mask, VkImageLayout descriptor_layout) {
+        // Set up the descriptor
+        img_info.imageView = o_view->handle();
+        img_info.imageLayout = descriptor_layout;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        for (TestType test_type : test_list) {
+            auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+
+            VkFramebufferCreateInfo fbci = {
+                VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &view->handle(), kWidth, kHeight, 1};
+            vk_testing::Framebuffer fb(*m_device, fbci);
+
+            cmd_buf.begin();
+            image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.image = image->handle();
+            image_barrier.subresourceRange = full_range;
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image_barrier.newLayout = descriptor_layout;
+
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+            image_barrier.image = o_image->handle();
+            cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                                    nullptr, 1, &image_barrier);
+
+            if (test_type == kExternal) {
+                // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
+                cmd_buf.end();
+                vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+                vk::QueueWaitIdle(m_device->m_queue);
+                cmd_buf.begin();
+            }
+
+            m_renderPassBeginInfo.renderPass = rp.handle();
+            m_renderPassBeginInfo.framebuffer = fb.handle();
+            m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
+
+            cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                      &descriptorSet, 0, NULL);
+            vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
+            vk::CmdSetScissor(cmd_buf.handle(), 0, 1, &scissor);
+
+            cmd_buf.Draw(1, 0, 0, 0);
+
+            cmd_buf.EndRenderPass();
+            cmd_buf.end();
+
+            // Submit cmd buffer
+            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(m_device->m_queue);
+        }
+    };
+    do_test(&image_3d, &view_2d, &other_image, &other_view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
