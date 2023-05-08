@@ -1503,7 +1503,8 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
         }
     }
 
-    if (deferredOperation != VK_NULL_HANDLE) {
+    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+    if (is_operation_deferred) {
         std::vector<std::function<void()>> post_completion_fns;
         auto completion_find = layer_data->deferred_operation_post_completion.pop(deferredOperation);
         if(completion_find->first) {
