@@ -133,6 +133,56 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledInSecondaryCB) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
+    TEST_DESCRIPTION(
+        "Verify calling vkCmdClearAttachments inside secondary commandbuffer without linking framebuffer pointer to"
+        "inheritance struct");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+        GTEST_SKIP() << "Test is unstable on ShieldTV";
+    }
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    auto hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    hinfo.renderPass = renderPass();
+
+    auto info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    info.pInheritanceInfo = &hinfo;
+
+    secondary.begin(&info);
+    VkClearAttachment color_attachment = {};
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 0.0;
+    color_attachment.clearValue.color.float32[1] = 0.0;
+    color_attachment.clearValue.color.float32[2] = 0.0;
+    color_attachment.clearValue.color.float32[3] = 0.0;
+    color_attachment.colorAttachment = 0;
+
+    VkClearAttachment ds_attachment = {};
+    ds_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    ds_attachment.clearValue.depthStencil.depth = 0.2f;
+    ds_attachment.clearValue.depthStencil.stencil = 1;
+
+    const std::array clear_attachments = {color_attachment, ds_attachment};
+    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+    vk::CmdClearAttachments(secondary.handle(), size32(clear_attachments), clear_attachments.data(), 1, &clear_rect);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveCommand, CommandPoolDeleteWithReferences) {
     TEST_DESCRIPTION("Ensure the validation layers bookkeeping tracks the implicit command buffer frees.");
     ASSERT_NO_FATAL_FAILURE(Init());
