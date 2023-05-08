@@ -58,8 +58,8 @@ void DESCRIPTOR_POOL_STATE::Allocate(const VkDescriptorSetAllocateInfo *alloc_in
     for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], this, ds_data->layout_nodes[i],
-                                                                       variable_count, dev_data_);
+        auto new_ds = dev_data_->CreateDescriptorSet(descriptor_sets[i], this, ds_data->layout_nodes[i], variable_count);
+
         sets_.emplace(descriptor_sets[i], new_ds.get());
         dev_data_->Add(std::move(new_ds));
     }
@@ -374,7 +374,7 @@ void cvdescriptorset::AllocateDescriptorSetsData::Init(uint32_t count) { layout_
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool_state,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                              const cvdescriptorset::DescriptorSet::StateTracker *state_data)
+                                              cvdescriptorset::DescriptorSet::StateTracker *state_data)
     : BASE_NODE(set, kVulkanObjectTypeDescriptorSet),
       some_update_(false),
       pool_state_(pool_state),

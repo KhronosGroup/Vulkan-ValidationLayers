@@ -83,7 +83,8 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     const safe_VkDescriptorPoolCreateInfo createInfo;
     using TypeCountMap = vvl::unordered_map<uint32_t, uint32_t>;
     const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
-  private:
+
+  protected:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
     uint32_t available_sets_;        // Available descriptor sets in this pool
@@ -840,7 +841,7 @@ class DescriptorSet : public BASE_NODE {
     using StateTracker = ValidationStateTracker;
 
     DescriptorSet(const VkDescriptorSet, DESCRIPTOR_POOL_STATE *, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, const StateTracker *state_data_const);
+                  uint32_t variable_count, StateTracker *state_data);
     void LinkChildNodes() override;
     ~DescriptorSet() { Destroy(); }
 
@@ -857,11 +858,11 @@ class DescriptorSet : public BASE_NODE {
     std::string StringifySetAndLayout() const;
 
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
-    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
+    virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
-    void PerformWriteUpdate(const VkWriteDescriptorSet &);
+    virtual void PerformWriteUpdate(const VkWriteDescriptorSet &);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
-    void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &);
+    virtual void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
 
     const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return layout_; };
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_->GetDescriptorSetLayout(); }
@@ -891,7 +892,10 @@ class DescriptorSet : public BASE_NODE {
         }
         return layout_->GetGlobalIndexRangeFromBinding(binding);
     };
-    bool IsPushDescriptor() const { return layout_->IsPushDescriptor(); };
+    bool IsPushDescriptor() const { return layout_->IsPushDescriptor(); }
+    bool IsUpdateAfterBind() const {
+        return (layout_->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0;
+    }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
 
@@ -1034,7 +1038,7 @@ class DescriptorSet : public BASE_NODE {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-  private:
+  protected:
     union AnyBinding {
         SamplerBinding sampler;
         ImageSamplerBinding image_sampler;
@@ -1064,7 +1068,7 @@ class DescriptorSet : public BASE_NODE {
     // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
     std::vector<BindingBackingStore> bindings_store_;
     std::vector<BindingPtr> bindings_;
-    const StateTracker *state_data_;
+    StateTracker *state_data_;
     uint32_t variable_count_;
     std::atomic<uint64_t> change_count_;
 

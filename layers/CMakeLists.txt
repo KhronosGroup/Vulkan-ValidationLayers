@@ -248,6 +248,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.cpp
     gpu_validation/gpu_validation.h
+    gpu_validation/gv_descriptor_sets.cpp
+    gpu_validation/gv_descriptor_sets.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/base_node.cpp

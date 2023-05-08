@@ -164,6 +164,8 @@ core_validation_sources = [
   "layers/gpu_validation/gpu_validation.cpp",
   "layers/gpu_validation/gpu_validation.h",
   "layers/gpu_validation/gpu_vuids.h",
+  "layers/gpu_validation/gv_descriptor_sets.cpp",
+  "layers/gpu_validation/gv_descriptor_sets.h",
   "layers/containers/qfo_transfer.h",
   "layers/containers/range_vector.h",
   "layers/state_tracker/base_node.cpp",

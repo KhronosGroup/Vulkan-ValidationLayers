@@ -4583,8 +4583,9 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                 } else {
                     // Create an empty proxy in order to use the existing descriptor set update validation
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
-                    // don't have to do this.
-                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
+                    // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
+                    // the state tracker. The proxy here could get away with const.
+                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
                     skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites,
                                                           "vkCmdPushDescriptorSetKHR()");
                 }
@@ -4779,7 +4780,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                              "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
         } else {
             // Create an empty proxy in order to use the existing descriptor set update validation
-            cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
+            cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
             // Decode the template into a set of write updates
             cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state.get(), pData,
                                                                     dsl->GetDescriptorSetLayout());

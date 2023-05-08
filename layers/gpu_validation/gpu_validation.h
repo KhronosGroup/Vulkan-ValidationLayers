@@ -18,20 +18,28 @@
 #pragma once
 
 #include "gpu_validation/gpu_utils.h"
+#include "gpu_validation/gv_descriptor_sets.h"
 #include "state_tracker/pipeline_state.h"
 
 class GpuAssisted;
 
+struct GpuAssistedDescSetState {
+    std::shared_ptr<gpuav_state::DescriptorSet> set_state;
+    // State that will be used by the GPU-AV shader instrumentation
+    // For update-after-bind, this will be set during queue submission
+    // Otherwise it will be set when the DescriptorSet is bound.
+    std::shared_ptr<gpuav_state::DescriptorSet::State> gpu_state;
+};
+
 struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
-    vvl::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
 };
 
 struct GpuAssistedInputBuffers {
     VkBuffer address_buffer;
     VmaAllocation address_buffer_allocation;
-    std::vector<GpuAssistedDeviceMemoryBlock> descriptor_set_buffers;
+    std::vector<GpuAssistedDescSetState> descriptor_set_buffers;
 };
 
 struct GpuAssistedPreDrawResources {
@@ -173,9 +181,11 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     void ResetCBState();
     void ProcessAccelerationStructure(VkQueue queue);
 };
+
 }  // namespace gpuav_state
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav_state::CommandBuffer, CMD_BUFFER_STATE)
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav_state::DescriptorSet, cvdescriptorset::DescriptorSet)
 
 class GpuAssisted : public GpuAssistedBase {
   public:
@@ -210,7 +220,6 @@ class GpuAssisted : public GpuAssistedBase {
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo& buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
 
-    void SetBindingState(uint32_t* data, uint32_t index, const cvdescriptorset::DescriptorBinding* binding);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
@@ -309,6 +318,9 @@ class GpuAssisted : public GpuAssistedBase {
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) final;
+    std::shared_ptr<cvdescriptorset::DescriptorSet> CreateDescriptorSet(
+        VkDescriptorSet, DESCRIPTOR_POOL_STATE*, const std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>& layout,
+        uint32_t variable_count) final;
 
     void DestroyBuffer(GpuAssistedBufferInfo& buffer_info);
     void DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationBufferInfo& buffer_info);
