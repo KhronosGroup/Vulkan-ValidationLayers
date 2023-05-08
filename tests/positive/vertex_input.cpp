@@ -14,7 +14,9 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
+class PositiveVertexInput : public VkPositiveLayerTest {};
+
+TEST_F(PositiveVertexInput, AttributeMatrixType) {
     TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -54,7 +56,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
     /* expect success */
 }
 
-TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
+TEST_F(PositiveVertexInput, AttributeArrayType) {
     TEST_DESCRIPTION("Make sure same types don't throw an error");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -93,7 +95,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
+TEST_F(PositiveVertexInput, AttributeComponents) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
         "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
@@ -189,7 +191,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass.handle());
 }
 
-TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributes) {
+TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
@@ -248,7 +250,7 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributes) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveLayerTest, VertexAttribute64bit) {
+TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     TEST_DESCRIPTION("Use 64-bit Vertex format");
 
     ASSERT_NO_FATAL_FAILURE(Init());

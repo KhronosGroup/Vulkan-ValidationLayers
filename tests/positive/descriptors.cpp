@@ -824,7 +824,7 @@ TEST_F(PositiveDescriptors, PushingDescriptorSetWithImmutableSampler) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
+TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);

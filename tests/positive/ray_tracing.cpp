@@ -17,7 +17,7 @@
 
 class PositiveRayTracing : public VkPositiveLayerTest {};
 
-TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes) {
+TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

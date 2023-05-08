@@ -15,7 +15,7 @@
 
 class PositiveRayTracingPipeline : public VkPositiveLayerTest {};
 
-TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
+TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);

@@ -209,7 +209,7 @@ TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
 }
 #endif
 
-TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
+TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     TEST_DESCRIPTION("Run vkCmdCopyImage with a swapchain image");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -299,7 +299,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
 
-TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
+TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image  between device group");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)

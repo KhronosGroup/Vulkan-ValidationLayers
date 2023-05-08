@@ -16,7 +16,7 @@
 
 class NegativeShaderLimits : public VkLayerTest {};
 
-TEST_F(VkLayerTest, LimitsMaxSampleMaskWords) {
+TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());

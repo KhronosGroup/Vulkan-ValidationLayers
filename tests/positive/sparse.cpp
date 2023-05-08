@@ -101,7 +101,7 @@ TEST_F(PositiveSparse, BindS) {
     vk::FreeMemory(m_device->device(), memory_two, NULL);
 }
 
-TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
+TEST_F(PositiveSparse, BindFreeMemory) {
     TEST_DESCRIPTION("Test using a sparse image after freeing memory that was bound to it.");
 
     ASSERT_NO_FATAL_FAILURE(Init());

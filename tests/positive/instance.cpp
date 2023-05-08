@@ -20,7 +20,7 @@
 
 class PositiveInstance : public VkPositiveLayerTest {};
 
-TEST_F(VkPositiveLayerTest, TwoInstances) {
+TEST_F(PositiveInstance, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
