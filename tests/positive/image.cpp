@@ -360,7 +360,7 @@ TEST_F(PositiveImage, FormatCompatibility) {
     vk::DestroyImage(m_device->device(), image, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
+TEST_F(PositiveImage, FramebufferFrom3DImage) {
     TEST_DESCRIPTION("Validate creating a framebuffer from a 3D image.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -449,7 +449,7 @@ TEST_F(PositiveImage, SubresourceLayout) {
     m_commandBuffer->QueueCommandBuffer();
 }
 
-TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
+TEST_F(PositiveImage, ImagelessLayoutTracking) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

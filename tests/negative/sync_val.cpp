@@ -3639,7 +3639,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
+TEST_F(NegativeSyncVal, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     TEST_DESCRIPTION("Using CmdWaitEvents2KHR when synchronization2 is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
@@ -3670,7 +3670,7 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, Sync2FeatureDisabled) {
+TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
     TEST_DESCRIPTION("Call sync2 functions when the feature is disabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);

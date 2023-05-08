@@ -18,8 +18,10 @@
 #include "../framework/android_hardware_buffer.h"
 #endif
 
+class PositiveAndroidHardwareBuffer : public VkPositiveLayerTest {};
+
 #ifdef AHB_VALIDATION_SUPPORT
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
+TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
@@ -75,7 +77,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
+TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import Depth/Stencil");
 
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
@@ -158,7 +160,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
+TEST_F(PositiveAndroidHardwareBuffer, BindBufferMemory) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer Buffers can be queried for mem requirements while unbound.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -221,7 +223,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
+TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     TEST_DESCRIPTION("Verify VkBuffers can export to an AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -273,7 +275,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
+TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     TEST_DESCRIPTION("Verify VkImages can export to an AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -338,7 +340,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
+TEST_F(PositiveAndroidHardwareBuffer, ExternalImage) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -445,7 +447,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     AHardwareBuffer_release(ahb);
 }
 
-TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
+TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

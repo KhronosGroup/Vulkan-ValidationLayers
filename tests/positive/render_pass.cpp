@@ -1340,7 +1340,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     m_commandBuffer->QueueCommandBuffer(false);
 }
 
-TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
+TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
     TEST_DESCRIPTION(
         "Test no false overlap is reported with multi attachment framebuffer (attachments are slices of a 3D image). Multiple "
         "subpasses that draw to a single slice of a 3D image");

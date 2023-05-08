@@ -16,7 +16,7 @@
 
 class NegativeShaderInterface : public VkLayerTest {};
 
-TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
+TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -95,7 +95,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
 }
 
-TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
+TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

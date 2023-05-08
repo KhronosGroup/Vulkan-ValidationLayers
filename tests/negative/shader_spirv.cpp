@@ -1673,7 +1673,7 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NonSemanticInfoEnabled) {
+TEST_F(NegativeShaderSpirv, NonSemanticInfoEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1870,7 +1870,7 @@ TEST_F(NegativeShaderSpirv, ComputeShaderDerivativesEnabled) {
     vk::DestroyPipeline(test_device.device(), pipe, nullptr);
 }
 
-TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderInterlockEnabled) {
+TEST_F(NegativeShaderSpirv, FragmentShaderInterlockEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the fragment shader interlock feature which has not enabled on the device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());

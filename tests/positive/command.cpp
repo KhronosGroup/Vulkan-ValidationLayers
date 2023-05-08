@@ -556,7 +556,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
 }
 
-TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
+TEST_F(PositiveCommand, ClearRectWith2DArray) {
     TEST_DESCRIPTION("Test using VkClearRect with an image that is of a 2D array type.");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
@@ -655,7 +655,7 @@ TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
     }
 }
 
-TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
+TEST_F(PositiveCommand, EventStageMaskSecondaryCommandBuffer) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     ASSERT_NO_FATAL_FAILURE(Init());
 

@@ -656,7 +656,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     }
 }
 
-TEST_F(VkLayerTest, TestShaderZeroInitializeWorkgroupMemory) {
+TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
 
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);

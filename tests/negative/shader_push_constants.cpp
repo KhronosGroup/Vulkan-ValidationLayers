@@ -152,7 +152,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidCmdPushConstantRange) {
+TEST_F(NegativeShaderPushConstants, Range) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange values in vkCmdPushConstants.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

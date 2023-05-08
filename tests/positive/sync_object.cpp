@@ -1719,7 +1719,7 @@ TEST_F(PositiveSyncObject, ThreadNullFenceCollision) {
     m_errorMonitor->SetBailout(NULL);
 }
 
-TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
+TEST_F(PositiveSyncObject, WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2312,7 +2312,7 @@ struct WaitTimelineSemThreadData : public SemBufferRaceData {
     }
 };
 
-TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
+TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
