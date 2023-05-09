@@ -1415,3 +1415,70 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
+    TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and no fragment output state");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    InitBasicGraphicsLibrary(&dynamic_rendering_features);
+    if (::testing::Test::IsSkipped()) return;
+
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    // Create an executable pipeline with rasterization disabled
+    // Pass rendering info with null pointers that should be ignored
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
+
+    auto lib_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
+    lib_info.flags =
+        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+
+    VkStencilOpState stencil = {};
+    stencil.failOp = VK_STENCIL_OP_KEEP;
+    stencil.passOp = VK_STENCIL_OP_KEEP;
+    stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+    stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+    auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthTestEnable = VK_FALSE;
+    ds_ci.depthWriteEnable = VK_TRUE;
+    ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+    ds_ci.depthBoundsTestEnable = VK_FALSE;
+    ds_ci.stencilTestEnable = VK_TRUE;
+    ds_ci.front = stencil;
+    ds_ci.back = stencil;
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::array stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+
+    CreatePipelineHelper lib(*this);
+    lib.InitInfo();
+    lib.InitState();
+    lib.gp_ci_.pNext = &lib_info;
+    lib.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    lib.gp_ci_.pDepthStencilState = &ds_ci;
+    lib.gp_ci_.stageCount = size32(stages);
+    lib.gp_ci_.pStages = stages.data();
+
+    // Remove VI and FO state-related pointers
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pVertexInputState = nullptr;
+    lib.gp_ci_.pColorBlendState = nullptr;
+    lib.gp_ci_.pMultisampleState = nullptr;
+    lib.gp_ci_.renderPass = VK_NULL_HANDLE;
+
+    lib.CreateGraphicsPipeline();
+}
