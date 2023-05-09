@@ -1341,7 +1341,9 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
         }
     }
 
-    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+    // Fix check for deferred ray tracing pipeline creation
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
         std::vector<std::function<void()>> post_completion_fns;
         auto completion_find = layer_data->deferred_operation_post_completion.pop(deferredOperation);
@@ -1488,7 +1490,10 @@ VkResult DispatchBuildAccelerationStructuresKHR(
     }
     VkResult result = layer_data->device_dispatch_table.BuildAccelerationStructuresKHR(device, deferredOperation, infoCount, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pInfos, ppBuildRangeInfos);
     if (local_pInfos) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{ [local_pInfos](){ delete[] local_pInfos; } };
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -2074,7 +2079,10 @@ void DispatchGetDescriptorEXT(
                 delete_code = "delete[] %s" % (delete_var)
             cleanup = '%sif (%s) {\n' % (indent, delete_var)
             if deferred_name is not None:
-                cleanup += '%s    if (%s != VK_NULL_HANDLE) {\n' % (indent, deferred_name)
+                cleanup += '%s    // Fix check for deferred ray tracing pipeline creation\n' % (indent)
+                cleanup += '%s    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817\n' % (indent)
+                cleanup += '%s    const bool is_operation_deferred = (%s != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);\n' % (indent, deferred_name)
+                cleanup += '%s    if (is_operation_deferred) {\n' % (indent)
                 cleanup += '%s        std::vector<std::function<void()>> cleanup{[%s](){ %s; }};\n' % (indent, delete_var, delete_code)
                 cleanup += '%s        layer_data->deferred_operation_post_completion.insert(%s, cleanup);\n' % (indent, deferred_name)
                 cleanup += '%s    } else {\n' % (indent)

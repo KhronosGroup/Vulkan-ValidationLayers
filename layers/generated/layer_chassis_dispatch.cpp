@@ -1503,7 +1503,9 @@ VkResult DispatchCreateRayTracingPipelinesKHR(
         }
     }
 
-    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+    // Fix check for deferred ray tracing pipeline creation
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
         std::vector<std::function<void()>> post_completion_fns;
         auto completion_find = layer_data->deferred_operation_post_completion.pop(deferredOperation);
@@ -1650,7 +1652,10 @@ VkResult DispatchBuildAccelerationStructuresKHR(
     }
     VkResult result = layer_data->device_dispatch_table.BuildAccelerationStructuresKHR(device, deferredOperation, infoCount, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pInfos, ppBuildRangeInfos);
     if (local_pInfos) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{ [local_pInfos](){ delete[] local_pInfos; } };
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -10566,7 +10571,10 @@ VkResult DispatchBuildMicromapsEXT(
     }
     VkResult result = layer_data->device_dispatch_table.BuildMicromapsEXT(device, deferredOperation, infoCount, (const VkMicromapBuildInfoEXT*)local_pInfos);
     if (local_pInfos) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfos](){ delete[] local_pInfos; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -10599,7 +10607,10 @@ VkResult DispatchCopyMicromapEXT(
     }
     VkResult result = layer_data->device_dispatch_table.CopyMicromapEXT(device, deferredOperation, (const VkCopyMicromapInfoEXT*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -10629,7 +10640,10 @@ VkResult DispatchCopyMicromapToMemoryEXT(
     }
     VkResult result = layer_data->device_dispatch_table.CopyMicromapToMemoryEXT(device, deferredOperation, (const VkCopyMicromapToMemoryInfoEXT*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -10659,7 +10673,10 @@ VkResult DispatchCopyMemoryToMicromapEXT(
     }
     VkResult result = layer_data->device_dispatch_table.CopyMemoryToMicromapEXT(device, deferredOperation, (const VkCopyMemoryToMicromapInfoEXT*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -11641,7 +11658,10 @@ VkResult DispatchCopyAccelerationStructureKHR(
     }
     VkResult result = layer_data->device_dispatch_table.CopyAccelerationStructureKHR(device, deferredOperation, (const VkCopyAccelerationStructureInfoKHR*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -11671,7 +11691,10 @@ VkResult DispatchCopyAccelerationStructureToMemoryKHR(
     }
     VkResult result = layer_data->device_dispatch_table.CopyAccelerationStructureToMemoryKHR(device, deferredOperation, (const VkCopyAccelerationStructureToMemoryInfoKHR*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {
@@ -11701,7 +11724,10 @@ VkResult DispatchCopyMemoryToAccelerationStructureKHR(
     }
     VkResult result = layer_data->device_dispatch_table.CopyMemoryToAccelerationStructureKHR(device, deferredOperation, (const VkCopyMemoryToAccelerationStructureInfoKHR*)local_pInfo);
     if (local_pInfo) {
-        if (deferredOperation != VK_NULL_HANDLE) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
             std::vector<std::function<void()>> cleanup{[local_pInfo](){ delete local_pInfo; }};
             layer_data->deferred_operation_post_completion.insert(deferredOperation, cleanup);
         } else {

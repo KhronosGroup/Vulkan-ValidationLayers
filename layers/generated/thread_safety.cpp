@@ -822,6 +822,8 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
         }
     };
 
+    // Fix check for deferred ray tracing pipeline creation
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
     const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
         auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
