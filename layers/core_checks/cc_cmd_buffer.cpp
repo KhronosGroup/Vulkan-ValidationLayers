@@ -946,24 +946,43 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              inheritance_rendering_info.colorAttachmentCount, rendering_info.colorAttachmentCount);
                         }
 
-                        for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
-                            if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
-                                continue;
-                            }
-                            auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                        for (uint32_t color_i = 0, count = std::min(inheritance_rendering_info.colorAttachmentCount,
+                                                                    rendering_info.colorAttachmentCount);
+                             color_i < count; color_i++) {
+                            if (rendering_info.pColorAttachments[color_i].imageView == VK_NULL_HANDLE) {
+                                if (inheritance_rendering_info.pColorAttachmentFormats[color_i] != VK_FORMAT_UNDEFINED) {
+                                    const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                                    skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-imageView-07606",
+                                                     "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
+                                                     "] %s is executed within a dynamic render pass instance "
+                                                     "scope begun "
+                                                     "by %s(), VkRenderingInfo::pColorAttachments[%" PRIu32
+                                                     "].imageView is VK_NULL_HANDLE but "
+                                                     "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
+                                                     "] is %s.",
+                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                                     cb_state->begin_rendering_func_name.c_str(), color_i, color_i,
+                                                     string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
+                                }
+                            } else {
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[color_i].imageView);
 
-                            if (image_view_state->create_info.format != inheritance_rendering_info.pColorAttachmentFormats[index]) {
-                                const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                                skip |=
-                                    LogError(objlist, "VUID-vkCmdExecuteCommands-imageView-06028",
-                                             "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
-                                             "] %s is executed within a dynamic renderpass instance "
-                                             "scope begun "
-                                             "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats at index (%u) does "
-                                             "not match the format of the imageView in VkRenderingInfo::pColorAttachments.",
-                                             i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             cb_state->begin_rendering_func_name.c_str(), index);
+                                if (image_view_state->create_info.format !=
+                                    inheritance_rendering_info.pColorAttachmentFormats[color_i]) {
+                                    const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
+                                    skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-imageView-06028",
+                                                     "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
+                                                     "] %s is executed within a dynamic render pass instance "
+                                                     "scope begun "
+                                                     "by %s(), VkRenderingInfo::pColorAttachments[%" PRIu32
+                                                     "].imageView format is %s but "
+                                                     "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats[%" PRIu32
+                                                     "] is %s.",
+                                                     i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                                     cb_state->begin_rendering_func_name.c_str(), color_i,
+                                                     string_VkFormat(image_view_state->create_info.format), color_i,
+                                                     string_VkFormat(inheritance_rendering_info.pColorAttachmentFormats[color_i]));
+                                }
                             }
                         }
 
