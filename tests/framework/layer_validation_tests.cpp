@@ -1786,7 +1786,6 @@ void CreatePipelineHelper::InitFragmentLibInfo(uint32_t count, const VkPipelineS
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     //  gp_ci_.pTessellationState = nullptr; // TODO
     gp_ci_.pViewportState = &vp_state_ci_;
-    gp_ci_.pRasterizationState = &rs_state_ci_;
 
     // If using Dynamic Rendering, will need to be set to null
     // otherwise needs to be shared across libraries in the same executable pipeline

@@ -1069,3 +1069,80 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 }
+
+TEST_F(VkPositiveLayerTest, CustomSafePNextCopy) {
+    TEST_DESCRIPTION("Check passing custom data down the pNext chain for safe struct construction");
+
+    // This tests an additional "copy_state" parameter in the SafePNextCopy function that allows "customizing" safe_* struct
+    // construction.. This is required for structs such as VkPipelineRenderingCreateInfo (which extend VkGraphicsPipelineCreateInfo)
+    // whose members must be partially ignored depending on the graphics sub-state present.
+
+    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+    auto pri = LvlInitStruct<VkPipelineRenderingCreateInfo>();
+    pri.colorAttachmentCount = 1;
+    pri.pColorAttachmentFormats = &format;
+
+    bool ignore_default_construction = true;
+    PNextCopyState copy_state = {
+        [&ignore_default_construction](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
+            if (ignore_default_construction) {
+                auto tmp = reinterpret_cast<safe_VkPipelineRenderingCreateInfo *>(safe_struct);
+                tmp->colorAttachmentCount = 0;
+                tmp->pColorAttachmentFormats = nullptr;
+                return true;
+            }
+            return false;
+        },
+    };
+
+    {
+        auto gpci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&pri);
+        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
+
+        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpci.pNext);
+        // Ensure original input struct was not modified
+        ASSERT_EQ(pri.colorAttachmentCount, 1);
+        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
+
+        // Ensure safe struct was modified
+        ASSERT_EQ(safe_pri->colorAttachmentCount, 0);
+        ASSERT_EQ(safe_pri->pColorAttachmentFormats, nullptr);
+    }
+
+    // Ensure PNextCopyState::init is also applied when there is more than one element in the pNext chain
+    {
+        auto gpl_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pri);
+        auto gpci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&gpl_info);
+
+        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
+
+        auto safe_gpl_info = reinterpret_cast<const safe_VkGraphicsPipelineLibraryCreateInfoEXT *>(safe_gpci.pNext);
+        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpl_info->pNext);
+        // Ensure original input struct was not modified
+        ASSERT_EQ(pri.colorAttachmentCount, 1);
+        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
+
+        // Ensure safe struct was modified
+        ASSERT_EQ(safe_pri->colorAttachmentCount, 0);
+        ASSERT_EQ(safe_pri->pColorAttachmentFormats, nullptr);
+    }
+
+    // Check that signaling to use the default constructor works
+    {
+        pri.colorAttachmentCount = 1;
+        pri.pColorAttachmentFormats = &format;
+
+        ignore_default_construction = false;
+        auto gpci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&pri);
+        safe_VkGraphicsPipelineCreateInfo safe_gpci(&gpci, false, false, &copy_state);
+
+        auto safe_pri = reinterpret_cast<const safe_VkPipelineRenderingCreateInfo *>(safe_gpci.pNext);
+        // Ensure original input struct was not modified
+        ASSERT_EQ(pri.colorAttachmentCount, 1);
+        ASSERT_EQ(pri.pColorAttachmentFormats, &format);
+
+        // Ensure safe struct was modified
+        ASSERT_EQ(safe_pri->colorAttachmentCount, 1);
+        ASSERT_EQ(*safe_pri->pColorAttachmentFormats, format);
+    }
+}
