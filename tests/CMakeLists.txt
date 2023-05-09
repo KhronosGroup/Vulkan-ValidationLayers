@@ -103,7 +103,10 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/nvidia_best_practices.cpp
     negative/object_lifetime.cpp
     negative/others.cpp
-    negative/pipeline_shader.cpp
+    negative/pipeline_advanced_blend.cpp
+    negative/pipeline_layout.cpp
+    negative/pipeline_topology.cpp
+    negative/pipeline.cpp
     negative/portability_subset.cpp
     negative/protected_memory.cpp
     negative/query.cpp

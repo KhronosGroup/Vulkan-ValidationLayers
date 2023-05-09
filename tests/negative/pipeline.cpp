@@ -18,38 +18,9 @@
 
 #include <limits>
 
-TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
-    TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
-    VkPhysicalDeviceFeatures device_features = {};
-    device_features.fillModeNonSolid = VK_FALSE;
-    // The sacrificial device object
-    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+class NegativePipeline : public VkLayerTest {};
 
-    VkPipelineRasterizationStateCreateInfo rs_ci = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>();
-    rs_ci.lineWidth = 1.0f;
-    rs_ci.rasterizerDiscardEnable = VK_TRUE;
-
-    auto set_polygonMode = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_ = rs_ci; };
-
-    // Set polygonMode to POINT while the non-solid fill mode feature is disabled.
-    // Introduce failure by setting unsupported polygon mode
-    rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413");
-
-    // Set polygonMode to LINE while the non-solid fill mode feature is disabled.
-    // Introduce failure by setting unsupported polygon mode
-    rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413");
-
-    // Set polygonMode to FILL_RECTANGLE_NV while the extension is not enabled.
-    // Introduce failure by setting unsupported polygon mode
-    rs_ci.polygonMode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
-}
-
-TEST_F(VkLayerTest, PipelineNotBound) {
+TEST_F(NegativePipeline, NotBound) {
     TEST_DESCRIPTION("Pass in an invalid pipeline object handle into a Vulkan API call.");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-parameter");
@@ -65,7 +36,7 @@ TEST_F(VkLayerTest, PipelineNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineWrongBindPointGraphics) {
+TEST_F(NegativePipeline, WrongBindPointGraphics) {
     TEST_DESCRIPTION("Bind a compute pipeline in the graphics bind point");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00779");
@@ -84,7 +55,7 @@ TEST_F(VkLayerTest, PipelineWrongBindPointGraphics) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineBasicCompute) {
+TEST_F(NegativePipeline, BasicCompute) {
     TEST_DESCRIPTION("Bind a compute pipeline (no subpasses)");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -119,7 +90,7 @@ TEST_F(VkLayerTest, PipelineBasicCompute) {
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
 }
 
-TEST_F(VkLayerTest, PipelineWrongBindPointCompute) {
+TEST_F(NegativePipeline, WrongBindPointCompute) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the compute bind point");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineBindPoint-00780");
@@ -138,7 +109,7 @@ TEST_F(VkLayerTest, PipelineWrongBindPointCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DisabledIndependentBlend) {
+TEST_F(NegativePipeline, DisabledIndependentBlend) {
     TEST_DESCRIPTION(
         "Generate INDEPENDENT_BLEND by disabling independent blend and then specifying different blend states for two "
         "attachments");
@@ -201,7 +172,7 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
+TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     TEST_DESCRIPTION("Test that blending is not enabled with a format not support blending");
     VkPhysicalDeviceFeatures features = {};
     features.independentBlend = VK_FALSE;
@@ -283,973 +254,7 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
                                       "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044");
 }
 
-TEST_F(VkLayerTest, PointSizeFailure) {
-    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
-
-    // Create VS declaring PointSize but not writing to it
-    const char NoPointSizeVertShader[] = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        out gl_PerVertex
-        {
-            vec4 gl_Position;
-            float gl_PointSize;
-        };
-        void main() {
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
-
-    // Set Input Assembly to TOPOLOGY POINT LIST
-    auto set_info = [&](CreatePipelineHelper &helper) {
-        // Set Input Assembly to TOPOLOGY POINT LIST
-        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722");
-}
-
-TEST_F(VkLayerTest, InvalidTopology) {
-    TEST_DESCRIPTION("InvalidTopology.");
-    VkPhysicalDeviceFeatures deviceFeatures = {};
-    deviceFeatures.geometryShader = VK_FALSE;
-    deviceFeatures.tessellationShader = VK_FALSE;
-
-    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-
-    VkPrimitiveTopology topology;
-
-    auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.ia_ci_.topology = topology;
-        helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
-    };
-
-    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-
-    topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-
-    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-
-    {
-        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
-    }
-
-    {
-        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
-    }
-
-    {
-        topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
-                                      "VUID-VkGraphicsPipelineCreateInfo-topology-00737"};
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
-    }
-
-    topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-
-    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-}
-
-TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
-    TEST_DESCRIPTION("Test VK_EXT_primitive_topology_list_restart");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto ptl_restart_features = LvlInitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
-    GetPhysicalDeviceFeatures2(ptl_restart_features);
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
-    }
-    if (!ptl_restart_features.primitiveTopologyListRestart) {
-        GTEST_SKIP() << "primitive topology list restart feature is not available, skipping test";
-    }
-    ptl_restart_features.primitiveTopologyListRestart = false;
-    ptl_restart_features.primitiveTopologyPatchListRestart = false;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ptl_restart_features));
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-
-    VkPrimitiveTopology topology;
-
-    auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.ia_ci_.topology = topology;
-        helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
-        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
-    };
-
-    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
-
-    if (m_device->phy().features().tessellationShader) {
-        topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                      "VUID-VkGraphicsPipelineCreateInfo-topology-00737"};
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
-    }
-}
-
-TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
-    TEST_DESCRIPTION("Attempt to create a pipeline layout using more than the physical limit of SetLayouts.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 0;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layout_binding.pImmutableSamplers = NULL;
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.bindingCount = 1;
-    ds_layout_ci.pBindings = &layout_binding;
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-
-    // Create an array of DSLs, one larger than the physical limit
-    const auto excess_layouts = 1 + m_device->phy().properties().limits.maxBoundDescriptorSets;
-    std::vector<VkDescriptorSetLayout> dsl_array(excess_layouts, ds_layout.handle());
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = excess_layouts;
-    pipeline_layout_ci.pSetLayouts = dsl_array.data();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286");
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineExcessSubsampledPerStageDescriptors) {
-    TEST_DESCRIPTION("Attempt to create a pipeline layout where total subsampled descriptors exceed limits");
-
-    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-
-    auto density_map2_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
-    auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t max_subsampled_samplers = density_map2_properties.maxDescriptorSetSubsampledSamplers;
-
-    // Note: Adding this check in case mock ICDs don't initialize min-max values correctly
-    if (max_subsampled_samplers == 0) {
-        GTEST_SKIP() << "axDescriptorSetSubsampledSamplers limit (" << max_subsampled_samplers
-                     << ") must be greater than 0. Skipping.";
-    }
-
-    if (max_subsampled_samplers >= properties2.properties.limits.maxDescriptorSetSamplers) {
-        GTEST_SKIP() << "test assumes maxDescriptorSetSubsampledSamplers limit (" << max_subsampled_samplers
-                     << ") is less than overall sampler limit (" << properties2.properties.limits.maxDescriptorSetSamplers
-                     << "). Skipping.";
-    }
-
-    VkDescriptorSetLayoutBinding dslb = {};
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    sampler_info.maxLod = 0.f;
-    sampler_info.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
-    vk_testing::Sampler sampler(*m_device, sampler_info);
-    ASSERT_TRUE(sampler.initialized());
-
-    // just make all the immutable samplers point to the same sampler
-    std::vector<VkSampler> immutableSamplers;
-    immutableSamplers.resize(max_subsampled_samplers);
-    for (uint32_t sampler_idx = 0; sampler_idx < max_subsampled_samplers; sampler_idx++) {
-        immutableSamplers[sampler_idx] = sampler.handle();
-    }
-
-    // VU 03566 - too many subsampled sampler type descriptors across stages
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb.descriptorCount = max_subsampled_samplers;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dslb.pImmutableSamplers = &immutableSamplers[0];
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb.descriptorCount = max_subsampled_samplers;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-    ASSERT_TRUE(ds_layout.initialized());
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-    const char *max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&ds_layout});
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
-    TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed per-stage limits");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    bool descriptor_indexing =
-        IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-    uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().properties().limits.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().properties().limits.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().properties().limits.maxPerStageDescriptorSamplers;
-    uint32_t max_combined = std::min(max_samplers, max_sampled_images);
-    uint32_t max_input_attachments = m_device->phy().properties().limits.maxPerStageDescriptorInputAttachments;
-
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().properties().limits.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().properties().limits.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
-
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
-    if (descriptor_indexing) {
-        GetPhysicalDeviceProperties2(descriptor_indexing_properties);
-    }
-
-    // Devices that report UINT32_MAX for any of these limits can't run this test
-    if (vvl::kU32Max ==
-        std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
-        GTEST_SKIP() << "Physical device limits report as UINT32_MAX";
-    }
-
-    VkDescriptorSetLayoutBinding dslb = {};
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-
-    // VU 0fe0023e - too many sampler type descriptors in fragment stage
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb.descriptorCount = max_samplers;
-    dslb.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    dslb.descriptorCount = max_combined;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);
-    if ((max_samplers + max_combined) > sum_samplers) {
-        const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);  // expect all-stages sum too
-    }
-    if (max_combined > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if ((max_samplers + max_combined) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
-        }
-        if ((max_samplers + max_combined) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-        }
-        if (max_combined > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
-        }
-        if (max_combined > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00240 - too many uniform buffer type descriptors in vertex stage
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dslb.descriptorCount = max_uniform_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);
-    if (dslb.descriptorCount > sum_uniform_buffers) {
-        const char *max_all_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_vuid);  // expect all-stages sum too
-    }
-    if (dslb.descriptorCount > sum_dyn_uniform_buffers) {
-        const char *max_all_uniform_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
-                                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_dynamic_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038");
-        }
-        if ((dslb.descriptorCount * 2) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00242 - too many storage buffer type descriptors in compute stage
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.descriptorCount = max_storage_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_ALL;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 2;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);
-    if (dslb.descriptorCount > sum_dyn_storage_buffers) {
-        const char *max_all_storage_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
-                                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_dynamic_vuid);  // expect all-stages sum too
-    }
-    const uint32_t storage_buffer_count = dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount;
-    if (storage_buffer_count > sum_storage_buffers) {
-        const char *max_all_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if (storage_buffer_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040");
-        }
-        if ((dslb.descriptorCount * 3) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00244 - too many sampled image type descriptors in multiple stages
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    dslb.descriptorCount = max_sampled_images;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-    dslb.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 2;
-    dslb.descriptorCount = max_combined;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                              : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sample_image_vuid);
-    const uint32_t sampled_image_count = max_combined + 2 * max_sampled_images;
-    if (sampled_image_count > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);  // expect all-stages sum too
-    }
-    if (max_combined > sum_samplers) {
-        const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if (sampled_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
-        }
-        if (sampled_image_count > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
-        }
-        if (max_combined > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
-        }
-        if (max_combined > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00246 - too many storage image type descriptors in fragment stage
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    dslb.descriptorCount = 1 + (max_storage_images / 2);
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
-                                                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_image_vuid);
-    const uint32_t storage_image_count = 2 * dslb.descriptorCount;
-    if (storage_image_count > sum_storage_images) {
-        const char *max_all_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_image_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if (storage_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
-        }
-        if (storage_image_count > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d18 - too many input attachments in fragment stage
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    dslb.descriptorCount = 1 + max_input_attachments;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
-                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_input_vuid);
-    if (dslb.descriptorCount > sum_input_attachments) {
-        const char *max_all_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
-                                                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_input_vuid);  // expect all-stages sum too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-}
-
-TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
-    TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed limits");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    const bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-    uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().properties().limits.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().properties().limits.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().properties().limits.maxPerStageDescriptorSamplers;
-    uint32_t max_input_attachments = m_device->phy().properties().limits.maxPerStageDescriptorInputAttachments;
-
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().properties().limits.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().properties().limits.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().properties().limits.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().properties().limits.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
-
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
-    if (descriptor_indexing) {
-        GetPhysicalDeviceProperties2(descriptor_indexing_properties);
-    }
-
-    // Devices that report UINT32_MAX for any of these limits can't run this test
-    if (vvl::kU32Max == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
-                                  sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
-        GTEST_SKIP() << "Physical device limits report as 2^32-1";
-    }
-
-    VkDescriptorSetLayoutBinding dslb = {};
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-
-    // VU 0fe00d1a - too many sampler type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb.descriptorCount = sum_samplers / 2;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    dslb.descriptorCount = sum_samplers - dslb.descriptorCount + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);
-    if (dslb.descriptorCount > max_samplers) {
-        const char *max_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);  // Expect max-per-stage samplers exceeds limits
-    }
-    if (dslb.descriptorCount > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_all_sampled_image_vuid);  // Expect max overall sampled image count exceeds limits
-    }
-    if (dslb.descriptorCount > max_sampled_images) {
-        const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                                  : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_sample_image_vuid);  // Expect max per-stage sampled image count exceeds limits
-    }
-    if (descriptor_indexing) {
-        if ((sum_samplers + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
-        }
-        if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) >
-            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-        }
-        if (dslb_vec[1].descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
-        }
-        if (dslb_vec[1].descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d1c - too many uniform buffer type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dslb.descriptorCount = sum_uniform_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_vuid);
-    if (dslb.descriptorCount > max_uniform_buffers) {
-        const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d1e - too many dynamic uniform buffer type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    dslb.descriptorCount = sum_dyn_uniform_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_uniform_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
-                                                                     : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_dynamic_vuid);
-    if (dslb.descriptorCount > max_uniform_buffers) {
-        const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d20 - too many storage buffer type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.descriptorCount = sum_storage_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_vuid);
-    if (dslb.descriptorCount > max_storage_buffers) {
-        const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d22 - too many dynamic storage buffer type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    dslb.descriptorCount = sum_dyn_storage_buffers + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_storage_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
-                                                                     : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_dynamic_vuid);
-    if (dslb.descriptorCount > max_storage_buffers) {
-        const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d24 - too many sampled image type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    dslb.descriptorCount = max_samplers;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    // revisit: not robust to odd limits.
-    uint32_t remaining = (max_samplers > sum_sampled_images ? 0 : (sum_sampled_images - max_samplers) / 2);
-    dslb.descriptorCount = 1 + remaining;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 2;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-    dslb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);
-    // Takes max since VUID only checks per shader stage
-    if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) > max_sampled_images) {
-        const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                                  : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_sample_image_vuid);  // Expect max-per-stage sampled images to exceed limits
-    }
-    if (descriptor_indexing) {
-        if (max_samplers > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
-        }
-        if (max_samplers > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
-        }
-        if ((dslb_vec[0].descriptorCount + dslb_vec[1].descriptorCount) >
-            descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
-        }
-        if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) >
-            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d26 - too many storage image type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    dslb.descriptorCount = sum_storage_images / 2;
-    dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-    dslb.binding = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    dslb.descriptorCount = sum_storage_images - dslb.descriptorCount + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_image_vuid);
-    if (dslb.descriptorCount > max_storage_images) {
-        const char *max_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_image_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if ((sum_storage_images + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042");
-        }
-        if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) >
-            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageImages) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-
-    // VU 0fe00d28 - too many input attachment type descriptors overall
-    dslb_vec.clear();
-    dslb.binding = 0;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    dslb.descriptorCount = sum_input_attachments + 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb.pImmutableSamplers = NULL;
-    dslb_vec.push_back(dslb);
-
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
-
-    const char *max_all_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
-                                                           : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_input_vuid);
-    if (dslb.descriptorCount > max_input_attachments) {
-        const char *max_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
-                                                           : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_input_vuid);  // expect max-per-stage too
-    }
-    if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043");
-        }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
-        }
-    }
-    err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
-    pipeline_layout = VK_NULL_HANDLE;
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, NULL);
-}
-
-TEST_F(VkLayerTest, InvalidCmdBufferPipelineDestroyed) {
+TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
@@ -1278,7 +283,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferPipelineDestroyed) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidPipeline) {
+TEST_F(NegativePipeline, BadPipelineObject) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     constexpr uint64_t fake_pipeline_handle = 0xbaad6001;
     VkPipeline bad_pipeline = CastFromUint64<VkPipeline>(fake_pipeline_handle);
@@ -1373,142 +378,7 @@ TEST_F(VkLayerTest, InvalidPipeline) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
-    TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
-
-    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-
-    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
-    uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
-    uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
-    if (std::max({x_count_limit, y_count_limit, z_count_limit}) == vvl::kU32Max) {
-        GTEST_SKIP() << "device maxComputeWorkGroupCount limit reports UINT32_MAX";
-    }
-
-    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
-    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
-    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
-
-    std::string spv_source = R"(
-        OpCapability Shader
-        OpMemoryModel Logical GLSL450
-        OpEntryPoint GLCompute %main "main"
-        OpExecutionMode %main LocalSize )";
-    spv_source.append(std::to_string(x_size_limit + 1) + " " + std::to_string(y_size_limit + 1) + " " +
-                      std::to_string(z_size_limit + 1));
-    spv_source.append(R"(
-        %void = OpTypeVoid
-           %3 = OpTypeFunction %void
-        %main = OpFunction %void None %3
-           %5 = OpLabel
-                OpReturn
-                OpFunctionEnd)");
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.cs_.reset(new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
-    pipe.InitState();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06429");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-y-06430");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-z-06431");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06432");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-
-    // Create a minimal compute pipeline
-    x_size_limit = (x_size_limit > 1024) ? 1024 : x_size_limit;
-    y_size_limit = (y_size_limit > 1024) ? 1024 : y_size_limit;
-    z_size_limit = (z_size_limit > 64) ? 64 : z_size_limit;
-
-    uint32_t invocations_limit = m_device->props.limits.maxComputeWorkGroupInvocations;
-    x_size_limit = (x_size_limit > invocations_limit) ? invocations_limit : x_size_limit;
-    invocations_limit /= x_size_limit;
-    y_size_limit = (y_size_limit > invocations_limit) ? invocations_limit : y_size_limit;
-    invocations_limit /= y_size_limit;
-    z_size_limit = (z_size_limit > invocations_limit) ? invocations_limit : z_size_limit;
-
-    std::stringstream cs_text;
-    cs_text << "#version 450\n";
-    cs_text << "layout(local_size_x = " << x_size_limit << ", ";
-    cs_text << "local_size_y = " << y_size_limit << ",";
-    cs_text << "local_size_z = " << z_size_limit << ") in;\n";
-    cs_text << "void main() {}\n";
-
-    VkShaderObj cs_obj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cs_.reset(new VkShaderObj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
-    pipe.CreateComputePipeline();
-
-    // Bind pipeline to command buffer
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-
-    // Dispatch counts that exceed device limits
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountX-00386");
-    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit + 1, y_count_limit, z_count_limit);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountY-00387");
-    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit + 1, z_count_limit);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountZ-00388");
-    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit + 1);
-    m_errorMonitor->VerifyFound();
-
-    if (device_group_creation) {
-        PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
-            (PFN_vkCmdDispatchBaseKHR)vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        // Base equals or exceeds limit
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00421");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00422");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupZ-00423");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        // (Base + count) exceeds limit
-        uint32_t x_base = x_count_limit / 2;
-        uint32_t y_base = y_count_limit / 2;
-        uint32_t z_base = z_count_limit / 2;
-        x_count_limit -= x_base;
-        y_count_limit -= y_base;
-        z_count_limit -= z_base;
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountX-00424");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountY-00425");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountZ-00426");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
-        m_errorMonitor->VerifyFound();
-    } else {
-        printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
-    }
-}
-
-TEST_F(VkLayerTest, InvalidPipelineCreateState) {
+TEST_F(NegativePipeline, ShaderStageName) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1537,7 +407,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "contains invalid characters or is badly formed");
 }
 
-TEST_F(VkLayerTest, InvalidPipelineCreateStateBadStageBit) {
+TEST_F(NegativePipeline, ShaderStageBit) {
     TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1565,149 +435,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateStateBadStageBit) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DispatchWithUnboundSet) {
-    TEST_DESCRIPTION("Dispatch with unbound descriptor set");
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    char const *cs_source = R"glsl(
-        #version 450
-        layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
-        layout(set = 0, binding = 0) uniform sampler2D InputTexture;
-        layout(set = 1, binding = 0, rgba32f) uniform image2D OutputTexture;
-        void main() {
-            vec4 value = textureGather(InputTexture, vec2(0), 0);
-            imageStore(OutputTexture, ivec2(0), value);
-        }
-    )glsl";
-
-    OneOffDescriptorSet combined_image_set(
-        m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
-    OneOffDescriptorSet storage_image_set(m_device,
-                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
-
-    const VkFormat combined_image_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image(m_device);
-    image.Init(1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
-    ASSERT_TRUE(image.initialized());
-
-    auto sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
-    ASSERT_TRUE(sampler.initialized());
-
-    CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.InitInfo();
-    cs_pipeline.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
-    cs_pipeline.InitState();
-    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&combined_image_set.layout_, &storage_image_set.layout_});
-    cs_pipeline.CreateComputePipeline();
-
-    m_commandBuffer->begin();
-
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
-
-    combined_image_set.WriteDescriptorImageInfo(0, image.targetView(combined_image_format), sampler.handle());
-    combined_image_set.UpdateDescriptorSets();
-
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
-                              1, &combined_image_set.set_, 0, nullptr);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-02697");
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
-
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
-    TEST_DESCRIPTION("Verify that OpImage*Dref* operations are supported for given format ");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                             "vkGetPhysicalDeviceFormatProperties2KHR");
-
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
-        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
-        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
-
-        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
-
-        const bool has_sampling =
-            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR) != 0;
-        const bool has_sampling_img_depth_compare =
-            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR) != 0;
-
-        if (has_sampling && !has_sampling_img_depth_compare) {
-            format = (VkFormat)fmt;
-            break;
-        }
-    }
-
-    if (format == VK_FORMAT_UNDEFINED) {
-        GTEST_SKIP() << "Cannot find suitable format, skipping.";
-    }
-
-    const char vsSource[] = R"glsl(
-        #version 450
-
-        void main() {
-        }
-    )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-
-    const char fsSource[] = R"glsl(
-        #version 450
-        layout (set = 0, binding = 1) uniform sampler2DShadow tex;
-        void main() {
-           float f = texture(tex, vec3(0));
-        }
-    )glsl";
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
-    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
-
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
-    ASSERT_TRUE(image.initialized());
-
-    auto sampler_ci = SafeSaneSamplerCreateInfo();
-    vk_testing::Sampler sampler(*m_device, sampler_ci);
-    ASSERT_TRUE(sampler.initialized());
-
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image.targetView(format), sampler.handle(),
-                                                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
-    g_pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-06479");
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-}
-
-TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
+TEST_F(NegativePipeline, SampleRateFeatureDisable) {
     // Enable sample shading in pipeline when the feature is disabled.
     // Disable sampleRateShading here
     VkPhysicalDeviceFeatures device_features = {};
@@ -1722,7 +450,7 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-sampleShadingEnable-00784");
 }
 
-TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
+TEST_F(NegativePipeline, SampleRateFeatureEnable) {
     // Enable sample shading in pipeline when the feature is disabled.
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -1755,7 +483,7 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
     range_test(1.0F, /* positive_test= */ true);
 }
 
-TEST_F(VkLayerTest, InvalidPipelineDepthClipControlFeatureDisable) {
+TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
     // Enable negativeOneToOne (VK_EXT_depth_clip_control) in pipeline when the feature is disabled.
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1767,7 +495,7 @@ TEST_F(VkLayerTest, InvalidPipelineDepthClipControlFeatureDisable) {
                                       "VUID-VkPipelineViewportDepthClipControlCreateInfoEXT-negativeOneToOne-06470");
 }
 
-TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
+TEST_F(NegativePipeline, SamplePNext) {
     // Enable sample shading in pipeline when the feature is disabled.
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -1785,7 +513,7 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
-TEST_F(VkLayerTest, InvalidSubpassRasterizationSamples) {
+TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1877,7 +605,7 @@ TEST_F(VkLayerTest, InvalidSubpassRasterizationSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
+TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
     TEST_DESCRIPTION("Test pipeline creation VUIDs added with VK_QCOM_render_pass_shader_resolve extension.");
     AddRequiredExtensions(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -2002,7 +730,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderPassShaderResolveQCOM) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, RasterizerDiscardWithFragmentShader) {
+TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     TEST_DESCRIPTION("Create Graphics Pipeline with fragment shader and rasterizer discard");
     ASSERT_NO_FATAL_FAILURE(Init());
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
@@ -2069,7 +797,7 @@ TEST_F(VkLayerTest, RasterizerDiscardWithFragmentShader) {
     vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
-TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
+TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2149,445 +877,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
     vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
-TEST_F(VkLayerTest, SetDepthRangeUnrestricted) {
-    TEST_DESCRIPTION("Test setting minDepthBounds and maxDepthBounds without VK_EXT_depth_range_unrestricted");
-
-    // Extension doesn't have feature bit, so not enabling extension invokes restrictions
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
-    if (VK_TRUE != device_features.depthBounds) {
-        GTEST_SKIP() << "Test requires unsupported depthBounds feature";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    // Need to set format framework uses for InitRenderTarget
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-
-    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
-                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
-
-    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
-    ds_ci.depthTestEnable = VK_TRUE;
-    ds_ci.depthBoundsTestEnable = VK_TRUE;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.ds_ci_ = ds_ci;
-    pipe.InitState();
-
-    pipe.ds_ci_.minDepthBounds = 1.5f;
-    pipe.ds_ci_.maxDepthBounds = 1.0f;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-
-    pipe.ds_ci_.minDepthBounds = 1.0f;
-    pipe.ds_ci_.maxDepthBounds = 1.5f;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-
-    // Add dynamic depth stencil state instead
-    pipe.ds_ci_.minDepthBounds = 0.0f;
-    pipe.ds_ci_.maxDepthBounds = 0.0f;
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_BOUNDS};
-    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508");
-    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.5f, 0.0f);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509");
-    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 0.0f, 1.5f);
-    m_errorMonitor->VerifyFound();
-
-    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.0f, 1.0f);
-    m_commandBuffer->end();
-}
-
-TEST_F(VkLayerTest, PSOViewportStateTests) {
-    TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for non-multiViewport");
-
-    VkPhysicalDeviceFeatures features{};
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    if (m_device->props.limits.maxViewports < 3) {
-        GTEST_SKIP() << "maxViewports is not large enough";
-    }
-
-    const auto break_vp_state = [](CreatePipelineHelper &helper) {
-        helper.rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
-        helper.gp_ci_.pViewportState = nullptr;
-    };
-    CreatePipelineHelper::OneshotTest(*this, break_vp_state, kErrorBit,
-                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00750");
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkViewport viewports[] = {viewport, viewport};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkRect2D scissors[] = {scissor, scissor};
-
-    // test viewport and scissor arrays
-    using std::vector;
-    struct TestCase {
-        uint32_t viewport_count;
-        VkViewport *viewports;
-        uint32_t scissor_count;
-        VkRect2D *scissors;
-
-        vector<std::string> vuids;
-    };
-
-    vector<TestCase> test_cases = {
-        {2,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {1,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
-        {1, nullptr, 1, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
-        {1, viewports, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {1,
-         nullptr,
-         1,
-         nullptr,
-         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {2,
-         nullptr,
-         3,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {2,
-         nullptr,
-         2,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-    };
-
-    for (const auto &test_case : test_cases) {
-        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
-            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
-            helper.vp_state_ci_.pViewports = test_case.viewports;
-            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
-            helper.vp_state_ci_.pScissors = test_case.scissors;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
-    }
-
-    vector<TestCase> dyn_test_cases = {
-        {0,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {1,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {1,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
-        {2,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
-        {0,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         nullptr,
-         3,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {0,
-         nullptr,
-         0,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-    };
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-
-    for (const auto &test_case : dyn_test_cases) {
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-            dyn_state_ci.dynamicStateCount = size(dyn_states);
-            dyn_state_ci.pDynamicStates = dyn_states;
-            helper.dyn_state_ci_ = dyn_state_ci;
-
-            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
-            helper.vp_state_ci_.pViewports = test_case.viewports;
-            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
-            helper.vp_state_ci_.pScissors = test_case.scissors;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
-    }
-}
-
-TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
-    TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for multiViewport feature");
-
-    ASSERT_NO_FATAL_FAILURE(Init());  // enables all supported features
-
-    if (!m_device->phy().features().multiViewport) {
-        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
-    }
-    // at least 16 viewports supported from here on
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkViewport viewports[] = {viewport, viewport};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkRect2D scissors[] = {scissor, scissor};
-
-    using std::vector;
-    struct TestCase {
-        uint32_t viewport_count;
-        VkViewport *viewports;
-        uint32_t scissor_count;
-        VkRect2D *scissors;
-
-        vector<std::string> vuids;
-    };
-
-    vector<TestCase> test_cases = {
-        {0,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {0,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-        {2, nullptr, 2, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
-        {2, viewports, 2, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {2,
-         nullptr,
-         2,
-         nullptr,
-         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {0,
-         nullptr,
-         0,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-    };
-
-    const auto max_viewports = m_device->phy().properties().limits.maxViewports;
-    const bool max_viewports_maxxed = max_viewports == std::numeric_limits<decltype(max_viewports)>::max();
-    if (max_viewports_maxxed) {
-        printf("VkPhysicalDeviceLimits::maxViewports is UINT32_MAX -- skipping part of test requiring to exceed maxViewports.\n");
-    } else {
-        const auto too_much_viewports = max_viewports + 1;
-        // avoid potentially big allocations by using only nullptr
-        test_cases.push_back({too_much_viewports,
-                              nullptr,
-                              2,
-                              scissors,
-                              {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
-                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}});
-        test_cases.push_back({2,
-                              viewports,
-                              too_much_viewports,
-                              nullptr,
-                              {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
-                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
-                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
-        test_cases.push_back(
-            {too_much_viewports,
-             nullptr,
-             too_much_viewports,
-             nullptr,
-             {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-              "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
-              "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
-    }
-
-    for (const auto &test_case : test_cases) {
-        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
-            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
-            helper.vp_state_ci_.pViewports = test_case.viewports;
-            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
-            helper.vp_state_ci_.pScissors = test_case.scissors;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
-    }
-
-    vector<TestCase> dyn_test_cases = {
-        {0,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {0,
-         viewports,
-         0,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-        {0,
-         nullptr,
-         0,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
-    };
-
-    if (!max_viewports_maxxed) {
-        const auto too_much_viewports = max_viewports + 1;
-        // avoid potentially big allocations by using only nullptr
-        dyn_test_cases.push_back({too_much_viewports,
-                                  nullptr,
-                                  2,
-                                  scissors,
-                                  {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
-        dyn_test_cases.push_back({2,
-                                  viewports,
-                                  too_much_viewports,
-                                  nullptr,
-                                  {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
-                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
-        dyn_test_cases.push_back({too_much_viewports,
-                                  nullptr,
-                                  too_much_viewports,
-                                  nullptr,
-                                  {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
-                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219"}});
-    }
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-
-    for (const auto &test_case : dyn_test_cases) {
-        const auto break_vp = [&](CreatePipelineHelper &helper) {
-            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-            dyn_state_ci.dynamicStateCount = size(dyn_states);
-            dyn_state_ci.pDynamicStates = dyn_states;
-            helper.dyn_state_ci_ = dyn_state_ci;
-
-            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
-            helper.vp_state_ci_.pViewports = test_case.viewports;
-            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
-            helper.vp_state_ci_.pScissors = test_case.scissors;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
-    }
-}
-
-TEST_F(VkLayerTest, PSOLineWidthInvalid) {
-    TEST_DESCRIPTION("Test non-1.0 lineWidth errors when pipeline is created and in vkCmdSetLineWidth");
-    VkPhysicalDeviceFeatures features{};
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    const std::array test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f),
-                                   std::numeric_limits<float>::quiet_NaN()};
-
-    // test VkPipelineRasterizationStateCreateInfo::lineWidth
-    for (const auto test_case : test_cases) {
-        const auto set_lineWidth = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_.lineWidth = test_case; };
-        CreatePipelineHelper::OneshotTest(*this, set_lineWidth, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749");
-    }
-
-    // test vk::CmdSetLineWidth
-    m_commandBuffer->begin();
-
-    for (const auto test_case : test_cases) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineWidth-lineWidth-00788");
-        vk::CmdSetLineWidth(m_commandBuffer->handle(), test_case);
-        m_errorMonitor->VerifyFound();
-    }
-}
-
-TEST_F(VkLayerTest, PipelineCreationCacheControl) {
+TEST_F(NegativePipeline, PipelineCreationCacheControl) {
     TEST_DESCRIPTION("Test VK_EXT_pipeline_creation_cache_control");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
@@ -2623,7 +913,7 @@ TEST_F(VkLayerTest, PipelineCreationCacheControl) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NumSamplesMismatch) {
+TEST_F(NegativePipeline, NumSamplesMismatch) {
     // Create CommandBuffer where MSAA samples doesn't match RenderPass
     // sampleCount
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-rasterizationSamples-04740");
@@ -2674,7 +964,7 @@ TEST_F(VkLayerTest, NumSamplesMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, NumBlendAttachMismatch) {
+TEST_F(NegativePipeline, NumBlendAttachMismatch) {
     // Create Pipeline where the number of blend attachments doesn't match the
     // number of color attachments.  In this case, we don't add any color
     // blend attachments even though we have a color attachment.
@@ -2696,130 +986,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609");
 }
 
-TEST_F(VkLayerTest, CmdClearAttachmentTests) {
-    TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkImageFormatProperties image_format_properties{};
-    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), m_renderTargets[0]->format(),
-                                                                 VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                                                 m_renderTargets[0]->usage(), 0, &image_format_properties));
-    if (image_format_properties.maxArrayLayers < 4) {
-        GTEST_SKIP() << "Test needs to create image 2D array of 4 image view, but VkImageFormatProperties::maxArrayLayers is < 4. "
-                        "Skipping test.";
-    }
-
-    // Create frame buffer with 2 layers, and image view with 4 layers,
-    // to make sure that considered layer count is the one coming from frame buffer
-    // (test would not fail if layer count used to do validation was 4)
-    VkImageObj render_target(m_device);
-    assert(!m_renderTargets.empty());
-    const auto render_target_ci = VkImageObj::ImageCreateInfo2D(
-        m_renderTargets[0]->width(), m_renderTargets[0]->height(), m_renderTargets[0]->create_info().mipLevels, 4,
-        m_renderTargets[0]->format(), m_renderTargets[0]->usage(), VK_IMAGE_TILING_OPTIMAL);
-    render_target.Init(render_target_ci, 0);
-    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
-    ivci.image = render_target.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    ivci.format = render_target_ci.format;
-    ivci.subresourceRange.layerCount = render_target_ci.arrayLayers;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    ivci.components.r = VK_COMPONENT_SWIZZLE_R;
-    ivci.components.g = VK_COMPONENT_SWIZZLE_G;
-    ivci.components.b = VK_COMPONENT_SWIZZLE_B;
-    ivci.components.a = VK_COMPONENT_SWIZZLE_A;
-    vk_testing::ImageView render_target_view(*m_device, ivci);
-    VkFramebufferCreateInfo fb_info = m_framebuffer_info;
-    fb_info.layers = 2;
-    fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &render_target_view.handle();
-    vk_testing::Framebuffer framebuffer(*m_device, fb_info);
-    m_renderPassBeginInfo.framebuffer = framebuffer.handle();
-
-    // Create secondary command buffer
-    auto secondary_cmd_buffer_alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
-    secondary_cmd_buffer_alloc_info.commandPool = m_commandPool->handle();
-    secondary_cmd_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-    secondary_cmd_buffer_alloc_info.commandBufferCount = 1;
-
-    vk_testing::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
-    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info = LvlInitStruct<VkCommandBufferInheritanceInfo>();
-    secondary_cmd_buffer_inheritance_info.renderPass = m_renderPass;
-    secondary_cmd_buffer_inheritance_info.framebuffer = framebuffer.handle();
-
-    VkCommandBufferBeginInfo secondary_cmd_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    secondary_cmd_buffer_begin_info.flags =
-        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    secondary_cmd_buffer_begin_info.pInheritanceInfo = &secondary_cmd_buffer_inheritance_info;
-
-    // Create clear rect
-    VkClearAttachment color_attachment;
-    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    color_attachment.clearValue.color.float32[0] = 1.0;
-    color_attachment.clearValue.color.float32[1] = 1.0;
-    color_attachment.clearValue.color.float32[2] = 1.0;
-    color_attachment.clearValue.color.float32[3] = 1.0;
-    color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
-
-    auto clear_cmds = [this, &color_attachment](VkCommandBuffer cmd_buffer, VkClearRect clear_rect) {
-        // extent too wide
-        VkClearRect clear_rect_too_large = clear_rect;
-        clear_rect_too_large.rect.extent.width = renderPassBeginInfo().renderArea.extent.width + 4;
-        clear_rect_too_large.rect.extent.height = clear_rect_too_large.rect.extent.height / 2;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00016");
-        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect_too_large);
-
-        // baseLayer < render pass instance layer count
-        clear_rect.baseArrayLayer = 1;
-        clear_rect.layerCount = 1;
-        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
-
-        // baseLayer + layerCount <= render pass instance layer count
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 2;
-        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
-
-        // baseLayer >= render pass instance layer count
-        clear_rect.baseArrayLayer = 2;
-        clear_rect.layerCount = 1;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
-        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
-
-        // baseLayer + layerCount > render pass instance layer count
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 4;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
-        vk::CmdClearAttachments(cmd_buffer, 1, &color_attachment, 1, &clear_rect);
-    };
-
-    // Register clear commands to secondary command buffer
-    secondary_cmd_buffer.begin(&secondary_cmd_buffer_begin_info);
-    clear_cmds(secondary_cmd_buffer.handle(), clear_rect);
-    secondary_cmd_buffer.end();
-
-    m_commandBuffer->begin();
-
-    // Execute secondary command buffer
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_cmd_buffer.handle());
-    m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRenderPass();
-
-    // Execute same commands as previously, but in a primary command buffer
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    clear_cmds(m_commandBuffer->handle(), clear_rect);
-    m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRenderPass();
-
-    m_commandBuffer->end();
-}
-
-TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
+TEST_F(NegativePipeline, ColorBlendInvalidLogicOp) {
     TEST_DESCRIPTION("Attempt to use invalid VkPipelineColorBlendStateCreateInfo::logicOp value.");
 
     ASSERT_NO_FATAL_FAILURE(Init());  // enables all supported features
@@ -2837,7 +1004,7 @@ TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
                                       "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
 }
 
-TEST_F(VkLayerTest, ColorBlendUnsupportedLogicOp) {
+TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
     TEST_DESCRIPTION("Attempt enabling VkPipelineColorBlendStateCreateInfo::logicOpEnable when logicOp feature is disabled.");
 
     VkPhysicalDeviceFeatures features{};
@@ -2849,7 +1016,7 @@ TEST_F(VkLayerTest, ColorBlendUnsupportedLogicOp) {
                                       "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606");
 }
 
-TEST_F(VkLayerTest, ColorBlendUnsupportedDualSourceBlend) {
+TEST_F(NegativePipeline, ColorBlendUnsupportedDualSourceBlend) {
     TEST_DESCRIPTION("Attempt to use dual-source blending when dualSrcBlend feature is disabled.");
 
     VkPhysicalDeviceFeatures features{};
@@ -2901,74 +1068,7 @@ TEST_F(VkLayerTest, ColorBlendUnsupportedDualSourceBlend) {
                                       "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611");
 }
 
-TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
-    TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
-
-    char const *vsSource = R"glsl(
-        #version 450
-        layout (std140, set = 0, binding = 0) uniform buf {
-            mat4 mvp;
-        } ubuf;
-        void main(){
-           gl_Position = ubuf.mvp * vec4(1);
-        }
-    )glsl";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07989");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
-    TEST_DESCRIPTION(
-        "Create a pipeline in which a descriptor used by a shader stage does not include that stage in its stageFlags.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},
-                                     });
-
-    char const *vsSource = R"glsl(
-        #version 450
-        layout (std140, set = 0, binding = 0) uniform buf {
-            mat4 mvp;
-        } ubuf;
-        void main(){
-           gl_Position = ubuf.mvp * vec4(1);
-        }
-    )glsl";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07988");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
+TEST_F(NegativePipeline, DuplicateStage) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2981,7 +1081,7 @@ TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-06897");
 }
 
-TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
+TEST_F(NegativePipeline, MissingEntrypoint) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -3025,7 +1125,7 @@ TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
     }
 }
 
-TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
+TEST_F(NegativePipeline, DepthStencilRequired) {
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "pDepthStencilState is NULL when rasterization is enabled and subpass uses a depth/stencil attachment");
 
@@ -3081,34 +1181,7 @@ TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
-        "layout");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "not declared in pipeline layout");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0; type is UNORM by default */
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineNullStagepName) {
+TEST_F(NegativePipeline, NullStagepName) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -3125,93 +1198,7 @@ TEST_F(VkLayerTest, CreatePipelineNullStagepName) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
-        "layout");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    char const *csSource = R"glsl(
-        #version 450
-        layout(local_size_x=1) in;
-        layout(set=0, binding=0) buffer block { vec4 x; };
-        void main(){
-           x = vec4(1);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
-    pipe.InitState();
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07988");
-    pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
-    TEST_DESCRIPTION("Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    char const *csSource = R"glsl(
-        #version 450
-        layout(local_size_x=1) in;
-        layout(set=0, binding=0) buffer block { vec4 x; };
-        void main() {
-           x.x = 1.0f;
-        }
-    )glsl";
-
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-    };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07989");
-}
-
-TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
-    TEST_DESCRIPTION("Verify an error message for multiple push descriptor sets.");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const unsigned int descriptor_set_layout_count = 2;
-    std::vector<VkDescriptorSetLayoutObj> ds_layouts;
-    for (uint32_t i = 0; i < descriptor_set_layout_count; ++i) {
-        dsl_binding.binding = i;
-        ds_layouts.emplace_back(m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
-                                VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-    }
-    const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
-
-    VkPipelineLayout pipeline_layout;
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.pushConstantRangeCount = 0;
-    pipeline_layout_ci.pPushConstantRanges = NULL;
-    pipeline_layout_ci.setLayoutCount = ds_vk_layouts.size();
-    pipeline_layout_ci.pSetLayouts = ds_vk_layouts.data();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00293");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
+TEST_F(NegativePipeline, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     TEST_DESCRIPTION("Verify an error message for an incorrect graphics pipeline rasterization sample count.");
 
     AddRequiredExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
@@ -3231,7 +1218,7 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-01505");
 }
 
-TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
+TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
     TEST_DESCRIPTION("Verify VK_NV_framebuffer_mixed_samples.");
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3343,7 +1330,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
     }
 }
 
-TEST_F(VkLayerTest, FramebufferMixedSamples) {
+TEST_F(NegativePipeline, FramebufferMixedSamples) {
     TEST_DESCRIPTION("Verify that the expected VUIds are hits when VK_NV_framebuffer_mixed_samples is disabled.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -3424,7 +1411,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
     }
 }
 
-TEST_F(VkLayerTest, FramebufferMixedSamplesCoverageReduction) {
+TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     TEST_DESCRIPTION("Verify VK_NV_coverage_reduction_mode.");
 
     AddRequiredExtensions(VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME);
@@ -3566,7 +1553,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesCoverageReduction) {
     }
 }
 
-TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
+TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
     TEST_DESCRIPTION("Verify VK_NV_fragment_coverage_to_color.");
 
     AddRequiredExtensions(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
@@ -3661,7 +1648,7 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
     }
 }
 
-TEST_F(VkLayerTest, ViewportSwizzleNV) {
+TEST_F(NegativePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -3724,7 +1711,7 @@ TEST_F(VkLayerTest, ViewportSwizzleNV) {
     }
 }
 
-TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
+TEST_F(NegativePipeline, CreationFeedbackCount) {
     TEST_DESCRIPTION("Test graphics pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -3760,7 +1747,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
                                       "VUID-VkGraphicsPipelineCreateInfo-pipelineStageCreationFeedbackCount-06594");
 }
 
-TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
+TEST_F(NegativePipeline, CreationFeedbackCountCompute) {
     TEST_DESCRIPTION("Test compute pipeline feedback stage count check.");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -3787,7 +1774,7 @@ TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
                                              "VUID-VkComputePipelineCreateInfo-pipelineStageCreationFeedbackCount-06566");
 }
 
-TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
+TEST_F(NegativePipeline, LineRasterization) {
     TEST_DESCRIPTION("Test VK_EXT_line_rasterization state against feature enables.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3876,47 +1863,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
     vk::CmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
 }
 
-TEST_F(VkLayerTest, FillRectangleNV) {
-    TEST_DESCRIPTION("Verify VK_NV_fill_rectangle");
-    AddRequiredExtensions(VK_NV_FILL_RECTANGLE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
-
-    // Disable non-solid fill modes to make sure that the usage of VK_POLYGON_MODE_LINE and
-    // VK_POLYGON_MODE_POINT will cause an error when the VK_NV_fill_rectangle extension is enabled.
-    device_features.fillModeNonSolid = VK_FALSE;
-
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkPolygonMode polygon_mode = VK_POLYGON_MODE_LINE;
-
-    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper &helper) { helper.rs_state_ci_.polygonMode = polygon_mode; };
-
-    // Set unsupported polygon mode VK_POLYGON_MODE_LINE
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
-
-    // Set unsupported polygon mode VK_POLYGON_MODE_POINT
-    polygon_mode = VK_POLYGON_MODE_POINT;
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
-
-    // Set supported polygon mode VK_POLYGON_MODE_FILL
-    polygon_mode = VK_POLYGON_MODE_FILL;
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit);
-
-    // Set supported polygon mode VK_POLYGON_MODE_FILL_RECTANGLE_NV
-    polygon_mode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit);
-}
-
-TEST_F(VkLayerTest, NotCompatibleForSet) {
+TEST_F(NegativePipeline, NotCompatibleForSet) {
     TEST_DESCRIPTION("Check that validation path catches pipeline layout inconsistencies for bind vs. dispatch");
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -4016,147 +1963,6 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
     vk::DestroyPipeline(device(), c_pipeline, nullptr);
 }
 
-TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
-    TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto cond_rendering_feature = LvlInitStruct<VkPhysicalDeviceConditionalRenderingFeaturesEXT>();
-    GetPhysicalDeviceFeatures2(cond_rendering_feature);
-    if (cond_rendering_feature.conditionalRendering == VK_FALSE) {
-        GTEST_SKIP() << "conditionalRendering feature not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cond_rendering_feature));
-
-    uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
-
-    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
-    ASSERT_TRUE(q_props.size() > 0);
-    ASSERT_TRUE(q_props[0].queueCount > 0);
-
-    for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
-        if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
-            only_transfer_queueFamilyIndex = i;
-            break;
-        }
-    }
-
-    if (only_transfer_queueFamilyIndex == vvl::kU32Max) {
-        GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
-    }
-
-    VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
-    VkCommandBufferObj commandBuffer(m_device, &commandPool);
-
-    commandBuffer.begin();
-
-    VkImageMemoryBarrier imb = LvlInitStruct<VkImageMemoryBarrier>();
-    imb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    imb.dstAccessMask = VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT;
-    imb.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    imb.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    imb.image = image.handle();
-    imb.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imb.subresourceRange.baseMipLevel = 0;
-    imb.subresourceRange.levelCount = 1;
-    imb.subresourceRange.baseArrayLayer = 0;
-    imb.subresourceRange.layerCount = 1;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcStageMask-06461");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstStageMask-06462");
-    vk::CmdPipelineBarrier(commandBuffer.handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-                           VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
-    m_errorMonitor->VerifyFound();
-
-    commandBuffer.end();
-}
-
-TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
-    TEST_DESCRIPTION("Check for the array dynamic array index features when the SPIR-V capabilities are requested.");
-
-    VkPhysicalDeviceFeatures features{};
-    features.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(Init(&features));
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    std::string const source{R"(
-               OpCapability Shader
-          %1 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint Fragment %main "main"
-               OpExecutionMode %main OriginUpperLeft
-               OpSource GLSL 450
-               OpName %main "main"
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd)"};
-
-    {
-        std::string const capability{"OpCapability UniformBufferArrayDynamicIndexing"};
-
-        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-
-        auto info_override = [&](CreatePipelineHelper &info) {
-            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    }
-
-    {
-        std::string const capability{"OpCapability SampledImageArrayDynamicIndexing"};
-
-        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-
-        auto info_override = [&](CreatePipelineHelper &info) {
-            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    }
-
-    {
-        std::string const capability{"OpCapability StorageBufferArrayDynamicIndexing"};
-
-        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-
-        auto info_override = [&](CreatePipelineHelper &info) {
-            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    }
-
-    {
-        std::string const capability{"OpCapability StorageImageArrayDynamicIndexing"};
-
-        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-
-        auto info_override = [&](CreatePipelineHelper &info) {
-            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
-    }
-}
-
 TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
@@ -4242,7 +2048,7 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
+TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4294,7 +2100,7 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SampledInvalidImageViews) {
+TEST_F(NegativePipeline, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4515,7 +2321,7 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
     }
 }
 
-TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled10) {
+TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled10) {
     TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.0 without the shaderDrawParameters feature enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
@@ -4543,7 +2349,7 @@ TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled10) {
     }
 }
 
-TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
+TEST_F(NegativePipeline, ShaderDrawParametersNotEnabled11) {
     TEST_DESCRIPTION("Validation using DrawParameters for Vulkan 1.1 without the shaderDrawParameters feature enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -4570,7 +2376,7 @@ TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled11) {
     }
 }
 
-TEST_F(VkLayerTest, GraphicsPipelineInvalidFlags) {
+TEST_F(NegativePipeline, CreateFlags) {
     TEST_DESCRIPTION("Create a graphics pipeline with invalid VkPipelineCreateFlags.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4601,7 +2407,7 @@ TEST_F(VkLayerTest, GraphicsPipelineInvalidFlags) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-04947");
 }
 
-TEST_F(VkLayerTest, ComputePipelineInvalidFlags) {
+TEST_F(NegativePipeline, CreateFlagsCompute) {
     TEST_DESCRIPTION("Create a compute pipeline with invalid VkPipelineCreateFlags.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4631,7 +2437,7 @@ TEST_F(VkLayerTest, ComputePipelineInvalidFlags) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-02874");
 }
 
-TEST_F(VkLayerTest, MergePipelineCachesInvalidDst) {
+TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     TEST_DESCRIPTION("Test mergeing pipeline caches with dst cache in src list");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4655,7 +2461,7 @@ TEST_F(VkLayerTest, MergePipelineCachesInvalidDst) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
+TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Compute Pipeline with bad base pointer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -4698,146 +2504,7 @@ TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
     }
 }
 
-TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
-    TEST_DESCRIPTION("Create a graphics pipeline with advanced blend when its disabled");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    GetPhysicalDeviceProperties2(blend_operation_advanced);
-
-    if (blend_operation_advanced.advancedBlendAllOperations) {
-        GTEST_SKIP() << "advancedBlendAllOperations is VK_TRUE, test needs it not supported.";
-    }
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-
-    VkPipelineColorBlendAttachmentState attachment_state = {};
-    attachment_state.blendEnable = VK_TRUE;
-    attachment_state.colorBlendOp = VK_BLEND_OP_XOR_EXT;
-    attachment_state.alphaBlendOp = VK_BLEND_OP_XOR_EXT;
-
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-    color_blend_state.attachmentCount = 1;
-    color_blend_state.pAttachments = &attachment_state;
-    pipe.gp_ci_.pColorBlendState = &color_blend_state;
-
-    pipe.InitState();
-    // When using profiles, advancedBlendMaxColorAttachments might be zero
-    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, PipelineAdvancedBlendInvalidBlendOps) {
-    TEST_DESCRIPTION("Advanced blending with invalid VkBlendOps");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    GetPhysicalDeviceProperties2(blend_operation_advanced);
-
-    if (!blend_operation_advanced.advancedBlendAllOperations) {
-        GTEST_SKIP() << "advancedBlendAllOperations is not supported.";
-    }
-
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-    VkPipelineColorBlendAttachmentState attachment_states[2];
-    memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
-
-    // only 1 attachment state, different blend op values
-    const auto set_info_different = [&](CreatePipelineHelper &helper) {
-        attachment_states[0].blendEnable = VK_TRUE;
-        attachment_states[0].colorBlendOp = VK_BLEND_OP_HSL_COLOR_EXT;
-        attachment_states[0].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-
-        color_blend_state.attachmentCount = 1;
-        color_blend_state.pAttachments = attachment_states;
-        helper.gp_ci_.pColorBlendState = &color_blend_state;
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info_different, kErrorBit,
-                                      "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406");
-
-    // Test is if independent blend is not supported
-    if (!blend_operation_advanced.advancedBlendIndependentBlend && blend_operation_advanced.advancedBlendMaxColorAttachments > 1) {
-        const auto set_info_color = [&](CreatePipelineHelper &helper) {
-            attachment_states[0].blendEnable = VK_TRUE;
-            attachment_states[0].colorBlendOp = VK_BLEND_OP_MIN;
-            attachment_states[0].alphaBlendOp = VK_BLEND_OP_MIN;
-            attachment_states[1].blendEnable = VK_TRUE;
-            attachment_states[1].colorBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-            attachment_states[1].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-
-            color_blend_state.attachmentCount = 2;
-            color_blend_state.pAttachments = attachment_states;
-            helper.gp_ci_.pColorBlendState = &color_blend_state;
-        };
-        constexpr std::array vuids = {"VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
-                                      "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408"};
-        CreatePipelineHelper::OneshotTest(*this, set_info_color, kErrorBit, vuids);
-    }
-}
-
-TEST_F(VkLayerTest, PipelineAdvancedBlendMaxBlendAttachment) {
-    TEST_DESCRIPTION("Advanced blending with invalid VkBlendOps");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(3));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    GetPhysicalDeviceProperties2(blend_operation_advanced_props);
-    if (blend_operation_advanced_props.advancedBlendMaxColorAttachments > 2) {
-        GTEST_SKIP() << "advancedBlendMaxColorAttachments is too high";
-    }
-
-    VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
-    VkPipelineColorBlendAttachmentState attachment_states[3];
-    memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 3);
-
-    // over max blend color attachment count
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        attachment_states[0].blendEnable = VK_TRUE;
-        attachment_states[0].colorBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-        attachment_states[0].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
-        attachment_states[1] = attachment_states[0];
-        attachment_states[2] = attachment_states[0];
-
-        color_blend_state.attachmentCount = 3;
-        color_blend_state.pAttachments = attachment_states;
-        helper.gp_ci_.pColorBlendState = &color_blend_state;
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
-}
-
-TEST_F(VkLayerTest, InvalidPipelineDiscardRectangle) {
+TEST_F(NegativePipeline, DiscardRectangle) {
     TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4875,7 +2542,7 @@ TEST_F(VkLayerTest, InvalidPipelineDiscardRectangle) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXT) {
+TEST_F(NegativePipeline, ColorWriteCreateInfoEXT) {
     TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext");
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
@@ -4900,55 +2567,6 @@ TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXT) {
     color_write.attachmentCount = 1;
     color_write.pColorWriteEnables = &enabled;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, ColorBlendAdvanced) {
-    TEST_DESCRIPTION("Test VkPipelineColorBlendAdvancedStateCreateInfoEXT with unsupported properties");
-
-    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
-    auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
-    GetPhysicalDeviceProperties2(blend_operation_advanced_props);
-
-    if (blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
-        blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
-        blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-        GTEST_SKIP() << "All VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT properties are enabled; nothing to test";
-    }
-
-    auto color_blend_advanced = LvlInitStruct<VkPipelineColorBlendAdvancedStateCreateInfoEXT>();
-    color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_DISJOINT_EXT;
-    color_blend_advanced.dstPremultiplied = VK_FALSE;
-    color_blend_advanced.srcPremultiplied = VK_FALSE;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.InitState();
-    pipe.cb_ci_.pNext = &color_blend_advanced;
-    if (!blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426");
-    }
-    if (!blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425");
-    }
-    if (!blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424");
-    }
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5118,7 +2736,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
+TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     TEST_DESCRIPTION("Test PipelineRasterizationConservativeStateCreateInfo.");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
@@ -5159,170 +2777,6 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreatePipelineLayoutWithInvalidSetLayoutFlags) {
-    TEST_DESCRIPTION("Validate setLayout flags in create pipeline layout.");
-
-    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto mut_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
-    GetPhysicalDeviceFeatures2(mut_features);
-    if (!mut_features.mutableDescriptorType) {
-        GTEST_SKIP() << "mutableDescriptorType not supported.";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mut_features));
-
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = 0;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    layout_binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
-    ds_layout_ci.bindingCount = 1;
-    ds_layout_ci.pBindings = &layout_binding;
-
-    vk_testing::DescriptorSetLayout ds_layout;
-    ds_layout.init(*m_device, ds_layout_ci);
-    VkDescriptorSetLayout ds_layout_handle = ds_layout.handle();
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout_handle;
-
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, ComputeImageLayout) {
-    TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader");
-
-    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
-
-    const char *cs = R"glsl(#version 450
-    layout(local_size_x=1) in;
-    layout(set=0, binding=0) uniform sampler2D s;
-    void main(){
-        vec4 v = 2.0 * texture(s, vec2(0.0));
-    }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
-    pipe.CreateComputePipeline();
-
-    const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    ASSERT_TRUE(image.initialized());
-
-    VkImageView view = image.targetView(fmt);
-
-    VkSamplerObj sampler(m_device);
-
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    {  // Verify invalid image layout with CmdDispatch
-        VkCommandBufferObj cmd(m_device, m_commandPool);
-        cmd.begin();
-        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                                  &pipe.descriptor_set_->set_, 0, nullptr);
-        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-        vk::CmdDispatch(cmd.handle(), 1, 1, 1);
-        cmd.end();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
-        cmd.QueueCommandBuffer(false);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {  // Verify invalid image layout with CmdDispatchBaseKHR
-        VkCommandBufferObj cmd(m_device, m_commandPool);
-        cmd.begin();
-        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                                  &pipe.descriptor_set_->set_, 0, nullptr);
-        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-        vkCmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
-        cmd.end();
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
-        cmd.QueueCommandBuffer(false);
-        m_errorMonitor->VerifyFound();
-    }
-}
-
-TEST_F(VkLayerTest, ComputeImageLayout_1_1) {
-    TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader using vkCmdDispatchBase");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
-
-    const char *cs = R"glsl(#version 450
-    layout(local_size_x=1) in;
-    layout(set=0, binding=0) uniform sampler2D s;
-    void main(){
-        vec4 v = 2.0 * texture(s, vec2(0.0));
-    }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.InitState();
-    pipe.CreateComputePipeline();
-
-    const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
-    VkImageObj image(m_device);
-    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    ASSERT_TRUE(image.initialized());
-
-    VkImageView view = image.targetView(fmt);
-
-    VkSamplerObj sampler(m_device);
-
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_commandBuffer->begin();
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-    vk::CmdDispatchBase(m_commandBuffer->handle(), 0, 0, 0, 1, 1, 1);
-    m_commandBuffer->end();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
-    m_commandBuffer->QueueCommandBuffer(false);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     TEST_DESCRIPTION("Test for a creating a pipeline with a null renderpass but VK_KHR_dynamic_rendering is not enabled");
 
@@ -5358,7 +2812,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWithoutFeature) {
+TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_ARM_rasterization_order_attachment_access enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5458,7 +2912,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWith
                                       "VUID-VkPipelineDepthStencilStateCreateInfo-rasterizationOrderStencilAttachmentAccess-06464");
 }
 
-TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSubpassFlags) {
+TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_ARM_rasterization_order_attachment_access enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -5602,7 +3056,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
     }
 }
 
-TEST_F(VkLayerTest, TestMismatchedRenderPassAndPipelineAttachments) {
+TEST_F(NegativePipeline, MismatchedRenderPassAndPipelineAttachments) {
     TEST_DESCRIPTION("Test creating a pipeline with no attachments with a render pass with attachments.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5649,7 +3103,7 @@ TEST_F(VkLayerTest, TestMismatchedRenderPassAndPipelineAttachments) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IncompatibleScissorCountAndViewportCount) {
+TEST_F(NegativePipeline, IncompatibleScissorCountAndViewportCount) {
     TEST_DESCRIPTION("Validate creating a pipeline with incompatible scissor and viewport count, without dynamic states.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -5678,55 +3132,7 @@ TEST_F(VkLayerTest, IncompatibleScissorCountAndViewportCount) {
                                       "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134");
 }
 
-TEST_F(VkLayerTest, TestCreatingPipelineWithScissorWithCount) {
-    TEST_DESCRIPTION("Validate creating graphics pipeline with dynamic state scissor with count.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    {
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 1;
-        dyn_state_ci.pDynamicStates = dyn_states;
-
-        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.dyn_state_ci_ = dyn_state_ci;
-            helper.vp_state_ci_.scissorCount = 0;
-            helper.vp_state_ci_.viewportCount = 0;
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
-                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
-    }
-
-    {
-        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
-        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = 2;
-        dyn_state_ci.pDynamicStates = dyn_states;
-
-        VkRect2D scissors = {};
-
-        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.dyn_state_ci_ = dyn_state_ci;
-            helper.vp_state_ci_.scissorCount = 1;
-            helper.vp_state_ci_.pScissors = &scissors;
-            helper.vp_state_ci_.viewportCount = 0;
-        };
-
-        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
-                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
-    }
-}
-
-TEST_F(VkLayerTest, TestCreatingPipelineWithoutShaderTileImage) {
+TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     TEST_DESCRIPTION("Validate creating graphics pipeline without shader tile image features enabled.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -5808,7 +3214,7 @@ TEST_F(VkLayerTest, TestCreatingPipelineWithoutShaderTileImage) {
     }
 }
 
-TEST_F(VkLayerTest, TestCreatingPipelineWithShaderTileImage) {
+TEST_F(NegativePipeline, ShaderTileImage) {
     TEST_DESCRIPTION("Validate creating graphics pipeline with shader tile image extension.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -5945,63 +3351,4 @@ TEST_F(VkLayerTest, TestCreatingPipelineWithShaderTileImage) {
         CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo_with_ms, kErrorBit,
                                           "VUID-RuntimeSpirv-minSampleShading-08732");
     }
-}
-
-TEST_F(VkLayerTest, DynamicSampleLocations) {
-    TEST_DESCRIPTION("Validate dynamic sample locations.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations_props);
-    GetPhysicalDeviceProperties2(properties2);
-
-    if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
-        GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";
-    }
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.InitState();
-
-    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT};
-    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-    dyn_state_ci.dynamicStateCount = 1;
-    dyn_state_ci.pDynamicStates = dyn_states;
-    pipe.dyn_state_ci_ = dyn_state_ci;
-
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06666");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    VkSampleLocationEXT sample_location = {0.5f, 0.5f};
-
-    auto sample_locations_info = LvlInitStruct<VkSampleLocationsInfoEXT>();
-    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
-    sample_locations_info.sampleLocationGridSize = {1u, 1u};
-    sample_locations_info.sampleLocationsCount = 1;
-    sample_locations_info.pSampleLocations = &sample_location;
-
-    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
 }

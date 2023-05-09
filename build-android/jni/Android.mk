@@ -161,7 +161,10 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := VulkanLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/negative/instanceless.cpp \
-                   $(SRC_DIR)/tests/negative/pipeline_shader.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline_advanced_blend.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline_layout.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline_topology.cpp \
+                   $(SRC_DIR)/tests/negative/pipeline.cpp \
                    $(SRC_DIR)/tests/negative/buffer.cpp \
                    $(SRC_DIR)/tests/negative/external_memory_sync.cpp \
                    $(SRC_DIR)/tests/negative/image.cpp \

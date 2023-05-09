@@ -735,3 +735,138 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
+    TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
+
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+
+    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
+    uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
+    uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
+    if (std::max({x_count_limit, y_count_limit, z_count_limit}) == vvl::kU32Max) {
+        GTEST_SKIP() << "device maxComputeWorkGroupCount limit reports UINT32_MAX";
+    }
+
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
+    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
+
+    std::string spv_source = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize )";
+    spv_source.append(std::to_string(x_size_limit + 1) + " " + std::to_string(y_size_limit + 1) + " " +
+                      std::to_string(z_size_limit + 1));
+    spv_source.append(R"(
+        %void = OpTypeVoid
+           %3 = OpTypeFunction %void
+        %main = OpFunction %void None %3
+           %5 = OpLabel
+                OpReturn
+                OpFunctionEnd)");
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06429");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-y-06430");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-z-06431");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-x-06432");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+
+    // Create a minimal compute pipeline
+    x_size_limit = (x_size_limit > 1024) ? 1024 : x_size_limit;
+    y_size_limit = (y_size_limit > 1024) ? 1024 : y_size_limit;
+    z_size_limit = (z_size_limit > 64) ? 64 : z_size_limit;
+
+    uint32_t invocations_limit = m_device->props.limits.maxComputeWorkGroupInvocations;
+    x_size_limit = (x_size_limit > invocations_limit) ? invocations_limit : x_size_limit;
+    invocations_limit /= x_size_limit;
+    y_size_limit = (y_size_limit > invocations_limit) ? invocations_limit : y_size_limit;
+    invocations_limit /= y_size_limit;
+    z_size_limit = (z_size_limit > invocations_limit) ? invocations_limit : z_size_limit;
+
+    std::stringstream cs_text;
+    cs_text << "#version 450\n";
+    cs_text << "layout(local_size_x = " << x_size_limit << ", ";
+    cs_text << "local_size_y = " << y_size_limit << ",";
+    cs_text << "local_size_z = " << z_size_limit << ") in;\n";
+    cs_text << "void main() {}\n";
+
+    VkShaderObj cs_obj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_.reset(new VkShaderObj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.CreateComputePipeline();
+
+    // Bind pipeline to command buffer
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    // Dispatch counts that exceed device limits
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountX-00386");
+    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit + 1, y_count_limit, z_count_limit);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountY-00387");
+    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit + 1, z_count_limit);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-groupCountZ-00388");
+    vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit + 1);
+    m_errorMonitor->VerifyFound();
+
+    if (device_group_creation) {
+        PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
+            (PFN_vkCmdDispatchBaseKHR)vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        // Base equals or exceeds limit
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00421");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00422");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupZ-00423");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        // (Base + count) exceeds limit
+        uint32_t x_base = x_count_limit / 2;
+        uint32_t y_base = y_count_limit / 2;
+        uint32_t z_base = z_count_limit / 2;
+        x_count_limit -= x_base;
+        y_count_limit -= y_base;
+        z_count_limit -= z_base;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountX-00424");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountY-00425");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountZ-00426");
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
+    }
+}
