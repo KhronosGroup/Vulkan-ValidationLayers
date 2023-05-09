@@ -16,6 +16,7 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
+#include "error_message/validation_error_enums.h"
 
 class NegativeImage : public VkLayerTest {
   public:
@@ -6348,4 +6349,125 @@ TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
     ci.imageType = VK_IMAGE_TYPE_3D;
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-08866");
     CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
+}
+
+TEST_F(NegativeImage, ComputeImageLayout) {
+    TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader");
+
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto vkCmdDispatchBaseKHR =
+        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
+    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
+
+    const char *cs = R"glsl(#version 450
+    layout(local_size_x=1) in;
+    layout(set=0, binding=0) uniform sampler2D s;
+    void main(){
+        vec4 v = 2.0 * texture(s, vec2(0.0));
+    }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageView view = image.targetView(fmt);
+
+    VkSamplerObj sampler(m_device);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    {  // Verify invalid image layout with CmdDispatch
+        VkCommandBufferObj cmd(m_device, m_commandPool);
+        cmd.begin();
+        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                                  &pipe.descriptor_set_->set_, 0, nullptr);
+        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+        vk::CmdDispatch(cmd.handle(), 1, 1, 1);
+        cmd.end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+        cmd.QueueCommandBuffer(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {  // Verify invalid image layout with CmdDispatchBaseKHR
+        VkCommandBufferObj cmd(m_device, m_commandPool);
+        cmd.begin();
+        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                                  &pipe.descriptor_set_->set_, 0, nullptr);
+        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+        vkCmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
+        cmd.end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+        cmd.QueueCommandBuffer(false);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeImage, ComputeImageLayout11) {
+    TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader using vkCmdDispatchBase");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto vkCmdDispatchBaseKHR =
+        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
+    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
+
+    const char *cs = R"glsl(#version 450
+    layout(local_size_x=1) in;
+    layout(set=0, binding=0) uniform sampler2D s;
+    void main(){
+        vec4 v = 2.0 * texture(s, vec2(0.0));
+    }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    image.Init(64, 64, 1, fmt, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    VkImageView view = image.targetView(fmt);
+
+    VkSamplerObj sampler(m_device);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdDispatchBase(m_commandBuffer->handle(), 0, 0, 0, 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_errorMonitor->VerifyFound();
 }

@@ -3519,3 +3519,67 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     vk::DeviceWaitIdle(m_device->device());
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
+
+TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
+    TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto cond_rendering_feature = LvlInitStruct<VkPhysicalDeviceConditionalRenderingFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(cond_rendering_feature);
+    if (cond_rendering_feature.conditionalRendering == VK_FALSE) {
+        GTEST_SKIP() << "conditionalRendering feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cond_rendering_feature));
+
+    uint32_t only_transfer_queueFamilyIndex = vvl::kU32Max;
+
+    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
+
+    for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
+        if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
+            only_transfer_queueFamilyIndex = i;
+            break;
+        }
+    }
+
+    if (only_transfer_queueFamilyIndex == vvl::kU32Max) {
+        GTEST_SKIP() << "Only VK_QUEUE_TRANSFER_BIT Queue is not supported";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
+    VkCommandBufferObj commandBuffer(m_device, &commandPool);
+
+    commandBuffer.begin();
+
+    VkImageMemoryBarrier imb = LvlInitStruct<VkImageMemoryBarrier>();
+    imb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    imb.dstAccessMask = VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT;
+    imb.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imb.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imb.image = image.handle();
+    imb.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imb.subresourceRange.baseMipLevel = 0;
+    imb.subresourceRange.levelCount = 1;
+    imb.subresourceRange.baseArrayLayer = 0;
+    imb.subresourceRange.layerCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-srcStageMask-06461");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier-dstStageMask-06462");
+    vk::CmdPipelineBarrier(commandBuffer.handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
+    m_errorMonitor->VerifyFound();
+
+    commandBuffer.end();
+}

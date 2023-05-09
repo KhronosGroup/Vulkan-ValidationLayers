@@ -5843,3 +5843,143 @@ TEST_F(NegativeDescriptors, UpdatingMutableDescriptors) {
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
+    TEST_DESCRIPTION("Dispatch with unbound descriptor set");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+        layout(set = 0, binding = 0) uniform sampler2D InputTexture;
+        layout(set = 1, binding = 0, rgba32f) uniform image2D OutputTexture;
+        void main() {
+            vec4 value = textureGather(InputTexture, vec2(0), 0);
+            imageStore(OutputTexture, ivec2(0), value);
+        }
+    )glsl";
+
+    OneOffDescriptorSet combined_image_set(
+        m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+    OneOffDescriptorSet storage_image_set(m_device,
+                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+
+    const VkFormat combined_image_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image(m_device);
+    image.Init(1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    ASSERT_TRUE(image.initialized());
+
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&combined_image_set.layout_, &storage_image_set.layout_});
+    cs_pipeline.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_);
+
+    combined_image_set.WriteDescriptorImageInfo(0, image.targetView(combined_image_format), sampler.handle());
+    combined_image_set.UpdateDescriptorSets();
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
+                              1, &combined_image_set.set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-02697");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
+    TEST_DESCRIPTION("Verify that OpImage*Dref* operations are supported for given format ");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
+        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFormatProperties2KHR");
+
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+
+        const bool has_sampling = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR) != 0;
+        const bool has_sampling_img_depth_compare =
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR) != 0;
+
+        if (has_sampling && !has_sampling_img_depth_compare) {
+            format = (VkFormat)fmt;
+            break;
+        }
+    }
+
+    if (format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Cannot find suitable format, skipping.";
+    }
+
+    const char vsSource[] = R"glsl(
+        #version 450
+
+        void main() {
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char fsSource[] = R"glsl(
+        #version 450
+        layout (set = 0, binding = 1) uniform sampler2DShadow tex;
+        void main() {
+           float f = texture(tex, vec3(0));
+        }
+    )glsl";
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+    ASSERT_TRUE(image.initialized());
+
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image.targetView(format), sampler.handle(),
+                                                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-06479");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

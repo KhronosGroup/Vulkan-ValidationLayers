@@ -4075,3 +4075,548 @@ TEST_F(NegativeDynamicState, DrawNotSetStencilTestEnable) {
 TEST_F(NegativeDynamicState, DrawNotSetStencilOp) {
     ExtendedDynamicStateDrawNotSet(VK_DYNAMIC_STATE_STENCIL_OP, "VUID-vkCmdDraw-None-07848");
 }
+
+TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
+    TEST_DESCRIPTION("Test setting minDepthBounds and maxDepthBounds without VK_EXT_depth_range_unrestricted");
+
+    // Extension doesn't have feature bit, so not enabling extension invokes restrictions
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    if (VK_TRUE != device_features.depthBounds) {
+        GTEST_SKIP() << "Test requires unsupported depthBounds feature";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Need to set format framework uses for InitRenderTarget
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+
+    m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt,
+                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    VkPipelineDepthStencilStateCreateInfo ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.depthBoundsTestEnable = VK_TRUE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.ds_ci_ = ds_ci;
+    pipe.InitState();
+
+    pipe.ds_ci_.minDepthBounds = 1.5f;
+    pipe.ds_ci_.maxDepthBounds = 1.0f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    pipe.ds_ci_.minDepthBounds = 1.0f;
+    pipe.ds_ci_.maxDepthBounds = 1.5f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    // Add dynamic depth stencil state instead
+    pipe.ds_ci_.minDepthBounds = 0.0f;
+    pipe.ds_ci_.maxDepthBounds = 0.0f;
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DEPTH_BOUNDS};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508");
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.5f, 0.0f);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509");
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 0.0f, 1.5f);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.0f, 1.0f);
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, Viewport) {
+    TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for non-multiViewport");
+
+    VkPhysicalDeviceFeatures features{};
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (m_device->props.limits.maxViewports < 3) {
+        GTEST_SKIP() << "maxViewports is not large enough";
+    }
+
+    const auto break_vp_state = [](CreatePipelineHelper &helper) {
+        helper.rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
+        helper.gp_ci_.pViewportState = nullptr;
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp_state, kErrorBit,
+                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00750");
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkViewport viewports[] = {viewport, viewport};
+    VkRect2D scissor = {{0, 0}, {64, 64}};
+    VkRect2D scissors[] = {scissor, scissor};
+
+    // test viewport and scissor arrays
+    using std::vector;
+    struct TestCase {
+        uint32_t viewport_count;
+        VkViewport *viewports;
+        uint32_t scissor_count;
+        VkRect2D *scissors;
+
+        vector<std::string> vuids;
+    };
+
+    vector<TestCase> test_cases = {
+        {2,
+         viewports,
+         1,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         1,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {1,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
+        {1, nullptr, 1, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
+        {1, viewports, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+        {1,
+         nullptr,
+         1,
+         nullptr,
+         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+        {2,
+         nullptr,
+         3,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
+          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+        {2,
+         nullptr,
+         2,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+    };
+
+    for (const auto &test_case : test_cases) {
+        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
+            helper.vp_state_ci_.pViewports = test_case.viewports;
+            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
+            helper.vp_state_ci_.pScissors = test_case.scissors;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
+    }
+
+    vector<TestCase> dyn_test_cases = {
+        {0,
+         viewports,
+         1,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         1,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {1,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {1,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
+        {2,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
+        {0,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         nullptr,
+         3,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {0,
+         nullptr,
+         0,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+    };
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+    for (const auto &test_case : dyn_test_cases) {
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+            dyn_state_ci.dynamicStateCount = size(dyn_states);
+            dyn_state_ci.pDynamicStates = dyn_states;
+            helper.dyn_state_ci_ = dyn_state_ci;
+
+            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
+            helper.vp_state_ci_.pViewports = test_case.viewports;
+            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
+            helper.vp_state_ci_.pScissors = test_case.scissors;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
+    }
+}
+
+TEST_F(NegativeDynamicState, MultiViewport) {
+    TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for multiViewport feature");
+
+    ASSERT_NO_FATAL_FAILURE(Init());  // enables all supported features
+
+    if (!m_device->phy().features().multiViewport) {
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
+    }
+    // at least 16 viewports supported from here on
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkViewport viewports[] = {viewport, viewport};
+    VkRect2D scissor = {{0, 0}, {64, 64}};
+    VkRect2D scissors[] = {scissor, scissor};
+
+    using std::vector;
+    struct TestCase {
+        uint32_t viewport_count;
+        VkViewport *viewports;
+        uint32_t scissor_count;
+        VkRect2D *scissors;
+
+        vector<std::string> vuids;
+    };
+
+    vector<TestCase> test_cases = {
+        {0,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {0,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+        {2, nullptr, 2, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
+        {2, viewports, 2, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+        {2,
+         nullptr,
+         2,
+         nullptr,
+         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
+        {0,
+         nullptr,
+         0,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+    };
+
+    const auto max_viewports = m_device->phy().properties().limits.maxViewports;
+    const bool max_viewports_maxxed = max_viewports == std::numeric_limits<decltype(max_viewports)>::max();
+    if (max_viewports_maxxed) {
+        printf("VkPhysicalDeviceLimits::maxViewports is UINT32_MAX -- skipping part of test requiring to exceed maxViewports.\n");
+    } else {
+        const auto too_much_viewports = max_viewports + 1;
+        // avoid potentially big allocations by using only nullptr
+        test_cases.push_back({too_much_viewports,
+                              nullptr,
+                              2,
+                              scissors,
+                              {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
+                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
+                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}});
+        test_cases.push_back({2,
+                              viewports,
+                              too_much_viewports,
+                              nullptr,
+                              {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
+                               "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134",
+                               "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
+        test_cases.push_back(
+            {too_much_viewports,
+             nullptr,
+             too_much_viewports,
+             nullptr,
+             {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
+              "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
+              "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}});
+    }
+
+    for (const auto &test_case : test_cases) {
+        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
+            helper.vp_state_ci_.pViewports = test_case.viewports;
+            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
+            helper.vp_state_ci_.pScissors = test_case.scissors;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
+    }
+
+    vector<TestCase> dyn_test_cases = {
+        {0,
+         viewports,
+         2,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {2,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
+        {0,
+         viewports,
+         0,
+         scissors,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+        {0,
+         nullptr,
+         0,
+         nullptr,
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+    };
+
+    if (!max_viewports_maxxed) {
+        const auto too_much_viewports = max_viewports + 1;
+        // avoid potentially big allocations by using only nullptr
+        dyn_test_cases.push_back({too_much_viewports,
+                                  nullptr,
+                                  2,
+                                  scissors,
+                                  {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
+                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
+        dyn_test_cases.push_back({2,
+                                  viewports,
+                                  too_much_viewports,
+                                  nullptr,
+                                  {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219",
+                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}});
+        dyn_test_cases.push_back({too_much_viewports,
+                                  nullptr,
+                                  too_much_viewports,
+                                  nullptr,
+                                  {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01218",
+                                   "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01219"}});
+    }
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+    for (const auto &test_case : dyn_test_cases) {
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+            dyn_state_ci.dynamicStateCount = size(dyn_states);
+            dyn_state_ci.pDynamicStates = dyn_states;
+            helper.dyn_state_ci_ = dyn_state_ci;
+
+            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
+            helper.vp_state_ci_.pViewports = test_case.viewports;
+            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
+            helper.vp_state_ci_.pScissors = test_case.scissors;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
+    }
+}
+
+TEST_F(NegativeDynamicState, ScissorWithCount) {
+    TEST_DESCRIPTION("Validate creating graphics pipeline with dynamic state scissor with count.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        dyn_state_ci.pDynamicStates = dyn_states;
+
+        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.dyn_state_ci_ = dyn_state_ci;
+            helper.vp_state_ci_.scissorCount = 0;
+            helper.vp_state_ci_.viewportCount = 0;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
+                                          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136");
+    }
+
+    {
+        const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 2;
+        dyn_state_ci.pDynamicStates = dyn_states;
+
+        VkRect2D scissors = {};
+
+        auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
+            helper.dyn_state_ci_ = dyn_state_ci;
+            helper.vp_state_ci_.scissorCount = 1;
+            helper.vp_state_ci_.pScissors = &scissors;
+            helper.vp_state_ci_.viewportCount = 0;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, set_viewport_state_createinfo, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03380");
+    }
+}
+
+TEST_F(NegativeDynamicState, DrawNotSetSampleLocations) {
+    TEST_DESCRIPTION("Validate dynamic sample locations.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations_props);
+    GetPhysicalDeviceProperties2(properties2);
+
+    if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06666");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkSampleLocationEXT sample_location = {0.5f, 0.5f};
+
+    auto sample_locations_info = LvlInitStruct<VkSampleLocationsInfoEXT>();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = 1;
+    sample_locations_info.pSampleLocations = &sample_location;
+
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, LineWidth) {
+    TEST_DESCRIPTION("Test non-1.0 lineWidth errors when pipeline is created and in vkCmdSetLineWidth");
+    VkPhysicalDeviceFeatures features{};
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    if (IsPlatform(kNexusPlayer)) {
+        GTEST_SKIP() << "This test should not run on Nexus Player";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::array test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f),
+                                   std::numeric_limits<float>::quiet_NaN()};
+
+    // test VkPipelineRasterizationStateCreateInfo::lineWidth
+    for (const auto test_case : test_cases) {
+        const auto set_lineWidth = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_.lineWidth = test_case; };
+        CreatePipelineHelper::OneshotTest(*this, set_lineWidth, kErrorBit,
+                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749");
+    }
+
+    // test vk::CmdSetLineWidth
+    m_commandBuffer->begin();
+
+    for (const auto test_case : test_cases) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineWidth-lineWidth-00788");
+        vk::CmdSetLineWidth(m_commandBuffer->handle(), test_case);
+        m_errorMonitor->VerifyFound();
+    }
+}

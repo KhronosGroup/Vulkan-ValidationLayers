@@ -2255,3 +2255,80 @@ TEST_F(NegativeShaderSpirv, ConservativeRasterizationPostDepthCoverage) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
                                       "VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235");
 }
+
+TEST_F(NegativeShaderSpirv, DynamicUniformIndex) {
+    TEST_DESCRIPTION("Check for the array dynamic array index features when the SPIR-V capabilities are requested.");
+
+    VkPhysicalDeviceFeatures features{};
+    features.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::string const source{R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd)"};
+
+    {
+        std::string const capability{"OpCapability UniformBufferArrayDynamicIndexing"};
+
+        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    }
+
+    {
+        std::string const capability{"OpCapability SampledImageArrayDynamicIndexing"};
+
+        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    }
+
+    {
+        std::string const capability{"OpCapability StorageBufferArrayDynamicIndexing"};
+
+        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    }
+
+    {
+        std::string const capability{"OpCapability StorageImageArrayDynamicIndexing"};
+
+        VkShaderObj fs(this, (capability + source).c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkShaderModuleCreateInfo-pCode-08740");
+    }
+}
