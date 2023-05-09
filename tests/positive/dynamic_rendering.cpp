@@ -768,6 +768,51 @@ TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveDynamicRendering, ExecuteCommandsWithNullImageView) {
+    TEST_DESCRIPTION(
+        "Test CmdExecuteCommands with an inherited image format of VK_FORMAT_UNDEFINED inside a render pass begun with "
+        "CmdBeginRendering where the same image is specified as null");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
+
+    auto color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = VK_NULL_HANDLE;
+
+    constexpr std::array bad_color_formats = {VK_FORMAT_UNDEFINED};
+
+    auto inheritance_rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
+    inheritance_rendering_info.colorAttachmentCount = bad_color_formats.size();
+    inheritance_rendering_info.pColorAttachmentFormats = bad_color_formats.data();
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const auto cmdbuff_ii = LvlInitStruct<VkCommandBufferInheritanceInfo>(&inheritance_rendering_info);
+
+    auto cmdbuff_bi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cmdbuff_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+
+    secondary.begin(&cmdbuff_bi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     TEST_DESCRIPTION("Suspend in primary and resume in secondary");
     InitBasicDynamicRendering();
