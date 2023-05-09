@@ -278,7 +278,7 @@ static CBDynamicFlags GetGraphicsDynamicState(PIPELINE_STATE &pipe_state) {
 
                 // VkPipelineFragmentShadingRateStateCreateInfoKHR
                 case VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR: {
-                    if (has_pre_raster_state && has_fragment_shader_state) {
+                    if (has_pre_raster_state || has_fragment_shader_state) {
                         flags.set(ConvertToCBDynamicState(vk_dynamic_state));
                     }
                     break;
@@ -331,7 +331,7 @@ static CBDynamicFlags GetGraphicsDynamicState(PIPELINE_STATE &pipe_state) {
                 case VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV:
                 case VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV:
                 case VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV: {
-                    if (has_fragment_shader_state && has_fragment_output_state) {
+                    if (has_fragment_shader_state || has_fragment_output_state) {
                         flags.set(ConvertToCBDynamicState(vk_dynamic_state));
                     }
                     break;
@@ -565,23 +565,6 @@ std::shared_ptr<FragmentOutputState> PIPELINE_STATE::CreateFragmentOutputState(
 
     // The conditions for containing FO state were not met, so return null
     return {};
-}
-
-template <typename Substate>
-void AppendDynamicStateFromSubstate(const Substate &substate, std::vector<VkDynamicState> &dyn_states,
-                                    VkPipelineDynamicStateCreateFlags &flags) {
-    if (substate) {
-        const auto *dyn_state = substate->parent.DynamicState();
-        if (dyn_state) {
-            flags |= dyn_state->flags;
-            for (uint32_t i = 0; i < dyn_state->dynamicStateCount; ++i) {
-                const auto itr = std::find(dyn_states.cbegin(), dyn_states.cend(), dyn_state->pDynamicStates[i]);
-                if (itr == dyn_states.cend()) {
-                    dyn_states.emplace_back(dyn_state->pDynamicStates[i]);
-                }
-            }
-        }
-    }
 }
 
 std::vector<std::shared_ptr<const PIPELINE_LAYOUT_STATE>> PIPELINE_STATE::PipelineLayoutStateUnion() const {
