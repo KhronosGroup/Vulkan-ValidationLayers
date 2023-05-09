@@ -1872,6 +1872,7 @@ TEST_F(NegativeWsi, PresentIdWait) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &present_wait_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
+    // Fixed as of Nvidia Linux driver version 525.47.22.
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
@@ -1968,6 +1969,8 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
+
+    // Fixed as of Nvidia Linux driver version 525.47.22.
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create swapchain, skipping test";
     }
