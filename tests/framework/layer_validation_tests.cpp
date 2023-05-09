@@ -1728,8 +1728,12 @@ void CreatePipelineHelper::InitPreRasterLibInfo(uint32_t count, const VkPipeline
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     gp_ci_.pViewportState = &vp_state_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
+
+    // If using Dynamic Rendering, will need to be set to null
+    // otherwise needs to be shared across libraries in the same executable pipeline
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
+
     gp_ci_.stageCount = count;
     gp_ci_.pStages = info;
 
@@ -1756,7 +1760,8 @@ void CreatePipelineHelper::InitFragmentLibInfo(uint32_t count, const VkPipelineS
     gp_ci_.pViewportState = &vp_state_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
 
-    // TODO renderPass _can_ be null
+    // If using Dynamic Rendering, will need to be set to null
+    // otherwise needs to be shared across libraries in the same executable pipeline
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
 
@@ -1788,6 +1793,9 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     gp_ci_.pColorBlendState = &cb_ci_;
     gp_ci_.pMultisampleState = &pipe_ms_state_ci_;
     gp_ci_.pRasterizationState = &rs_state_ci_;
+
+    // If using Dynamic Rendering, will need to be set to null
+    // otherwise needs to be shared across libraries in the same executable pipeline
     gp_ci_.renderPass = layer_test_.renderPass();
     gp_ci_.subpass = 0;
 
