@@ -114,10 +114,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
@@ -136,9 +132,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
     }
 
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -153,10 +146,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
-        // frag_shader_lib's layout will not be created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, which will trigger
-        // the desired error
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline());
     }
 
@@ -180,10 +169,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
     if (::testing::Test::IsSkipped()) return;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
@@ -201,9 +186,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
         pre_raster_lib.InitState();
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
     }
-
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -223,10 +205,6 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkCreate) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
-        // frag_shader_lib's layout will not be created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, which will trigger
-        // the desired error
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06614");
         frag_shader_lib.CreateGraphicsPipeline();
@@ -666,10 +644,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
     VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
@@ -687,9 +661,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
-
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -710,8 +681,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInCreate) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
 
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06756");
         frag_shader_lib.CreateGraphicsPipeline(true, false);
@@ -739,10 +708,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
     VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
@@ -760,9 +725,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
         pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
-
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -782,9 +744,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsNullInLink) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
-
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06757");
         frag_shader_lib.CreateGraphicsPipeline(true, false);
@@ -812,10 +771,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
     VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper pre_raster_lib(*this);
     {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
@@ -834,9 +789,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
 
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -851,8 +803,6 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
     }
@@ -939,10 +889,6 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds.UpdateDescriptorSets();
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
@@ -973,9 +919,6 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
 
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -991,18 +934,12 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
 
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         frag_shader_lib.CreateGraphicsPipeline(true, false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    // frag_out_lib.InitState();
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    frag_out_lib.gp_ci_.renderPass = render_pass;
-    frag_out_lib.gp_ci_.subpass = subpass;
     ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
 
     VkPipeline libraries[4] = {
@@ -1151,10 +1088,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     vertex_input_lib.InitState();
     ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -1175,8 +1109,6 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     }
 
     layout = pre_raster_lib.gp_ci_.layout;
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -1193,16 +1125,11 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
         frag_shader_lib.gp_ci_.layout = layout;
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    frag_out_lib.gp_ci_.renderPass = render_pass;
-    frag_out_lib.gp_ci_.subpass = subpass;
     ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
 
     VkPipeline libraries[4] = {
@@ -1628,10 +1555,6 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     ds2.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds2.UpdateDescriptorSets();
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
@@ -1662,9 +1585,6 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
 
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -1680,8 +1600,6 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
 
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
         frag_shader_lib.CreateGraphicsPipeline(true, false);
     }
@@ -1939,18 +1857,12 @@ TEST_F(NegativeGraphicsLibrary, Layouts) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
     }
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    const auto render_pass = pre_raster_lib.gp_ci_.renderPass;
-    const auto subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
         vk_testing::GraphicsPipelineLibraryStage stage_ci(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci.stage_ci);
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.InitState();
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline());
     }
@@ -2011,9 +1923,6 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
 
-    const auto render_pass = pre_raster_lib.gp_ci_.renderPass;
-    const auto subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -2021,9 +1930,6 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage.stage_ci);
         frag_shader_lib.InitState();
-
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
         frag_shader_lib.CreateGraphicsPipeline(true, false);
     }

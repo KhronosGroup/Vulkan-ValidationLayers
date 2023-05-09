@@ -156,10 +156,7 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     vertex_input_lib.InitState();
     ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -179,8 +176,6 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
     }
 
     layout = pre_raster_lib.gp_ci_.layout;
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -195,20 +190,12 @@ TEST_F(PositiveGraphicsLibrary, ExeLibrary) {
         stage_ci.pName = "main";
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
-        // frag_shader_lib.InitState();
-        // // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
         frag_shader_lib.gp_ci_.layout = layout;
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    // frag_out_lib.InitState();
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    frag_out_lib.gp_ci_.renderPass = render_pass;
-    frag_out_lib.gp_ci_.subpass = subpass;
     ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
 
     VkPipeline libraries[4] = {
@@ -261,10 +248,6 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     ds2.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
     ds2.UpdateDescriptorSets();
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
-
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
     vertex_input_lib.InitState();
@@ -295,9 +278,6 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
     }
 
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
-
     CreatePipelineHelper frag_shader_lib(*this);
     {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
@@ -312,19 +292,12 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.InitState();
-
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         frag_shader_lib.CreateGraphicsPipeline(true, false);
     }
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    // frag_out_lib.InitState();
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
-    frag_out_lib.gp_ci_.renderPass = render_pass;
-    frag_out_lib.gp_ci_.subpass = subpass;
     ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
 
     VkPipeline libraries[4] = {
@@ -507,10 +480,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgy) {
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
 
-    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
 
     auto ia_state = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
     ia_state.primitiveRestartEnable = false;
@@ -546,8 +516,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgy) {
     }
 
     layout = pre_raster_lib.gp_ci_.layout;
-    render_pass = pre_raster_lib.gp_ci_.renderPass;
-    subpass = pre_raster_lib.gp_ci_.subpass;
 
     CreatePipelineHelper frag_shader_lib(*this);
     {
@@ -563,8 +531,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgy) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
         frag_shader_lib.gp_ci_.layout = layout;
-        frag_shader_lib.gp_ci_.renderPass = render_pass;
-        frag_shader_lib.gp_ci_.subpass = subpass;
         frag_shader_lib.gp_ci_.pDynamicState = &dynamic_create_info;
         frag_shader_lib.gp_ci_.pInputAssemblyState = &ia_state;
         frag_shader_lib.CreateGraphicsPipeline(true, false);
@@ -572,8 +538,6 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgy) {
 
     CreatePipelineHelper frag_out_lib(*this);
     frag_out_lib.InitFragmentOutputLibInfo();
-    frag_out_lib.gp_ci_.renderPass = render_pass;
-    frag_out_lib.gp_ci_.subpass = subpass;
     frag_out_lib.gp_ci_.pDynamicState = &dynamic_create_info;
     frag_out_lib.gp_ci_.pInputAssemblyState = &ia_state;
     ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
