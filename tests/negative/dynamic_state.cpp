@@ -4620,3 +4620,43 @@ TEST_F(NegativeDynamicState, LineWidth) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeDynamicState, SetAfterStaticPipeline) {
+    TEST_DESCRIPTION("Pipeline without state is set and tried to use vkCmdSet");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LINE_WIDTH};
+
+    CreatePipelineHelper pipe_line(*this);
+    pipe_line.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_states[0];
+    pipe_line.dyn_state_ci_ = dyn_state_ci;
+    pipe_line.InitState();
+    pipe_line.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_static(*this);
+    pipe_static.InitInfo();
+    pipe_static.InitState();
+    pipe_static.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.pipeline_);  // ignored
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.pipeline_);
+    m_commandBuffer->Draw(1, 0, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.pipeline_);
+    vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02859");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

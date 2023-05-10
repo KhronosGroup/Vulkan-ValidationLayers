@@ -411,3 +411,90 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
+    TEST_DESCRIPTION("Validate binding a non-dynamic pipeline doesn't trigger dynamic static errors");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
+    if (!extended_dynamic_state2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state2_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_state;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_no_dynamic(*this);
+    pipe_no_dynamic.InitInfo();
+    pipe_no_dynamic.InitState();
+    pipe_no_dynamic.CreateGraphicsPipeline();
+
+    VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
+    m_commandBuffer.begin();
+    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
+    m_commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.pipeline_);
+    vk::CmdBindPipeline(m_commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer.handle(), 1, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer.handle());
+    m_commandBuffer.end();
+}
+
+TEST_F(PositiveDynamicState, SetBeforePipeline) {
+    TEST_DESCRIPTION("Pipeline set state, but prior to last bound pipeline that had it");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_LINE_WIDTH, VK_DYNAMIC_STATE_BLEND_CONSTANTS};
+
+    CreatePipelineHelper pipe_line(*this);
+    pipe_line.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_states[0];
+    pipe_line.dyn_state_ci_ = dyn_state_ci;
+    pipe_line.InitState();
+    pipe_line.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_blend(*this);
+    pipe_blend.InitInfo();
+    dyn_state_ci.pDynamicStates = &dyn_states[1];
+    pipe_blend.dyn_state_ci_ = dyn_state_ci;
+    pipe_blend.InitState();
+    pipe_blend.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
+    float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    vk::CmdSetBlendConstants(m_commandBuffer->handle(), blends);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.pipeline_);
+    m_commandBuffer->Draw(1, 0, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_blend.pipeline_);
+    m_commandBuffer->Draw(1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
