@@ -125,10 +125,6 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     GetPhysicalDeviceProperties2(blend_operation_advanced_props);
 

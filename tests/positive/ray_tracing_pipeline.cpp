@@ -35,10 +35,6 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    const auto vkCreateRayTracingPipelinesKHR =
-        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
-    const auto vkDestroyPipeline = GetInstanceProcAddr<PFN_vkDestroyPipeline>("vkDestroyPipeline");
-
     VkPipeline pipeline = VK_NULL_HANDLE;
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
@@ -69,7 +65,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
 
     VkPipelineLibraryCreateInfoKHR library_info_one = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
     library_info_one.libraryCount = 1;
@@ -111,12 +107,12 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     pipeline_ci.pLibraryInterface = &interface_ci;
 
     VkResult err =
-        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
     ASSERT_VK_SUCCESS(err);
     ASSERT_NE(pipeline, VK_NULL_HANDLE);
 
-    vkDestroyPipeline(m_device->handle(), pipeline, nullptr);
-    vkDestroyPipeline(m_device->handle(), library, nullptr);
+    vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+    vk::DestroyPipeline(m_device->handle(), library, nullptr);
 }
 
 TEST_F(PositiveRayTracingPipeline, CacheControl) {
@@ -146,9 +142,6 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    const auto vkCreateRayTracingPipelinesKHR =
-        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
-
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
@@ -177,7 +170,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
 }
 

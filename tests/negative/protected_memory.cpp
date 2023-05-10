@@ -762,10 +762,6 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
@@ -773,10 +769,8 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
-    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties =
-        LvlInitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
-    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&protected_memory_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    auto protected_memory_properties = LvlInitStruct<VkPhysicalDeviceProtectedMemoryProperties>();
+    GetPhysicalDeviceProperties2(protected_memory_properties);
 
     // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

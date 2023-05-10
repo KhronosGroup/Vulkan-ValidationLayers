@@ -183,9 +183,6 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFormatProperties2KHR");
-
     struct {
         VkFormat format;
         VkFormatProperties3KHR props;
@@ -200,7 +197,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
         auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
-        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+        vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
 
         const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
         const bool has_read_without_format =
@@ -349,9 +346,6 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFormatProperties2KHR");
-
     struct {
         VkFormat format;
         VkFormatProperties3KHR props;
@@ -366,7 +360,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
         auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
-        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+        vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
 
         const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
         const bool has_write_without_format =

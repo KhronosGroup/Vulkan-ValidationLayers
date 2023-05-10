@@ -1162,15 +1162,10 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
     // And for GetPhysicalDeviceQueueFamilyProperties2KHR
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR vkGetPhysicalDeviceQueueFamilyProperties2KHR =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceQueueFamilyProperties2KHR"));
-    if (vkGetPhysicalDeviceQueueFamilyProperties2KHR) {
-        vkGetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, nullptr);
+    vk::GetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, nullptr);
 
-        queue_family_props2.resize(queue_count);
-        vkGetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
-    }
+    queue_family_props2.resize(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
     vk_testing::Device device(phys_device_obj.handle());
     device.init();

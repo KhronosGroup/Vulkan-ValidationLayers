@@ -402,14 +402,10 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
-    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
-        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
-    ASSERT_TRUE(vkCmdDrawMeshTasksNV != nullptr);
-
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
+    vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 

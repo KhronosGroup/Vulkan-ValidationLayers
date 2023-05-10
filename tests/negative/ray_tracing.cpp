@@ -554,9 +554,6 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const auto vkCmdCopyMemoryToAccelerationStructureKHR =
-        GetInstanceProcAddr<PFN_vkCmdCopyMemoryToAccelerationStructureKHR>("vkCmdCopyMemoryToAccelerationStructureKHR");
-
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj src_buffer;
@@ -581,7 +578,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHR) {
     // Acceleration structure buffer is not bound to memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-buffer-03745");
     m_commandBuffer->begin();
-    vkCmdCopyMemoryToAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
@@ -677,9 +674,6 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const auto vkWriteAccelerationStructuresPropertiesKHR =
-        GetInstanceProcAddr<PFN_vkWriteAccelerationStructuresPropertiesKHR>("vkWriteAccelerationStructuresPropertiesKHR");
-
     // Init a non host visible buffer
     VkBufferObj non_host_visible_buffer;
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
@@ -707,9 +701,9 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     std::vector<uint32_t> data(4096);
     // .dstAccelerationStructure buffer is not bound to host visible memory
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
-    vkWriteAccelerationStructuresPropertiesKHR(device(), 1, &build_geometry_info.GetDstAS()->handle(),
-                                               VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data.size(), data.data(),
-                                               data.size());
+    vk::WriteAccelerationStructuresPropertiesKHR(device(), 1, &build_geometry_info.GetDstAS()->handle(),
+                                                 VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data.size(), data.data(),
+                                                 data.size());
     m_errorMonitor->VerifyFound();
 }
 
@@ -1132,8 +1126,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     GetPhysicalDeviceProperties2(properties2);
 
-    const auto vkCmdTraceRaysIndirectKHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirectKHR>("vkCmdTraceRaysIndirectKHR");
-
     const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
@@ -1148,18 +1140,18 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
         invalid_stride.stride = (stridebufregion.size + 1) % stridebufregion.size;
         if (invalid_stride.stride > 0) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
-                                      &invalid_stride, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
+                                        &invalid_stride, device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
-                                      &stridebufregion, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
+                                        &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
-                                      &stridebufregion, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
+                                        &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1175,20 +1167,20 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-04041");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03694");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
-                                      &invalid_stride, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion,
+                                        &invalid_stride, device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-04035");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03690");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
-                                      &stridebufregion, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride,
+                                        &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirectKHR-stride-04029");
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdTraceRaysIndirectKHR-stride-03686");
-            vkCmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
-                                      &stridebufregion, device_address);
+            vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion,
+                                        &stridebufregion, device_address);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -1218,8 +1210,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdTraceRaysIndirect2KHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirect2KHR>("vkCmdTraceRaysIndirect2KHR");
-
     VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_info.size = 4096;
@@ -1233,7 +1223,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdTraceRaysIndirect2KHR-rayTracingPipelineTraceRaysIndirect2-03637");
-        vkCmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address);
+        vk::CmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address);
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->end();
@@ -1265,8 +1255,6 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdTraceRaysIndirect2KHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirect2KHR>("vkCmdTraceRaysIndirect2KHR");
-
     VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_info.size = 4096;
@@ -1279,7 +1267,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRAddress) {
     // indirectDeviceAddress is not a multiple of 4
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03634");
-        vkCmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address + 1);
+        vk::CmdTraceRaysIndirect2KHR(m_commandBuffer->handle(), device_address + 1);
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->end();
@@ -1300,10 +1288,6 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
 
-    const auto vkGetDeviceAccelerationStructureCompatibilityKHR =
-        GetInstanceProcAddr<PFN_vkGetDeviceAccelerationStructureCompatibilityKHR>(
-            "vkGetDeviceAccelerationStructureCompatibilityKHR");
-
     VkAccelerationStructureVersionInfoKHR valid_version = LvlInitStruct<VkAccelerationStructureVersionInfoKHR>();
     VkAccelerationStructureCompatibilityKHR compatablity;
     uint8_t mode[] = {VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR};
@@ -1312,7 +1296,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
         VkAccelerationStructureVersionInfoKHR invalid_version = valid_version;
         invalid_version.sType = VK_STRUCTURE_TYPE_MAX_ENUM;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureVersionInfoKHR-sType-sType");
-        vkGetDeviceAccelerationStructureCompatibilityKHR(device(), &invalid_version, &compatablity);
+        vk::GetDeviceAccelerationStructureCompatibilityKHR(device(), &invalid_version, &compatablity);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1320,7 +1304,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
         VkAccelerationStructureVersionInfoKHR invalid_version = valid_version;
         invalid_version.pVersionData = NULL;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureVersionInfoKHR-pVersionData-parameter");
-        vkGetDeviceAccelerationStructureCompatibilityKHR(device(), &invalid_version, &compatablity);
+        vk::GetDeviceAccelerationStructureCompatibilityKHR(device(), &invalid_version, &compatablity);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1346,12 +1330,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
 
     const bool index_type_uint8 = IsExtensionsEnabled(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
-    const auto vkGetPhysicalDeviceProperties2KHR =
-        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
-
     auto acc_struct_properties = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(acc_struct_properties);
 
     // Command buffer not in recording mode
     {

@@ -43,27 +43,20 @@ TEST_F(PositiveSyncObject, ThreadSafetyDisplayObjects) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceDisplayPropertiesKHR != nullptr);
-    ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
-
     uint32_t prop_count = 0;
-    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count == 0) {
         GTEST_SKIP() << "No VkDisplayKHR properties to query";
     }
 
     std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
     // Create a VkDisplayKHR object
-    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
     ASSERT_NE(prop_count, 0U);
 
     // Now use this new object in an API call that thread safety will track
     prop_count = 0;
-    vkGetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
+    vk::GetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
 }
 
 TEST_F(PositiveSyncObject, ThreadSafetyDisplayPlaneObjects) {
@@ -77,25 +70,17 @@ TEST_F(PositiveSyncObject, ThreadSafetyDisplayPlaneObjects) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceDisplayPlanePropertiesKHR != nullptr);
-    ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
-
     uint32_t prop_count = 0;
-    vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
         // only grab first plane property
         prop_count = 1;
         VkDisplayPlanePropertiesKHR display_plane_props = {};
         // Create a VkDisplayKHR object
-        vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, &display_plane_props);
+        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, &display_plane_props);
         // Now use this new object in an API call
         prop_count = 0;
-        vkGetDisplayModePropertiesKHR(gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
+        vk::GetDisplayModePropertiesKHR(gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
     }
 }
 
@@ -1314,10 +1299,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     VkPhysicalDeviceExternalSemaphoreInfoKHR esi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR, nullptr,
                                                     handle_type};
     VkExternalSemaphorePropertiesKHR esp = {VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR, nullptr};
-    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -1415,10 +1397,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 
     auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {

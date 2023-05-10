@@ -2255,12 +2255,8 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -2411,12 +2407,8 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -2545,12 +2537,8 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
         GTEST_SKIP() << "Sparse binding not supported, skipping test";
     }
 
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -3112,12 +3100,8 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;

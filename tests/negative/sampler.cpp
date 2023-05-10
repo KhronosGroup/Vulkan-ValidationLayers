@@ -809,13 +809,10 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_properties =
-        LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&custom_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    auto custom_properties = LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&custom_properties);
+    GetPhysicalDeviceProperties2(prop2);
+
     if ((custom_properties.maxCustomBorderColorSamplers <= 0xFFFF) &&
         (prop2.properties.limits.maxSamplerAllocationCount >= custom_properties.maxCustomBorderColorSamplers)) {
         VkSampler samplers[0xFFFF];

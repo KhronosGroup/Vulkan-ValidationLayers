@@ -188,24 +188,18 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_commandBuffer->reset();
     // CmdWriteBufferMarkerAMD
     if (has_amd_buffer_maker) {
-        auto fpCmdWriteBufferMarkerAMD =
-            (PFN_vkCmdWriteBufferMarkerAMD)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteBufferMarkerAMD");
-        if (!fpCmdWriteBufferMarkerAMD) {
-            printf("Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n");
-        } else {
-            m_commandBuffer->reset();
-            m_commandBuffer->begin();
-            fpCmdWriteBufferMarkerAMD(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
-            m_commandBuffer->end();
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+        vk::CmdWriteBufferMarkerAMD(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
+        m_commandBuffer->end();
 
-            m_commandBuffer->reset();
-            m_commandBuffer->begin();
-            vk::CmdCopyBuffer(cb, buffer_b.handle(), buffer_a.handle(), 1, &region);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
-            fpCmdWriteBufferMarkerAMD(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
-            m_errorMonitor->VerifyFound();
-            m_commandBuffer->end();
-        }
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+        vk::CmdCopyBuffer(cb, buffer_b.handle(), buffer_a.handle(), 1, &region);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-WRITE");
+        vk::CmdWriteBufferMarkerAMD(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->end();
     } else {
         printf("Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n");
     }
@@ -1815,11 +1809,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     if (has_khr_indirect) {
         // DrawIndirectCount
-        auto fpCmdDrawIndirectCountKHR =
-            (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
-        if (!fpCmdDrawIndirectCountKHR) {
-            printf("Test requires unsupported vkCmdDrawIndirectCountKHR feature. Skipped.\n");
-        } else {
+        {
             VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1836,8 +1826,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
                                       0, 1, &descriptor_set.set_, 0, nullptr);
-            fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
-                                      sizeof(VkDrawIndirectCommand));
+            vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+                                        sizeof(VkDrawIndirectCommand));
             m_commandBuffer->EndRenderPass();
             m_commandBuffer->end();
 
@@ -1856,8 +1846,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
                                       0, 1, &descriptor_set.set_, 0, nullptr);
 
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
-            fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
-                                      sizeof(VkDrawIndirectCommand));
+            vk::CmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+                                        sizeof(VkDrawIndirectCommand));
             m_errorMonitor->VerifyFound();
 
             m_commandBuffer->EndRenderPass();
@@ -1865,11 +1855,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
         }
 
         // DrawIndexedIndirectCount
-        auto fpCmdDrawIndexIndirectCountKHR =
-            (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
-        if (!fpCmdDrawIndexIndirectCountKHR) {
-            printf("Test requires unsupported vkCmdDrawIndexedIndirectCountKHR feature. Skipped.\n");
-        } else {
+        {
             VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1887,8 +1873,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
                                       0, 1, &descriptor_set.set_, 0, nullptr);
-            fpCmdDrawIndexIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
-                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+            vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndexedIndirect.handle(), 0,
+                                               buffer_count.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
             m_commandBuffer->EndRenderPass();
             m_commandBuffer->end();
 
@@ -1908,8 +1894,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
                                       0, 1, &descriptor_set.set_, 0, nullptr);
 
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-AFTER-WRITE");
-            fpCmdDrawIndexIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
-                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+            vk::CmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer_drawIndexedIndirect.handle(), 0,
+                                               buffer_count.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
             m_errorMonitor->VerifyFound();
 
             m_commandBuffer->EndRenderPass();
@@ -4160,10 +4146,6 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
     m_commandBuffer->end();
 
     if (copy_commands_2) {
-        auto vkCmdCopyImage2KHR =
-            reinterpret_cast<PFN_vkCmdCopyImage2KHR>(vk::GetInstanceProcAddr(instance(), "vkCmdCopyImage2KHR"));
-        assert(vkCmdCopyImage2KHR != nullptr);
-
         m_commandBuffer->reset();
 
         VkImageCopy2KHR copy_regions2[2];
@@ -4202,12 +4184,12 @@ TEST_F(NegativeSyncVal, TestCopyingToCompressedImage) {
 
         m_commandBuffer->begin();
 
-        vkCmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE-AFTER-WRITE");
         copy_image_info.regionCount = 1;
         copy_image_info.pRegions = &copy_regions2[1];
         copy_regions[1].dstOffset = {7, 0, 0};
-        vkCmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
+        vk::CmdCopyImage2KHR(m_commandBuffer->handle(), &copy_image_info);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();

@@ -3785,11 +3785,6 @@ TEST_F(NegativeImage, Stencil) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR vkGetPhysicalDeviceImageFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
-
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3825,7 +3820,7 @@ TEST_F(NegativeImage, Stencil) {
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
-    vkGetPhysicalDeviceImageFormatProperties2KHR(m_device->phy().handle(), &image_format_info2, &image_format_properties2);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(m_device->phy().handle(), &image_format_info2, &image_format_properties2);
     m_errorMonitor->VerifyFound();
     // test vkCreateImage as well for this case
     CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
@@ -4844,10 +4839,6 @@ TEST_F(NegativeImage, ImageFormatInfoDrmFormatModifier) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkGetPhysicalDeviceImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
-
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT image_drm_format_modifier =
         LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
 
@@ -4861,19 +4852,19 @@ TEST_F(NegativeImage, ImageFormatInfoDrmFormatModifier) {
 
     VkImageFormatProperties2 image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     image_format_info.pNext = nullptr;
     image_format_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     image_format_info.pNext = &image_drm_format_modifier;
     image_drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
-    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
     image_drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -4882,7 +4873,7 @@ TEST_F(NegativeImage, ImageFormatInfoDrmFormatModifier) {
     image_format_info.pNext = &format_list;
     image_format_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
-    vkGetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2KHR(gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5371,11 +5362,6 @@ TEST_F(NegativeImage, DrmFormatModifer) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    PFN_vkGetImageDrmFormatModifierPropertiesEXT vkGetImageDrmFormatModifierPropertiesEXT =
-        (PFN_vkGetImageDrmFormatModifierPropertiesEXT)vk::GetInstanceProcAddr(instance(),
-                                                                              "vkGetImageDrmFormatModifierPropertiesEXT");
-    ASSERT_TRUE(vkGetImageDrmFormatModifierPropertiesEXT != nullptr);
-
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     constexpr std::array<uint64_t, 2> dummy_modifiers = {0, 1};
@@ -5502,10 +5488,6 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping.";
     }
 
-    auto vkGetImageSubresourceLayout2EXT = reinterpret_cast<PFN_vkGetImageSubresourceLayout2EXT>(
-        vk::GetInstanceProcAddr(instance(), "vkGetImageSubresourceLayout2EXT"));
-    ASSERT_TRUE(vkGetImageSubresourceLayout2EXT != nullptr);
-
     // A bit set flag bit
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &image_compression_control));
     {
@@ -5561,7 +5543,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5577,7 +5559,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5595,7 +5577,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5612,7 +5594,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5628,7 +5610,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5645,7 +5627,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5664,7 +5646,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5681,7 +5663,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -5698,7 +5680,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
             VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
 
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -6360,10 +6342,6 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
-
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1) in;
     layout(set=0, binding=0) uniform sampler2D s;
@@ -6411,7 +6389,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                                   &pipe.descriptor_set_->set_, 0, nullptr);
         vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
-        vkCmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
+        vk::CmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
         cmd.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
@@ -6428,10 +6406,6 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
 
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1) in;
