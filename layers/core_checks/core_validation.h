@@ -94,6 +94,7 @@ struct DrawDispatchVuid {
     const char* dynamic_exclusive_scissor_enable_07879 = kVUIDUndefined;
     const char* dynamic_color_write_enable_07749 = kVUIDUndefined;
     const char* dynamic_color_write_enable_count_07750 = kVUIDUndefined;
+    const char* dynamic_attachment_feedback_loop_08877 = kVUIDUndefined;
     const char* dynamic_rendering_view_mask_06178 = kVUIDUndefined;
     const char* dynamic_rendering_color_count_06179 = kVUIDUndefined;
     const char* dynamic_rendering_color_formats_06180 = kVUIDUndefined;
@@ -2189,6 +2190,8 @@ class CoreChecks : public ValidationStateTracker {
                                                            const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo) const override;
     bool PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
                                                        const VkPerformanceOverrideInfoINTEL* pOverrideInfo) const override;
+    bool PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
+                                                              VkImageAspectFlags aspectMask) const override;
     bool PreCallValidateCmdBeginConditionalRenderingEXT(
         VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin) const override;
     bool PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer) const override;

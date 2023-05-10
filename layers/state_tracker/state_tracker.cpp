@@ -1345,6 +1345,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.attachment_feedback_loop_layout_features = *attachment_feedback_loop_layout;
         }
 
+        const auto attachment_feedback_loop_dynamic_features =
+            LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT>(pCreateInfo->pNext);
+        if (attachment_feedback_loop_dynamic_features) {
+            enabled_features.attachment_feedback_loop_dynamic_features = *attachment_feedback_loop_dynamic_features;
+        }
+
         const auto pipeline_protected_access_features =
             LvlFindInChain<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(pCreateInfo->pNext);
         if (pipeline_protected_access_features) {
