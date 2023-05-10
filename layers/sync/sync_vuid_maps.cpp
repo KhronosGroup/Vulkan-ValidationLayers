@@ -1168,4 +1168,27 @@ const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     return result;
 }
 
+const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error) {
+    static const std::map<ShaderTileImageError, std::vector<Entry>> kShaderTileImageErrors{
+        {ShaderTileImageError::kShaderTileImageFeatureError,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-shaderTileImageColorReadAccess-08718"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-shaderTileImageColorReadAccess-08718"},
+         }},
+        {ShaderTileImageError::kShaderTileImageBarrierError,
+         {
+             {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-08719"},
+             {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-08719"},
+         }},
+    };
+
+    const auto &result = FindVUID(error, loc, kShaderTileImageErrors);
+    assert(!result.empty());
+    if (result.empty()) {
+        static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-barrier-error");
+        return unhandled;
+    }
+    return result;
+}
+
 };  // namespace sync_vuid_maps
