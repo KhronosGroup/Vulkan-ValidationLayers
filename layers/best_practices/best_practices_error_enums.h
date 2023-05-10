@@ -76,10 +76,6 @@
 [[maybe_unused]] static const char *kVUID_BestPractices_DisplayPlane_PropertiesNotCalled =
     "UNASSIGNED-BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_MemTrack_InvalidState = "UNASSIGNED-BestPractices-MemTrack-InvalidState";
-[[maybe_unused]] static const char *kVUID_BestPractices_BufferMemReqNotCalled =
-    "UNASSIGNED-BestPractices-vkBindBufferMemory-requirements-not-retrieved";
-[[maybe_unused]] static const char *kVUID_BestPractices_ImageMemReqNotCalled =
-    "UNASSIGNED-BestPractices-vkBindImageMemory-requirements-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindAccelNV_NoMemReqQuery =
     "UNASSIGNED-BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_GetVideoSessionMemReqCountNotRetrieved =
