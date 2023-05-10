@@ -1549,3 +1549,38 @@ TEST_F(NegativeDescriptorBuffer, SetBufferAddressSpaceLimits) {
     vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
     m_errorMonitor->VerifyFound();
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5826
+TEST_F(NegativeDescriptorBuffer, NullHandle) {
+    TEST_DESCRIPTION("Descriptor buffer various tests.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(descriptor_buffer_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_buffer_features));
+
+    auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    const auto invalid_sampler = CastToHandle<VkSampler, uintptr_t>(0x0);
+    const auto invalid_imageview = CastToHandle<VkImageView, uintptr_t>(0x0);
+
+    std::array<std::byte, 128> buffer = {};
+    auto dgi = LvlInitStruct<VkDescriptorGetInfoEXT>();
+
+    const VkDescriptorImageInfo dii = {invalid_sampler, invalid_imageview, VK_IMAGE_LAYOUT_GENERAL};
+
+    dgi.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    dgi.data.pInputAttachmentImage = &dii;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08021");
+    vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.inputAttachmentDescriptorSize, buffer.data());
+    m_errorMonitor->VerifyFound();
+}
