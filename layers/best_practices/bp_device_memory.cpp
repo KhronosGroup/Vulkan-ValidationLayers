@@ -147,13 +147,6 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
     auto buffer_state = Get<BUFFER_STATE>(buffer);
-
-    if (!buffer_state->memory_requirements_checked && !buffer_state->external_memory_handle_types) {
-        skip |= LogWarning(device, kVUID_BestPractices_BufferMemReqNotCalled,
-                           "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
-                           api_name, report_data->FormatHandle(buffer).c_str());
-    }
-
     auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
 
     if (mem_state && mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
@@ -211,18 +204,6 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(image);
-
-    if (image_state->disjoint == false) {
-        if (!image_state->memory_requirements_checked[0] && !image_state->external_memory_handle_types) {
-            skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
-                               "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                               api_name, report_data->FormatHandle(image).c_str());
-        }
-    } else {
-        // TODO If binding disjoint image then this needs to check that VkImagePlaneMemoryRequirementsInfo was called for each
-        // plane.
-    }
-
     auto mem_state = Get<DEVICE_MEMORY_STATE>(memory);
 
     if (mem_state->alloc_info.allocationSize == image_state->requirements[0].size &&
