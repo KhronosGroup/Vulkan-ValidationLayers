@@ -938,7 +938,6 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     TEST_DESCRIPTION("Test setting memory barrier with shader tile image features are enabled.");
 
@@ -978,16 +977,16 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
 
-    auto memory_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
-    memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    memory_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    memory_barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    auto memory_barrier_2 = LvlInitStruct<VkMemoryBarrier2KHR>();
+    memory_barrier_2.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
     auto dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
     dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &memory_barrier;
+    dependency_info.pMemoryBarriers = &memory_barrier_2;
     dependency_info.bufferMemoryBarrierCount = 0;
     dependency_info.pBufferMemoryBarriers = VK_NULL_HANDLE;
     dependency_info.imageMemoryBarrierCount = 0;
@@ -995,6 +994,15 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
 
     vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
     vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &dependency_info);
+    vk::CmdEndRendering(m_commandBuffer->handle());
+
+    auto memory_barrier = LvlInitStruct<VkMemoryBarrier>();
+    memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &memory_barrier, 0,
+                           nullptr, 0, nullptr);
     vk::CmdEndRendering(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
