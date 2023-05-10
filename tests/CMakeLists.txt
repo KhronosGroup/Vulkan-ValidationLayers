@@ -168,9 +168,7 @@ elseif(MSVC)
     # Disable some signed/unsigned mismatch warnings.
     target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
 
-    if(MSVC_IDE)
-        set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:VkLayer_khronos_validation>")
-    endif()
+    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:VkLayer_khronos_validation>")
 
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
