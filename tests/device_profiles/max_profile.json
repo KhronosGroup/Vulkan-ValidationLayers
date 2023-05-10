@@ -723,6 +723,9 @@
                 "VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT": {
                     "attachmentFeedbackLoopLayout": true
                 },
+                "VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT": {
+                    "attachmentFeedbackLoopDynamicState": true
+                },
                 "VkPhysicalDeviceDepthClampZeroOneFeaturesEXT": {
                     "depthClampZeroOne": true
                 },
@@ -1662,6 +1665,7 @@
                 "VK_EXT_acquire_xlib_display": 1,
                 "VK_EXT_astc_decode_mode": 1,
                 "VK_EXT_attachment_feedback_loop_layout": 1,
+                "VK_EXT_attachment_feedback_loop_dynamic_state": 1,
                 "VK_EXT_blend_operation_advanced": 1,
                 "VK_EXT_border_color_swizzle": 1,
                 "VK_EXT_buffer_device_address": 1,
