@@ -484,12 +484,22 @@ class CoreChecks : public ValidationStateTracker {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
 
+    template <typename Barrier>
+    bool ValidateBarriersForShaderTileImage(const LogObjectList& objlist, const Location& outer_loc,
+                                            VkDependencyFlags dependencyFlags, uint32_t memBarrierCount,
+                                            const Barrier* pMemBarriers, uint32_t bufferBarrierCount, uint32_t imageMemBarrierCount,
+                                            VkPipelineStageFlags src_stage_mask = 0, VkPipelineStageFlags dst_stage_mask = 0) const;
+
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& loc,
                                              VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidatePipelineStage(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                                VkPipelineStageFlags2KHR stage_mask) const;
+    bool ValidatePipelineStageForShaderTileImage(const LogObjectList& objlist, const Location& loc,
+                                                 VkPipelineStageFlags2KHR stage_mask, const std::string& vuid) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                             VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
+    bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
+                                              const std::string& vuid) const;
     template <typename Barrier>
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                const Barrier& barrier, VkPipelineStageFlags src_stage_mask,
@@ -502,8 +512,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
-    bool ValidateDependencyInfoForShaderTileImage(const Location& loc, const CMD_BUFFER_STATE& cb_state,
-                                                  const VkDependencyInfoKHR& dep_info) const;
     template <typename ImgBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImgBarrier& barrier,
                                       const IMAGE_STATE* state_data) const;

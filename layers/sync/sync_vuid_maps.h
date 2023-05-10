@@ -112,4 +112,8 @@ enum class SubmitError {
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
+enum class ShaderTileImageError { kShaderTileImageFeatureError, kShaderTileImageBarrierError };
+
+const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error);
+
 }  // namespace sync_vuid_maps
