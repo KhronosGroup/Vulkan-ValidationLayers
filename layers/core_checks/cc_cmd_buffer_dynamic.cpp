@@ -174,6 +174,12 @@ bool CoreChecks::ValidateDynamicStateSetStatus(const LAST_BOUND_STATE &last_boun
                                           vuid.dynamic_color_write_enable_07749);
     }
 
+    // VK_EXT_attachment_feedback_loop_dynamic_state
+    {
+        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, objlist, cmd_type,
+                                          vuid.dynamic_attachment_feedback_loop_08877);
+    }
+
     if (const auto *rp_state = pipeline.RasterizationState(); rp_state) {
         if (rp_state->depthBiasEnable == VK_TRUE) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, objlist, cmd_type,
@@ -1621,4 +1627,32 @@ bool CoreChecks::PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer c
                                                                const VkPerformanceOverrideInfoINTEL *pOverrideInfo) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, CMD_SETCOARSESAMPLEORDERNV, VK_TRUE, nullptr, nullptr);
+}
+
+bool CoreChecks::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
+                                                                      VkImageAspectFlags aspectMask) const {
+    bool skip = false;
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    skip =
+        ValidateExtendedDynamicState(*cb_state, CMD_SETATTACHMENTFEEDBACKLOOPENABLEEXT,
+                                     enabled_features.attachment_feedback_loop_dynamic_features.attachmentFeedbackLoopDynamicState,
+                                     "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopDynamicState-08862",
+                                     "attachmentFeedbackLoopDynamicState");
+
+    if (aspectMask != VK_IMAGE_ASPECT_NONE &&
+        !enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-attachmentFeedbackLoopLayout-08864",
+                         "vkCmdSetAttachmentFeedbackLoopEnableEXT(): aspestMask is %s but the attachmentFeedbackLoopLayout feature "
+                         "is not enabled.",
+                         string_VkImageAspectFlags(aspectMask).c_str());
+    }
+
+    if (aspectMask != VK_IMAGE_ASPECT_NONE && aspectMask != VK_IMAGE_ASPECT_COLOR_BIT && aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
+        aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-08863",
+                     "vkCmdSetAttachmentFeedbackLoopEnableEXT(): aspestMask is %s.", string_VkImageAspectFlags(aspectMask).c_str());
+    }
+
+    return skip;
 }

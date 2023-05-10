@@ -95,6 +95,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT multisampled_render_to_single_sampled_features;
     VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_identifier_features;
     VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT attachment_feedback_loop_layout_features;
+    VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT attachment_feedback_loop_dynamic_features;
     VkPhysicalDevicePipelineProtectedAccessFeaturesEXT pipeline_protected_access_features;
     VkPhysicalDeviceImageProcessingFeaturesQCOM image_processing_features;
     VkPhysicalDeviceLinearColorAttachmentFeaturesNV linear_color_attachment_features;
