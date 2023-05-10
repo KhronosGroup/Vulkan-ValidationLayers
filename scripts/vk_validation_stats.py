@@ -240,12 +240,10 @@ class ValidationSource:
 
 # Class to parse the validation layer test source and store testnames
 class ValidationTests:
-    def __init__(self, test_file_list, unassigned_vuid_files, test_group_name=['VkLayerTest', 'VkPositiveLayerTest', 'VkBestPracticesLayerTest']):
+    def __init__(self, test_file_list, unassigned_vuid_files):
         self.test_files = test_file_list
         self.unassigned_vuid_files = unassigned_vuid_files
-        self.test_trigger_txt_list = []
-        for tg in test_group_name:
-            self.test_trigger_txt_list.append('TEST_F(%s' % tg)
+        self.test_trigger_txt_list = ['TEST_F(']
         self.explicit_vuids = set()
         self.implicit_vuids = set()
         self.unassigned_vuids = set()
@@ -290,6 +288,8 @@ class ValidationTests:
                         if ('' == testname):
                             grab_next_line = True
                             continue
+                        testgroup = line.split(',')[0][line.index('(') + 1:]
+                        testname = testgroup + '.' + testname
                         #self.test_to_vuids[testname] = []
                     if grab_next_line: # test name on its own line
                         grab_next_line = False
