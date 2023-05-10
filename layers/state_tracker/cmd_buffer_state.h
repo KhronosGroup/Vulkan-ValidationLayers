@@ -180,11 +180,11 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
 
-    // Dynamic State
-    CBDynamicFlags status;          // Track status of various bindings on cmd buffer
-    CBDynamicFlags static_status;   // All state bits provided by current graphics pipeline
-                                    // rather than dynamic state
-    CBDynamicFlags dynamic_status;  // dynamic state set up in pipeline
+    // Track status of all vkCmdSet* calls, if 1, means it was set
+    struct DynamicStateStatus {
+        CBDynamicFlags cb;        // for lifetime of CommandBuffer
+        CBDynamicFlags pipeline;  // for lifetime since last bound pipeline
+    } dynamic_state_status;
 
     // These are values that are being set with vkCmdSet* tied to a command buffer
     struct DynamicStateValue {
@@ -225,7 +225,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         std::bitset<32> color_blend_advanced_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
 
         // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
-        // setting the state, it will fail in ValidateCBDynamicStatus() for us. Some values (ex. the bitset) are tracking in
+        // setting the state, it will fail in ValidateDynamicStateIsSet() for us. Some values (ex. the bitset) are tracking in
         // replacement for static_status/dynamic_status so this needs to reset along with those
         void reset() {
             discard_rectangles.reset();

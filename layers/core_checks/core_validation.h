@@ -401,8 +401,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo& submit, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo2KHR& submit, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit, const Location& loc) const;
-    bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE& cb_state, CBDynamicState dynamic_state, CMD_TYPE cmd_type,
-                                 const char* msg_code) const;
+    bool ValidateDynamicStateIsSet(CBDynamicFlags not_set_status, CBDynamicState dynamic_state, const LogObjectList& objlist,
+                                   CMD_TYPE cmd_type, const char* msg_code) const;
     bool ValidateDynamicStateSetStatus(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool ValidateDrawDynamicState(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,

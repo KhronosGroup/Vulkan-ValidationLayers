@@ -164,8 +164,6 @@ using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATE_STATUS_NUM>;
 CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
 const char* DynamicStateToString(CBDynamicState dynamic_state);
 std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
-struct VkPipelineDynamicStateCreateInfo;
-CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);
 '''
         return output
 
@@ -214,18 +212,6 @@ std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states) {
     }
     if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(CB_DYNAMIC_STATE_STATUS_NUM)));
     return ret;
-}
-
-CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info) {
-    // initially assume everything is static state
-    CBDynamicFlags flags(~CBDynamicFlags(0));
-
-    if (info) {
-        for (uint32_t i = 0; i < info->dynamicStateCount; i++) {
-            flags.reset(ConvertToCBDynamicState(info->pDynamicStates[i]));
-        }
-    }
-    return flags;
 }
 '''
         return output

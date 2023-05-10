@@ -134,8 +134,8 @@ void CMD_BUFFER_STATE::ResetCBState() {
     command_count = 0;
     submitCount = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
-    status.reset();
-    static_status.reset();
+    dynamic_state_status.cb.reset();
+    dynamic_state_status.pipeline.reset();
     dynamic_state_value.reset();
     inheritedViewportDepths.clear();
     usedViewportScissorCount = 0;
@@ -1049,13 +1049,6 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
 void CMD_BUFFER_STATE::UpdateDrawCmd(CMD_TYPE cmd_type) {
     has_draw_cmd = true;
     UpdatePipelineState(cmd_type, VK_PIPELINE_BIND_POINT_GRAPHICS);
-
-    // Update the consumed viewport/scissor count.
-    uint32_t &used = usedViewportScissorCount;
-    used = std::max(used, pipelineStaticViewportCount);
-    used = std::max(used, pipelineStaticScissorCount);
-    usedDynamicViewportCount |= dynamic_status[CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT];
-    usedDynamicScissorCount |= dynamic_status[CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT];
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
@@ -1077,7 +1070,21 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto &last_bound = lastBound[lv_bind_point];
     PIPELINE_STATE *pipe = last_bound.pipeline_state;
-    if (pipe && VK_NULL_HANDLE != last_bound.pipeline_layout) {
+    if (!pipe) {
+        return;
+    }
+    if (pipe->vertex_input_state && !pipe->vertex_input_state->binding_descriptions.empty()) {
+        vertex_buffer_used = true;
+    }
+
+    // Update the consumed viewport/scissor count.
+    {
+        usedViewportScissorCount = std::max({usedViewportScissorCount, pipelineStaticViewportCount, pipelineStaticScissorCount});
+        usedDynamicViewportCount |= pipe->IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        usedDynamicScissorCount |= pipe->IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    }
+
+    if (last_bound.pipeline_layout != VK_NULL_HANDLE) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
             if (set_index >= last_bound.per_set.size()) {
@@ -1148,9 +1155,6 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                 }
             }
         }
-    }
-    if (pipe && pipe->vertex_input_state && !pipe->vertex_input_state->binding_descriptions.empty()) {
-        vertex_buffer_used = true;
     }
 }
 
@@ -1379,8 +1383,8 @@ void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicState state) {
 
 void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &state_bits) {
     RecordCmd(cmd_type);
-    status |= state_bits;
-    static_status &= ~state_bits;
+    dynamic_state_status.cb |= state_bits;
+    dynamic_state_status.pipeline |= state_bits;
 }
 
 void CMD_BUFFER_STATE::RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2) {
@@ -1566,7 +1570,8 @@ void CMD_BUFFER_STATE::UnbindResources() {
 
     // Reset status of cb to force rebinding of all resources
     // Index buffer included
-    status.reset();
+    dynamic_state_status.cb.reset();
+    dynamic_state_status.pipeline.reset();
 
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();
