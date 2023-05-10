@@ -498,3 +498,40 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
+    TEST_DESCRIPTION("Use vkCmdSetAttachmentFeedbackLoopEnableEXT correctly");
+    AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto feedback_loop_dynamic_features = LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT>();
+    auto feedback_loop_features =
+        LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(&feedback_loop_dynamic_features);
+    GetPhysicalDeviceFeatures2(feedback_loop_features);
+    if (!feedback_loop_dynamic_features.attachmentFeedbackLoopDynamicState) {
+        GTEST_SKIP() << "attachmentFeedbackLoopDynamicState is not supported.";
+    }
+    if (!feedback_loop_features.attachmentFeedbackLoopLayout) {
+        GTEST_SKIP() << "attachmentFeedbackLoopLayout is not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &feedback_loop_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT};
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_commandBuffer->handle(), VK_IMAGE_ASPECT_COLOR_BIT);
+    m_commandBuffer->end();
+}
