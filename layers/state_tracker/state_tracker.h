@@ -894,6 +894,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                          const VkDescriptorSet* pDescriptorSets) override;
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator) override;
+
+    void PerformUpdateDescriptorSets(uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+
     void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                            const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                            const VkCopyDescriptorSet* pDescriptorCopies) override;

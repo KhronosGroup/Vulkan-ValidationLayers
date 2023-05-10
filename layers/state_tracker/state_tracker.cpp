@@ -2679,12 +2679,33 @@ void ValidationStateTracker::PreCallRecordFreeDescriptorSets(VkDevice device, Vk
     }
 }
 
+void ValidationStateTracker::PerformUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet *p_wds, uint32_t copy_count, const VkCopyDescriptorSet *p_cds) {
+    // Write updates first
+    uint32_t i = 0;
+    for (i = 0; i < write_count; ++i) {
+        auto dest_set = p_wds[i].dstSet;
+        auto set_node = Get<cvdescriptorset::DescriptorSet>(dest_set);
+        if (set_node) {
+            set_node->PerformWriteUpdate(p_wds[i]);
+        }
+    }
+    // Now copy updates
+    for (i = 0; i < copy_count; ++i) {
+        auto dst_set = p_cds[i].dstSet;
+        auto src_set = p_cds[i].srcSet;
+        auto src_node = Get<cvdescriptorset::DescriptorSet>(src_set);
+        auto dst_node = Get<cvdescriptorset::DescriptorSet>(dst_set);
+        if (src_node && dst_node) {
+            dst_node->PerformCopyUpdate(p_cds[i], *src_node);
+        }
+    }
+}
+
 void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                                const VkWriteDescriptorSet *pDescriptorWrites,
                                                                uint32_t descriptorCopyCount,
                                                                const VkCopyDescriptorSet *pDescriptorCopies) {
-    cvdescriptorset::PerformUpdateDescriptorSets(this, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                                 pDescriptorCopies);
+    PerformUpdateDescriptorSets(descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
 }
 
 void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
@@ -4724,7 +4745,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
                                                                         const void *pData) {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
-    cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),
+    PerformUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                                  decoded_update.desc_writes.data(), 0, NULL);
 }
 
