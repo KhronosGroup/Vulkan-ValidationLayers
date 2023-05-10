@@ -51,15 +51,12 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const auto vkGetAccelerationStructureBuildSizesKHR =
-        GetInstanceProcAddr<PFN_vkGetAccelerationStructureBuildSizesKHR>("vkGetAccelerationStructureBuildSizesKHR");
-
     auto build_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     uint32_t max_primitives_count;
     auto build_sizes_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
-    vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
-                                            &max_primitives_count, &build_sizes_info);
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
 }
 
 TEST_F(PositiveRayTracing, AccelerationStructureReference) {

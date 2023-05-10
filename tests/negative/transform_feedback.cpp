@@ -699,13 +699,8 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props =
-        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
+    auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    GetPhysicalDeviceProperties2(transform_feedback_props);
 
     // seen sometimes when using profiles and will crash
     if (transform_feedback_props.maxTransformFeedbackStreams == 0) {

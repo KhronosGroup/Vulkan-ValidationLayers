@@ -1443,11 +1443,9 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
 
     uint32_t combination_count = 0;
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
-    auto vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV"));
 
-    ASSERT_NO_FATAL_FAILURE(vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr));
+    ASSERT_NO_FATAL_FAILURE(
+        vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr));
     if (combination_count < 1) {
         GTEST_SKIP() << "No mixed sample combinations are supported";
     }
@@ -1455,7 +1453,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     // TODO this fill can be removed once https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4138 merges
     std::fill(combinations.begin(), combinations.end(), LvlInitStruct<VkFramebufferMixedSamplesCombinationNV>());
     ASSERT_NO_FATAL_FAILURE(
-        vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]));
+        vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]));
 
     // Pick the first supported combination for a positive test.
     test_cases.push_back({combinations[0].rasterizationSamples, static_cast<VkSampleCountFlagBits>(combinations[0].colorSamples),
@@ -2590,11 +2588,6 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
         GTEST_SKIP() << "VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations is supported, skipping.";
     }
 
-    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT vkGetPhysicalDeviceMultisamplePropertiesEXT =
-        (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT)vk::GetInstanceProcAddr(instance(),
-                                                                                 "vkGetPhysicalDeviceMultisamplePropertiesEXT");
-    assert(vkGetPhysicalDeviceMultisamplePropertiesEXT != nullptr);
-
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -2645,7 +2638,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     ASSERT_TRUE(framebuffer.initialized());
 
     auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
-    vkGetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
 
@@ -2747,13 +2740,8 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props =
-        LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
-    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&conservative_rasterization_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    auto conservative_rasterization_props = LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
+    GetPhysicalDeviceProperties2(conservative_rasterization_props);
 
     VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state =
         LvlInitStruct<VkPipelineRasterizationConservativeStateCreateInfoEXT>();

@@ -155,14 +155,10 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
     VkExternalMemoryHandleTypeFlagsNV supported_handle_types = 0;
     VkExternalMemoryHandleTypeFlagsNV any_compatible_group = 0;
 
-    auto vkGetPhysicalDeviceExternalImageFormatPropertiesNV =
-        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV>(
-            "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
-
     IterateFlags<VkExternalMemoryHandleTypeFlagBitsNV>(
         AllVkExternalMemoryHandleTypeFlagBitsNV, [&](VkExternalMemoryHandleTypeFlagBitsNV flag) {
             VkExternalImageFormatPropertiesNV external_image_properties = {};
-            VkResult result = vkGetPhysicalDeviceExternalImageFormatPropertiesNV(
+            VkResult result = vk::GetPhysicalDeviceExternalImageFormatPropertiesNV(
                 gpu(), image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
                 image_create_info.flags, flag, &external_image_properties);
             if (result == VK_SUCCESS &&
@@ -529,10 +525,7 @@ TEST_F(NegativeExternalMemorySync, TimelineSemaphore) {
 
         auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-        auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-            (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-                instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-        vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+        vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
         if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
             !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -594,10 +587,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
 
     auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -686,9 +676,7 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
-    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -766,9 +754,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
-    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -845,9 +831,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
     auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
-    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
-    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+    vk::GetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -911,10 +895,7 @@ TEST_F(NegativeExternalMemorySync, TemporarySemaphore) {
 
     auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -1015,10 +996,7 @@ TEST_F(NegativeExternalMemorySync, Semaphore) {
 
     auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
-    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+    vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -1523,7 +1501,6 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto vkGetMemoryFdKHR = GetInstanceProcAddr<PFN_vkGetMemoryFdKHR>("vkGetMemoryFdKHR");
     int fd = -1;
 
     // Allocate memory without VkExportMemoryAllocateInfo in the pNext chain
@@ -1539,7 +1516,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00671");
-        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd);
         m_errorMonitor->VerifyFound();
     }
     // VkExportMemoryAllocateInfo::handleTypes does not include requested handle type
@@ -1558,7 +1535,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00671");
-        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd);
         m_errorMonitor->VerifyFound();
     }
     // Request handle of the wrong type
@@ -1577,7 +1554,7 @@ TEST_F(NegativeExternalMemorySync, GetMemoryFdHandle) {
         get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryGetFdInfoKHR-handleType-00672");
-        vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+        vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1594,7 +1571,6 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto vkGetMemoryFdKHR = GetInstanceProcAddr<PFN_vkGetMemoryFdKHR>("vkGetMemoryFdKHR");
     constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     VkExternalMemoryFeatureFlags external_features = 0;
@@ -1642,7 +1618,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
         auto get_handle_info = LvlInitStruct<VkMemoryGetFdInfoKHR>();
         get_handle_info.memory = memory;
         get_handle_info.handleType = handle_type;
-        ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd));
+        ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd));
     }
     auto import_info = LvlInitStruct<VkImportMemoryFdInfoKHR>();
     import_info.handleType = handle_type;
@@ -1689,7 +1665,6 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto vkGetMemoryWin32HandleKHR = GetInstanceProcAddr<PFN_vkGetMemoryWin32HandleKHR>("vkGetMemoryWin32HandleKHR");
     constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
     VkExternalMemoryFeatureFlags external_features = 0;
@@ -1746,7 +1721,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
         auto get_handle_info = LvlInitStruct<VkMemoryGetWin32HandleInfoKHR>();
         get_handle_info.memory = memory;
         get_handle_info.handleType = handle_type;
-        ASSERT_VK_SUCCESS(vkGetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle));
+        ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(*m_device, &get_handle_info, &handle));
     }
     auto import_info = LvlInitStruct<VkImportMemoryWin32HandleInfoKHR>();
     import_info.handleType = handle_type;

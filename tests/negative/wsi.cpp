@@ -64,18 +64,13 @@ TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
     {
         swapchain_ci.flags = VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR;
 
-        PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-            reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-                vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-        ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
-
         // Get surface protected capabilities
         auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = swapchain_ci.surface;
         auto surface_protected_capabilities = LvlInitStruct<VkSurfaceProtectedCapabilitiesKHR>();
         auto surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
         surface_capabilities.pNext = &surface_protected_capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_capabilities);
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_capabilities);
 
         // Create swapchain, monitor potential validation error
         if (!surface_protected_capabilities.supportsProtected) {
@@ -1059,16 +1054,11 @@ TEST_F(NegativeWsi, SwapchainMinImageCountShared) {
         GTEST_SKIP() << "Cannot find supported shared present mode";
     }
 
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
-
     auto shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
     auto capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
     auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = m_surface;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
 
     // This was recently added to CTS, but some drivers might not correctly advertise the flag
     if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
@@ -1184,16 +1174,11 @@ TEST_F(NegativeWsi, SwapchainUsageShared) {
         GTEST_SKIP() << "Cannot find supported shared present mode";
     }
 
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceSurfaceCapabilities2KHR != nullptr);
-
     auto shared_present_capabilities = LvlInitStruct<VkSharedPresentSurfaceCapabilitiesKHR>();
     auto capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>(&shared_present_capabilities);
     auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = m_surface;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
 
     // No implementation should support depth/stencil for swapchain
     if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
@@ -1503,34 +1488,13 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
         GTEST_SKIP() << "Failed to create surface.  Skipping.";
     }
 
-    // Load all VK_KHR_display functions
-    PFN_vkCreateDisplayModeKHR vkCreateDisplayModeKHR =
-        (PFN_vkCreateDisplayModeKHR)vk::GetInstanceProcAddr(instance(), "vkCreateDisplayModeKHR");
-    PFN_vkCreateDisplayPlaneSurfaceKHR vkCreateDisplayPlaneSurfaceKHR =
-        (PFN_vkCreateDisplayPlaneSurfaceKHR)vk::GetInstanceProcAddr(instance(), "vkCreateDisplayPlaneSurfaceKHR");
-    PFN_vkGetDisplayPlaneSupportedDisplaysKHR vkGetDisplayPlaneSupportedDisplaysKHR =
-        (PFN_vkGetDisplayPlaneSupportedDisplaysKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneSupportedDisplaysKHR");
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR =
-        (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
-        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
-    PFN_vkGetDisplayPlaneCapabilitiesKHR vkGetDisplayPlaneCapabilitiesKHR =
-        (PFN_vkGetDisplayPlaneCapabilitiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayPlaneCapabilitiesKHR");
-    ASSERT_TRUE(vkCreateDisplayModeKHR != nullptr);
-    ASSERT_TRUE(vkCreateDisplayPlaneSurfaceKHR != nullptr);
-    ASSERT_TRUE(vkGetDisplayPlaneSupportedDisplaysKHR != nullptr);
-    ASSERT_TRUE(vkGetPhysicalDeviceDisplayPlanePropertiesKHR != nullptr);
-    ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
-    ASSERT_TRUE(vkGetDisplayPlaneCapabilitiesKHR != nullptr);
-
     uint32_t plane_prop_count = 0;
-    vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, nullptr);
     if (plane_prop_count == 0) {
         GTEST_SKIP() << "Test requires at least 1 supported display plane property";
     }
     std::vector<VkDisplayPlanePropertiesKHR> display_plane_props(plane_prop_count);
-    vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, display_plane_props.data());
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, display_plane_props.data());
     // using plane 0 for rest of test
     VkDisplayKHR current_display = display_plane_props[0].currentDisplay;
     if (current_display == VK_NULL_HANDLE) {
@@ -1538,24 +1502,24 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     }
 
     uint32_t mode_prop_count = 0;
-    vkGetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, nullptr);
+    vk::GetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, nullptr);
     if (plane_prop_count == 0) {
         GTEST_SKIP() << "test requires at least 1 supported display mode property";
     }
     std::vector<VkDisplayModePropertiesKHR> display_mode_props(mode_prop_count);
-    vkGetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, display_mode_props.data());
+    vk::GetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, display_mode_props.data());
 
     uint32_t plane_count;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249");
-    vkGetDisplayPlaneSupportedDisplaysKHR(gpu(), plane_prop_count, &plane_count, nullptr);
+    vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), plane_prop_count, &plane_count, nullptr);
     m_errorMonitor->VerifyFound();
-    ASSERT_VK_SUCCESS(vkGetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, nullptr));
+    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, nullptr));
     if (plane_count == 0) {
         GTEST_SKIP() << "test requires at least 1 supported display plane";
     }
     std::vector<VkDisplayKHR> supported_displays(plane_count);
     plane_count = 1;
-    ASSERT_VK_SUCCESS(vkGetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, supported_displays.data()));
+    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, supported_displays.data()));
     if (supported_displays[0] != current_display) {
         GTEST_SKIP() << "Current VkDisplayKHR used is not supported";
     }
@@ -1567,17 +1531,17 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplayModeParametersKHR-width-01990");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplayModeParametersKHR-height-01991");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplayModeParametersKHR-refreshRate-01992");
-    vkCreateDisplayModeKHR(gpu(), current_display, &display_mode_info, nullptr, &display_mode);
+    vk::CreateDisplayModeKHR(gpu(), current_display, &display_mode_info, nullptr, &display_mode);
     m_errorMonitor->VerifyFound();
     // Use the first good parameter queried
     display_mode_info.parameters = display_mode_props[0].parameters;
-    VkResult result = vkCreateDisplayModeKHR(gpu(), current_display, &display_mode_info, nullptr, &display_mode);
+    VkResult result = vk::CreateDisplayModeKHR(gpu(), current_display, &display_mode_info, nullptr, &display_mode);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "test failed to create a display mode with vkCreateDisplayModeKHR";
     }
 
     VkDisplayPlaneCapabilitiesKHR plane_capabilities;
-    ASSERT_VK_SUCCESS(vkGetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities));
+    ASSERT_VK_SUCCESS(vk::GetDisplayPlaneCapabilitiesKHR(gpu(), display_mode, 0, &plane_capabilities));
 
     VkSurfaceKHR surface;
     auto display_surface_info = LvlInitStruct<VkDisplaySurfaceCreateInfoKHR>();
@@ -1593,13 +1557,13 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     if ((plane_capabilities.supportedAlpha & VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_BIT_KHR) == 0) {
         display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255");
-        vkCreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+        vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
         m_errorMonitor->VerifyFound();
     }
     if ((plane_capabilities.supportedAlpha & VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_PREMULTIPLIED_BIT_KHR) == 0) {
         display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_PREMULTIPLIED_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255");
-        vkCreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+        vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1609,13 +1573,13 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01255");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-alphaMode-01254");
-    vkCreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
 
     display_surface_info.alphaMode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
     display_surface_info.planeIndex = plane_prop_count;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252");
-    vkCreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
     display_surface_info.planeIndex = 0;  // restore to good value
 
@@ -1624,7 +1588,7 @@ TEST_F(NegativeWsi, DisplayPlaneSurface) {
     // one for height and width
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-width-01256");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDisplaySurfaceCreateInfoKHR-width-01256");
-    vkCreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
+    vk::CreateDisplayPlaneSurfaceKHR(instance(), &display_surface_info, nullptr, &surface);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2108,20 +2072,12 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
         surface_info.surface = m_surface;
         VkDeviceGroupPresentModeFlagsKHR flags = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
 
-        PFN_vkGetDeviceGroupSurfacePresentModes2EXT vkGetDeviceGroupSurfacePresentModes2EXT =
-            reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModes2EXT>(
-                vk::GetInstanceProcAddr(instance(), "vkGetDeviceGroupSurfacePresentModes2EXT"));
-
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213");
-        vkGetDeviceGroupSurfacePresentModes2EXT(device(), &surface_info, &flags);
+        vk::GetDeviceGroupSurfacePresentModes2EXT(device(), &surface_info, &flags);
         m_errorMonitor->VerifyFound();
 
-        PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT vkGetPhysicalDeviceSurfacePresentModes2EXT =
-            (PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfacePresentModes2EXT");
-
         uint32_t count;
-        vkGetPhysicalDeviceSurfacePresentModes2EXT(gpu(), &surface_info, &count, nullptr);
+        vk::GetPhysicalDeviceSurfacePresentModes2EXT(gpu(), &surface_info, &count, nullptr);
     }
 #endif
 
@@ -2138,28 +2094,20 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
     }
 
     if (display_surface_counter) {
-        PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT vkGetPhysicalDeviceSurfaceCapabilities2EXT =
-            (PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
-
         auto capabilities = LvlInitStruct<VkSurfaceCapabilities2EXT>();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-06211");
-        vkGetPhysicalDeviceSurfaceCapabilities2EXT(gpu(), m_surface, &capabilities);
+        vk::GetPhysicalDeviceSurfaceCapabilities2EXT(gpu(), m_surface, &capabilities);
         m_errorMonitor->VerifyFound();
     }
 
     if (get_surface_capabilities2) {
-        PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-            (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                    "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
-
         auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = m_surface;
         auto capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06210");
-        vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2171,14 +2119,11 @@ TEST_F(NegativeWsi, SurfaceSupportByPhysicalDevice) {
     }
 
     if (get_surface_capabilities2) {
-        PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR =
-            (PFN_vkGetPhysicalDeviceSurfaceFormats2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceFormats2KHR");
-
         auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
         surface_info.surface = m_surface;
         uint32_t count;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06210");
-        vkGetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
+        vk::GetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2246,8 +2191,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.oldSwapchain = 0;
 
     // Query present mode data
-    auto vkGetPhysicalDeviceSurfaceCapabilities2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
     const std::array defined_present_modes{
         VK_PRESENT_MODE_IMMEDIATE_KHR,
         VK_PRESENT_MODE_MAILBOX_KHR,
@@ -2280,21 +2223,21 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     surface_info.pNext = &present_mode;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSurfacePresentModeEXT-presentMode-07780");
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
     auto present_mode_compatibility = LvlInitStruct<VkSurfacePresentModeCompatibilityEXT>();
     present_mode.presentMode = pdev_surface_present_modes[0];
     surface_caps.pNext = &present_mode_compatibility;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     std::vector<VkPresentModeKHR> compatible_present_modes(present_mode_compatibility.presentModeCount);
     present_mode_compatibility.pPresentModes = compatible_present_modes.data();
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     auto scaling_capabilities = LvlInitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
     surface_caps.pNext = &scaling_capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     mismatched_present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
 
@@ -2434,7 +2377,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     // If the swapchain is created with VkSwapchainPresentModesCreateInfoEXT,
     present_mode.presentMode = present_modes_ci.pPresentModes[0];
     surface_caps.pNext = &scaling_capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     // presentScaling must be a valid scaling method for the surface
     // as returned in VkSurfacePresentScalingCapabilitiesEXT::supportedPresentScaling,
@@ -2506,19 +2449,14 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 
-    auto vkReleaseSwapchainImagesEXT =
-        reinterpret_cast<PFN_vkReleaseSwapchainImagesEXT>(vk::GetInstanceProcAddr(instance(), "vkReleaseSwapchainImagesEXT"));
-
     uint32_t release_index = swapchain_images_count + 2;
     auto release_info = LvlInitStruct<VkReleaseSwapchainImagesInfoEXT>();
     release_info.swapchain = m_swapchain;
     release_info.imageIndexCount = swapchain_images_count;
     release_info.pImageIndices = &release_index;
-    if (vkReleaseSwapchainImagesEXT) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
-        vkReleaseSwapchainImagesEXT(m_device->device(), &release_info);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
+    vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
@@ -2629,9 +2567,6 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     std::vector<VkPresentModeKHR> present_modes(count);
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), m_surface, &count, present_modes.data());
 
-    auto vkGetPhysicalDeviceSurfaceCapabilities2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceCapabilities2KHR"));
-
     auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     auto surface_caps = LvlInitStruct<VkSurfaceCapabilities2KHR>();
     surface_info.surface = m_surface;
@@ -2643,33 +2578,33 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 
     // Leave VkSurfacePresentMode off of the pNext chain
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776");
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
     surface_info.pNext = &present_mode;
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     std::vector<VkPresentModeKHR> compatible_present_modes(present_mode_compatibility.presentModeCount);
     present_mode_compatibility.pPresentModes = compatible_present_modes.data();
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
 
     auto scaling_capabilities = LvlInitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
     surface_caps.pNext = &scaling_capabilities;
     surface_info.pNext = nullptr;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777");
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
     m_errorMonitor->VerifyFound();
 
     if (IsExtensionsEnabled(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
         surface_info.pNext = &present_mode;
         surface_info.surface = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778");
-        vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
         m_errorMonitor->VerifyFound();
 
         surface_caps.pNext = &present_mode_compatibility;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779");
-        vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2824,20 +2759,15 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     present_mode_info.pPresentModes = &good_present_mode;
     vk::QueuePresentKHR(m_device->m_queue, &present);
 
-    auto vkReleaseSwapchainImagesEXT =
-        reinterpret_cast<PFN_vkReleaseSwapchainImagesEXT>(vk::GetInstanceProcAddr(instance(), "vkReleaseSwapchainImagesEXT"));
-
     uint32_t release_index = 0;
     VkReleaseSwapchainImagesInfoEXT release_info = LvlInitStruct<VkReleaseSwapchainImagesInfoEXT>();
     release_info.swapchain = m_swapchain;
     release_info.imageIndexCount = swapchain_images_count;
     release_info.pImageIndices = &release_index;
-    if (vkReleaseSwapchainImagesEXT) {
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
-        vkReleaseSwapchainImagesEXT(m_device->device(), &release_info);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
+    vk::ReleaseSwapchainImagesEXT(m_device->device(), &release_info);
+    m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
 }
@@ -2863,17 +2793,12 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    auto vkAcquireFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkAcquireFullScreenExclusiveModeEXT>(
-        vk::GetInstanceProcAddr(instance(), "vkAcquireFullScreenExclusiveModeEXT"));
-    auto vkReleaseFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkReleaseFullScreenExclusiveModeEXT>(
-        vk::GetInstanceProcAddr(instance(), "vkReleaseFullScreenExclusiveModeEXT"));
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675");
-    vkAcquireFullScreenExclusiveModeEXT(device(), m_swapchain);
+    vk::AcquireFullScreenExclusiveModeEXT(device(), m_swapchain);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678");
-    vkReleaseFullScreenExclusiveModeEXT(device(), m_swapchain);
+    vk::ReleaseFullScreenExclusiveModeEXT(device(), m_swapchain);
     m_errorMonitor->VerifyFound();
 
     const POINT pt_zero = {0, 0};
@@ -2907,17 +2832,17 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain_two);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674");
-    vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_one);
+    vk::AcquireFullScreenExclusiveModeEXT(device(), swapchain_one);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677");
-    vkReleaseFullScreenExclusiveModeEXT(device(), swapchain_one);
+    vk::ReleaseFullScreenExclusiveModeEXT(device(), swapchain_one);
     m_errorMonitor->VerifyFound();
 
-    VkResult res = vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
+    VkResult res = vk::AcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
     if (res == VK_SUCCESS) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676");
-        vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
+        vk::AcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3296,9 +3221,6 @@ TEST_F(NegativeWsi, SurfaceQueryImageCompressionControlWithoutExtension) {
         GTEST_SKIP() << "Cannot create surface";
     }
 
-    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceSurfaceFormats2KHR>(vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSurfaceFormats2KHR"));
-
     auto compression_properties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
     auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>(&compression_properties);
     surface_info.surface = m_surface;
@@ -3306,7 +3228,7 @@ TEST_F(NegativeWsi, SurfaceQueryImageCompressionControlWithoutExtension) {
 
     // get compression control properties even of VK_EXT_image_compression_control extension is disabled(or is not supported).
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext");
-    vkGetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
+    vk::GetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3327,10 +3249,6 @@ TEST_F(NegativeWsi, PhysicalDeviceSurfaceCapabilities) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
 
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
-        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
-
     auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = m_surface;
 
@@ -3340,7 +3258,7 @@ TEST_F(NegativeWsi, PhysicalDeviceSurfaceCapabilities) {
     surface_capabilities.surfaceCapabilities = m_surface_capabilities;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671");
-    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_capabilities);
     m_errorMonitor->VerifyFound();
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR

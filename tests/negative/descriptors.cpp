@@ -3491,15 +3491,11 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pNext);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
-    // Get the inline uniform block limits
-    auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+    auto phys_dev_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&inline_uniform_props);
+    GetPhysicalDeviceProperties2(phys_dev_props);
 
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
@@ -5909,15 +5905,12 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFormatProperties2KHR");
-
     VkFormat format = VK_FORMAT_UNDEFINED;
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
         auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
-        vkGetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
+        vk::GetPhysicalDeviceFormatProperties2KHR(gpu(), (VkFormat)fmt, &fmt_props);
 
         const bool has_sampling = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR) != 0;
         const bool has_sampling_img_depth_compare =

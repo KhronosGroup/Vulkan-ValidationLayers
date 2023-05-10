@@ -34,12 +34,6 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features));
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
-
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -47,14 +41,14 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
         break;
     }
@@ -124,11 +118,6 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -139,14 +128,14 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
@@ -179,16 +168,9 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
-    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
-    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
@@ -283,7 +265,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         vk::FreeMemory(device(), mem, NULL);
     }
 
-    vkReleaseProfilingLockKHR(device());
+    vk::ReleaseProfilingLockKHR(device());
 }
 
 TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
@@ -305,12 +287,6 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
-
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
@@ -320,14 +296,14 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
@@ -362,16 +338,9 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
-    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
-    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
@@ -399,7 +368,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         vk::QueueWaitIdle(queue);
     }
 
-    vkReleaseProfilingLockKHR(device());
+    vk::ReleaseProfilingLockKHR(device());
 }
 
 TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
@@ -421,11 +390,6 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -436,14 +400,14 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
@@ -478,16 +442,9 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
-    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
-    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
@@ -535,10 +492,10 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
 
         // Release while recording.
-        vkReleaseProfilingLockKHR(device());
+        vk::ReleaseProfilingLockKHR(device());
         {
             VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-            VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+            VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
             ASSERT_TRUE(result == VK_SUCCESS);
         }
 
@@ -565,7 +522,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         vk::FreeMemory(device(), mem, NULL);
     }
 
-    vkReleaseProfilingLockKHR(device());
+    vk::ReleaseProfilingLockKHR(device());
 }
 
 TEST_F(NegativeQuery, PerformanceIncompletePasses) {
@@ -594,16 +551,6 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
-
-    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
-        (PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -615,14 +562,14 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
@@ -635,7 +582,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         create_info.counterIndexCount = counterIndices.size();
         create_info.pCounterIndices = &counterIndices[0];
 
-        vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(gpu(), &create_info, &nPasses);
+        vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(gpu(), &create_info, &nPasses);
 
         if (nPasses < 2) {
             counters.clear();
@@ -662,18 +609,9 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
-    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
-    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-    PFN_vkResetQueryPoolEXT fpvkResetQueryPoolEXT =
-        (PFN_vkResetQueryPoolEXT)vk::GetInstanceProcAddr(instance(), "vkResetQueryPoolEXT");
-
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
@@ -699,7 +637,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         VkCommandBufferBeginInfo command_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        fpvkResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
+        vk::ResetQueryPoolEXT(m_device->device(), query_pool.handle(), 0, 1);
 
         m_commandBuffer->begin(&command_buffer_begin_info);
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
@@ -812,7 +750,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         vk::FreeMemory(device(), mem, NULL);
     }
 
-    vkReleaseProfilingLockKHR(device());
+    vk::ReleaseProfilingLockKHR(device());
 }
 
 TEST_F(NegativeQuery, PerformanceResetAndBegin) {
@@ -838,16 +776,6 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
-            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
-                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
-    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
-
-    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
-        (PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR != nullptr);
 
     auto queueFamilyProperties = m_device->phy().queue_properties();
     uint32_t queueFamilyIndex = queueFamilyProperties.size();
@@ -858,14 +786,14 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
 
         counters.resize(nCounters);
         for (auto &c : counters) {
             c = LvlInitStruct<VkPerformanceCounterKHR>();
         }
-        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
@@ -895,16 +823,9 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
 
-    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
-        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
-    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
-    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
-        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
-    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
-
     {
         VkAcquireProfilingLockInfoKHR lock_info = LvlInitStruct<VkAcquireProfilingLockInfoKHR>();
-        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        VkResult result = vk::AcquireProfilingLockKHR(device(), &lock_info);
         ASSERT_TRUE(result == VK_SUCCESS);
     }
 
@@ -961,7 +882,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         vk::FreeMemory(device(), mem, NULL);
     }
 
-    vkReleaseProfilingLockKHR(device());
+    vk::ReleaseProfilingLockKHR(device());
 }
 
 TEST_F(NegativeQuery, HostResetNotEnabled) {

@@ -720,7 +720,6 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto vkCmdInsertDebugUtilsLabelEXT = GetInstanceProcAddr<PFN_vkCmdInsertDebugUtilsLabelEXT>("vkCmdInsertDebugUtilsLabelEXT");
 
     constexpr int worker_count = 8;
     ThreadTimeoutHelper timeout_helper(worker_count);
@@ -747,7 +746,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
             for (int i = 0; i < command_buffers_per_pool; i++) {
                 ASSERT_VK_SUCCESS(vk::BeginCommandBuffer(command_buffers[i], &begin_info));
                 // Record debug label. It's a required step to reproduce the original issue
-                vkCmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
+                vk::CmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
                 ASSERT_VK_SUCCESS(vk::EndCommandBuffer(command_buffers[i]));
             }
             vk::FreeCommandBuffers(m_device->device(), pool.handle(), command_buffers_per_pool, command_buffers.data());

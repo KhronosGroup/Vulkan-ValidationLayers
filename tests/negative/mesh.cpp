@@ -672,9 +672,6 @@ TEST_F(NegativeMesh, BasicUsageNV) {
                                                                "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
     }
 
-    PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
-        (PFN_vkCmdDrawMeshTasksIndirectNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectNV");
-
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
@@ -686,7 +683,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718");
-    vkCmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer, 0, 2, 0);
+    vk::CmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer, 0, 2, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -886,13 +883,6 @@ TEST_F(NegativeMesh, DrawCmds) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT =
-        (PFN_vkCmdDrawMeshTasksEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksEXT");
-    PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectEXT");
-    PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountEXT");
-
     // #version 450
     // #extension GL_EXT_mesh_shader : enable
     // layout (triangles) out;
@@ -985,24 +975,24 @@ TEST_F(NegativeMesh, DrawCmds) {
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
-    vkCmdDrawMeshTasksEXT(m_commandBuffer->handle(), max_group_count_X, max_group_count_Y, max_group_count_Z);
+    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), max_group_count_X, max_group_count_Y, max_group_count_Z);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
-    vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     if (m_device->props.limits.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->props.limits.maxDrawIndirectCount)) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
-        vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0,
-                                      m_device->props.limits.maxDrawIndirectCount + 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+        vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0,
+                                        m_device->props.limits.maxDrawIndirectCount + 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_errorMonitor->VerifyFound();
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089");
-    vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandEXT) * 2, 1,
-                                  sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandEXT) * 2, 1,
+                                    sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stage-06481");
@@ -1012,18 +1002,18 @@ TEST_F(NegativeMesh, DrawCmds) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-stage-06480");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087");
-    vkCmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
+    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-06480");
-    vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-06480");
-    vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                       sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -1054,11 +1044,6 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
-
-    PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectEXT");
-    PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountEXT");
 
     // #version 450
     // #extension GL_EXT_mesh_shader : require
@@ -1124,11 +1109,12 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088");
-    vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT) - 2);
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2,
+                                    sizeof(VkDrawMeshTasksIndirectCommandEXT) - 2);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
-    vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     VkBufferObj draw_buffer;
@@ -1153,24 +1139,24 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     count_buffer_wrong_usage.init(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714");
-    vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
-                                       sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715");
-    vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong_usage.handle(), 0, 1,
-                                       sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_wrong_usage.handle(), 0,
+                                         1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096");
-    vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                       sizeof(VkDrawMeshTasksIndirectCommandEXT) - 3);
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT) - 3);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097");
-    vkCmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(),
-                                       2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), count_buffer.handle(), 0, 4,
-                                       sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_commandBuffer->handle(), draw_buffer.handle(),
+                                         2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), count_buffer.handle(), 0, 4,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
@@ -1197,13 +1183,6 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
-        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
-    PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
-        (PFN_vkCmdDrawMeshTasksIndirectNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectNV");
-    PFN_vkCmdDrawMeshTasksIndirectCountNV vkCmdDrawMeshTasksIndirectCountNV =
-        (PFN_vkCmdDrawMeshTasksIndirectCountNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountNV");
 
     static const char mesh_src[] = R"glsl(
         #version 450
@@ -1259,25 +1238,25 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156");
-    vkCmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandNV) * 2, 1,
-                                 sizeof(VkDrawMeshTasksIndirectCommandNV));
+    vk::CmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandNV) * 2, 1,
+                                   sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksNV-stage-06480");
-    vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
+    vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480");
-    vkCmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandNV));
+    vk::CmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480");
-    vkCmdDrawMeshTasksIndirectCountNV(m_commandBuffer->handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                      sizeof(VkDrawMeshTasksIndirectCommandNV));
+    vk::CmdDrawMeshTasksIndirectCountNV(m_commandBuffer->handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                        sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();

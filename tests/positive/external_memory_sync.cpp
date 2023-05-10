@@ -28,7 +28,6 @@ TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto vkGetMemoryFdKHR = GetInstanceProcAddr<PFN_vkGetMemoryFdKHR>("vkGetMemoryFdKHR");
 
     auto export_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -44,7 +43,7 @@ TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     int fd = -1;
-    vkGetMemoryFdKHR(*m_device, &get_handle_info, &fd);
+    vk::GetMemoryFdKHR(*m_device, &get_handle_info, &fd);
 }
 
 TEST_F(PositiveExternalMemorySync, ExternalMemory) {
@@ -70,11 +69,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     VkPhysicalDeviceExternalBufferInfoKHR ebi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
                                                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, handle_type};
     VkExternalBufferPropertiesKHR ebp = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
-    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceExternalBufferPropertiesKHR != nullptr);
-    vkGetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &ebi, &ebp);
+    vk::GetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &ebi, &ebp);
     if (!(ebp.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR)) {
@@ -126,23 +121,18 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
 
 #ifdef _WIN32
     // Export memory to handle
-    auto vkGetMemoryWin32HandleKHR =
-        (PFN_vkGetMemoryWin32HandleKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryWin32HandleKHR");
-    ASSERT_TRUE(vkGetMemoryWin32HandleKHR != nullptr);
     VkMemoryGetWin32HandleInfoKHR mghi = {VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, nullptr, memory_export.handle(),
                                           handle_type};
     HANDLE handle;
-    ASSERT_VK_SUCCESS(vkGetMemoryWin32HandleKHR(m_device->device(), &mghi, &handle));
+    ASSERT_VK_SUCCESS(vk::GetMemoryWin32HandleKHR(m_device->device(), &mghi, &handle));
 
     VkImportMemoryWin32HandleInfoKHR import_info = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR, nullptr, handle_type,
                                                     handle};
 #else
     // Export memory to fd
-    auto vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR");
-    ASSERT_TRUE(vkGetMemoryFdKHR != nullptr);
     VkMemoryGetFdInfoKHR mgfi = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_export.handle(), handle_type};
     int fd;
-    ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(m_device->device(), &mgfi, &fd));
+    ASSERT_VK_SUCCESS(vk::GetMemoryFdKHR(m_device->device(), &mgfi, &fd));
 
     VkImportMemoryFdInfoKHR import_info = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd};
 #endif

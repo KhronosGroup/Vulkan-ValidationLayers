@@ -98,13 +98,8 @@ TEST_F(NegativeShaderSpirv, ShaderFloatControl) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&shader_float_control);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(shader_float_control);
 
     if (shader_float_control.denormBehaviorIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE) {
         GTEST_SKIP() << "denormBehaviorIndependence is NONE";

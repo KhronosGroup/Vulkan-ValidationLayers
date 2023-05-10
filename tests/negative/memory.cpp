@@ -2274,11 +2274,6 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
-
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
     image_swapchain_create_info.swapchain = m_swapchain;
 
@@ -2299,7 +2294,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsSwapchain) {
     VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06416");
-    vkGetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2316,11 +2311,6 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDrmFormatModifier) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
 
     VkSubresourceLayout planeLayout = {0, 0, 0, 0, 0};
     auto drm_format_modifier_create_info = LvlInitStruct<VkImageDrmFormatModifierExplicitCreateInfoEXT>();
@@ -2344,7 +2334,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDrmFormatModifier) {
     VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776");
-    vkGetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
+    vk::GetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
 

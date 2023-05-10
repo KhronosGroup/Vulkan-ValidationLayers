@@ -3216,20 +3216,9 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT vkGetPhysicalDeviceMultisamplePropertiesEXT =
-        (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT)vk::GetInstanceProcAddr(instance(),
-                                                                                 "vkGetPhysicalDeviceMultisamplePropertiesEXT");
-    assert(vkGetPhysicalDeviceMultisamplePropertiesEXT != nullptr);
-    PFN_vkCmdSetSampleLocationsEXT vkCmdSetSampleLocationsEXT =
-        (PFN_vkCmdSetSampleLocationsEXT)vk::GetInstanceProcAddr(instance(), "vkCmdSetSampleLocationsEXT");
-    assert(vkCmdSetSampleLocationsEXT != nullptr);
-
     auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&sample_locations_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations_props);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
 
     if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
         GTEST_SKIP() << "VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported";
@@ -3299,7 +3288,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     vk::CreateFramebuffer(m_device->handle(), &m_framebuffer_info, nullptr, &m_framebuffer);
 
     auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
-    vkGetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     // 1 from VK_SAMPLE_COUNT_1_BIT
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
@@ -3416,7 +3405,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
         sample_locations_info.sampleLocationsCount = valid_count * 64;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526");
-        vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+        vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
         m_errorMonitor->VerifyFound();
 
         sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
@@ -3426,12 +3415,12 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     // Test invalid sample location count
     sample_locations_info.sampleLocationsCount = valid_count + 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
-    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     m_errorMonitor->VerifyFound();
     sample_locations_info.sampleLocationsCount = valid_count;
 
     // Test image was never created with VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT
-    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    vk::CmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-02689");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();

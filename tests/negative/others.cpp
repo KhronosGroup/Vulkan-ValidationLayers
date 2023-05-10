@@ -328,9 +328,6 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Create an invalid pNext structure to trigger the stateless validation warning
     VkBaseOutStructure bogus_struct{};
@@ -339,20 +336,20 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
 
     // Should get the first three errors just fine
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
     // VUID-VkPhysicalDeviceProperties2-pNext-pNext produces a massive ~3600 character log message, which hits a
     // complex string buffer reallocation path inside of the logging code. Make sure it successfully prints out
     // the very end of the message.
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "is undefined and may not work correctly with validation enabled");
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 
     // Limit should prevent the message from coming through a fourth time
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 }
 
 TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
@@ -800,12 +797,6 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkDebugMarkerSetObjectNameEXT fpvkDebugMarkerSetObjectNameEXT =
-        (PFN_vkDebugMarkerSetObjectNameEXT)vk::GetInstanceProcAddr(instance(), "vkDebugMarkerSetObjectNameEXT");
-    if (!(fpvkDebugMarkerSetObjectNameEXT)) {
-        GTEST_SKIP() << "Can't find fpvkDebugMarkerSetObjectNameEXT; skipped";
-    }
-
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
@@ -834,7 +825,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     name_info.object = (uint64_t)memory_2;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
-    fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
+    vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
 
     vk::BindBufferMemory(device(), buffer, memory_1, 0);
 
@@ -867,7 +858,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     name_info.object = (uint64_t)commandBuffer;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT;
     name_info.pObjectName = commandBuffer_name.c_str();
-    fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
+    vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
 
     VkCommandBufferBeginInfo cb_begin_Info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -1073,9 +1064,6 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkCommandPoolCreateInfo-pNext-pNext");
     // Set VkCommandPoolCreateInfo::pNext to a non-NULL value, when pNext must be NULL.
@@ -1103,7 +1091,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     // in vkGetPhysicalDeviceProperties2, VkPhysicalDeviceProperties2 is not a const
     VkPhysicalDeviceProperties2 physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&app_info);
 
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &physical_device_properties2);
+    vk::GetPhysicalDeviceProperties2KHR(gpu(), &physical_device_properties2);
     m_errorMonitor->VerifyFound();
 }
 

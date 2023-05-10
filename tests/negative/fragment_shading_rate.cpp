@@ -216,13 +216,9 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
-        LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
+    GetPhysicalDeviceProperties2(properties2);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
         GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.";
@@ -524,16 +520,12 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
         GTEST_SKIP() << "fragmentDensityMapDynamic not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties =
-        LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
-    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&density_map2_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
-
     features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&density_map2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto density_map2_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&density_map2_properties);
+    GetPhysicalDeviceProperties2(properties2);
 
     // Test sampler parameters
 
@@ -1134,13 +1126,6 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
-
     auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
@@ -1149,6 +1134,10 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
+    GetPhysicalDeviceProperties2(properties2);
 
     auto attach = LvlInitStruct<VkAttachmentReference2>();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1654,13 +1643,9 @@ TEST_F(NegativeFragmentShadingRate, PipelineCombinerOpsLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
-        LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
+    GetPhysicalDeviceProperties2(properties2);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
         GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported";
@@ -2218,12 +2203,9 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         offsetting.pFragmentDensityOffsets = m_vOffsets;
         offsetting.fragmentDensityOffsetCount = 2;
 
-        PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-            (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-        ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
         auto fdm_offset_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM>();
-        auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fdm_offset_properties);
-        vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+        auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fdm_offset_properties);
+        GetPhysicalDeviceProperties2(properties2);
 
         m_vOffsets[0].x = 1;
         m_vOffsets[0].y = 1;

@@ -68,10 +68,6 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
     }
 
-    PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT =
-        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetInstanceProcAddr(instance(), "vkCmdBindVertexBuffers2EXT");
-    ASSERT_TRUE(vkCmdBindVertexBuffers2EXT != nullptr);
-
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -94,7 +90,7 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
-    vkCmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
+    vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
     m_commandBuffer->end();
 }
 
