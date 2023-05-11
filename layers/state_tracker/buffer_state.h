@@ -28,10 +28,9 @@ class BUFFER_STATE : public BINDABLE {
   public:
     const safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &createInfo;
-    VkDeviceAddress deviceAddress;
     const VkMemoryRequirements requirements;
     const VkMemoryRequirements *const memory_requirements_pointer = &requirements;
-    bool memory_requirements_checked;
+    VkDeviceAddress deviceAddress = 0;
 
     vvl::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 

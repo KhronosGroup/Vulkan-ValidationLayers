@@ -105,7 +105,7 @@ class IMAGE_STATE : public BINDABLE {
     using MemoryReqs = std::array<VkMemoryRequirements, MAX_PLANES>;
     const MemoryReqs requirements;
     const VkMemoryRequirements *const memory_requirements_pointer = &requirements[0];
-    std::array<bool, MAX_PLANES> memory_requirements_checked;
+    std::array<bool, MAX_PLANES> memory_requirements_checked = {};
 
     const bool sparse_residency;
     using SparseReqs = std::vector<VkSparseImageMemoryRequirements>;
