@@ -134,7 +134,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
                     if (!render_pass) {
                         skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06000",
-                                         "vkBeginCommandBuffer(): Renderpass must be a valid VkRenderPass.");
+                                         "vkBeginCommandBuffer(): Render pass must be a valid VkRenderPass.");
                     } else {
                         if (info->subpass >= render_pass->createInfo.subpassCount) {
                             skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06001",
@@ -306,7 +306,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     } else {
                         skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00053",
                                          "vkBeginCommandBuffer(): Flags contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
-                                         "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLEs.");
+                                         "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLE.");
                     }
                 }
             }
@@ -666,9 +666,11 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                     inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
                     return validation_.LogError(
                         primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
-                        "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%u] (%s) consume inherited viewport %u %s"
+                        "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%" PRIu32
+                        "] (%s) consume inherited viewport %" PRIu32
+                        " %s"
                         "but this state was not inherited as its depth range [%f, %f] does not match "
-                        "pViewportDepths[%u] = [%f, %f]",
+                        "pViewportDepths[%" PRIu32 "] = [%f, %f]",
                         unsigned(cmd_buffer_idx), validation_.report_data->FormatHandle(secondary_state->commandBuffer()).c_str(),
                         unsigned(index), index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
                         inherited_viewport->maxDepth, unsigned(cmd_buffer_idx), expected_viewport_depth->minDepth,
@@ -757,8 +759,9 @@ class CoreChecks::ViewportScissorInheritanceTracker {
             skip |= validation_.LogError(
                 primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
                 "vkCmdExecuteCommands(): "
-                "Draw commands in pCommandBuffers[%u] (%s) consume inherited dynamic viewport with count state "
-                "but the dynamic viewport count (%u) exceeds the inheritance limit (viewportDepthCount=%u).",
+                "Draw commands in pCommandBuffers[%" PRIu32
+                "] (%s) consume inherited dynamic viewport with count state "
+                "but the dynamic viewport count (%" PRIu32 ") exceeds the inheritance limit (viewportDepthCount=%" PRIu32 ").",
                 unsigned(cmd_buffer_idx), validation_.report_data->FormatHandle(secondary_state->commandBuffer()).c_str(),
                 unsigned(viewport_count_to_inherit_), unsigned(secondary_state->inheritedViewportDepths.size()));
         }
@@ -886,8 +889,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                      "] %s is executed within a %s "
                                      "instance scope begun by vkCmdBeginRenderPass(), but "
-                                     "VkCommandBufferInheritanceInfo::subpass (%u) does not "
-                                     "match the current subpass (%u).",
+                                     "VkCommandBufferInheritanceInfo::subpass (%" PRIu32
+                                     ") does not "
+                                     "match the current subpass (%" PRIu32 ").",
                                      i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                      report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
                                      inheritance_subpass, cb_state->GetActiveSubpass());
@@ -912,8 +916,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-flags-06026",
                                              "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                              "] %s is executed within a dynamic renderpass instance scope begun "
-                                             "by %s(), but VkCommandBufferInheritanceRenderingInfo::flags (%u) does "
-                                             "not match VkRenderingInfo::flags (%u), excluding "
+                                             "by %s(), but VkCommandBufferInheritanceRenderingInfo::flags (%" PRIu32
+                                             ") does "
+                                             "not match VkRenderingInfo::flags (%" PRIu32
+                                             "), excluding "
                                              "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
                                              i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                              cb_state->begin_rendering_func_name.c_str(), inheritance_rendering_info.flags,
@@ -926,8 +932,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                              "] %s is executed within a dynamic renderpass instance scope begun "
                                              "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%u) does "
-                                             "not match VkRenderingInfo::colorAttachmentCount (%u).",
+                                             "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32
+                                             ") does "
+                                             "not match VkRenderingInfo::colorAttachmentCount (%" PRIu32 ").",
                                              i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                              cb_state->begin_rendering_func_name.c_str(),
                                              inheritance_rendering_info.colorAttachmentCount, rendering_info.colorAttachmentCount);
@@ -1049,8 +1056,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                              "] %s is executed within a dynamic renderpass instance scope begun "
                                              "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::viewMask (%u) does "
-                                             "not match VkRenderingInfo::viewMask (%u).",
+                                             "VkCommandBufferInheritanceRenderingInfo::viewMask (%" PRIu32
+                                             ") does "
+                                             "not match VkRenderingInfo::viewMask (%" PRIu32 ").",
                                              i, report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                              cb_state->begin_rendering_func_name.c_str(), inheritance_rendering_info.viewMask,
                                              rendering_info.viewMask);
@@ -1075,7 +1083,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "] %s is executed within a dynamic renderpass instance "
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
-                                        "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%u) "
+                                        "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%" PRIu32
+                                        ") "
                                         "does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
                                         i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
@@ -1131,7 +1140,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "vkCmdExecuteCommands(): pCommandBuffers[%" PRIu32
                                         "] %s is executed within a dynamic renderpass instance "
                                         "scope begun "
-                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%u) of "
+                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%" PRIu32
+                                        ") of "
                                         "VkRenderingInfoKHR::pColorAttachments does not match "
                                         "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
                                         i, report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
@@ -1272,13 +1282,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     // We can report all the errors for the intersected range directly
                     for (auto index = iter->range.begin; index < iter->range.end; index++) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
-                        skip |=
-                            LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                     "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%x array layer %u, "
-                                     "mip level %u) which expects layout %s--instead, image %s layout is %s.",
-                                     "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
-                                     subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
-                                     string_VkImageLayout(cb_layout));
+                        skip |= LogError(
+                            pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                            "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%x array layer %" PRIu32
+                            ", "
+                            "mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
+                            "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
+                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
+                            string_VkImageLayout(cb_layout));
                     }
                 }
             }
