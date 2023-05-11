@@ -37,8 +37,6 @@ BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, cons
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
-      deviceAddress(0),
       requirements(GetMemoryRequirements(dev_data, buff)),
-      memory_requirements_checked(false),
       supported_video_profiles(
           dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {}

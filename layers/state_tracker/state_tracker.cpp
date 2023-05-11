@@ -2193,30 +2193,6 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device,
     }
 }
 
-void ValidationStateTracker::RecordGetBufferMemoryRequirementsState(VkBuffer buffer) {
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
-    if (buffer_state) {
-        buffer_state->memory_requirements_checked = true;
-    }
-}
-
-void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
-                                                                       VkMemoryRequirements *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(buffer);
-}
-
-void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2(VkDevice device,
-                                                                        const VkBufferMemoryRequirementsInfo2 *pInfo,
-                                                                        VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(pInfo->buffer);
-}
-
-void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device,
-                                                                           const VkBufferMemoryRequirementsInfo2 *pInfo,
-                                                                           VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(pInfo->buffer);
-}
-
 void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo) {
     const VkImagePlaneMemoryRequirementsInfo *plane_info =
         (pInfo == nullptr) ? nullptr : LvlFindInChain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
