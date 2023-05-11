@@ -134,13 +134,13 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
                     if (!render_pass) {
                         skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06000",
-                                         "vkBeginCommandBuffer(): Renderpass must be a valid VkRenderPass");
+                                         "vkBeginCommandBuffer(): Renderpass must be a valid VkRenderPass.");
                     } else {
                         if (info->subpass >= render_pass->createInfo.subpassCount) {
                             skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06001",
                                              "vkBeginCommandBuffer(): Subpass member of pInheritanceInfo (%" PRIu32
                                              ") must be a valid subpass "
-                                             "index within pInheritanceInfo->renderPass",
+                                             "index within pInheritanceInfo->renderPass.",
                                              info->subpass);
                         }
                     }
@@ -148,7 +148,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     if (!p_inherited_rendering_info) {
                         skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06002",
                                          "vkBeginCommandBuffer():The pNext chain of pInheritanceInfo must include a "
-                                         "VkCommandBufferInheritanceRenderingInfoKHR structure");
+                                         "VkCommandBufferInheritanceRenderingInfoKHR structure.");
                     }
                 }
             }
@@ -158,27 +158,25 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (p_attachment_sample_count_info_amd &&
                     p_attachment_sample_count_info_amd->colorAttachmentCount != p_inherited_rendering_info->colorAttachmentCount) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06003",
-                                     "vkBeginCommandBuffer(): VkAttachmentSampleCountInfo{AMD,NV}->colorAttachmentCount[%u] must "
-                                     "equal VkCommandBufferInheritanceRenderingInfoKHR->colorAttachmentCount[%u]",
+                                     "vkBeginCommandBuffer(): VkAttachmentSampleCountInfoAMD::colorAttachmentCount (%" PRIu32
+                                     ") must equal VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%" PRIu32 ").",
                                      p_attachment_sample_count_info_amd->colorAttachmentCount,
                                      p_inherited_rendering_info->colorAttachmentCount);
                 }
 
                 if ((p_inherited_rendering_info->colorAttachmentCount != 0) &&
                     (p_inherited_rendering_info->rasterizationSamples & AllVkSampleCountFlagBits) == 0) {
-                    skip |=
-                        LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004",
-                                 "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->colorAttachmentCount (%" PRIu32
-                                 ") is not 0, rasterizationSamples (%s) must be valid VkSampleCountFlagBits value",
-                                 p_inherited_rendering_info->colorAttachmentCount,
-                                 string_VkSampleCountFlagBits(p_inherited_rendering_info->rasterizationSamples));
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004",
+                                     "vkBeginCommandBuffer(): colorAttachmentCount (%" PRIu32
+                                     ") is not 0, so rasterizationSamples (%s) must be a valid VkSampleCountFlagBits value.",
+                                     p_inherited_rendering_info->colorAttachmentCount,
+                                     string_VkSampleCountFlagBits(p_inherited_rendering_info->rasterizationSamples));
                 }
 
                 if ((enabled_features.core.variableMultisampleRate == false) &&
                     (p_inherited_rendering_info->rasterizationSamples & AllVkSampleCountFlagBits) == 0) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-variableMultisampleRate-06005",
-                                     "vkBeginCommandBuffer(): If the variableMultisampleRate feature is not enabled, "
-                                     "rasterizationSamples (%s) must be a valid VkSampleCountFlagBits",
+                                     "vkBeginCommandBuffer(): rasterizationSamples is %s.",
                                      string_VkSampleCountFlagBits(p_inherited_rendering_info->rasterizationSamples));
                 }
 
@@ -190,21 +188,18 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                 GetPotentialFormatFeatures(attachment_format);
                             if ((potential_format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
                                 if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
-                                    skip |= LogError(
-                                        commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
-                                        "vkBeginCommandBuffer(): "
-                                        "VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a "
-                                        "format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
-                                        i, string_VkFormat(attachment_format));
+                                    skip |= LogError(commandBuffer,
+                                                     "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
+                                                     "vkBeginCommandBuffer(): "
+                                                     "pColorAttachmentFormats[%" PRIu32 "] is %s.",
+                                                     i, string_VkFormat(attachment_format));
                                 } else if ((potential_format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
-                                    skip |= LogError(
-                                        commandBuffer,
-                                        "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492",
-                                        "vkBeginCommandBuffer(): "
-                                        "VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a "
-                                        "format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
-                                        "or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
-                                        i, string_VkFormat(attachment_format));
+                                    skip |=
+                                        LogError(commandBuffer,
+                                                 "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492",
+                                                 "vkBeginCommandBuffer(): "
+                                                 "pColorAttachmentFormats[%" PRIu32 "] is %s.",
+                                                 i, string_VkFormat(attachment_format));
                                 }
                             }
                         }
@@ -216,18 +211,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (depth_format != VK_FORMAT_UNDEFINED) {
                     const VkFormatFeatureFlags2KHR potential_format_features = GetPotentialFormatFeatures(depth_format);
                     if ((potential_format_features & valid_depth_stencil_format) == 0) {
-                        skip |= LogError(
-                            commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007",
-                            "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->depthAttachmentFormat (%s) must be a "
-                            "format with potential format features that include VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                            string_VkFormat(depth_format));
+                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007",
+                                         "vkBeginCommandBuffer(): depthAttachmentFormat is %s.", string_VkFormat(depth_format));
                     }
                     if (!FormatHasDepth(depth_format)) {
-                        skip |= LogError(
-                            commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540",
-                            "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->depthAttachmentFormat (%s) must be a "
-                            "format with a depth aspect.",
-                            string_VkFormat(depth_format));
+                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540",
+                                         "vkBeginCommandBuffer(): depthAttachmentFormat is %s.", string_VkFormat(depth_format));
                     }
                 }
 
@@ -235,42 +224,39 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (stencil_format != VK_FORMAT_UNDEFINED) {
                     const VkFormatFeatureFlags2KHR potential_format_features = GetPotentialFormatFeatures(stencil_format);
                     if ((potential_format_features & valid_depth_stencil_format) == 0) {
-                        skip |= LogError(
-                            commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199",
-                            "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->stencilAttachmentFormat (%s) must be "
-                            "a format with potential format features that include VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                            string_VkFormat(stencil_format));
+                        skip |=
+                            LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199",
+                                     "vkBeginCommandBuffer(): stencilAttachmentFormat is %s.", string_VkFormat(stencil_format));
                     }
                     if (!FormatHasStencil(stencil_format)) {
                         skip |=
                             LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541",
-                                     "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->stencilAttachmentFormat "
-                                     "(%s) must include stencil aspect.",
-                                     string_VkFormat(stencil_format));
+                                     "vkBeginCommandBuffer(): stencilAttachmentFormat is %s.", string_VkFormat(stencil_format));
                     }
                 }
 
                 if ((depth_format != VK_FORMAT_UNDEFINED && stencil_format != VK_FORMAT_UNDEFINED) &&
                     (depth_format != stencil_format)) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200",
-                                     "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfoKHR->depthAttachmentFormat "
-                                     "(%s) must equal VkCommandBufferInheritanceRenderingInfoKHR->stencilAttachmentFormat (%s)",
+                                     "vkBeginCommandBuffer(): depthAttachmentFormat "
+                                     "(%s) is not the same as stencilAttachmentFormat (%s).",
                                      string_VkFormat(depth_format), string_VkFormat(stencil_format));
                 }
 
                 if ((enabled_features.core11.multiview == VK_FALSE) && (p_inherited_rendering_info->viewMask != 0)) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008",
-                                     "vkBeginCommandBuffer(): If the multiview feature is not enabled, viewMask must be 0 (%u)",
+                                     "vkBeginCommandBuffer(): Multiview feature is not enabled, but viewMask is (%" PRIu32 ").",
                                      p_inherited_rendering_info->viewMask);
                 }
 
                 if (MostSignificantBit(p_inherited_rendering_info->viewMask) >=
                     static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-                    skip |=
-                        LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009",
-                                 "vkBeginCommandBuffer(): Most significant bit "
-                                 "VkCommandBufferInheritanceRenderingInfoKHR->viewMask(%u) must be less maxMultiviewViewCount(%u)",
-                                 p_inherited_rendering_info->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+                    skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009",
+                                     "vkBeginCommandBuffer(): The index of the most significant bit in "
+                                     "viewMask (%" PRIu32
+                                     ") is superior or equal to VkPhysicalDeviceVulkan11Properties::maxMultiviewViewCount (%" PRIu32
+                                     ").",
+                                     p_inherited_rendering_info->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
                 }
             }
         }
@@ -298,7 +284,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if (p_inherited_viewport_scissor_info->viewportDepthCount == 0) {
                     skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784",
                                      "vkBeginCommandBuffer(): "
-                                     "If viewportScissor2D is VK_TRUE, then viewportDepthCount must be greater than 0.");
+                                     "viewportScissor2D is VK_TRUE, but viewportDepthCount is 0.");
                 }
             }
 
@@ -310,16 +296,17 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         if (render_pass) {
                             if (info->subpass >= render_pass->createInfo.subpassCount) {
                                 skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00054",
-                                                 "vkBeginCommandBuffer(): Secondary %s must have a subpass index (%d) that is "
-                                                 "less than the number of subpasses (%d).",
+                                                 "vkBeginCommandBuffer(): Secondary %s has a subpass index (%" PRIu32
+                                                 ") that is "
+                                                 "superior or equal to the number of subpasses (%" PRIu32 ").",
                                                  report_data->FormatHandle(commandBuffer).c_str(), info->subpass,
                                                  render_pass->createInfo.subpassCount);
                             }
                         }
                     } else {
                         skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00053",
-                                         "vkBeginCommandBuffer(): Flags contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, "
-                                         "the renderpass member of pInheritanceInfo must be a valid VkRenderPass.");
+                                         "vkBeginCommandBuffer(): Flags contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
+                                         "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLEs.");
                     }
                 }
             }
