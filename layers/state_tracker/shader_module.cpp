@@ -454,6 +454,159 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
     return variables;
 }
 
+static inline bool IsImageOperandsBiasOffset(uint32_t type) {
+    return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
+                    spv::ImageOperandsConstOffsetsMask)) != 0;
+}
+
+ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruction& image_insn) : image_insn(image_insn) {
+    const uint32_t image_opcode = image_insn.Opcode();
+
+    // Get properties from each access instruction
+    switch (image_opcode) {
+        case spv::OpImageDrefGather:
+        case spv::OpImageSparseDrefGather:
+            is_dref = true;
+            break;
+
+        case spv::OpImageSampleDrefImplicitLod:
+        case spv::OpImageSampleDrefExplicitLod:
+        case spv::OpImageSampleProjDrefImplicitLod:
+        case spv::OpImageSampleProjDrefExplicitLod:
+        case spv::OpImageSparseSampleDrefImplicitLod:
+        case spv::OpImageSparseSampleDrefExplicitLod:
+        case spv::OpImageSparseSampleProjDrefImplicitLod:
+        case spv::OpImageSparseSampleProjDrefExplicitLod: {
+            is_dref = true;
+            is_sampler_implicitLod_dref_proj = true;
+            is_sampler_sampled = true;
+
+            const uint32_t image_operand_index = 6;
+            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
+                is_sampler_bias_offset = true;
+            }
+            break;
+        }
+
+        case spv::OpImageSampleImplicitLod:
+        case spv::OpImageSampleProjImplicitLod:
+        case spv::OpImageSampleProjExplicitLod:
+        case spv::OpImageSparseSampleImplicitLod:
+        case spv::OpImageSparseSampleProjImplicitLod:
+        case spv::OpImageSparseSampleProjExplicitLod: {
+            is_sampler_implicitLod_dref_proj = true;
+            is_sampler_sampled = true;
+
+            const uint32_t image_operand_index = 5;
+            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
+                is_sampler_bias_offset = true;
+            }
+            break;
+        }
+
+        case spv::OpImageSampleExplicitLod:
+        case spv::OpImageSparseSampleExplicitLod: {
+            is_sampler_sampled = true;
+
+            const uint32_t image_operand_index = 5;
+            if (image_insn.Length() > image_operand_index && IsImageOperandsBiasOffset(image_insn.Word(image_operand_index))) {
+                is_sampler_bias_offset = true;
+            }
+            break;
+        }
+
+        case spv::OpImageWrite:
+            is_written_to = true;
+            texel_component_count = module_state.GetTexelComponentCount(image_insn);
+            break;
+
+        case spv::OpImageRead:
+        case spv::OpImageSparseRead:
+            is_read_from = true;
+            break;
+
+        // case spv::OpImageTexelPointer: TODO - Atomics not supported in here yet
+        case spv::OpImageFetch:
+        case spv::OpImageSparseFetch:
+        case spv::OpImageGather:
+        case spv::OpImageSparseGather:
+        case spv::OpImageQuerySizeLod:
+        case spv::OpImageQuerySize:
+        case spv::OpImageQueryLevels:
+        case spv::OpImageQuerySamples:
+        case spv::OpImageQueryLod:
+        case spv::OpImageSparseTexelsResident:
+            break;
+
+        default:
+            assert(false);  // This is an OpImage* we are not catching
+            break;
+    }
+
+    // First find the OpLoad for the Image (and optional Sampler)
+    const Instruction* image_load = nullptr;
+    const Instruction* sampler_load = nullptr;
+    // sampled image instructions are 2 OpLoad and can be separate image and sampler
+    const uint32_t sampled_image_operand = SampledImageAccessOperandsPosition(image_opcode);
+    if (sampled_image_operand != 0) {
+        const uint32_t sampled_image_id = image_insn.Word(sampled_image_operand);
+        const Instruction* id = module_state.FindDef(sampled_image_id);  // <id> Sampled Image
+
+        sampler_load = (id->Opcode() == spv::OpSampledImage) ? module_state.FindDef(id->Word(4)) : nullptr;
+        const uint32_t image_operand = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : sampled_image_id;
+
+        image_load = module_state.FindDef(image_operand);
+    } else {
+        const uint32_t image_operand = ImageAccessOperandsPosition(image_opcode);
+        assert(image_operand != 0);
+
+        const uint32_t image_id = image_insn.Word(image_operand);
+        image_load = module_state.FindDef(image_id);
+
+        // OpImageFetch grabs OpImage before OpLoad
+        if (image_load->Opcode() == spv::OpImage) {
+            image_load = module_state.FindDef(image_load->Word(3));
+        }
+    }
+
+    // With the OpLoad find the OpVariable for the Image
+    assert(image_load);
+    const Instruction* image_load_pointer = module_state.FindDef(image_load->Word(3));
+    if (image_load_pointer->Opcode() == spv::OpVariable) {
+        variable_image_insn = image_load_pointer;
+    } else if (image_load_pointer->Opcode() == spv::OpAccessChain || image_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
+        // TODO 5465 - Better way to check for descriptor indexing
+        // If Image is an array, need to get the index
+        // Currently just need to care about the first image_loads because the above loop will have combos to
+        // image-to-samplers for us
+        const Instruction* const_def = module_state.GetConstantDef(image_load_pointer->Word(4));
+        if (const_def) {
+            image_access_chain_index = const_def->GetConstantValue();
+        }
+        variable_image_insn = module_state.FindDef(image_load_pointer->Word(3));
+    } else {
+        assert(false);
+    }
+
+    // If there is a OpSampledImage, take the other OpLoad and find the OpVariable for the Sampler
+    if (sampler_load) {
+        const Instruction* sampler_load_pointer = module_state.FindDef(sampler_load->Word(3));
+        if (sampler_load_pointer->Opcode() == spv::OpVariable) {
+            variable_sampler_insn = sampler_load_pointer;
+        } else if (sampler_load_pointer->Opcode() == spv::OpAccessChain ||
+                   sampler_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
+            // TODO 5465 - Better way to check for descriptor indexing
+            const Instruction* const_def = module_state.GetConstantDef(sampler_load_pointer->Word(4));
+            if (const_def) {
+                sampler_access_chain_index = const_def->GetConstantValue();
+            }
+            variable_sampler_insn = module_state.FindDef(sampler_load_pointer->Word(3));
+        } else {
+            assert(false);
+        }
+    }
+}
+
 EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
     : entrypoint_insn(entrypoint_insn),
       execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
@@ -540,11 +693,6 @@ std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const EntryP
     return result;
 }
 
-static inline bool IsImageOperandsBiasOffset(uint32_t type) {
-    return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
-                    spv::ImageOperandsConstOffsetsMask)) != 0;
-}
-
 SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_state) {
     // Parse the words first so we have instruction class objects to use
     {
@@ -570,6 +718,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     // These have their own object class, but need entire module parsed first
     std::vector<const Instruction*> entry_point_instructions;
     std::vector<const Instruction*> type_struct_instructions;
+    std::vector<const Instruction*> image_instructions;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -660,26 +809,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             case spv::OpImageSampleProjExplicitLod:
             case spv::OpImageSparseSampleImplicitLod:
             case spv::OpImageSparseSampleProjImplicitLod:
-            case spv::OpImageSparseSampleProjExplicitLod: {
-                // combined image samples are just OpLoad, but also can be separate image and sampler
-                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
-                auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                sampler_load_ids.emplace_back(load_id);
-                sampler_implicitLod_dref_proj_load_ids.emplace_back(load_id);
-                // ImageOperands in index: 5
-                if (insn.Length() > 5 && IsImageOperandsBiasOffset(insn.Word(5))) {
-                    sampler_bias_offset_load_ids.emplace_back(load_id);
-                }
-                break;
-            }
+            case spv::OpImageSparseSampleProjExplicitLod:
             case spv::OpImageDrefGather:
-            case spv::OpImageSparseDrefGather: {
-                // combined image samples are just OpLoad, but also can be separate image and sampler
-                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
-                auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
-                image_dref_load_ids.emplace_back(load_id);
-                break;
-            }
+            case spv::OpImageSparseDrefGather:
             case spv::OpImageSampleDrefImplicitLod:
             case spv::OpImageSampleDrefExplicitLod:
             case spv::OpImageSampleProjDrefImplicitLod:
@@ -687,50 +819,31 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             case spv::OpImageSparseSampleDrefImplicitLod:
             case spv::OpImageSparseSampleDrefExplicitLod:
             case spv::OpImageSparseSampleProjDrefImplicitLod:
-            case spv::OpImageSparseSampleProjDrefExplicitLod: {
-                // combined image samples are just OpLoad, but also can be separate image and sampler
-                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
-                auto sampler_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                auto image_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
-
-                image_dref_load_ids.emplace_back(image_load_id);
-                sampler_load_ids.emplace_back(sampler_load_id);
-                sampler_implicitLod_dref_proj_load_ids.emplace_back(sampler_load_id);
-                // ImageOperands in index: 6
-                if (insn.Length() > 6 && IsImageOperandsBiasOffset(insn.Word(6))) {
-                    sampler_bias_offset_load_ids.emplace_back(sampler_load_id);
-                }
-                break;
-            }
+            case spv::OpImageSparseSampleProjDrefExplicitLod:
             case spv::OpImageSampleExplicitLod:
-            case spv::OpImageSparseSampleExplicitLod: {
-                // ImageOperands in index: 5
-                if (insn.Length() > 5 && IsImageOperandsBiasOffset(insn.Word(5))) {
-                    // combined image samples are just OpLoad, but also can be separate image and sampler
-                    const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
-                    auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                    sampler_load_ids.emplace_back(load_id);
-                    sampler_bias_offset_load_ids.emplace_back(load_id);
-                }
+            case spv::OpImageSparseSampleExplicitLod:
+            case spv::OpImageRead:
+            case spv::OpImageSparseRead:
+            case spv::OpImageFetch:
+            case spv::OpImageGather:
+            case spv::OpImageQuerySizeLod:
+            case spv::OpImageQuerySize:
+            case spv::OpImageQueryLod:
+            case spv::OpImageQueryLevels:
+            case spv::OpImageQuerySamples:
+            case spv::OpImageSparseFetch:
+            case spv::OpImageSparseGather:
+            case spv::OpImageSparseTexelsResident: {
+                image_instructions.push_back(&insn);
                 break;
             }
             case spv::OpStore: {
                 store_pointer_ids.emplace_back(insn.Word(1));  // object id or AccessChain id
                 break;
             }
-            case spv::OpImageRead:
-            case spv::OpImageSparseRead: {
-                image_read_load_ids.emplace_back(insn.Word(3));
-                break;
-            }
             case spv::OpImageWrite: {
-                image_write_load_ids.emplace_back(insn.Word(1));
+                image_instructions.push_back(&insn);
                 image_write_load_id_map.emplace(&insn, insn.Word(1));
-                break;
-            }
-            case spv::OpSampledImage: {
-                // 3: image load id, 4: sampler load id
-                sampled_image_load_ids.emplace_back(std::pair<uint32_t, uint32_t>(insn.Word(3), insn.Word(4)));
                 break;
             }
             case spv::OpLoad: {
@@ -797,6 +910,14 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     for (const auto& insn : type_struct_instructions) {
         auto new_struct = type_structs.emplace_back(std::make_shared<TypeStructInfo>(module_state, *insn));
         type_struct_map[new_struct->id] = new_struct;
+    }
+
+    // Need to get ImageAccesses as EntryPoint's variables depend on it
+    for (const auto& insn : image_instructions) {
+        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
+        if (new_access->variable_image_insn) {
+            image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
+        }
     }
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
@@ -1689,6 +1810,9 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
             if (type->Opcode() == spv::OpTypeRuntimeArray) {
                 variable.runtime_array = true;
             }
+            if (type->Opcode() == spv::OpTypeSampledImage) {
+                variable.is_sampled_image = true;
+            }
 
             type = module_state.FindDef(type->Word(2));  // Element type
         } else {
@@ -1715,11 +1839,16 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                                      const Instruction& insn)
     : VariableBase(module_state, insn, entrypoint.stage),
+      array_length(0),
+      runtime_array(false),
+      is_sampled_image(false),
+
       base_type(FindBaseType(*this, module_state)),
       image_format_type(FindImageFormatType(module_state, base_type)),
       image_dim(base_type.FindImageDim()),
       is_image_array(base_type.IsArrayed()),
       is_multisampled(base_type.IsMultisampled()),
+      image_sampled_type_width(base_type.IsMultisampled()),
       is_storage_buffer(IsStorageBuffer(*this)) {
     const auto& static_data_ = module_state.static_data_;
     // Handle anything specific to the base type
@@ -1742,118 +1871,63 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
             const bool is_image_without_format = ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
 
-            auto image_write_loads = module_state.FindVariableAccesses(id, static_data_.image_write_load_ids, false);
-            if (!image_write_loads.empty()) {
-                is_written_to = true;
-                if (is_written_to && is_image_without_format) {
-                    is_write_without_format = true;
-                    for (const auto& entry : static_data_.image_write_load_id_map) {
-                        for (const Instruction* insn : image_write_loads) {
-                            if (insn->ResultId() == entry.second) {
-                                const uint32_t texel_component_count = module_state.GetTexelComponentCount(*entry.first);
-                                write_without_formats_component_count_list.emplace_back(*entry.first, texel_component_count);
-                            }
+            const auto access_it = static_data_.image_access_map.find(id);
+            if (access_it == static_data_.image_access_map.end()) {
+                break;
+            }
+            for (const auto& image_access_ptr : access_it->second) {
+                const auto& image_access = *image_access_ptr;
+
+                is_dref |= image_access.is_dref;
+                is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
+                is_sampler_sampled |= image_access.is_sampler_sampled;
+                is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
+                is_written_to |= image_access.is_written_to;
+                is_read_from |= image_access.is_read_from;
+
+                if (image_access.is_written_to) {
+                    if (is_image_without_format) {
+                        is_write_without_format |= true;
+                        if (image_access.texel_component_count != ImageAccess::kInvalidValue) {
+                            write_without_formats_component_count_list.push_back(image_access.texel_component_count);
                         }
                     }
                 }
-            }
 
-            auto image_read_loads = module_state.FindVariableAccesses(id, static_data_.image_read_load_ids, false);
-            if (!image_read_loads.empty()) {
-                is_read_from = true;
-                if (is_image_without_format) {
-                    is_read_without_format = true;
-                }
+                if (image_access.is_read_from) {
+                    if (is_image_without_format) {
+                        is_read_without_format |= true;
+                    }
 
-                // If accessed in an array, track which indexes were read, if not runtime array
-                if (is_input_attachment && !runtime_array) {
-                    for (const Instruction* insn : image_read_loads) {
-                        if (insn->Opcode() == spv::OpAccessChain) {
-                            // TODO 5465 - Better way to check for descriptor indexing
-                            const Instruction* const_def = module_state.GetConstantDef(insn->Word(4));
-                            if (const_def) {
-                                const uint32_t access_index = const_def->GetConstantValue();
-                                input_attachment_index_read[access_index] = true;
-                            }
-                        } else if (insn->Opcode() == spv::OpLoad) {
+                    // If accessed in an array, track which indexes were read, if not runtime array
+                    if (is_input_attachment && !runtime_array) {
+                        if (image_access.image_access_chain_index != ImageAccess::kInvalidValue) {
+                            input_attachment_index_read[image_access.image_access_chain_index] = true;
+                        } else {
                             // if InputAttachment is accessed from load, just a single, non-array, index
                             input_attachment_index_read.resize(1);
                             input_attachment_index_read[0] = true;
                         }
                     }
                 }
-            }
-            if (!module_state.FindVariableAccesses(id, static_data_.sampler_load_ids, false).empty()) {
-                is_sampler_sampled = true;
-            }
-            if (!module_state.FindVariableAccesses(id, static_data_.sampler_implicitLod_dref_proj_load_ids, false).empty()) {
-                is_sampler_implicitLod_dref_proj = true;
-            }
-            if (!module_state.FindVariableAccesses(id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
-                is_sampler_bias_offset = true;
-            }
-            if (!module_state.FindVariableAccesses(id, static_data_.image_dref_load_ids, false).empty()) {
-                is_dref_operation = true;
-            }
 
-            // Search all <image, sampler> combos (if not CombinedImageSampler)
-            for (auto& sampled_image_load_id : static_data_.sampled_image_load_ids) {
-                std::vector<uint32_t> image_load_ids = {sampled_image_load_id.first};
-                auto image_loads = module_state.FindVariableAccesses(id, image_load_ids, false);
-                if (image_loads.empty()) {
-                    continue;
-                }
+                // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
+                if (image_access.variable_sampler_insn && !is_sampled_image) {
+                    // if no AccessChain, it is same conceptually as being zero
+                    const uint32_t image_index = image_access.image_access_chain_index != ImageAccess::kInvalidValue
+                                                     ? image_access.image_access_chain_index
+                                                     : 0;
+                    const uint32_t sampler_index = image_access.sampler_access_chain_index != ImageAccess::kInvalidValue
+                                                       ? image_access.sampler_access_chain_index
+                                                       : 0;
 
-                uint32_t image_index = 0;
-                // If Image is an array, need to get the index
-                // Currently just need to care about the first image_loads because the above loop will have combos to
-                // image-to-samplers for us
-                if (image_loads[0]->Opcode() == spv::OpAccessChain) {
-                    // TODO 5465 - Can this just be GetConstantValueById() - is a spec const possible here?
-                    const Instruction* const_def = module_state.GetConstantDef(image_loads[0]->Word(4));
-                    if (!const_def) {
-                        continue;  // access chain index not a constant
-                    }
-                    image_index = const_def->GetConstantValue();
-                }
-
-                // Find sampler's set binding.
-                auto load_it = static_data_.load_members.find(sampled_image_load_id.second);
-                if (load_it == static_data_.load_members.end()) {
-                    continue;
-                } else {
-                    uint32_t sampler_id = load_it->second;
-                    uint32_t sampler_index = 0;
-                    auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
-
-                    if (accesschain_it != static_data_.accesschain_members.end()) {
-                        const Instruction* const_def = module_state.GetConstantDef(accesschain_it->second.second);
-                        if (!const_def) {
-                            // access chain index representing sampler index is not a constant, skip.
-                            break;
-                        }
-                        sampler_id = const_def->ResultId();
-                        sampler_index = const_def->GetConstantValue();
-                    }
-                    const auto sampler_dec = module_state.GetDecorationSet(sampler_id);
                     if (image_index >= samplers_used_by_image.size()) {
                         samplers_used_by_image.resize(image_index + 1);
                     }
 
-                    // Need to check again for these properties in case not using a combined image sampler
-                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_load_ids, false).empty()) {
-                        is_sampler_sampled = true;
-                    }
-                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids, false)
-                             .empty()) {
-                        is_sampler_implicitLod_dref_proj = true;
-                    }
-                    if (!module_state.FindVariableAccesses(sampler_id, static_data_.sampler_bias_offset_load_ids, false).empty()) {
-                        is_sampler_bias_offset = true;
-                    }
-
+                    const auto& decoration_set = module_state.GetDecorationSet(image_access.variable_sampler_insn->ResultId());
                     samplers_used_by_image[image_index].emplace(
-                        SamplerUsedByImage{DescriptorSlot{sampler_dec.set, sampler_dec.binding}, sampler_index});
+                        SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});
                 }
             }
             break;
@@ -1875,6 +1949,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
             break;
         }
+
         default:
             break;
     }
