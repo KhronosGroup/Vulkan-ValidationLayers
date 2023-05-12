@@ -420,12 +420,3 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 
 // Lookup table of stage orderings
 const std::map<VkPipelineStageFlags2, int>& syncStageOrder();
-
-struct SyncShaderStageAccess {
-    SyncStageAccessIndex sampled_read;
-    SyncStageAccessIndex storage_read;
-    SyncStageAccessIndex storage_write;
-    SyncStageAccessIndex uniform_read;
-};
-
-const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage();

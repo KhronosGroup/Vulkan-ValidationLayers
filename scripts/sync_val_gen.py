@@ -914,41 +914,6 @@ def PipelineOrderMaskMap(stage_order, stage_order_map, config):
                                       order_nums, config))
     return output
 
-def ShaderStageToSyncStageAccess( shader_stage_key, sync_stage_key ):
-    return '    {{VK_SHADER_STAGE_{}, {{\n        SYNC_{}_SHADER_SAMPLED_READ, SYNC_{}_SHADER_STORAGE_READ, SYNC_{}_SHADER_STORAGE_WRITE, SYNC_{}_UNIFORM_READ}}}},'.format(shader_stage_key, sync_stage_key, sync_stage_key, sync_stage_key, sync_stage_key)
-
-def ShaderStageAndSyncStageAccessMap(config):
-    output = []
-    if not config['is_source']:
-        output.append('struct SyncShaderStageAccess {')
-        output.append('    SyncStageAccessIndex sampled_read;')
-        output.append('    SyncStageAccessIndex storage_read;')
-        output.append('    SyncStageAccessIndex storage_write;')
-        output.append('    SyncStageAccessIndex uniform_read;')
-        output.append('};\n')
-        output.append('const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage();')
-    else:
-        output.append('const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage() {')
-        output.append('    static const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> variable = {')
-        output.append(ShaderStageToSyncStageAccess('VERTEX_BIT', 'VERTEX_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('TESSELLATION_CONTROL_BIT', 'TESSELLATION_CONTROL_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('TESSELLATION_EVALUATION_BIT', 'TESSELLATION_EVALUATION_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('GEOMETRY_BIT', 'GEOMETRY_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('FRAGMENT_BIT', 'FRAGMENT_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('COMPUTE_BIT', 'COMPUTE_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('RAYGEN_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('ANY_HIT_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('CLOSEST_HIT_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('MISS_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('INTERSECTION_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('CALLABLE_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('TASK_BIT_EXT', 'TASK_SHADER_EXT'))
-        output.append(ShaderStageToSyncStageAccess('MESH_BIT_EXT', 'MESH_SHADER_EXT'))
-        output.append('};\n')
-        output.append('return variable;\n')
-        output.append('}\n')
-    return output
-
 def GenSyncTypeHelper(gen, is_source) :
     lines = []
 
@@ -1001,5 +966,4 @@ def GenSyncTypeHelper(gen, is_source) :
     lines.extend(StageAccessCrossReference(enums_in_bit_order, stage_access_combinations, config))
     lines.extend(AllCommandsByQueueCapability(stage_order, stage_queue_cap_table, config))
     lines.extend(PipelineOrderMaskMap(stage_order, stage_order_map, config))
-    lines.extend(ShaderStageAndSyncStageAccessMap(config))
     return  '\n'.join(lines)

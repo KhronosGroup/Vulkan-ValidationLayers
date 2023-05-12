@@ -625,25 +625,23 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
         assert(stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT);
         return SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
     }
-    auto stage_access = syncStageAccessMaskByShaderStage().find(stage_flag);
-    if (stage_access == syncStageAccessMaskByShaderStage().end()) {
-        assert(0);
-    }
+    const auto stage_accesses = sync_utils::GetShaderStageAccesses(stage_flag);
+
     if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-        return stage_access->second.uniform_read;
+        return stage_accesses.uniform_read;
     }
 
     // If the desriptorSet is writable, we don't need to care SHADER_READ. SHADER_WRITE is enough.
     // Because if write hazard happens, read hazard might or might not happen.
     // But if write hazard doesn't happen, read hazard is impossible to happen.
     if (variable.is_written_to) {
-        return stage_access->second.storage_write;
+        return stage_accesses.storage_write;
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
                descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
                descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-        return stage_access->second.sampled_read;
+        return stage_accesses.sampled_read;
     } else {
-        return stage_access->second.storage_read;
+        return stage_accesses.storage_read;
     }
 }
 
