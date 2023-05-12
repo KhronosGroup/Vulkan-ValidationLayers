@@ -143,6 +143,33 @@ struct TypeStructInfo {
     TypeStructInfo(const SHADER_MODULE_STATE &module_state, const Instruction &struct_insn);
 };
 
+// Represents the OpImage* instructions and how it maps to the variable
+// This is created in the SHADER_MODULE_STATE but then used with VariableBase objects
+struct ImageAccess {
+    const Instruction &image_insn;  // OpImage*
+    const Instruction *variable_image_insn = nullptr;
+    // If there is a OpSampledImage there will also be a sampler variable
+    const Instruction *variable_sampler_insn = nullptr;
+
+    bool is_dref = false;
+    bool is_sampler_implicitLod_dref_proj = false;
+    bool is_sampler_sampled = false;
+    bool is_sampler_bias_offset = false;
+    bool is_written_to = false;
+    bool is_read_from = false;
+
+    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
+    uint32_t image_access_chain_index = kInvalidValue;    // Index 0
+    uint32_t sampler_access_chain_index = kInvalidValue;  // Index 0
+    uint32_t texel_component_count = kInvalidValue;
+
+    ImageAccess(const SHADER_MODULE_STATE &module_state, const Instruction &image_insn);
+};
+
+// <Image OpVariable Result ID, [ImageAccess, ImageAccess, etc] > - used for faster lookup
+// Many ImageAccess can point to a single Image Variable
+using ImageAccessMap = vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const ImageAccess>>>;
+
 // A slot is a <Location, Component> mapping
 struct InterfaceSlot {
     // A Location is made up of 4 Components
@@ -286,7 +313,8 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_write_without_format{false};  // For storage images
     bool is_dref{false};
 
-    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn);
+    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn,
+                              const ImageAccessMap &image_access_map);
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const SHADER_MODULE_STATE &module_state);
@@ -357,29 +385,6 @@ struct StructInfo {
     std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
 };
 
-// Represents the OpImage* instructions and how it maps to the variable
-// This is created in the SHADER_MODULE_STATE but then used with VariableBase objects
-struct ImageAccess {
-    const Instruction &image_insn;  // OpImage*
-    const Instruction *variable_image_insn = nullptr;
-    // If there is a OpSampledImage there will also be a sampler variable
-    const Instruction *variable_sampler_insn = nullptr;
-
-    bool is_dref = false;
-    bool is_sampler_implicitLod_dref_proj = false;
-    bool is_sampler_sampled = false;
-    bool is_sampler_bias_offset = false;
-    bool is_written_to = false;
-    bool is_read_from = false;
-
-    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
-    uint32_t image_access_chain_index = kInvalidValue;    // Index 0
-    uint32_t sampler_access_chain_index = kInvalidValue;  // Index 0
-    uint32_t texel_component_count = kInvalidValue;
-
-    ImageAccess(const SHADER_MODULE_STATE &module_state, const Instruction &image_insn);
-};
-
 // Represents a single Entrypoint into a Shader Module
 struct EntryPoint {
     // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
@@ -428,14 +433,15 @@ struct EntryPoint {
 
     bool has_passthrough{false};
 
-    EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn);
+    EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map);
 
   protected:
     static vvl::unordered_set<uint32_t> GetAccessibleIds(const SHADER_MODULE_STATE &module_state, EntryPoint &entrypoint);
     static std::vector<StageInteraceVariable> GetStageInterfaceVariables(const SHADER_MODULE_STATE &module_state,
                                                                          const EntryPoint &entrypoint);
     static std::vector<ResourceInterfaceVariable> GetResourceInterfaceVariables(const SHADER_MODULE_STATE &module_state,
-                                                                                const EntryPoint &entrypoint);
+                                                                                const EntryPoint &entrypoint,
+                                                                                const ImageAccessMap &image_access_map);
 };
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
@@ -497,11 +503,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<std::shared_ptr<TypeStructInfo>> type_structs;  // All OpTypeStruct objects
         // <OpTypeStruct ID, info> - used for faster lookup as there can many structs
         vvl::unordered_map<uint32_t, std::shared_ptr<const TypeStructInfo>> type_struct_map;
-
-        std::vector<std::shared_ptr<ImageAccess>> image_accesses;
-        // <Image OpVariable Result ID, [ImageAccess, ImageAccess, etc] > - used for faster lookup
-        // Many ImageAccess can point to a single Image Variable
-        vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const ImageAccess>>> image_access_map;
 
         bool has_group_decoration{false};
 
