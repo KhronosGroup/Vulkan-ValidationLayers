@@ -106,3 +106,65 @@ Infomaration to note:
 - It is possible to have multiple `EntryPoints` pointing to the same interface variable.
 - 2 different accesses (ex. `OpLoad`) can point to same `Variable`
 - 2 `Image operation` can point to 2 different `Variables`
+
+### Image Accesses
+
+Any variable in a shader pointing to an Image is a `Resource Interface` variable.
+There are validation checks that need care only if the variable is accessed.
+This requires a `OpImage*` instruction to access the variable.
+
+Most Accesses look like
+
+```
+OpImage* -> OpLoad -> OpAccessChain (optional) -> OpVariable
+```
+
+There are a few exceptions:
+
+An Image Fetch has an `OpImage` prior to the `OpLoad`
+
+```
+OpImageFetch -> OpImage -> OpLoad -> OpVariable
+```
+
+Atomics use `OpImageTexelPointer` instead of `OpLoad`
+
+```
+OpAtomicLoad -> OpImageTexelPointer -> OpVariable
+```
+
+The biggest thing to consider is using either a
+
+- `VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER`
+- `VK_DESCRIPTOR_TYPE_SAMPLER` and `VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE` combo
+
+```
+// VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+OpImageSampleExplicitLod -> OpLoad -> OpAccessChain (optional) -> OpVariable -> OpTypePointer -> OpTypeSampledImage
+
+// VK_DESCRIPTOR_TYPE_SAMPLER and VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+OpImageSampleImplicitLod -> OpSampledImage -> OpTypeSampledImage
+                                           -> OpLoad -> OpAccessChain (optional) -> OpVariable (image)
+                                           -> OpLoad -> OpAccessChain (optional) -> OpVariable (sampler)
+```
+
+Both contain a `OpTypeSampledImage` that how we know a `VkSampler` is involved
+
+But it is also possible to have the Image and Samplers mix and match
+
+```
+ImageAccess -> Image_0
+            -> Sampler_0
+
+ImageAccess -> Image_0
+            -> Sampler_1
+
+ImageAccess -> Image_0 (non-sampled access)
+```
+
+This is handled by having the `Resource Interface` variable track if it has a `OpTypeSampledImage`, `OpTypeImage` or `OpTypeSampler`
+
+- If it has `OpTypeSampledImage`, there is **no way** for it to part of a `SAMPLER`/`SAMPLED_IMAGE` combo
+- If it has a `OpTypeImage` or `OpTypeSampler`, we need to know if they are **accessed together**
+    - This means the the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
+    - There is no case where only a `OpTypeSampler` variable can be used by itself, so no need to track it the other way

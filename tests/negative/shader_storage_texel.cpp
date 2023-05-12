@@ -72,7 +72,7 @@ TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
 
-TEST_F(NegativeShaderStorageTexel, UnkownWriteLessComponent) {
+TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to texel buffer unknown format with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -109,13 +109,18 @@ TEST_F(NegativeShaderStorageTexel, UnkownWriteLessComponent) {
         %ptr = OpTypePointer UniformConstant %image
         %var = OpVariable %ptr UniformConstant
      %v3uint = OpTypeVector %uint 3
+     %v4uint = OpTypeVector %uint 4
       %int_1 = OpConstant %int 1
      %uint_1 = OpConstant %uint 1
     %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+    %texelU4 = OpConstantComposite %v4uint %uint_1 %uint_1 %uint_1 %uint_1
        %main = OpFunction %void None %func
       %label = OpLabel
        %load = OpLoad %image %var
-               OpImageWrite %load %int_1 %texelU3 ZeroExtend
+               OpImageWrite %load %int_1 %texelU4 ZeroExtend ;; Valid
+               OpImageWrite %load %int_1 %texelU3 ZeroExtend ;; Invalid
+               OpImageWrite %load %int_1 %texelU4 ZeroExtend ;; Valid
+               OpImageWrite %load %int_1 %texelU3 ZeroExtend ;; Invalid
                OpReturn
                OpFunctionEnd
         )";

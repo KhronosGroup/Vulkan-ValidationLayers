@@ -1081,7 +1081,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
             }
 
-            if ((variable.is_dref_operation) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
+            if ((variable.is_dref) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
                 auto set = context.descriptor_set.GetSet();
                 const LogObjectList objlist(set, image_view);
                 return LogError(objlist, context.vuids.depth_compare_sample_06479,
@@ -1413,8 +1413,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
 
-        for (const auto &pair : binding_info.second.variable->write_without_formats_component_count_list) {
-            const uint32_t texel_component_count = pair.second;
+        for (const uint32_t texel_component_count : binding_info.second.variable->write_without_formats_component_count_list) {
             const uint32_t format_component_count = FormatComponentCount(image_view_format);
             if (texel_component_count < format_component_count) {
                 auto set = context.descriptor_set.GetSet();
@@ -1422,9 +1421,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 return LogError(device, context.vuids.storage_image_write_texel_count_04115,
                                 "%s: OpImageWrite Texel operand only contains %" PRIu32
                                 " components, but the VkImageView is mapped to a OpImage format of %s has %" PRIu32
-                                " components.\n%s",
-                                context.caller, texel_component_count, string_VkFormat(image_view_format), format_component_count,
-                                pair.first.Describe().c_str());
+                                " components.\n",
+                                context.caller, texel_component_count, string_VkFormat(image_view_format), format_component_count);
             }
         }
     }
@@ -1578,8 +1576,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
 
-        for (const auto &pair : binding_info.second.variable->write_without_formats_component_count_list) {
-            const uint32_t texel_component_count = pair.second;
+        for (const uint32_t texel_component_count : binding_info.second.variable->write_without_formats_component_count_list) {
             const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
             if (texel_component_count < format_component_count) {
                 auto set = context.descriptor_set.GetSet();
@@ -1588,9 +1585,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 return LogError(device, context.vuids.storage_texel_buffer_write_texel_count_04469,
                                 "%s: OpImageWrite Texel operand only contains %" PRIu32
                                 " components, but the VkImageView is mapped to a OpImage format of %s has %" PRIu32
-                                " components.\n%s",
-                                context.caller, texel_component_count, string_VkFormat(buffer_view_format), format_component_count,
-                                pair.first.Describe().c_str());
+                                " components.\n",
+                                context.caller, texel_component_count, string_VkFormat(buffer_view_format), format_component_count);
             }
         }
     }
