@@ -40,12 +40,6 @@ VkPipelineStageFlags2KHR WithEarlierPipelineStages(VkPipelineStageFlags2KHR stag
 
 VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_mask);
 
-int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags2KHR flag);
-
-VkPipelineStageFlags2KHR GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags);
-
-VkPipelineStageFlags2KHR GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags);
-
 std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask);
 
 std::string StringAccessFlags(VkAccessFlags2KHR mask);

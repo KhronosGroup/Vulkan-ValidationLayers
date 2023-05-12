@@ -2209,8 +2209,6 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
-        auto latest_src_stage = sync_utils::GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
-        auto earliest_dst_stage = sync_utils::GetLogicallyEarliestGraphicsPipelineStage(dependency.dstStageMask);
 
         // The first subpass here serves as a good proxy for "is multiview enabled" - since all view masks need to be non-zero if
         // any are, which enables multiview.
@@ -2267,11 +2265,9 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                 vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-06810" : "VUID-VkSubpassDependency-srcSubpass-06809";
                 skip |= LogError(device, vuid,
                                  "Dependency %" PRIu32
-                                 " specifies a self-dependency from a stage (%s) that accesses framebuffer space (%s) to a stage "
-                                 "(%s) that accesses non-framebuffer space (%s).",
-                                 i, sync_utils::StringPipelineStageFlags(latest_src_stage).c_str(),
-                                 string_VkPipelineStageFlags(dependency.srcStageMask).c_str(),
-                                 sync_utils::StringPipelineStageFlags(earliest_dst_stage).c_str(),
+                                 " specifies a self-dependency from stage(s) that access framebuffer space %s to stage(s) that "
+                                 "access non-framebuffer space %s.",
+                                 i, string_VkPipelineStageFlags(dependency.srcStageMask).c_str(),
                                  string_VkPipelineStageFlags(dependency.dstStageMask).c_str());
             } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
                        (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
