@@ -904,6 +904,83 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     }
 }
 
+TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5649
+    TEST_DESCRIPTION(
+        "Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in the pNext chain");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // for extension dependencies
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, skipping tests";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    // handleTypes needs to be assigned to trigger the behavior we want
+    assert(external_info.handleTypes);
+
+    std::vector<uint64_t> mods;
+
+    // Get info needed to fill out VkImageDrmFormatModifierListCreateInfoEXT
+    {
+        auto modp = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmtp = LvlInitStruct<VkFormatProperties2>(&modp);
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &fmtp);
+        if (modp.drmFormatModifierCount == 0) {
+            GTEST_SKIP() << "drmFormatModifierCount equal to 0";
+        }
+        std::vector<VkDrmFormatModifierPropertiesEXT> mod_props(modp.drmFormatModifierCount);
+        modp.pDrmFormatModifierProperties = mod_props.data();
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &fmtp);
+
+        for (uint32_t i = 0; i < modp.drmFormatModifierCount; ++i) {
+            auto &mod = modp.pDrmFormatModifierProperties[i];
+            auto features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+
+            if ((mod.drmFormatModifierTilingFeatures & features) != features) {
+                continue;
+            }
+
+            mods.push_back(mod.drmFormatModifier);
+        }
+    }
+    ASSERT_FALSE(mods.empty());
+
+    auto drm_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&external_info);
+    drm_info.drmFormatModifierCount = size32(mods);
+    drm_info.pDrmFormatModifiers = mods.data();
+
+    auto ci = LvlInitStruct<VkImageCreateInfo>(&drm_info);
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    CreateImageTest(*this, &ci, "");
+}
+
 TEST_F(PositiveImage, DrmFormatModifier) {
     // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/2610
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
