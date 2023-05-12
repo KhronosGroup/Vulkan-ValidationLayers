@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "generated/sync_validation_types.h"
 #include <vulkan/vulkan.h>
 #include <string>
 
@@ -48,7 +49,14 @@ struct ExecScopes {
     VkPipelineStageFlags2KHR src;
     VkPipelineStageFlags2KHR dst;
 };
-
 ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR& dep_info);
+
+struct ShaderStageAccesses {
+    SyncStageAccessIndex sampled_read;
+    SyncStageAccessIndex storage_read;
+    SyncStageAccessIndex storage_write;
+    SyncStageAccessIndex uniform_read;
+};
+ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage);
 
 }  // namespace sync_utils
