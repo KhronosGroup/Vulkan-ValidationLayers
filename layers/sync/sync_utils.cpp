@@ -161,56 +161,6 @@ VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
 }
 
-int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags2KHR flag) {
-    const auto &rec = syncStageOrder().find(flag);
-    if (rec == syncStageOrder().end()) {
-        return -1;
-    }
-    return rec->second;
-}
-
-// The following two functions technically have O(N^2) complexity, but it's for a value of O that's largely
-// stable and also rather tiny - this could definitely be rejigged to work more efficiently, but the impact
-// on runtime is currently negligible, so it wouldn't gain very much.
-// If we add a lot more graphics pipeline stages, this set of functions should be rewritten to accomodate.
-VkPipelineStageFlags2KHR GetLogicallyEarliestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags) {
-    VkPipelineStageFlags2KHR earliest_bit = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    int earliest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(earliest_bit);
-
-    inflags = ExpandPipelineStages(inflags);
-    for (std::size_t i = 0; i < kNumPipelineStageBits; ++i) {
-        VkPipelineStageFlags2KHR current_flag = (inflags & 0x1ull) << i;
-        if (current_flag) {
-            int new_order = GetGraphicsPipelineStageLogicalOrdinal(current_flag);
-            if (new_order != -1 && new_order < earliest_bit_order) {
-                earliest_bit_order = new_order;
-                earliest_bit = current_flag;
-            }
-        }
-        inflags = inflags >> 1;
-    }
-    return earliest_bit;
-}
-
-VkPipelineStageFlags2KHR GetLogicallyLatestGraphicsPipelineStage(VkPipelineStageFlags2KHR inflags) {
-    VkPipelineStageFlags2KHR latest_bit = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    int latest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(latest_bit);
-
-    inflags = ExpandPipelineStages(inflags);
-    for (std::size_t i = 0; i < kNumPipelineStageBits; ++i) {
-        VkPipelineStageFlags2KHR current_flag = (inflags & 0x1ull) << i;
-        if (current_flag) {
-            int new_order = GetGraphicsPipelineStageLogicalOrdinal(current_flag);
-            if (new_order != -1 && new_order > latest_bit_order) {
-                latest_bit_order = new_order;
-                latest_bit = current_flag;
-            }
-        }
-        inflags = inflags >> 1;
-    }
-    return latest_bit;
-}
-
 // helper to extract the union of the stage masks in all of the barriers
 ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
     ExecScopes result{};
