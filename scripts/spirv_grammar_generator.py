@@ -91,6 +91,8 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.opcodes = dict()
         self.atomicsOps = []
         self.groupOps = []
+        self.imageAcesssOps = []
+        self.sampledImageAccessOps = []
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
@@ -240,10 +242,14 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     'name' : opname,
                     'hasType' : "false",
                     'hasResult' : "false",
+
                     'memoryScopePosition' : 0,
                     'executionScopePosition' : 0,
                     'imageOperandsPosition' : 0,
                     'storageClassPosition' : 0,
+
+                    'imageRefPosition' : 0,
+                    'sampledImageRefPosition' : 0,
                 }
 
                 if instruction['class'] == 'Atomic':
@@ -276,6 +282,26 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                             self.opcodes[opcode]['imageOperandsPosition'] = index + 1
                         if operand['kind'] == 'StorageClass':
                             self.opcodes[opcode]['storageClassPosition'] = index + 1
+                        if operand['kind'] == 'IdRef':
+                            if operand['name'] == '\'Image\'':
+                                self.opcodes[opcode]['imageRefPosition'] = index + 1
+                            elif operand['name'] == '\'Sampled Image\'':
+                                self.opcodes[opcode]['sampledImageRefPosition'] = index + 1
+
+                if re.search("OpImage*", opname) is not None:
+                    info = self.opcodes[opcode]
+                    imageRef = info['imageRefPosition']
+                    sampledImageRef = info['sampledImageRefPosition']
+                    if imageRef == 0 and sampledImageRef == 0:
+                        # things like OpImageSparseTexelsResident don't do an actual image operation
+                        continue
+                    elif imageRef != 0 and sampledImageRef != 0:
+                        print("Error: unknown opcode {} not handled correctly\n".format(opname))
+                        sys.exit(1)
+                    elif imageRef != 0:
+                        self.imageAcesssOps.append(opname)
+                    elif sampledImageRef != 0:
+                        self.sampledImageAccessOps.append(opname)
 
     def addToStingList(self, operandKind, kind, list):
         if operandKind['kind'] == kind:
@@ -295,9 +321,13 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '    const char* name;\n'
             output += '    bool has_type; // always operand 0 if present\n'
             output += '    bool has_result; // always operand 1 if present\n'
+            output += '\n'
             output += '    uint32_t memory_scope_position; // operand ID position or zero if not present\n'
             output += '    uint32_t execution_scope_position; // operand ID position or zero if not present\n'
             output += '    uint32_t image_operands_position; // operand ID position or zero if not present\n'
+            output += '\n'
+            output += '    uint32_t image_access_operands_position; // operand ID position or zero if not present\n'
+            output += '    uint32_t sampled_image_access_operands_position; // operand ID position or zero if not present\n'
             output += '};\n'
             output += '\n'
             output += '// Static table to replace having many large switch statement functions for looking up each part\n'
@@ -306,7 +336,17 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '// clang-format off\n'
             output += 'static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {\n'
             for opcode, info in sorted(self.opcodes.items()):
-                output += f'    {{spv::{info["name"]}, {{"{info["name"]}", {info["hasType"]}, {info["hasResult"]}, {info["memoryScopePosition"]}, {info["executionScopePosition"]}, {info["imageOperandsPosition"]}}}}},\n'
+                output += '    {{spv::{}, {{"{}", {}, {}, {}, {}, {}, {}, {}}}}},\n'.format(
+                    info['name'],
+                    info['name'],
+                    info['hasType'],
+                    info['hasResult'],
+                    info['memoryScopePosition'],
+                    info['executionScopePosition'],
+                    info['imageOperandsPosition'],
+                    info['imageRefPosition'],
+                    info['sampledImageRefPosition'],
+                )
             output += '};\n'
             output += '// clang-format on\n'
         return output;
@@ -367,6 +407,8 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += 'bool ImageGatherOperation(uint32_t opcode);\n'
             output += 'bool ImageFetchOperation(uint32_t opcode);\n'
             output += 'bool ImageSampleOperation(uint32_t opcode);\n'
+            output += 'uint32_t ImageAccessOperandsPosition(uint32_t opcode);\n'
+            output += 'uint32_t SampledImageAccessOperandsPosition(uint32_t opcode);\n'
         elif self.sourceFile:
             output += 'bool ImageGatherOperation(uint32_t opcode) {\n'
             output += '    bool found = false;\n'
@@ -390,6 +432,26 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             for f in self.imageSampleOps:
                 output += '        case spv::{}:\n'.format(f)
             output += self.commonBoolSwitch
+
+            output += '// Return operand position of Image IdRef or zero if there is none\n'
+            output += 'uint32_t ImageAccessOperandsPosition(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        position = format_info->second.image_access_operands_position;\n'
+            output += '    }\n'
+            output += '    return position;\n'
+            output += '}\n\n'
+
+            output += '// Return operand position of \'Sampled Image\' IdRef or zero if there is none\n'
+            output += 'uint32_t SampledImageAccessOperandsPosition(uint32_t opcode) {\n'
+            output += '    uint32_t position = 0;\n'
+            output += '    auto format_info = kInstructionTable.find(opcode);\n'
+            output += '    if (format_info != kInstructionTable.end()) {\n'
+            output += '        position = format_info->second.sampled_image_access_operands_position;\n'
+            output += '    }\n'
+            output += '    return position;\n'
+            output += '}\n\n'
 
         return output;
     #

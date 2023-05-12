@@ -241,22 +241,21 @@ struct StageInteraceVariable : public VariableBase {
 // at draw/submit time we can cross reference with the last bound descriptor.
 struct ResourceInterfaceVariable : public VariableBase {
     // If the type is a OpTypeArray save the length
-    uint32_t array_length = 0;
-    bool runtime_array = false;  // OpTypeRuntimeArray - can't validate length until run time
+    uint32_t array_length;
+    bool runtime_array;  // OpTypeRuntimeArray - can't validate length until run time
+
+    bool is_sampled_image;  // OpTypeSampledImage
 
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
-    // For storage images - list of < OpImageWrite : Texel component length >
-    std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
+    // For storage images - list of Texel component length the OpImageWrite
+    std::vector<uint32_t> write_without_formats_component_count_list;
 
     // A variable can have an array of indexes, need to track which are written to
     // can't use bitset because number of indexes isn't known until runtime
     // This array will match the OpTypeArray and not consider the InputAttachmentIndex
     std::vector<bool> input_attachment_index_read;
-
-    // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
-    uint32_t image_sampled_type_width = 0;
 
     // Type once array/pointer are stripped
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
@@ -267,6 +266,8 @@ struct ResourceInterfaceVariable : public VariableBase {
     const spv::Dim image_dim;
     const bool is_image_array;
     const bool is_multisampled;
+    // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
+    uint32_t image_sampled_type_width = 0;
 
     bool is_read_from{false};   // has operation to reads from the variable
     bool is_written_to{false};  // has operation to writes to the variable
@@ -283,7 +284,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     bool is_sampler_bias_offset{false};
     bool is_read_without_format{false};   // For storage images
     bool is_write_without_format{false};  // For storage images
-    bool is_dref_operation{false};
+    bool is_dref{false};
 
     ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const EntryPoint &entrypoint, const Instruction &insn);
 
@@ -354,6 +355,29 @@ struct StructInfo {
 
   private:
     std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
+};
+
+// Represents the OpImage* instructions and how it maps to the variable
+// This is created in the SHADER_MODULE_STATE but then used with VariableBase objects
+struct ImageAccess {
+    const Instruction &image_insn;  // OpImage*
+    const Instruction *variable_image_insn = nullptr;
+    // If there is a OpSampledImage there will also be a sampler variable
+    const Instruction *variable_sampler_insn = nullptr;
+
+    bool is_dref = false;
+    bool is_sampler_implicitLod_dref_proj = false;
+    bool is_sampler_sampled = false;
+    bool is_sampler_bias_offset = false;
+    bool is_written_to = false;
+    bool is_read_from = false;
+
+    static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
+    uint32_t image_access_chain_index = kInvalidValue;    // Index 0
+    uint32_t sampler_access_chain_index = kInvalidValue;  // Index 0
+    uint32_t texel_component_count = kInvalidValue;
+
+    ImageAccess(const SHADER_MODULE_STATE &module_state, const Instruction &image_insn);
 };
 
 // Represents a single Entrypoint into a Shader Module
@@ -474,21 +498,19 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // <OpTypeStruct ID, info> - used for faster lookup as there can many structs
         vvl::unordered_map<uint32_t, std::shared_ptr<const TypeStructInfo>> type_struct_map;
 
+        std::vector<std::shared_ptr<ImageAccess>> image_accesses;
+        // <Image OpVariable Result ID, [ImageAccess, ImageAccess, etc] > - used for faster lookup
+        // Many ImageAccess can point to a single Image Variable
+        vvl::unordered_map<uint32_t, std::vector<std::shared_ptr<const ImageAccess>>> image_access_map;
+
         bool has_group_decoration{false};
 
         // Tracks accesses (load, store, atomic) to the instruction calling them
         // Example: the OpLoad does the "access" but need to know if a OpImageRead uses that OpLoad later
-        std::vector<uint32_t> image_read_load_ids;
-        std::vector<uint32_t> image_write_load_ids;
         vvl::unordered_map<const Instruction *, uint32_t> image_write_load_id_map;  // <OpImageWrite, load id>
         std::vector<uint32_t> atomic_pointer_ids;
         std::vector<uint32_t> store_pointer_ids;
         std::vector<uint32_t> atomic_store_pointer_ids;
-        std::vector<uint32_t> sampler_load_ids;  // tracks all sampling operations
-        std::vector<uint32_t> sampler_implicitLod_dref_proj_load_ids;
-        std::vector<uint32_t> sampler_bias_offset_load_ids;
-        std::vector<uint32_t> image_dref_load_ids;
-        std::vector<std::pair<uint32_t, uint32_t>> sampled_image_load_ids;                       // <image, sampler>
         vvl::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
         vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
         vvl::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
