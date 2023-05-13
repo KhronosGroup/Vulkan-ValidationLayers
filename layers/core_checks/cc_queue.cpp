@@ -623,7 +623,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         }
 
         if (bind_info.pImageOpaqueBinds) {
-            for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.bufferBindCount; ++image_opaque_idx) {
+            for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.imageOpaqueBindCount; ++image_opaque_idx) {
                 const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
                 if (image_opaque_bind.pBinds) {
                     auto image_state = Get<IMAGE_STATE>(image_opaque_bind.image);
