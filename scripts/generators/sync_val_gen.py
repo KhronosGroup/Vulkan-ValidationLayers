@@ -339,7 +339,7 @@ def BubbleInsertStages(stage_order, prior, subseq):
     print('BUBBLE\n', '\n '.join(stages))
     return stages
 
-def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
+def ParsePipelineStageOrder(stage_order, stage_order_logical, stage_order_snippet, config) :
     pipeline_name = ''
     stage_lists = {}
     touchup = set()
@@ -436,9 +436,9 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
 
     # Convert sets to ordered vectors
     prior_sets = prior
-    prior = { key:StageOrderListFromSet(stage_order, value) for key, value in prior_sets.items() }
+    prior = { key:StageOrderListFromSet(stage_order_logical, value) for key, value in prior_sets.items() }
     subseq_sets = subseq
-    subseq = { key:StageOrderListFromSet(stage_order, value) for key, value in subseq_sets.items() }
+    subseq = { key:StageOrderListFromSet(stage_order_logical, value) for key, value in subseq_sets.items() }
 
     if debug_stage_order_parse:
         print('STAGE_ORDER PRIOR STAGES')
@@ -463,6 +463,43 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
 pipeline_order = '''
 VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
 VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
+VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT
+VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT
+VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT
+VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT
+VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
+VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
+VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
+VK_PIPELINE_STAGE_2_HOST_BIT
+VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV
+VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT
+VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT
+VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR
+VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
+VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
+VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
+VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR
+VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR
+VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR
+VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV
+VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT
+VK_PIPELINE_STAGE_2_COPY_BIT
+VK_PIPELINE_STAGE_2_RESOLVE_BIT
+VK_PIPELINE_STAGE_2_BLIT_BIT
+VK_PIPELINE_STAGE_2_CLEAR_BIT
+VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT
+VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT
+VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI
+'''
+
+pipeline_order_logical = '''
+VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
+VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
 VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT
 VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT
 VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT
@@ -470,10 +507,10 @@ VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT
 VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT
 VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT
 VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
-VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
 VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT
 VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
+VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
@@ -687,20 +724,6 @@ def StageAccessEnums(stage_accesses, config):
         output.extend([ '{}static const {} {} = ({}(1) << {});'.format('', sync_mask_name, e['stage_access_bit'], sync_mask_name, e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
     output.append('')
 
-    map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
-    output.append('// Map of the StageAccessIndices from the StageAccess Bit')
-    typename = 'vvl::unordered_map<{}, {}>'.format(sync_mask_name, ordinal_name)
-    if config['is_source']:
-        output.append('const {}& {}() {{'.format(typename, map_name))
-        output.append('{}static const {} variable = {{'.format(indent, typename))
-        output.extend([ '{}{{ {}, {} }},'.format(indent * 2, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
-        output.append('{}}};'.format(indent))
-        output.append('{}return variable;'.format(indent))
-        output.append('}')
-    else:
-        output.append('const {}& {}();'.format(typename, map_name))
-    output.append('')
-
     # stage/access debug information based on ordinal enum
     sa_info_type = '{}StageAccessInfoType'.format(type_prefix)
     if not config['is_source']:
@@ -757,7 +780,10 @@ def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, 
                 sep = ' |\n' + indent * 2
                 table.append( '{tab}{{ {}, (\n{tab}{tab}{}\n{tab})}},'.format(mask_key, sep.join(mask_vec), tab=indent))
             else:
-                table.append( '{}{{ {}, {}}},'.format(indent, mask_key, mask_vec[0]))
+                if table_name == 'StageOrder':
+                    table.append( '{}{{ {}, {}}},'.format(indent, mask_key, mask_vec[0]))
+                else:
+                    table.append( '{tab}{{ {}, (\n{tab}{tab}{}\n{tab})}},'.format(mask_key, mask_vec[0], tab=indent))
         if(table_name == 'StageAccessMaskByAccessBit'):
             table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_2_MEMORY_READ_BIT', 'syncStageAccessReadMask'))
             table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_2_MEMORY_WRITE_BIT', 'syncStageAccessWriteMask'))
@@ -766,33 +792,6 @@ def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, 
         table.append('}')
     else:
         table.append('const {}& {}();'.format(typename, config['var_prefix'] + table_name))
-    table.append('')
-
-    return table
-
-def DoubleCrossReferenceTable(table_name, table_desc, stage_keys, access_keys, stage_access_stage_access_map, config):
-    indent = config['indent']
-    ordinal_name = config['ordinal_name']
-
-    table = ['// ' + table_desc]
-    typename = 'std::map<{vk_stage_flags}, std::map<{vk_access_flags}, {ordinal_name}>>'.format(**config)
-    if config['is_source']:
-        table.append('const {}& {var_prefix}{}() {{'.format(typename, table_name, **config))
-        table.append('static const {} variable = {{'.format(typename))
-        sep = ' },\n' + indent * 2 + '{ '
-
-        # Because stage_access_stage_access_map's elements order might be different sometimes.
-        # It causes the generator creates different code. It needs to be sorted.
-        for i in sorted(stage_access_stage_access_map):
-            if len(stage_access_stage_access_map[i].keys()) == 0: continue
-            accesses = [ '{}, {}'.format(access, index) for access, index in sorted(stage_access_stage_access_map[i].items()) ]
-            entry_format = '{tab}{{ {key}, {{\n{tab}{tab}{{ {val} }}\n{tab}}} }},'
-            table.append( entry_format.format(key=i, val=sep.join(accesses), tab=indent))
-        table.append('{}}};'.format(indent))
-        table.append('{}return variable;'.format(indent))
-        table.append('}')
-    else:
-        table.append('const {}& {var_prefix}{}();'.format(typename, table_name, **config))
     table.append('')
 
     return table
@@ -830,12 +829,6 @@ def StageAccessCrossReference(enum_in_bit_order, stage_access_combinations, conf
     saa_desc = 'Bit order mask of stage_access bit for each access'
     output.extend(CrossReferenceTable(saa_name, saa_desc, 'VkAccessFlags2',  config['sync_mask_name'],
                                       UnpackField(access_in_bit_order), stage_access_mask_access_map, config))
-
-    #sasa -- stage access index by stage by access
-    sasa_name = 'StageAccessIndexByStageAndAccess'
-    sasa_desc = 'stage_access index for each stage and access'
-    output.extend(DoubleCrossReferenceTable(sasa_name, sasa_desc,stages_in_bit_order, access_in_bit_order, stage_access_stage_access_map, config))
-
 
     # direct VkPipelineStageFlags to valid VkAccessFlags lookup table
     direct_name = 'DirectStageToAccessMask'
@@ -946,14 +939,15 @@ def GenSyncTypeHelper(gen, is_source) :
         lines.extend(DeclareFauxConst(enums_in_bit_order))
         lines.append('')
 
-
     stage_order = pipeline_order.split()
     stage_order.append(present_stage)
+    stage_order_logical = pipeline_order_logical.split()
+    stage_order_logical.append(present_stage)
     access_types = {stage:list() for stage in stage_order}
     if debug_top_level:
         lines.append('// Access types \n//    ' + '\n//    '.join(access_types) +  '\n' * 2)
 
-    stage_order_map = ParsePipelineStageOrder(stage_order, snippet_pipeline_stages_order, config)
+    stage_order_map = ParsePipelineStageOrder(stage_order, stage_order_logical, snippet_pipeline_stages_order, config)
     access_stage_table = ParseAccessMasks(gen.genOpts.valid_usage_path, stage_order)
     access_stage_table.update(FauxStageAccess());
     stage_queue_cap_table = ParseQueueCaps(snippet_pipeline_stages_supported)
