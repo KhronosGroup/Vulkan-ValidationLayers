@@ -1426,17 +1426,6 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
     if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))
         return false;
 
-    if (m_device->IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        // WORKAROUND: for Profile not reporting extended enums, and possibly some drivers too
-        const auto all_nontransfer_feature_flags =
-            all_feature_flags ^ (VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR);
-        const bool transfer_probably_supported_anyway = (features & all_nontransfer_feature_flags) > 0;
-        if (!transfer_probably_supported_anyway) {
-            if ((usages & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) && !(features & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR)) return false;
-            if ((usages & VK_IMAGE_USAGE_TRANSFER_DST_BIT) && !(features & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR)) return false;
-        }
-    }
-
     return true;
 }
 VkImageCreateInfo VkImageObj::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,
