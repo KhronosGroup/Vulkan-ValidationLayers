@@ -21,25 +21,6 @@ import sys
 from generator import *
 from common_codegen import *
 
-#
-# DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
-class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.'):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam  = 48
-#
 # DispatchTableHelperOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
 class DispatchTableHelperOutputGenerator(OutputGenerator):

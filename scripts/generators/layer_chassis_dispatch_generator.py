@@ -23,28 +23,6 @@ from generator import *
 from collections import namedtuple
 from common_codegen import *
 
-# LayerChassisDispatchGeneratorOptions - subclass of GeneratorOptions.
-#
-# Adds options used by LayerChassisDispatchOutputGenerator objects during
-# layer chassis dispatch file generation.
-class LayerChassisDispatchGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.'):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam   = 48
-
-
 # LayerChassisDispatchOutputGenerator - subclass of OutputGenerator.
 # Generates layer chassis non-dispatchable handle-wrapping code.
 #

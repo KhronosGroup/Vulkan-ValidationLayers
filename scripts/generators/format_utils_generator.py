@@ -18,25 +18,6 @@ import sys
 from generator import *
 from common_codegen import *
 
-# This is a workaround to use a Python 2.7 and 3.x compatible syntax
-from io import open
-
-class FormatUtilsOutputGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.'):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*',
-                emitFormats = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
 #
 # FormatUtilsOutputGenerator - Generate SPIR-V validation
 # for SPIR-V extensions and capabilities

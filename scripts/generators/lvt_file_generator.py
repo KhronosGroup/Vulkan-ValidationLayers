@@ -99,25 +99,6 @@ namespace vk {
 '''
 
 #
-# LvtFileOutputGeneratorOptions - subclass of GeneratorOptions.
-class LvtFileOutputGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 lvt_file_type = ''):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.lvt_file_type   = lvt_file_type
-#
 # LvtFileOutputGenerator - subclass of OutputGenerator.
 # Generates files needed by the layer validation tests
 class LvtFileOutputGenerator(OutputGenerator):

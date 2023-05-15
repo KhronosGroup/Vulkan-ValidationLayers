@@ -25,30 +25,6 @@ from common_codegen import *
 import generators.sync_val_gen as sync_val_gen
 
 #
-# HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
-class HelperFileOutputGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 library_name = '',
-                 helper_file_type = '',
-                 valid_usage_path = ''):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam   = 48
-        self.library_name     = library_name
-        self.helper_file_type = helper_file_type
-        self.valid_usage_path = valid_usage_path
-#
 # HelperFileOutputGenerator - subclass of OutputGenerator. Outputs Vulkan helper files
 class HelperFileOutputGenerator(OutputGenerator):
     """Generate helper file based on XML element attributes"""
@@ -110,7 +86,6 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.handle_types = GetHandleTypes(self.registry.tree)
         # User-supplied prefix text, if any (list of strings)
         self.helper_file_type = genOpts.helper_file_type
-        self.library_name = genOpts.library_name
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See helper_file_generator.py for modifications\n'

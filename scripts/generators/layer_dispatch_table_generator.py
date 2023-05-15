@@ -28,25 +28,6 @@ ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceVersion']
 
 #
-# LayerDispatchTableGeneratorOptions - subclass of GeneratorOptions.
-class LayerDispatchTableGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.'):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam  = 48
-
-#
 # LayerDispatchTableOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
 class LayerDispatchTableOutputGenerator(OutputGenerator):

@@ -27,31 +27,6 @@ from common_codegen import *
 # NOTE: should be removed if generation scripts ever get refactored
 from generators.parameter_validation_generator import ParameterValidationOutputGenerator
 
-# LayerFactoryGeneratorOptions - subclass of GeneratorOptions.
-#
-# Adds options used by LayerFactoryOutputGenerator objects during factory
-# layer generation.
-class LayerChassisGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 warnExtensions = [],
-                 helper_file_type = ''):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam    = 48
-        self.helper_file_type  = helper_file_type
-        self.warnExtensions    = warnExtensions
-
 # LayerChassisOutputGenerator - subclass of OutputGenerator.
 # Generates a LayerFactory layer that intercepts all API entrypoints
 #  This is intended to be used as a starting point for creating custom layers

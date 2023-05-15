@@ -51,215 +51,167 @@ def makeGenOpts(args):
     warnExtensions = args.warnExtensions
 
     # Output target directory
-    directory = args.directory
-
-    # An API style convention object
-    conventions = VulkanConventions()
+    from generators.base_generator import SetOutputDirectory
+    SetOutputDirectory(args.directory)
 
     # ValidationLayer Generators
     # Options for thread safety header code-generation
     genOpts['thread_safety.h'] = [
           ThreadOutputGenerator,
-          ThreadGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'thread_safety.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'thread_safety.h')
         ]
 
     # Options for thread safety source code-generation
     genOpts['thread_safety.cpp'] = [
           ThreadOutputGenerator,
-          ThreadGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'thread_safety.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'thread_safety.cpp')
         ]
 
     # Options for stateless validation source file
     genOpts['parameter_validation.cpp'] = [
           ParameterValidationOutputGenerator,
-          ParameterValidationGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'parameter_validation.cpp',
-            directory         = directory,
             valid_usage_path  = args.scripts)
           ]
 
     # Options for stateless validation header file
     genOpts['parameter_validation.h'] = [
           ParameterValidationOutputGenerator,
-          ParameterValidationGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'parameter_validation.h',
-            directory         = directory,
             valid_usage_path  = args.scripts)
           ]
 
     # Options for stateless validation enum helper file
     genOpts['enum_flag_bits.h'] = [
           ParameterValidationOutputGenerator,
-          ParameterValidationGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'enum_flag_bits.h',
-            directory         = directory,
             valid_usage_path  = args.scripts)
           ]
 
     # Options for object_tracker code-generated validation routines
     genOpts['object_tracker.cpp'] = [
           ObjectTrackerOutputGenerator,
-          ObjectTrackerGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'object_tracker.cpp',
-            directory         = directory,
             valid_usage_path  = args.scripts)
         ]
 
     # Options for object_tracker code-generated prototypes
     genOpts['object_tracker.h'] = [
           ObjectTrackerOutputGenerator,
-          ObjectTrackerGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'object_tracker.h',
-            directory         = directory,
             valid_usage_path  = args.scripts)
         ]
 
     # Options for dispatch table helper generator
     genOpts['vk_dispatch_table_helper.h'] = [
           DispatchTableHelperOutputGenerator,
-          DispatchTableHelperOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_dispatch_table_helper.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'vk_dispatch_table_helper.h')
         ]
 
     # lvt_file generator options for lvt_function_pointers.h
     genOpts['lvt_function_pointers.h'] = [
           LvtFileOutputGenerator,
-          LvtFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'lvt_function_pointers.h',
-            directory         = directory,
             lvt_file_type  = 'function_pointer_header')
         ]
 
     # lvt_file generator options for lvt_function_pointers.cpp
     genOpts['lvt_function_pointers.cpp'] = [
           LvtFileOutputGenerator,
-          LvtFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'lvt_function_pointers.cpp',
-            directory         = directory,
             lvt_file_type  = 'function_pointer_source')
         ]
 
     # Options for Layer dispatch table generator
     genOpts['vk_layer_dispatch_table.h'] = [
           LayerDispatchTableOutputGenerator,
-          LayerDispatchTableGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_layer_dispatch_table.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'vk_layer_dispatch_table.h')
         ]
 
     # Helper file generator options for vk_enum_string_helper.h
     genOpts['vk_enum_string_helper.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_enum_string_helper.h',
-            directory         = directory,
             helper_file_type  = 'enum_string_header')
         ]
 
     # Helper file generator options for vk_safe_struct.h
     genOpts['vk_safe_struct.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct.h',
-            directory         = directory,
             helper_file_type  = 'safe_struct_header')
         ]
 
     # Helper file generator options for vk_safe_struct_utils.cpp
     genOpts['vk_safe_struct_utils.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct_utils.cpp',
-            directory         = directory,
             helper_file_type  = 'safe_struct_source')
         ]
 
     # Helper file generator options for vk_safe_struct_core.cpp
     genOpts['vk_safe_struct_core.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct_core.cpp',
-            directory         = directory,
             helper_file_type  = 'safe_struct_source')
         ]
 
     # Helper file generator options for vk_safe_struct_khr.cpp
     genOpts['vk_safe_struct_khr.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct_khr.cpp',
-            directory         = directory,
             helper_file_type  = 'safe_struct_source')
         ]
 
     # Helper file generator options for vk_safe_struct_khr.cpp
     genOpts['vk_safe_struct_ext.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct_ext.cpp',
-            directory         = directory,
             helper_file_type  = 'safe_struct_source')
         ]
 
     # Helper file generator options for vk_safe_struct_vendor.cpp
     genOpts['vk_safe_struct_vendor.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_safe_struct_vendor.cpp',
-            directory         = directory,
             helper_file_type  = 'safe_struct_source')
         ]
 
     # Helper file generator options for vk_object_types.h
     genOpts['vk_object_types.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_object_types.h',
-            directory         = directory,
             helper_file_type  = 'object_types_header')
         ]
 
     # Helper file generator options for extension_helper.h
     genOpts['vk_extension_helper.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_extension_helper.h',
-            directory         = directory,
             helper_file_type  = 'extension_helper_header')
         ]
 
     # Helper file generator options for typemap_helper.h
     genOpts['vk_typemap_helper.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'vk_typemap_helper.h',
-            directory         = directory,
             helper_file_type  = 'typemap_helper_header')
         ]
 
@@ -267,10 +219,8 @@ def makeGenOpts(args):
     # Options for layer chassis header
     genOpts['chassis.h'] = [
           LayerChassisOutputGenerator,
-          LayerChassisGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'chassis.h',
-            directory         = directory,
             warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_header')
         ]
@@ -278,10 +228,8 @@ def makeGenOpts(args):
     # Options for layer chassis source file
     genOpts['chassis.cpp'] = [
           LayerChassisOutputGenerator,
-          LayerChassisGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'chassis.cpp',
-            directory         = directory,
             warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_source')
         ]
@@ -290,49 +238,33 @@ def makeGenOpts(args):
     # Options for layer chassis header
     genOpts['chassis_dispatch_helper.h'] = [
           LayerChassisOutputGenerator,
-          LayerChassisGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'chassis_dispatch_helper.h',
-            directory         = directory,
             helper_file_type  = 'layer_chassis_helper_header')
         ]
-
-
 
     # Options for layer chassis dispatch source file
     genOpts['layer_chassis_dispatch.cpp'] = [
           LayerChassisDispatchOutputGenerator,
-          LayerChassisDispatchGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'layer_chassis_dispatch.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'layer_chassis_dispatch.cpp')
         ]
 
     # Options for layer chassis dispatch header file
     genOpts['layer_chassis_dispatch.h'] = [
           LayerChassisDispatchOutputGenerator,
-          LayerChassisDispatchGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'layer_chassis_dispatch.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'layer_chassis_dispatch.h')
         ]
 
     # Options for best practices code-generated source
     genOpts['best_practices.cpp'] = [
           BestPracticesOutputGenerator,
-          BestPracticesOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'best_practices.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'best_practices.cpp')
         ]
 
     # Options for best_practices code-generated header
     genOpts['best_practices.h'] = [
           BestPracticesOutputGenerator,
-          BestPracticesOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'best_practices.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'best_practices.h')
         ]
 
 # Create an API generator and corresponding generator options based on
@@ -340,20 +272,16 @@ def makeGenOpts(args):
     # Helper file generator options for sync_validation_types.h
     genOpts['sync_validation_types.h'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'sync_validation_types.h',
-            directory         = directory,
             helper_file_type  = 'sync_helper_header',
             valid_usage_path  = args.scripts)
         ]
 
     genOpts['sync_validation_types.cpp'] = [
           HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'sync_validation_types.cpp',
-            directory         = directory,
             helper_file_type  = 'sync_helper_source',
             valid_usage_path  = args.scripts)
         ]
@@ -361,20 +289,15 @@ def makeGenOpts(args):
     # Options for spirv_validation_helper code-generated header
     genOpts['spirv_validation_helper.cpp'] = [
           SpirvValidationHelperOutputGenerator,
-          SpirvValidationHelperOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'spirv_validation_helper.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'spirv_validation_helper.cpp')
         ]
 
     # Options for spirv_grammar_helper code-generated source
     # Only uses spirv grammar and not the vk.xml
     genOpts['spirv_grammar_helper.cpp'] = [
           SpirvGrammarHelperOutputGenerator,
-          SpirvGrammarHelperOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'spirv_grammar_helper.cpp',
-            directory         = directory,
             grammar           = args.grammar)
         ]
 
@@ -382,66 +305,48 @@ def makeGenOpts(args):
     # Only uses spirv grammar and not the vk.xml
     genOpts['spirv_grammar_helper.h'] = [
           SpirvGrammarHelperOutputGenerator,
-          SpirvGrammarHelperOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'spirv_grammar_helper.h',
-            directory         = directory,
             grammar           = args.grammar)
         ]
 
     # Options for command_validation code-generated header
     genOpts['command_validation.cpp'] = [
           CommandValidationOutputGenerator,
-          CommandValidationOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'command_validation.cpp',
-            directory         = directory,
             valid_usage_path  = args.scripts)
         ]
 
     # generator for command_validation.h
     genOpts['command_validation.h'] = [
           CommandValidationOutputGenerator,
-          CommandValidationOutputGeneratorOptions(
-            conventions       = conventions,
+          BaseGeneratorOptions(
             filename          = 'command_validation.h',
-            directory         = directory,
             valid_usage_path  = args.scripts)
         ]
 
     genOpts['dynamic_state_helper.cpp'] = [
           DynamicStateOutputGenerator,
-          DynamicStateOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'dynamic_state_helper.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'dynamic_state_helper.cpp')
         ]
 
     # generator for command_validation.h
     genOpts['dynamic_state_helper.h'] = [
           DynamicStateOutputGenerator,
-          DynamicStateOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'dynamic_state_helper.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'dynamic_state_helper.h')
         ]
 
     # Options for format_utils code-generated header
     genOpts['vk_format_utils.cpp'] = [
           FormatUtilsOutputGenerator,
-          FormatUtilsOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_format_utils.cpp',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'vk_format_utils.cpp')
         ]
 
     # generator for format_utils.h
     genOpts['vk_format_utils.h'] = [
           FormatUtilsOutputGenerator,
-          FormatUtilsOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'vk_format_utils.h',
-            directory         = directory)
+          BaseGeneratorOptions(filename = 'vk_format_utils.h')
         ]
 
 # Generate a target based on the options in the matching genOpts{} object.
@@ -533,25 +438,23 @@ if __name__ == '__main__':
     from cgenerator import CGeneratorOptions, COutputGenerator
 
     # ValidationLayer Generator Modifications
-    from generators.thread_safety_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
-    from generators.parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
-    from generators.object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
-    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
-    from generators.helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
-    from generators.layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
-    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
-    from generators.lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
-    from generators.best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
-    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
-    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
-    from generators.command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
-    from generators.format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
-    from generators.dynamic_state_generator import DynamicStateOutputGenerator, DynamicStateOutputGeneratorOptions
+    from generators.base_generator import BaseGeneratorOptions
 
-    # Temporary workaround for vkconventions python2 compatibility
-    import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
-    from vkconventions import VulkanConventions
+    from generators.thread_safety_generator import ThreadOutputGenerator
+    from generators.parameter_validation_generator import ParameterValidationOutputGenerator
+    from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
+    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
+    from generators.helper_file_generator import HelperFileOutputGenerator
+    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
+    from generators.layer_chassis_generator import LayerChassisOutputGenerator
+    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
+    from generators.lvt_file_generator import LvtFileOutputGenerator
+    from generators.best_practices_generator import BestPracticesOutputGenerator
+    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
+    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
+    from generators.command_validation_generator import CommandValidationOutputGenerator
+    from generators.format_utils_generator import FormatUtilsOutputGenerator
+    from generators.dynamic_state_generator import DynamicStateOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):
