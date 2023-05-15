@@ -373,12 +373,12 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
-    auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(maint4features);
-    if (!maint4features.maintenance4) {
-        GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
+    auto maintenance_4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance_4_features);
+    if (!maintenance_4_features.maintenance4) {
+        GTEST_SKIP() << "maintenance4 is required but not enabled.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance_4_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(
