@@ -431,7 +431,8 @@ std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const 
 }
 
 std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const SHADER_MODULE_STATE& module_state,
-                                                                                 const EntryPoint& entrypoint) {
+                                                                                 const EntryPoint& entrypoint,
+                                                                                 const ImageAccessMap& image_access_map) {
     std::vector<ResourceInterfaceVariable> variables;
     if (!module_state.has_valid_spirv) {
         return variables;
@@ -448,7 +449,7 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
-            variables.emplace_back(module_state, entrypoint, insn);
+            variables.emplace_back(module_state, entrypoint, insn, image_access_map);
         }
     }
     return variables;
@@ -607,7 +608,8 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
     }
 }
 
-EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn)
+EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint_insn,
+                       const ImageAccessMap& image_access_map)
     : entrypoint_insn(entrypoint_insn),
       execution_model(spv::ExecutionModel(entrypoint_insn.Word(1))),
       stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(execution_model))),
@@ -616,7 +618,7 @@ EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instructio
       execution_mode(module_state.GetExecutionModeSet(id)),
       emit_vertex_geometry(false),
       accessible_ids(GetAccessibleIds(module_state, *this)),
-      resource_interface_variables(GetResourceInterfaceVariables(module_state, *this)),
+      resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, image_access_map)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this)) {
     if (module_state.has_valid_spirv) {
         // After all variables are made, can get references from them
@@ -913,6 +915,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     }
 
     // Need to get ImageAccesses as EntryPoint's variables depend on it
+    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
+    ImageAccessMap image_access_map;
+
     for (const auto& insn : image_instructions) {
         auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
         if (new_access->variable_image_insn) {
@@ -922,7 +927,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
     for (const auto& insn : entry_point_instructions) {
-        entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn));
+        entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn, image_access_map));
     }
 
     SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
@@ -1837,12 +1842,11 @@ bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable&
 }
 
 ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
-                                                     const Instruction& insn)
+                                                     const Instruction& insn, const ImageAccessMap& image_access_map)
     : VariableBase(module_state, insn, entrypoint.stage),
       array_length(0),
       runtime_array(false),
       is_sampled_image(false),
-
       base_type(FindBaseType(*this, module_state)),
       image_format_type(FindImageFormatType(module_state, base_type)),
       image_dim(base_type.FindImageDim()),
@@ -1871,8 +1875,8 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
 
             const bool is_image_without_format = ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));
 
-            const auto access_it = static_data_.image_access_map.find(id);
-            if (access_it == static_data_.image_access_map.end()) {
+            const auto access_it = image_access_map.find(id);
+            if (access_it == image_access_map.end()) {
                 break;
             }
             for (const auto& image_access_ptr : access_it->second) {
