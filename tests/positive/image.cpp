@@ -1036,6 +1036,110 @@ TEST_F(PositiveImage, DrmFormatModifier) {
     }
 }
 
+TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5649
+    TEST_DESCRIPTION(
+        "Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in the pNext chain");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // for extension dependencies
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, skipping tests";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    std::vector<uint64_t> mods;
+
+    const auto format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    // Get info needed to fill out VkImageDrmFormatModifierListCreateInfoEXT
+    {
+        auto modp = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+        auto fmtp = LvlInitStruct<VkFormatProperties2>(&modp);
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+        if (modp.drmFormatModifierCount == 0) {
+            GTEST_SKIP() << "drmFormatModifierCount equal to 0";
+        }
+        std::vector<VkDrmFormatModifierPropertiesEXT> mod_props(modp.drmFormatModifierCount);
+        modp.pDrmFormatModifierProperties = mod_props.data();
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
+
+        for (uint32_t i = 0; i < modp.drmFormatModifierCount; ++i) {
+            auto &mod = modp.pDrmFormatModifierProperties[i];
+            auto features = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+
+            if ((mod.drmFormatModifierTilingFeatures & features) != features) {
+                continue;
+            }
+
+            mods.push_back(mod.drmFormatModifier);
+        }
+    }
+
+    if (mods.empty()) {
+        GTEST_SKIP() << "Skip test";
+    }
+
+    auto external_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    // handleTypes needs to be assigned to trigger the behavior we want
+    assert(external_info.handleTypes);
+
+    auto drm_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>(&external_info);
+    drm_info.drmFormatModifierCount = size32(mods);
+    drm_info.pDrmFormatModifiers = mods.data();
+
+    auto ci = LvlInitStruct<VkImageCreateInfo>(&drm_info);
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = format;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    {
+        auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+        drm_format_modifier.sharingMode = ci.sharingMode;
+        drm_format_modifier.queueFamilyIndexCount = ci.queueFamilyIndexCount;
+        drm_format_modifier.pQueueFamilyIndices = ci.pQueueFamilyIndices;
+        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>(&drm_format_modifier);
+        external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(external_info.handleTypes);
+        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        image_info.format = ci.format;
+        image_info.type = ci.imageType;
+        image_info.tiling = ci.tiling;
+        image_info.usage = ci.usage;
+        image_info.flags = ci.flags;
+
+        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+
+        if (const auto result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+            result != VK_SUCCESS) {
+            GTEST_SKIP() << "Unable to create image. VkResult = " << vk_result_string(result);
+        }
+    }
+
+    CreateImageTest(*this, &ci);
+}
+
 TEST_F(PositiveImage, CopyImageSubresource) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
