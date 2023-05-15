@@ -18,9 +18,6 @@ import sys
 from generator import *
 from common_codegen import *
 
-# This is a workaround to use a Python 2.7 and 3.x compatible syntax
-from io import open
-
 class DynamicStateOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  conventions = None,

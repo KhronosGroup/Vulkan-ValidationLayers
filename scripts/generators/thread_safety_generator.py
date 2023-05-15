@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os,re,sys
+import sys
 from generator import *
 from common_codegen import *
 

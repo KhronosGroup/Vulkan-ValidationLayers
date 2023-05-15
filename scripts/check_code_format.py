@@ -30,7 +30,6 @@
 
 import os
 import argparse
-import difflib
 import re
 import subprocess
 import sys

@@ -20,7 +20,7 @@
 # all Vulkan  functions. The resultant factory layer allows rapid development of
 # layers and interceptors.
 
-import os,re,sys
+import sys
 from generator import *
 from common_codegen import *
 

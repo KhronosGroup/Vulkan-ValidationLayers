@@ -14,10 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os,re,sys,string,json
-import xml.etree.ElementTree as etree
+import sys
 from generator import *
-from collections import namedtuple
 from common_codegen import *
 
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax

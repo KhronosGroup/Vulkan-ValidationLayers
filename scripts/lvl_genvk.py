@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, cProfile, pdb, string, sys, time, os
+import argparse, pdb, sys, time, os
 
 # Simple timer functions
 startTime = None
