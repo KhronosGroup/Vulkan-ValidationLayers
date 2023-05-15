@@ -29,44 +29,18 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  conventions = None,
                  filename = None,
-                 directory = '.',
-                 genpath = None,
-                 apiname = 'vulkan',
-                 profile = None,
-                 versions = '.*',
-                 emitversions = '.*',
-                 defaultExtensions = 'vulkan',
-                 addExtensions = None,
-                 removeExtensions = None,
-                 emitExtensions = None,
-                 emitSpirv = None,
-                 sortProcedure = regSortFeatures,
-                 genFuncPointers = True,
-                 apicall = 'VKAPI_ATTR ',
-                 apientry = 'VKAPI_CALL ',
-                 apientryp = 'VKAPI_PTR *',
-                 alignFuncParam = 48,
-                 expandEnumerants = False):
+                 directory = '.'):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
                 directory = directory,
-                genpath = genpath,
-                apiname = apiname,
-                profile = profile,
-                versions = versions,
-                emitversions = emitversions,
-                defaultExtensions = defaultExtensions,
-                addExtensions = addExtensions,
-                removeExtensions = removeExtensions,
-                emitExtensions = emitExtensions,
-                emitSpirv = emitSpirv,
-                sortProcedure = sortProcedure)
-        self.genFuncPointers = genFuncPointers
-        self.apicall         = apicall
-        self.apientry        = apientry
-        self.apientryp       = apientryp
-        self.alignFuncParam  = alignFuncParam
+                apiname = 'vulkan',
+                defaultExtensions = 'vulkan',
+                emitExtensions = '.*')
+        self.apicall         = 'VKAPI_ATTR '
+        self.apientry        = 'VKAPI_CALL '
+        self.apientryp       = 'VKAPI_PTR *'
+        self.alignFuncParam  = 48
 #
 # DispatchTableHelperOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
