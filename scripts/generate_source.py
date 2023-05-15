@@ -90,7 +90,7 @@ def main(argv):
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
                  '-export_header'],
-                [common_codegen.repo_relative('scripts/external_revision_generator.py'),
+                [common_codegen.repo_relative('scripts/generators/external_revision_generator.py'),
                  '--json_file', common_codegen.repo_relative('scripts/known_good.json'),
                  '--json_keys', 'repos,3,commit',
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',

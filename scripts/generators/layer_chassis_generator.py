@@ -25,7 +25,7 @@ from generator import *
 from common_codegen import *
 
 # NOTE: should be removed if generation scripts ever get refactored
-from parameter_validation_generator import ParameterValidationOutputGenerator
+from generators.parameter_validation_generator import ParameterValidationOutputGenerator
 
 # LayerFactoryGeneratorOptions - subclass of GeneratorOptions.
 #

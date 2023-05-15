@@ -533,21 +533,21 @@ if __name__ == '__main__':
     from cgenerator import CGeneratorOptions, COutputGenerator
 
     # ValidationLayer Generator Modifications
-    from thread_safety_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
-    from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
-    from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
-    from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
-    from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-    from layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
-    from layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
-    from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
-    from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
-    from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
-    from spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
-    from spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
-    from command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
-    from format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
-    from dynamic_state_generator import DynamicStateOutputGenerator, DynamicStateOutputGeneratorOptions
+    from generators.thread_safety_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
+    from generators.parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
+    from generators.object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
+    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
+    from generators.helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
+    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
+    from generators.layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
+    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
+    from generators.lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
+    from generators.best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
+    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator, SpirvValidationHelperOutputGeneratorOptions
+    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator, SpirvGrammarHelperOutputGeneratorOptions
+    from generators.command_validation_generator import CommandValidationOutputGenerator, CommandValidationOutputGeneratorOptions
+    from generators.format_utils_generator import FormatUtilsOutputGenerator, FormatUtilsOutputGeneratorOptions
+    from generators.dynamic_state_generator import DynamicStateOutputGenerator, DynamicStateOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
