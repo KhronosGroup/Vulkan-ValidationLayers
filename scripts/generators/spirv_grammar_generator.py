@@ -21,23 +21,6 @@ from common_codegen import *
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax
 from io import open
 
-class SpirvGrammarHelperOutputGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 grammar = None):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.grammar = grammar
 #
 # SpirvGrammarHelperOutputGenerator - Generate SPIR-V grammar helper
 # for SPIR-V opcodes, enums, etc

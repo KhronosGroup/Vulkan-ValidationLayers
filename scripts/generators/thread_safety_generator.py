@@ -22,28 +22,6 @@ import sys
 from generator import *
 from common_codegen import *
 
-# ThreadGeneratorOptions - subclass of GeneratorOptions.
-#
-# Adds options used by ThreadOutputGenerator objects during threading
-# layer generation.
-class ThreadGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.'):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam  = 48
-
-
 # ThreadOutputGenerator - subclass of OutputGenerator.
 # Generates Thread checking framework
 #

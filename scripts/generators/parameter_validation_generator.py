@@ -39,28 +39,6 @@ def multi_string_iter(lines):
                 def deleter(): del(lines[i][j])
                 yield (setter, deleter, l)
 
-# ParameterValidationGeneratorOptions - subclass of GeneratorOptions.
-#
-# Adds options used by ParameterValidationOutputGenerator object during Parameter validation layer generation.
-class ParameterValidationGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 valid_usage_path = ''):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam  = 48
-        self.valid_usage_path = valid_usage_path
-
 # ParameterValidationOutputGenerator - subclass of OutputGenerator.
 # Generates param checker layer code.
 #

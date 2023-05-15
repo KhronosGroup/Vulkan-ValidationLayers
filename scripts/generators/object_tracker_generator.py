@@ -26,30 +26,6 @@ from common_codegen import *
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax.
 from io import open
 
-# ObjectTrackerGeneratorOptions - subclass of GeneratorOptions.
-#
-# Adds options used by ObjectTrackerOutputGenerator objects during
-# object_tracker layer generation.
-class ObjectTrackerGeneratorOptions(GeneratorOptions):
-    def __init__(self,
-                 conventions = None,
-                 filename = None,
-                 directory = '.',
-                 valid_usage_path = ''):
-        GeneratorOptions.__init__(self,
-                conventions = conventions,
-                filename = filename,
-                directory = directory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
-                emitExtensions = '.*')
-        self.apicall         = 'VKAPI_ATTR '
-        self.apientry        = 'VKAPI_CALL '
-        self.apientryp       = 'VKAPI_PTR *'
-        self.alignFuncParam  = 48
-        self.valid_usage_path = valid_usage_path
-
-
 # ObjectTrackerOutputGenerator - subclass of OutputGenerator.
 # Generates object_tracker layer object validation code
 #
