@@ -473,6 +473,40 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchInBlock) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
+    TEST_DESCRIPTION("OpTypeVector has larger output than input");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec3 x;
+        layout(location=0) out vec4 color;
+        void main(){
+           color = vec4(1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
+}
+
 TEST_F(NegativeShaderInterface, VsFsMismatchByLocation) {
     TEST_DESCRIPTION(
         "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "

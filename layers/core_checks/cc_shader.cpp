@@ -2883,14 +2883,18 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     const uint32_t input_vec_size = input_var->base_type.Word(3);
                     if (output_vec_size > input_vec_size) {
                         const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
+                        const char *vuid = IsExtEnabled(device_extensions.vk_khr_maintenance4)
+                                               ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                               : "VUID-RuntimeSpirv-OpTypeVector-06816";
                         skip |=
-                            LogError(objlist, "VUID-RuntimeSpirv-maintenance4-06817",
+                            LogError(objlist, vuid,
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] starting at Location %" PRIu32
                                      " Component %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
-                                     " Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
-                                     "between input and output vectors",
+                                     ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "
+                                     "between input and output vectors.",
                                      pipe_index, location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
                                      string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
+                        break;  // Only need to report for the first component found
                     }
                 }
             } else if ((input_var == nullptr) && (output_var != nullptr)) {
