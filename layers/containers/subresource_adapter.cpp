@@ -282,15 +282,6 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
     linear_image_ = false;
 
-    // WORKAROUND for profile and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
-    if (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
-        subres = {static_cast<VkImageAspectFlags>(AspectBit(0)), 0, 0};
-        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
-        if (layout.size > 0) {
-            linear_image_ = true;
-        }
-    }
-
     is_compressed_ = FormatIsCompressed(image.createInfo.format);
     texel_extent_ = FormatTexelBlockExtent(image.createInfo.format);
 

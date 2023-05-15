@@ -379,14 +379,6 @@ VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo ima
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         image_ci.format = format;
 
-        // WORKAROUND for profile and mock_icd not containing valid format limits yet
-        VkFormatProperties format_props;
-        vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
-        const VkFormatFeatureFlags core_filter = 0x1FFF;
-        const auto features = (image_ci.tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
-                                                                          : format_props.optimalTilingFeatures & core_filter;
-        if (!(features & core_filter)) continue;
-
         VkImageFormatProperties img_limits;
         if (VK_SUCCESS == GPDIFPHelper(gpu, &image_ci, &img_limits) && img_limits.maxMipLevels == 1) return format;
     }
