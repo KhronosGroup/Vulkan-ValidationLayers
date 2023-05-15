@@ -156,9 +156,9 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        skip |= LogInfo(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
-                        "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
-                        inst_api_name.c_str(), dev_api_name.c_str());
+        LogInfo(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
+                "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
+                inst_api_name.c_str(), dev_api_name.c_str());
     }
 
     std::vector<std::string> extensions;
@@ -393,14 +393,14 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
             skip |= CheckPipelineStageFlags("vkQueueSubmit", pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
         if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
-            skip |= LogInfo(device, kVUID_BestPractices_SemaphoreCount,
-                            "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.",
-                            submit, submit);
+            LogInfo(device, kVUID_BestPractices_SemaphoreCount,
+                    "pSubmits[%" PRIu32 "].pSignalSemaphores is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.", submit,
+                    submit);
         }
         if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            skip |= LogInfo(device, kVUID_BestPractices_SemaphoreCount,
-                            "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.",
-                            submit, submit);
+            LogInfo(device, kVUID_BestPractices_SemaphoreCount,
+                    "pSubmits[%" PRIu32 "].pWaitSemaphores is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit,
+                    submit);
         }
     }
 
