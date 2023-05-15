@@ -22,7 +22,7 @@ import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
 from common_codegen import *
-import sync_val_gen
+import generators.sync_val_gen as sync_val_gen
 
 #
 # HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
