@@ -14,12 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import argparse
-import shutil
 import subprocess
 import sys
-import platform
 
 import common_ci
 

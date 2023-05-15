@@ -17,7 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os,re,sys
+import re,sys
 import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple

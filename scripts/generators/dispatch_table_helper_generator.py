@@ -17,10 +17,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os,re,sys
-import xml.etree.ElementTree as etree
+import sys
 from generator import *
-from collections import namedtuple
 from common_codegen import *
 
 #

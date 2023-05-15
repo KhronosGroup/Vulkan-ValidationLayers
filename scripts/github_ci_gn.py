@@ -16,13 +16,9 @@
 
 import os
 import argparse
-import shutil
 import subprocess
 import sys
-import platform
 import common_ci
-from argparse import RawDescriptionHelpFormatter
-
 #
 # Build VVL repo using gn and Ninja
 def BuildGn():

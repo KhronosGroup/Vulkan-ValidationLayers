@@ -16,13 +16,9 @@
 
 import os
 import argparse
-import shutil
 import subprocess
 import sys
-import platform
-
 import common_ci
-from argparse import RawDescriptionHelpFormatter
 
 SUPPORTED_ABIS = [ 'arm64-v8a', 'armeabi-v7a']
 DEFAULT_ABI = SUPPORTED_ABIS[0]
