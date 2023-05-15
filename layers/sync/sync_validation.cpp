@@ -6870,9 +6870,9 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
         if (barrier_set.single_exec_scope) {
             if (barrier_set.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
                 const std::string vuid = std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
-                skip = sync_state.LogInfo(command_buffer_handle, vuid,
-                                          "%s, srcStageMask includes %s, unsupported by synchronization validation.", CmdName(),
-                                          string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
+                sync_state.LogInfo(command_buffer_handle, vuid,
+                                   "%s, srcStageMask includes %s, unsupported by synchronization validation.", CmdName(),
+                                   string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT));
             } else {
                 const auto &barriers = barrier_set.memory_barriers;
                 for (size_t barrier_index = 0; barrier_index < barriers.size(); barrier_index++) {
@@ -6880,11 +6880,11 @@ bool SyncOpWaitEvents::Validate(const CommandBufferAccessContext &cb_context) co
                     if (barrier.src_exec_scope.mask_param & VK_PIPELINE_STAGE_HOST_BIT) {
                         const std::string vuid =
                             std::string("SYNC-") + std::string(CmdName()) + std::string("-hostevent-unsupported");
-                        skip =
-                            sync_state.LogInfo(command_buffer_handle, vuid,
-                                               "%s, srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
-                                               CmdName(), string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT),
-                                               "pDependencyInfo", barrier_set_index, "pMemoryBarriers", barrier_index);
+
+                        sync_state.LogInfo(command_buffer_handle, vuid,
+                                           "%s, srcStageMask %s of %s %zu, %s %zu, unsupported by synchronization validation.",
+                                           CmdName(), string_VkPipelineStageFlagBits(VK_PIPELINE_STAGE_HOST_BIT), "pDependencyInfo",
+                                           barrier_set_index, "pMemoryBarriers", barrier_index);
                     }
                 }
             }
@@ -7030,7 +7030,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
             "%s: srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto handle = exec_context.Handle();
         if (events_not_found) {
-            skip |= sync_state.LogInfo(handle, vuid, message, CmdName(), barrier_mask_params,
+            sync_state.LogInfo(handle, vuid, message, CmdName(), barrier_mask_params,
                                        sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(),
                                        " vkCmdSetEvent may be in previously submitted command buffer.");
         } else {
