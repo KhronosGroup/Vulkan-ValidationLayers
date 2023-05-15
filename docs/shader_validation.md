@@ -148,7 +148,7 @@ OpImageSampleImplicitLod -> OpSampledImage -> OpTypeSampledImage
                                            -> OpLoad -> OpAccessChain (optional) -> OpVariable (sampler)
 ```
 
-Both contain a `OpTypeSampledImage` that how we know a `VkSampler` is involved
+Both contain a `OpTypeSampledImage`, which is how we know a `VkSampler` is being used with the variable
 
 But it is also possible to have the Image and Samplers mix and match
 
@@ -164,7 +164,7 @@ ImageAccess -> Image_0 (non-sampled access)
 
 This is handled by having the `Resource Interface` variable track if it has a `OpTypeSampledImage`, `OpTypeImage` or `OpTypeSampler`
 
-- If it has `OpTypeSampledImage`, there is **no way** for it to part of a `SAMPLER`/`SAMPLED_IMAGE` combo
+- If it has `OpTypeSampledImage`, there is **no way** for it to be part of a `SAMPLER`/`SAMPLED_IMAGE` combo
 - If it has a `OpTypeImage` or `OpTypeSampler`, we need to know if they are **accessed together**
     - This means the the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
     - There is no case where only a `OpTypeSampler` variable can be used by itself, so no need to track it the other way

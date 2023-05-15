@@ -720,7 +720,10 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     // These have their own object class, but need entire module parsed first
     std::vector<const Instruction*> entry_point_instructions;
     std::vector<const Instruction*> type_struct_instructions;
-    std::vector<const Instruction*> image_instructions;
+
+    // Need to get ImageAccesses as EntryPoint's variables depend on it
+    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
+    ImageAccessMap image_access_map;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -730,6 +733,8 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         if (result_id != 0) {
             definitions[result_id] = &insn;
         }
+
+        bool image_instructions = false;
 
         switch (insn.Opcode()) {
             // Specialization constants
@@ -836,7 +841,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             case spv::OpImageSparseFetch:
             case spv::OpImageSparseGather:
             case spv::OpImageSparseTexelsResident: {
-                image_instructions.push_back(&insn);
+                image_instructions = true;
                 break;
             }
             case spv::OpStore: {
@@ -844,7 +849,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 break;
             }
             case spv::OpImageWrite: {
-                image_instructions.push_back(&insn);
+                image_instructions = true;
                 image_write_load_id_map.emplace(&insn, insn.Word(1));
                 break;
             }
@@ -895,6 +900,13 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 // We don't care about any other defs for now.
                 break;
         }
+
+        if (image_instructions) {
+            auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, insn));
+            if (new_access->variable_image_insn) {
+                image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
+            }
+        }
     }
 
     for (const Instruction* decoration_inst : builtin_decoration_inst) {
@@ -912,17 +924,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     for (const auto& insn : type_struct_instructions) {
         auto new_struct = type_structs.emplace_back(std::make_shared<TypeStructInfo>(module_state, *insn));
         type_struct_map[new_struct->id] = new_struct;
-    }
-
-    // Need to get ImageAccesses as EntryPoint's variables depend on it
-    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
-    ImageAccessMap image_access_map;
-
-    for (const auto& insn : image_instructions) {
-        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
-        if (new_access->variable_image_insn) {
-            image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
-        }
     }
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
