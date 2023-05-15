@@ -29,53 +29,18 @@ class BestPracticesOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  conventions = None,
                  filename = None,
-                 directory = '.',
-                 genpath = None,
-                 apiname = 'vulkan',
-                 profile = None,
-                 versions = '.*',
-                 emitversions = '.*',
-                 defaultExtensions = 'vulkan',
-                 addExtensions = None,
-                 removeExtensions = None,
-                 emitExtensions = None,
-                 emitSpirv = None,
-                 sortProcedure = regSortFeatures,
-                 genFuncPointers = True,
-                 protectFile = True,
-                 protectFeature = False,
-                 apicall = 'VKAPI_ATTR ',
-                 apientry = 'VKAPI_CALL ',
-                 apientryp = 'VKAPI_PTR *',
-                 indentFuncProto = True,
-                 indentFuncPointer = False,
-                 alignFuncParam = 48,
-                 expandEnumerants = False):
+                 directory = '.'):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
                 directory = directory,
-                genpath = genpath,
-                apiname = apiname,
-                profile = profile,
-                versions = versions,
-                emitversions = emitversions,
-                defaultExtensions = defaultExtensions,
-                addExtensions = addExtensions,
-                removeExtensions = removeExtensions,
-                emitExtensions = emitExtensions,
-                emitSpirv = emitSpirv,
-                sortProcedure = sortProcedure)
-        self.genFuncPointers = genFuncPointers
-        self.protectFile     = protectFile
-        self.protectFeature  = protectFeature
-        self.apicall         = apicall
-        self.apientry        = apientry
-        self.apientryp       = apientryp
-        self.indentFuncProto = indentFuncProto
-        self.indentFuncPointer = indentFuncPointer
-        self.alignFuncParam  = alignFuncParam
-        self.expandEnumerants = expandEnumerants
+                apiname = 'vulkan',
+                defaultExtensions = 'vulkan',
+                emitExtensions = '.*')
+        self.apicall         = 'VKAPI_ATTR '
+        self.apientry        = 'VKAPI_CALL '
+        self.apientryp       = 'VKAPI_PTR *'
+        self.alignFuncParam  = 48
 #
 # BestPracticesOutputGenerator(errFile, warnFile, diagFile)
 class BestPracticesOutputGenerator(OutputGenerator):
@@ -295,7 +260,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             intercept += '    ValidationStateTracker::PostCallRecord'+cmdname[2:] + '(' + params_text
             if cmdname in self.manual_postcallrecord_list:
                 intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
-            
+
             if success_codes is not None:
                 intercept +=  '    if (result > VK_SUCCESS) {\n'
                 intercept += f'        LogPositiveSuccessCode("{cmdname}", result); // {success_codes}\n'

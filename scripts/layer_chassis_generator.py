@@ -31,85 +31,24 @@ from parameter_validation_generator import ParameterValidationOutputGenerator
 #
 # Adds options used by LayerFactoryOutputGenerator objects during factory
 # layer generation.
-#
-# Additional members
-#   protectFile - True if multiple inclusion protection should be
-#     generated (based on the filename) around the entire header.
-#   protectFeature - True if #ifndef..#endif protection should be
-#     generated around a feature interface in the header file.
-#   genFuncPointers - True if function pointer typedefs should be
-#     generated
-#   protectProto - If conditional protection should be generated
-#     around prototype declarations, set to either '#ifdef'
-#     to require opt-in (#ifdef protectProtoStr) or '#ifndef'
-#     to require opt-out (#ifndef protectProtoStr). Otherwise
-#     set to None.
-#   protectProtoStr - #ifdef/#ifndef symbol to use around prototype
-#     declarations, if protectProto is set
-#   apicall - string to use for the function declaration prefix,
-#     such as APICALL on Windows.
-#   apientry - string to use for the calling convention macro,
-#     in typedefs, such as APIENTRY.
-#   apientryp - string to use for the calling convention macro
-#     in function pointer typedefs, such as APIENTRYP.
-#   indentFuncProto - True if prototype declarations should put each
-#     parameter on a separate line
-#   indentFuncPointer - True if typedefed function pointers should put each
-#     parameter on a separate line
-#   alignFuncParam - if nonzero and parameters are being put on a
-#     separate line, align parameter names at the specified column
 class LayerChassisGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  conventions = None,
                  filename = None,
                  directory = '.',
-                 genpath = None,
-                 apiname = 'vulkan',
-                 profile = None,
-                 versions = '.*',
-                 emitversions = '.*',
-                 defaultExtensions = 'vulkan',
-                 addExtensions = None,
-                 removeExtensions = None,
-                 emitExtensions = None,
                  warnExtensions = [],
-                 emitSpirv = None,
-                 sortProcedure = regSortFeatures,
-                 genFuncPointers = True,
-                 protectFile = True,
-                 protectFeature = True,
-                 apicall = 'VKAPI_ATTR ',
-                 apientry = 'VKAPI_CALL ',
-                 apientryp = 'VKAPI_PTR *',
-                 indentFuncProto = True,
-                 indentFuncPointer = False,
-                 alignFuncParam = 48,
-                 helper_file_type = '',
-                 expandEnumerants = False):
+                 helper_file_type = ''):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
                 directory = directory,
-                genpath = genpath,
-                apiname = apiname,
-                profile = profile,
-                versions = versions,
-                emitversions = emitversions,
-                defaultExtensions = defaultExtensions,
-                addExtensions = addExtensions,
-                removeExtensions = removeExtensions,
-                emitExtensions = emitExtensions,
-                emitSpirv = emitSpirv,
-                sortProcedure = sortProcedure)
-        self.genFuncPointers   = genFuncPointers
-        self.protectFile       = protectFile
-        self.protectFeature    = protectFeature
-        self.apicall           = apicall
-        self.apientry          = apientry
-        self.apientryp         = apientryp
-        self.indentFuncProto   = indentFuncProto
-        self.indentFuncPointer = indentFuncPointer
-        self.alignFuncParam    = alignFuncParam
+                apiname = 'vulkan',
+                defaultExtensions = 'vulkan',
+                emitExtensions = '.*')
+        self.apicall         = 'VKAPI_ATTR '
+        self.apientry        = 'VKAPI_CALL '
+        self.apientryp       = 'VKAPI_PTR *'
+        self.alignFuncParam    = 48
         self.helper_file_type  = helper_file_type
         self.warnExtensions    = warnExtensions
 

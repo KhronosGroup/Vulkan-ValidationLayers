@@ -31,50 +31,20 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  conventions = None,
                  filename = None,
                  directory = '.',
-                 genpath = None,
-                 apiname = 'vulkan',
-                 profile = None,
-                 versions = '.*',
-                 emitversions = '.*',
-                 defaultExtensions = 'vulkan',
-                 addExtensions = None,
-                 removeExtensions = None,
-                 emitExtensions = None,
-                 emitSpirv = None,
-                 sortProcedure = regSortFeatures,
-                 genFuncPointers = True,
-                 protectFile = True,
-                 protectFeature = True,
-                 apicall = 'VKAPI_ATTR ',
-                 apientry = 'VKAPI_CALL ',
-                 apientryp = 'VKAPI_PTR *',
-                 alignFuncParam = 48,
                  library_name = '',
-                 expandEnumerants = False,
                  helper_file_type = '',
                  valid_usage_path = ''):
         GeneratorOptions.__init__(self,
                 conventions = conventions,
                 filename = filename,
                 directory = directory,
-                genpath = genpath,
-                apiname = apiname,
-                profile = profile,
-                versions = versions,
-                emitversions = emitversions,
-                defaultExtensions = defaultExtensions,
-                addExtensions = addExtensions,
-                removeExtensions = removeExtensions,
-                emitExtensions = emitExtensions,
-                emitSpirv = emitSpirv,
-                sortProcedure = sortProcedure)
-        self.genFuncPointers  = genFuncPointers
-        self.protectFile      = protectFile
-        self.protectFeature   = protectFeature
-        self.apicall          = apicall
-        self.apientry         = apientry
-        self.apientryp        = apientryp
-        self.alignFuncParam   = alignFuncParam
+                apiname = 'vulkan',
+                defaultExtensions = 'vulkan',
+                emitExtensions = '.*')
+        self.apicall         = 'VKAPI_ATTR '
+        self.apientry        = 'VKAPI_CALL '
+        self.apientryp       = 'VKAPI_PTR *'
+        self.alignFuncParam   = 48
         self.library_name     = library_name
         self.helper_file_type = helper_file_type
         self.valid_usage_path = valid_usage_path
@@ -1203,7 +1173,7 @@ class HelperFileOutputGenerator(OutputGenerator):
 
 #include <vulkan/vk_layer.h>
 
-"""     
+"""
         if self.genOpts.filename.endswith('_utils.cpp'):
             safe_struct_helper_source += self.build_safe_struct_utility_funcs()
         else:
@@ -1277,7 +1247,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             destruct_txt = ''
 
             custom_definitions = {
-            # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array. 
+            # as_geom_khr_host_alloc maps a VkAccelerationStructureGeometryKHR to its host allocated instance array, if the user supplied such an array.
             'VkAccelerationStructureGeometryKHR':
 """
 struct ASGeomKHRExtraData {
@@ -1921,7 +1891,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
             if copy_pnext:
                 destruct_txt += '    if (pNext)\n'
                 destruct_txt += '        FreePnextChain(pNext);\n'
-            
+
             if (self.structOrUnion[item.name] == 'union'):
                 if (item.name == 'VkDescriptorDataEXT'):
                     default_init_list = ' type_at_end {0},'
