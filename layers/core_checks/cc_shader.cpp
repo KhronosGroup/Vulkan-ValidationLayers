@@ -215,56 +215,13 @@ bool CoreChecks::ValidateConservativeRasterization(const SHADER_MODULE_STATE &mo
     return skip;
 }
 
-PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vector<uint8_t> &push_constant_data_update,
-                                                                const StructInfo &push_constant_used_in_shader,
-                                                                uint32_t &out_issue_index) const {
-    const auto *used_bytes = push_constant_used_in_shader.GetUsedbytes();
-    const auto used_bytes_size = used_bytes->size();
-    if (used_bytes_size == 0) return PC_Byte_Updated;
-
-    const auto push_constant_data_update_size = push_constant_data_update.size();
-    const auto *data = push_constant_data_update.data();
-    if ((*data == PC_Byte_Updated) && std::memcmp(data, data + 1, push_constant_data_update_size - 1) == 0) {
-        if (used_bytes_size <= push_constant_data_update_size) {
-            return PC_Byte_Updated;
-        }
-        const auto used_bytes_size1 = used_bytes_size - push_constant_data_update_size;
-
-        const auto *used_bytes_data1 = used_bytes->data() + push_constant_data_update_size;
-        if ((*used_bytes_data1 == 0) && std::memcmp(used_bytes_data1, used_bytes_data1 + 1, used_bytes_size1 - 1) == 0) {
-            return PC_Byte_Updated;
-        }
-    }
-
-    uint32_t i = 0;
-    for (const auto used : *used_bytes) {
-        if (used) {
-            if (i >= push_constant_data_update.size() || push_constant_data_update[i] == PC_Byte_Not_Set) {
-                out_issue_index = i;
-                return PC_Byte_Not_Set;
-            } else if (push_constant_data_update[i] == PC_Byte_Not_Updated) {
-                out_issue_index = i;
-                return PC_Byte_Not_Updated;
-            }
-        }
-        ++i;
-    }
-    return PC_Byte_Updated;
-}
-
 bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
-                                           safe_VkPipelineShaderStageCreateInfo const *create_info) const {
+                                           const EntryPoint &entrypoint) const {
     bool skip = false;
-    // Temp workaround to prevent false positive errors
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450
-    if (module_state.HasMultipleEntryPoints()) {
-        return skip;
-    }
 
-    const VkShaderStageFlagBits stage = create_info->stage;
-    // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    const auto *push_constants = module_state.FindEntrypointPushConstant(create_info->pName, stage);
-    if (!push_constants || !push_constants->IsUsed()) {
+    const VkShaderStageFlagBits stage = entrypoint.stage;
+    const auto push_constant_variable = entrypoint.push_constant_variable;
+    if (!push_constant_variable) {
         return skip;
     }
     const auto &pipeline_layout = pipeline.PipelineLayoutState();
@@ -293,22 +250,17 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     for (auto const &range : *push_constant_ranges) {
         if (range.stageFlags & stage) {
             found_stage = true;
-            std::string location_desc;
-            std::vector<uint8_t> push_constant_bytes_set;
-            if (range.offset > 0) {
-                push_constant_bytes_set.resize(range.offset, PC_Byte_Not_Set);
-            }
-            push_constant_bytes_set.resize(range.offset + range.size, PC_Byte_Updated);
-            uint32_t issue_index = 0;
-            const auto ret = ValidatePushConstantSetUpdate(push_constant_bytes_set, *push_constants, issue_index);
-
-            if (ret == PC_Byte_Not_Set) {
-                const auto loc_descr = push_constants->GetLocationDesc(issue_index);
+            const uint32_t range_end = range.offset + range.size;
+            const uint32_t push_constant_end = push_constant_variable->offset + push_constant_variable->size;
+            // spec: "If a push constant block is declared in a shader"
+            // Is checked regardless if element in Block is not statically used
+            if ((push_constant_variable->offset < range.offset) | (push_constant_end > range_end)) {
                 const LogObjectList objlist(module_state.vk_shader_module(), pipeline_layout->layout());
-                skip |= LogError(
-                    objlist, vuid, "%s(): pCreateInfos[%" PRIu32 "] Push constant buffer:%s in %s is out of range in %s.",
-                    pipeline.GetCreateFunctionName(), pipeline.create_index, loc_descr.c_str(),
-                    string_VkShaderStageFlags(stage).c_str(), report_data->FormatHandle(pipeline_layout->layout()).c_str());
+                skip |= LogError(objlist, vuid,
+                                 "%s(): pCreateInfos[%" PRIu32 "] %s has a push constant buffer Block with range [%" PRIu32
+                                 ", %" PRIu32 "] which outside the pipeline layout range of [%" PRIu32 ", %" PRIu32 "].",
+                                 pipeline.GetCreateFunctionName(), pipeline.create_index, string_VkShaderStageFlags(stage).c_str(),
+                                 push_constant_variable->offset, push_constant_end, range.offset, range_end);
                 break;
             }
         }
@@ -2776,7 +2728,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     }
 
     // Validate Push Constants use
-    skip |= ValidatePushConstantUsage(pipeline, module_state, create_info);
+    skip |= ValidatePushConstantUsage(pipeline, module_state, entrypoint);
     // can dereference because entrypoint is validated by here
     skip |= ValidateShaderDescriptorVariable(module_state, stage, pipeline, entrypoint);
 

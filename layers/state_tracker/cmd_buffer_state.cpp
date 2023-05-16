@@ -244,7 +244,6 @@ void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT
 
     push_constant_data_ranges = pipeline_layout_state->push_constant_ranges;
     push_constant_data.clear();
-    push_constant_data_update.clear();
     uint32_t size_needed = 0;
     for (const auto &push_constant_range : *push_constant_data_ranges) {
         auto size = push_constant_range.offset + push_constant_range.size;
@@ -253,24 +252,6 @@ void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT
         auto stage_flags = push_constant_range.stageFlags;
         uint32_t bit_shift = 0;
         while (stage_flags) {
-            if (stage_flags & 1) {
-                VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
-                const auto it = push_constant_data_update.find(flag);
-
-                if (it != push_constant_data_update.end()) {
-                    if (it->second.size() < push_constant_range.offset) {
-                        it->second.resize(push_constant_range.offset, PC_Byte_Not_Set);
-                    }
-                    if (it->second.size() < size) {
-                        it->second.resize(size, PC_Byte_Not_Updated);
-                    }
-                } else {
-                    std::vector<uint8_t> bytes;
-                    bytes.resize(push_constant_range.offset, PC_Byte_Not_Set);
-                    bytes.resize(size, PC_Byte_Not_Updated);
-                    push_constant_data_update[flag] = bytes;
-                }
-            }
             stage_flags = stage_flags >> 1;
             ++bit_shift;
         }
@@ -1566,7 +1547,6 @@ void CMD_BUFFER_STATE::UnbindResources() {
     // Push constants
     push_constant_data.clear();
     push_constant_data_ranges.reset();
-    push_constant_data_update.clear();
 
     // Reset status of cb to force rebinding of all resources
     // Index buffer included

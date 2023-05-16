@@ -3559,10 +3559,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (!cb_state.push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_state.push_constant_data_ranges)) {
         for (const auto &stage : pipeline.stage_states) {
-            const auto *push_constants =
-                stage.module_state->FindEntrypointPushConstant(stage.create_info->pName, stage.create_info->stage);
-            if (!push_constants || !push_constants->IsUsed()) {
-                continue;
+            if (!stage.entrypoint || !stage.entrypoint->push_constant_variable) {
+                continue;  // no static push constant in shader
             }
 
             // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
@@ -3573,12 +3571,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                                  "pipeline layout %s.",
                                  function, string_VkShaderStageFlags(stage.create_info->stage).c_str(),
                                  report_data->FormatHandle(pipeline_layout->layout()).c_str());
-            }
-
-            const auto it = cb_state.push_constant_data_update.find(stage.create_info->stage);
-            if (it == cb_state.push_constant_data_update.end()) {
-                // This error has been printed in ValidatePushConstantUsage.
-                break;
             }
         }
     }

@@ -64,6 +64,9 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
         case spv::DecorationPerPrimitiveEXT:  // VK_EXT_mesh_shader
             flags |= per_primitive_ext;
             break;
+        case spv::DecorationOffset:
+            offset |= value;
+            break;
         default:
             break;
     }
@@ -431,7 +434,7 @@ std::vector<StageInteraceVariable> EntryPoint::GetStageInterfaceVariables(const 
 }
 
 std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables(const SHADER_MODULE_STATE& module_state,
-                                                                                 const EntryPoint& entrypoint,
+                                                                                 EntryPoint& entrypoint,
                                                                                  const ImageAccessMap& image_access_map) {
     std::vector<ResourceInterfaceVariable> variables;
     if (!module_state.has_valid_spirv) {
@@ -450,6 +453,8 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
             variables.emplace_back(module_state, entrypoint, insn, image_access_map);
+        } else if (storage_class == spv::StorageClassPushConstant) {
+            entrypoint.push_constant_variable = std::make_shared<PushConstantVariable>(module_state, insn, entrypoint.stage);
         }
     }
     return variables;
@@ -930,8 +935,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     for (const auto& insn : entry_point_instructions) {
         entry_points.emplace_back(std::make_shared<EntryPoint>(module_state, *insn, image_access_map));
     }
-
-    SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
 }
 
 void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
@@ -1008,15 +1011,6 @@ std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     std::ostringstream ss;
     DescribeTypeInner(ss, type, 0);
     return ss.str();
-}
-
-const StructInfo* SHADER_MODULE_STATE::FindEntrypointPushConstant(char const* name, VkShaderStageFlagBits stageBits) const {
-    for (const auto& entry_point : static_data_.entry_points) {
-        if (entry_point->name.compare(name) == 0 && entry_point->stage == stageBits) {
-            return &(entry_point->push_constant_used_in_shader);
-        }
-    }
-    return nullptr;
 }
 
 std::shared_ptr<const EntryPoint> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
@@ -1227,201 +1221,6 @@ NumericType SHADER_MODULE_STATE::GetNumericType(uint32_t type) const {
             return GetNumericType(insn->Word(3));
         default:
             return NumericTypeUnknown;
-    }
-}
-
-const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn) const {
-    while (true) {
-        if (insn->Opcode() == spv::OpTypePointer) {
-            insn = FindDef(insn->Word(3));
-        } else if (insn->Opcode() == spv::OpTypeArray) {
-            insn = FindDef(insn->Word(2));
-        } else if (insn->Opcode() == spv::OpTypeStruct) {
-            return insn;
-        } else {
-            return nullptr;
-        }
-    }
-}
-
-void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, StructInfo& data) const {
-    const Instruction* struct_type = GetStructType(insn);
-    data.size = 0;
-
-    StructInfo data1;
-    uint32_t element_index = 2;  // offset where first element in OpTypeStruct is
-    uint32_t local_offset = 0;
-    // offsets into struct
-    std::vector<uint32_t> offsets;
-    offsets.resize(struct_type->Length() - element_index);
-
-    for (const Instruction* member_decorate : static_data_.member_decoration_inst) {
-        if ((member_decorate->Word(1) == struct_type->Word(1)) && (member_decorate->Length() == 5) &&
-            (member_decorate->Word(3) == spv::DecorationOffset)) {
-            // The members of struct in SPRIV_R aren't always sort, so we need to know their order.
-            offsets[member_decorate->Word(2)] = member_decorate->Word(4);
-        }
-    }
-
-    for (const uint32_t offset : offsets) {
-        local_offset = offset;
-        data1 = {};
-        data1.root = data.root;
-        data1.offset = local_offset;
-        const Instruction* def_member = FindDef(struct_type->Word(element_index));
-
-        // Array could be multi-dimensional
-        while (def_member->Opcode() == spv::OpTypeArray) {
-            const auto len_id = def_member->Word(3);
-            const Instruction* def_len = FindDef(len_id);
-            data1.array_length_hierarchy.emplace_back(def_len->Word(3));  // array length
-            def_member = FindDef(def_member->Word(2));
-        }
-
-        if (def_member->Opcode() == spv::OpTypeStruct) {
-            DefineStructMember(def_member, data1);
-        } else if (def_member->Opcode() == spv::OpTypePointer) {
-            if (def_member->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
-                // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
-                // that "points to something."
-                data1.size = 8;
-            } else {
-                // If it's OpTypePointer. it means the member is a buffer, the type will be TypePointer, and then struct
-                DefineStructMember(def_member, data1);
-            }
-        } else {
-            if (def_member->Opcode() == spv::OpTypeMatrix) {
-                data1.array_length_hierarchy.emplace_back(def_member->Word(3));  // matrix's columns. matrix's row is vector.
-                def_member = FindDef(def_member->Word(2));
-            }
-
-            if (def_member->Opcode() == spv::OpTypeVector) {
-                data1.array_length_hierarchy.emplace_back(def_member->Word(3));  // vector length
-                def_member = FindDef(def_member->Word(2));
-            }
-
-            // Get scalar type size. The value in SPRV-R is bit. It needs to translate to byte.
-            data1.size = (def_member->Word(2) / 8);
-        }
-        const auto array_length_hierarchy_szie = data1.array_length_hierarchy.size();
-        if (array_length_hierarchy_szie > 0) {
-            data1.array_block_size.resize(array_length_hierarchy_szie, 1);
-
-            for (int i2 = static_cast<int>(array_length_hierarchy_szie - 1); i2 > 0; --i2) {
-                data1.array_block_size[i2 - 1] = data1.array_length_hierarchy[i2] * data1.array_block_size[i2];
-            }
-        }
-        data.struct_members.emplace_back(data1);
-        ++element_index;
-    }
-    uint32_t total_array_length = 1;
-    for (const auto length : data1.array_length_hierarchy) {
-        total_array_length *= length;
-    }
-    data.size = local_offset + data1.size * total_array_length;
-}
-
-uint32_t SHADER_MODULE_STATE::UpdateOffset(uint32_t offset, const std::vector<uint32_t>& array_indices,
-                                           const StructInfo& data) const {
-    int array_indices_size = static_cast<int>(array_indices.size());
-    if (array_indices_size) {
-        uint32_t array_index = 0;
-        uint32_t i = 0;
-        for (const auto index : array_indices) {
-            array_index += (data.array_block_size[i] * index);
-            ++i;
-        }
-        offset += (array_index * data.size);
-    }
-    return offset;
-}
-
-void SHADER_MODULE_STATE::SetUsedBytes(uint32_t offset, const std::vector<uint32_t>& array_indices, const StructInfo& data) const {
-    int array_indices_size = static_cast<int>(array_indices.size());
-    uint32_t block_memory_size = data.size;
-    for (uint32_t i = static_cast<int>(array_indices_size); i < data.array_length_hierarchy.size(); ++i) {
-        block_memory_size *= data.array_length_hierarchy[i];
-    }
-
-    offset = UpdateOffset(offset, array_indices, data);
-
-    uint32_t end = offset + block_memory_size;
-    auto used_bytes = data.GetUsedbytes();
-    if (used_bytes->size() < end) {
-        used_bytes->resize(end, 0);
-    }
-    std::memset(used_bytes->data() + offset, true, static_cast<std::size_t>(block_memory_size));
-}
-
-void SHADER_MODULE_STATE::RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
-                                       const Instruction* access_chain, const StructInfo& data) const {
-    if (access_chain_word_index < access_chain->Length()) {
-        if (data.array_length_hierarchy.size() > array_indices.size()) {
-            const Instruction* def = FindDef(access_chain->Word(access_chain_word_index));
-            ++access_chain_word_index;
-
-            if (def && def->Opcode() == spv::OpConstant) {
-                array_indices.emplace_back(def->Word(3));
-                RunUsedArray(offset, array_indices, access_chain_word_index, access_chain, data);
-            } else {
-                // If it is a variable, set the all array is used.
-                if (access_chain_word_index < access_chain->Length()) {
-                    uint32_t array_length = data.array_length_hierarchy[array_indices.size()];
-                    for (uint32_t i = 0; i < array_length; ++i) {
-                        auto array_indices2 = array_indices;
-                        array_indices2.emplace_back(i);
-                        RunUsedArray(offset, array_indices2, access_chain_word_index, access_chain, data);
-                    }
-                } else {
-                    SetUsedBytes(offset, array_indices, data);
-                }
-            }
-        } else {
-            offset = UpdateOffset(offset, array_indices, data);
-            RunUsedStruct(offset, access_chain_word_index, access_chain, data);
-        }
-    } else {
-        SetUsedBytes(offset, array_indices, data);
-    }
-}
-
-void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction* access_chain,
-                                        const StructInfo& data) const {
-    std::vector<uint32_t> array_indices_emptry;
-
-    if (access_chain_word_index < access_chain->Length()) {
-        auto strcut_member_index = GetConstantValueById(access_chain->Word(access_chain_word_index));
-        ++access_chain_word_index;
-
-        auto data1 = data.struct_members[strcut_member_index];
-        RunUsedArray(offset + data1.offset, array_indices_emptry, access_chain_word_index, access_chain, data1);
-    }
-}
-
-void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const vvl::unordered_set<uint32_t>& accessible_ids,
-                                              const StructInfo& data) const {
-    for (const auto& id : accessible_ids) {
-        const Instruction* insn = FindDef(id);
-        if (insn->Opcode() == spv::OpAccessChain) {
-            if (insn->Word(3) == variable_id) {
-                RunUsedStruct(0, 4, insn, data);
-            }
-        }
-    }
-}
-
-void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE& module_state,
-                                                      std::vector<std::shared_ptr<EntryPoint>>& entry_points) {
-    for (auto& entrypoint : entry_points) {
-        for (const Instruction* var_insn : module_state.static_data_.variable_inst) {
-            if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
-                const Instruction* type = module_state.FindDef(var_insn->Word(1));
-                entrypoint->push_constant_used_in_shader.root = &entrypoint->push_constant_used_in_shader;
-                module_state.DefineStructMember(type, entrypoint->push_constant_used_in_shader);
-                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint->accessible_ids,
-                                                 entrypoint->push_constant_used_in_shader);
-            }
-        }
     }
 }
 
@@ -1680,7 +1479,8 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         if (block_decorated_with_location) {
             // In case of option 1, need to keep track as we go
             uint32_t base_location = variable.decorations.location;
-            for (const uint32_t member_id : variable.type_struct_info->member_ids) {
+            for (const auto& members : variable.type_struct_info->members) {
+                const uint32_t member_id = members.id;
                 const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
 
                 // Info needed to test type matching later
@@ -1701,7 +1501,7 @@ std::vector<InterfaceSlot> StageInteraceVariable::GetInterfaceSlots(StageInterac
         } else {
             // Option 2
             for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
-                const uint32_t member_id = variable.type_struct_info->member_ids[i];
+                const uint32_t member_id = variable.type_struct_info->members[i].id;
                 // Location/Components cant be decorated in nested structs, so no need to keep checking further
                 // The spec says all or non of the member variables must have Location
                 const auto member_decoration = variable.type_struct_info->decorations.member_decorations.at(i);
@@ -1774,8 +1574,8 @@ uint32_t StageInteraceVariable::GetBuiltinComponents(const StageInteraceVariable
         return count;
     }
     if (variable.type_struct_info) {
-        for (const uint32_t member_id : variable.type_struct_info->member_ids) {
-            count += module_state.GetComponentsConsumedByType(member_id);
+        for (const auto& members : variable.type_struct_info->members) {
+            count += module_state.GetComponentsConsumedByType(members.id);
         }
     } else {
         const uint32_t base_type_id = variable.base_type.ResultId();
@@ -1965,11 +1765,48 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const SHADER_MODULE_STATE& 
     }
 }
 
+PushConstantVariable::PushConstantVariable(const SHADER_MODULE_STATE& module_state, const Instruction& insn,
+                                           VkShaderStageFlagBits stage)
+    : VariableBase(module_state, insn, stage), offset(vvl::kU32Max), size(0) {
+    assert(type_struct_info != nullptr);  // Push Constants need to be structs
+
+    // Currently to know the range we only need to know
+    // - The lowest offset element is in root struct
+    // - how large the highest offset element is in root struct
+    //
+    // Note structs don't have to be ordered, the following is legal
+    //    OpMemberDecorate %x 1 Offset 0
+    //    OpMemberDecorate %x 0 Offset 4
+    uint32_t highest_element_index = 0;
+    uint32_t highest_element_offset = 0;
+    for (uint32_t i = 0; i < type_struct_info->members.size(); i++) {
+        const auto& member = type_struct_info->members[i];
+        // all struct elements are required to have offset decorations in Block
+        const uint32_t memeber_offset = member.decorations->offset;
+        offset = std::min(offset, memeber_offset);
+        if (memeber_offset > highest_element_offset) {
+            highest_element_index = i;
+            highest_element_offset = memeber_offset;
+        }
+    }
+    const auto& highest_member = type_struct_info->members[highest_element_index];
+    const uint32_t highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
+    size = (highest_element_size + highest_element_offset) - offset;
+}
+
 TypeStructInfo::TypeStructInfo(const SHADER_MODULE_STATE& module_state, const Instruction& struct_insn)
     : id(struct_insn.Word(1)), length(struct_insn.Length() - 2), decorations(module_state.GetDecorationSet(id)) {
-    member_ids.resize(length);
+    members.resize(length);
     for (uint32_t i = 0; i < length; i++) {
-        member_ids[i] = struct_insn.Word(2 + i);
+        Member& member = members[i];
+        member.id = struct_insn.Word(2 + i);
+        member.insn = module_state.FindDef(member.id);
+        member.type_struct_info = module_state.GetTypeStructInfo(member.insn);
+
+        const auto it = decorations.member_decorations.find(i);
+        if (it != decorations.member_decorations.end()) {
+            member.decorations = &it->second;
+        }
     }
 }
 
@@ -2023,8 +1860,14 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
             bit_size += GetTypeBitsSize(FindDef(insn->Word(i)));
         }
     } else if (opcode == spv::OpTypePointer) {
-        const Instruction* type = FindDef(insn->Word(3));
-        bit_size = GetTypeBitsSize(type);
+        if (insn->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+            // All PhysicalStorageBuffer are just 64-bit pointers
+            // We don't need to go chasing it to find the size, as it is not calculated for any VUs
+            bit_size = 8;
+        } else {
+            const Instruction* type = FindDef(insn->Word(3));
+            bit_size = GetTypeBitsSize(type);
+        }
     } else if (opcode == spv::OpVariable) {
         const Instruction* type = FindDef(insn->Word(1));
         bit_size = GetTypeBitsSize(type);

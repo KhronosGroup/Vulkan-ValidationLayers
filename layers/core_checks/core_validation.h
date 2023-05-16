@@ -913,12 +913,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateConservativeRasterization(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                            const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
-                                   safe_VkPipelineShaderStageCreateInfo const* create_info) const;
+                                   const EntryPoint& entrypoint) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const EntryPoint& entrypoint,
                                const PIPELINE_STATE& pipeline) const;
-    PushConstantByteState ValidatePushConstantSetUpdate(const std::vector<uint8_t>& push_constant_data_update,
-                                                        const StructInfo& push_constant_used_in_shader,
-                                                        uint32_t& out_issue_index) const;
     bool ValidateSpecializations(const SHADER_MODULE_STATE& module_state, const safe_VkSpecializationInfo* spec,
                                  const PIPELINE_STATE& pipeline) const;
     bool RequirePropertyFlag(const SHADER_MODULE_STATE& module_state, VkBool32 check, char const* flag, char const* structure,
