@@ -3227,21 +3227,6 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
         auto &push_constant_data = cb_state->push_constant_data;
         assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
         std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
-
-        auto flags = stageFlags;
-        uint32_t bit_shift = 0;
-        while (flags) {
-            if (flags & 1) {
-                VkShaderStageFlagBits flag = static_cast<VkShaderStageFlagBits>(1 << bit_shift);
-                const auto it = cb_state->push_constant_data_update.find(flag);
-
-                if (it != cb_state->push_constant_data_update.end()) {
-                    std::memset(it->second.data() + offset, PC_Byte_Updated, static_cast<std::size_t>(size));
-                }
-            }
-            flags = flags >> 1;
-            ++bit_shift;
-        }
     }
 }
 

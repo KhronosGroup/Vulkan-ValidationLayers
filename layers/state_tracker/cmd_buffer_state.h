@@ -362,9 +362,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
 
-    std::map<VkShaderStageFlagBits, std::vector<uint8_t>>
-        push_constant_data_update;  // vector's value is enum PushConstantByteState.
-
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
 
