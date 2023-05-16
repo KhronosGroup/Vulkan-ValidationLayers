@@ -337,8 +337,8 @@ inline bool operator==(const ResourceInterfaceVariable &a, const ResourceInterfa
 inline bool operator<(const ResourceInterfaceVariable &a, const ResourceInterfaceVariable &b) noexcept { return a.id < b.id; }
 
 // vkspec.html#interfaces-resources-pushconst
-// need to be statically used in shader
-// are always OpTypeStruct and Block decorated
+// Push constants need to be statically used in shader
+// Push constants are always OpTypeStruct and Block decorated
 struct PushConstantVariable : public VariableBase {
     // This info could be found/saved in TypeStructInfo, but since Push Constants are the only ones using it right now, no point to
     // do it for every struct
