@@ -38,31 +38,56 @@ if ("${CMAKE_ANDROID_STL_TYPE}" MATCHES "static")
     message(FATAL_ERROR "Cannot build tests with ${CMAKE_ANDROID_STL_TYPE}!")
 endif()
 
+set_directory_properties(PROPERTIES "COMPILE_OPTIONS" "") # Disable compiler warnings
+
+enable_language(C) # NOTE: We need to enable the C language for android_native_app_glue.c
+
 set(native_app_glue_dir "${ANDROID_NDK}/sources/android/native_app_glue")
 
 if (NOT EXISTS ${native_app_glue_dir})
     message(FATAL_ERROR "Couldn't find Android Native Glue directory!")
 endif()
 
-# While AndroidNdkModules.cmake exists it cannot be used reliably since it's not part of upstream CMake.
-target_sources(vk_layer_validation_tests PRIVATE
+add_library(android_glue STATIC)
+
+target_include_directories(android_glue PUBLIC ${native_app_glue_dir})
+target_sources(android_glue PRIVATE
     ${native_app_glue_dir}/android_native_app_glue.c
     ${native_app_glue_dir}/android_native_app_glue.h
 )
 
-target_include_directories(vk_layer_validation_tests PRIVATE ${native_app_glue_dir})
+# Despite the fact this issue has been fixed "https://github.com/android-ndk/ndk/issues/381".
+# We still need to force export ANativeActivity_onCreate.
+target_link_options(android_glue PUBLIC -u ANativeActivity_onCreate)
 
-# TODO, add testing to ensure vkEnumerateDeviceExtensionProperties and vkEnumerateDeviceLayerProperties are exported.
-# This is needed for older versions of the Android loader.
+target_link_libraries(vk_layer_validation_tests PRIVATE android_glue)
 
-# TODO, ensure the binary name is VulkanLayerValidationTests instead of vk_layer_validation_tests
+# 'VulkanLayerValidationTests.so' needed for Android.mk backcompat
+set_target_properties(vk_layer_validation_tests PROPERTIES
+    OUTPUT_NAME "VulkanLayerValidationTests"
+    PREFIX ""
+)
 
-# TODO, also based on https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3088/files testing should be a SHARED library instead of an executable.
-# Needs investigation.
+find_program(GNU_NM NAMES nm)
+if (GNU_NM)
+    # Ensure ANativeActivity_onCreate is being exported
+    add_test(NAME ANativeActivity_onCreate COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:vk_layer_validation_tests>)
+    set_tests_properties(ANativeActivity_onCreate
+        PROPERTIES PASS_REGULAR_EXPRESSION "T ANativeActivity_onCreate"
+    )
 
-# TODO, look into CMAKE_CROSSCOMPILING_EMULATOR.
+    # Ensure compatibility with older Android loaders
+    add_test(NAME vkEnumerateDeviceExtensionProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:VkLayer_khronos_validation>)
+    set_tests_properties(vkEnumerateDeviceExtensionProperties
+        PROPERTIES PASS_REGULAR_EXPRESSION "T vkEnumerateDeviceExtensionProperties"
+    )
 
-# TODO, look into Android testing on github actions. https://github.com/microsoft/GSL/blob/main/.github/workflows/android.yml
+    # Ensure compatibility with older Android loaders
+    add_test(NAME vkEnumerateDeviceLayerProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:VkLayer_khronos_validation>)
+    set_tests_properties(vkEnumerateDeviceLayerProperties
+        PROPERTIES PASS_REGULAR_EXPRESSION "T vkEnumerateDeviceLayerProperties"
+    )
+endif()
 
 # TODO, we've been requested by Google to test with an NDK that's no older than 6 months or so.
 
