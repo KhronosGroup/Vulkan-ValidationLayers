@@ -210,6 +210,10 @@ jobs:
             -G "Ninja"
         - name: Build
           run: cmake --build build/
+        - name: Test
+          if: matrix.build_tests == 'ON'
+          working-directory: ./build
+          run: ctest --output-on-failure -C Debug
 
   android_mk:
       runs-on: ubuntu-22.04
