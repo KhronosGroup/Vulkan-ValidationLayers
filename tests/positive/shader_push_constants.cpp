@@ -283,9 +283,9 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
 
     char const *const vsSource = R"glsl(
         #version 450
-        layout(push_constant, std430) uniform foo { float x[16]; } constants;
+        layout(push_constant, std430) uniform foo { layout(offset = 16) vec4 x; } constants;
         void main(){
-           gl_Position = vec4(constants.x[4]);
+           gl_Position = constants.x;
         }
     )glsl";
 
@@ -293,6 +293,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // range A and B are the same while range C is different
+    // All 3 ranges fit the range from the shader
     const uint32_t pc_size = 32;
     VkPushConstantRange range_a = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
     VkPushConstantRange range_b = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
@@ -482,4 +483,195 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderPushConstants, OffsetVector) {
+    TEST_DESCRIPTION("Vector uses offset in the shader.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *const vsSource = R"glsl(
+        #version 450
+
+        layout(push_constant) uniform Material {
+            layout(offset = 16) vec4 color;
+        }constants;
+
+        void main() {
+            gl_Position = constants.color;
+        }
+    )glsl";
+
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    // Set up a push constant range
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 32};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.CreateGraphicsPipeline();
+
+    const float data[16] = {};  // dummy data to match shader size
+
+    m_commandBuffer->begin();
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, data);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
+    TEST_DESCRIPTION("Basic use of Physical Storage Buffers in a Push Constant block.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported and is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *const vsSource = R"glsl(
+        #version 450
+
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+            float v;
+        };
+
+        layout(push_constant, scalar) uniform pc {
+            layout(offset = 16) VectorBuffer vb; // always 8 bytes
+            float extra; // offset == 24
+        } pcs;
+
+        void main() {
+            gl_Position = vec4(pcs.vb.v);
+        }
+    )glsl";
+
+    VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    // Use exact range
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 28};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.CreateGraphicsPipeline();
+
+    const float data[12] = {};  // dummy data to match shader size
+
+    m_commandBuffer->begin();
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 12, data);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
+    TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *vertex_source = R"glsl(
+        #version 450
+
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+            vec3 x;
+            vec3 y;
+            vec3 z;
+        };
+
+        layout(push_constant, scalar) uniform pc {
+            VectorBuffer vb; // only 8 bytes, just a pointer
+        } pcs;
+
+        void main() {
+            gl_Position = vec4(pcs.vb.x, 1.0);
+        }
+        )glsl";
+    const VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fragment_source = R"glsl(
+        #version 450
+
+        #extension GL_EXT_buffer_reference : enable
+        #extension GL_EXT_scalar_block_layout : enable
+
+        layout(buffer_reference, buffer_reference_align=16, scalar) readonly buffer VectorBuffer {
+            vec3 v;
+        };
+
+        layout(push_constant, scalar) uniform pushConstants {
+            layout(offset=8) VectorBuffer vb;
+        } pcs;
+
+        layout(location=0) out vec4 o;
+        void main() {
+            o = vec4(pcs.vb.v, 1.0);
+        }
+    )glsl";
+    const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::array<VkPushConstantRange, 2> push_ranges;
+    push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_ranges[0].size = sizeof(uint64_t);
+    push_ranges[0].offset = 0;
+    push_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_ranges[1].size = sizeof(uint64_t);
+    push_ranges[1].offset = sizeof(uint64_t);
+
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr,           0, 0, nullptr,
+        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 }

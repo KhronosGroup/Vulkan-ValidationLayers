@@ -296,7 +296,13 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
     auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_src, "main");
 
     if (vs) {
-        VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * (16 + 4 + 1)}};
+        // struct has {
+        //     mat4x4
+        //     float
+        //     vec4
+        // }
+        // but std140 padding so the vec4 is offset 80
+        VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, 96}};
 
         VkPipelineLayoutCreateInfo const pipeline_layout_info{
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
