@@ -2873,7 +2873,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                 }
             }
         } else {
-            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
+            const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
             skip |=
                 LogError(objlist, kVUID_Core_DrawState_NoActiveRenderpass, "%s: No active render pass found at draw-time.", caller);
         }
