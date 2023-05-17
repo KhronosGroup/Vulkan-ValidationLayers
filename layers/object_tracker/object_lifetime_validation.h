@@ -91,8 +91,8 @@ class ObjectLifetimes : public ValidationObject {
         }
     }
 
-    bool ReportUndestroyedInstanceObjects(VkInstance instance, const std::string &error_code) const;
-    bool ReportUndestroyedDeviceObjects(VkDevice device, const std::string &error_code) const;
+    bool ReportUndestroyedInstanceObjects(VkInstance instance) const;
+    bool ReportUndestroyedDeviceObjects(VkDevice device) const;
 
     bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) const;
     bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code) const;

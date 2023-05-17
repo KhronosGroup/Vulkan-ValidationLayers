@@ -2298,12 +2298,17 @@ void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, Vk
     }
 }
 
+std::shared_ptr<COMMAND_POOL_STATE> ValidationStateTracker::CreateCommandPoolState(VkCommandPool command_pool,
+                                                                                   const VkCommandPoolCreateInfo *pCreateInfo) {
+    auto queue_flags = physical_device_state->queue_family_properties[pCreateInfo->queueFamilyIndex].queueFlags;
+    return std::make_shared<COMMAND_POOL_STATE>(this, command_pool, pCreateInfo, queue_flags);
+}
+
 void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto queue_flags = physical_device_state->queue_family_properties[pCreateInfo->queueFamilyIndex].queueFlags;
-    Add(std::make_shared<COMMAND_POOL_STATE>(this, *pCommandPool, pCreateInfo, queue_flags));
+    Add(CreateCommandPoolState(*pCommandPool, pCreateInfo));
 }
 
 void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -2379,6 +2384,23 @@ void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const Vk
                                                        const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
     Add(std::make_shared<FENCE_STATE>(*this, *pFence, pCreateInfo));
+}
+
+std::shared_ptr<PIPELINE_CACHE_STATE> ValidationStateTracker::CreatePipelineCacheState(
+    VkPipelineCache pipeline_cache, const VkPipelineCacheCreateInfo *pCreateInfo) const {
+    return std::make_shared<PIPELINE_CACHE_STATE>(pipeline_cache, pCreateInfo);
+}
+
+void ValidationStateTracker::PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkPipelineCache *pPipelineCache, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    Add(CreatePipelineCacheState(*pPipelineCache, pCreateInfo));
+}
+
+void ValidationStateTracker::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
+                                                               const VkAllocationCallbacks *pAllocator) {
+    Destroy<PIPELINE_CACHE_STATE>(pipelineCache);
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(

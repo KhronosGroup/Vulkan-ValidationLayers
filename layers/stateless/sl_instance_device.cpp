@@ -38,20 +38,20 @@ bool StatelessValidation::ValidateString(const char *apiName, const ParameterNam
     return skip;
 }
 
-bool StatelessValidation::ValidateApiVersion(uint32_t api_version, uint32_t effective_api_version) const {
+bool StatelessValidation::ValidateApiVersion(uint32_t api_version, APIVersion effective_api_version) const {
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
-    if (api_version_nopatch != effective_api_version) {
+    if (effective_api_version != api_version_nopatch) {
         if ((api_version_nopatch < VK_API_VERSION_1_0) && (api_version != 0)) {
             skip |= LogError(instance, "VUID-VkApplicationInfo-apiVersion-04010",
                              "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                              "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                             api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+                             api_version, effective_api_version.major(), effective_api_version.minor());
         } else {
             skip |= LogWarning(instance, kVUIDUndefined,
                                "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                                "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
-                               api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+                               api_version, effective_api_version.major(), effective_api_version.minor());
         }
     }
     return skip;

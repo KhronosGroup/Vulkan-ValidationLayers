@@ -3352,7 +3352,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
     return skip;
 }
 
-spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4) {
+spv_target_env PickSpirvEnv(APIVersion api_version, bool spirv_1_4) {
     if (api_version >= VK_API_VERSION_1_3) {
         return SPV_ENV_VULKAN_1_3;
     } else if (api_version >= VK_API_VERSION_1_2) {

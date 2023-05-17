@@ -77,13 +77,13 @@ if (GNU_NM)
     )
 
     # Ensure compatibility with older Android loaders
-    add_test(NAME vkEnumerateDeviceExtensionProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:VkLayer_khronos_validation>)
+    add_test(NAME vkEnumerateDeviceExtensionProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:vvl>)
     set_tests_properties(vkEnumerateDeviceExtensionProperties
         PROPERTIES PASS_REGULAR_EXPRESSION "T vkEnumerateDeviceExtensionProperties"
     )
 
     # Ensure compatibility with older Android loaders
-    add_test(NAME vkEnumerateDeviceLayerProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:VkLayer_khronos_validation>)
+    add_test(NAME vkEnumerateDeviceLayerProperties COMMAND ${GNU_NM} --dynamic $<TARGET_FILE:vvl>)
     set_tests_properties(vkEnumerateDeviceLayerProperties
         PROPERTIES PASS_REGULAR_EXPRESSION "T vkEnumerateDeviceLayerProperties"
     )
@@ -102,7 +102,7 @@ endif()
 #        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/apk/out
 #        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/AndroidManifest.xml ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml
 #        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${layer_test_target_}> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:${layer_test_target_}>
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:VkLayer_khronos_validation> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:VkLayer_khronos_validation>
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:vvl> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:vvl>
 #        COMMAND ${_aapt} package -f -M ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml -I ${_android_jar} -S ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/res -F ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out
 #        COMMAND jarsigner -verbose -keystore $ENV{HOME}/.android/debug.keystore -storepass android -keypass android ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk androiddebugkey
 #        COMMAND ${_zipalign} -f 4 ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}.apk

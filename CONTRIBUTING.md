@@ -131,7 +131,7 @@ output all of the applicable Vulkan Objects and related values. Also, ensure tha
 fix the problem, they should do so to better assist the user. Note that Vulkan object handles must be output via the `FormatHandle()`
 function, and that all object handles visible in a message should also be included in the callback data.  If more than a single object is
 output, the LogObjectList structure should be used.
-* **Generated Source Code:** The `layers/generated` directory contains source code that is created by several
+* **Generated Source Code:** The `layers/vulkan/generated` directory contains source code that is created by several
 generator scripts in the `scripts` directory. All changes to these scripts _must_ be submitted with the
 corresponding generated output to keep the repository self-consistent. [Here for more information](docs/generated_code.md).
 

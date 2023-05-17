@@ -1,6 +1,6 @@
 # GPU Assisted Validation Shaders
 
-This directory is for holding shaders that are used for [GPU Assisted Validation](../../docs/gpu_validation.md). These are turned in SPIR-V when generating code with `generate_spirv.py`　and turned into a header file in [layers/generated](../generated/).
+This directory is for holding shaders that are used for [GPU Assisted Validation](../../docs/gpu_validation.md). These are turned in SPIR-V when generating code with `generate_spirv.py`　and turned into a header file in [layers/vulkan/generated](../generated/).
 
 To regenerate the validation shader, run the following:
 

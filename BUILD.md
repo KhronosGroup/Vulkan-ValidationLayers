@@ -37,7 +37,7 @@ cmake --build build --config Debug
 
 ## Generated source code
 
-This repository contains generated source code in the `layers/generated`
+This repository contains generated source code in the `layers/vulkan/generated`
 directory which is not intended to be modified directly.
 
 Please see the [Generated Code documentation](./docs/generated_code.md) for more information

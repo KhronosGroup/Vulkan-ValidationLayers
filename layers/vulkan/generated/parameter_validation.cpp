@@ -40,7 +40,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice 
     bool skip = false;
     const auto &target_pdev = physical_device_properties_map.find(pdev);
     if (target_pdev != physical_device_properties_map.end()) {
-        auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);
+        auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
         if (effective_api_version < promoted_version) {
             skip = LogError(instance,
                             kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "

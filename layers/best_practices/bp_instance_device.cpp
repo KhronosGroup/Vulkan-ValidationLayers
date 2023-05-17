@@ -54,7 +54,7 @@ const char* DepReasonToString(ExtDeprecationReason reason) {
     }
 }
 
-bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version,
+bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, APIVersion version,
                                                  const char* vuid) const {
     bool skip = false;
     auto dep_info_it = deprecated_extensions.find(extension_name);
@@ -176,7 +176,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         const char* extension_name = pCreateInfo->ppEnabledExtensionNames[i];
 
-        uint32_t extension_api_version = std::min(api_version, device_api_version);
+        APIVersion extension_api_version = std::min(api_version, APIVersion(device_api_version));
 
         if (white_list(extension_name, kInstanceExtensionNames)) {
             skip |=

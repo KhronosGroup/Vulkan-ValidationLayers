@@ -129,7 +129,7 @@ elseif(MSVC)
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
 
-option(BUILD_LAYERS "Build VkLayer_khronos_validation" ON)
+option(BUILD_LAYERS "Build validation layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Install VkLayer_utils")
 
 if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)

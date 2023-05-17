@@ -52,6 +52,48 @@ enum ExtEnabled : unsigned char {
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
 #define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
 
+
+#define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
+
+class APIVersion {
+  public:
+    APIVersion() : api_version_(VVL_UNRECOGNIZED_API_VERSION) {}
+
+    APIVersion(uint32_t api_version) : api_version_(api_version) {}
+
+    APIVersion& operator=(uint32_t api_version) {
+        api_version_ = api_version;
+        return *this;
+    }
+
+    bool valid() const { return api_version_ != VVL_UNRECOGNIZED_API_VERSION; }
+    uint32_t value() const { return api_version_; }
+    uint32_t major() const { return VK_API_VERSION_MAJOR(api_version_); }
+    uint32_t minor() const { return VK_API_VERSION_MINOR(api_version_); }
+    uint32_t patch() const { return VK_API_VERSION_PATCH(api_version_); }
+
+    bool operator<(APIVersion api_version) const { return api_version_ < api_version.api_version_; }
+    bool operator<=(APIVersion api_version) const { return api_version_ <= api_version.api_version_; }
+    bool operator>(APIVersion api_version) const { return api_version_ > api_version.api_version_; }
+    bool operator>=(APIVersion api_version) const { return api_version_ >= api_version.api_version_; }
+    bool operator==(APIVersion api_version) const { return api_version_ == api_version.api_version_; }
+    bool operator!=(APIVersion api_version) const { return api_version_ != api_version.api_version_; }
+
+  private:
+    uint32_t api_version_;
+};
+
+static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
+    if (specified_version < VK_API_VERSION_1_1)
+        return VK_API_VERSION_1_0;
+    else if (specified_version < VK_API_VERSION_1_2)
+        return VK_API_VERSION_1_1;
+    else if (specified_version < VK_API_VERSION_1_3)
+        return VK_API_VERSION_1_2;
+    else
+        return VK_API_VERSION_1_3;
+}
+
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
@@ -224,18 +266,8 @@ struct InstanceExtensions {
         return empty_info;
     }
 
-    uint32_t NormalizeApiVersion(uint32_t specified_version) {
-        if (specified_version < VK_API_VERSION_1_1)
-            return VK_API_VERSION_1_0;
-        else if (specified_version < VK_API_VERSION_1_2)
-            return VK_API_VERSION_1_1;
-        else if (specified_version < VK_API_VERSION_1_3)
-            return VK_API_VERSION_1_2;
-        else
-            return VK_API_VERSION_1_3;
-    }
 
-    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
+    APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
 
         constexpr std::array<const char*, 5> V_1_1_promoted_instance_apis = {
             VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
@@ -250,7 +282,7 @@ struct InstanceExtensions {
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
-        uint32_t api_version = NormalizeApiVersion(requested_api_version);
+        auto api_version = NormalizeApiVersion(requested_api_version);
         if (api_version >= VK_API_VERSION_1_1) {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
@@ -1314,8 +1346,8 @@ struct DeviceExtensions : public InstanceExtensions {
     DeviceExtensions() = default;
     DeviceExtensions(const InstanceExtensions& instance_ext) : InstanceExtensions(instance_ext) {}
 
-    uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version,
-                                      const VkDeviceCreateInfo *pCreateInfo = nullptr) {
+    APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
+                                        const VkDeviceCreateInfo *pCreateInfo = nullptr) {
         // Initialize: this to defaults,  base class fields to input.
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
@@ -1394,7 +1426,7 @@ struct DeviceExtensions : public InstanceExtensions {
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
-        uint32_t api_version = NormalizeApiVersion(requested_api_version);
+        auto api_version = NormalizeApiVersion(requested_api_version);
         if (api_version >= VK_API_VERSION_1_1) {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;

@@ -148,7 +148,7 @@ endif()
 # TODO: Remove once Android.mk is gone.
 target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_TESTS_USE_CMAKE)
 
-add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
+add_dependencies(vk_layer_validation_tests vvl)
 
 target_include_directories(vk_layer_validation_tests PRIVATE .)
 
@@ -169,7 +169,7 @@ elseif(MSVC)
     # Disable some signed/unsigned mismatch warnings.
     target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
 
-    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:VkLayer_khronos_validation>")
+    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:vvl>")
 
     if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing

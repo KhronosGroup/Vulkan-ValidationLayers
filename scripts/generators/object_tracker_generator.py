@@ -4,6 +4,7 @@
 # Copyright (c) 2015-2023 Valve Corporation
 # Copyright (c) 2015-2023 LunarG, Inc.
 # Copyright (c) 2015-2023 Google Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -243,12 +244,18 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Generate the object tracker undestroyed object validation function
     def GenReportFunc(self):
         output_func = ''
+        error_code = {
+            'instance': 'VUID-vkDestroyInstance-instance-00629',
+            'device': 'VUID-vkDestroyDevice-device-00378'
+        }
         for objtype in ['instance', 'device']:
             upper_objtype = objtype.capitalize();
-            output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s, const std::string& error_code) const {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s) const {\n' % (upper_objtype, upper_objtype, objtype)
             output_func += '    bool skip = false;\n'
+            output_func += '    const std::string error_code = "%s";\n' % error_code[objtype]
             if objtype == 'device':
-                output_func += '    skip |= ReportLeaked%sObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)
+                comment_prefix = ''
+                output_func += '    %sskip |= ReportLeaked%sObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (comment_prefix, upper_objtype, objtype)
             for handle in self.object_types:
                 if self.handle_types.IsNonDispatchable(handle) and not self.is_aliased_type[handle]:
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
@@ -344,6 +351,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         copyright += ' * Copyright (c) 2015-2023 Valve Corporation\n'
         copyright += ' * Copyright (c) 2015-2023 LunarG, Inc.\n'
         copyright += ' * Copyright (c) 2015-2023 Google Inc.\n'
+        copyright += ' * Copyright (c) 2023-2023 RasterGrid Kft.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'

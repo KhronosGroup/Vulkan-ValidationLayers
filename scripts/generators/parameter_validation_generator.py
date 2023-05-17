@@ -4,6 +4,7 @@
 # Copyright (c) 2015-2023 Valve Corporation
 # Copyright (c) 2015-2023 LunarG, Inc.
 # Copyright (c) 2015-2023 Google Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -484,7 +485,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             api_func += '    bool skip = false;\n'
             api_func += '    const auto &target_pdev = physical_device_properties_map.find(pdev);\n'
             api_func += '    if (target_pdev != physical_device_properties_map.end()) {\n'
-            api_func += '        auto effective_api_version = std::min(target_pdev->second->apiVersion, api_version);\n'
+            api_func += '        auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);\n'
             api_func += '        if (effective_api_version < promoted_version) {\n'
             api_func += '            skip = LogError(instance,\n'
             api_func += '                            kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "\n'
@@ -552,6 +553,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         pnext_check += '                           "current effective API version is %s.",\n'
                         pnext_check += '                           api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());\n'
                         pnext_check += '            }\n'
+                    elif ver_info not in self.extension_names:
+                        # Extension not supported in the target API
+                        continue
                     else:
                         # Dependent on enabled extension
                         ext_name = ver_info
@@ -877,7 +881,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             enum_map_key = set(['core'])
                             extnumber = enum.get('extnumber')
 
-                            if extnumber is not None:
+                            # Ignore extensions that are disabled and only used for their enum range for core enums
+                            if extnumber is not None and self.extension_number_map[extnumber].get('supported') != 'disabled':
                                 # Find the actual, "promoted to" extension
                                 ext = self.extension_number_map[extnumber]
                                 enum_map_key = set([ext.get('name')])

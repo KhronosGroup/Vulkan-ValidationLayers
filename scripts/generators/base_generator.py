@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2023 Valve Corporation
 # Copyright (c) 2023 LunarG, Inc.
+# Copyright (c) 2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,6 +31,10 @@ def SetOutputDirectory(directory):
     global outputDirectory
     outputDirectory = directory
 
+def SetTargetApiName(apiname):
+    global targetApiName
+    targetApiName = apiname
+
 # This Generator Option is used across all Validation Layer generators
 # After years of use, it has shown that all the options are unified across each generator (file)
 # as it is easier to modifiy things per-file that need the difference
@@ -39,14 +44,16 @@ class BaseGeneratorOptions(GeneratorOptions):
                  helper_file_type = '',
                  valid_usage_path = '',
                  lvt_file_type = '',
+                 mergeApiNames = None,
                  warnExtensions = [],
                  grammar = None):
         GeneratorOptions.__init__(self,
                 conventions = vulkanConventions,
                 filename = filename,
                 directory = outputDirectory,
-                apiname = 'vulkan',
-                defaultExtensions = 'vulkan',
+                apiname = targetApiName,
+                mergeApiNames = mergeApiNames,
+                defaultExtensions = targetApiName,
                 emitExtensions = '.*',
                 emitSpirv = '.*',
                 emitFormats = '.*')

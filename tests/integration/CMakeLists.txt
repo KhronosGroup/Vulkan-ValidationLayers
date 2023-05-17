@@ -74,6 +74,6 @@ if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/utils/vk_layer_utils.cpp")
     message(FATAL_ERROR "vk_layer_utils.cpp is missing - update LunarG/VulkanTools")
 endif()
 
-if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/generated/vk_format_utils.cpp")
+if (NOT EXISTS "${VVL_SOURCE_DIR}/layers/vulkan/generated/vk_format_utils.cpp")
     message(FATAL_ERROR "vk_format_utils.cpp is missing - update LunarG/VulkanTools")
 endif()

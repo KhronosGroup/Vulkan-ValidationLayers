@@ -28,4 +28,4 @@ target_link_libraries(VkLayer_utils PUBLIC log)
 
 # For now just install the .so
 # TODO: This seems valid only if CMAKE_ANDROID_STL_TYPE is c++_static.
-install(TARGETS VkLayer_khronos_validation DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})

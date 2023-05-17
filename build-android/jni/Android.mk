@@ -30,9 +30,9 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_config.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/vk_layer_extension_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/logging.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/vk_layer_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_format_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_format_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/xxhash.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
@@ -78,10 +78,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_module.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_instruction.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_shader.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_synchronization.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_validation_helper.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_grammar_helper.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/dynamic_state_helper.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/spirv_validation_helper.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/spirv_grammar_helper.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/command_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/dynamic_state_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gv_descriptor_sets.cpp
@@ -102,23 +102,23 @@ LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_render_pass.cpp
 LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_synchronization.cpp
 LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_video.cpp
 LOCAL_SRC_FILES += ${SRC_DIR}/layers/best_practices/bp_wsi.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/best_practices.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/best_practices.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_vuid_maps.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/core_error_location.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/sync_validation_types.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/sync_validation_types.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/valid_param_values.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/valid_param_values.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_query.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_queue.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_ray_tracing.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_wsi.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cc_ycbcr.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_buffer.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_cmd_buffer_dynamic.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_cmd_buffer.cpp
@@ -133,19 +133,19 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_ray_tracing.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_render_pass.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_synchronization.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_wsi.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker/object_tracker_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/thread_safety.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_core.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_khr.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_ext.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_vendor.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/containers/subresource_adapter.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/external/vma/vma.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(VVL_EXTERNAL_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
@@ -255,13 +255,13 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
                    $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_utils.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_core.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_khr.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_ext.cpp \
-                   $(SRC_DIR)/layers/generated/vk_safe_struct_vendor.cpp \
-                   $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                   $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_utils.cpp \
+                   $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_core.cpp \
+                   $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_khr.cpp \
+                   $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_ext.cpp \
+                   $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_vendor.cpp \
+                   $(SRC_DIR)/layers/vulkan/generated/lvt_function_pointers.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
 LOCAL_CPPFLAGS += -isystem $(ROBIN_HOOD_INCLUDE)
