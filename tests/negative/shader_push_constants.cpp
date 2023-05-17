@@ -353,3 +353,106 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
+    TEST_DESCRIPTION("Test push-constant detect the write entrypoint with the push constants.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
+        GTEST_SKIP() << "Pixel 3 compilers can't compile this valid SPIR-V";
+    }
+
+    // #version 460
+    // layout(push_constant) uniform Material {
+    //     vec4 color;
+    // }constants;
+    // void main() {
+    //     gl_Position = constants.color;
+    // }
+    //
+    // #version 460
+    // layout(location = 0) out vec4 uFragColor;
+    // void main(){
+    //     uFragColor = vec4(0.0);
+    // }
+    const char *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main_f "main" %4
+               OpEntryPoint Vertex %main_v "main" %2
+               OpExecutionMode %main_f OriginUpperLeft
+               OpMemberDecorate %builtin_vert 0 BuiltIn Position
+               OpMemberDecorate %builtin_vert 1 BuiltIn PointSize
+               OpMemberDecorate %builtin_vert 2 BuiltIn ClipDistance
+               OpMemberDecorate %builtin_vert 3 BuiltIn CullDistance
+               OpDecorate %builtin_vert Block
+               OpMemberDecorate %struct_pc 0 Offset 0
+               OpDecorate %struct_pc Block
+               OpDecorate %4 Location 0
+       %void = OpTypeVoid
+          %8 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+            ; Vertex types
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+      %array = OpTypeArray %float %uint_1
+  %builtin_vert = OpTypeStruct %v4float %float %array %array
+%ptr_builtin_vert = OpTypePointer Output %builtin_vert
+          %2 = OpVariable %ptr_builtin_vert Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+  %struct_pc = OpTypeStruct %v4float
+%ptr_pc_struct = OpTypePointer PushConstant %struct_pc
+         %18 = OpVariable %ptr_pc_struct PushConstant
+%ptr_pc_vec4 = OpTypePointer PushConstant %v4float
+%ptr_output_vert = OpTypePointer Output %v4float
+            ; Fragment types
+%ptr_output_frag = OpTypePointer Output %v4float
+          %4 = OpVariable %ptr_output_frag Output
+    %float_0 = OpConstant %float 0
+         %23 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_0
+
+     %main_v = OpFunction %void None %8
+         %24 = OpLabel
+         %25 = OpAccessChain %ptr_pc_vec4 %18 %int_0
+         %26 = OpLoad %v4float %25
+         %27 = OpAccessChain %ptr_output_vert %2 %int_0
+               OpStore %27 %26
+               OpReturn
+               OpFunctionEnd
+
+     %main_f = OpFunction %void None %8
+         %28 = OpLabel
+               OpStore %4 %23
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // Push constant are in the vertex Entrypoint
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
+    auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_info.pushConstantRangeCount = 1;
+    pipeline_layout_info.pPushConstantRanges = &push_constant_range;
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
+
+    VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07987");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    // Make sure Vertex is ok when used
+    push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+}
