@@ -675,3 +675,73 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderPushConstants, MultipleStructs) {
+    TEST_DESCRIPTION("Test having multiple structs Push Constant structs, but only one is used.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Note - it is invalid SPIR-V for an entrypoint to have 2 Push Constant variables used. This is only valid because it is being
+    // ignored
+    //
+    // What this looks like:
+    //
+    // layout(push_constant) uniform pc_a { layout(offset = 32) vec4 x; } a;
+    // layout(push_constant) uniform pc_b { layout(offset = 16) vec4 x; } b;
+    const char *source = R"(
+                 OpCapability Shader
+                 OpMemoryModel Logical GLSL450
+                 OpEntryPoint Vertex %1 "main"
+                 ; used in range [32 - 48]
+                 OpDecorate %struct_pc Block
+                 OpMemberDecorate %struct_pc 0 Offset 32
+                 ; unused in range [16 - 32]
+                 OpDecorate %struct_unused Block
+                 OpMemberDecorate %struct_unused 0 Offset 16
+         %void = OpTypeVoid
+            %7 = OpTypeFunction %void
+         %uint = OpTypeInt 32 0
+        %float = OpTypeFloat 32
+      %v4float = OpTypeVector %float 4
+       %uint_0 = OpConstant %uint 0
+       %uint_2 = OpConstant %uint 2
+ %ptr_pc_float = OpTypePointer PushConstant %float
+    %struct_pc = OpTypeStruct %v4float
+%ptr_pc_struct = OpTypePointer PushConstant %struct_pc
+          %var = OpVariable %ptr_pc_struct PushConstant
+                ; Unused
+                ; Vulkan 1.0 you do not need declare this in the OpEntryPoint
+%struct_unused = OpTypeStruct %v4float
+   %ptr_unused = OpTypePointer PushConstant %struct_unused
+   %var_unused = OpVariable %ptr_unused PushConstant
+            %1 = OpFunction %void None %7
+           %16 = OpLabel
+           %17 = OpAccessChain %ptr_pc_float %var %uint_0 %uint_2
+                 OpReturn
+                 OpFunctionEnd
+    )";
+
+    VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 32, 16};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.CreateGraphicsPipeline();
+
+    const float data[16] = {};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
