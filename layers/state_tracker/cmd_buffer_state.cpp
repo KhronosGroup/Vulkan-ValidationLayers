@@ -250,10 +250,8 @@ void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT
         size_needed = std::max(size_needed, size);
 
         auto stage_flags = push_constant_range.stageFlags;
-        uint32_t bit_shift = 0;
         while (stage_flags) {
             stage_flags = stage_flags >> 1;
-            ++bit_shift;
         }
     }
     push_constant_data.resize(size_needed, 0);
