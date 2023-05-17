@@ -19,15 +19,8 @@ if (ANDROID_USE_LEGACY_TOOLCHAIN_FILE)
     message(WARNING "Using legacy android toolchain!")
 endif()
 
-if (ANDROID_PLATFORM LESS "24")
-    message(FATAL_ERROR "Vulkan not supported on Android 23 and below!")
-endif()
-
 if (ANDROID_PLATFORM LESS "26")
-    message(WARNING "No Android HardwareBuffer support!\n"
-                    "While Vulkan is supported in Android 24 and 25, there is no AHardwareBuffer support.\n"
-                    "To build a version of the Validation Layers for use with Android that will not require AHB support,\n"
-                    "simply change `ANDROID_PLATFORM` parameter value in the CMake generate command to 24 or 25.")
+    message(FATAL_ERROR "Vulkan-ValidationLayers is not supported on Android 25 and below!")
 endif()
 
 # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
