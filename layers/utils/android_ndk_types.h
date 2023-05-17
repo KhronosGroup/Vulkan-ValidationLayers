@@ -46,10 +46,8 @@
 //
 // NOTE: VK_USE_PLATFORM_ANDROID_KHR != Android Hardware Buffer
 //       AHB is all things not found in the Vulkan Spec
-#if __ANDROID_API__ < 24
-#error "Vulkan not supported on Android 23 and below"
-#elif __ANDROID_API__ < 26
-#warning "Building for Android without Android Hardware Buffer support"
+#if __ANDROID_API__ < 26
+#error "Vulkan-ValidationLayers is not supported on Android 25 and below"
 #else
 // This is used to allow building for Android without AHB support
 #define AHB_VALIDATION_SUPPORT

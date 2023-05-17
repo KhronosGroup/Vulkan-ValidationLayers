@@ -33,6 +33,10 @@
 #include <windows.h>
 #include <direct.h>
 #define GetCurrentDir _getcwd
+#elif defined(__ANDROID__)
+#include <sys/system_properties.h>
+#include <unistd.h>
+#define GetCurrentDir getcwd
 #else
 #include <unistd.h>
 #define GetCurrentDir getcwd
@@ -60,6 +64,13 @@ class ConfigFile {
 
 static ConfigFile layer_config;
 
+#if defined(__ANDROID__)
+static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
+    std::string *property = static_cast<std::string *>(cookie);
+    *property = value;
+}
+#endif
+
 std::string GetEnvironment(const char *variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     const char *output = getenv(variable);
@@ -75,21 +86,12 @@ std::string GetEnvironment(const char *variable) {
     delete[] buffer;
     return output;
 #elif defined(__ANDROID__)
-    string command = "getprop " + string(variable);
-    FILE *pPipe = popen(command.c_str(), "r");
-    if (pPipe != nullptr) {
-        char value[256];
-        fgets(value, 256, pPipe);
-        pclose(pPipe);
+    const prop_info *prop_info = __system_property_find(variable);
 
-        // Make sure its not an empty line and does not end in a newline
-        const auto str_len = strcspn(value, "\r\n");
-        if (str_len == 0) {
-            return "";
-        } else {
-            value[str_len] = '\0';
-            return string(value);
-        }
+    if (prop_info) {
+        std::string property;
+        __system_property_read_callback(prop_info, PropCallback, &property);
+        return property;
     } else {
         return "";
     }
