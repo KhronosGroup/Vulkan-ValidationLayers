@@ -3,6 +3,7 @@
 # Copyright (c) 2015-2021 The Khronos Group Inc.
 # Copyright (c) 2015-2023 Valve Corporation
 # Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,6 +60,7 @@ platform_dict = {
     'xcb' : 'VK_USE_PLATFORM_XCB_KHR',
     'xlib' : 'VK_USE_PLATFORM_XLIB_KHR',
     'xlib_xrandr' : 'VK_USE_PLATFORM_XLIB_XRANDR_EXT',
+    'sci': 'VK_USE_PLATFORM_SCI',
     'provisional' : 'VK_ENABLE_BETA_EXTENSIONS',
     'directfb' : 'VK_USE_PLATFORM_DIRECTFB_EXT',
     'screen' : 'VK_USE_PLATFORM_SCREEN_QNX',

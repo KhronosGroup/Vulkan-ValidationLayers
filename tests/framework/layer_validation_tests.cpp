@@ -1056,7 +1056,9 @@ VkLayerTest::VkLayerTest() {
     // Find out what version the instance supports and record the default target instance
     auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
     if (enumerateInstanceVersion) {
-        enumerateInstanceVersion(&m_instance_api_version);
+        uint32_t instance_api_version;
+        enumerateInstanceVersion(&instance_api_version);
+        m_instance_api_version = instance_api_version;
     } else {
         m_instance_api_version = VK_API_VERSION_1_0;
     }
@@ -1086,17 +1088,17 @@ void VkLayerTest::AddSurfaceExtension() {
 #endif
 }
 
-void VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
+void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
     m_attempted_api_version = target_api_version;  // used to know if request failed
 
     m_target_api_version = std::min(target_api_version, m_instance_api_version);
-    app_info_.apiVersion = m_target_api_version;
+    app_info_.apiVersion = m_target_api_version.value();
 }
 
-uint32_t VkLayerTest::DeviceValidationVersion() const {
+APIVersion VkLayerTest::DeviceValidationVersion() const {
     // The validation layers assume the version we are validating to is the apiVersion unless the device apiVersion is lower
-    return std::min(m_target_api_version, physDevProps().apiVersion);
+    return std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
 }
 
 template <>
@@ -2504,7 +2506,7 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
 }
 
 std::pair<VkBufferObj &&, VkAccelerationStructureGeometryKHR> GetSimpleAABB(const VkDeviceObj &device,
-                                                                            uint32_t vk_api_version /*= VK_API_VERSION_1_2*/) {
+                                                                            APIVersion vk_api_version /*= VK_API_VERSION_1_2*/) {
     const std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
 
     const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();

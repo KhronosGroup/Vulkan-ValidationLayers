@@ -3,6 +3,7 @@
 # Copyright (c) 2021-2023 Valve Corporation
 # Copyright (c) 2021-2023 LunarG, Inc.
 # Copyright (c) 2021-2023 Google Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,6 +33,10 @@ verify_exclude = ['.clang-format']
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
+    parser.add_argument('--api',
+                        default='vulkan',
+                        choices=['vulkan'],
+                        help='Specify API name to generate')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
     parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
     parser.add_argument('--generated-version', help='sets the header version used to generate the repo')
@@ -48,6 +53,7 @@ def main(argv):
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
                    '-quiet',
+                   '-api', args.api,
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
                                               "chassis_dispatch_helper.h",
@@ -96,7 +102,7 @@ def main(argv):
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',
                  '-o', 'spirv_tools_commit_id.h']]
 
-    repo_dir = common_codegen.repo_relative('layers/generated')
+    repo_dir = common_codegen.repo_relative(f'layers/{args.api}/generated')
 
     # Update the api_version in the respective json files
     if args.generated_version:

@@ -8,6 +8,7 @@
  * Copyright (c) 2015-2023 Valve Corporation
  * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2023-2023 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +33,9 @@ WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_o
 
 
 // ObjectTracker undestroyed objects validation function
-bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) const {
+bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) const {
     bool skip = false;
+    const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
     // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
     // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
@@ -41,8 +43,9 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     return skip;
 }
-bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) const {
+bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
     bool skip = false;
+    const std::string error_code = "VUID-vkDestroyDevice-device-00378";
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBuffer, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImage, error_code);

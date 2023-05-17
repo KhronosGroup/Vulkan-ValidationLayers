@@ -50,7 +50,7 @@ static void *get_proc_address(dl_handle library, const char *name) {
     assert(name);
     return (void *)GetProcAddress(library, name);
 }
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__QNX__)
 
 #include <dlfcn.h>
 
@@ -901,25 +901,25 @@ PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappi
 PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
 
 
-void InitCore() {
+void InitCore(const char *api_name) {
 
 #if defined(WIN32)
-    const char filename[] = "vulkan-1.dll";
-    auto lib_handle = open_library(filename);
+    std::string filename = std::string(api_name) + "-1.dll";
+    auto lib_handle = open_library(filename.c_str());
 #elif(__APPLE__)
-    const char filename[] = "libvulkan.dylib";
-    auto lib_handle = open_library(filename);
+    std::string filename = std::string("lib") + api_name + ".dylib";
+    auto lib_handle = open_library(filename.c_str());
 #else
-    const char *filename = "libvulkan.so";
-    auto lib_handle = open_library(filename);
+    std::string filename = std::string("lib") + api_name + ".so";
+    auto lib_handle = open_library(filename.c_str());
     if (!lib_handle) {
-        filename = "libvulkan.so.1";
-        lib_handle = open_library(filename);
+        filename = std::string("lib") + api_name + ".so.1";
+        lib_handle = open_library(filename.c_str());
     }
 #endif
 
     if (lib_handle == nullptr) {
-        printf("%s\n", open_library_error(filename));
+        printf("%s\n", open_library_error(filename.c_str()));
         exit(1);
     }
 

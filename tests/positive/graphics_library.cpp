@@ -40,7 +40,7 @@ void PositiveGraphicsLibrary::InitBasicGraphicsLibrary(void* pNextFeatures) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
     if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << VK_VERSION_MINOR(m_attempted_api_version) << " is required";
+        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
     }
 }
 

@@ -145,7 +145,7 @@ class ValidationCache {
     mutable std::shared_mutex lock_;
 };
 
-spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(APIVersion api_version, bool spirv_1_4);
 
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &options);

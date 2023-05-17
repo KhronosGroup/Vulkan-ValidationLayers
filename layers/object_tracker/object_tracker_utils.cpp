@@ -330,7 +330,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
         auto device_layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
         auto obj_lifetimes_data = reinterpret_cast<ObjectLifetimes *>(
             device_layer_data->GetValidationObject(device_layer_data->object_dispatch, LayerObjectTypeObjectTracker));
-        skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
+        skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device);
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
                                       "VUID-vkDestroyInstance-instance-00631");
@@ -340,7 +340,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
                                   "VUID-vkDestroyInstance-instance-00631");
 
     // Report any remaining instance objects
-    skip |= ReportUndestroyedInstanceObjects(instance, "VUID-vkDestroyInstance-instance-00629");
+    skip |= ReportUndestroyedInstanceObjects(instance);
 
     return skip;
 }
@@ -392,7 +392,7 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
     skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyDevice-device-00379",
                                   "VUID-vkDestroyDevice-device-00380");
     // Report any remaining objects associated with this VkDevice object in LL
-    skip |= ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
+    skip |= ReportUndestroyedDeviceObjects(device);
 
     return skip;
 }

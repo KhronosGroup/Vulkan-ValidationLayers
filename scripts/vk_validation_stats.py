@@ -3,6 +3,7 @@
 # Copyright (c) 2015-2023 Valve Corporation
 # Copyright (c) 2015-2023 LunarG, Inc.
 # Copyright (c) 2015-2023 Google Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -692,6 +693,10 @@ def main(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument('json_file', help="registry file 'validusage.json'")
+    parser.add_argument('-api',
+                        default='vulkan',
+                        choices=['vulkan'],
+                        help='Specify API name to use')
     parser.add_argument('-c', action='store_true',
                         help='report consistency warnings')
     parser.add_argument('-todo', action='store_true',
@@ -731,10 +736,10 @@ def main(argv):
         'layers/state_tracker/shader_module.cpp',
         'layers/gpu_validation/gpu_vuids.h',
         'layers/stateless/stateless_validation.h',
-        'layers/generated/parameter_validation.cpp',
-        'layers/generated/object_tracker.cpp',
-        'layers/generated/spirv_validation_helper.cpp',
-        'layers/generated/command_validation.cpp',
+        f'layers/{args.api}/generated/parameter_validation.cpp',
+        f'layers/{args.api}/generated/object_tracker.cpp',
+        f'layers/{args.api}/generated/spirv_validation_helper.cpp',
+        f'layers/{args.api}/generated/command_validation.cpp',
     ]]
     # Be careful not to add vk_validation_error_messages.h or it will show 100% test coverage
     layer_source_files.extend(glob.glob(os.path.join(common_codegen.repo_relative('layers/core_checks/'), '*.cpp')))

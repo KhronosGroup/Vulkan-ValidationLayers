@@ -27,6 +27,7 @@
 #include <bitset>
 #include <iomanip>
 #include "cast_utils.h"
+#include "generated/vk_extension_helper.h"
 #include "generated/vk_format_utils.h"
 #include "error_message/logging.h"
 
@@ -63,13 +64,13 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
 }
 
 // Convert integer API version to a string
-static inline std::string StringAPIVersion(uint32_t version) {
+static inline std::string StringAPIVersion(APIVersion version) {
     std::stringstream version_name;
-    uint32_t major = VK_VERSION_MAJOR(version);
-    uint32_t minor = VK_VERSION_MINOR(version);
-    uint32_t patch = VK_VERSION_PATCH(version);
-    version_name << major << "." << minor << "." << patch << " (0x" << std::setfill('0') << std::setw(8) << std::hex << version
-                 << ")";
+    if (!version.valid()) {
+        return "<unrecognized>";
+    }
+    version_name << version.major() << "." << version.minor() << "." << version.patch() << " (0x" << std::setfill('0')
+                 << std::setw(8) << std::hex << version.value() << ")";
     return version_name.str();
 }
 
@@ -467,8 +468,8 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-[[nodiscard]] constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
-                                                      const uint32_t mip_level) {
+[[nodiscard]] inline VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask,
+                                                   const uint32_t mip_level) {
     // Return zero extent if mip level doesn't exist
     if (mip_level >= ci.mipLevels) {
         return VkExtent3D{0, 0, 0};
@@ -508,7 +509,7 @@ static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-[[nodiscard]] constexpr VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageSubresourceRange &range) {
+[[nodiscard]] inline VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageSubresourceRange &range) {
     return GetEffectiveExtent(ci, range.aspectMask, range.baseMipLevel);
 }
 

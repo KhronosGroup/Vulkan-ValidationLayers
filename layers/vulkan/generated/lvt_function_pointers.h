@@ -862,7 +862,7 @@ extern PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScre
 extern PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
 extern PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
 
-void InitCore();
+void InitCore(const char *api_name);
 void InitInstanceExtension(VkInstance instance, const char* extension_name);
 void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name);
 void ResetAllExtensions();

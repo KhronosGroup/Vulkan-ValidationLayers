@@ -1,6 +1,7 @@
 # ~~~
 # Copyright (c) 2014-2023 Valve Corporation
 # Copyright (c) 2014-2023 LunarG, Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
+
+# These variables enable downstream users to customize the CMake targets
+# based on the target API variant (e.g. Vulkan SC)
+set(API_TYPE "vulkan")
+set(LAYER_NAME "VkLayer_khronos_validation")
+
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
     containers/custom_containers.h
@@ -21,23 +28,23 @@ target_sources(VkLayer_utils PRIVATE
     error_message/logging.cpp
     external/xxhash.h
     external/xxhash.cpp
-    generated/lvt_function_pointers.cpp
-    generated/lvt_function_pointers.h
-    generated/vk_format_utils.h
-    generated/vk_format_utils.cpp
-    generated/vk_validation_error_messages.h
-    generated/vk_layer_dispatch_table.h
-    generated/vk_dispatch_table_helper.h
-    generated/vk_safe_struct.h
-    generated/vk_safe_struct_utils.cpp
-    generated/vk_safe_struct_core.cpp
-    generated/vk_safe_struct_khr.cpp
-    generated/vk_safe_struct_ext.cpp
-    generated/vk_safe_struct_vendor.cpp
-    generated/vk_enum_string_helper.h
-    generated/vk_object_types.h
-    generated/vk_extension_helper.h
-    generated/vk_typemap_helper.h
+    ${API_TYPE}/generated/lvt_function_pointers.cpp
+    ${API_TYPE}/generated/lvt_function_pointers.h
+    ${API_TYPE}/generated/vk_format_utils.h
+    ${API_TYPE}/generated/vk_format_utils.cpp
+    ${API_TYPE}/generated/vk_validation_error_messages.h
+    ${API_TYPE}/generated/vk_layer_dispatch_table.h
+    ${API_TYPE}/generated/vk_dispatch_table_helper.h
+    ${API_TYPE}/generated/vk_safe_struct.h
+    ${API_TYPE}/generated/vk_safe_struct_utils.cpp
+    ${API_TYPE}/generated/vk_safe_struct_core.cpp
+    ${API_TYPE}/generated/vk_safe_struct_khr.cpp
+    ${API_TYPE}/generated/vk_safe_struct_ext.cpp
+    ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
+    ${API_TYPE}/generated/vk_enum_string_helper.h
+    ${API_TYPE}/generated/vk_object_types.h
+    ${API_TYPE}/generated/vk_extension_helper.h
+    ${API_TYPE}/generated/vk_typemap_helper.h
     utils/cast_utils.h
     utils/convert_to_renderpass2.cpp
     utils/convert_to_renderpass2.h
@@ -61,7 +68,7 @@ target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
-target_include_directories(VkLayer_utils PUBLIC .)
+target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 
 find_package(robin_hood CONFIG)
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
@@ -72,7 +79,7 @@ endif()
 
 # TODO: This should be removed once the official "Vulkan-Utility-Libraries" library is available for consumption
 if(BUILD_LAYER_SUPPORT_FILES)
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_enum_string_helper.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
     install(FILES ${CMAKE_SOURCE_DIR}/layers/containers/custom_containers.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/containers)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/error_message
@@ -81,21 +88,21 @@ if(BUILD_LAYER_SUPPORT_FILES)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/layers/external
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan
             FILES_MATCHING PATTERN "xxhash.*")
-    install(FILES ${CMAKE_SOURCE_DIR}/layers/generated/vk_format_utils.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_validation_error_messages.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_layer_dispatch_table.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_dispatch_table_helper.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_utils.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_core.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_khr.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_ext.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_safe_struct_vendor.cpp
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_enum_string_helper.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_object_types.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_extension_helper.h
-                  ${CMAKE_SOURCE_DIR}/layers/generated/vk_typemap_helper.h
+    install(FILES ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_format_utils.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_format_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_validation_error_messages.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_layer_dispatch_table.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_dispatch_table_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_core.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_khr.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_ext.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_safe_struct_vendor.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_enum_string_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_object_types.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_extension_helper.h
+                  ${CMAKE_SOURCE_DIR}/layers/${API_TYPE}/generated/vk_typemap_helper.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/generated)
     install(FILES ${CMAKE_SOURCE_DIR}/layers/utils/cast_utils.h
                   ${CMAKE_SOURCE_DIR}/layers/utils/hash_util.h
@@ -154,14 +161,14 @@ if (VVL_CODEGEN)
     add_custom_target(vvl_codegen
         COMMAND Python3::Interpreter "${VVL_SOURCE_DIR}/scripts/generate_source.py"
             ${VULKAN_HEADERS_REGISTRY_DIRECTORY} "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1"
-            --incremental --generated-version ${VulkanHeaders_VERSION}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
+            --incremental --generated-version ${VulkanHeaders_VERSION} --api ${API_TYPE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${API_TYPE}/generated
     )
 endif()
 
-add_library(VkLayer_khronos_validation MODULE)
+add_library(vvl MODULE)
 
-target_sources(VkLayer_khronos_validation PRIVATE
+target_sources(vvl PRIVATE
     best_practices/best_practices_error_enums.h
     best_practices/best_practices_utils.cpp
     best_practices/bp_buffer.cpp
@@ -218,29 +225,29 @@ target_sources(VkLayer_khronos_validation PRIVATE
     error_message/validation_error_enums.h
     external/vma/vma.h
     external/vma/vma.cpp
-    generated/best_practices.cpp
-    generated/best_practices.h
-    generated/chassis.cpp
-    generated/valid_param_values.cpp
-    generated/command_validation.cpp
-    generated/dynamic_state_helper.cpp
-    generated/enum_flag_bits.h
-    generated/layer_chassis_dispatch.cpp
-    generated/object_tracker.cpp
-    generated/object_tracker.h
-    generated/parameter_validation.cpp
-    generated/parameter_validation.h
-    generated/spirv_grammar_helper.cpp
-    generated/spirv_validation_helper.cpp
-    generated/sync_validation_types.cpp
-    generated/thread_safety.cpp
-    generated/thread_safety.h
-    generated/vk_safe_struct_utils.cpp
-    generated/vk_safe_struct_core.cpp
-    generated/vk_safe_struct_khr.cpp
-    generated/vk_safe_struct_ext.cpp
-    generated/vk_safe_struct_vendor.cpp
-    generated/vk_safe_struct.h
+    ${API_TYPE}/generated/best_practices.cpp
+    ${API_TYPE}/generated/best_practices.h
+    ${API_TYPE}/generated/chassis.cpp
+    ${API_TYPE}/generated/valid_param_values.cpp
+    ${API_TYPE}/generated/command_validation.cpp
+    ${API_TYPE}/generated/dynamic_state_helper.cpp
+    ${API_TYPE}/generated/enum_flag_bits.h
+    ${API_TYPE}/generated/layer_chassis_dispatch.cpp
+    ${API_TYPE}/generated/object_tracker.cpp
+    ${API_TYPE}/generated/object_tracker.h
+    ${API_TYPE}/generated/parameter_validation.cpp
+    ${API_TYPE}/generated/parameter_validation.h
+    ${API_TYPE}/generated/spirv_grammar_helper.cpp
+    ${API_TYPE}/generated/spirv_validation_helper.cpp
+    ${API_TYPE}/generated/sync_validation_types.cpp
+    ${API_TYPE}/generated/thread_safety.cpp
+    ${API_TYPE}/generated/thread_safety.h
+    ${API_TYPE}/generated/vk_safe_struct_utils.cpp
+    ${API_TYPE}/generated/vk_safe_struct_core.cpp
+    ${API_TYPE}/generated/vk_safe_struct_khr.cpp
+    ${API_TYPE}/generated/vk_safe_struct_ext.cpp
+    ${API_TYPE}/generated/vk_safe_struct_vendor.cpp
+    ${API_TYPE}/generated/vk_safe_struct.h
     gpu_validation/debug_printf.cpp
     gpu_validation/debug_printf.h
     gpu_validation/gpu_utils.cpp
@@ -313,30 +320,32 @@ target_sources(VkLayer_khronos_validation PRIVATE
     layer_options.cpp
     vk_layer_settings_ext.h
 )
-get_target_property(LAYER_SOURCES VkLayer_khronos_validation SOURCES)
+get_target_property(LAYER_SOURCES vvl SOURCES)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${LAYER_SOURCES})
 
+set_target_properties(vvl PROPERTIES OUTPUT_NAME ${LAYER_NAME})
+
 if(MSVC)
-    target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
-    target_compile_options(VkLayer_khronos_validation PRIVATE /bigobj)
+    target_link_options(vvl PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
+    target_compile_options(vvl PRIVATE /bigobj)
 elseif(MINGW)
-    target_sources(VkLayer_khronos_validation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
-    target_compile_options(VkLayer_khronos_validation PRIVATE -Wa,-mbig-obj)
+    target_sources(vvl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.def)
+    target_compile_options(vvl PRIVATE -Wa,-mbig-obj)
 elseif(APPLE)
     message(STATUS "Functions are exported via VVL_EXPORT")
-    set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
+    set_target_properties(vvl PROPERTIES SUFFIX ".dylib")
 elseif(ANDROID)
     message(STATUS "Functions are exported via VVL_EXPORT")
 else()
-    target_link_options(VkLayer_khronos_validation PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL)
+    target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    target_compile_options(VkLayer_khronos_validation PRIVATE
+    target_compile_options(vvl PRIVATE
         -Wno-unused-parameter
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(VkLayer_khronos_validation PRIVATE
+        target_compile_options(vvl PRIVATE
             -Wno-sign-conversion
             -Wno-implicit-int-conversion
         )
@@ -345,11 +354,11 @@ endif()
 
 # Khronos validation additional dependencies
 if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
+    target_link_libraries(vvl PRIVATE robin_hood::robin_hood)
 endif()
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
-target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
+target_link_libraries(vvl PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
 # OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
@@ -359,11 +368,11 @@ if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
    option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
    if (USE_MIMALLOC)
       target_compile_definitions(mimalloc-static INTERFACE USE_MIMALLOC)
-      target_link_libraries(VkLayer_khronos_validation PRIVATE mimalloc-static)
+      target_link_libraries(vvl PRIVATE mimalloc-static)
    endif()
 endif()
 
-target_include_directories(VkLayer_khronos_validation SYSTEM PRIVATE external)
+target_include_directories(vvl SYSTEM PRIVATE external)
 
 if (ANDROID)
     add_subdirectory(android)
@@ -375,27 +384,27 @@ endif()
 # - The respective json file, VkLayer_khronos_validation.json
 # This code generates the appropriate json for both local testing and the installation.
 # NOTE: For WIN32 the JSON and dll MUST be placed in the same location, due to Win32 using a relative path for installation.
-set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.json.in")
+set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.json.in")
 set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/validation.json")
-set(OUTPUT_FILE_FINAL_NAME "VkLayer_khronos_validation.json")
+set(OUTPUT_FILE_FINAL_NAME "${LAYER_NAME}.json")
 set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
 if (WIN32)
     set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_BINDIR}) # WIN32/MINGW expect the dll in the `bin` dir, this matches our WIN32 SDK process
 endif()
 
 if (WIN32)
-    set(JSON_LIBRARY_PATH ".\\\\VkLayer_khronos_validation.dll")
+    set(JSON_LIBRARY_PATH ".\\\\${LAYER_NAME}.dll")
 elseif(APPLE)
-    set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation.dylib")
+    set(JSON_LIBRARY_PATH "./lib${LAYER_NAME}.dylib")
 else()
-    set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation.so")
+    set(JSON_LIBRARY_PATH "./lib${LAYER_NAME}.so")
 endif()
 
 configure_file(${INPUT_FILE} ${INTERMEDIATE_FILE} @ONLY)
 
 # To support both multi/single configuration generators just copy the json to the correct directory
-add_custom_command(TARGET VkLayer_khronos_validation POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${INTERMEDIATE_FILE} $<TARGET_FILE_DIR:VkLayer_khronos_validation>/${OUTPUT_FILE_FINAL_NAME}
+add_custom_command(TARGET vvl POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${INTERMEDIATE_FILE} $<TARGET_FILE_DIR:vvl>/${OUTPUT_FILE_FINAL_NAME}
 )
 
 # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories
@@ -404,9 +413,9 @@ if (UNIX)
     set(UNIX_INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/unix_install_validation.json")
 
     if(APPLE)
-        set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation.dylib")
+        set(JSON_LIBRARY_PATH "lib${LAYER_NAME}.dylib")
     else()
-        set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation.so")
+        set(JSON_LIBRARY_PATH "lib${LAYER_NAME}.so")
     endif()
 
     configure_file(${INPUT_FILE} ${UNIX_INTERMEDIATE_FILE} @ONLY)
@@ -418,7 +427,7 @@ if (WIN32)
     install(FILES ${INTERMEDIATE_FILE} DESTINATION ${LAYER_INSTALL_DIR} RENAME ${OUTPUT_FILE_FINAL_NAME})
 endif()
 if (MSVC)
-    install(FILES $<TARGET_PDB_FILE:VkLayer_khronos_validation> DESTINATION ${LAYER_INSTALL_DIR})
+    install(FILES $<TARGET_PDB_FILE:vvl> DESTINATION ${LAYER_INSTALL_DIR})
 endif()
 
-install(TARGETS VkLayer_khronos_validation DESTINATION ${LAYER_INSTALL_DIR})
+install(TARGETS vvl DESTINATION ${LAYER_INSTALL_DIR})

@@ -187,7 +187,7 @@ void TestEnvironment::SetUp() {
 
     vk_testing::set_error_callback(test_error_callback);
 
-    vk::InitCore();
+    vk::InitCore("vulkan");
 }
 
 void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }

@@ -1,6 +1,6 @@
 # Generated Code
 
-There is a lot of code generated in `layers/generated/`. This is done to prevent errors forgetting to add support for new
+There is a lot of code generated in `layers/vulkan/generated/`. This is done to prevent errors forgetting to add support for new
 values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 How to generate the code:
@@ -21,7 +21,7 @@ cmd /C "python3 scripts/generate_source.py external/Vulkan-Headers/registry/ ext
 ```
 
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
-`scripts/` and `layers/generated/` in any PR.
+`scripts/` and `layers/vulkan/generated/` in any PR.
 
 ## CMake helper
 

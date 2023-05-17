@@ -3,6 +3,7 @@
 # Copyright (c) 2015-2023 Valve Corporation
 # Copyright (c) 2015-2023 LunarG, Inc.
 # Copyright (c) 2015-2023 Google Inc.
+# Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -124,6 +125,63 @@ class LayerChassisOutputGenerator(OutputGenerator):
     precallvalidate_loop = "for (const ValidationObject* intercept : layer_data->object_dispatch) {"
     precallrecord_loop = "for (ValidationObject* intercept : layer_data->object_dispatch) {"
     postcallrecord_loop = precallrecord_loop
+
+    # Vulkan validation layer list
+    vk_validation_layers = [
+        {
+            'include': 'thread_safety.h',
+            'class': 'ThreadSafety',
+            'enabled': '!disables[thread_safety]'
+        },
+        {
+            'include': 'stateless/stateless_validation.h',
+            'class': 'StatelessValidation',
+            'enabled': '!disables[stateless_checks]'
+        },
+        {
+            'include': 'object_tracker/object_lifetime_validation.h',
+            'class': 'ObjectLifetimes',
+            'enabled': '!disables[object_tracking]'
+        },
+        {
+            'include': 'core_checks/core_validation.h',
+            'class': 'CoreChecks',
+            'enabled': '!disables[core_checks]'
+        },
+        {
+            'include': 'best_practices/best_practices_validation.h',
+            'class': 'BestPractices',
+            'enabled': 'enables[best_practices]'
+        },
+        {
+            'include': 'gpu_validation/gpu_validation.h',
+            'class': 'GpuAssisted',
+            'enabled': 'enables[gpu_validation]'
+        },
+        {
+            'include': 'gpu_validation/debug_printf.h',
+            'class': 'DebugPrintf',
+            'enabled': 'enables[debug_printf]'
+        },
+        {
+            'include': 'sync/sync_validation.h',
+            'class': 'SyncValidator',
+            'enabled': 'enables[sync_validation]'
+        }
+    ]
+
+    # Vulkan extension lists
+    vk_instance_extensions = [
+        'VK_EXT_debug_report',
+        'VK_EXT_debug_utils',
+        'VK_EXT_validation_features'
+    ]
+
+    vk_device_extensions = [
+        'VK_EXT_validation_cache',
+        'VK_EXT_debug_marker',
+        'VK_EXT_tooling_info'
+    ]
 
     inline_custom_header_preamble = """
 #include <atomic>
@@ -276,7 +334,7 @@ typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 // Layer chassis validation object base class definition
 class ValidationObject {
     public:
-        uint32_t api_version;
+        APIVersion api_version;
         debug_report_data* report_data = nullptr;
         std::vector<std::vector<ValidationObject*>> intercept_vectors;
 
@@ -446,6 +504,7 @@ class ValidationObject {
  * Copyright (c) 2015-2023 Valve Corporation
  * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2015-2023 Google Inc.
+ * Copyright (c) 2023-2023 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -481,38 +540,16 @@ bool wrap_handles = true;
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
-
-// Include layer validation object definitions
-#include "best_practices/best_practices_validation.h"
-#include "core_checks/core_validation.h"
-#include "gpu_validation/gpu_validation.h"
-#include "object_tracker/object_lifetime_validation.h"
-#include "gpu_validation/debug_printf.h"
-#include "stateless/stateless_validation.h"
-#include "sync/sync_validation.h"
-#include "thread_safety.h"
-
-// This header file must be included after the above validation object class definitions
-#include "chassis_dispatch_helper.h"
-
-// Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 """
 
     inline_custom_source_preamble_2 = """
+// Global list of sType,size identifiers
+std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
 namespace vulkan_layer_chassis {
 
 static const VkLayerProperties global_layer = {
     OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
-};
-
-static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION},
-                                                            {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_SPEC_VERSION},
-                                                            {VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_EXT_VALIDATION_FEATURES_SPEC_VERSION}};
-static const VkExtensionProperties device_extensions[] = {
-    {VK_EXT_VALIDATION_CACHE_EXTENSION_NAME, VK_EXT_VALIDATION_CACHE_SPEC_VERSION},
-    {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, VK_EXT_DEBUG_MARKER_SPEC_VERSION},
-    {VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_EXT_TOOLING_INFO_SPEC_VERSION}
 };
 
 typedef enum ApiFunctionType {
@@ -701,7 +738,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (fpCreateInstance == nullptr) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    uint32_t api_version = VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(specified_version), VK_API_VERSION_MINOR(specified_version), 0);
+    APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version), VK_API_VERSION_MINOR(specified_version), 0);
 
     auto report_data = new debug_report_data{};
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
@@ -717,40 +754,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
-    std::vector<ValidationObject*> local_object_dispatch;
-
-    // Add VOs to dispatch vector. Order here will be the validation dispatch order!
-    if (!local_disables[thread_safety]) {
-        local_object_dispatch.emplace_back(new ThreadSafety(nullptr));
-    }
-
-    if (!local_disables[stateless_checks]) {
-        local_object_dispatch.emplace_back(new StatelessValidation);
-    }
-
-    if (!local_disables[object_tracking]) {
-        local_object_dispatch.emplace_back(new ObjectLifetimes);
-    }
-
-    if (!local_disables[core_checks]) {
-        local_object_dispatch.emplace_back(new CoreChecks);
-    }
-
-    if (local_enables[best_practices]) {
-        local_object_dispatch.emplace_back(new BestPractices);
-    }
-
-    if (local_enables[gpu_validation]) {
-        local_object_dispatch.emplace_back(new GpuAssisted);
-    }
-
-    if (local_enables[debug_printf]) {
-        local_object_dispatch.emplace_back(new DebugPrintf);
-    }
-
-    if (local_enables[sync_validation]) {
-        local_object_dispatch.emplace_back(new SyncValidator);
-    }
+    std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables[handle_wrapping]) {
@@ -882,7 +886,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     instance_interceptor->instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &device_properties);
 
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
-    uint32_t effective_api_version = std::min(device_properties.apiVersion, instance_interceptor->api_version);
+    auto effective_api_version = std::min(APIVersion(device_properties.apiVersion), instance_interceptor->api_version);
 
     DeviceExtensions device_extensions = {};
     device_extensions.InitFromDeviceCreateInfo(&instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
@@ -924,42 +928,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->instance = instance_interceptor->instance;
     device_interceptor->report_data = instance_interceptor->report_data;
 
-    // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
-    auto disables = instance_interceptor->disabled;
-    auto enables = instance_interceptor->enabled;
-
-    if (!disables[thread_safety]) {
-        device_interceptor->object_dispatch.emplace_back(new ThreadSafety(static_cast<ThreadSafety *>(
-            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading))));
-    }
-
-    if (!disables[stateless_checks]) {
-        device_interceptor->object_dispatch.emplace_back(new StatelessValidation);
-    }
-
-    if (!disables[object_tracking]) {
-        device_interceptor->object_dispatch.emplace_back(new ObjectLifetimes);
-    }
-
-    if (!disables[core_checks]) {
-        device_interceptor->object_dispatch.emplace_back(new CoreChecks);
-    }
-
-    if (enables[best_practices]) {
-        device_interceptor->object_dispatch.emplace_back(new BestPractices);
-    }
-
-    if (enables[gpu_validation]) {
-        device_interceptor->object_dispatch.emplace_back(new GpuAssisted);
-    }
-
-    if (enables[debug_printf]) {
-        device_interceptor->object_dispatch.emplace_back(new DebugPrintf);
-    }
-
-    if (enables[sync_validation]) {
-        device_interceptor->object_dispatch.emplace_back(new SyncValidator);
-    }
+    InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
 
     // Initialize all of the objects with the appropriate data
     for(auto* object : device_interceptor->object_dispatch) {
@@ -1561,7 +1530,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
 }  // extern "C"
 """
 
-    init_object_dispatch_vector = """
+    vk_init_object_dispatch_vector = """
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
                                 typeid(&ValidationObject::name), \\
@@ -1648,6 +1617,92 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
         return ispointer
 
     #
+    # Get layer data list
+    def getLayerList(self):
+        return self.vk_validation_layers
+
+    #
+    # Get instance extension list
+    def getInstanceExtensions(self):
+        return self.vk_instance_extensions
+
+    #
+    # Get device extension list
+    def getDeviceExtensions(self):
+        return self.vk_device_extensions
+
+    #
+    # Generate chassis source includes
+    def genChassisSourceIncludes(self):
+        includes = []
+        includes.append('// Include layer validation object definitions')
+        # Add #include directives for the used layers
+        for layer in self.getLayerList():
+            includes.append('#include "{}"'.format(layer['include']))
+        includes.append('')
+        includes.append('// This header file must be included after the above validation object class definitions')
+        includes.append('#include "chassis_dispatch_helper.h"')
+        includes.append('')
+        return '\n'.join(includes)
+
+    #
+    # Generate extension lists exposed by the validation layer
+    def genExtensionLists(self):
+        extensions = []
+        extensions.append('static const VkExtensionProperties instance_extensions[] = {')
+        for instance_extension in self.getInstanceExtensions():
+            extensions.append('    {{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(instance_extension.upper()))
+        extensions.append('};')
+        extensions.append('')
+        extensions.append('static const VkExtensionProperties device_extensions[] = {')
+        for device_extension in self.getDeviceExtensions():
+            extensions.append('    {{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(device_extension.upper()))
+        extensions.append('};')
+        extensions.append('')
+        return '\n'.join(extensions)
+
+    #
+    # Generate init object dispatch vector
+    def genInitObjectDispatchVector(self):
+        return self.vk_init_object_dispatch_vector
+
+    #
+    # Generate layer registration code
+    def genRegisterLayers(self):
+        contents = []
+
+        contents.append(
+            'static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &enables, const CHECK_DISABLED &disables) {\n' +
+            '    std::vector<ValidationObject*> object_dispatch{};\n\n'
+            '    // Add VOs to dispatch vector. Order here will be the validation dispatch order!')
+        for layer in self.getLayerList():
+            constructor = layer['class']
+            if layer['class'] == 'ThreadSafety':
+                constructor += '(nullptr)'
+            contents.append(('    if ({0}) {{\n' +
+                '        object_dispatch.emplace_back(new {1});\n' +
+                '    }}').format(layer['enabled'], constructor))
+        contents.append('    return object_dispatch;')
+        contents.append('}\n')
+
+        contents.append(
+            'static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, ValidationObject *device_interceptor) {\n' +
+            '    auto disables = instance_interceptor->disabled;\n' +
+            '    auto enables = instance_interceptor->enabled;\n\n' +
+            '    // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED')
+        for layer in self.getLayerList():
+            constructor = layer['class']
+            if layer['class'] == 'ThreadSafety':
+                constructor += ('(static_cast<ThreadSafety *>(\n' +
+                    '            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)))')
+            contents.append(('    if ({0}) {{\n' +
+                '        device_interceptor->object_dispatch.emplace_back(new {1});\n' +
+                '    }}').format(layer['enabled'], constructor))
+        contents.append('}')
+
+        return '\n'.join(contents)
+
+    #
     #
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
@@ -1668,6 +1723,9 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
         else:
             self.chassis_source = True
             write(self.inline_custom_source_preamble_1, file=self.outFile)
+            write(self.genChassisSourceIncludes(), file=self.outFile)
+            write(self.genExtensionLists(), file=self.outFile)
+            write(self.genRegisterLayers(), file=self.outFile)
             write(self.inline_custom_source_preamble_2, file=self.outFile)
             write("static const std::set<std::string> kDeviceWarnExtensionNames {", file=self.outFile)
             for ext in genOpts.warnExtensions:
@@ -1714,7 +1772,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
             helper_content += '    InterceptIdCount,\n'
             helper_content += '} InterceptId;\n\n'
             helper_content += 'void ValidationObject::InitObjectDispatchVectors() {\n'
-            helper_content += self.init_object_dispatch_vector
+            helper_content += self.genInitObjectDispatchVector()
             helper_content += '\n\n'
             helper_content += '    intercept_vectors.resize(InterceptIdCount);\n\n'
             helper_content += self.dispatch_vector_fcns;

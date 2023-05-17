@@ -39,9 +39,9 @@ The code is currently split up into the following main sections
     - This contains information about the `VkShaderModule` object
 - `layers/shader_validation.cpp`
     - This takes the following above and does the actual validation. All errors are produced here.
-    - `layers/generated/spirv_validation_helper.cpp`
+    - `layers/vulkan/generated/spirv_validation_helper.cpp`
         - This is generated file provides a way to generate checks for things found in the `vk.xml` related to SPIR-V
-- `layers/generated/spirv_grammar_helper.cpp`
+- `layers/vulkan/generated/spirv_grammar_helper.cpp`
     - This is a general util file that is [generated](generated_code.md) from the SPIR-V grammar
 
 ## Types of Shader Validation

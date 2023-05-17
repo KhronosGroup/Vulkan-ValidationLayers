@@ -384,7 +384,7 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller);
 
-    bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
+    bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, APIVersion version, const char* vuid) const;
 
     bool ValidateSpecialUseExtensions(const char* api_name, const char* extension_name,
                                       const SpecialUseVUIDs& special_use_vuids) const;
