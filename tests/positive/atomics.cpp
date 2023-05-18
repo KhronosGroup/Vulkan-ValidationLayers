@@ -868,3 +868,73 @@ TEST_F(PositiveAtomic, Int64) {
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
+
+TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
+    TEST_DESCRIPTION("Have a OpImageTexelPointer without an actual OpAtomic* accessing it");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;
+    // Need to have VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT
+    //      but not VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), format, &formatProps);
+    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), format, formatProps);
+
+    auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+    VkImageObj image(m_device);
+    image.Init(image_ci);
+    VkImageView image_view = image.targetView(format);
+
+    const char *spv_source = R"(
+             OpCapability Shader
+             OpMemoryModel Logical GLSL450
+             OpEntryPoint GLCompute %main "main"
+             OpExecutionMode %main LocalSize 1 1 1
+             OpDecorate %image DescriptorSet 0
+             OpDecorate %image Binding 0
+     %void = OpTypeVoid
+        %3 = OpTypeFunction %void
+     %uint = OpTypeInt 32 0
+        %7 = OpTypeImage %uint 2D 0 0 0 2 R32ui
+   %ptr_uc = OpTypePointer UniformConstant %7
+    %image = OpVariable %ptr_uc UniformConstant
+      %int = OpTypeInt 32 1
+    %v2int = OpTypeVector %int 2
+    %int_0 = OpConstant %int 0
+       %13 = OpConstantComposite %v2int %int_0 %int_0
+   %uint_0 = OpConstant %uint 0
+%ptr_image = OpTypePointer Image %uint
+     %main = OpFunction %void None %3
+        %5 = OpLabel
+       %18 = OpImageTexelPointer %ptr_image %image %13 %uint_0
+             OpReturn
+             OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+}
