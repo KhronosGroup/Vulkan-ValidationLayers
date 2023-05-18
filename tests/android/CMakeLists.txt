@@ -42,7 +42,7 @@ set_directory_properties(PROPERTIES "COMPILE_OPTIONS" "") # Disable compiler war
 
 enable_language(C) # NOTE: We need to enable the C language for android_native_app_glue.c
 
-set(native_app_glue_dir "${ANDROID_NDK}/sources/android/native_app_glue")
+set(native_app_glue_dir "${CMAKE_ANDROID_NDK}/sources/android/native_app_glue")
 
 if (NOT EXISTS ${native_app_glue_dir})
     message(FATAL_ERROR "Couldn't find Android Native Glue directory!")
@@ -68,6 +68,8 @@ set_target_properties(vk_layer_validation_tests PROPERTIES
     PREFIX ""
 )
 
+install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
 find_program(GNU_NM NAMES nm)
 if (GNU_NM)
     # Ensure ANativeActivity_onCreate is being exported
@@ -88,22 +90,3 @@ if (GNU_NM)
         PROPERTIES PASS_REGULAR_EXPRESSION "T vkEnumerateDeviceLayerProperties"
     )
 endif()
-
-# TODO, we've been requested by Google to test with an NDK that's no older than 6 months or so.
-
-# Look into 
-# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/3088/files
-#
-#    set(_android_jar ${ANDROID_SDK_HOME}/platforms/android-${ANDROID_PLATFORM}/android.jar)
-#    set(_aapt ${ANDROID_SDK_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/aapt)
-#    set(_zipalign ${ANDROID_SDK_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/zipalign)
-#    add_custom_command(TARGET ${layer_test_target_} POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/apk
-#        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/apk/out
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/AndroidManifest.xml ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${layer_test_target_}> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:${layer_test_target_}>
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:vvl> ${CMAKE_BINARY_DIR}/apk/out/lib/${ANDROID_ABI}/$<TARGET_FILE_NAME:vvl>
-#        COMMAND ${_aapt} package -f -M ${CMAKE_BINARY_DIR}/apk/AndroidManifest.xml -I ${_android_jar} -S ${CMAKE_CURRENT_SOURCE_DIR}/platforms/android/res -F ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out
-#        COMMAND jarsigner -verbose -keystore $ENV{HOME}/.android/debug.keystore -storepass android -keypass android ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk androiddebugkey
-#        COMMAND ${_zipalign} -f 4 ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}-unaligned.apk ${CMAKE_BINARY_DIR}/apk/out/${layer_test_target_}.apk
-#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)

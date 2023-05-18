@@ -14,18 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-if (ANDROID_USE_LEGACY_TOOLCHAIN_FILE)
-    # https://github.com/android/ndk/issues/1693
-    message(WARNING "Using legacy android toolchain!")
-endif()
 
-if (ANDROID_PLATFORM LESS "26")
-    message(FATAL_ERROR "Vulkan-ValidationLayers is not supported on Android 25 and below!")
-endif()
+message(STATUS "Targeting Android API Level ${CMAKE_SYSTEM_VERSION}")
+
+message(STATUS "Building with Android NDK Version ${ANDROID_NDK_REVISION}")
 
 # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
 target_link_libraries(VkLayer_utils PUBLIC log)
 
-# For now just install the .so
-# TODO: This seems valid only if CMAKE_ANDROID_STL_TYPE is c++_static.
 install(TARGETS vvl DESTINATION ${CMAKE_INSTALL_LIBDIR})
