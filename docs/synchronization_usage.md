@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2022 LunarG, Inc. -->
+<!-- Copyright 2015-2023 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -97,9 +97,7 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Load/Store/Resolve operations within Subpasses.
 - ExecuteCommands detection of hazard from or with secondary command buffers
 
-### Alpha Functionality
-
-- QueueSubmit (excluding QueueSubmit2, for alpha release) hazard detection
+- QueueSubmit/QueueSubmit2 time hazard detection
 - Semaphore (binary only) and Fence synchronization operations/effects
 - Device and Queue WaitIdle support
 
@@ -108,10 +106,10 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - Does not include implementation of multi-view renderpass support.
 - Host set event not supported.
 -  Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
-- Does not include component granularity access tracking.
+- Does not include component granularity access tracking, or correctly support swizzling.
+- Indirectly accessed (indirect/indexed) buffers validated at *binding* granularity. (Every valid location assumed to be accessed.)
 - Host synchronization not supported, except Fences (above).
 - Timeline Semaphore not supported
-- Swapchain memory/operations not tracked
 
 ## Typical Synchronization Validation Usage
 
