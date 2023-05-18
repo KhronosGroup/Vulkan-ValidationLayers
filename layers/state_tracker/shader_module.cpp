@@ -541,7 +541,10 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
         case spv::OpImageQueryLevels:
         case spv::OpImageQuerySamples:
         case spv::OpImageQueryLod:
+            break;
+
         case spv::OpImageSparseTexelsResident:
+            assert(false);  // This is not a proper OpImage* instruction, has no OpImage operand
             break;
 
         default:
@@ -844,8 +847,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             case spv::OpImageQueryLevels:
             case spv::OpImageQuerySamples:
             case spv::OpImageSparseFetch:
-            case spv::OpImageSparseGather:
-            case spv::OpImageSparseTexelsResident: {
+            case spv::OpImageSparseGather: {
                 image_instructions = true;
                 break;
             }
