@@ -180,13 +180,11 @@ cmake -S . -B build/ --preset dev
 ### Windows Development Environment Requirements
 
 - Windows 10+
-- Microsoft [Visual Studio](https://www.visualstudio.com/)
-  - `Visual Studio 2019` is the oldest we support. Anything less than that is not guaranteed to compile/work.
-- [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is the minimum CMake version supported.
-- Git Client Support
-  - [Git for Windows](http://git-scm.com/download/win) is a popular solution for Windows
+- Visual Studio
+- CMake
+- Git
 
-NOTE: [Visual Studio 17 2022](https://cmake.org/cmake/help/latest/generator/Visual%20Studio%2017%202022.html) requires at least CMake `3.21`
+Note: Anything less than `Visual Studio 2019` is not guaranteed to compile/work.
 
 ### Windows Build - Microsoft Visual Studio
 
