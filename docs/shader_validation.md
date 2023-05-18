@@ -127,10 +127,10 @@ An Image Fetch has an `OpImage` prior to the `OpLoad`
 OpImageFetch -> OpImage -> OpLoad -> OpVariable
 ```
 
-Atomics use `OpImageTexelPointer` instead of `OpLoad`
+Image Atomics use `OpImageTexelPointer` instead of `OpLoad`
 
 ```
-OpAtomicLoad -> OpImageTexelPointer -> OpVariable
+OpAtomicLoad -> OpImageTexelPointer -> OpAccessChain (optional) -> OpVariable
 ```
 
 The biggest thing to consider is using either a
@@ -168,3 +168,15 @@ This is handled by having the `Resource Interface` variable track if it has a `O
 - If it has a `OpTypeImage` or `OpTypeSampler`, we need to know if they are **accessed together**
     - This means the the `ValidateDescriptor` logic needs to know every `OpTypeSampler` variable accessed together with a `OpTypeImage` variable
     - There is no case where only a `OpTypeSampler` variable can be used by itself, so no need to track it the other way
+
+### Atomics
+
+There are 2 types of atomic accesses: "Image" and "Non-Image"
+
+Image atomics are described above how they use `OpImageTexelPointer` instead of `OpLoad`
+
+Non-Image atomics will look like
+
+```
+OpAtomicLoad -> OpAccessChain (optional) -> OpVariable
+```
