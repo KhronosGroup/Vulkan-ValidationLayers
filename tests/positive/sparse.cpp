@@ -382,3 +382,86 @@ TEST_F(PositiveSparse, BufferOverlapCopy) {
     // Wait for operations to finish before destroying anything
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(PositiveSparse, Image) {
+    TEST_DESCRIPTION("Use OpImageSparse* operations at draw time");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto index = m_device->graphics_queue_node_index_;
+    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
+    }
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Device does not support sparse residency for images";
+    }
+    if (!m_device->phy().features().shaderResourceResidency) {
+        GTEST_SKIP() << "Device does not support OpCapability SparseResidency";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_create_info);
+
+    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler;
+    sampler.init(*m_device, sampler_ci);
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    ds.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    ds.UpdateDescriptorSets();
+
+    char const *fsSource = R"glsl(
+        #version 450
+        #extension GL_ARB_sparse_texture2 : enable
+
+        layout(set = 0, binding = 0) uniform sampler2D s2D;
+
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            vec4 texel = vec4(1.0);
+            int resident = 0;
+            resident |= sparseTextureARB(s2D, vec2(0.0), texel);
+            resident |= sparseTextureLodARB(s2D, vec2(0.0), 2.0, texel);
+            resident |= sparseTexelFetchARB(s2D, ivec2(0), 2, texel);
+
+            outColor = sparseTexelsResidentARB(resident) ? vec4(0.0) : vec4(1.0);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &ds.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
