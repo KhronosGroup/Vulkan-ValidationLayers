@@ -28,12 +28,8 @@ if (UPDATE_DEPS)
     list(APPEND update_dep_command "${CMAKE_GENERATOR}")
 
     if (CMAKE_GENERATOR_PLATFORM)
-        if (${CMAKE_VS_VERSION_BUILD_NUMBER} VERSION_LESS "16")
-            message(FATAL_ERROR "Visual Studio 16 2019 is the oldest visual studio generator we support.")
-        endif()
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
         list(APPEND update_dep_command "--arch")
-        list(APPEND update_dep_command "${_target_arch}")
+        list(APPEND update_dep_command "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
     if (NOT CMAKE_BUILD_TYPE)
