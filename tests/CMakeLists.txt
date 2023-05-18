@@ -205,12 +205,9 @@ if (ANDROID)
     return()
 endif()
 
+install(TARGETS vk_layer_validation_tests)
+
 include(GoogleTest)
 gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
-
-option(INSTALL_TESTS "Install tests")
-if(INSTALL_TESTS)
-    install(TARGETS vk_layer_validation_tests)
-endif()
 
 add_subdirectory(layers)
