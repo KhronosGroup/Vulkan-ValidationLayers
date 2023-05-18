@@ -173,6 +173,28 @@ TEST_F(NegativeCommand, MissingClearAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5793
+TEST_F(NegativeCommand, QueueIsNull) {
+    TEST_DESCRIPTION("Call QueueSubmit with a null Queue");
+    auto submit_null_queue = [&]() {
+        ASSERT_NO_FATAL_FAILURE(Init());
+
+        VkCommandBufferObj cmd_buffer(m_device, m_commandPool);
+        cmd_buffer.begin();
+        cmd_buffer.end();
+
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &cmd_buffer.handle();
+
+        // NOTE: We want to test VVL not the loader. So use GetDeviceProcAddr!
+        auto device_queue_submit = reinterpret_cast<PFN_vkQueueSubmit>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit"));
+        device_queue_submit(VK_NULL_HANDLE, 1, &submit_info, VK_NULL_HANDLE);
+    };
+
+    EXPECT_DEATH(submit_null_queue(), "VkQueue is NULL");
+}
+
 TEST_F(NegativeCommand, SecondaryCommandbufferAsPrimary) {
     TEST_DESCRIPTION("Create a secondary command buffer and pass it to QueueSubmit.");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-00075");

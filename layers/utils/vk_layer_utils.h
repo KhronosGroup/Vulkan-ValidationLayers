@@ -26,6 +26,7 @@
 #include <vector>
 #include <bitset>
 #include <iomanip>
+#include <iostream>
 #include "cast_utils.h"
 #include "generated/vk_format_utils.h"
 #include "error_message/logging.h"
@@ -159,8 +160,25 @@ Stream &stream_join(Stream &stream, const String &sep, const Collection &values)
     return stream_join(stream, sep, values.cbegin(), values.cend());
 }
 
-typedef void *dispatch_key;
-static inline dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
+using dispatch_key = void *;
+
+static inline dispatch_key get_dispatch_key(VkQueue queue) {
+    if (queue == nullptr) {
+        std::cerr << "VkQueue is NULL." << std::endl;
+        std::abort();
+    }
+    return (dispatch_key) * (VkLayerDispatchTable **)queue;
+}
+
+static inline dispatch_key get_dispatch_key(const void *object) {
+    if (object == nullptr) {
+        std::cerr
+            << "User provided NULL handle for dispatchable object (instance, physical device, device, command buffer, or queue)"
+            << std::endl;
+        std::abort();
+    }
+    return (dispatch_key) * (VkLayerDispatchTable **)object;
+}
 
 VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
 VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
