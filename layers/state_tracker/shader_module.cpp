@@ -590,6 +590,11 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
     }
 
     const Instruction* image_load_pointer = module_state.FindDef(image_load->Word(3));
+    if (!image_load_pointer) {
+        no_function_jump = false;
+        return;  // TODO 5614 - Figure out why some SPIR-V is hitting a null FindDef from OpLoad
+    }
+
     if (image_load_pointer->Opcode() == spv::OpVariable) {
         variable_image_insn = image_load_pointer;
     } else if (image_load_pointer->Opcode() == spv::OpAccessChain || image_load_pointer->Opcode() == spv::OpInBoundsAccessChain) {
@@ -617,6 +622,11 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
         }
 
         const Instruction* sampler_load_pointer = module_state.FindDef(sampler_load->Word(3));
+        if (!sampler_load_pointer) {
+            no_function_jump = false;
+            return;  // TODO 5614 - Figure out why some SPIR-V is hitting a null FindDef from OpLoad
+        }
+
         if (sampler_load_pointer->Opcode() == spv::OpVariable) {
             variable_sampler_insn = sampler_load_pointer;
         } else if (sampler_load_pointer->Opcode() == spv::OpAccessChain ||
