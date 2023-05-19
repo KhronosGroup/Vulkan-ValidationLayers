@@ -1584,3 +1584,36 @@ TEST_F(NegativeDescriptorBuffer, NullHandle) {
     vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.inputAttachmentDescriptorSize, buffer.data());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptorBuffer, BufferUsage) {
+    TEST_DESCRIPTION("Wrong Usage for buffer createion.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(descriptor_buffer_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &descriptor_buffer_features));
+
+    auto descriptor_buffer_properties = LvlInitStruct<VkPhysicalDeviceDescriptorBufferPropertiesEXT>();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    if (descriptor_buffer_properties.bufferlessPushDescriptors) {
+        GTEST_SKIP() << "bufferlessPushDescriptors is supported";
+    }
+
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 64;
+    buffer_create_info.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08103");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}

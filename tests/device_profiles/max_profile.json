@@ -1082,7 +1082,7 @@
                     "maxMemoryAllocationSize": 4294967000
                 },
                 "VkPhysicalDeviceMaintenance4Properties": {
-                    "maxBufferSize": 4294967000
+                    "maxBufferSize": 1073741824
                 },
                 "VkPhysicalDeviceFloatControlsProperties": {
                     "shaderSignedZeroInfNanPreserveFloat16": true,
@@ -1485,7 +1485,7 @@
                     "storageTexelBufferOffsetAlignmentBytes": 16,
                     "uniformTexelBufferOffsetSingleTexelAlignment": true,
                     "uniformTexelBufferOffsetAlignmentBytes": 16,
-                    "maxBufferSize": 4294967000
+                    "maxBufferSize": 1073741824
                 },
                 "VkPhysicalDeviceCustomBorderColorPropertiesEXT": {
                     "maxCustomBorderColorSamplers": 4294967000

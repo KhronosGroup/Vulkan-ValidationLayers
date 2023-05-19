@@ -875,3 +875,38 @@ TEST_F(NegativeSparse, OverlappingBufferCopy) {
     // Wait for operations to finish before destroying anything
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(NegativeSparse, BufferFlagsFeature) {
+    TEST_DESCRIPTION("Create buffers with Flags that require disabled sparse features");
+
+    VkPhysicalDeviceFeatures features = {};
+    features.sparseBinding = VK_FALSE;
+    features.sparseResidencyBuffer = VK_FALSE;
+    features.sparseResidencyAliased = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 64;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer;
+
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00915");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00916");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00918");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00917");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00918");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}
