@@ -944,3 +944,41 @@ TEST_F(NegativeBuffer, CopyingInterleavedRegions) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeBuffer, MaxBufferSize) {
+    TEST_DESCRIPTION("check limit of maxBufferSize");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto maintenance4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(maintenance4_features);
+    if (!maintenance4_features.maintenance4) {
+        GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &maintenance4_features));
+
+    auto maintenance4_properties = LvlInitStruct<VkPhysicalDeviceMaintenance4Properties>();
+    GetPhysicalDeviceProperties2(maintenance4_properties);
+
+    const VkDeviceSize max_test_size = (1ull << 32);
+    if (maintenance4_properties.maxBufferSize >= max_test_size) {
+        GTEST_SKIP() << "maxBufferSize too large to test";
+    }
+
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = maintenance4_properties.maxBufferSize + 1;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-size-06409");
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}
