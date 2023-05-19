@@ -183,41 +183,13 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
 
 std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                                       VkFormatFeatureFlags2KHR features) {
-    std::shared_ptr<IMAGE_STATE> state;
-
-    if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-        if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
-            state = std::make_shared<IMAGE_STATE_SPARSE<true>>(this, img, pCreateInfo, features);
-        } else {
-            state = std::make_shared<IMAGE_STATE_SPARSE<false>>(this, img, pCreateInfo, features);
-        }
-    } else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
-        uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
-        switch (plane_count) {
-            case 3:
-                state = std::make_shared<IMAGE_STATE_MULTIPLANAR<3>>(this, img, pCreateInfo, features);
-                break;
-            case 2:
-                state = std::make_shared<IMAGE_STATE_MULTIPLANAR<2>>(this, img, pCreateInfo, features);
-                break;
-            case 1:
-                state = std::make_shared<IMAGE_STATE_MULTIPLANAR<1>>(this, img, pCreateInfo, features);
-                break;
-            default:
-                // Not supported
-                assert(false);
-        }
-    } else {
-        state = std::make_shared<IMAGE_STATE_LINEAR>(this, img, pCreateInfo, features);
-    }
-
-    return state;
+    return CreateImageStateImpl<ImageStateBindingTraits<IMAGE_STATE>>(img, pCreateInfo, features);
 }
 
 std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
                                                                       VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                                       VkFormatFeatureFlags2KHR features) {
-    return std::make_shared<IMAGE_STATE_NO_BINDING>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+    return CreateImageStateImpl<ImageStateBindingTraits<IMAGE_STATE>>(img, pCreateInfo, swapchain, swapchain_index, features);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,

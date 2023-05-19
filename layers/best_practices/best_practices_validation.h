@@ -211,13 +211,6 @@ class Image : public IMAGE_STATE {
     std::vector<std::vector<Usage>> usages_;
 };
 
-using ImageNoBinding = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableNoMemoryTracker>;
-using ImageLinear = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableLinearMemoryTracker>;
-template <bool IS_RESIDENT>
-using ImageSparse = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableSparseMemoryTracker<IS_RESIDENT>>;
-template <unsigned PLANE_COUNT>
-using ImageMultiplanar = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableMultiplanarMemoryTracker<PLANE_COUNT>>;
-
 class PhysicalDevice : public PHYSICAL_DEVICE_STATE {
   public:
     PhysicalDevice(VkPhysicalDevice phys_dev) : PHYSICAL_DEVICE_STATE(phys_dev) {}
@@ -915,44 +908,14 @@ class BestPractices : public ValidationStateTracker {
     std::shared_ptr<PHYSICAL_DEVICE_STATE> CreatePhysicalDeviceState(VkPhysicalDevice phys_dev) final {
         return std::static_pointer_cast<PHYSICAL_DEVICE_STATE>(std::make_shared<bp_state::PhysicalDevice>(phys_dev));
     }
-
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo,
                                                   VkFormatFeatureFlags2KHR features) final {
-        std::shared_ptr<bp_state::Image> state;
-
-        if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-            if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
-                state = std::make_shared<bp_state::ImageSparse<true>>(this, img, pCreateInfo, features);
-            } else {
-                state = std::make_shared<bp_state::ImageSparse<false>>(this, img, pCreateInfo, features);
-            }
-        } else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
-            uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
-            switch (plane_count) {
-                case 3:
-                    state = std::make_shared<bp_state::ImageMultiplanar<3>>(this, img, pCreateInfo, features);
-                    break;
-                case 2:
-                    state = std::make_shared<bp_state::ImageMultiplanar<2>>(this, img, pCreateInfo, features);
-                    break;
-                case 1:
-                    state = std::make_shared<bp_state::ImageMultiplanar<1>>(this, img, pCreateInfo, features);
-                    break;
-                default:
-                    // Not supported
-                    assert(false);
-            }
-        } else {
-            state = std::make_shared<bp_state::ImageLinear>(this, img, pCreateInfo, features);
-        }
-
-        return state;
+        return CreateImageStateImpl<ImageStateBindingTraits<bp_state::Image>>(img, pCreateInfo, features);
     }
 
     std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo* pCreateInfo, VkSwapchainKHR swapchain,
                                                   uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final {
-        return std::static_pointer_cast<IMAGE_STATE>(
-            std::make_shared<bp_state::ImageNoBinding>(this, img, pCreateInfo, swapchain, swapchain_index, features));
+        return CreateImageStateImpl<ImageStateBindingTraits<bp_state::Image>>(img, pCreateInfo, swapchain, swapchain_index, features);
     }
 
     std::shared_ptr<DESCRIPTOR_POOL_STATE> CreateDescriptorPoolState(VkDescriptorPool pool,
