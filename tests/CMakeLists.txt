@@ -182,7 +182,7 @@ find_package(GTest REQUIRED CONFIG QUIET)
 find_package(glslang REQUIRED CONFIG QUIET)
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
-    VkLayer_utils
+    vvl_utils
     glslang::glslang
     glslang::OGLCompiler
     glslang::OSDependent
@@ -191,7 +191,6 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     glslang::HLSL
     glslang::SPIRV
     glslang::SPVRemapper
-    VVL-SPIRV-LIBS
     GTest::gtest
     GTest::gtest_main
     ${CMAKE_DL_LIBS}

@@ -24,7 +24,7 @@ if (ANDROID_PLATFORM LESS "26")
 endif()
 
 # Required for __android_log_print. Marking as PUBLIC since the tests use __android_log_print as well.
-target_link_libraries(VkLayer_utils PUBLIC log)
+target_link_libraries(vvl_utils PUBLIC log)
 
 # For now just install the .so
 # TODO: This seems valid only if CMAKE_ANDROID_STL_TYPE is c++_static.

@@ -20,6 +20,14 @@ The tests are grouped into different categories. Some of the main test categorie
 - `VkGpuAssistedLayerTest` - Test [GPU-Assisted Validation](../docs/gpu_validation.md)
 - `VkPortabilitySubsetTest` - Test [VK_KHR_portability_subset validation](../docs/portability_validation.md)
 
+## vvl_utils
+
+The validation layer tests don't just test the validation layers via the Vulkan API.
+
+Because the vast majority of the validation layer code is in the vvl_utils static library which we can test the source code directly.
+
+This can be useful for testing helper functions and or generated code directly since it can often be tricky to trigger everything via writing vulkan tests.
+
 ## Implicit Layers note
 
 In general, the implicit validation layers may change the expected message output, which may cause some tests to fail. One solution is to disable the implicit layer during the test session using the `VK_LOADER_LAYERS_DISABLE` environment variable introduced in Vulkan Loader v.1.3.234.
