@@ -1635,6 +1635,14 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex win32_handle_map_lock_;
 #endif
 
+  protected:
+      template <typename ImageStateTraits>
+      std::shared_ptr<IMAGE_STATE> CreateImageStateImpl(VkImage img, const VkImageCreateInfo* pCreateInfo,
+          VkFormatFeatureFlags2KHR features);
+      template <typename ImageStateTraits>
+      std::shared_ptr<IMAGE_STATE> CreateImageStateImpl(VkImage img, const VkImageCreateInfo* pCreateInfo,
+          VkSwapchainKHR swapchain, uint32_t swapchain_index,
+          VkFormatFeatureFlags2KHR features);
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, acceleration_structure_nv_map_)
@@ -1685,3 +1693,47 @@ class ValidationStateTracker : public ValidationObject {
     };
     FakeAllocator fake_memory;
 };
+
+template <typename ImageStateTraits>
+std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageStateImpl(VkImage img, const VkImageCreateInfo* pCreateInfo,
+    VkFormatFeatureFlags2KHR features) {
+    std::shared_ptr<IMAGE_STATE> state;
+
+    if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+            state = std::make_shared<typename ImageStateTraits::template Sparse<true>>(this, img, pCreateInfo, features);
+        }
+        else {
+            state = std::make_shared<typename ImageStateTraits::template Sparse<false>>(this, img, pCreateInfo, features);
+        }
+    }
+    else if (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) {
+        uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
+        switch (plane_count) {
+        case 3:
+            state = std::make_shared<typename ImageStateTraits::template Multiplanar<3>>(this, img, pCreateInfo, features);
+            break;
+        case 2:
+            state = std::make_shared<typename ImageStateTraits::template Multiplanar<2>>(this, img, pCreateInfo, features);
+            break;
+        case 1:
+            state = std::make_shared<typename ImageStateTraits::template Multiplanar<1>>(this, img, pCreateInfo, features);
+            break;
+        default:
+            // Not supported
+            assert(false);
+        }
+    }
+    else {
+        state = std::make_shared<typename ImageStateTraits::Linear>(this, img, pCreateInfo, features);
+    }
+
+    return state;
+}
+
+template <typename ImageStateTraits>
+std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageStateImpl(VkImage img, const VkImageCreateInfo* pCreateInfo,
+    VkSwapchainKHR swapchain, uint32_t swapchain_index,
+    VkFormatFeatureFlags2KHR features) {
+    return std::make_shared<typename ImageStateTraits::NoBinding>(this, img, pCreateInfo, swapchain, swapchain_index, features);
+}

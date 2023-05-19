@@ -223,12 +223,15 @@ class IMAGE_STATE : public BINDABLE {
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
 
-using IMAGE_STATE_NO_BINDING = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableNoMemoryTracker>;
-using IMAGE_STATE_LINEAR = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableLinearMemoryTracker>;
-template <bool IS_RESIDENT>
-using IMAGE_STATE_SPARSE = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableSparseMemoryTracker<IS_RESIDENT>>;
-template <unsigned PLANE_COUNT>
-using IMAGE_STATE_MULTIPLANAR = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableMultiplanarMemoryTracker<PLANE_COUNT>>;
+template <typename ImageState>
+struct ImageStateBindingTraits {
+    using NoBinding = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableNoMemoryTracker>;
+    using Linear = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableLinearMemoryTracker>;
+    template <bool IS_RESIDENT>
+    using Sparse = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableSparseMemoryTracker<IS_RESIDENT>>;
+    template <unsigned PLANE_COUNT>
+    using Multiplanar = MEMORY_TRACKED_RESOURCE_STATE<ImageState, BindableMultiplanarMemoryTracker<PLANE_COUNT>>;
+};
 
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
