@@ -560,6 +560,10 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
     if (sampled_image_operand != 0) {
         const uint32_t sampled_image_id = image_insn.Word(sampled_image_operand);
         const Instruction* id = module_state.FindDef(sampled_image_id);  // <id> Sampled Image
+        if (id->Opcode() == spv::OpFunctionParameter) {
+            no_function_jump = false;
+            return;  // TODO 5614 - Handle function jumps
+        }
 
         sampler_load = (id->Opcode() == spv::OpSampledImage) ? module_state.FindDef(id->Word(4)) : nullptr;
         const uint32_t image_operand = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : sampled_image_id;
@@ -580,6 +584,11 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
 
     // With the OpLoad find the OpVariable for the Image
     assert(image_load);
+    if (image_load->Opcode() == spv::OpFunctionParameter) {
+        no_function_jump = false;
+        return;  // TODO 5614 - Handle function jumps
+    }
+
     const Instruction* image_load_pointer = module_state.FindDef(image_load->Word(3));
     if (image_load_pointer->Opcode() == spv::OpVariable) {
         variable_image_insn = image_load_pointer;
@@ -593,12 +602,20 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
             image_access_chain_index = const_def->GetConstantValue();
         }
         variable_image_insn = module_state.FindDef(image_load_pointer->Word(3));
+    } else if (image_load_pointer->Opcode() == spv::OpFunctionParameter) {
+        no_function_jump = false;
+        return;  // TODO 5614 - Handle function jumps
     } else {
         assert(false);
     }
 
     // If there is a OpSampledImage, take the other OpLoad and find the OpVariable for the Sampler
     if (sampler_load) {
+        if (sampler_load->Opcode() == spv::OpFunctionParameter) {
+            no_function_jump = false;
+            return;  // TODO 5614 - Handle function jumps
+        }
+
         const Instruction* sampler_load_pointer = module_state.FindDef(sampler_load->Word(3));
         if (sampler_load_pointer->Opcode() == spv::OpVariable) {
             variable_sampler_insn = sampler_load_pointer;
@@ -610,6 +627,9 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
                 sampler_access_chain_index = const_def->GetConstantValue();
             }
             variable_sampler_insn = module_state.FindDef(sampler_load_pointer->Word(3));
+        } else if (sampler_load_pointer->Opcode() == spv::OpFunctionParameter) {
+            no_function_jump = false;
+            return;  // TODO 5614 - Handle function jumps
         } else {
             assert(false);
         }
@@ -728,10 +748,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     // These have their own object class, but need entire module parsed first
     std::vector<const Instruction*> entry_point_instructions;
     std::vector<const Instruction*> type_struct_instructions;
-
-    // Need to get ImageAccesses as EntryPoint's variables depend on it
-    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
-    ImageAccessMap image_access_map;
+    std::vector<const Instruction*> image_instructions;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -741,8 +758,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         if (result_id != 0) {
             definitions[result_id] = &insn;
         }
-
-        bool image_instructions = false;
 
         switch (insn.Opcode()) {
             // Specialization constants
@@ -848,7 +863,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             case spv::OpImageQuerySamples:
             case spv::OpImageSparseFetch:
             case spv::OpImageSparseGather: {
-                image_instructions = true;
+                image_instructions.push_back(&insn);
                 break;
             }
             case spv::OpStore: {
@@ -856,7 +871,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 break;
             }
             case spv::OpImageWrite: {
-                image_instructions = true;
+                image_instructions.push_back(&insn);
                 image_write_load_id_map.emplace(&insn, insn.Word(1));
                 break;
             }
@@ -907,13 +922,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 // We don't care about any other defs for now.
                 break;
         }
-
-        if (image_instructions) {
-            auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, insn));
-            if (new_access->variable_image_insn) {
-                image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
-            }
-        }
     }
 
     for (const Instruction* decoration_inst : builtin_decoration_inst) {
@@ -931,6 +939,17 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
     for (const auto& insn : type_struct_instructions) {
         auto new_struct = type_structs.emplace_back(std::make_shared<TypeStructInfo>(module_state, *insn));
         type_struct_map[new_struct->id] = new_struct;
+    }
+
+    // Need to get ImageAccesses as EntryPoint's variables depend on it
+    std::vector<std::shared_ptr<ImageAccess>> image_accesses;
+    ImageAccessMap image_access_map;
+
+    for (const auto& insn : image_instructions) {
+        auto new_access = image_accesses.emplace_back(std::make_shared<ImageAccess>(module_state, *insn));
+        if (new_access->variable_image_insn && new_access->no_function_jump) {
+            image_access_map[new_access->variable_image_insn->ResultId()].push_back(new_access);
+        }
     }
 
     // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
