@@ -64,6 +64,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/robustness.cpp
     positive/sampler.cpp
     positive/shader_compute.cpp
+    positive/shader_image_access.cpp
     positive/shader_interface.cpp
     positive/shader_limits.cpp
     positive/shader_push_constants.cpp
