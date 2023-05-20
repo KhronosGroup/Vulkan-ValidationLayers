@@ -284,3 +284,57 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
+    TEST_DESCRIPTION("Use a OpCopyObject from a OpLoad");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+
+    // This is simple
+    //    int x = textureSize(texture_image, 0).x;
+    // but with inserted OpCopyObject calls
+    char const *csSource = R"(
+               OpCapability Shader
+               OpCapability ImageQuery
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %texture_image DescriptorSet 0
+               OpDecorate %texture_image Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%ptr_func_int = OpTypePointer Function %int
+      %float = OpTypeFloat 32
+         %10 = OpTypeImage %float 2D 0 0 0 1 Unknown
+%ptr_texture = OpTypePointer UniformConstant %10
+%texture_image = OpVariable %ptr_texture UniformConstant
+      %int_0 = OpConstant %int 0
+      %v2int = OpTypeVector %int 2
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %x = OpVariable %ptr_func_int Function
+         %13 = OpLoad %10 %texture_image
+      %copy1 = OpCopyObject %10 %13
+      %copy2 = OpCopyObject %10 %copy1
+         %16 = OpImageQuerySizeLod %v2int %copy2 %int_0
+         %19 = OpCompositeExtract %int %16 0
+               OpStore %x %19
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+}
