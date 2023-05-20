@@ -611,7 +611,8 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
         no_function_jump = false;
         return;  // TODO 5614 - Handle function jumps
     } else {
-        assert(false);
+        no_function_jump = false;
+        return;  // TODO 5614 - Handle other calls like OpCopyObject
     }
 
     // If there is a OpSampledImage, take the other OpLoad and find the OpVariable for the Sampler
@@ -641,7 +642,8 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
             no_function_jump = false;
             return;  // TODO 5614 - Handle function jumps
         } else {
-            assert(false);
+            no_function_jump = false;
+            return;  // TODO 5614 - Handle other calls like OpCopyObject
         }
     }
 }
