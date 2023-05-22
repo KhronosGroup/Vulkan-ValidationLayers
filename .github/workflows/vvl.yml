@@ -132,13 +132,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [ x64, Win32 ]
+        arch: [ amd64, amd64_x86 ] # 64 bit compiler, 64 bit compiler targeting 32 bit
         config: [ debug, release ]
         os: [ windows-latest ]
         exclude:
-          - arch: Win32
+          - arch: amd64_x86
             config: release
-          - arch: x64
+          - arch: amd64
             config: debug
 
     steps:
