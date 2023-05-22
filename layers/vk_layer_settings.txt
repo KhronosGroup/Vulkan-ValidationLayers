@@ -111,3 +111,32 @@ khronos_validation.enables =
 # performance in multithreaded applications.
 khronos_validation.fine_grained_locking = true
 
+# Best Practices
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
+
+# Best Practices with ARM best practices
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM
+
+# Best Practices with AMD best practices
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD
+
+# Best Practices with Imagination Tech best practices
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG
+
+# Best Practices with Nvidia Specific Check
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA
+
+# Best Practices with ALL Vendor Specific Checks
+# =====================
+# Enable best practices layer
+khronos_validation.enables=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL
