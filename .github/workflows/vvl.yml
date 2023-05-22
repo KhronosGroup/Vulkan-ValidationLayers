@@ -98,8 +98,6 @@ jobs:
 
   gn:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -181,7 +179,6 @@ jobs:
   android_cmake:
       runs-on: ubuntu-22.04
       strategy:
-        fail-fast: false
         matrix:
           abi: [ arm64-v8a ]
           build_tests: [ "ON" ]
@@ -217,8 +214,6 @@ jobs:
 
   android_mk:
       runs-on: ubuntu-22.04
-      strategy:
-        fail-fast: false
       steps:
         - uses: actions/checkout@v3
         - uses: actions/setup-python@v4
@@ -230,7 +225,6 @@ jobs:
   macos:
     runs-on: macos-latest
     strategy:
-      fail-fast: false
       matrix:
         macos_version: ["min","latest"]
     steps:
@@ -255,8 +249,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -293,8 +285,6 @@ jobs:
   # If we do intentionally want to break them, we just need to update the integration test code to account for that.
   integration_test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
