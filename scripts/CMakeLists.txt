@@ -82,12 +82,16 @@ if (UPDATE_DEPS)
     set(UPDATE_DEPS_HASH "0" CACHE STRING "Default value until we run update_deps.py")
     mark_as_advanced(UPDATE_DEPS_HASH)
 
+    if ("${UPDATE_DEPS_HASH}" STREQUAL "0")
+        list(APPEND update_dep_command "--clean-build")
+        list(APPEND update_dep_command "--clean-install")
+    endif()
+
     if ("${md5_hash}" STREQUAL $CACHE{UPDATE_DEPS_HASH})
         message(DEBUG "update_deps.py: no work to do.")
     else()
         execute_process(
             COMMAND ${Python3_EXECUTABLE} ${update_dep_command}
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE _update_deps_result
         )
         if (NOT (${_update_deps_result} EQUAL 0))
