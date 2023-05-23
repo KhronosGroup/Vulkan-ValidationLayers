@@ -13,21 +13,20 @@
 
 #include "../framework/layer_validation_tests.h"
 
-static VkValidationFeatureEnableEXT gpu_av_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-static VkValidationFeatureDisableEXT gpu_av_disables[] = {
-    VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-    VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+static std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+static std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
+                                     VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
 // All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
 // enabled/disabled
 VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
     VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
-    features.enabledValidationFeatureCount = 1;
+    features.enabledValidationFeatureCount = size32(gpu_av_enables);
     // TODO - Add command line flag or env var or another system for setting this to 'zero' to allow for someone writting a new
     // GPU-AV test to easily check the test is valid
-    features.disabledValidationFeatureCount = 4;
-    features.pEnabledValidationFeatures = gpu_av_enables;
-    features.pDisabledValidationFeatures = gpu_av_disables;
+    features.disabledValidationFeatureCount = size32(gpu_av_disables);
+    features.pEnabledValidationFeatures = gpu_av_enables.data();
+    features.pDisabledValidationFeatures = gpu_av_disables.data();
     return features;
 }
 
