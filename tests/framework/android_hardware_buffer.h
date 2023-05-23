@@ -10,9 +10,15 @@
  */
 #pragma once
 
-#include "utils/android_ndk_types.h"  // Defines AHB_VALIDATION_SUPPORT if supported
+#include "utils/android_ndk_types.h"
+#include "../framework/layer_validation_tests.h"
 
-#ifdef AHB_VALIDATION_SUPPORT
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+
+// Not in public NDK headers, only AOSP headers, but NDK will allow it for usage of camera apps and we use for AHB tests
+constexpr uint32_t AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22;
+constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000;
+constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
 
 // Helper to get the memory type index for AHB object that are being imported
 // returns false if can't set the values correctly
@@ -34,4 +40,4 @@ inline bool SetAllocationInfoImportAHB(vk_testing::Device *device, VkAndroidHard
     return info.memoryTypeIndex < mem_props.memoryTypeCount;
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR

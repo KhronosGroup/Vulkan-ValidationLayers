@@ -13,12 +13,9 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/android_hardware_buffer.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-#include "../framework/android_hardware_buffer.h"
-#endif
-
-#ifdef AHB_VALIDATION_SUPPORT
 
 class NegativeAndroidHardwareBuffer : public VkLayerTest {};
 
@@ -1560,4 +1557,4 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     AHardwareBuffer_release(ahb);
 }
 
-#endif  // AHB_VALIDATION_SUPPORT
+#endif  // VK_USE_PLATFORM_ANDROID_KHR

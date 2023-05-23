@@ -21,7 +21,7 @@
 #include "generated/vk_enum_string_helper.h"
 #include "core_validation.h"
 
-#ifdef AHB_VALIDATION_SUPPORT
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions
 // that support the VK_ANDROID_external_memory_android_hardware_buffer extension.
 // This chunk could move into a seperate core_validation_android.cpp file... ?
@@ -471,7 +471,6 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
 }
 
 // Validate creating an image with an external format
-// This could be wrapped with VK_USE_PLATFORM_ANDROID_KHR instead of AHB_VALIDATION_SUPPORT, but this check is only for AHB
 bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info) const {
     bool skip = false;
 
@@ -548,7 +547,6 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
 }
 
 // Validate creating an image view with an AHB format
-// This could be wrapped with VK_USE_PLATFORM_ANDROID_KHR instead of AHB_VALIDATION_SUPPORT, but this check is only for AHB
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const {
     bool skip = false;
     auto image_state = Get<IMAGE_STATE>(create_info->image);
@@ -596,20 +594,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
     return skip;
 }
 
-#else  // !AHB_VALIDATION_SUPPORT
-
-// Case building for Android without AHB Validation
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
-    VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties) const {
-    return false;
-}
-bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
-                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
-                                                                      struct AHardwareBuffer **pBuffer) const {
-    return false;
-}
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#else  // !defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const { return false; }
 
@@ -634,4 +619,4 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo *create_info
 
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const { return false; }
 
-#endif  // AHB_VALIDATION_SUPPORT
+#endif
