@@ -507,21 +507,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
     if (pCreateInfo->pBindings != nullptr) {
         for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
             if (pCreateInfo->pBindings[i].descriptorCount != 0) {
-                if (((pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
-                     (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) &&
-                    (pCreateInfo->pBindings[i].pImmutableSamplers != nullptr)) {
-                    for (uint32_t descriptor_index = 0; descriptor_index < pCreateInfo->pBindings[i].descriptorCount;
-                         ++descriptor_index) {
-                        if (pCreateInfo->pBindings[i].pImmutableSamplers[descriptor_index] == VK_NULL_HANDLE) {
-                            skip |= LogError(device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282",
-                                             "vkCreateDescriptorSetLayout: required parameter "
-                                             "pCreateInfo->pBindings[%" PRIu32 "].pImmutableSamplers[%" PRIu32
-                                             "] specified as VK_NULL_HANDLE",
-                                             i, descriptor_index);
-                        }
-                    }
-                }
-
                 // If descriptorCount is not 0, stageFlags must be a valid combination of VkShaderStageFlagBits values
                 if ((pCreateInfo->pBindings[i].stageFlags != 0) &&
                     ((pCreateInfo->pBindings[i].stageFlags & (~AllVkShaderStageFlagBits)) != 0)) {
