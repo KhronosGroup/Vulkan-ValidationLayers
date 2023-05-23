@@ -431,11 +431,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             // integration into api version 1.1
             if (api_version >= VK_API_VERSION_1_1) {
                 skip |= LogError(device, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840",
-                                 "vkCreateDevice(): VkDeviceCreateInfo->ppEnabledExtensionNames must not include "
+                                 "vkCreateDevice(): ppEnabledExtensionNames must not include "
                                  "VK_AMD_negative_viewport_height if api version is greater than or equal to 1.1.");
             } else if (maint1) {
                 skip |= LogError(device, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374",
-                                 "vkCreateDevice(): VkDeviceCreateInfo->ppEnabledExtensionNames must not simultaneously include "
+                                 "vkCreateDevice(): ppEnabledExtensionNames must not simultaneously include "
                                  "VK_KHR_maintenance1 and VK_AMD_negative_viewport_height.");
             }
         }
@@ -457,7 +457,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
         if (khr_bda && ext_bda) {
             skip |= LogError(device, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328",
-                             "VkDeviceCreateInfo->ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
+                             "vkCreateDevice(): ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
                              "VK_EXT_buffer_device_address.");
         }
     }
@@ -468,7 +468,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         if (features2) {
             // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
             skip |= LogError(device, "VUID-VkDeviceCreateInfo-pNext-00373",
-                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2 struct when "
+                             "vkCreateDevice(): pNext includes a VkPhysicalDeviceFeatures2 struct when "
                              "pCreateInfo->pEnabledFeatures is non-NULL.");
         }
     }
@@ -478,7 +478,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     const auto *robustness2_features = LvlFindInChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
     if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
         skip |= LogError(device, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000",
-                         "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
+                         "vkCreateDevice(): If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
     }
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
     if (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
@@ -486,13 +486,14 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         skip |= LogError(
             device,
             "VUID-VkPhysicalDeviceRayTracingPipelineFeaturesKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03575",
-            "If rayTracingPipelineShaderGroupHandleCaptureReplayMixed is VK_TRUE, rayTracingPipelineShaderGroupHandleCaptureReplay "
+            "vkCreateDevice(): If rayTracingPipelineShaderGroupHandleCaptureReplayMixed is VK_TRUE, "
+            "rayTracingPipelineShaderGroupHandleCaptureReplay "
             "must also be VK_TRUE.");
     }
     auto vertex_attribute_divisor_features = LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_attribute_divisor_features && (!IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor))) {
         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
-                         "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
+                         "vkCreateDevice(): pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
                          "struct, VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
     }
 
@@ -506,12 +507,10 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES) {
-                skip |= LogError(
-                    instance, "VUID-VkDeviceCreateInfo-pNext-02829",
-                    "If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then it must not include a "
-                    "VkPhysicalDevice16BitStorageFeatures, VkPhysicalDeviceMultiviewFeatures, "
-                    "VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceProtectedMemoryFeatures, "
-                    "VkPhysicalDeviceSamplerYcbcrConversionFeatures, or VkPhysicalDeviceShaderDrawParametersFeatures structure");
+                skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-02829",
+                                 "vkCreateDevice(): If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then "
+                                 "it must not include a %s structure",
+                                 string_VkStructureType(current->sType));
                 break;
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
@@ -549,14 +548,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES) {
                 skip |= LogError(
                     instance, "VUID-VkDeviceCreateInfo-pNext-02830",
-                    "If the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not include a "
-                    "VkPhysicalDevice8BitStorageFeatures, VkPhysicalDeviceShaderAtomicInt64Features, "
-                    "VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceDescriptorIndexingFeatures, "
-                    "VkPhysicalDeviceScalarBlockLayoutFeatures, VkPhysicalDeviceImagelessFramebufferFeatures, "
-                    "VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, "
-                    "VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures, VkPhysicalDeviceHostQueryResetFeatures, "
-                    "VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceBufferDeviceAddressFeatures, or "
-                    "VkPhysicalDeviceVulkanMemoryModelFeatures structure");
+                    "vkCreateDevice(): If the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not "
+                    "include a %s structure",
+                    string_VkStructureType(current->sType));
                 break;
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
@@ -628,9 +622,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES) {
-                skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-06532",
-                                 "vkCreateDevice(): %s structure included in VkPhysicalDeviceVulkan13Features' pNext chain.",
-                                 string_VkStructureType(current->sType));
+                skip |= LogError(
+                    instance, "VUID-VkDeviceCreateInfo-pNext-06532",
+                    "vkCreateDevice(): If the pNext chain includes a VkPhysicalDeviceVulkan13Features structure, then it must not "
+                    "include a %s structure",
+                    string_VkStructureType(current->sType));
                 break;
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
@@ -692,8 +688,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         variable_pointers_storage_buffer = variable_pointers_features->variablePointersStorageBuffer;
     }
     if ((variable_pointers == VK_TRUE) && (variable_pointers_storage_buffer == VK_FALSE)) {
-        skip |= LogError(instance, "VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431",
-                         "If variablePointers is VK_TRUE then variablePointersStorageBuffer also needs to be VK_TRUE");
+        skip |= LogError(
+            instance, "VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431",
+            "vkCreateDevice(): If variablePointers is VK_TRUE then variablePointersStorageBuffer also needs to be VK_TRUE");
     }
 
     // feature dependencies for VK_KHR_multiview
@@ -712,11 +709,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
     if ((multiview == VK_FALSE) && (multiview_geometry_shader == VK_TRUE)) {
         skip |= LogError(instance, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewGeometryShader-00580",
-                         "If multiviewGeometryShader is VK_TRUE then multiview also needs to be VK_TRUE");
+                         "vkCreateDevice(): If multiviewGeometryShader is VK_TRUE then multiview also needs to be VK_TRUE");
     }
     if ((multiview == VK_FALSE) && (multiview_tessellation_shader == VK_TRUE)) {
         skip |= LogError(instance, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581",
-                         "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
+                         "vkCreateDevice(): If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
     }
 
     return skip;
