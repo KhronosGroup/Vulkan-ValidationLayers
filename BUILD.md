@@ -252,15 +252,8 @@ export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
 
 ### Android Build Requirements
 
-Note that the minimum supported Android SDK API Level is 26, revision
-level 3.
-
-NDK r20 or greater required
-
-- Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
-  or later.
-- From the "Welcome to Android Studio" splash screen, add the following
-  components using Configure > SDK Manager:
+- Install [Android Studio 2.3](https://developer.android.com/studio/index.html) or later.
+- From the `Welcome to Android Studio` splash screen, add the following components using Configure > SDK Manager:
   - SDK Platforms > Android 8.0.0 and newer
   - SDK Tools > Android SDK Build-Tools
   - SDK Tools > Android SDK Platform-Tools
@@ -269,8 +262,7 @@ NDK r20 or greater required
 
 #### Add Android specifics to environment
 
-For each of the below, you may need to specify a different build-tools
-version, as Android Studio will roll it forward fairly regularly.
+For each of the below, you may need to specify a different build-tools version, as Android Studio will roll it forward fairly regularly.
 
 On Linux:
 
@@ -285,9 +277,11 @@ export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
 
 On Windows:
 
-    set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
-    set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
-    set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
+```
+set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
+set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
+set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
+```
 
 On OSX:
 
@@ -300,10 +294,11 @@ export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
 ```
 
 Note: If `apksigner` gives a `java: not found` error you do not have Java in your path.
+
 A common way to install on the system:
 
 ```bash
-  sudo apt install default-jre
+sudo apt install default-jre
 ```
 
 #### Additional OSX System Requirements
@@ -331,8 +326,10 @@ everything in the repository for Android, including validation layers, tests,
 demos, and APK packaging: This script does retrieve and use the upstream SPRIV
 tools.
 
-    cd build-android
-    ./build_all.sh
+```bash
+cd build-android
+./build_all.sh
+```
 
 > **NOTE:** To allow manual installation of Android layer libraries on development devices, `build_all.sh` will use the static version of the c++ library (libc++_static.so). For testing purposes and general usage including installation via APK the c++ shared library should be used (libc++_shared.so). See comments in [build_all.sh](build-android/build_all.sh) for details.
 
