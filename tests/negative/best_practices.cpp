@@ -626,8 +626,8 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkSubpassDescription sd{};
 
@@ -668,8 +668,8 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkSubpassDescription sd{};
 
@@ -1663,12 +1663,12 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // Specify that we do nothing with the contents of the attached image
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachment.format = image_info.format;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
-    ar.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    ar.layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkSubpassDescription spd{};
     spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -2197,6 +2197,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
     TEST_DESCRIPTION("Transition image layout from undefined to read only");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 

@@ -4443,14 +4443,32 @@ TEST_F(VkVideoBestPracticesLayerTest, BindVideoSessionMemory) {
 
     VideoContext context(DeviceObj(), config);
 
+    // Create a buffer to get non-video-related memory requirements
+    VkBufferCreateInfo buffer_create_info =
+        LvlInitStruct<VkBufferCreateInfo>(nullptr, static_cast<VkBufferCreateFlags>(0), static_cast<VkDeviceSize>(4096),
+                                          static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+    vk_testing::Buffer buffer(*m_device, buffer_create_info);
+    VkMemoryRequirements buf_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &buf_mem_reqs);
+
+    // Create non-video-related DeviceMemory
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    alloc_info.allocationSize = buf_mem_reqs.size;
+    ASSERT_TRUE(m_device->phy().set_memory_type(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    vk_testing::DeviceMemory memory(*m_device, alloc_info);
+
+    // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called
     auto bind_info = LvlInitStruct<VkBindVideoSessionMemoryInfoKHR>();
+    bind_info.memory = memory;
+    bind_info.memoryOffset = 0;
+    bind_info.memorySize = alloc_info.allocationSize;
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit,
                                          "UNASSIGNED-BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved");
     context.vk.BindVideoSessionMemoryKHR(m_device->device(), context.Session(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
-    uint32_t mem_req_count;
+    uint32_t mem_req_count = 0;
     context.vk.GetVideoSessionMemoryRequirementsKHR(m_device->device(), context.Session(), &mem_req_count, nullptr);
 
     if (mem_req_count > 0) {

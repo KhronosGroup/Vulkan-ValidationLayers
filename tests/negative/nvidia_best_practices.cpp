@@ -250,6 +250,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
 TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     InitBestPracticesFramework(kEnableNVIDIAValidation);
 
@@ -264,8 +265,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     }
 
     auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
-    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>(&as_features);
-    auto features2 = GetPhysicalDeviceFeatures2(bda_features);
+    auto rt_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&as_features);
+    GetPhysicalDeviceFeatures2(bda_features);
 
     if (as_features.accelerationStructure == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructure feature is not supported";
@@ -275,7 +277,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (rt_pipeline_features.rayTracingPipeline == VK_FALSE) {
+        GTEST_SKIP() << "rayTracingPipeline feature is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
 
     VkQueueObj *graphics_queue = m_device->GetDefaultQueue();
 
