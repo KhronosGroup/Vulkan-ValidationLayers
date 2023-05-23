@@ -1152,7 +1152,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                                                                     binding_table.deviceAddress + binding_table.size - 1);
         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<4> buffer_address_validator = {{{
-            {vuid_single_device_memory,
+            {vuid_single_device_memory, LogObjectList(commandBuffer),
              [this, commandBuffer, rt_func_name, vuid_single_device_memory](const BUFFER_STATE_PTR &buffer_state,
                                                                             std::string *out_error_msg) {
                  if (!out_error_msg) {
@@ -1162,7 +1162,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                  }
              }},
 
-            {vuid_binding_table_flag,
+            {vuid_binding_table_flag, LogObjectList(commandBuffer),
              [](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                  if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
                      if (out_error_msg) {
@@ -1177,7 +1177,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                         "usage flag:\n";
              }},
 
-            {"VUID-VkStridedDeviceAddressRegionKHR-size-04631",
+            {"VUID-VkStridedDeviceAddressRegionKHR-size-04631", LogObjectList(commandBuffer),
              [&requested_range](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                  const auto buffer_address_range = buffer_state->DeviceAddressRange();
                  if (!buffer_address_range.includes(requested_range)) {
@@ -1195,7 +1195,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                         " buffer device address range " + requested_range_string + ":\n";
              }},
 
-            {"VUID-VkStridedDeviceAddressRegionKHR-size-04632",
+            {"VUID-VkStridedDeviceAddressRegionKHR-size-04632", LogObjectList(commandBuffer),
              [&binding_table](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                  if (binding_table.stride > buffer_state->createInfo.size) {
                      if (out_error_msg) {
@@ -1214,7 +1214,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
         const std::string binding_table_address = std::string(binding_table_name) + "->deviceAddress";
         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, rt_func_name, binding_table_address,
-                                                                  binding_table.deviceAddress, LogObjectList(commandBuffer));
+                                                                  binding_table.deviceAddress);
     }
 
     return skip;

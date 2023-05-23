@@ -3690,7 +3690,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
         {
             using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
             BufferAddressValidation<5> buffer_address_validator = {{{
-                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052",
+                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052", LogObjectList(device),
                  [this, commandBuffer](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                      if (!out_error_msg) {
                          return !buffer_state->sparse && buffer_state->IsMemoryBound();
@@ -3700,7 +3700,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      }
                  }},
 
-                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
+                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055", LogObjectList(device),
                  [binding_usage = bindingInfo.usage](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                      if ((buffer_state->createInfo.usage &
                           (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
@@ -3720,7 +3720,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                             "].usage (" + string_VkBufferUsageFlags(binding_usage) + "):\n";
                  }},
 
-                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122", LogObjectList(device),
                  [binding_usage = bindingInfo.usage, &num_sampler_buffers](const BUFFER_STATE_PTR &buffer_state,
                                                                            std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -3738,7 +3738,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      return "The following buffers were not created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:\n";
                  }},
 
-                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123",
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123", LogObjectList(device),
                  [binding_usage = bindingInfo.usage, &num_resource_buffers](const BUFFER_STATE_PTR &buffer_state,
                                                                             std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -3756,7 +3756,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      return "The following buffers were not created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT:\n";
                  }},
 
-                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124", LogObjectList(device),
                  [binding_usage = bindingInfo.usage, &num_push_descriptor_buffers](const BUFFER_STATE_PTR &buffer_state,
                                                                                    std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -3778,7 +3778,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
             const std::string address_name = "pBindingInfos[" + std::to_string(i) + "].address";
             skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT()",
-                                                                      address_name, bindingInfo.address, LogObjectList(device));
+                                                                      address_name, bindingInfo.address);
         }
 
         const auto *buffer_handle = LvlFindInChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[i].pNext);
@@ -4092,7 +4092,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescr
     } else {
         using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
         BufferAddressValidation<1> buffer_address_validator = {
-            {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
+            {{{"VUID-VkDescriptorAddressInfoEXT-range-08045", LogObjectList(device),
                [&address_info](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                    if (address_info->range >
                        buffer_state->createInfo.size - (address_info->address - buffer_state->deviceAddress)) {
@@ -4105,7 +4105,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescr
                }}}}};
 
         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT", "address",
-                                                                  address_info->address, LogObjectList(device));
+                                                                  address_info->address);
     }
 
     if (address_info->range == VK_WHOLE_SIZE) {
@@ -4227,7 +4227,8 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     std::string_view vuid_memory_bound = "";
     using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
     BufferAddressValidation<1> buffer_address_validator = {
-        {{{"", [this, device, &vuid_memory_bound](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+        {{{"VUID-VkDescriptorDataEXT-type", LogObjectList(device),
+           [this, device, &vuid_memory_bound](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
                if (!out_error_msg) {
                    return !buffer_state->sparse && buffer_state->IsMemoryBound();
                } else {
@@ -4241,9 +4242,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08030";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
-                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
+                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
+                                                                              pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08039",
@@ -4256,9 +4257,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08031";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
-                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
+                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
+                                                                              pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08040",
@@ -4271,9 +4272,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08032";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
-                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
+                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
+                                                                              pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08037",
@@ -4286,9 +4287,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
                 if (!buffer_states.empty()) {
                     vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08033";
-                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
-                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
-                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkGetDescriptorEXT()",
+                                                                              "pDescriptorInfo->data.pUniformBuffer->address",
+                                                                              pDescriptorInfo->data.pUniformBuffer->address);
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08038",

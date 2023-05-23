@@ -62,20 +62,26 @@
 template <size_t N>
 class BufferAddressValidation {
   public:
+    // Return true if and only if VU is verified
     using ValidationFunction = std::function<bool(const ValidationStateTracker::BUFFER_STATE_PTR&, std::string* out_error_msg)>;
     using ErrorMsgHeaderSuffixFunction = std::function<std::string()>;
 
     struct VuidAndValidation {
-        std::string_view vuid;
-        ValidationFunction validation_func;
+        std::string_view vuid{};
+        LogObjectList objlist{};
+        ValidationFunction validation_func = [](const ValidationStateTracker::BUFFER_STATE_PTR&, std::string* out_error_msg) {
+            return true;
+        };
         ErrorMsgHeaderSuffixFunction error_msg_header_suffix_func = []() { return "\n"; };  // text appended to error message header
     };
 
     // Look for a buffer that satisfies all VUIDs
     [[nodiscard]] bool HasValidBuffer(vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept;
+    // Look for a buffer that does not satisfy one of the VUIDs
+    [[nodiscard]] bool HasInvalidBuffer(vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
-    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker, const LogObjectList& objlist,
+    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker,
                                          vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
                                          std::string_view api_name, const std::string& device_address_name,
                                          VkDeviceAddress device_address) const noexcept;
@@ -83,16 +89,36 @@ class BufferAddressValidation {
     [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker,
                                                 vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
                                                 std::string_view api_name, const std::string& device_address_name,
-                                                VkDeviceAddress device_address, const LogObjectList& objlist) const noexcept {
+                                                VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (!HasValidBuffer(buffer_list)) {
-            skip |= LogInvalidBuffers(checker, objlist, buffer_list, api_name, device_address_name, device_address);
+            skip |= LogInvalidBuffers(checker, buffer_list, api_name, device_address_name, device_address);
+        }
+        return skip;
+    }
+    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker,
+                                                vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
+                                                std::string_view api_name, const std::string& device_address_name,
+                                                VkDeviceAddress device_address) const noexcept {
+        bool skip = false;
+        if (HasInvalidBuffer(buffer_list)) {
+            skip |= LogInvalidBuffers(checker, buffer_list, api_name, device_address_name, device_address);
         }
         return skip;
     }
 
+    bool AddVuidValidation(VuidAndValidation&& vuid_and_validation) noexcept {
+        for (size_t i = 0; i < N; ++i) {
+            if (vuidsAndValidationFunctions[i].vuid.empty()) {
+                vuidsAndValidationFunctions[i] = std::move(vuid_and_validation);
+                return true;
+            }
+        }
+        return false;
+    }
+
   public:
-    // public to enable using aggregate initialization
+    // public to enable aggregate initialization
     std::array<VuidAndValidation, N> vuidsAndValidationFunctions;
 
   private:
@@ -108,9 +134,7 @@ bool BufferAddressValidation<N>::HasValidBuffer(
     vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept {
     for (const auto& buffer : buffer_list) {
         assert(buffer);
-        if (!buffer) {
-            continue;
-        }
+
         bool valid_buffer_found = true;
         for (const auto& vuidAndValidation : vuidsAndValidationFunctions) {
             if (!vuidAndValidation.validation_func(buffer, nullptr)) {
@@ -125,7 +149,23 @@ bool BufferAddressValidation<N>::HasValidBuffer(
 }
 
 template <size_t N>
-bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, const LogObjectList& objlist,
+bool BufferAddressValidation<N>::HasInvalidBuffer(
+    vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list) const noexcept {
+    for (const auto& buffer : buffer_list) {
+        assert(buffer);
+
+        for (const auto& vuidAndValidation : vuidsAndValidationFunctions) {
+            if (!vuidAndValidation.validation_func(buffer, nullptr)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+template <size_t N>
+bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker,
                                                    vvl::span<const ValidationStateTracker::BUFFER_STATE_PTR> buffer_list,
                                                    std::string_view api_name, const std::string& device_address_name,
                                                    VkDeviceAddress device_address) const noexcept {
@@ -151,11 +191,10 @@ bool BufferAddressValidation<N>::LogInvalidBuffers(const CoreChecks& checker, co
     // For each buffer, and for each violated VUID, build an error message
     for (const auto& buffer : buffer_list) {
         assert(buffer);
-        if (!buffer) {
-            continue;
-        }
+
         for (size_t i = 0; i < N; ++i) {
-            [[maybe_unused]] const auto& [vuid, validation_func, error_msg_header_suffix_func] = vuidsAndValidationFunctions[i];
+            [[maybe_unused]] const auto& [vuid, objlist, validation_func, error_msg_header_suffix_func] =
+                vuidsAndValidationFunctions[i];
 
             // Fill buffer_error with error if there is one, and if validation function did fill a buffer error message
             if (std::string buffer_error; !validation_func(buffer, &buffer_error) && !buffer_error.empty()) {
