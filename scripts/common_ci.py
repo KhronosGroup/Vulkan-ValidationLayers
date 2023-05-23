@@ -187,7 +187,7 @@ def BuildProfileLayer():
     VP_DIR = RepoRelative("%s/Vulkan-Profiles" % EXTERNAL_DIR_NAME)
     if not os.path.exists(VP_DIR):
         print("Clone Vulkan-Profiles Repository")
-        clone_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Profiles.git'
+        clone_cmd = 'git clone --branch vk_ext_layer_settings_use https://github.com/KhronosGroup/Vulkan-Profiles.git'
         RunShellCmd(clone_cmd, EXTERNAL_DIR_NAME)
 
     BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
