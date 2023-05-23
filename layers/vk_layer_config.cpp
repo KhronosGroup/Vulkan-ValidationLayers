@@ -19,11 +19,12 @@
  **************************************************************************/
 #include "vk_layer_config.h"
 
-#include <string.h>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <charconv>
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
@@ -33,9 +34,10 @@
 #include <windows.h>
 #include <direct.h>
 #define GetCurrentDir _getcwd
-#elif defined(__ANDROID__)
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <sys/system_properties.h>
 #include <unistd.h>
+#include "utils/android_ndk_types.h"
 #define GetCurrentDir getcwd
 #else
 #include <unistd.h>
@@ -413,23 +415,36 @@ void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
     }
 }
 
-// This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
-#if defined(__ANDROID__)
-#include "utils/android_ndk_types.h"  // get AHB_VALIDATION_SUPPORT macro
-void __attribute__((constructor)) CheckAndroidVersion();
-void CheckAndroidVersion() {
-#ifdef AHB_VALIDATION_SUPPORT
-    string version_env = GetEnvironment("ro.build.version.sdk");
-    int target_version = atoi(version_env.c_str());
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-    // atoi returns 0 if GetEnvironment fails and don't want false positive errors
-    if ((target_version != 0) && (target_version < 26)) {
-        LOGCONSOLE(
-            "ERROR - Targeted Android version is %d and needs to be 26 or above. Please read "
-            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/BUILD.md for how to build the Validation Layers "
-            "for Android 25 and below",
-            target_version);
+// Require at least NDK 20 to build Validation Layers. Makes everything simpler to just have people building the layers to use a
+// recent (over 2 years old) version of the NDK.
+#if __NDK_MAJOR__ < 20
+#error "Validation Layers require at least NDK r20 or greater to build"
+#endif
+
+// This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
+void __attribute__((constructor)) CheckAndroidVersion() {
+    const std::string version = GetEnvironment("ro.build.version.sdk");
+
+    if (version.empty()) {
+        return;
     }
-#endif  // AHB_VALIDATION_SUPPORT
+
+    constexpr uint32_t target_android_api = 26;
+    constexpr uint32_t android_api = __ANDROID_API__;
+
+    static_assert(android_api >= target_android_api, "Vulkan-ValidationLayers is not supported on Android 25 and below");
+
+    uint32_t queried_version{};
+
+    if (std::from_chars(version.data(), version.data() + version.size(), queried_version).ec != std::errc()) {
+        return;
+    }
+
+    if (queried_version < target_android_api) {
+        LOGCONSOLE("ERROR - Android version is %d and needs to be 26 or above.", queried_version);
+    }
 }
-#endif  // defined(__ANDROID__)
+
+#endif

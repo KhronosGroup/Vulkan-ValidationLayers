@@ -151,8 +151,6 @@ target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_TESTS_USE_CMAKE
 
 add_dependencies(vk_layer_validation_tests vvl)
 
-target_include_directories(vk_layer_validation_tests PRIVATE .)
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE
         -Wno-sign-compare

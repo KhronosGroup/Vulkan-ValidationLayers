@@ -12,15 +12,13 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/android_hardware_buffer.h"
 #include "generated/vk_extension_helper.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-#include "../framework/android_hardware_buffer.h"
-#endif
 
 class PositiveAndroidHardwareBuffer : public VkPositiveLayerTest {};
 
-#ifdef AHB_VALIDATION_SUPPORT
 TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");
 
@@ -553,4 +551,4 @@ TEST_F(PositiveAndroidHardwareBuffer, ExternalCameraFormat) {
     AHardwareBuffer_release(ahb);
 }
 
-#endif  // AHB_VALIDATION_SUPPORT
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
