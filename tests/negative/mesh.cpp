@@ -219,6 +219,9 @@ TEST_F(NegativeMesh, BasicUsage) {
         for (int i = 0; i < 5; i++) {
             dyn_state.dynamicStateCount = dyn_states[i].size();
             dyn_state.pDynamicStates = dyn_states[i].data();
+            if (!extended_dynamic_state2.extendedDynamicState2PatchControlPoints &&
+                *dyn_state.pDynamicStates == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)
+                continue;
             const auto break_vp5 = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
                 helper.gp_ci_.pDynamicState = &dyn_state;
