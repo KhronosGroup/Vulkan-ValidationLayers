@@ -783,13 +783,6 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         const VkDeviceSize small_buffer_size =
             std::max<VkDeviceSize>(4 * descriptor_buffer_properties.descriptorBufferOffsetAlignment, 4096);
 
-        // Allocate common buffer memory
-        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
-        alloc_info.allocationSize = large_buffer_size;
-        vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
-
         // Create a large and a small buffer
         buffCI = LvlInitStruct<VkBufferCreateInfo>();
         buffCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -801,6 +794,17 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
         buffCI.size = small_buffer_size;
         auto small_buffer = std::make_unique<vk_testing::Buffer>();
         small_buffer->init_no_mem(*m_device, buffCI);
+
+        VkMemoryRequirements buffer_mem_reqs = {};
+        vk::GetBufferMemoryRequirements(m_device->device(), large_buffer->handle(), &buffer_mem_reqs);
+
+        // Allocate common buffer memory
+        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+        alloc_info.allocationSize = buffer_mem_reqs.size;
+        m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &alloc_info, 0);
+        vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
 
         // Bind those buffers to the same buffer memory
         vk::BindBufferMemory(device(), large_buffer->handle(), buffer_memory.handle(), 0);
