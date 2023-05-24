@@ -66,6 +66,14 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     fsr_features.primitiveFragmentShadingRate = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &fsr_features));
 
+    VkImageFormatProperties format_props = {};
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties(
+        m_device->phy().handle(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0, &format_props);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Image options not supported";
+    }
+
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_OPTIMAL, 0);
