@@ -251,35 +251,29 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v3
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: mingw-ccache
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
-      - name: Cache dependent components
-        id: cache-deps
-        uses: actions/cache@v3
-        with:
-          path: |
-            external/Debug/glslang/build/install
-            external/Debug/Vulkan-Headers/build/install
-            external/Debug/SPIRV-Headers/build/install
-            external/Debug/SPIRV-Tools/build/install
-            external/Debug/robin-hood-hashing/build/install
-            external/Debug/googletest/build/install
-            external/Debug/Vulkan-Headers/registry
-            external/Debug/SPIRV-Headers/include
-            external/Debug/mimalloc/build/install
-          key: mingw-Debug-${{ hashfiles('scripts/known_good.json') }}
       - uses: lukka/get-cmake@latest
       - name: GCC Version
         run: gcc --version # If this fails MINGW is not setup correctly
       - name: Configure
-        run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
+        run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
         env:
-          LDFLAGS: "-fuse-ld=lld" # MINGW linking is very slow. Use llvm linker instead.
+          LDFLAGS: -fuse-ld=lld # MINGW linking is very slow. Use llvm linker instead.
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_GENERATOR: Ninja
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --verbose
       - name: Install
         run: cmake --install build --prefix build/install
+      - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
+        run: ccache --show-stats
 
   # Test to ensure we don't accidentally break the SDK, LunarG/VulkanTools, or Vulkan-Profiles
   # If we do intentionally want to break them, we just need to update the integration test code to account for that.
