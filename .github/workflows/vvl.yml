@@ -269,7 +269,7 @@ jobs:
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
           CMAKE_GENERATOR: Ninja
       - name: Build
-        run: cmake --build build --verbose
+        run: cmake --build build -- --quiet
       - name: Install
         run: cmake --install build --prefix build/install
       - name: MinGW ccache stats # The Post Setup ccache doesn't work right on MinGW
