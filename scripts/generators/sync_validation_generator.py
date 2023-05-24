@@ -313,9 +313,8 @@ class SyncValidationOutputGenerator(OutputGenerator):
                 after_index = next((i for i, s in enumerate(self.pipelineStagesOrdered[name]) if s['stage'] == after_stage))
                 self.pipelineStagesOrdered[name].insert(after_index + 1, stage_order)
 
-            bottom_index = next((i for i, s in enumerate(self.pipelineStagesOrdered[name]) if s['stage'] == 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'), -1)
             for stage_order in unordered_list:
-                self.pipelineStagesOrdered[name].insert(bottom_index, stage_order)
+                self.pipelineStagesOrdered[name].append(stage_order)
 
 
     def getInBitOrder(self, tag, enum_elem):
@@ -357,7 +356,7 @@ class SyncValidationOutputGenerator(OutputGenerator):
         return enum_in_bit_order
 
     def getStagesInLogicalOrder(self):
-        logical_order = []
+        logical_order = ['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT']
         for pipeline_name in self.pipelineNames:
             for index, stage_info in enumerate(self.pipelineStagesOrdered[pipeline_name]):
                 stage = stage_info['stage']
@@ -370,6 +369,7 @@ class SyncValidationOutputGenerator(OutputGenerator):
                         else:
                             break
                     logical_order.insert(insert_loc, stage)
+        logical_order.append('VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT')
         return logical_order
 
     #
@@ -589,19 +589,24 @@ class SyncValidationOutputGenerator(OutputGenerator):
             output += f'    static {map_type} variable = {{\n'
 
             earlier_stages = {}
+            earlier_stages['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
+            earlier_stages['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
+
             for stages in self.pipelineStagesOrdered.values():
                 for i in range(len(stages)):
                     stage_order = stages[i]
                     stage = stage_order['stage']
+                    if stage == 'VK_PIPELINE_STAGE_2_HOST_BIT':
+                        continue
                     if stage not in earlier_stages:
-                        earlier_stages[stage] = set()
+                        earlier_stages[stage] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
+                        earlier_stages['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'].update([stage])
+
                     if not stage_order['ordered']:
                         earlier_stages[stage] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
                     else:
                         earlier_stages[stage].update([s['stage'] for s in stages[:i]])
 
-            earlier_stages['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
-            earlier_stages['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'].update(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
             earlier_stages = { key:SortSetBasedOnOrder(values, self.logicallyOrderedStages) for key, values in earlier_stages.items() }
 
             for stage in self.stages:
@@ -626,19 +631,24 @@ class SyncValidationOutputGenerator(OutputGenerator):
             output += f'    static {map_type} variable = {{\n'
 
             later_stages = {}
+            later_stages['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
+            later_stages['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT', 'VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
+
             for stages in self.pipelineStagesOrdered.values():
                 for i in range(len(stages)):
                     stage_order = stages[i]
                     stage = stage_order['stage']
+                    if stage == 'VK_PIPELINE_STAGE_2_HOST_BIT':
+                        continue
                     if stage not in later_stages:
-                        later_stages[stage] = set()
+                        later_stages[stage] = set(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
+                        later_stages['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'].update([stage])
+
                     if not stage_order['ordered']:
                         later_stages[stage] = set(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
                     else:
-                        later_stages[stage].update([s['stage'] for s in stages[i+1:] if s['ordered'] or stage == 'VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
+                        later_stages[stage].update([s['stage'] for s in stages[i+1:] if s['ordered']])
 
-            later_stages['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'] = set(['VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'])
-            later_stages['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'].update(['VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'])
             later_stages = { key:SortSetBasedOnOrder(values, self.logicallyOrderedStages) for key, values in later_stages.items() }
 
             for stage in self.stages:
