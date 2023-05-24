@@ -298,7 +298,9 @@ jobs:
       - name: Add ccache to PATH
         run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
       - name: Install WSI dependencies
-        run: sudo apt-get install -y libwayland-dev xorg-dev
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get install -y libwayland-dev xorg-dev
       - name: Configure Integration Test
         run: cmake -S tests/integration -B tests/integration/build -D CMAKE_BUILD_TYPE=Debug -G "Ninja"
       - name: Build Integration Test
