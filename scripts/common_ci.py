@@ -210,21 +210,28 @@ def BuildProfileLayer():
 #
 # Run the Layer Validation Tests
 def RunVVLTests():
-    print("Run Vulkan-ValidationLayer Tests using Mock ICD")
-
-    if IsWindows():
-        print("Not implemented yet")
-        exit(-1)
-
-    lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests', 'vk_layer_validation_tests')
+    print("Run VVL Tests using Mock ICD")
 
     lvt_env = dict(os.environ)
 
     # Because we installed everything to TEST_INSTALL_DIR all the libraries/json files are in pre-determined locations
-    # defined by GNUInstallDirs. This makes adding the LD_LIBRARY_PATH and VK_LAYER_PATH trivial/robust.
-    lvt_env['LD_LIBRARY_PATH'] = os.path.join(TEST_INSTALL_DIR, 'lib')
-    lvt_env['VK_LAYER_PATH'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
-    lvt_env['VK_DRIVER_FILES'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
+    # defined by GNUInstallDirs. This makes setting VK_LAYER_PATH and other environment variables trivial/robust.
+    if IsWindows():
+        # TODO: Enable Windows testing on GHA. GHA run the test with elevated permissions which causes the loader
+        # to ignore VK_LAYER_PATH for security reasons.
+        #
+        # Perhaps this can be fixed with GHA or more likely with registry editing.
+        # Ideally the registry editing is only done during GHA to avoid impacting local users who run this script.
+        lvt_env['VK_LAYER_PATH'] = os.path.join(TEST_INSTALL_DIR, 'bin')
+        lvt_env['VK_DRIVER_FILES'] = os.path.join(TEST_INSTALL_DIR, 'bin\\VkICD_mock_icd.json')
+    else:
+        lvt_env['LD_LIBRARY_PATH'] = os.path.join(TEST_INSTALL_DIR, 'lib')
+        lvt_env['VK_LAYER_PATH'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
+        lvt_env['VK_DRIVER_FILES'] = os.path.join(TEST_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
+
+    # Useful for debugging
+    # lvt_env['VK_LOADER_DEBUG'] = 'error,warn,info'
+    # lvt_env['VK_LAYER_TESTS_PRINT_DRIVER'] = '1'
 
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
     lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT'
@@ -238,6 +245,8 @@ def RunVVLTests():
         lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
 
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
+
+    lvt_cmd = os.path.join(TEST_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
     RunShellCmd(lvt_cmd, env=lvt_env)
 
