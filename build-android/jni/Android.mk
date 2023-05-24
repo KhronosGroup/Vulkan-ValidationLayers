@@ -223,6 +223,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/layer_utils.cpp \
                    $(SRC_DIR)/tests/positive/format_utils.cpp \
                    $(SRC_DIR)/tests/positive/other.cpp \
+                   $(SRC_DIR)/tests/positive/pipeline_layout.cpp \
                    $(SRC_DIR)/tests/positive/pipeline_topology.cpp \
                    $(SRC_DIR)/tests/positive/pipeline.cpp \
                    $(SRC_DIR)/tests/positive/protected_memory.cpp \

@@ -54,6 +54,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/memory.cpp
     positive/mesh.cpp
     positive/other.cpp
+    positive/pipeline_layout.cpp
     positive/pipeline_topology.cpp
     positive/pipeline.cpp
     positive/protected_memory.cpp

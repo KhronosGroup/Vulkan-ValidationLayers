@@ -459,7 +459,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SHADER_MODULE_STATE &mod
 static std::string string_descriptorTypeSet(const std::set<uint32_t> &descriptor_type_set) {
     std::stringstream ss;
     for (auto it = descriptor_type_set.begin(); it != descriptor_type_set.end(); ++it) {
-        if (ss.tellp()) ss << ", ";
+        if (ss.tellp()) ss << " or ";
         ss << string_VkDescriptorType(VkDescriptorType(*it));
     }
     return ss.str();
@@ -2174,8 +2174,8 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |=
                 LogError(objlist, vuid,
-                         "%s(): pCreateInfos[%" PRIu32 "] Set %" PRIu32 " Binding %" PRIu32
-                         " type mismatch on descriptor slot in shader (%s), uses type %s but expected %s",
+                         "%s(): pCreateInfos[%" PRIu32 "] has a type mismatch for descriptor slot [Set %" PRIu32 " Binding %" PRIu32
+                         "] for shader (%s), uses type %s but expected (%s).",
                          pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
                          variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
                          string_VkDescriptorType(binding->descriptorType), string_descriptorTypeSet(descriptor_type_set).c_str());
