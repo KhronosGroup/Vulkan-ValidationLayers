@@ -91,6 +91,11 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
             const uint32_t input_base_type_id = input->base_type.ResultId();
             const auto input_type = module_state.GetNumericType(input_base_type_id);
 
+            // TODO 5906 - This means there is a struct and we are not currently searching inside of it
+            if (input_type == NumericTypeUnknown) {
+                continue;
+            }
+
             // Type checking
             if (!(attrib_type & input_type)) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Input-08733",
