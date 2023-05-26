@@ -129,7 +129,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
     # Vulkan validation layer list
     vk_validation_layers = [
         {
-            'include': 'thread_safety.h',
+            'include': 'thread_tracker/thread_safety_validation.h',
             'class': 'ThreadSafety',
             'enabled': '!disables[thread_safety]'
         },

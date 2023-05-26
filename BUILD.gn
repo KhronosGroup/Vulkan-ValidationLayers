@@ -245,7 +245,12 @@ stateless_validation_sources = [
 
 thread_safety_sources = [
   "layers/vulkan/generated/thread_safety.cpp",
-  "layers/vulkan/generated/thread_safety.h",
+  "layers/vulkan/generated/thread_safety_commands.h",
+  "layers/vulkan/generated/thread_safety_counter_bodies.h",
+  "layers/vulkan/generated/thread_safety_counter_definitions.h",
+  "layers/vulkan/generated/thread_safety_counter_instances.h",
+  "layers/thread_tracker/thread_safety_validation.cpp",
+  "layers/thread_tracker/thread_safety_validation.h",
 ]
 
 unique_objects_sources = []

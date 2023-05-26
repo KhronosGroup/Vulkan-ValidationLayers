@@ -63,10 +63,32 @@ def makeGenOpts(args):
 
     # ValidationLayer Generators
     # Options for thread safety header code-generation
-    genOpts['thread_safety.h'] = [
+    
+    genOpts['thread_safety_counter_definitions.h'] = [
           ThreadOutputGenerator,
           BaseGeneratorOptions(
-            filename          = 'thread_safety.h',
+            filename          = 'thread_safety_counter_definitions.h',
+            mergeApiNames     = mergeApiNames)
+        ]
+    
+    genOpts['thread_safety_counter_instances.h'] = [
+          ThreadOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'thread_safety_counter_instances.h',
+            mergeApiNames     = mergeApiNames)
+        ]
+    
+    genOpts['thread_safety_counter_bodies.h'] = [
+          ThreadOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'thread_safety_counter_bodies.h',
+            mergeApiNames     = mergeApiNames)
+        ]
+    
+    genOpts['thread_safety_commands.h'] = [
+          ThreadOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'thread_safety_commands.h',
             mergeApiNames     = mergeApiNames)
         ]
 
