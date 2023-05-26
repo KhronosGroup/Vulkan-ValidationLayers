@@ -136,6 +136,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_wsi.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/thread_safety.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/thread_tracker/thread_safety_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_core.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_khr.cpp

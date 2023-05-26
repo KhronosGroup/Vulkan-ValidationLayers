@@ -241,7 +241,10 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/spirv_validation_helper.cpp
     ${API_TYPE}/generated/sync_validation_types.cpp
     ${API_TYPE}/generated/thread_safety.cpp
-    ${API_TYPE}/generated/thread_safety.h
+    ${API_TYPE}/generated/thread_safety_commands.h
+    ${API_TYPE}/generated/thread_safety_counter_bodies.h
+    ${API_TYPE}/generated/thread_safety_counter_definitions.h
+    ${API_TYPE}/generated/thread_safety_counter_instances.h
     ${API_TYPE}/generated/vk_safe_struct_utils.cpp
     ${API_TYPE}/generated/vk_safe_struct_core.cpp
     ${API_TYPE}/generated/vk_safe_struct_khr.cpp
@@ -317,6 +320,8 @@ target_sources(vvl PRIVATE
     sync/sync_utils.h
     sync/sync_vuid_maps.cpp
     sync/sync_vuid_maps.h
+    thread_tracker/thread_safety_validation.cpp
+    thread_tracker/thread_safety_validation.h
     layer_options.cpp
     vk_layer_settings_ext.h
 )
