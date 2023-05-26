@@ -66,7 +66,10 @@ target_sources(VkLayer_utils PRIVATE
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
 target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
 
-target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
+target_link_libraries(VkLayer_utils PUBLIC
+    Vulkan::Headers
+    ${CMAKE_DL_LIBS}
+)
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
 target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 

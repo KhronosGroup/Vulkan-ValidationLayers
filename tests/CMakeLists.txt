@@ -194,7 +194,6 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     VVL-SPIRV-LIBS
     GTest::gtest
     GTest::gtest_main
-    ${CMAKE_DL_LIBS}
     $<TARGET_NAME_IF_EXISTS:PkgConfig::XCB>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
@@ -211,3 +210,4 @@ include(GoogleTest)
 gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 
 add_subdirectory(layers)
+add_subdirectory(spirv_hopper)
