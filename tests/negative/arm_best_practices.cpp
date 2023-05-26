@@ -901,8 +901,9 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         GTEST_SKIP() << "Test temporarily disabled on S10 device";
     }
     
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     InitState();
 

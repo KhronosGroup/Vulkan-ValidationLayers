@@ -1406,8 +1406,9 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     VkImageMemoryBarrier img_barrier_template = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier_template.srcAccessMask = 0;

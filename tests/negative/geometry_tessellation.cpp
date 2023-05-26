@@ -26,8 +26,9 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::vector<const char *> device_extension_names;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     auto features = m_device->phy().features();
     // Make sure gs & ts are disabled

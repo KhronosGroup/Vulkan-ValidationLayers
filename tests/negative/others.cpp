@@ -1246,8 +1246,9 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     queue_info.pQueuePriorities = &priorities[0];
     
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
 
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
     auto features = m_device->phy().features();
@@ -1377,8 +1378,9 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
     
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&pd_features2);
@@ -1455,8 +1457,9 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     }
 
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features12);
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -1547,8 +1550,9 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
         m_errorMonitor->SetUnexpectedError("VUID-VkDeviceCreateInfo-pNext-pNext");
     }
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>(&features11);
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -1578,9 +1582,9 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     device_extensions.push_back(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME);
     device_extensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
 
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    
+    }
     
     // Create a device that enables variablePointers but not variablePointersStorageBuffer
     auto variable_features = LvlInitStruct<VkPhysicalDeviceVariablePointersFeatures>();
@@ -2006,8 +2010,9 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     device_extensions.push_back("VK_KHR_maintenance1");
     device_extensions.push_back("VK_AMD_negative_viewport_height");
@@ -2050,8 +2055,9 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     device_extensions.push_back(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
     
@@ -2078,8 +2084,9 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
     
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
     vk_testing::Event event(*m_device, event_create_info);
@@ -2592,8 +2599,9 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
     }
     
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
     VkDeviceCreateInfo device_create_info = LvlInitStruct<VkDeviceCreateInfo>();
@@ -2698,8 +2706,9 @@ TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
     queue_info.pQueuePriorities = &priority;
     
     std::vector<const char *> device_extensions;
-    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
     
     device_extensions.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
