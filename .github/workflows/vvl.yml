@@ -37,11 +37,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04]
+        os: [ubuntu-22.04]
         compiler: [{cc: gcc, cxx: g++}]
         config: [debug, release]
         cpp_std: [17]
         include:
+          # Test Ubuntu-20.04 release build works.
+          - os: ubuntu-20.04
+            compiler: {cc: gcc, cxx: g++}
+            config: release
+            cpp_std: 17
           # Test C++ 20 support
           - os: ubuntu-22.04
             compiler: {cc: gcc, cxx: g++}
@@ -64,7 +69,7 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
@@ -172,7 +177,7 @@ jobs:
             external/${{ matrix.config }}/Vulkan-Headers/registry
             external/${{ matrix.config }}/SPIRV-Headers/include
             external/${{ matrix.config }}/mimalloc/build/install
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
         run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
@@ -288,14 +293,16 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-integration_test
-      - name: Add ccache to PATH
-        run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
+          key: integration_test_ccache
       - name: Install WSI dependencies
         run: |
           sudo apt-get -qq update
           sudo apt-get install -y libwayland-dev xorg-dev
       - name: Configure Integration Test
-        run: cmake -S tests/integration -B tests/integration/build -D CMAKE_BUILD_TYPE=Debug -G "Ninja"
+        run: cmake -S tests/integration -B tests/integration/build
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_GENERATOR: Ninja
       - name: Build Integration Test
         run: cmake --build tests/integration/build
