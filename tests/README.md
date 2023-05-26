@@ -13,12 +13,13 @@ Make sure `-DBUILD_TESTS` was passed into the CMake command when generating the 
 
 The tests are grouped into different categories. Some of the main test categories are:
 
-- `VkLayerTest` - General tests that expect the Validation Layers to trigger an error
-    - Also known as "negative tests"
-- `VkPositiveLayerTest` - Tests that make sure Validation isn't accidentally triggering an error
-- `VkBestPracticesLayerTest` - Tests the [best practice layer](../docs/best_practices.md)
-- `VkGpuAssistedLayerTest` - Test [GPU-Assisted Validation](../docs/gpu_validation.md)
-- `VkPortabilitySubsetTest` - Test [VK_KHR_portability_subset validation](../docs/portability_validation.md)
+- Negative testing
+    - General tests that expect the Validation Layers to trigger an error
+- Positive testing
+    - Make sure Validation isn't accidentally triggering an error
+    - Commonly created to prevent bug regressions
+- SPIR-V testing with [SPIRV-Hopper](./spirv_hopper/)
+    - Seperate tool for testing shader runtime validation
 
 ## Implicit Layers note
 
