@@ -108,23 +108,6 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
-      - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
-        id: cache-deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-gn
-        with:
-          path: |
-            buildtools/
-            depot_tools/
-            testing/
-            tools/
-            third_party/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Install build dependencies
         run: |
           sudo apt-get -qq update
