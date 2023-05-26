@@ -141,14 +141,8 @@ jobs:
         run: |
           python3 -m pip install jsonschema pyparsing
       - name: Cache dependent components
-        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
-        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
-        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
-        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
         id: cache-deps
         uses: actions/cache@v3
-        env:
-          cache-name: cache-windows
         with:
           path: |
             external/${{ matrix.config }}/glslang/build/install
@@ -160,7 +154,7 @@ jobs:
             external/${{ matrix.config }}/Vulkan-Headers/registry
             external/${{ matrix.config }}/SPIRV-Headers/include
             external/${{ matrix.config }}/mimalloc/build/install
-          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+          key: ${{ matrix.os }}-build-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
         run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
 
