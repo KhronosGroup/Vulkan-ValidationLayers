@@ -73,7 +73,8 @@ fi
 echo "Building Layer using ${ANDROID_STL_TYPE}";
 
 function create_APK() {
-    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
+    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk
+    aapt add -f bin/$1-unaligned.apk bin/libs/*.so
     # If zipalign was run after signing, it won't be a valid signature
     zipalign -f 4 bin/$1-unaligned.apk bin/$1.apk
     # jarsigner used to be used until it was removed from the Android SDK
