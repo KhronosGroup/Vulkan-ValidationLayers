@@ -2881,6 +2881,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                                  " Component %" PRIu32 " but it is not an Output declared in %s",
                                  pipe_index, string_VkShaderStageFlagBits(consumer_stage), location, component,
                                  string_VkShaderStageFlagBits(producer_stage));
+                break;  // Only need to report for the first component found
             }
         }
     }
