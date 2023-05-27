@@ -1823,7 +1823,17 @@ PushConstantVariable::PushConstantVariable(const SHADER_MODULE_STATE& module_sta
         }
     }
     const auto& highest_member = type_struct_info->members[highest_element_index];
-    const uint32_t highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
+    uint32_t highest_element_size = 0;
+    if (highest_member.insn->Opcode() == spv::OpTypeArray &&
+        module_state.FindDef(highest_member.insn->Word(3))->Opcode() == spv::OpSpecConstant) {
+        // TODO - This is a work-around because currently we only apply SpecConstant for workgroup size
+        // The shader validation needs to be fixed so we handle all cases when spec constant are applied, while still being catious
+        // of the fact that information is not known until pipeline creation (not at shader module creation time)
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+        highest_element_size = module_state.FindDef(highest_member.insn->Word(3))->Word(3);
+    } else {
+        highest_element_size = module_state.GetTypeBytesSize(highest_member.insn);
+    }
     size = (highest_element_size + highest_element_offset) - offset;
 }
 
