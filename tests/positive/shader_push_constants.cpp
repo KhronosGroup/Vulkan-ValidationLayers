@@ -745,3 +745,30 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveShaderPushConstants, SpecConstantSize) {
+    TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const char *cs_source = R"glsl(
+        #version 460
+        layout (constant_id = 2) const int my_array_size = 1;
+        layout (push_constant) uniform my_buf {
+            float my_array[my_array_size];
+        } pc;
+
+        void main() {
+            float a = pc.my_array[0];
+        }
+    )glsl";
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 32};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.CreateComputePipeline();
+}
