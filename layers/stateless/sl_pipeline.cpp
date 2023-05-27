@@ -95,6 +95,7 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
                 skip |=
                     LogError(device, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292",
                              "vkCreatePipelineLayout() Duplicate stage flags found in ranges %" PRIu32 " and %" PRIu32 ".", i, j);
+                break;  // Only need to report the first range mismatch
             }
         }
     }
