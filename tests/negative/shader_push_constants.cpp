@@ -456,3 +456,49 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 }
+
+// This is not working because of a bug in the Spec Constant logic
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
+    TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const char *cs_source = R"glsl(
+        #version 460
+        layout (constant_id = 0) const int my_array_size = 1;
+        layout (push_constant) uniform my_buf {
+            float my_array[my_array_size];
+        } pc;
+
+        void main() {
+            float a = pc.my_array[0];
+        }
+    )glsl";
+
+    uint32_t data = 32;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    // With spec constant set, this should be 32, not 16
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(
+        new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkComputePipelineCreateInfo-layout-07987");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
