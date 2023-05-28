@@ -746,8 +746,8 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     m_commandBuffer->end();
 }
 
-TEST_F(PositiveShaderPushConstants, SpecConstantSize) {
-    TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
+TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
+    TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block, but use default value");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     const char *cs_source = R"glsl(
@@ -768,6 +768,48 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSize) {
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
+    TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const char *cs_source = R"glsl(
+        #version 460
+        layout (constant_id = 0) const int my_array_size = 256;
+        layout (push_constant) uniform my_buf {
+            float my_array[my_array_size];
+        } pc;
+
+        void main() {
+            float a = pc.my_array[0];
+        }
+    )glsl";
+
+    // Setting makes the VkPushConstantRange valid
+    uint32_t data = 1;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
+    const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(
+        new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
     pipe.CreateComputePipeline();
