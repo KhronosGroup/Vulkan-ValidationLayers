@@ -224,6 +224,11 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
                                            const EntryPoint &entrypoint) const {
     bool skip = false;
 
+    // TODO - Workaround for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
+    if (module_state.static_data_.has_specialization_constants) {
+        return skip;
+    }
+
     const VkShaderStageFlagBits stage = entrypoint.stage;
     const auto push_constant_variable = entrypoint.push_constant_variable;
     if (!push_constant_variable) {
