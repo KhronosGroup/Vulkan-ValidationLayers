@@ -373,9 +373,13 @@ class BINDABLE : public BASE_NODE {
     virtual void BindMemory(BASE_NODE *parent, std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize memory_offset,
                             const VkDeviceSize resource_offset, const VkDeviceSize mem_size) = 0;
     virtual bool HasFullRangeBound() const = 0;
-    virtual bool DoesResourceMemoryOverlap(const sparse_container::range<VkDeviceSize> &memory_region,
-                                           const BINDABLE *other_resource,
-                                           const sparse_container::range<VkDeviceSize> &other_memory_region) const = 0;
+    virtual std::pair<VkDeviceMemory, sparse_container::range<VkDeviceSize>> GetResourceMemoryOverlap(
+        const sparse_container::range<VkDeviceSize> &memory_region, const BINDABLE *other_resource,
+        const sparse_container::range<VkDeviceSize> &other_memory_region) const = 0;
+    bool DoesResourceMemoryOverlap(const sparse_container::range<VkDeviceSize> &memory_region, const BINDABLE *other_resource,
+                                   const sparse_container::range<VkDeviceSize> &other_memory_region) const {
+        return GetResourceMemoryOverlap(memory_region, other_resource, other_memory_region).first != VK_NULL_HANDLE;
+    }
     virtual BindableMemoryTracker::BoundMemoryRange GetBoundMemoryRange(
         const sparse_container::range<VkDeviceSize> &range) const = 0;
     virtual BindableMemoryTracker::DeviceMemoryState GetBoundMemoryStates() const = 0;
@@ -423,27 +427,31 @@ class MEMORY_TRACKED_RESOURCE_STATE : public BaseClass {
 
     bool HasFullRangeBound() const override { return memory_tracker_.HasFullRangeBound(); }
 
-    bool DoesResourceMemoryOverlap(const sparse_container::range<VkDeviceSize> &memory_region, const BINDABLE *other_resource,
-                                   const sparse_container::range<VkDeviceSize> &other_memory_region) const override {
-        if (!other_resource) return false;
+    std::pair<VkDeviceMemory, sparse_container::range<VkDeviceSize>> GetResourceMemoryOverlap(
+        const sparse_container::range<VkDeviceSize> &memory_region, const BINDABLE *other_resource,
+        const sparse_container::range<VkDeviceSize> &other_memory_region) const override {
+        if (!other_resource) return {VK_NULL_HANDLE, {}};
 
         auto ranges = GetBoundMemoryRange(memory_region);
         auto other_ranges = other_resource->GetBoundMemoryRange(other_memory_region);
 
-        for (const auto &value_pair : ranges) {
+        for (const auto &[memory, memory_ranges] : ranges) {
             // Check if we have memory from same VkDeviceMemory bound
-            auto it = other_ranges.find(value_pair.first);
+            auto it = other_ranges.find(memory);
             if (it != other_ranges.end()) {
                 // Check if any of the bound memory ranges overlap
-                for (const auto &memory_range : value_pair.second) {
+                for (const auto &memory_range : memory_ranges) {
                     for (const auto &other_memory_range : it->second) {
-                        if (other_memory_range.intersects(memory_range)) return true;
+                        if (other_memory_range.intersects(memory_range)) {
+                            auto memory_space_intersection = other_memory_range & memory_range;
+                            return {memory, memory_space_intersection};
+                        }
                     }
                 }
             }
         }
 
-        return false;
+        return {VK_NULL_HANDLE, {}};
     }
 
     BindableMemoryTracker::BoundMemoryRange GetBoundMemoryRange(const sparse_container::range<VkDeviceSize> &range) const override {

@@ -52,6 +52,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/hash_vk_types.h
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
+    utils/ray_tracing_utils.cpp
+    utils/ray_tracing_utils.h
     utils/vk_layer_utils.cpp
     utils/vk_layer_utils.h
     vk_layer_config.h
@@ -112,6 +114,8 @@ if(BUILD_LAYER_SUPPORT_FILES)
                   ${CMAKE_SOURCE_DIR}/layers/utils/hash_vk_types.h
                   ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.cpp
                   ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_extension_utils.h
+                  ${CMAKE_SOURCE_DIR}/layers/utils/ray_tracing_utils.cpp
+                  ${CMAKE_SOURCE_DIR}/layers/utils/ray_tracing_utils.h
                   ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_utils.cpp
                   ${CMAKE_SOURCE_DIR}/layers/utils/vk_layer_utils.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan/utils)

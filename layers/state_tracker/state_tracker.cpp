@@ -2895,7 +2895,11 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
                                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
     auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
-    Add(std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state)));
+    auto as_address_info = LvlInitStruct<VkAccelerationStructureDeviceAddressInfoKHR>();
+    as_address_info.accelerationStructure = *pAccelerationStructure;
+    const VkDeviceAddress as_address = DispatchGetAccelerationStructureDeviceAddressKHR(device, &as_address_info);
+    Add(std::make_shared<ACCELERATION_STRUCTURE_STATE_KHR>(*pAccelerationStructure, pCreateInfo, std::move(buffer_state),
+                                                           as_address));
 }
 
 void ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(

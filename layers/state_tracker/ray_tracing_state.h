@@ -70,8 +70,8 @@ using ACCELERATION_STRUCTURE_STATE_LINEAR =
 class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
   public:
     ACCELERATION_STRUCTURE_STATE_KHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                                     std::shared_ptr<BUFFER_STATE> &&buf_state)
-        : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state) {}
+                                     std::shared_ptr<BUFFER_STATE> &&buf_state, VkDeviceAddress address)
+        : BASE_NODE(as, kVulkanObjectTypeAccelerationStructureKHR), create_infoKHR(ci), buffer_state(buf_state), address(address) {}
     ACCELERATION_STRUCTURE_STATE_KHR(const ACCELERATION_STRUCTURE_STATE_KHR &rh_obj) = delete;
 
     VkAccelerationStructureKHR acceleration_structure() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
@@ -106,6 +106,7 @@ class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
     bool built = false;
     uint64_t opaque_handle = 0;
     std::shared_ptr<BUFFER_STATE> buffer_state;
+    VkDeviceAddress address;
 };
 
 // Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
