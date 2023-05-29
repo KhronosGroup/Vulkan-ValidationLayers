@@ -583,8 +583,8 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
     }
 
     // With the OpLoad find the OpVariable for the Image
-    assert(image_load);
-    if (image_load->Opcode() == spv::OpFunctionParameter) {
+    if (!image_load || image_load->Opcode() != spv::OpLoad) {
+        // TODO - This can be OpUndef, need to get spec clarification how this is handled
         no_function_jump = false;
         return;  // TODO 5614 - Handle function jumps
     }
@@ -617,7 +617,7 @@ ImageAccess::ImageAccess(const SHADER_MODULE_STATE& module_state, const Instruct
 
     // If there is a OpSampledImage, take the other OpLoad and find the OpVariable for the Sampler
     if (sampler_load) {
-        if (sampler_load->Opcode() == spv::OpFunctionParameter) {
+        if (sampler_load->Opcode() != spv::OpLoad) {
             no_function_jump = false;
             return;  // TODO 5614 - Handle function jumps
         }
