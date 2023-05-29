@@ -86,12 +86,12 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     // Build Bottom Level Acceleration Structure
     auto bot_level_build_geometry = std::make_shared<rt::as::BuildGeometryInfoKHR>(
         rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device));
-    bot_level_build_geometry->BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+    bot_level_build_geometry->BuildCmdBuffer(*m_device, m_commandBuffer->handle());
 
     // Build Top Level Acceleration Structure
     rt::as::BuildGeometryInfoKHR top_level_build_geometry =
         rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(DeviceValidationVersion(), *m_device, bot_level_build_geometry);
-    top_level_build_geometry.BuildCmdBuffer(instance(), *m_device, m_commandBuffer->handle());
+    top_level_build_geometry.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
 
     m_commandBuffer->end();
 }
@@ -255,7 +255,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQueryEnabledRTXDisabled) {
+TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabledRTXDisabled) {
     TEST_DESCRIPTION(
         "Test barrier with access ACCELERATION_STRUCTURE bit."
         "Ray query extension is enabled, as well as feature."
@@ -334,7 +334,7 @@ TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQ
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQueryEnabledRTXEnabled) {
+TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabledRTXEnabled) {
     TEST_DESCRIPTION(
         "Test barrier with access ACCELERATION_STRUCTURE bit."
         "Ray query extension is enabled, as well as feature."
@@ -413,4 +413,54 @@ TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQ
     m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
+    TEST_DESCRIPTION("Build a list of destination acceleration structures, then do an update build on that same list");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    accel_features.accelerationStructure = VK_TRUE;
+    bda_features.bufferDeviceAddress = VK_TRUE;
+    ray_query_features.rayQuery = VK_TRUE;
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    if (ray_query_features.rayQuery == VK_FALSE) {
+        GTEST_SKIP() << "rayQuery feature is not supported";
+    }
+    if (accel_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature is not supported";
+    }
+    if (bda_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    constexpr size_t build_info_count = 10;
+
+    std::vector<rt::as::BuildGeometryInfoKHR> build_infos;
+    for (size_t i = 0; i < build_info_count; ++i) {
+        auto build_info = rt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(DeviceValidationVersion(), *m_device);
+        build_info.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+        build_infos.emplace_back(std::move(build_info));
+    }
+
+    m_commandBuffer->begin();
+    rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+
+    for (auto& build_info : build_infos) {
+        build_info.SetSrcAS(build_info.GetDstAS());
+        build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+        build_info.SetDstAS(rt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(DeviceValidationVersion(), 4096));
+    }
+
+    rt::as::BuildAccelerationStructuresKHR(*m_device, m_commandBuffer->handle(), build_infos);
+    m_commandBuffer->end();
 }

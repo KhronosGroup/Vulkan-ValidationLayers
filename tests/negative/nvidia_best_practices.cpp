@@ -309,7 +309,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-AllocateMemory-SetPriority");
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-AccelerationStructure-NotAsync");
-        build_geometry_info.BuildCmdBuffer(instance(), *m_device, cmd_buffer.handle());
+        build_geometry_info.BuildCmdBuffer(*m_device, cmd_buffer.handle());
 
         if (queue == compute_queue) {
             m_errorMonitor->Finish();

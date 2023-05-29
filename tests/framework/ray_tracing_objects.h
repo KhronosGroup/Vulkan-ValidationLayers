@@ -155,16 +155,17 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as);
     BuildGeometryInfoKHR& SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as);
     BuildGeometryInfoKHR& SetScratchBuffer(vk_testing::Buffer&& scratch_buffer);
+    BuildGeometryInfoKHR& SetDeviceScratchOffset(VkDeviceAddress offset);
     BuildGeometryInfoKHR& SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as);
+    // Should be 0 or 1
     BuildGeometryInfoKHR& SetInfoCount(uint32_t info_count);
     BuildGeometryInfoKHR& SetNullInfos(bool use_null_infos);
     BuildGeometryInfoKHR& SetNullBuildRangeInfos(bool use_null_build_range_infos);
 
     // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
     // then one the build acceleration structure function.
-    void BuildCmdBuffer(VkInstance instance, const vk_testing::Device& device, VkCommandBuffer cmd_buffer,
-                        bool use_ppGeometries = true);
-    void BuildCmdBufferIndirect(VkInstance instance, const vk_testing::Device& device, VkCommandBuffer cmd_buffer);
+    void BuildCmdBuffer(const vk_testing::Device& device, VkCommandBuffer cmd_buffer, bool use_ppGeometries = true);
+    void BuildCmdBufferIndirect(const vk_testing::Device& device, VkCommandBuffer cmd_buffer);
     void BuildHost(VkInstance instance, const vk_testing::Device& device);
     void VkCmdBuildAccelerationStructuresKHR(const vk_testing::Device& device, VkCommandBuffer cmd_buffer,
                                              bool use_ppGeometries = true);
@@ -181,7 +182,10 @@ class BuildGeometryInfoKHR {
     VkAccelerationStructureBuildSizesInfoKHR GetSizeInfo(VkDevice device, bool use_ppGeometries = true);
 
   private:
-    void BuildCommon(VkInstance instance, const vk_testing::Device& device, bool is_on_device_build, bool use_ppGeometries = true);
+    friend void BuildAccelerationStructuresKHR(const vk_testing::Device& device, VkCommandBuffer cmd_buffer,
+                                               std::vector<BuildGeometryInfoKHR>& infos);
+
+    void BuildCommon(const vk_testing::Device& device, bool is_on_device_build, bool use_ppGeometries = true);
 
     APIVersion vk_api_version_;
     uint32_t vk_info_count_ = 1;
@@ -190,10 +194,15 @@ class BuildGeometryInfoKHR {
     VkAccelerationStructureBuildGeometryInfoKHR vk_info_;
     std::vector<GeometryKHR> geometries_;
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
+    VkDeviceAddress device_scratch_offset_ = 0;
     vk_testing::Buffer device_scratch_;
     std::unique_ptr<uint8_t[]> host_scratch_;
     std::shared_ptr<BuildGeometryInfoKHR> blas_;
 };
+
+// Helper functions
+void BuildAccelerationStructuresKHR(const vk_testing::Device& device, VkCommandBuffer cmd_buffer,
+                                    std::vector<BuildGeometryInfoKHR>& infos);
 
 // Helper functions providing simple, valid objects.
 // Calling Build() on them without further modifications results in a usable and valid Vulkan object.

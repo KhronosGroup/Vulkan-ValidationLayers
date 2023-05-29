@@ -253,11 +253,8 @@ void AccelerationStructureKHR::Build(const vk_testing::Device &device) {
     vk_info_.buffer = device_buffer_.handle();
 
     // Create acceleration structure
-    auto vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device.handle(), "vkCreateAccelerationStructureKHR"));
-    assert(vkCreateAccelerationStructureKHR);
     VkAccelerationStructureKHR handle;
-    const VkResult result = vkCreateAccelerationStructureKHR(device.handle(), &vk_info_, nullptr, &handle);
+    const VkResult result = vk::CreateAccelerationStructureKHR(device.handle(), &vk_info_, nullptr, &handle);
     assert(result == VK_SUCCESS);
     if (result == VK_SUCCESS) {
         init(device.handle(), handle);
@@ -270,10 +267,7 @@ void AccelerationStructureKHR::Destroy() {
     }
     assert(device() != VK_NULL_HANDLE);
     assert(handle() != VK_NULL_HANDLE);
-    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
-    assert(vkDestroyAccelerationStructureKHR);
-    vkDestroyAccelerationStructureKHR(device(), handle(), nullptr);
+    vk::DestroyAccelerationStructureKHR(device(), handle(), nullptr);
     handle_ = VK_NULL_HANDLE;
     device_buffer_.destroy();
 }
@@ -330,13 +324,18 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(vk_testing::Buffer 
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeviceScratchOffset(VkDeviceAddress offset) {
+    device_scratch_offset_ = offset;
+    return *this;
+}
+
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBottomLevelAS(std::shared_ptr<BuildGeometryInfoKHR> bottom_level_as) {
     blas_ = std::move(bottom_level_as);
     return *this;
 }
 
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetInfoCount(uint32_t info_count) {
-    assert(info_count <= 1);  // TODO - support array of VkAccelerationStructureBuildGeometryInfoKHR
+    assert(info_count <= 1);
     vk_info_count_ = info_count;
     return *this;
 }
@@ -351,21 +350,20 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null
     return *this;
 }
 
-void BuildGeometryInfoKHR::BuildCmdBuffer(VkInstance instance, const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
+void BuildGeometryInfoKHR::BuildCmdBuffer(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
                                           bool use_ppGeometries /*= true*/) {
     if (blas_) {
-        blas_->BuildCmdBuffer(instance, device, cmd_buffer, use_ppGeometries);
+        blas_->BuildCmdBuffer(device, cmd_buffer, use_ppGeometries);
     }
-    BuildCommon(instance, device, true);
+    BuildCommon(device, true);
     VkCmdBuildAccelerationStructuresKHR(device, cmd_buffer, true);
 }
 
-void BuildGeometryInfoKHR::BuildCmdBufferIndirect(VkInstance instance, const vk_testing::Device &device,
-                                                  VkCommandBuffer cmd_buffer) {
+void BuildGeometryInfoKHR::BuildCmdBufferIndirect(const vk_testing::Device &device, VkCommandBuffer cmd_buffer) {
     if (blas_) {
-        blas_->BuildCmdBufferIndirect(instance, device, cmd_buffer);
+        blas_->BuildCmdBufferIndirect(device, cmd_buffer);
     }
-    BuildCommon(instance, device, true);
+    BuildCommon(device, true);
     VkCmdBuildAccelerationStructuresIndirectKHR(device, cmd_buffer);
 }
 
@@ -373,7 +371,7 @@ void BuildGeometryInfoKHR::BuildHost(VkInstance instance, const vk_testing::Devi
     if (blas_) {
         blas_->BuildHost(instance, device);
     }
-    BuildCommon(instance, device, false);
+    BuildCommon(device, false);
     VkBuildAccelerationStructuresKHR(instance, device);
 }
 
@@ -389,7 +387,6 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vk_testing:
     }
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
     std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(geometries_.size());
-    pGeometries.reserve(geometries_.size());
     for (size_t i = 0; i < geometries_.size(); ++i) {
         const auto &geometry = geometries_[i];
         if (use_ppGeometries) {
@@ -408,15 +405,13 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(const vk_testing:
     }
 
     // Build acceleration structure
-    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
-        vk::GetDeviceProcAddr(device.handle(), "vkCmdBuildAccelerationStructuresKHR"));
-    assert(vkCmdBuildAccelerationStructuresKHR);
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
         use_null_build_range_infos_ ? nullptr : pRange_infos.data();
-    vkCmdBuildAccelerationStructuresKHR(cmd_buffer, vk_info_count_, pInfos, ppBuildRangeInfos);
+    vk::CmdBuildAccelerationStructuresKHR(cmd_buffer, vk_info_count_, pInfos, ppBuildRangeInfos);
 
     // pGeometries and geometries are going to be destroyed
+    vk_info_.geometryCount = 0;
     vk_info_.ppGeometries = nullptr;
     vk_info_.pGeometries = nullptr;
 }
@@ -434,18 +429,15 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(const vk_
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
     vk_info_.ppGeometries = pGeometries.data();
 
-    auto vkCmdBuildAccelerationStructuresIndirectKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>(
-        vk::GetDeviceProcAddr(device.handle(), "vkCmdBuildAccelerationStructuresIndirectKHR"));
-    assert(vkCmdBuildAccelerationStructuresIndirectKHR);
-
     VkDeviceAddress indirect_device_addresses{};
     uint32_t indirect_strides = sizeof(VkAccelerationStructureBuildRangeInfoKHR);
     uint32_t max_prim_counts[1] = {1};
 
-    vkCmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_device_addresses,
-                                                &indirect_strides, reinterpret_cast<uint32_t **>(&max_prim_counts));
+    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_device_addresses,
+                                                  &indirect_strides, reinterpret_cast<uint32_t **>(&max_prim_counts));
 
     // pGeometries and geometries are going to be destroyed
+    vk_info_.geometryCount = 0;
     vk_info_.ppGeometries = nullptr;
     vk_info_.pGeometries = nullptr;
 }
@@ -466,15 +458,13 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR(VkInstance instance,
     vk_info_.ppGeometries = pGeometries.data();
 
     // Build acceleration structure
-    auto vkBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(
-        vk::GetInstanceProcAddr(instance, "vkBuildAccelerationStructuresKHR"));
-    assert(vkBuildAccelerationStructuresKHR);
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
         use_null_build_range_infos_ ? nullptr : pRange_infos.data();
-    vkBuildAccelerationStructuresKHR(device.handle(), VK_NULL_HANDLE, vk_info_count_, pInfos, ppBuildRangeInfos);
+    vk::BuildAccelerationStructuresKHR(device.handle(), VK_NULL_HANDLE, vk_info_count_, pInfos, ppBuildRangeInfos);
 
     // pGeometries is going to be destroyed
+    vk_info_.geometryCount = 0;
     vk_info_.ppGeometries = nullptr;
 }
 
@@ -504,21 +494,19 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(VkDev
     }
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
-    auto vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
-        vk::GetDeviceProcAddr(device, "vkGetAccelerationStructureBuildSizesKHR"));
-    assert(vkGetAccelerationStructureBuildSizesKHR);
     auto size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
-    vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vk_info_, &primitives_count,
-                                            &size_info);
+    vk::GetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &vk_info_, &primitives_count,
+                                              &size_info);
 
     // pGeometries and geometries are going to be destroyed
+    vk_info_.geometryCount = 0;
     vk_info_.ppGeometries = nullptr;
     vk_info_.pGeometries = nullptr;
 
     return size_info;
 }
 
-void BuildGeometryInfoKHR::BuildCommon(VkInstance instance, const vk_testing::Device &device, bool is_on_device_build,
+void BuildGeometryInfoKHR::BuildCommon(const vk_testing::Device &device, bool is_on_device_build,
                                        bool use_ppGeometries /*= true*/) {
     assert(vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR ||
            vk_info_.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
@@ -545,12 +533,9 @@ void BuildGeometryInfoKHR::BuildCommon(VkInstance instance, const vk_testing::De
         // Allocate device local scratch buffer
 
         // Get minAccelerationStructureScratchOffsetAlignment
-        auto vkGetPhysicalDeviceProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(
-            vk::GetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2"));
-        assert(vkGetPhysicalDeviceProperties2);
         auto as_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
         auto phys_dev_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&as_props);
-        vkGetPhysicalDeviceProperties2(device.phy(), &phys_dev_props);
+        vk::GetPhysicalDeviceProperties2(device.phy(), &phys_dev_props);
 
         if (!device_scratch_.initialized()) {
             auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
@@ -569,7 +554,10 @@ void BuildGeometryInfoKHR::BuildCommon(VkInstance instance, const vk_testing::De
                 Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
             assert(aligned_scratch_address >= scratch_address);
             assert(aligned_scratch_address < (scratch_address + as_props.minAccelerationStructureScratchOffsetAlignment));
-            vk_info_.scratchData.deviceAddress = aligned_scratch_address;
+            vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
+            assert(vk_info_.scratchData.deviceAddress <
+                   (scratch_address +
+                    device_scratch_.create_info().size));  // Note: This assert may prove overly conservative in the future
         } else {
             vk_info_.scratchData.deviceAddress = 0;
         }
@@ -581,6 +569,62 @@ void BuildGeometryInfoKHR::BuildCommon(VkInstance instance, const vk_testing::De
             host_scratch_ = std::make_unique<uint8_t[]>(static_cast<size_t>(scratch_size));
         }
         vk_info_.scratchData.hostAddress = host_scratch_.get();
+    }
+}
+
+void BuildAccelerationStructuresKHR(const vk_testing::Device &device, VkCommandBuffer cmd_buffer,
+                                    std::vector<BuildGeometryInfoKHR> &infos) {
+    size_t total_geomertry_count = 0;
+    
+    for (auto &build_info : infos) {
+        total_geomertry_count += build_info.geometries_.size();
+    }
+
+    // Those vectors will be used to contiguously store the "raw vulkan data" for each element of `infos`
+    // To do that, total memory needed needs to be know upfront
+    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(total_geomertry_count);
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(total_geomertry_count);
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(total_geomertry_count);
+
+    std::vector<VkAccelerationStructureBuildGeometryInfoKHR> vk_infos;
+    vk_infos.reserve(infos.size());
+
+    size_t pGeometries_offset = 0;
+    size_t range_infos_offset = 0;
+    size_t pRange_infos_offset = 0;
+
+    for (auto &build_info : infos) {
+        if (build_info.blas_) {
+            build_info.blas_->BuildCmdBuffer(device, cmd_buffer, true);
+        }
+        build_info.BuildCommon(device, true);
+
+        // Fill current vk_info_ with geometry data in ppGeometries, and get build ranges
+        for (size_t i = 0; i < build_info.geometries_.size(); ++i) {
+            const auto &geometry = build_info.geometries_[i];
+            pGeometries[pGeometries_offset + i] = &geometry.GetVkObj();
+            range_infos[range_infos_offset + i] = geometry.GetFullBuildRange();
+            pRange_infos[pRange_infos_offset + i] = &range_infos[range_infos_offset + i];
+        }
+
+        build_info.vk_info_.geometryCount = static_cast<uint32_t>(build_info.geometries_.size());
+        build_info.vk_info_.ppGeometries = &pGeometries[pGeometries_offset];
+
+        vk_infos.emplace_back(build_info.vk_info_);
+
+        pGeometries_offset += build_info.geometries_.size();
+        range_infos_offset += build_info.geometries_.size();
+        pRange_infos_offset += build_info.geometries_.size();
+    }
+
+    // Build list of acceleration structures
+    vk::CmdBuildAccelerationStructuresKHR(cmd_buffer, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(), pRange_infos.data());
+
+    // Clean
+    for (auto &build_info : infos) {
+        // pGeometries is going to be destroyed
+        build_info.vk_info_.geometryCount = 0;
+        build_info.vk_info_.ppGeometries = nullptr;
     }
 }
 

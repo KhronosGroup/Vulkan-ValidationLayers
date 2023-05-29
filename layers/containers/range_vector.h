@@ -102,13 +102,14 @@ struct range {
         return *this;
     }
 
+    // Compute ranges intersection. Returns empty range on non-intersection
     range operator&(const range &rhs) const {
         if (includes(rhs.begin)) {
             return range(rhs.begin, std::min(end, rhs.end));
         } else if (rhs.includes(begin)) {
             return range(begin, std::min(end, rhs.end));
         }
-        return range();  // Empty default range on non-intersection
+        return range();
     }
 
     index_type size() const { return end - begin; }
@@ -141,6 +142,13 @@ class range_view {
   private:
     const Range &range_;
 };
+
+template <typename Range>
+std::string string_range(const Range &range) {
+    std::stringstream ss;
+    ss << "[" << range.begin << ", " << range.end << ')';
+    return ss.str();
+}
 
 template <typename Range>
 std::string string_range_hex(const Range &range) {
