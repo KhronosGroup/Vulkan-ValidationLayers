@@ -1822,3 +1822,65 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
     vk_testing::Image image(*m_device, image_info, 0, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(NegativeExternalMemorySync, Win32MemoryHandleProperties) {
+    TEST_DESCRIPTION("Call vkGetMemoryWin32HandlePropertiesKHR with invalid Win32 handle or with opaque handle type");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+    constexpr auto opaque_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    // Generally, which value is considered invalid depends on the specific Win32 function.
+    // VVL assumes that both these values do not represent a valid handle.
+    constexpr HANDLE invalid_win32_handle = NULL;
+    const HANDLE less_common_invalid_win32_handle = INVALID_HANDLE_VALUE;
+
+    const HANDLE handle_that_passes_validation = (HANDLE)0x12345678;
+
+    auto properties = LvlInitStruct<VkMemoryWin32HandlePropertiesKHR>();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetMemoryWin32HandlePropertiesKHR-handle-00665");
+    vk::GetMemoryWin32HandlePropertiesKHR(*m_device, handle_type, invalid_win32_handle, &properties);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetMemoryWin32HandlePropertiesKHR-handle-00665");
+    vk::GetMemoryWin32HandlePropertiesKHR(*m_device, handle_type, less_common_invalid_win32_handle, &properties);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetMemoryWin32HandlePropertiesKHR-handleType-00666");
+    vk::GetMemoryWin32HandlePropertiesKHR(*m_device, opaque_handle_type, handle_that_passes_validation, &properties);
+    m_errorMonitor->VerifyFound();
+}
+#endif
+
+TEST_F(NegativeExternalMemorySync, FdMemoryHandleProperties) {
+    TEST_DESCRIPTION("Call vkGetMemoryFdPropertiesKHR with invalid fd handle or with opaque handle type");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    constexpr auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT;
+    constexpr auto opaque_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    constexpr int invalid_fd_handle = -1;
+    constexpr int valid_fd_handle = 0;
+
+    auto properties = LvlInitStruct<VkMemoryFdPropertiesKHR>();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetMemoryFdPropertiesKHR-fd-00673");
+    vk::GetMemoryFdPropertiesKHR(*m_device, handle_type, invalid_fd_handle, &properties);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetMemoryFdPropertiesKHR-handleType-00674");
+    vk::GetMemoryFdPropertiesKHR(*m_device, opaque_handle_type, valid_fd_handle, &properties);
+    m_errorMonitor->VerifyFound();
+}
