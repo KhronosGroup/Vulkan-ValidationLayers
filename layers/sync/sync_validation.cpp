@@ -4158,6 +4158,16 @@ void SyncValidator::WaitForFence(VkFence fence) {
     }
 }
 
+void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos) {
+    for (const auto &info : vvl::make_span(infos, count)) {
+        if (VK_NULL_HANDLE == info.image) continue;
+        auto image_state = Get<ImageState>(info.image);
+        if (image_state->IsTiled()) {
+            image_state->SetOpaqueBaseAddress(*this);
+        }
+    }
+}
+
 const QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) const {
     return GetMappedPlainFromShared(queue_sync_states_, queue);
 }
@@ -4392,6 +4402,17 @@ std::shared_ptr<CMD_BUFFER_STATE> SyncValidator::CreateCmdBufferState(VkCommandB
 std::shared_ptr<SWAPCHAIN_NODE> SyncValidator::CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                                     VkSwapchainKHR swapchain) {
     return std::static_pointer_cast<SWAPCHAIN_NODE>(std::make_shared<syncval_state::Swapchain>(this, create_info, swapchain));
+}
+
+std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                             VkFormatFeatureFlags2KHR features) {
+    return CreateImageStateImpl<ImageStateBindingTraits<ImageState>>(img, pCreateInfo, features);
+}
+
+std::shared_ptr<IMAGE_STATE> SyncValidator::CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                             VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                             VkFormatFeatureFlags2KHR features) {
+    return CreateImageStateImpl<ImageStateBindingTraits<ImageState>>(img, pCreateInfo, swapchain, swapchain_index, features);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -7717,6 +7738,28 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     }
 }
 
+void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                                  VkResult result) {
+    StateTracker::PostCallRecordBindImageMemory(device, image, mem, memoryOffset, result);
+    if (VK_SUCCESS != result) return;
+    const VkBindImageMemoryInfo bind_info = ConvertImageMemoryInfo(device, image, mem, memoryOffset);
+    UpdateSyncImageMemoryBindState(1, &bind_info);
+}
+
+void SyncValidator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                                   VkResult result) {
+    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, result);
+    if (VK_SUCCESS != result) return;
+    UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
+}
+
+void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+                                                      const VkBindImageMemoryInfo *pBindInfos, VkResult result) {
+    StateTracker::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, result);
+    if (VK_SUCCESS != result) return;
+    UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
+}
+
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     StateTracker::PostCallRecordQueueWaitIdle(queue, result);
     if ((result != VK_SUCCESS) || (!enabled[sync_validation_queue_submit]) || (queue == VK_NULL_HANDLE)) return;
@@ -8013,6 +8056,24 @@ void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
         for (uint32_t i = 0; i < fenceCount; i++) {
             WaitForFence(pFences[i]);
+        }
+    }
+}
+
+void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                                        VkImage *pSwapchainImages, VkResult result) {
+    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+
+    if (pSwapchainImages) {
+        for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
+            SWAPCHAIN_IMAGE &swapchain_image = swapchain_state->images[i];
+            if (swapchain_image.image_state) {
+                auto *sync_image = static_cast<ImageState *>(swapchain_image.image_state);
+                assert(sync_image->IsTiled());  // This is the assumption from the spec, and the implementation relies on it
+                sync_image->SetOpaqueBaseAddress(*this);
+            }
         }
     }
 }
@@ -8916,3 +8977,28 @@ FenceSyncState::FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_,
 // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
 
 ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ == kInvalidTag) ? context_->StartTag() : tag_; }
+
+void syncval_state::ImageState::SetOpaqueBaseAddress(ValidationStateTracker &dev_data) {
+    // This is safe to call if already called to simplify caller logic
+    // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
+    if (opaque_base_address_) return;
+
+    VkDeviceSize opaque_base = 0U;  // Fakespace Allocator starts > 0
+    auto get_opaque_base = [&opaque_base](const IMAGE_STATE &other) {
+        const ImageState &other_sync = static_cast<const ImageState &>(other);
+        opaque_base = other_sync.opaque_base_address_;
+        return true;
+    };
+    if (IsSwapchainImage()) {
+        AnyAliasBindingOf(bind_swapchain->ObjectBindings(), get_opaque_base);
+    } else {
+        AnyImageAliasOf(get_opaque_base);
+    }
+    if (!opaque_base) {
+        // The size of the opaque range is based on the SyncVal *internal* representation of the tiled resource, unrelated
+        // to the acutal size of the the resource in device memory. If differing representations become possible, the allocated
+        // size would need to be changed to those representation's size requirements.
+        opaque_base = dev_data.AllocFakeMemory(fragment_encoder->TotalSize());
+    }
+    opaque_base_address_ = opaque_base;
+}

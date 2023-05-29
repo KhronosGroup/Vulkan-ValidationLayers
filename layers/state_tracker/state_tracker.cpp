@@ -3808,14 +3808,19 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
     }
 }
 
-void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
-                                                           VkDeviceSize memoryOffset, VkResult result) {
-    if (VK_SUCCESS != result) return;
+VkBindImageMemoryInfo ValidationStateTracker::ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,
+                                                                     VkDeviceSize memoryOffset) {
     auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
     bind_info.image = image;
     bind_info.memory = mem;
     bind_info.memoryOffset = memoryOffset;
-    UpdateBindImageMemoryState(bind_info);
+    return bind_info;
+}
+
+void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
+                                                           VkDeviceSize memoryOffset, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    UpdateBindImageMemoryState(ConvertImageMemoryInfo(device, image, mem, memoryOffset));
 }
 
 void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,

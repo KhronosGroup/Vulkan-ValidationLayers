@@ -39,10 +39,33 @@ struct ResourceFirstAccess;
 class SyncEventsContext;
 struct SyncEventState;
 class SyncValidator;
+
 namespace syncval_state {
 class CommandBuffer;
 class Swapchain;
+
+class ImageState : public IMAGE_STATE {
+  public:
+    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
+               VkFormatFeatureFlags2KHR features)
+        : IMAGE_STATE(dev_data, img, pCreateInfo, features), opaque_base_address_(0U) {}
+
+    ImageState(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+               uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
+        : IMAGE_STATE(dev_data, img, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
+    bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
+    bool IsTiled() const { return !IsLinear(); }
+
+    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
+
+    VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
+    bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
+
+  protected:
+    VkDeviceSize opaque_base_address_ = 0U;
+};
 }  // namespace syncval_state
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, IMAGE_STATE);
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
@@ -1908,6 +1931,7 @@ struct SubmitInfoConverter {
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
+    using ImageState = syncval_state::ImageState;
     using StateTracker = ValidationStateTracker;
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
 
@@ -1935,6 +1959,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     void WaitForFence(VkFence fence);
 
+    void UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos);
+
     const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
     QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
@@ -1957,6 +1983,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                                            const COMMAND_POOL_STATE *cmd_pool) override;
     std::shared_ptr<SWAPCHAIN_NODE> CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
                                                          VkSwapchainKHR swapchain) final;
+    std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo,
+                                                  VkFormatFeatureFlags2KHR features) final;
+
+    std::shared_ptr<IMAGE_STATE> CreateImageState(VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+                                                  uint32_t swapchain_index, VkFormatFeatureFlags2KHR features) final;
 
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type);
@@ -2324,6 +2355,12 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                            const VkCommandBuffer *pCommandBuffers) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer *pCommandBuffers) override;
+    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                       VkResult result) override;
+    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                        VkResult result) override;
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                           VkResult result) override;
     void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) override;
     void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) override;
 
@@ -2355,4 +2392,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) override;
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result) override;
+    void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                             VkImage *pSwapchainImages, VkResult result) override;
 };

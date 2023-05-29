@@ -315,6 +315,9 @@ class ValidationStateTracker : public ValidationObject {
     }
 
   public:
+    static VkBindImageMemoryInfo ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,
+                                                        VkDeviceSize memoryOffset);
+
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
@@ -483,6 +486,9 @@ class ValidationStateTracker : public ValidationObject {
             (*set_image_view_initial_layout_callback)(cb_state, iv_state, layout);
         }
     }
+
+    VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
+    void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
 
     // State update functions
     // Gets/Enumerations
