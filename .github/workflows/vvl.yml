@@ -123,11 +123,6 @@ jobs:
         arch: [ amd64, amd64_x86 ] # 64 bit compiler, 64 bit compiler targeting 32 bit
         config: [ debug, release ]
         os: [ windows-latest ]
-        exclude:
-          - arch: amd64_x86
-            config: release
-          - arch: amd64
-            config: debug
 
     steps:
       - uses: actions/checkout@v3
@@ -157,6 +152,8 @@ jobs:
           key: ${{ matrix.os }}-build-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build
         run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+      - name: Test Vulkan-ValidationLayers - Max Profile
+        run: python scripts/github_ci_win_linux.py --test
 
   android_cmake:
       runs-on: ubuntu-22.04

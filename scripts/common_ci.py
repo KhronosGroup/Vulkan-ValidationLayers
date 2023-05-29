@@ -50,13 +50,25 @@ TEST_INSTALL_DIR = RepoRelative("build/install")
 
 def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), config)
 
+# Returns true if we are running in GitHub actions
+# https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+def IsGHA(): 
+    if 'GITHUB_ACTION' in os.environ:
+        return True
+    return False
+
 # Runs a command in a directory and returns its return code.
 # Directory is project root by default, or a relative path from project root
 def RunShellCmd(command, start_dir = PROJECT_ROOT, env=None, verbose=False):
     if start_dir != PROJECT_ROOT:
         start_dir = RepoRelative(start_dir)
     cmd_list = command.split(" ")
-    if verbose or ('VVL_CI_VERBOSE' in os.environ and os.environ['VVL_CI_VERBOSE'] != '0'):
+
+    # Helps a lot when debugging CI issues
+    if IsGHA():
+        verbose = True
+
+    if verbose:
         print(f'CICMD({cmd_list}, env={env})')
     subprocess.check_call(cmd_list, cwd=start_dir, env=env)
 
@@ -142,9 +154,15 @@ def BuildLoader():
 
     # This enables better stack traces from tools like leak sanitizer by using the loader feature which prevents unloading of libraries at shutdown.
     cmake_cmd += ' -D LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING=ON'
+
+    # GitHub actions runs our test as admin on Windows
+    if IsGHA() and IsWindows():
+        cmake_cmd += ' -D LOADER_USE_UNSAFE_FILE_SEARCH=ON'
     
+    # TODO: Use CXXFLAGS and CFLAGS environment variables instead.
     if not IsWindows():
         cmake_cmd += ' -D LOADER_ENABLE_ADDRESS_SANITIZER=ON'
+
     RunShellCmd(cmake_cmd)
 
     print("Build Loader")
@@ -217,11 +235,6 @@ def RunVVLTests():
     # Because we installed everything to TEST_INSTALL_DIR all the libraries/json files are in pre-determined locations
     # defined by GNUInstallDirs. This makes setting VK_LAYER_PATH and other environment variables trivial/robust.
     if IsWindows():
-        # TODO: Enable Windows testing on GHA. GHA run the test with elevated permissions which causes the loader
-        # to ignore VK_LAYER_PATH for security reasons.
-        #
-        # Perhaps this can be fixed with GHA or more likely with registry editing.
-        # Ideally the registry editing is only done during GHA to avoid impacting local users who run this script.
         lvt_env['VK_LAYER_PATH'] = os.path.join(TEST_INSTALL_DIR, 'bin')
         lvt_env['VK_DRIVER_FILES'] = os.path.join(TEST_INSTALL_DIR, 'bin\\VkICD_mock_icd.json')
     else:
