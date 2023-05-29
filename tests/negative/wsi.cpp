@@ -2772,7 +2772,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
-#if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
@@ -2785,6 +2785,10 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2851,8 +2855,8 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
 }
 #endif
 
-#if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
-TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2864,6 +2868,10 @@ TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
