@@ -142,7 +142,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, cons
     if (sem_state) {
         if ((info->handleType & sem_state->exportHandleTypes) == 0) {
             skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126",
-                             "%s: handleType %s was not VkExportSemaphoreCreateInfo::handleTypes (%s)", func_name,
+                             "%s: handleType %s was not included in VkExportSemaphoreCreateInfo::handleTypes (%s)", func_name,
                              string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
                              string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
         }
