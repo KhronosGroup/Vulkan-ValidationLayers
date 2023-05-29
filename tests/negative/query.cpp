@@ -79,6 +79,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     // Invalid counter indices
     counterIndices.push_back(counters.size());
     perf_query_pool_ci.counterIndexCount++;
+    perf_query_pool_ci.pCounterIndices = counterIndices.data();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321");
     query_pool.init(*m_device, query_pool_ci);
     m_errorMonitor->VerifyFound();
