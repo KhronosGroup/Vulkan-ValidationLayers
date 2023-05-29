@@ -302,7 +302,7 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
     return is_compatible;
 }
 
-bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
+bool IMAGE_STATE::IsCompatibleAliasing(const IMAGE_STATE *other_image_state) const {
     if (!IsSwapchainImage() && !other_image_state->IsSwapchainImage() &&
         !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) {
         return false;
@@ -325,54 +325,33 @@ void IMAGE_STATE::SetInitialLayoutMap() {
     if (layout_range_map) {
         return;
     }
-    if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
-        // Look for another aliasing image and point at its layout state.
-        // ObjectBindings() is thread safe since returns by value, and once
-        // the weak_ptr is successfully locked, the other image state won't
-        // be freed out from under us.
-        for (auto const &memory_state : GetBoundMemoryStates()) {
-            for (auto &entry : memory_state->ObjectBindings()) {
-                if (entry.first.type == kVulkanObjectTypeImage) {
-                    auto base_node = entry.second.lock();
-                    if (base_node) {
-                        auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
-                        if (other_image != this && other_image->IsCompatibleAliasing(this)) {
-                            layout_range_map = other_image->layout_range_map;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+
+    std::shared_ptr<GlobalImageLayoutRangeMap> layout_map;
+    auto get_layout_map = [&layout_map](const IMAGE_STATE &other_image) {
+        layout_map = other_image.layout_range_map;
+        return true;
+    };
+
+    // See if an alias already has a layout map
+    if (HasAliasFlag()) {
+        AnyImageAliasOf(get_layout_map);
     } else if (bind_swapchain) {
         // Swapchains can also alias if multiple images are bound (or retrieved
         // with vkGetSwapchainImages()) for a (single swapchain, index) pair.
-        // ObjectBindings() is thread safe since returns by value, and once
-        // the weak_ptr is successfully locked, the other image state won't
-        // be freed out from under us.
-        for (auto &entry : bind_swapchain->ObjectBindings()) {
-            if (entry.first.type == kVulkanObjectTypeImage) {
-                auto base_node = entry.second.lock();
-                if (base_node) {
-                    auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
-                    if (other_image != this && other_image->IsCompatibleAliasing(this)) {
-                        layout_range_map = other_image->layout_range_map;
-                        break;
-                    }
-                }
-            }
-        }
+        AnyAliasBindingOf(bind_swapchain->ObjectBindings(), get_layout_map);
     }
-    // ... otherwise set up the new map.
-    if (!layout_range_map) {
+
+    if (!layout_map) {
+        // otherwise set up a new map.
         // set up the new map completely before making it available
-        auto new_map = std::make_shared<GlobalImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
+        layout_map = std::make_shared<GlobalImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
         auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
         for (; range_gen->non_empty(); ++range_gen) {
-            new_map->insert(new_map->end(), std::make_pair(*range_gen, createInfo.initialLayout));
+            layout_map->insert(layout_map->end(), std::make_pair(*range_gen, createInfo.initialLayout));
         }
-        layout_range_map = std::move(new_map);
     }
+    // And store in the object
+    layout_range_map = std::move(layout_map);
 }
 
 void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index) {
