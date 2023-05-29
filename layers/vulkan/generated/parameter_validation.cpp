@@ -12230,6 +12230,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     {
         skip |= ValidateStructPnext("vkGetMemoryWin32HandlePropertiesKHR", "pMemoryWin32HandleProperties->pNext", nullptr, pMemoryWin32HandleProperties->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, "VUID-VkMemoryWin32HandlePropertiesKHR-pNext-pNext", kVUIDUndefined, false, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties);
     return skip;
 }
 
@@ -12270,6 +12271,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdPropertiesKHR(
     {
         skip |= ValidateStructPnext("vkGetMemoryFdPropertiesKHR", "pMemoryFdProperties->pNext", nullptr, pMemoryFdProperties->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, "VUID-VkMemoryFdPropertiesKHR-pNext-pNext", kVUIDUndefined, false, false);
     }
+    if (!skip) skip |= manual_PreCallValidateGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties);
     return skip;
 }
 

@@ -229,6 +229,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetDiscardRectangleEnableEXT',
             'vkCmdSetDiscardRectangleModeEXT',
             'vkCmdSetExclusiveScissorEnableNV',
+            'vkGetMemoryWin32HandlePropertiesKHR',
+            'vkGetMemoryFdPropertiesKHR',
             ]
 
         # Commands to ignore
