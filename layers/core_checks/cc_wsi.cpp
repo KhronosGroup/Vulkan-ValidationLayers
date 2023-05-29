@@ -346,29 +346,27 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     auto full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
     auto win32_full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
-    if (IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive)) {
-        const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
-        if (full_screen_info) {
-            full_screen_info_copy_addr = &full_screen_info_copy;
-            full_screen_info_copy = *full_screen_info;
-            full_screen_info_copy.pNext = nullptr;
+    const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
+    if (full_screen_info) {
+        full_screen_info_copy_addr = &full_screen_info_copy;
+        full_screen_info_copy = *full_screen_info;
+        full_screen_info_copy.pNext = nullptr;
 
-            if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
-                const auto *win32_full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
-                if (!win32_full_screen_info) {
-                    const LogObjectList objlist(device, pCreateInfo->surface);
-                    if (LogError(objlist, "VUID-VkSwapchainCreateInfoKHR-pNext-02679",
-                                 "%s: pCreateInfo->pNext chain contains "
-                                 "VkSurfaceFullScreenExclusiveInfoEXT, but does not contain "
-                                 "VkSurfaceFullScreenExclusiveWin32InfoEXT.",
-                                 func_name)) {
-                        return true;
-                    }
-                } else {
-                    win32_full_screen_info_copy = *win32_full_screen_info;
-                    win32_full_screen_info_copy.pNext = nullptr;
-                    full_screen_info_copy.pNext = &win32_full_screen_info_copy;
+        if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
+            const auto *win32_full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pCreateInfo->pNext);
+            if (!win32_full_screen_info) {
+                const LogObjectList objlist(device, pCreateInfo->surface);
+                if (LogError(objlist, "VUID-VkSwapchainCreateInfoKHR-pNext-02679",
+                             "%s: pCreateInfo->pNext chain contains "
+                             "VkSurfaceFullScreenExclusiveInfoEXT, but does not contain "
+                             "VkSurfaceFullScreenExclusiveWin32InfoEXT.",
+                             func_name)) {
+                    return true;
                 }
+            } else {
+                win32_full_screen_info_copy = *win32_full_screen_info;
+                win32_full_screen_info_copy.pNext = nullptr;
+                full_screen_info_copy.pNext = &win32_full_screen_info_copy;
             }
         }
     }
@@ -980,60 +978,58 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
-            const auto *swapchain_present_fence_info = LvlFindInChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
-            if (swapchain_present_fence_info) {
-                if (pPresentInfo->swapchainCount != swapchain_present_fence_info->swapchainCount) {
-                    skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757",
-                                     "vkQueuePresentKHR(): VkSwapchainPresentFenceInfoEXT.swapchainCount is %" PRIu32
-                                     " but pPresentInfo->swapchainCount is %" PRIu32
-                                     ". For VkSwapchainPresentFenceInfoEXT in pNext chain of VkPresentInfoKHR, "
-                                     "VkSwapchainPresentFenceInfoEXT.swapchainCount must equal VkPresentInfoKHR.swapchainCount.",
-                                     swapchain_present_fence_info->swapchainCount, pPresentInfo->swapchainCount);
-                }
-
-                for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
-                    if (swapchain_present_fence_info->pFences[i]) {
-                        const auto fence_state = Get<FENCE_STATE>(swapchain_present_fence_info->pFences[i]);
-                        skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
-                                                       "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", "vkQueueSubmit()");
-                    }
-                }
+        const auto *swapchain_present_fence_info = LvlFindInChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
+        if (swapchain_present_fence_info) {
+            if (pPresentInfo->swapchainCount != swapchain_present_fence_info->swapchainCount) {
+                skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757",
+                                 "vkQueuePresentKHR(): VkSwapchainPresentFenceInfoEXT.swapchainCount is %" PRIu32
+                                 " but pPresentInfo->swapchainCount is %" PRIu32
+                                 ". For VkSwapchainPresentFenceInfoEXT in pNext chain of VkPresentInfoKHR, "
+                                 "VkSwapchainPresentFenceInfoEXT.swapchainCount must equal VkPresentInfoKHR.swapchainCount.",
+                                 swapchain_present_fence_info->swapchainCount, pPresentInfo->swapchainCount);
             }
 
-            const auto *swapchain_present_mode_info = LvlFindInChain<VkSwapchainPresentModeInfoEXT>(pPresentInfo->pNext);
-            if (swapchain_present_mode_info) {
-                if (pPresentInfo->swapchainCount != swapchain_present_mode_info->swapchainCount) {
-                    skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-07760",
-                                     "vkQueuePresentKHR(): VkSwapchainPresentModeInfoEXT.swapchainCount is %" PRIu32
-                                     " but pPresentInfo->swapchainCount is %" PRIu32
-                                     ". For VkSwapchainPresentModeInfoEXT in pNext chain of VkPresentInfoKHR, "
-                                     "VkSwapchainPresentModeInfoEXT.swapchainCount must equal VkPresentInfoKHR.swapchainCount.",
-                                     swapchain_present_mode_info->swapchainCount, pPresentInfo->swapchainCount);
+            for (uint32_t i = 0; i < swapchain_present_fence_info->swapchainCount; i++) {
+                if (swapchain_present_fence_info->pFences[i]) {
+                    const auto fence_state = Get<FENCE_STATE>(swapchain_present_fence_info->pFences[i]);
+                    skip |= ValidateFenceForSubmit(fence_state.get(), "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07759",
+                                                   "VUID-VkSwapchainPresentFenceInfoEXT-pFences-07758", "vkQueueSubmit()");
                 }
+            }
+        }
 
-                for (uint32_t i = 0; i < swapchain_present_mode_info->swapchainCount; i++) {
-                    const VkPresentModeKHR present_mode = swapchain_present_mode_info->pPresentModes[i];
-                    const auto swapchain_state = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
-                    if (!swapchain_state->present_modes.empty()) {
-                        bool found_match = std::find(swapchain_state->present_modes.begin(), swapchain_state->present_modes.end(),
-                                                     present_mode) != swapchain_state->present_modes.end();
-                        if (!found_match) {
-                            skip |= LogError(
-                                pPresentInfo->pSwapchains[i], "VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-07761",
-                                "vkQueuePresentKHR has a vkSwapchainPresentModeInfoEXT structure in its pNext chain which contains "
-                                "a presentMode (%s) that was not specified in a VkSwapchainPresentModesCreateInfoEXT "
-                                "structure extending VkCreateSwapchainsKHR.",
-                                string_VkPresentModeKHR(present_mode));
-                        }
-                    } else {
+        const auto *swapchain_present_mode_info = LvlFindInChain<VkSwapchainPresentModeInfoEXT>(pPresentInfo->pNext);
+        if (swapchain_present_mode_info) {
+            if (pPresentInfo->swapchainCount != swapchain_present_mode_info->swapchainCount) {
+                skip |= LogError(pPresentInfo->pSwapchains[0], "VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-07760",
+                                 "vkQueuePresentKHR(): VkSwapchainPresentModeInfoEXT.swapchainCount is %" PRIu32
+                                 " but pPresentInfo->swapchainCount is %" PRIu32
+                                 ". For VkSwapchainPresentModeInfoEXT in pNext chain of VkPresentInfoKHR, "
+                                 "VkSwapchainPresentModeInfoEXT.swapchainCount must equal VkPresentInfoKHR.swapchainCount.",
+                                 swapchain_present_mode_info->swapchainCount, pPresentInfo->swapchainCount);
+            }
+
+            for (uint32_t i = 0; i < swapchain_present_mode_info->swapchainCount; i++) {
+                const VkPresentModeKHR present_mode = swapchain_present_mode_info->pPresentModes[i];
+                const auto swapchain_state = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
+                if (!swapchain_state->present_modes.empty()) {
+                    bool found_match = std::find(swapchain_state->present_modes.begin(), swapchain_state->present_modes.end(),
+                                                 present_mode) != swapchain_state->present_modes.end();
+                    if (!found_match) {
                         skip |= LogError(
                             pPresentInfo->pSwapchains[i], "VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-07761",
-                            "vkQueuePresentKHR has a vkSwapchainPresentModeInfoEXT structure in its pNext chain specifying "
-                            "presentMode (%s), but a VkSwapchainPresentModesCreateInfoEXT structure was not included in the "
-                            "pNext chain of VkCreateSwapchainsKHR.",
+                            "vkQueuePresentKHR has a vkSwapchainPresentModeInfoEXT structure in its pNext chain which contains "
+                            "a presentMode (%s) that was not specified in a VkSwapchainPresentModesCreateInfoEXT "
+                            "structure extending VkCreateSwapchainsKHR.",
                             string_VkPresentModeKHR(present_mode));
                     }
+                } else {
+                    skip |=
+                        LogError(pPresentInfo->pSwapchains[i], "VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-07761",
+                                 "vkQueuePresentKHR has a vkSwapchainPresentModeInfoEXT structure in its pNext chain specifying "
+                                 "presentMode (%s), but a VkSwapchainPresentModesCreateInfoEXT structure was not included in the "
+                                 "pNext chain of VkCreateSwapchainsKHR.",
+                                 string_VkPresentModeKHR(present_mode));
                 }
             }
         }
@@ -1145,22 +1141,20 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
             surface_caps2 = physical_device_state->surfaceless_query_state.capabilities;
         }
         auto min_image_count = surface_caps2.surfaceCapabilities.minImageCount;
-        if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
-            const VkSwapchainPresentModesCreateInfoEXT *present_modes_ci =
-                LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->createInfo.pNext);
-            if (present_modes_ci) {
-                auto surface_state = Get<SURFACE_STATE>(swapchain_data->createInfo.surface);
-                // If a SwapchainPresentModesCreateInfo struct was included, min_image_count becomes the max of the
-                // minImageCount values returned via VkSurfaceCapabilitiesKHR for each of the present modes in
-                // SwapchainPresentModesCreateInfo
-                VkSurfaceCapabilitiesKHR surface_capabilities{};
-                min_image_count = 0;
-                for (uint32_t i = 0; i < present_modes_ci->presentModeCount; i++) {
-                    surface_capabilities =
-                        surface_state->GetPresentModeSurfaceCapabilities(physical_device, present_modes_ci->pPresentModes[i]);
-                    if (surface_capabilities.minImageCount > min_image_count) {
-                        min_image_count = surface_capabilities.minImageCount;
-                    }
+        const VkSwapchainPresentModesCreateInfoEXT *present_modes_ci =
+            LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->createInfo.pNext);
+        if (present_modes_ci) {
+            auto surface_state = Get<SURFACE_STATE>(swapchain_data->createInfo.surface);
+            // If a SwapchainPresentModesCreateInfo struct was included, min_image_count becomes the max of the
+            // minImageCount values returned via VkSurfaceCapabilitiesKHR for each of the present modes in
+            // SwapchainPresentModesCreateInfo
+            VkSurfaceCapabilitiesKHR surface_capabilities{};
+            min_image_count = 0;
+            for (uint32_t i = 0; i < present_modes_ci->presentModeCount; i++) {
+                surface_capabilities =
+                    surface_state->GetPresentModeSurfaceCapabilities(physical_device, present_modes_ci->pPresentModes[i]);
+                if (surface_capabilities.minImageCount > min_image_count) {
+                    min_image_count = surface_capabilities.minImageCount;
                 }
             }
         }

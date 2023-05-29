@@ -591,38 +591,56 @@ char *SafeStringCopy(const char *in_string);
         V_1_2_instance_extensions_promoted_to_V_1_3_core = sorted([e.get('name') for e in promoted_1_3_exts if e.get('type') == 'instance'])
         V_1_2_device_extensions_promoted_to_V_1_3_core = sorted([e.get('name') for e in promoted_1_3_exts if e.get('type') == 'device'])
 
-        output = [
-            '#pragma once',
-            '',
-            '#include <string>',
-            '#include <utility>',
-            '#include <set>',
-            '#include <array>',
-            '#include <vector>',
-            '#include <cassert>',
-            '',
-            '#include <vulkan/vulkan.h>',
-            '#include "containers/custom_containers.h"',
-            ''
-            '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
-            '',
-            'enum ExtEnabled : unsigned char {',
-            '    kNotEnabled,',
-            '    kEnabledByCreateinfo,',
-            '    kEnabledByApiLevel,',
-            '    kEnabledByInteraction,',
-            '};',
-            '',
-            '[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {',
-            '    return (extension != kNotEnabled);',
-            '};',
-            '',
-            '[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {',
-            '    return (extension == kEnabledByCreateinfo);',
-            '};',
-            '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
-            '#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"',
-            '']
+        output = ['''#pragma once
+
+#include <string>
+#include <utility>
+#include <set>
+#include <array>
+#include <vector>
+#include <cassert>
+
+#include <vulkan/vulkan.h>
+#include "containers/custom_containers.h"
+#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
+
+enum ExtEnabled : unsigned char {
+    kNotEnabled,
+    kEnabledByCreateinfo,
+    kEnabledByApiLevel,
+    kEnabledByInteraction,
+};
+
+/*
+This function is a helper to know if the extension is enabled.
+
+Times to use it
+- To determine the VUID
+- The VU mentions the use of the extension
+- Extension exposes property limits being validated
+- Checking not enabled
+    - if (!IsExtEnabled(...)) { }
+- Special extensions that being EXPOSED alters the VUs
+    - IsExtEnabled(device_extensions.vk_khr_portability_subset)
+- Special extensions that alter behaviour of enabled
+    - IsExtEnabled(device_extensions.vk_khr_maintenance*)
+
+Times to NOT use it
+    - If checking if a struct or enum is being used. There are a stateless checks
+      to make sure the new Structs/Enums are not being used without this enabled.
+    - If checking if the extension's feature enable status, because if the feature
+      is enabled, then we already validated that extension is enabled.
+    - Some variables (ex. viewMask) require the extension to be used if non-zero
+*/
+[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
+    return (extension != kNotEnabled);
+};
+
+[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
+    return (extension == kEnabledByCreateinfo);
+};
+#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
+#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"''']
 
         output.append(self.genAPIVersionDefinition())
 

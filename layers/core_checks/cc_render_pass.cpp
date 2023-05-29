@@ -2712,10 +2712,7 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
                                            const char *function_name) const {
     bool skip = false;
 
-    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
-        skip |= ValidateDepthStencilResolve(pCreateInfo, function_name);
-    }
-
+    skip |= ValidateDepthStencilResolve(pCreateInfo, function_name);
     skip |= ValidateFragmentShadingRateAttachments(device, pCreateInfo);
 
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
@@ -4295,8 +4292,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                     "height: %u, the ceiling value: %u\n",
                                     i, subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                             }
-                            if (view_state->normalized_subresource_range.layerCount != 1 &&
-                                !(api_version >= VK_API_VERSION_1_1 || IsExtEnabled(device_extensions.vk_khr_multiview))) {
+                            if (view_state->normalized_subresource_range.layerCount != 1 && !IsExtEnabled(device_extensions.vk_khr_multiview)) {
                                 skip |= LogError(device, "VUID-VkFramebufferCreateInfo-pAttachments-02744",
                                                  "vkCreateFramebuffer(): pCreateInfo->pAttachments[%" PRIu32
                                                  "] is referenced by "
@@ -4517,7 +4513,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 
                     const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
                         LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
-                    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) && depth_stencil_resolve != nullptr) {
+                    if (depth_stencil_resolve != nullptr) {
                         skip |= MatchUsage(1, depth_stencil_resolve->pDepthStencilResolveAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
                     }
@@ -4532,51 +4528,32 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                     }
                 }
 
-                if (IsExtEnabled(device_extensions.vk_khr_multiview)) {
-                    if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
-                        for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
-                            const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
-                                LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
-                            uint32_t view_bits = rpci->pSubpasses[i].viewMask;
-                            int highest_view_bit = MostSignificantBit(view_bits);
+                // VUID-VkSubpassDescription2-multiview-06558 forces viewMask to be zero if not using multiView
+                if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
+                    for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+                        const VkSubpassDescriptionDepthStencilResolve *depth_stencil_resolve =
+                            LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
+                        uint32_t view_bits = rpci->pSubpasses[i].viewMask;
+                        int highest_view_bit = MostSignificantBit(view_bits);
 
-                            for (uint32_t j = 0; j < rpci->pSubpasses[i].colorAttachmentCount; ++j) {
-                                attachment_index = rpci->pSubpasses[i].pColorAttachments[j].attachment;
-                                if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                    int32_t layer_count =
-                                        framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
-                                    if (layer_count <= highest_view_bit) {
-                                        skip |= LogError(
-                                            pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                            "only specifies %" PRIi32
-                                            " layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %i, with that attachment specified as a color attachment %u.",
-                                            attachment_index, layer_count, i,
-                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
-                                    }
-                                }
-                                if (rpci->pSubpasses[i].pResolveAttachments) {
-                                    attachment_index = rpci->pSubpasses[i].pResolveAttachments[j].attachment;
-                                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                        int32_t layer_count =
-                                            framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
-                                        if (layer_count <= highest_view_bit) {
-                                            skip |= LogError(
-                                                pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                "only specifies %" PRIi32
-                                                " layers, but the view mask for subpass %u in renderPass (%s) "
-                                                "includes layer %i, with that attachment specified as a resolve attachment %u.",
-                                                attachment_index, layer_count, i,
-                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
-                                        }
-                                    }
+                        for (uint32_t j = 0; j < rpci->pSubpasses[i].colorAttachmentCount; ++j) {
+                            attachment_index = rpci->pSubpasses[i].pColorAttachments[j].attachment;
+                            if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                int32_t layer_count =
+                                    framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
+                                if (layer_count <= highest_view_bit) {
+                                    skip |=
+                                        LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                 "only specifies %" PRIi32
+                                                 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                 "includes layer %i, with that attachment specified as a color attachment %u.",
+                                                 attachment_index, layer_count, i,
+                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                 }
                             }
-
-                            for (uint32_t j = 0; j < rpci->pSubpasses[i].inputAttachmentCount; ++j) {
-                                attachment_index = rpci->pSubpasses[i].pInputAttachments[j].attachment;
+                            if (rpci->pSubpasses[i].pResolveAttachments) {
+                                attachment_index = rpci->pSubpasses[i].pResolveAttachments[j].attachment;
                                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
                                     int32_t layer_count =
                                         framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
@@ -4586,48 +4563,65 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
                                             "only specifies %" PRIi32
                                             " layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %i, with that attachment specified as an input attachment %u.",
+                                            "includes layer %i, with that attachment specified as a resolve attachment %u.",
                                             attachment_index, layer_count, i,
                                             report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
                                     }
                                 }
                             }
+                        }
 
-                            if (rpci->pSubpasses[i].pDepthStencilAttachment != nullptr) {
-                                attachment_index = rpci->pSubpasses[i].pDepthStencilAttachment->attachment;
+                        for (uint32_t j = 0; j < rpci->pSubpasses[i].inputAttachmentCount; ++j) {
+                            attachment_index = rpci->pSubpasses[i].pInputAttachments[j].attachment;
+                            if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                int32_t layer_count =
+                                    framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
+                                if (layer_count <= highest_view_bit) {
+                                    skip |=
+                                        LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                 "only specifies %" PRIi32
+                                                 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                 "includes layer %i, with that attachment specified as an input attachment %u.",
+                                                 attachment_index, layer_count, i,
+                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                }
+                            }
+                        }
+
+                        if (rpci->pSubpasses[i].pDepthStencilAttachment != nullptr) {
+                            attachment_index = rpci->pSubpasses[i].pDepthStencilAttachment->attachment;
+                            if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                int32_t layer_count =
+                                    framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
+                                if (layer_count <= highest_view_bit) {
+                                    skip |=
+                                        LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                 "only specifies %" PRIi32
+                                                 " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                 "includes layer %i, with that attachment specified as a depth/stencil attachment.",
+                                                 attachment_index, layer_count, i,
+                                                 report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
+                                }
+                            }
+
+                            if (depth_stencil_resolve != nullptr &&
+                                depth_stencil_resolve->pDepthStencilResolveAttachment != nullptr) {
+                                attachment_index = depth_stencil_resolve->pDepthStencilResolveAttachment->attachment;
                                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
                                     int32_t layer_count =
                                         framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
                                     if (layer_count <= highest_view_bit) {
-                                        skip |= LogError(
-                                            pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                            "only specifies %" PRIi32
-                                            " layers, but the view mask for subpass %u in renderPass (%s) "
-                                            "includes layer %i, with that attachment specified as a depth/stencil attachment.",
-                                            attachment_index, layer_count, i,
-                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
-                                    }
-                                }
-
-                                if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve) &&
-                                    depth_stencil_resolve != nullptr &&
-                                    depth_stencil_resolve->pDepthStencilResolveAttachment != nullptr) {
-                                    attachment_index = depth_stencil_resolve->pDepthStencilResolveAttachment->attachment;
-                                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                                        int32_t layer_count =
-                                            framebuffer_attachments_create_info->pAttachmentImageInfos[attachment_index].layerCount;
-                                        if (layer_count <= highest_view_bit) {
-                                            skip |= LogError(
-                                                pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
-                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
-                                                "only specifies %" PRIi32
-                                                " layers, but the view mask for subpass %u in renderPass (%s) "
-                                                "includes layer %i, with that attachment specified as a depth/stencil resolve "
-                                                "attachment.",
-                                                attachment_index, layer_count, i,
-                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
-                                        }
+                                        skip |=
+                                            LogError(pCreateInfo->renderPass, "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                     "only specifies %" PRIi32
+                                                     " layers, but the view mask for subpass %u in renderPass (%s) "
+                                                     "includes layer %i, with that attachment specified as a depth/stencil resolve "
+                                                     "attachment.",
+                                                     attachment_index, layer_count, i,
+                                                     report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
                                     }
                                 }
                             }
@@ -4653,14 +4647,12 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                         MatchUsage(1, subpass_description.pDepthStencilAttachment, pCreateInfo,
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
                     // Verify depth/stecnil resolve
-                    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
-                        const VkSubpassDescriptionDepthStencilResolve *ds_resolve =
-                            LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
-                        if (ds_resolve) {
-                            skip |= MatchUsage(1, ds_resolve->pDepthStencilResolveAttachment, pCreateInfo,
-                                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                               "VUID-VkFramebufferCreateInfo-pAttachments-02634");
-                        }
+                    const VkSubpassDescriptionDepthStencilResolve *ds_resolve =
+                        LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
+                    if (ds_resolve) {
+                        skip |= MatchUsage(1, ds_resolve->pDepthStencilResolveAttachment, pCreateInfo,
+                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                           "VUID-VkFramebufferCreateInfo-pAttachments-02634");
                     }
 
                     // Verify fragment shading rate attachments
