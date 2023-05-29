@@ -173,8 +173,8 @@ TEST_F(PositiveWsi, CreateX11Surface) {
 #endif
 }
 
-#if defined(VVL_TESTS_ENABLE_EXCLUSIVE_FULLSCREEN) && defined(VK_USE_PLATFORM_WIN32_KHR)
-TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -186,6 +186,10 @@ TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullscreenEXT) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Only run test MockICD due to CI stability";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
