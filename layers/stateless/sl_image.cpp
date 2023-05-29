@@ -674,7 +674,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
         }
 
         auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
-        if (IsExtEnabled(device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
+        if (astc_decode_mode != nullptr) {
             if ((astc_decode_mode->decodeMode != VK_FORMAT_R16G16B16A16_SFLOAT) &&
                 (astc_decode_mode->decodeMode != VK_FORMAT_R8G8B8A8_UNORM) &&
                 (astc_decode_mode->decodeMode != VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {

@@ -42,6 +42,27 @@ enum ExtEnabled : unsigned char {
     kEnabledByInteraction,
 };
 
+/*
+This function is a helper to know if the extension is enabled.
+
+Times to use it
+- To determine the VUID
+- The VU mentions the use of the extension
+- Extension exposes property limits being validated
+- Checking not enabled
+    - if (!IsExtEnabled(...)) { }
+- Special extensions that being EXPOSED alters the VUs
+    - IsExtEnabled(device_extensions.vk_khr_portability_subset)
+- Special extensions that alter behaviour of enabled
+    - IsExtEnabled(device_extensions.vk_khr_maintenance*)
+
+Times to NOT use it
+    - If checking if a struct or enum is being used. There are a stateless checks
+      to make sure the new Structs/Enums are not being used without this enabled.
+    - If checking if the extension's feature enable status, because if the feature
+      is enabled, then we already validated that extension is enabled.
+    - Some variables (ex. viewMask) require the extension to be used if non-zero
+*/
 [[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
     return (extension != kNotEnabled);
 };
@@ -51,7 +72,6 @@ enum ExtEnabled : unsigned char {
 };
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
 #define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
-
 
 #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
 

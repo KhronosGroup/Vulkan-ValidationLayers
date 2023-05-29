@@ -1910,11 +1910,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             break;
     }
 
-    // External format checks needed when VK_ANDROID_external_memory_android_hardware_buffer enabled
-    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateCreateImageViewANDROID(pCreateInfo);
-    }
-
+    skip |= ValidateCreateImageViewANDROID(pCreateInfo);
     skip |= ValidateImageViewFormatFeatures(image_state, view_format, image_usage);
 
     if (enabled_features.shading_rate_image_features.shadingRateImage) {
@@ -2057,7 +2053,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     }
 
     if (const auto astc_decode_mode = LvlFindInChain<VkImageViewASTCDecodeModeEXT>(pCreateInfo->pNext);
-        IsExtEnabled(device_extensions.vk_ext_astc_decode_mode) && (astc_decode_mode != nullptr)) {
+        (astc_decode_mode != nullptr)) {
         if ((enabled_features.astc_decode_features.decodeModeSharedExponent == VK_FALSE) &&
             (astc_decode_mode->decodeMode == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)) {
             skip |= LogError(pCreateInfo->image, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231",
@@ -2148,9 +2144,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                          "VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT is not set.");
     }
 
-    if (IsExtEnabled(device_extensions.vk_qcom_image_processing)) {
-        skip |= ValidateImageViewSampleWeightQCOM(pCreateInfo, image_state);
-    }
+    skip |= ValidateImageViewSampleWeightQCOM(pCreateInfo, image_state);
 
     return skip;
 }

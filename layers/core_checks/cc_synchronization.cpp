@@ -1747,7 +1747,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_
             sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
             sub_image_found = true;
         }
-        if (!sub_image_found && IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
+        if (!sub_image_found) {
             const auto *resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {

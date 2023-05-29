@@ -739,9 +739,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                            VkMemoryRequirements *pMemoryRequirements) const {
     bool skip = false;
-    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
-    }
+    skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
 
     auto image_state = Get<IMAGE_STATE>(image);
     if (image_state) {
@@ -758,9 +756,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo, const char *func_name) const {
     bool skip = false;
-    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-        skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, func_name);
-    }
+    skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, func_name);
 
     auto image_state = Get<IMAGE_STATE>(pInfo->image);
     const VkFormat image_format = image_state->createInfo.format;

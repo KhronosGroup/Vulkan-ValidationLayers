@@ -452,7 +452,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
 
         if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
              binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
-            binding_info.pImmutableSamplers && IsExtEnabled(device_extensions.vk_ext_custom_border_color)) {
+            binding_info.pImmutableSamplers) {
             for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
                 auto sampler_state = Get<SAMPLER_STATE>(binding_info.pImmutableSamplers[j]);
                 if (sampler_state && (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
@@ -5210,6 +5210,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                          phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures);
     }
 
+    // Extension exposes new properties limits
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
         // XXX TODO: replace with correct VU messages
 
@@ -5404,6 +5405,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         }
     }
 
+    // Extension exposes new properties limits
     if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
         uint32_t sum_subsampled_samplers = 0;
         for (const auto &dsl : set_layouts) {
