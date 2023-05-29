@@ -20,12 +20,7 @@
 // This file should never be included, but here for searchability and statistics
 
 const char* unimplementable_validation[] = {
-    // TODO - This might be able to be rewritten as how VUID-VkWaylandSurfaceCreateInfoKHR-display-01304 is
-    //
-    // Not possible to validate a "valid" handle for fd
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5431#issuecomment-1484167442
-    "VUID-vkGetMemoryFdPropertiesKHR-fd-00673",
-
     // sparseAddressSpaceSize can't be tracked in a layer
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/2403
-    "VUID-vkCreateBuffer-flags-00911"};
+    "VUID-vkCreateBuffer-flags-00911",
+};

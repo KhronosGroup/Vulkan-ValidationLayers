@@ -31,6 +31,22 @@ bool StatelessValidation::manual_PreCallValidateGetMemoryFdKHR(VkDevice device, 
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device,
+                                                                         VkExternalMemoryHandleTypeFlagBits handleType, int fd,
+                                                                         VkMemoryFdPropertiesKHR *pMemoryFdProperties) const {
+    bool skip = false;
+    if (fd < 0) {
+        skip |= LogError(device, "VUID-vkGetMemoryFdPropertiesKHR-fd-00673",
+                         "vkGetMemoryFdPropertiesKHR(): fd handle (%d) is not a valid POSIX file descriptor.", fd);
+    }
+    if (handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
+        skip |= LogError(device, "VUID-vkGetMemoryFdPropertiesKHR-handleType-00674",
+                         "vkGetMemoryFdPropertiesKHR(): opaque handle type %s is not allowed.",
+                         string_VkExternalMemoryHandleTypeFlagBits(handleType));
+    }
+    return skip;
+}
+
 bool StatelessValidation::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
                                                               VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                                               VkExternalSemaphoreHandleTypeFlags allowed_types) const {
@@ -107,6 +123,25 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+bool StatelessValidation::manual_PreCallValidateGetMemoryWin32HandlePropertiesKHR(
+    VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
+    VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties) const {
+    bool skip = false;
+    if (handle == NULL || handle == INVALID_HANDLE_VALUE) {
+        static_assert(sizeof(HANDLE) == sizeof(uintptr_t));  // to use PRIxPTR for HANDLE formatting
+        skip |= LogError(device, "VUID-vkGetMemoryWin32HandlePropertiesKHR-handle-00665",
+                         "vkGetMemoryWin32HandlePropertiesKHR(): handle (0x%" PRIxPTR ") is not a valid Windows handle.",
+                         reinterpret_cast<std::uintptr_t>(handle));
+    }
+    if (handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
+        handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT) {
+        skip |= LogError(device, "VUID-vkGetMemoryWin32HandlePropertiesKHR-handleType-00666",
+                         "vkGetMemoryWin32HandlePropertiesKHR(): opaque handle type %s is not allowed.",
+                         string_VkExternalMemoryHandleTypeFlagBits(handleType));
+    }
+    return skip;
+}
+
 static constexpr VkExternalSemaphoreHandleTypeFlags kSemWin32HandleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT |
                                                                            VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT |
                                                                            VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
