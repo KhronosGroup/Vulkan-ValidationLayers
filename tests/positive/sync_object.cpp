@@ -15,8 +15,6 @@
 #include "generated/vk_extension_helper.h"
 
 #include <array>
-#include <chrono>
-#include <deque>
 #include <thread>
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -2308,3 +2306,70 @@ TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
 
     data.Run(*m_commandPool, *m_errorMonitor);
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
+    TEST_DESCRIPTION("Use vkWaitSemaphores with exported semaphore to wait for the queue");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        // Older AMD driver does not like timeline + export properties combo
+        GTEST_SKIP() << "Please update AMD drivers at least to Adrenalin 23.5.2 to run this test. Then remove this check.";
+    }
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    // Create exportable timeline semaphore
+    auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    semaphore_type_create_info.initialValue = 0;
+
+    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>(&semaphore_type_create_info);
+    export_info.handleTypes = handle_type;
+
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    // This caused original issue: exported semaphore failed to retire queue operations.
+    HANDLE win32_handle = NULL;
+    ASSERT_VK_SUCCESS(semaphore.export_handle(win32_handle, handle_type));
+
+    // Put semaphore to work
+    const uint64_t signal_value = 1;
+    auto timeline_submit_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    timeline_submit_info.signalSemaphoreValueCount = 1;
+    timeline_submit_info.pSignalSemaphoreValues = &signal_value;
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_submit_info);
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+
+    // This wait (with exported semaphore) should properly retire all queue operations
+    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &semaphore.handle();
+    wait_info.pValues = &signal_value;
+    ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, uint64_t(1e10)));
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR

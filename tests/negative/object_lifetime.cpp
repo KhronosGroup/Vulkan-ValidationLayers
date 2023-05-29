@@ -1204,14 +1204,7 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-
-    // Check for external semaphore import and export capability
-    auto semaphore_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
-    semaphore_info.handleType = handle_type;
-    auto semaphore_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
-    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
-    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through fd handle";
     }
 
@@ -1252,14 +1245,7 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-    // Check for external semaphore import and export capability
-    auto semaphore_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
-    semaphore_info.handleType = handle_type;
-    auto semaphore_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
-    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
-    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!SemaphoreExportImportSupported(gpu(), handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
     }
 

@@ -603,6 +603,17 @@ VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkP
     return supported_types;
 }
 
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    constexpr auto export_import_flags =
+        VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
+
+    auto info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    info.handleType = handle_type;
+    auto properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &info, &properties);
+    return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
+}
+
 VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type) {
     auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();

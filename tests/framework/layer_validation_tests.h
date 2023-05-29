@@ -1088,6 +1088,8 @@ VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkPhysicalD
 VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(VkPhysicalDevice gpu,
                                                                              VkExternalSemaphoreFeatureFlags requested_features);
 
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+
 VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(VkPhysicalDevice gpu, const VkBufferCreateInfo &buffer_create_info,
                                                          VkExternalMemoryHandleTypeFlagBits handle_type);
 
