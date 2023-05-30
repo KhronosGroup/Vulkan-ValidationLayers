@@ -197,8 +197,6 @@ class IMAGE_STATE : public BINDABLE {
 
     void SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint32_t swapchain_index);
 
-    VkDeviceSize GetFakeBaseAddress() const override;
-
     void Destroy() override;
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
@@ -316,7 +314,6 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 
 struct SWAPCHAIN_IMAGE {
     IMAGE_STATE *image_state = nullptr;
-    VkDeviceSize fake_base_address = 0;
     bool acquired = false;
 };
 
