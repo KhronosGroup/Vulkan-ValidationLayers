@@ -1926,7 +1926,6 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                 pCreateInfo->pAttachments[subpass.pColorAttachments[last_sample_count_attachment].attachment]
                                     .samples;
                             if (current_sample_count != last_sample_count) {
-                                // Also VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06869
                                 const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
                                                            : "VUID-VkSubpassDescription-pColorAttachments-06868";
                                 skip |= LogError(

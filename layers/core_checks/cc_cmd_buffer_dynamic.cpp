@@ -621,10 +621,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETDEPTHBOUNDS, VK_TRUE, nullptr, nullptr);
 
-    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
-            // Also VUID-vkCmdSetDepthBounds-minDepthBounds-00600
             skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508",
                              "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and minDepthBounds "
                              "(=%f) is not within the [0.0, 1.0] range.",
@@ -632,7 +630,6 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
         }
 
         if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
-            // Also VUID-vkCmdSetDepthBounds-maxDepthBounds-00601
             skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509",
                              "vkCmdSetDepthBounds(): VK_EXT_depth_range_unrestricted extension is not enabled and maxDepthBounds "
                              "(=%f) is not within the [0.0, 1.0] range.",

@@ -728,10 +728,8 @@ bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, V
                                                 const char *apiName) const {
     bool skip = false;
 
-    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         if (!(clearValue.depth >= 0.0) || !(clearValue.depth <= 1.0)) {
-            // Also VUID-VkClearDepthStencilValue-depth-00022
             skip |= LogError(commandBuffer, "VUID-VkClearDepthStencilValue-depth-02506",
                              "%s: VK_EXT_depth_range_unrestricted extension is not enabled and VkClearDepthStencilValue::depth "
                              "(=%f) is not within the [0.0, 1.0] range.",

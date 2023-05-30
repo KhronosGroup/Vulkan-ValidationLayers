@@ -1374,11 +1374,9 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
         }
     }
 
-    // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
     if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
         // minDepth
         if (!(viewport.minDepth >= 0.0) || !(viewport.minDepth <= 1.0)) {
-            // Also VUID-VkViewport-minDepth-02540
             skip |= LogError(object, "VUID-VkViewport-minDepth-01234",
                              "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.minDepth (=%f) is not within the "
                              "[0.0, 1.0] range.",
@@ -1387,7 +1385,6 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
         // maxDepth
         if (!(viewport.maxDepth >= 0.0) || !(viewport.maxDepth <= 1.0)) {
-            // Also VUID-VkViewport-maxDepth-02541
             skip |= LogError(object, "VUID-VkViewport-maxDepth-01235",
                              "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.maxDepth (=%f) is not within the "
                              "[0.0, 1.0] range.",

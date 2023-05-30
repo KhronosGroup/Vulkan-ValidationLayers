@@ -1258,12 +1258,10 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                                 pipeline.create_index);
                         }
 
-                        // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
                         if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
                             !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
                             const float minDepthBounds = ds_state->minDepthBounds;
                             const float maxDepthBounds = ds_state->maxDepthBounds;
-                            // Also VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00755
                             if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
                                 skip |= LogError(
                                     device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
