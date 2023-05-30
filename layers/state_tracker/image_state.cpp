@@ -361,16 +361,6 @@ void IMAGE_STATE::SetSwapchain(std::shared_ptr<SWAPCHAIN_NODE> &swapchain, uint3
     bind_swapchain->AddParent(this);
 }
 
-VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
-    if (!IsSwapchainImage()) {
-        return BINDABLE::GetFakeBaseAddress();
-    }
-    if (!bind_swapchain) {
-        return 0;
-    }
-    return bind_swapchain->images[swapchain_image_index].fake_base_address;
-}
-
 static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
     auto *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(ci->pNext);
     return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;

@@ -3782,12 +3782,6 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
         if (swapchain_info) {
             auto swapchain = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
             if (swapchain) {
-                SWAPCHAIN_IMAGE &swapchain_image = swapchain->images[swapchain_info->imageIndex];
-
-                if (!swapchain_image.fake_base_address) {
-                    auto size = image_state->fragment_encoder->TotalSize();
-                    swapchain_image.fake_base_address = fake_memory.Alloc(size);
-                }
                 // All images bound to this swapchain and index are aliases
                 image_state->SetSwapchain(swapchain, swapchain_info->imageIndex);
             }
@@ -5043,10 +5037,6 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
 
             auto image_state =
                 CreateImageState(pSwapchainImages[i], swapchain_state->image_create_info.ptr(), swapchain, i, format_features);
-            if (!swapchain_image.fake_base_address) {
-                auto size = image_state->fragment_encoder->TotalSize();
-                swapchain_image.fake_base_address = fake_memory.Alloc(size);
-            }
 
             image_state->SetSwapchain(swapchain_state, i);
             swapchain_image.image_state = image_state.get();
