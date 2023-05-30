@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See spirv_gramar_generator.py for modifications
+// See spirv_grammar_generator.py for modifications
 
 
 /***************************************************************************

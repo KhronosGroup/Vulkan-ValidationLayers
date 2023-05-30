@@ -340,7 +340,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See object_tracker_generator.py for modifications\n'
+        file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
         self.otwrite('both', file_comment)
         # Copyright Statement
         copyright = ''

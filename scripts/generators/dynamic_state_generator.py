@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+import sys,os
 from generator import *
 from common_codegen import *
 
@@ -41,7 +41,7 @@ class DynamicStateOutputGenerator(OutputGenerator):
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See dynamic_state_generator.py for modifications\n'
+        file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
         write(file_comment, file=self.outFile)
         # Copyright Statement
         copyright = ''

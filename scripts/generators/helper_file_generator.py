@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re,sys
+import re,sys,os
 import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
@@ -138,7 +138,7 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         self.helper_file_type = genOpts.helper_file_type
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See helper_file_generator.py for modifications\n'
+        file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright = ''

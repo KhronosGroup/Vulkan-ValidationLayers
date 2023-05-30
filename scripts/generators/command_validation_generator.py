@@ -78,7 +78,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See command_validation_generator.py for modifications\n'
+        file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
         write(file_comment, file=self.outFile)
         # Copyright Statement
         copyright = ''
