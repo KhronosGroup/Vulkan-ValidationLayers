@@ -13299,6 +13299,21 @@ struct safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT {
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 dynamicRenderingUnusedAttachments;
+    safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& operator=(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT();
+    ~safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT();
+    void initialize(const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT *>(this); }
+    VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM {
     VkStructureType sType;
     void* pNext{};
