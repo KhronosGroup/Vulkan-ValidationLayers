@@ -84,6 +84,10 @@ jobs:
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
+      - name: Test Vulkan-ValidationLayers - Max Profile
+        run: python3 scripts/github_ci_win_linux.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
         run: python3 scripts/github_ci_win_linux.py --test
         env:
@@ -96,10 +100,6 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/nvidia_tegra_x1.json
-      - name: Test Vulkan-ValidationLayers - Max Profile
-        run: python3 scripts/github_ci_win_linux.py --test
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
   gn:
     runs-on: ubuntu-22.04
