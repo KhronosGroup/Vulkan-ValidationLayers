@@ -1,6 +1,6 @@
 #pragma once
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See dispatch_helper_generator.py for modifications
+// See dispatch_table_helper_generator.py for modifications
 
 /*
  * Copyright (c) 2015-2023 The Khronos Group Inc.

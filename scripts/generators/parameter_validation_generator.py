@@ -311,8 +311,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         from datetime import datetime
         curr_year = datetime.now().year
         year = f'{start_year}-{curr_year}' if start_year is not None else curr_year
+        file_name = os.path.basename(__file__)
         return f'''/* *** THIS FILE IS GENERATED - DO NOT EDIT! ***
- * See parameter_validation_generator.py for modifications
+ * See {file_name} for modifications
  *
  * Copyright (c) {year} The Khronos Group Inc.
  * Copyright (c) {year} LunarG, Inc.

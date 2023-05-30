@@ -17,6 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import argparse
 import hashlib
 import subprocess
@@ -28,7 +29,7 @@ def generate(symbol_name, commit_id, output_header_file):
     with open(output_header_file, "w", newline='\n') as header_file:
          # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See external_revision_generator.py for modifications\n'
+        file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
         header_file.write(file_comment)
         # Copyright Notice
         copyright = ''
