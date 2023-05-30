@@ -44,6 +44,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.storageClassList = [] # list of storage classes
         self.executionModelList = []
         self.decorationList = []
+        self.builtInList = []
         self.dimList = []
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
@@ -167,6 +168,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                 self.addToStingList(operandKind, 'StorageClass', self.storageClassList)
                 self.addToStingList(operandKind, 'ExecutionModel', self.executionModelList)
                 self.addToStingList(operandKind, 'Decoration', self.decorationList)
+                self.addToStingList(operandKind, 'BuiltIn', self.builtInList)
                 self.addToStingList(operandKind, 'Dim', self.dimList)
 
             for instruction in instructions:
@@ -485,6 +487,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output +=  'const char* string_SpvStorageClass(uint32_t storage_class);\n'
             output +=  'const char* string_SpvExecutionModel(uint32_t execution_model);\n'
             output +=  'const char* string_SpvDecoration(uint32_t decoration);\n'
+            output +=  'const char* string_SpvBuiltIn(uint32_t built_in);\n'
             output +=  'const char* string_SpvDim(uint32_t dim);\n'
         elif self.sourceFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode) {\n'
@@ -523,6 +526,16 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                 output += '            return \"{}\";\n'.format(decoration)
             output += '        default:\n'
             output += '            return \"Unknown Decoration\";\n'
+            output += '    }\n'
+            output += '};\n'
+
+            output += '\nconst char* string_SpvBuiltIn(uint32_t built_in) {\n'
+            output += '    switch(built_in) {\n'
+            for builtIn in self.builtInList:
+                output += '        case spv::BuiltIn{}:\n'.format(builtIn)
+                output += '            return \"{}\";\n'.format(builtIn)
+            output += '        default:\n'
+            output += '            return \"Unknown BuiltIn\";\n'
             output += '    }\n'
             output += '};\n'
 

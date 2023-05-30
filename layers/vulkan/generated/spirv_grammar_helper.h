@@ -52,5 +52,6 @@ const char* string_SpvOpcode(uint32_t opcode);
 const char* string_SpvStorageClass(uint32_t storage_class);
 const char* string_SpvExecutionModel(uint32_t execution_model);
 const char* string_SpvDecoration(uint32_t decoration);
+const char* string_SpvBuiltIn(uint32_t built_in);
 const char* string_SpvDim(uint32_t dim);
 
