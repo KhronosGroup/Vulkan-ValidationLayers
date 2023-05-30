@@ -17454,6 +17454,62 @@ void safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::initialize(con
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    dynamicRenderingUnusedAttachments(in_struct->dynamicRenderingUnusedAttachments)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT),
+    pNext(nullptr),
+    dynamicRenderingUnusedAttachments()
+{}
+
+safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    dynamicRenderingUnusedAttachments = copy_src.dynamicRenderingUnusedAttachments;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::operator=(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    dynamicRenderingUnusedAttachments = copy_src.dynamicRenderingUnusedAttachments;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::~safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::initialize(const VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    dynamicRenderingUnusedAttachments = in_struct->dynamicRenderingUnusedAttachments;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT::initialize(const safe_VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    dynamicRenderingUnusedAttachments = copy_src->dynamicRenderingUnusedAttachments;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT::safe_VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT(const VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     attachmentFeedbackLoopDynamicState(in_struct->attachmentFeedbackLoopDynamicState)

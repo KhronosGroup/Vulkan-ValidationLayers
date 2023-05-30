@@ -6855,6 +6855,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRAR
     typedef VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT Type;
 };
 
+// Map type VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT> {
+    typedef VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT Type;
+};
+
 // Map type VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM
 template <> struct LvlTypeMap<VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM;

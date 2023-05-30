@@ -238,9 +238,9 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_rendering_view_mask_06178        = "VUID-vkCmdDrawMultiEXT-viewMask-06178";
         dynamic_rendering_color_count_06179      = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06179";
         dynamic_rendering_color_formats_06180    = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06180";
-        dynamic_rendering_undefined_color_formats_07616 = "VUID-vkCmdDrawMultiExt-colorAttachmentCount-07616";
-        dynamic_rendering_undefined_depth_format_07617 = "VUID-vkCmdDrawMultiExt-pDepthAttachment-07617";
-        dynamic_rendering_undefined_stencil_format_07618 = "VUID-vkCmdDrawMultiExt-pStencilAttachment-07618";
+        dynamic_rendering_undefined_color_formats_07616 = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-07616";
+        dynamic_rendering_undefined_depth_format_07617 = "VUID-vkCmdDrawMultiEXT-pDepthAttachment-07617";
+        dynamic_rendering_undefined_stencil_format_07618 = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-07618";
         dynamic_rendering_depth_format_06181     = "VUID-vkCmdDrawMultiEXT-pDepthAttachment-06181";
         dynamic_rendering_stencil_format_06182   = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-06182";
         dynamic_rendering_fsr_06183              = "VUID-vkCmdDrawMultiEXT-imageView-06183";
