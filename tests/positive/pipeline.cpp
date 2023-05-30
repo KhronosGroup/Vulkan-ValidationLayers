@@ -235,9 +235,9 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         nullptr,  // pNext
         0,        // flags
         0,
-        nullptr,  // bindings
+        reinterpret_cast<const VkVertexInputBindingDescription *>(hopefully_undereferencable_pointer),  // bindings
         0,
-        nullptr  // attributes
+        reinterpret_cast<const VkVertexInputAttributeDescription *>(hopefully_undereferencable_pointer)  // attributes
     };
 
     const VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{
@@ -309,7 +309,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             reinterpret_cast<const VkPipelineTessellationStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineViewportStateCreateInfo *>(hopefully_undereferencable_pointer),
             &pipeline_rasterization_state_create_info,
-            &pipeline_multisample_state_create_info,
+            reinterpret_cast<const VkPipelineMultisampleStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
