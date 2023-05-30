@@ -7220,3 +7220,43 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeCommand, BindVertexIndexBufferUsage) {
+    TEST_DESCRIPTION("Bad usage flags for binding the Vertex and Index buffer");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 64, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-buffer-00433");
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    VkDeviceSize offsets = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindVertexBuffers-pBuffers-00627");
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offsets);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeCommand, ClearImageAspectMask) {
+    TEST_DESCRIPTION("Need to use VK_IMAGE_ASPECT_COLOR_BIT.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkClearColorValue clear_color;
+    memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
+    const VkImageSubresourceRange color_range = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-aspectMask-02498");
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &color_range);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
