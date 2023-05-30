@@ -396,8 +396,15 @@ static bool UsesPipelineRobustness(const void *pNext, const PIPELINE_STATE &pipe
     return result;
 }
 
-static bool IgnoreColorAttachments(PIPELINE_STATE &pipe_state) {
+static bool IgnoreColorAttachments(const ValidationStateTracker *state_data, PIPELINE_STATE &pipe_state) {
     bool ignore = false;
+    // If the libraries used to create this pipeline are ignoring color attachments, this pipeline should as well
+    if (pipe_state.library_create_info) {
+        for (uint32_t i = 0; i < pipe_state.library_create_info->libraryCount; i++) {
+            const auto lib = state_data->Get<PIPELINE_STATE>(pipe_state.library_create_info->pLibraries[i]);
+            if (lib->ignore_color_attachments) return true;
+        }
+    }
     // According to the spec, pAttachments is to be ignored if the pipeline is created with
     // VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
     // and VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT dynamic states set
@@ -723,7 +730,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
-      ignore_color_attachments(IgnoreColorAttachments(*this)),
+      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       csm_states(csm_states) {
     if (library_create_info) {
         const auto &exe_layout_state = state_data->Get<PIPELINE_LAYOUT_STATE>(create_info.graphics.layout);
@@ -768,7 +775,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       dynamic_state(0),  // compute has no dynamic state
       descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
-      ignore_color_attachments(IgnoreColorAttachments(*this)),
+      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       csm_states(csm_states),
       merged_graphics_layout(layout) {
     assert(active_shaders == VK_SHADER_STAGE_COMPUTE_BIT);
@@ -793,7 +800,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       dynamic_state(0),  // RTX has no dynamic states being validated
       descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
-      ignore_color_attachments(IgnoreColorAttachments(*this)),
+      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &
@@ -820,7 +827,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       dynamic_state(0),  // RTX has no dynamic states being validated
       descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), *this)),
-      ignore_color_attachments(IgnoreColorAttachments(*this)),
+      ignore_color_attachments(IgnoreColorAttachments(state_data, *this)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
     assert(0 == (active_shaders &
