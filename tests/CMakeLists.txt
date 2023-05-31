@@ -49,6 +49,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/gpu_av.cpp
     positive/graphics_library.cpp
     positive/image.cpp
+    positive/imageless_framebuffer.cpp
     positive/instance.cpp
     positive/layer_utils.cpp
     positive/memory.cpp

@@ -2336,6 +2336,53 @@ TEST_F(NegativeRenderPass, Framebuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
+    TEST_DESCRIPTION("pAttachments points to valid objects for the Framebuffer creation");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(2));
+
+    // Create a renderPass with a single color attachment
+    VkAttachmentReference attachment_ref = {};
+    attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    std::array attachment_refs = {attachment_ref, attachment_ref};
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = attachment_refs.data();
+    auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass;
+    rp_ci.attachmentCount = 2;
+    VkAttachmentDescription attachment_desc = {};
+    attachment_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attachment_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    std::array attachment_descs = {attachment_desc, attachment_desc};
+    rp_ci.pAttachments = attachment_descs.data();
+    vk_testing::RenderPass render_pass(*m_device, rp_ci);
+
+    auto fb_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_ci.width = 100;
+    fb_ci.height = 100;
+    fb_ci.layers = 1;
+    fb_ci.renderPass = render_pass.handle();
+    fb_ci.attachmentCount = 2;
+
+    fb_ci.pAttachments = nullptr;
+    VkFramebuffer framebuffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-02778");
+    vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
+    m_errorMonitor->VerifyFound();
+
+    VkImageView image_views[2] = {m_renderTargets[0]->targetView(VK_FORMAT_B8G8R8A8_UNORM),
+                                  CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
+
+    fb_ci.pAttachments = image_views;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-02778");
+    vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
     TEST_DESCRIPTION("End a command buffer with an active render pass");
 
