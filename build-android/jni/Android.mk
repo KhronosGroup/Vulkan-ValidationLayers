@@ -219,6 +219,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/dynamic_state.cpp \
                    $(SRC_DIR)/tests/positive/image.cpp \
+                   $(SRC_DIR)/tests/positive/imageless_framebuffer.cpp \
                    $(SRC_DIR)/tests/positive/gpu_av.cpp \
                    $(SRC_DIR)/tests/positive/instance.cpp \
                    $(SRC_DIR)/tests/positive/layer_utils.cpp \
