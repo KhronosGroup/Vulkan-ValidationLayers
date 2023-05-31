@@ -348,16 +348,13 @@ else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
 
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
+target_compile_options(vvl PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(vvl PRIVATE
-        -Wno-unused-parameter
+        -Wno-sign-conversion
+        -Wno-implicit-int-conversion
     )
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(vvl PRIVATE
-            -Wno-sign-conversion
-            -Wno-implicit-int-conversion
-        )
-    endif()
 endif()
 
 # Khronos validation additional dependencies

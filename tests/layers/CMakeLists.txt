@@ -32,11 +32,12 @@ else()
     target_link_options(VkLayer_device_profile_api PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map,-Bsymbolic)
 endif()
 
+target_compile_options(VkLayer_device_profile_api PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(VkLayer_device_profile_api PRIVATE
         -Wno-sign-compare
         -Wno-shorten-64-to-32
-        -Wno-unused-parameter
         -Wno-missing-field-initializers
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
