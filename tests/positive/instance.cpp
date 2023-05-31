@@ -24,7 +24,7 @@ TEST_F(VkPositiveLayerTest, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
+    
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -34,9 +34,16 @@ TEST_F(VkPositiveLayerTest, TwoInstances) {
     VkInstanceCreateInfo ici = LvlInitStruct<VkInstanceCreateInfo>();
     ici.enabledLayerCount = instance_layers_.size();
     ici.ppEnabledLayerNames = instance_layers_.data();
+    std::vector<const char *> extNames;
+    
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        ici.enabledExtensionCount = (int)extNames.size();
+        ici.ppEnabledExtensionNames = extNames.data();
+        ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    }
 
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i1));
-
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i2));
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i2, nullptr));
 
