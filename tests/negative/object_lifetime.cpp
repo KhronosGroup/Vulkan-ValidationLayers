@@ -1189,3 +1189,100 @@ TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
+    TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    // Check for external semaphore import and export capability
+    auto semaphore_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    semaphore_info.handleType = handle_type;
+    auto semaphore_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
+    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through fd handle";
+    }
+
+    // Create semaphore and export its fd handle
+    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    export_info.handleTypes = handle_type;
+    auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    vk_testing::Semaphore export_semaphore(*m_device, create_info);
+    int fd = -1;
+    ASSERT_VK_SUCCESS(export_semaphore.export_handle(fd, handle_type));
+
+    // Create a new semaphore and put it to work
+    vk_testing::Semaphore semaphore(*m_device);
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+
+    // Try to import fd handle while semaphore is still in use
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkImportSemaphoreFdKHR-semaphore-01142");
+    semaphore.import_handle(fd, handle_type);
+    m_errorMonitor->VerifyFound();
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
+    TEST_DESCRIPTION("Import semaphore when semaphore is in use.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    // Check for external semaphore import and export capability
+    auto semaphore_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    semaphore_info.handleType = handle_type;
+    auto semaphore_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &semaphore_info, &semaphore_properties);
+    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    // Create semaphore and export its Win32 handle
+    auto export_info = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    export_info.handleTypes = handle_type;
+    auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&export_info);
+    vk_testing::Semaphore export_semaphore(*m_device, create_info);
+    HANDLE handle = NULL;
+    ASSERT_VK_SUCCESS(export_semaphore.export_handle(handle, handle_type));
+
+    // Create a new semaphore and put it to work
+    vk_testing::Semaphore semaphore(*m_device);
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+
+    // Try to import Win32 handle while semaphore is still in use
+    // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUIDUndefined);
+    semaphore.import_handle(handle, handle_type);
+    m_errorMonitor->VerifyFound();
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+#endif
