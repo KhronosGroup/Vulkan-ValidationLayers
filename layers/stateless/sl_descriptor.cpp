@@ -668,7 +668,7 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // ValidateArray()
     return ValidateArray("vkFreeDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount, &pDescriptorSets,
-                         true, true, kVUIDUndefined, kVUIDUndefined);
+                         true, true, kVUIDUndefined, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
 }
 
 bool StatelessValidation::ValidateWriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,

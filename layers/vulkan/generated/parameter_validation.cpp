@@ -7791,6 +7791,7 @@ bool StatelessValidation::PreCallValidateFreeCommandBuffers(
     bool skip = false;
     skip |= ValidateRequiredHandle("vkFreeCommandBuffers", "commandPool", commandPool);
     skip |= ValidateArray("vkFreeCommandBuffers", "commandBufferCount", "", commandBufferCount, &pCommandBuffers, true, false, "VUID-vkFreeCommandBuffers-commandBufferCount-arraylength", kVUIDUndefined);
+    if (!skip) skip |= manual_PreCallValidateFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
     return skip;
 }
 

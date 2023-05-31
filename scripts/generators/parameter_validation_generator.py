@@ -107,6 +107,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkFreeDescriptorSets',
             'vkUpdateDescriptorSets',
             'vkBeginCommandBuffer',
+            'vkFreeCommandBuffers',
             'vkCmdSetViewport',
             'vkCmdSetScissor',
             'vkCmdSetLineWidth',
