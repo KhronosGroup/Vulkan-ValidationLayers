@@ -2515,12 +2515,8 @@ TEST_F(NegativePipeline, DiscardRectangle) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
-        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
-    phys_dev_props_2.pNext = &discard_rectangle_properties;
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    auto discard_rectangle_properties = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
     uint32_t count = discard_rectangle_properties.maxDiscardRectangles + 1;
     std::vector<VkRect2D> discard_rectangles(count);
@@ -2580,9 +2576,8 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
-    VkPhysicalDeviceProperties2 phys_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations);
-    GetPhysicalDeviceProperties2(phys_props);
+    auto sample_locations = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
+    GetPhysicalDeviceProperties2(sample_locations);
 
     if (sample_locations.variableSampleLocations) {
         GTEST_SKIP() << "VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations is supported, skipping.";

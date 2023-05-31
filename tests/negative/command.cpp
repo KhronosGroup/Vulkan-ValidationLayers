@@ -4779,8 +4779,7 @@ TEST_F(NegativeCommand, MultiDraw) {
         GTEST_SKIP() << "Test requires (unsupported) multiDraw";
     }
     auto multi_draw_properties = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(multi_draw_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

@@ -2430,8 +2430,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateDivisor) {
     }
 
     auto vertex_attribute_divisor_properties = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(vertex_attribute_divisor_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2526,8 +2525,7 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     }
 
     auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state3_features);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
 
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable) {
         GTEST_SKIP() << "DynamicState3 features not supported";
@@ -3217,8 +3215,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations_props);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(sample_locations_props);
 
     if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
         GTEST_SKIP() << "VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported";
@@ -3586,12 +3583,8 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTOffsets) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
-        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
-    phys_dev_props_2.pNext = &discard_rectangle_properties;
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    auto discard_rectangle_properties = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
     if (discard_rectangle_properties.maxDiscardRectangles == 0) {
         GTEST_SKIP() << "Discard rectangles are not supported";
@@ -3658,12 +3651,8 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCount) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties =
-        LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
-    phys_dev_props_2.pNext = &discard_rectangle_properties;
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    auto discard_rectangle_properties = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 0;
@@ -4539,8 +4528,7 @@ TEST_F(NegativeDynamicState, DrawNotSetSampleLocations) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto sample_locations_props = LvlInitStruct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&sample_locations_props);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(sample_locations_props);
 
     if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
         GTEST_SKIP() << "Required sample location sample count VK_SAMPLE_COUNT_1_BIT not supported";

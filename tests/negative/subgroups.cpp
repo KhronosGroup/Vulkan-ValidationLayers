@@ -679,8 +679,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
-    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
-    GetPhysicalDeviceProperties2(props);
+    GetPhysicalDeviceProperties2(subgroup_properties);
 
     if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
         GTEST_SKIP() << "Required shader stage not present in requiredSubgroupSizeStages";
@@ -758,8 +757,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeature) {
     }
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
-    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
-    GetPhysicalDeviceProperties2(props);
+    GetPhysicalDeviceProperties2(subgroup_properties);
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 

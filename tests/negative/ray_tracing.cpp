@@ -1439,8 +1439,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirectKHR) {
     VkBufferObj buffer(*m_device, buf_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(ray_tracing_properties);
 
     const VkDeviceAddress device_address = buffer.address(DeviceValidationVersion());
 

@@ -217,8 +217,7 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
         GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.";
@@ -524,8 +523,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto density_map2_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&density_map2_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
 
     // Test sampler parameters
 
@@ -945,8 +943,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
@@ -1016,8 +1013,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
@@ -1136,8 +1132,7 @@ TEST_F(NegativeFragmentShadingRate, Attachments) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     auto attach = LvlInitStruct<VkAttachmentReference2>();
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1264,8 +1259,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto pd_properties = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(pd_properties);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     // Create a render pass without a Fragment Shading Rate attachment
     auto col_attach = LvlInitStruct<VkAttachmentDescription2>();
@@ -1521,10 +1515,8 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
     m_errorMonitor->VerifyFound();
 
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties =
-        LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    VkPhysicalDeviceProperties2 properties = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsrProperties);
-    GetPhysicalDeviceProperties2(properties);
+    auto fsrProperties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    GetPhysicalDeviceProperties2(fsrProperties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
         if (IsPlatform(kMockICD)) {
@@ -1644,8 +1636,7 @@ TEST_F(NegativeFragmentShadingRate, PipelineCombinerOpsLimit) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
         GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported";
@@ -2204,8 +2195,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         offsetting.fragmentDensityOffsetCount = 2;
 
         auto fdm_offset_properties = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM>();
-        auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fdm_offset_properties);
-        GetPhysicalDeviceProperties2(properties2);
+        GetPhysicalDeviceProperties2(fdm_offset_properties);
 
         m_vOffsets[0].x = 1;
         m_vOffsets[0].y = 1;

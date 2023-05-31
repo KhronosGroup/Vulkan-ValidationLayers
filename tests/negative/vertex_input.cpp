@@ -65,10 +65,8 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
-    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
-        LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto pdvad_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
@@ -150,10 +148,8 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
-        LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto pdvad_props = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+    GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
@@ -444,8 +440,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
     }
 
     auto provoking_vertex_properties = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&provoking_vertex_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(provoking_vertex_properties);
     if (provoking_vertex_properties.provokingVertexModePerPipeline == VK_TRUE) {
         GTEST_SKIP() << "provokingVertexModePerPipeline is VK_TRUE";
     }

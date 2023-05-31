@@ -40,8 +40,7 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
 
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&ray_query_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&ray_tracing_features);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
 
     if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
         GTEST_SKIP() << "rayTracingPipeline feature not supported";
@@ -77,8 +76,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(acc_structure_features);
 
     if (bda_features.bufferDeviceAddress == VK_FALSE) {
         GTEST_SKIP() << "bufferDeviceAddress feature is not supported";
@@ -87,7 +85,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
         GTEST_SKIP() << "accelerationStructure feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
 
     m_commandBuffer->begin();
     // Build Bottom Level Acceleration Structure
@@ -118,14 +116,13 @@ TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
 
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(acc_structure_features);
 
     if (acc_structure_features.accelerationStructureHostCommands == VK_FALSE) {
         GTEST_SKIP() << "accelerationStructureHostCommands feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_structure_features));
 
     // Build Bottom Level Acceleration Structure
     auto bot_level_build_geometry = std::make_shared<rt::as::BuildGeometryInfoKHR>(
