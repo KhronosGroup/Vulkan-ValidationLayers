@@ -1189,8 +1189,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(render_pass_multiview_props);
     if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
         GTEST_SKIP() << "maxMultiviewViewCount lower than required";
     }
@@ -1220,8 +1219,7 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(render_pass_multiview_props);
     if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
         GTEST_SKIP() << "maxMultiviewViewCount lower than required";
     }
@@ -1257,8 +1255,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(render_pass_multiview_props);
 
     if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
         GTEST_SKIP() << "maxMultiviewViewCount too high";

@@ -810,8 +810,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     m_errorMonitor->VerifyFound();
 
     auto custom_properties = LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&custom_properties);
-    GetPhysicalDeviceProperties2(prop2);
+    auto prop2 = GetPhysicalDeviceProperties2(custom_properties);
 
     if ((custom_properties.maxCustomBorderColorSamplers <= 0xFFFF) &&
         (prop2.properties.limits.maxSamplerAllocationCount >= custom_properties.maxCustomBorderColorSamplers)) {

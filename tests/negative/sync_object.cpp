@@ -2678,8 +2678,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
     InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -3242,8 +3241,7 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(timelineproperties);
 
     auto semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;

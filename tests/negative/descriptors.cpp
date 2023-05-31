@@ -3494,8 +3494,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-    auto phys_dev_props = LvlInitStruct<VkPhysicalDeviceProperties2>(&inline_uniform_props);
-    GetPhysicalDeviceProperties2(phys_dev_props);
+    GetPhysicalDeviceProperties2(inline_uniform_props);
 
     VkDescriptorSetLayoutBinding dslb = {};
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
@@ -4346,8 +4345,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
     }
 
     auto inlineUniformProps = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inlineUniformProps);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(inlineUniformProps);
 
     auto extEnable = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>();
     extEnable.inlineUniformBlock = VK_TRUE;

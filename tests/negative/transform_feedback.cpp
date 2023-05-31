@@ -642,8 +642,7 @@ TEST_F(NegativeTransformFeedback, UsingRasterizationStateStreamExtDisabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
-        LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     transform_feedback_features.geometryStreams = VK_FALSE;  // Invalid
 
     // Extension enabled via VK_EXT_transform_feedback dependency
@@ -1062,8 +1061,7 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
-        LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     transform_feedback_features.geometryStreams = VK_TRUE;
 
     // Extension enabled via dependencies
@@ -1071,11 +1069,8 @@ TEST_F(NegativeTransformFeedback, PipelineRasterizationStateStreamCreateInfoEXT)
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceTransformFeedbackPropertiesEXT transfer_feedback_props =
-        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transfer_feedback_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto transfer_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    GetPhysicalDeviceProperties2(transfer_feedback_props);
 
     if (!transfer_feedback_props.transformFeedbackRasterizationStreamSelect &&
         transfer_feedback_props.maxTransformFeedbackStreams == 0) {

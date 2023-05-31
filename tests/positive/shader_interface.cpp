@@ -230,8 +230,7 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
 
     auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(NULL);
     uniform_buffer_standard_layout_features.uniformBufferStandardLayout = VK_TRUE;
-    auto query_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
-    GetPhysicalDeviceFeatures2(query_features2);
+    GetPhysicalDeviceFeatures2(uniform_buffer_standard_layout_features);
 
     auto set_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
 
@@ -284,8 +283,7 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     }
 
     auto scalar_block_features = LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
-    auto query_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
-    GetPhysicalDeviceFeatures2(query_features2);
+    GetPhysicalDeviceFeatures2(scalar_block_features);
 
     if (scalar_block_features.scalarBlockLayout != VK_TRUE) {
         GTEST_SKIP() << "scalarBlockLayout feature not supported";

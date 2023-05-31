@@ -56,9 +56,8 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkPhysicalDeviceMultiviewProperties multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multiview_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    GetPhysicalDeviceProperties2(multiview_props);
 
     VkFormat color_format = VK_FORMAT_D32_SFLOAT;
 
@@ -1928,9 +1927,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2182,9 +2179,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2308,8 +2303,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImage) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
@@ -2426,8 +2420,7 @@ TEST_F(NegativeDynamicRendering, TestFragmentDensityMapRenderArea) {
     if (::testing::Test::IsSkipped()) return;
 
     auto fdm_props = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapPropertiesEXT>();
-    auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fdm_props);
-    GetPhysicalDeviceProperties2(props2);
+    GetPhysicalDeviceProperties2(fdm_props);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
@@ -2535,8 +2528,7 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapRenderAreaWithoutDeviceGroupE
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto fdm_props = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapPropertiesEXT>();
-    auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fdm_props);
-    GetPhysicalDeviceProperties2(props2);
+    GetPhysicalDeviceProperties2(fdm_props);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UINT,
@@ -3974,9 +3966,7 @@ TEST_F(NegativeDynamicRendering, PNextImageView) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
@@ -4112,9 +4102,8 @@ TEST_F(NegativeDynamicRendering, InfoViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPhysicalDeviceMultiviewProperties multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multiview_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    GetPhysicalDeviceProperties2(multiview_props);
 
     if (multiview_props.maxMultiviewViewCount == 32) {
         GTEST_SKIP() << "VUID is not testable as maxMultiviewViewCount is 32";
@@ -4723,9 +4712,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateImageView) {
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4870,8 +4857,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoDepthAttachment) {
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
     auto depth_stencil_resolve_properties = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_properties);
-    GetPhysicalDeviceProperties2(properties2);
+    GetPhysicalDeviceProperties2(depth_stencil_resolve_properties);
     bool has_depth_resolve_mode_average =
         (depth_stencil_resolve_properties.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0;
     bool has_stencil_resolve_mode_average =
@@ -5150,9 +5136,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRateAttachmentSize
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -5223,9 +5207,7 @@ TEST_F(NegativeDynamicRendering, FragmentShadingRateAttachmentSizeWithDeviceGrou
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(fsr_properties);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -6763,9 +6745,8 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingViewMaskParameter) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
-    VkPhysicalDeviceMultiviewProperties multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multiview_props);
-    GetPhysicalDeviceProperties2(pd_props2);
+    auto multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    GetPhysicalDeviceProperties2(multiview_props);
 
     if (multiview_props.maxMultiviewViewCount == 32) {
         GTEST_SKIP() << "TVUID is not testable as maxMultiviewViewCount is 32";

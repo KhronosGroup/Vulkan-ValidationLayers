@@ -97,8 +97,7 @@ TEST_F(NegativeDescriptorBuffer, SetLayout) {
 
     if (IsExtensionsEnabled(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)) {
         auto inlineUniformProps = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inlineUniformProps);
-        GetPhysicalDeviceProperties2(prop2);
+        GetPhysicalDeviceProperties2(inlineUniformProps);
 
         const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT,
                                                    inlineUniformProps.maxInlineUniformBlockSize + 4, VK_SHADER_STAGE_FRAGMENT_BIT,

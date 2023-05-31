@@ -1564,9 +1564,7 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(transform_feedback_properties);
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
     qpci.queryCount = 1;
@@ -1618,11 +1616,8 @@ TEST_F(NegativeQuery, TransformFeedbackStream) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props =
-        LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-    VkPhysicalDeviceProperties2 phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
-
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    GetPhysicalDeviceProperties2(transform_feedback_props);
     if (transform_feedback_props.transformFeedbackQueries) {
         GTEST_SKIP() << "Transform feedback queries are supported";
     }
@@ -1962,9 +1957,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-
-    auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
-    GetPhysicalDeviceProperties2(phys_dev_props_2);
+    GetPhysicalDeviceProperties2(transform_feedback_properties);
 
     const std::optional<uint32_t> compute_queue_family_index =
         m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);

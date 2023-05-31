@@ -737,8 +737,7 @@ TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
     }
 
     auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(render_pass_multiview_props);
 
     if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
         GTEST_SKIP() << "maxMultiviewViewCount too high";

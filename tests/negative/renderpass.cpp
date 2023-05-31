@@ -2778,8 +2778,7 @@ TEST_F(NegativeRenderPass, DepthStencilResolveMode) {
     }
 
     auto ds_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ds_resolve_props);
-    vk::GetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(ds_resolve_props);
 
     VkRenderPass renderPass;
 
@@ -3575,8 +3574,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     bool imageless_fb_supported = IsExtensionsEnabled(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
     auto vulkan_12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Properties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&vulkan_12_features);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(vulkan_12_features);
 
     ms_render_to_single_sampled_features.multisampledRenderToSingleSampled = true;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &imageless_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
