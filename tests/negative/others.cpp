@@ -2060,6 +2060,42 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
     vk::FreeCommandBuffers(m_device->device(), command_pool.handle(), 1, &command_buffer);
 }
 
+TEST_F(VkLayerTest, FreeCommandBuffersNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkCommandBuffer invalid_cb = CastToHandle<VkCommandBuffer, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeCommandBuffers-pCommandBuffers-00048");
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &invalid_cb);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    VkDescriptorSet invalid_set = CastToHandle<VkDescriptorSet, uintptr_t>(0xbaadbeef);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, &invalid_set);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ValidateStride) {
     TEST_DESCRIPTION("Validate Stride.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
