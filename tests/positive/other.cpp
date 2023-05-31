@@ -1146,3 +1146,48 @@ TEST_F(VkPositiveLayerTest, CustomSafePNextCopy) {
         ASSERT_EQ(*safe_pri->pColorAttachmentFormats, format);
     }
 }
+
+TEST_F(VkPositiveLayerTest, FreeCommandBuffersNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    auto command_buffer_allocate_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
+
+    VkCommandBuffer free_command_buffers[2] = {command_buffer, VK_NULL_HANDLE};
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, &free_command_buffers[0]);
+}
+
+TEST_F(VkPositiveLayerTest, FreeDescriptorSetsNull) {
+    TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
+
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                nullptr};
+
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+
+    VkDescriptorSet descriptor_sets[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    auto alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.pSetLayouts = &ds_layout.handle();
+    // Only set first set, second is still null
+    vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[0]);
+    vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 2, descriptor_sets);
+}
