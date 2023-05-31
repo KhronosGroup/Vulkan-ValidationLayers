@@ -152,11 +152,12 @@ target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_TESTS_USE_CMAKE
 
 add_dependencies(vk_layer_validation_tests vvl)
 
+target_compile_options(vk_layer_validation_tests PRIVATE "$<IF:$<CXX_COMPILER_ID:MSVC>,/wd4100,-Wno-unused-parameter>")
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE
         -Wno-sign-compare
         -Wno-shorten-64-to-32
-        -Wno-unused-parameter
         -Wno-missing-field-initializers
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")

@@ -103,14 +103,32 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         )
     endif()
 elseif(MSVC)
-    add_compile_options("/W3") # TODO: Update to /W4   
-    add_compile_options("/w34456") # Warn about nested declarations
-    add_compile_options("/w34701") # Warn about potentially uninitialized variables
-    add_compile_options("/w34703") # Warn about potentially uninitialized variables    
-    add_compile_options("/w34057") # Warn about different indirection types.
-    add_compile_options("/w34245") # Warn about signed/unsigned mismatch.
-    add_compile_options("/we4189") # Warn about unused variables
-    add_compile_options("/we5038") # Warn about MIL ordering in constructors
+    add_compile_options(
+        /W4
+        /we5038 # Enable warning about MIL ordering in constructors
+
+        # Disable warnings
+        /wd4324 # padding
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4459 # hiding global parameter
+        /wd4702 # unreachable code
+        /wd4127 # constant conditional expression
+        /wd4389 # signed/unsigned mismatch
+        /wd4754 # conversion rules for arithmetic operations
+        /wd4706 # assignment within conditional expression
+        /wd4130 # logical operation on address of string constant
+        /wd4244 # Possible loss of data
+
+        # TODO: Fix warnings and enable ISO compliance on MSVC
+        # /permissive-
+    )
+
+    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+        add_compile_options(
+            /wd4310 # cast truncates constant value
+        )
+    endif()
 
     # PDBs aren't generated on Release builds by default.
     add_compile_options("$<$<CONFIG:Release>:/Zi>")
