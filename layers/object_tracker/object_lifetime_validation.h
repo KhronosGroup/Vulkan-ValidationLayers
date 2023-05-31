@@ -145,11 +145,13 @@ class ObjectLifetimes : public ValidationObject {
                                          object_lifetime_data->swapchainImageMap.end())) {
                                     // Object found on other device, report an error if object has a device parent error code
                                     if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
-                                        return LogError(instance, wrong_device_code,
-                                                        "Object 0x%" PRIxLEAST64
-                                                        " of type %s"
-                                                        " was not created, allocated or retrieved from the correct device.",
-                                                        object_handle, object_string[object_type]);
+                                        const LogObjectList objlist(instance, device, layer_object_data->device);
+                                        return LogError(objlist, wrong_device_code,
+                                                        "The %s (0x%" PRIxLEAST64
+                                                        ") was created, allocated or retrieved from the VkDevice %p but the other "
+                                                        "Dispatchable Handle used VkDevice %p.",
+                                                        object_string[object_type], object_handle, layer_object_data->device,
+                                                        device);
 
                                     } else {
                                         return false;
