@@ -25,7 +25,7 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
     bool skip = false;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
         skip |= ValidateArray("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
-                              &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
+                              &pCreateInfo->pAttachments, false, true, kVUIDUndefined, "VUID-VkFramebufferCreateInfo-flags-02778");
     }
     return skip;
 }
