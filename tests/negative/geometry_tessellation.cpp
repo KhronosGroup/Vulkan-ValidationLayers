@@ -927,13 +927,36 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
     tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
                                       "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
+}
 
-    p_tsci = &tsci;
-    // Pass an invalid primitive topology
-    iasci_bad = iasci;
-    iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    p_iasci = &iasci_bad;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
+TEST_F(NegativeGeometryTessellation, PatchListTopology) {
+    TEST_DESCRIPTION("Need to have VK_PRIMITIVE_TOPOLOGY_PATCH_LIST.");
+
+    AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!m_device->phy().features().tessellationShader) {
+        GTEST_SKIP() << "Device does not support tessellation shaders";
+    }
+    VkShaderObj tcs(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pTessellationState = &tsci;
+        helper.gp_ci_.pInputAssemblyState = &iasci;
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(),
+                                 tes.GetStageCreateInfo()};
+    };
+
+    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+                           ? "VUID-VkGraphicsPipelineCreateInfo-pStages-08888"
+                           : "VUID-VkGraphicsPipelineCreateInfo-pStages-00736";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
 }
 
 /*// TODO : This test should be good, but needs Tess support in compiler to run
