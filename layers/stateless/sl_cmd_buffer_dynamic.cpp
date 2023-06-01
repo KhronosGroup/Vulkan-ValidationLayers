@@ -153,15 +153,17 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
 
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
-        skip |=
-            LogError(device, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791",
-                     "vkCmdSetVertexInputEXT(): vertexBindingDescriptionCount is greater than the maxVertexInputBindings limit");
+        skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791",
+                         "vkCmdSetVertexInputEXT(): vertexBindingDescriptionCount (%" PRIu32
+                         ") is greater than the maxVertexInputBindings limit (%" PRIu32 ").",
+                         vertexBindingDescriptionCount, device_limits.maxVertexInputBindings);
     }
 
     if (vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
-        skip |= LogError(
-            device, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792",
-            "vkCmdSetVertexInputEXT(): vertexAttributeDescriptionCount is greater than the maxVertexInputAttributes limit");
+        skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792",
+                         "vkCmdSetVertexInputEXT(): vertexAttributeDescriptionCount (%" PRIu32
+                         ") is greater than the maxVertexInputAttributes limit (%" PRIu32 ").",
+                         vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
     }
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
