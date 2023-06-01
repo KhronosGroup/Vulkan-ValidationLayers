@@ -246,3 +246,71 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceQueue, QueueCount) {
+    TEST_DESCRIPTION("Create device queue with too high of a queueCount.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_props.data());
+
+    const uint32_t invalid_count = queue_props[0].queueCount + 1;
+    std::vector<float> priorities(invalid_count);
+    std::fill(priorities.begin(), priorities.end(), 0.0f);
+
+    auto device_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    device_queue_ci.queueFamilyIndex = 0;
+    device_queue_ci.queueCount = queue_props[0].queueCount + 1;
+    device_queue_ci.pQueuePriorities = priorities.data();
+
+    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-queueCount-00382");
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceQueue, QueuePriorities) {
+    TEST_DESCRIPTION("Create device queue with invalid QueuePriorities");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_props.data());
+
+    auto device_queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    device_queue_ci.queueFamilyIndex = 0;
+    device_queue_ci.queueCount = 1;
+
+    auto device_ci = LvlInitStruct<VkDeviceCreateInfo>();
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device = VK_NULL_HANDLE;
+
+    const float priority_high = 2.0f;
+    device_queue_ci.pQueuePriorities = &priority_high;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+
+    const float priority_low = -1.0f;
+    device_queue_ci.pQueuePriorities = &priority_low;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383");
+    vk::CreateDevice(gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
