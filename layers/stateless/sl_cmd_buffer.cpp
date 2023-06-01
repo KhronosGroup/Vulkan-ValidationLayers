@@ -227,7 +227,7 @@ bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandB
                     not_null_msg = "pSizes is not NULL";
                 else
                     not_null_msg = "pStrides is not NULL";
-                const char *vuid_breach_msg = "%s: %s, so bindingCount must be greater that 0.";
+                const char *vuid_breach_msg = "%s: %s, so bindingCount must be greater than 0.";
                 skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", vuid_breach_msg, api_call,
                                  not_null_msg);
             }
