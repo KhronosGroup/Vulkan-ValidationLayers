@@ -47,6 +47,23 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
                                       "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
 }
 
+// Create VS declaring PointSize but not writing to it
+static const char *NoPointSizeVertShader = R"glsl(
+    #version 450
+    vec2 vertices[3];
+    out gl_PerVertex
+    {
+        vec4 gl_Position;
+        float gl_PointSize;
+    };
+    void main() {
+        vertices[0] = vec2(-1.0, -1.0);
+        vertices[1] = vec2( 1.0, -1.0);
+        vertices[2] = vec2( 0.0,  1.0);
+        gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+    }
+)glsl";
+
 TEST_F(NegativePipelineTopology, PointSize) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader.");
 
@@ -54,32 +71,110 @@ TEST_F(NegativePipelineTopology, PointSize) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    // Create VS declaring PointSize but not writing to it
-    const char NoPointSizeVertShader[] = R"glsl(
-        #version 450
-        vec2 vertices[3];
-        out gl_PerVertex
-        {
-            vec4 gl_Position;
-            float gl_PointSize;
-        };
-        void main() {
-            vertices[0] = vec2(-1.0, -1.0);
-            vertices[1] = vec2( 1.0, -1.0);
-            vertices[2] = vec2( 0.0,  1.0);
-            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    // Set Input Assembly to TOPOLOGY POINT LIST
     auto set_info = [&](CreatePipelineHelper &helper) {
-        // Set Input Assembly to TOPOLOGY POINT LIST
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722");
+}
+
+TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with no dynamic state and "
+        "dynamicPrimitiveTopologyUnrestricted is false.");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    GetPhysicalDeviceProperties2(dynamic_state_3_props);
+    if (dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
+        GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
+    }
+
+    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+}
+
+TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with "
+        "dynamicPrimitiveTopologyUnrestricted is true, but not dynamic state.");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    GetPhysicalDeviceProperties2(dynamic_state_3_props);
+    if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
+        GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_FALSE";
+    }
+
+    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
+}
+
+TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with dynamic state but "
+        "dynamicPrimitiveTopologyUnrestricted is false.");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    GetPhysicalDeviceProperties2(dynamic_state_3_props);
+    if (dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
+        GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
+    }
+
+    VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY;
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_state;
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.dyn_state_ci_ = dyn_state_ci;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08890");
 }
 
 TEST_F(NegativePipelineTopology, PrimitiveTopology) {
@@ -184,6 +279,21 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
                                       "VUID-VkGraphicsPipelineCreateInfo-topology-00737"};
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
+}
+
+TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
+    TEST_DESCRIPTION("Use VK_PRIMITIVE_TOPOLOGY_PATCH_LIST without tessellation shader");
+
+    AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto set_info = [&](CreatePipelineHelper &helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
+    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+                           ? "VUID-VkGraphicsPipelineCreateInfo-topology-08889"
+                           : "VUID-VkGraphicsPipelineCreateInfo-topology-00737";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
 }
 
 TEST_F(NegativePipelineTopology, FillRectangleNV) {

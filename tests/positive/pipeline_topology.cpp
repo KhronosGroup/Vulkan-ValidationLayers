@@ -540,3 +540,50 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 
     cb.end();
 }
+
+TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but it is valid with both dynamic "
+        "state and dynamicPrimitiveTopologyUnrestricted is true.");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
+    if (!extended_dynamic_state_features.extendedDynamicState) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto dynamic_state_3_props = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3PropertiesEXT>();
+    GetPhysicalDeviceProperties2(dynamic_state_3_props);
+    if (!dynamic_state_3_props.dynamicPrimitiveTopologyUnrestricted) {
+        GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
+    }
+
+    static const char *vs_source = R"glsl(
+        #version 450
+        void main() {
+            gl_PointSize = 1.0;
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY;
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_state;
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.dyn_state_ci_ = dyn_state_ci;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
