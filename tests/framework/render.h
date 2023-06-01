@@ -429,7 +429,7 @@ class VkImageObj : public vk_testing::Image {
 
     void Layout(VkImageLayout const layout) { m_descriptorImageInfo.imageLayout = layout; }
 
-    VkDeviceMemory memory() const { return Image::memory().handle(); }
+    VkDeviceMemory Memory() const { return Image::memory().handle(); }
 
     void *MapMemory() { return Image::memory().map(); }
 
