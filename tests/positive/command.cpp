@@ -938,3 +938,89 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
     cb.end();
 }
+
+TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffer) {
+    TEST_DESCRIPTION("Create a debug label on a primary command buffer");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    m_commandBuffer->begin();
+
+    auto label = LvlInitStruct<VkDebugUtilsLabelEXT>();
+    label.pLabelName = "test";
+    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
+
+    m_commandBuffer->end();
+
+    const std::array command_buffers = {m_commandBuffer->handle()};
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = size32(command_buffers);
+    submit_info.pCommandBuffers = command_buffers.data();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+
+TEST_F(PositiveCommand, DebugLabelPrimaryCommandBuffers) {
+    TEST_DESCRIPTION("Begin a debug label on 1 command buffer, then end it on another command buffer");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkCommandBufferObj command_buffer_start(m_device, m_commandPool);
+    VkCommandBufferObj command_buffer_end(m_device, m_commandPool);
+
+    // Start DebugLabel on 1 command buffer
+    {
+        auto label = LvlInitStruct<VkDebugUtilsLabelEXT>();
+        label.pLabelName = "test";
+        command_buffer_start.begin();
+        vk::CmdBeginDebugUtilsLabelEXT(command_buffer_start.handle(), &label);
+        command_buffer_start.end();
+    }
+
+    // End DebugLabel on another command buffer
+    {
+        command_buffer_end.begin();
+        vk::CmdEndDebugUtilsLabelEXT(command_buffer_end.handle());
+        command_buffer_end.end();
+    }
+
+    const std::array command_buffers = {command_buffer_start.handle(), command_buffer_end.handle()};
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = size32(command_buffers);
+    submit_info.pCommandBuffers = command_buffers.data();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+
+TEST_F(PositiveCommand, DebugLabelSecondaryCommandBuffer) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cb.begin();
+    {
+        auto label = LvlInitStruct<VkDebugUtilsLabelEXT>();
+        label.pLabelName = "test";
+        vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
+        vk::CmdEndDebugUtilsLabelEXT(cb);
+    }
+    cb.end();
+}

@@ -16,7 +16,7 @@
  */
 #pragma once
 
-// This file list all VUID that are no possible to validate.
+// This file list all VUID that are not possible to validate.
 // This file should never be included, but here for searchability and statistics
 
 const char* unimplementable_validation[] = {
@@ -36,4 +36,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkViewport-maxDepth-02541",                                      // VUID-VkViewport-maxDepth-01235
     "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00755",              // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510
     "VUID-vkCmdFillBuffer-apiVersion-07894",                               // VUID-vkCmdFillBuffer-commandBuffer-00030
-};
+
+    // This VUID cannot be validated at vkCmdEndDebugUtilsLabelEXT time. Needs spec clarification.
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5671
+    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912"};

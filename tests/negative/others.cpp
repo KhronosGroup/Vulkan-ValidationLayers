@@ -2968,43 +2968,6 @@ TEST_F(VkLayerTest, InvalidExtEnum) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, EndDebugLabelWithNoBegin) {
-    TEST_DESCRIPTION("Call vkCmdEndDebugUtilsLabelEXT without matching vkCmdBeginDebugUtilsLabelEXT");
-
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    m_commandBuffer->begin();
-    // First verify there is no error in the valid case
-    auto label = LvlInitStruct<VkDebugUtilsLabelEXT>(nullptr, "Test");
-    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-
-    // Now call vkCmdEndDebugUtilsLabelEXT without a corresponding begin
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
-
-    // Now test the same scenario for secondary buffers
-    auto cb_info =
-        LvlInitStruct<VkCommandBufferAllocateInfo>(nullptr, m_commandPool->handle(), VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1u);
-    vk_testing::CommandBuffer cb(*m_device, cb_info);
-    cb.begin();
-    vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
-    vk::CmdEndDebugUtilsLabelEXT(cb);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
-    vk::CmdEndDebugUtilsLabelEXT(cb);
-    m_errorMonitor->VerifyFound();
-
-    cb.end();
-}
-
 TEST_F(VkLayerTest, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
