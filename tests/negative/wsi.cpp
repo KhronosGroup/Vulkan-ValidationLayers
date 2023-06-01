@@ -3444,3 +3444,84 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
 
     vk::DestroySwapchainKHR(m_device->device(), swapchain, nullptr);
 }
+
+TEST_F(NegativeWsi, PresentInfoParameters) {
+    TEST_DESCRIPTION("Validate VkPresentInfoKHR implicit VUs");
+
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    uint32_t image_index;
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.waitSemaphoreCount = 0;
+    present.swapchainCount = 0;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    // There are 3 because 3 different fields rely on swapchainCount being non-zero
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");                                    // pSwapchains
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-swapchainCount-arraylength");  // pImageIndices
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-swapchainCount-arraylength");  // pResults
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, PresentRegionsKHR) {
+    TEST_DESCRIPTION("Validate VkPresentRegionsKHR");
+
+    AddRequiredExtensions(VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    uint32_t image_index;
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
+
+    // Allowed to have zero rectangleCount
+    VkPresentRegionKHR region[2] = {{0, nullptr}, {0, nullptr}};
+
+    auto regions = LvlInitStruct<VkPresentRegionsKHR>();
+    auto present = LvlInitStruct<VkPresentInfoKHR>(&regions);
+    present.waitSemaphoreCount = 0;
+    present.swapchainCount = 1;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+
+    {
+        regions.swapchainCount = 2;  // swapchainCount doesn't match VkPresentInfoKHR::swapchainCount
+        regions.pRegions = region;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentRegionsKHR-swapchainCount-01260");
+        vk::QueuePresentKHR(m_device->m_queue, &present);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        regions.swapchainCount = 0;  // can't be zero
+        regions.pRegions = region;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentRegionsKHR-swapchainCount-arraylength");
+        vk::QueuePresentKHR(m_device->m_queue, &present);
+        m_errorMonitor->VerifyFound();
+    }
+}
