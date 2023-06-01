@@ -123,12 +123,6 @@ elseif(MSVC)
         # /permissive-
     )
 
-    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-        add_compile_options(
-            /wd4310 # cast truncates constant value
-        )
-    endif()
-
     # PDBs aren't generated on Release builds by default.
     add_compile_options("$<$<CONFIG:Release>:/Zi>")
     add_link_options("$<$<CONFIG:Release>:/DEBUG:FULL>")
