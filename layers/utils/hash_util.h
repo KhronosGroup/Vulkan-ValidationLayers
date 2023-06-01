@@ -58,14 +58,15 @@ class HashCombiner {
     };
 
     HashCombiner(Key combined = 0) : combined_(combined) {}
-    // magic and combination algorithm based on boost::hash_combine
-    // http://www.boost.org/doc/libs/1_43_0/doc/html/hash/reference.html#boost.hash_combine
-    // Magic value is 2^size / ((1-sqrt(5)/2)
-    static const uint64_t kMagic = sizeof(Key) > 4 ? Key(0x9e3779b97f4a7c16UL) : Key(0x9e3779b9U);
 
     // If you need to override the default hash
     template <typename Value, typename Hasher = WrappedHash<Value>>
     HashCombiner &Combine(const Value &value) {
+        // magic and combination algorithm based on boost::hash_combine
+        // http://www.boost.org/doc/libs/1_43_0/doc/html/hash/reference.html#boost.hash_combine
+        // Magic value is 2^size / ((1-sqrt(5)/2)
+        constexpr Key kMagic = sizeof(Key) > 4 ? static_cast<Key>(0x9e3779b97f4a7c16UL) : static_cast<Key>(0x9e3779b9U);
+
         combined_ ^= Hasher()(value) + kMagic + (combined_ << 6) + (combined_ >> 2);
         return *this;
     }
