@@ -91,6 +91,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/debug_printf.cpp
     negative/descriptor_buffer.cpp
     negative/descriptors.cpp
+    negative/device_queue.cpp
     negative/dynamic_rendering.cpp
     negative/dynamic_state.cpp
     negative/external_memory_sync.cpp
