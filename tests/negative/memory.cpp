@@ -213,9 +213,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
-    VkDeviceMemory memory;
-    VkResult err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DeviceMemory memory(*m_device, memory_info);
 
     VkMemoryMapInfoKHR map_info = LvlInitStruct<VkMemoryMapInfoKHR>();
     map_info.memory = memory;
@@ -256,39 +254,32 @@ TEST_F(NegativeMemory, MapMemory2) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryUnmapInfoKHR-memory-07964");
     vk::UnmapMemory2KHR(m_device->device(), &unmap_info);
     m_errorMonitor->VerifyFound();
-
-    vk::FreeMemory(m_device->device(), memory, NULL);
 }
 
 TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
-    VkResult err;
-    bool pass;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00682");
-    m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-memory-00683");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     mem_alloc.allocationSize = 1024;
 
-    pass = m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {  // If we can't find any unmappable memory this test doesn't
-                  // make sense
+    if (!m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+        // If we can't find any unmappable memory this test doesn't make sense
         GTEST_SKIP() << "No unmappable memory types found";
     }
 
-    VkDeviceMemory mem;
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DeviceMemory memory(*m_device, mem_alloc);
+    void *mapped_address = nullptr;
 
-    void *mappedAddress = NULL;
-    err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, &mappedAddress);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00682");
+    m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-memory-00683");
+    vk::MapMemory(m_device->device(), memory.handle(), 0, VK_WHOLE_SIZE, 0, &mapped_address);
     m_errorMonitor->VerifyFound();
 
     // Attempt to flush and invalidate non-host memory
     VkMappedMemoryRange memory_range = LvlInitStruct<VkMappedMemoryRange>();
-    memory_range.memory = mem;
+    memory_range.memory = memory.handle();
     memory_range.offset = 0;
     memory_range.size = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
@@ -298,8 +289,35 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
     vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
+}
 
-    vk::FreeMemory(m_device->device(), mem, NULL);
+TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
+    TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
+    AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    mem_alloc.allocationSize = 1024;
+    if (!m_device->phy().set_memory_type(
+            0xFFFFFFFF, &mem_alloc, 0,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {  // If we can't find any unmappable memory this test doesn't make sense
+        GTEST_SKIP() << "No unmappable memory types found";
+    }
+
+    vk_testing::DeviceMemory memory(*m_device, mem_alloc);
+
+    VkMemoryMapInfoKHR map_info = LvlInitStruct<VkMemoryMapInfoKHR>();
+    map_info.memory = memory.handle();
+    map_info.offset = 0;
+    map_info.size = 32;
+    uint8_t *pData;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryMapInfoKHR-memory-07962");
+    vk::MapMemory2KHR(m_device->device(), &map_info, (void **)&pData);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
@@ -416,7 +434,6 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     // Create an image, allocate memory, set a bad typeIndex and then try to
     // bind it
     VkImage image;
-    VkDeviceMemory mem;
     VkMemoryRequirements mem_reqs;
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
     const int32_t tex_width = 32;
@@ -467,16 +484,13 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "for this object type are not compatible with the memory");
 
-    err = vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &mem);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DeviceMemory mem(*m_device, mem_alloc);
 
-    err = vk::BindImageMemory(m_device->device(), image, mem, 0);
-    (void)err;
+    vk::BindImageMemory(m_device->device(), image, mem.handle(), 0);
 
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(m_device->device(), image, nullptr);
-    vk::FreeMemory(m_device->device(), mem, nullptr);
 }
 
 TEST_F(NegativeMemory, BindMemory) {
