@@ -5717,6 +5717,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
 
         BufferAddressInfillUpdateOps ops{{buffer_state}};
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
+        buffer_device_address_ranges_version++;
     }
 }
 

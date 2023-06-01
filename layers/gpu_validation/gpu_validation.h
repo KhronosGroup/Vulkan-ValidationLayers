@@ -62,7 +62,6 @@ struct GpuAssistedPreDispatchResources {
 
 struct GpuAssistedBufferInfo {
     GpuAssistedDeviceMemoryBlock output_mem_block;
-    GpuAssistedDeviceMemoryBlock bda_input_mem_block;  // Buffer Device Address input
     GpuAssistedPreDrawResources pre_draw_resources;
     GpuAssistedPreDispatchResources pre_dispatch_resources;
     VkDescriptorSet desc_set;
@@ -71,12 +70,11 @@ struct GpuAssistedBufferInfo {
     bool uses_robustness;
     CMD_TYPE cmd_type;
     uint32_t desc_binding_index;
-    GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedDeviceMemoryBlock bda_input_mem_block,
-                          GpuAssistedPreDrawResources pre_draw_resources, GpuAssistedPreDispatchResources pre_dispatch_resources,
-                          VkDescriptorSet desc_set, VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point,
-                          bool uses_robustness, CMD_TYPE cmd_type, uint32_t desc_binding_index)
+    GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
+                          GpuAssistedPreDispatchResources pre_dispatch_resources, VkDescriptorSet desc_set,
+                          VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness,
+                          CMD_TYPE cmd_type, uint32_t desc_binding_index)
         : output_mem_block(output_mem_block),
-          bda_input_mem_block(bda_input_mem_block),
           pre_draw_resources(pre_draw_resources),
           pre_dispatch_resources(pre_dispatch_resources),
           desc_set(desc_set),
@@ -223,6 +221,7 @@ class GpuAssisted : public GpuAssistedBase {
                                     uint32_t operation_index, uint32_t* const debug_output_buffer,
                                     const std::vector<GpuAssistedDescSetState>& descriptor_sets);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
+    void UpdateBDABuffer(GpuAssistedDeviceMemoryBlock buffer_device_addresses);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
 
@@ -340,6 +339,10 @@ class GpuAssisted : public GpuAssistedBase {
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
+    GpuAssistedDeviceMemoryBlock app_buffer_device_addresses{};
+    size_t app_bda_buffer_size{};
+    size_t app_bda_max_addresses{};
+    uint32_t gpuav_bda_buffer_version = 0;
 
     bool buffer_device_address;
 };
