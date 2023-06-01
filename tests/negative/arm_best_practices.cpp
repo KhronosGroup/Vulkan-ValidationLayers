@@ -331,9 +331,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     // create a non-sparse index buffer
     std::vector<uint16_t> nonsparse_indices;
     nonsparse_indices.resize(128);
-    for (unsigned i = 0; i < nonsparse_indices.size(); i++) {
-        nonsparse_indices[i] = i;
-    }
+    std::generate(nonsparse_indices.begin(), nonsparse_indices.end(), [n = 0]() mutable { return ++n; });
 
     // another example of non-sparsity where the number of indices is also very small
     std::vector<uint16_t> nonsparse_indices_2 = {0, 1, 2, 3, 4, 5, 6, 7};
