@@ -1462,3 +1462,51 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     vk_testing::Sampler sampler(*m_device, sampler_create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSampler, BorderColorValue) {
+    TEST_DESCRIPTION("Using a bad VkBorderColor value.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_info.borderColor = static_cast<VkBorderColor>(0xFFFFBAD0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01078");
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, CompareOpValue) {
+    TEST_DESCRIPTION("Using a bad VkCompareOp value.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.compareEnable = VK_TRUE;
+    sampler_info.compareOp = static_cast<VkCompareOp>(0xFFFFBAD0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-compareEnable-01080");
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSampler, CustomBorderColorsFeature) {
+    TEST_DESCRIPTION("Don't turn on the customBorderColors feature");
+    AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
+
+    auto custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
+    custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
+    sampler_info.pNext = &custom_color_cinfo;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-customBorderColors-04085");
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    m_errorMonitor->VerifyFound();
+}
