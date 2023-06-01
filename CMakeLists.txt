@@ -118,7 +118,6 @@ elseif(MSVC)
         /wd4754 # conversion rules for arithmetic operations
         /wd4706 # assignment within conditional expression
         /wd4130 # logical operation on address of string constant
-        /wd4244 # Possible loss of data
 
         # TODO: Fix warnings and enable ISO compliance on MSVC
         # /permissive-

@@ -1000,13 +1000,13 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpName %main "main"  ; id %4)asm";
 
             for (uint32_t i = 0; i < count; ++i) {
-                char v = 'a' + i;
+                char v = 'a' + static_cast<char>(i);
                 gsSource << "\nOpName %var" << v << " \"" << v << "\"";
             }
             gsSource << "\n; Annotations\n";
 
             for (uint32_t i = 0; i < count; ++i) {
-                char v = 'a' + i;
+                char v = 'a' + static_cast<char>(i);
                 gsSource << "OpDecorate %var" << v << " Location " << i << "\n";
                 gsSource << "OpDecorate %var" << v << " Stream 0\n";
                 gsSource << "OpDecorate %var" << v << " XfbBuffer " << i << "\n";
@@ -1025,7 +1025,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
 
             gsSource << "\n";
             for (uint32_t i = 0; i < count; ++i) {
-                char v = 'a' + i;
+                char v = 'a' + static_cast<char>(i);
                 gsSource << "%var" << v << " = OpVariable %_ptr_Output_float Output\n";
             }
 
