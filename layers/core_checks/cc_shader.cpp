@@ -1699,8 +1699,13 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
                 0) &&
                pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        if (!entrypoint.written_builtin_point_size) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722",
+        const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+                                     phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
+        if (!entrypoint.written_builtin_point_size && !ignore_topology) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                   ? "VUID-VkGraphicsPipelineCreateInfo-topology-08890"
+                                   : "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722";
+            skip |= LogError(module_state.vk_shader_module(), vuid,
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST, but "
                              "PointSize is not written in the Vertex shader.",
