@@ -7260,3 +7260,21 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 }
+
+TEST_F(NegativeCommand, DebugLabelSecondaryCommandBuffer) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cb.begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913");
+    vk::CmdEndDebugUtilsLabelEXT(cb);
+    m_errorMonitor->VerifyFound();
+
+    cb.end();
+}

@@ -1743,10 +1743,13 @@ bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer command
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
+
+    if (cb_state->IsPrimary()) {
+        return skip;
+    }
+
     if (cb_state->LabelStackDepth() < 1) {
-        const auto vuid = cb_state->IsPrimary() ? "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912"
-                                                : "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913";
-        skip |= LogError(commandBuffer, vuid,
+        skip |= LogError(commandBuffer, "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913",
                          "vkCmdEndDebugUtilsLabelEXT() called without a corresponding vkCmdBeginDebugUtilsLabelEXT first");
     }
     return skip;
