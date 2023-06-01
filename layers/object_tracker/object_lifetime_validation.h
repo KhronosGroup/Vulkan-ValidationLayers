@@ -105,17 +105,16 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
     void DestroyLeakedInstanceObjects();
     void DestroyLeakedDeviceObjects();
-    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
-                              const char *wrong_device_code) const;
+    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code, const char *api_name) const;
     void DestroyQueueDataStructures();
     bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer) const;
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) const;
     bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo) const;
-    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush) const;
+    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const char *api_name) const;
     bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_code,
-                                 const char *wrong_device_code) const;
+                                 const char *wrong_device_code, const char *api_name) const;
     bool ValidateAccelerationStructures(const char *dst_handle_vuid, uint32_t count,
-                                        const VkAccelerationStructureBuildGeometryInfoKHR *infos) const;
+                                        const VkAccelerationStructureBuildGeometryInfoKHR *infos, const char *api_name) const;
 
     ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) const {
         for (auto *layer_object : object_dispatch) {
@@ -127,7 +126,7 @@ class ObjectLifetimes : public ValidationObject {
     };
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool null_allowed,
-                             const char *invalid_handle_code, const char *wrong_device_code) const {
+                             const char *invalid_handle_code, const char *wrong_device_code, const char *api_name) const {
         // Look for object in object map
         if (!object_map[object_type].contains(object_handle)) {
             // If object is an image, also look for it in the swapchain image map
@@ -146,12 +145,12 @@ class ObjectLifetimes : public ValidationObject {
                                     // Object found on other device, report an error if object has a device parent error code
                                     if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
                                         const LogObjectList objlist(instance, device, layer_object_data->device);
-                                        return LogError(objlist, wrong_device_code,
-                                                        "The %s (0x%" PRIxLEAST64
-                                                        ") was created, allocated or retrieved from the VkDevice %p but the other "
-                                                        "Dispatchable Handle used VkDevice %p.",
-                                                        object_string[object_type], object_handle, layer_object_data->device,
-                                                        device);
+                                        return LogError(
+                                            objlist, wrong_device_code,
+                                            "%s(): Expected all Dispatchable Handles to use %s, but the %s (0x%" PRIxLEAST64
+                                            ") was created, allocated or retrieved from %s.",
+                                            api_name, report_data->FormatHandle(device).c_str(), object_string[object_type],
+                                            object_handle, report_data->FormatHandle(layer_object_data->device).c_str());
 
                                     } else {
                                         return false;
@@ -162,8 +161,8 @@ class ObjectLifetimes : public ValidationObject {
                     }
                 }
                 // Report an error if object was not found anywhere
-                return LogError(instance, invalid_handle_code, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
-                                object_handle);
+                return LogError(instance, invalid_handle_code, "%s(): Invalid %s Object 0x%" PRIxLEAST64 ".", api_name,
+                                object_string[object_type], object_handle);
             }
         }
         return false;
@@ -171,16 +170,17 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
-                        const char *wrong_device_code) const {
+                        const char *wrong_device_code, const char *api_name) const {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
 
         if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, api_name);
         }
 
-        return CheckObjectValidity(HandleToUint64(object), object_type, null_allowed, invalid_handle_code, wrong_device_code);
+        return CheckObjectValidity(HandleToUint64(object), object_type, null_allowed, invalid_handle_code, wrong_device_code,
+                                   api_name);
     }
 
     template <typename T1>

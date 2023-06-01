@@ -747,7 +747,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%sskip |= ValidateObject(%s%s[%s], %s, %s, %s, %s);\n' % (indent, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s%s[%s], %s, %s, %s, %s, "%s");\n' % (indent, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid, parent_name)
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
             indent = self.decIndent(indent)
@@ -760,7 +760,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 null_allowed = 'false'
                 manual_vuid_index = parent_name + '-' + obj_name
                 param_vuid = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
-            pre_call_code += '%s%sskip |= ValidateObject(%s%s, %s, %s, %s, %s);\n' % (bonus_indent, indent, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%s%sskip |= ValidateObject(%s%s, %s, %s, %s, %s, "%s");\n' % (bonus_indent, indent, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid, parent_name)
             if 'pSampler' in obj_name:
                 pre_call_code = ''
         return pre_call_code
