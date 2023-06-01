@@ -98,6 +98,12 @@ khronos_validation.enables =
 # Use VMA linear memory allocations for GPU-AV output buffers
 #khronos_validation.vma_linear_output = true
 
+# Specify the maximum number of buffer device addresses in simultaneous use
+# =====================
+# <LayerIdentifier>.gpuav_max_buffer_device_addresses
+# Specify the maximum number of buffer device addresses to allow GPU-AV allocate resources
+#khronos_validation.gpuav_max_buffer_device_addresses = 10000
+
 # Fine Grained Locking
 # =====================
 # <LayerIdentifier>.fine_grained_locking

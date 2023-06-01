@@ -1604,6 +1604,7 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<QueueFamilyExtensionProperties> queue_family_ext_props;
 
     bool performance_lock_acquired = false;
+    uint32_t buffer_device_address_ranges_version = 0;
 
     mutable VideoProfileDesc::Cache video_profile_cache_;
 

@@ -132,6 +132,29 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                               IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
                              shaderInt64 && enabled_features.core12.bufferDeviceAddress);
 
+    if (buffer_device_address) {
+        const char *size_string = getLayerOption("khronos_validation.gpuav_max_buffer_device_addresses");
+        app_bda_max_addresses = *size_string ? atoi(size_string) : 10000;
+        VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        // We need 2 words per address (address and size), 1 word for the start of sizes index, 2 words for the address section
+        // bounds, and 2 more words for the size section bounds
+        app_bda_buffer_size = (1 + (app_bda_max_addresses + 2) + (app_bda_max_addresses + 2)) * 8;  // 64 bit words
+        buffer_info.size = app_bda_buffer_size;
+        // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
+        // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+        VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &app_buffer_device_addresses.buffer,
+                                          &app_buffer_device_addresses.allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(
+                device, "Unable to allocate device memory for buffer device address data.  Device could become unstable.", true);
+            aborted = true;
+            return;
+        }
+    }
+
     if (IsExtEnabled(device_extensions.vk_ext_shader_object)) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "VK_EXT_shader_Object is enabled, but GPU-AV does not currently support validation of shader objects");
@@ -219,6 +242,9 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     acceleration_structure_validation_state.Destroy(device, vmaAllocator);
     pre_draw_validation_state.Destroy(device);
     pre_dispatch_validation_state.Destroy(device);
+    if (app_buffer_device_addresses.buffer) {
+        vmaDestroyBuffer(vmaAllocator, app_buffer_device_addresses.buffer, app_buffer_device_addresses.allocation);
+    }
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
@@ -844,9 +870,6 @@ void GpuAssisted::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice devic
 // Free the device memory and descriptor set(s) associated with a command buffer.
 void GpuAssisted::DestroyBuffer(GpuAssistedBufferInfo &buffer_info) {
     vmaDestroyBuffer(vmaAllocator, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
-    if (buffer_info.bda_input_mem_block.buffer) {
-        vmaDestroyBuffer(vmaAllocator, buffer_info.bda_input_mem_block.buffer, buffer_info.bda_input_mem_block.allocation);
-    }
     if (buffer_info.desc_set != VK_NULL_HANDLE) {
         desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
     }
@@ -1263,6 +1286,58 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
     }
 }
 
+void GpuAssisted::UpdateBDABuffer(GpuAssistedDeviceMemoryBlock device_address_buffer) {
+    if (gpuav_bda_buffer_version == buffer_device_address_ranges_version) {
+        return;
+    }
+    auto address_ranges = GetBufferAddressRanges();
+    auto address_ranges_num_addresses = address_ranges.size();
+    if (address_ranges_num_addresses == 0) return;
+
+    // Example BDA input buffer assuming 2 buffers using BDA:
+    // Word 0 | Index of start of buffer sizes (in this case 5)
+    // Word 1 | 0x0000000000000000
+    // Word 2 | Device Address of first buffer  (Addresses sorted in ascending order)
+    // Word 3 | Device Address of second buffer
+    // Word 4 | 0xffffffffffffffff
+    // Word 5 | 0 (size of pretend buffer at word 1)
+    // Word 6 | Size in bytes of first buffer
+    // Word 7 | Size in bytes of second buffer
+    // Word 8 | 0 (size of pretend buffer in word 4)
+
+    uint64_t *bda_data;
+    // Make sure to limit writes to size of the buffer
+    [[maybe_unused]] VkResult result;
+    result = vmaMapMemory(vmaAllocator, device_address_buffer.allocation, reinterpret_cast<void **>(&bda_data));
+    assert(result == VK_SUCCESS);
+    uint32_t address_index = 1;
+    size_t size_index = 3 + address_ranges.size();
+    memset(bda_data, 0, static_cast<size_t>(app_bda_buffer_size));
+    bda_data[0] = size_index;       // Start of buffer sizes
+    bda_data[address_index++] = 0;  // NULL address
+    bda_data[size_index++] = 0;
+    if (address_ranges_num_addresses > app_bda_max_addresses) {
+        std::ostringstream problem_string;
+        problem_string << "Number of buffer device addresses in use (" << address_ranges_num_addresses
+                       << ") is greapter than khronos_validation.max_buffer_device_addresses (" << app_bda_max_addresses
+                       << "). Truncating BDA table which could result in invalid validation";
+        ReportSetupProblem(device, problem_string.str().c_str());
+    }
+    size_t num_addresses = std::min(address_ranges_num_addresses, app_bda_max_addresses);
+    for (size_t i = 0; i < num_addresses; i++) {
+        bda_data[address_index++] = address_ranges[i].begin;
+        bda_data[size_index++] = address_ranges[i].end - address_ranges[i].begin;
+    }
+    bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
+    bda_data[size_index] = 0;
+    // Flush the BDA buffer before unmapping so that the new state is visible to the GPU
+    result = vmaFlushAllocation(vmaAllocator, device_address_buffer.allocation, 0, VK_WHOLE_SIZE);
+    // No good way to handle this error, we should still try to unmap.
+    assert(result == VK_SUCCESS);
+    vmaUnmapMemory(vmaAllocator, device_address_buffer.allocation);
+    gpuav_bda_buffer_version = buffer_device_address_ranges_version;
+}
+
 void GpuAssisted::UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint) {
     if (aborted) return;
     auto cb_node = GetWrite<gpuav_state::CommandBuffer>(commandBuffer);
@@ -1362,6 +1437,7 @@ void GpuAssisted::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             PreRecordCommandBuffer(submit->pCommandBuffers[i]);
         }
     }
+    UpdateBDABuffer(app_buffer_device_addresses);
 }
 
 void GpuAssisted::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -1373,6 +1449,7 @@ void GpuAssisted::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
             PreRecordCommandBuffer(submit->pCommandBufferInfos[i].commandBuffer);
         }
     }
+    UpdateBDABuffer(app_buffer_device_addresses);
 }
 
 void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence) {
@@ -1382,6 +1459,7 @@ void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
             PreRecordCommandBuffer(submit->pCommandBufferInfos[i].commandBuffer);
         }
     }
+    UpdateBDABuffer(app_buffer_device_addresses);
 }
 
 void GpuAssisted::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -1885,7 +1963,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
-    GpuAssistedDeviceMemoryBlock bda_input_block = {};
     VkDescriptorBufferInfo di_input_desc_buffer_info = {};
     VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
     VkWriteDescriptorSet desc_writes[3] = {};
@@ -2027,66 +2104,17 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     }
 
     if (buffer_device_address) {
-        auto address_ranges = GetBufferAddressRanges();
-        if (address_ranges.size() > 0) {
-            // Example BDA input buffer assuming 2 buffers using BDA:
-            // Word 0 | Index of start of buffer sizes (in this case 5)
-            // Word 1 | 0x0000000000000000
-            // Word 2 | Device Address of first buffer  (Addresses sorted in ascending order)
-            // Word 3 | Device Address of second buffer
-            // Word 4 | 0xffffffffffffffff
-            // Word 5 | 0 (size of pretend buffer at word 1)
-            // Word 6 | Size in bytes of first buffer
-            // Word 7 | Size in bytes of second buffer
-            // Word 8 | 0 (size of pretend buffer in word 4)
+        bda_input_desc_buffer_info.range = app_bda_buffer_size;
+        bda_input_desc_buffer_info.buffer = app_buffer_device_addresses.buffer;
+        bda_input_desc_buffer_info.offset = 0;
 
-            uint32_t num_buffers = static_cast<uint32_t>(address_ranges.size());
-            uint32_t words_needed = (num_buffers + 3) + (num_buffers + 2);
-            buffer_info.size = words_needed * 8;  // 64 bit words
-            alloc_info.pool = VK_NULL_HANDLE;
-            // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
-            // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
-            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-            result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &bda_input_block.buffer, &bda_input_block.allocation,
-                                     nullptr);
-            if (result != VK_SUCCESS) {
-                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
-                aborted = true;
-                return;
-            }
-            uint64_t *bda_data;
-            result = vmaMapMemory(vmaAllocator, bda_input_block.allocation, reinterpret_cast<void **>(&bda_data));
-            uint32_t address_index = 1;
-            uint32_t size_index = 3 + num_buffers;
-            memset(bda_data, 0, static_cast<size_t>(buffer_info.size));
-            bda_data[0] = size_index;       // Start of buffer sizes
-            bda_data[address_index++] = 0;  // NULL address
-            bda_data[size_index++] = 0;
-
-            for (const auto &range : address_ranges) {
-                bda_data[address_index++] = range.begin;
-                bda_data[size_index++] = range.end - range.begin;
-            }
-            bda_data[address_index] = std::numeric_limits<uintptr_t>::max();
-            bda_data[size_index] = 0;
-            // Flush the BDA buffer before unmapping so that the new state is visible to the GPU
-            result = vmaFlushAllocation(vmaAllocator, bda_input_block.allocation, 0, VK_WHOLE_SIZE);
-            // No good way to handle this error, we should still try to unmap.
-            assert(result == VK_SUCCESS);
-            vmaUnmapMemory(vmaAllocator, bda_input_block.allocation);
-
-            bda_input_desc_buffer_info.range = (words_needed * 8);
-            bda_input_desc_buffer_info.buffer = bda_input_block.buffer;
-            bda_input_desc_buffer_info.offset = 0;
-
-            desc_writes[desc_count] = LvlInitStruct<VkWriteDescriptorSet>();
-            desc_writes[desc_count].dstBinding = 2;
-            desc_writes[desc_count].descriptorCount = 1;
-            desc_writes[desc_count].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            desc_writes[desc_count].pBufferInfo = &bda_input_desc_buffer_info;
-            desc_writes[desc_count].dstSet = desc_sets[0];
-            desc_count++;
-        }
+        desc_writes[desc_count] = LvlInitStruct<VkWriteDescriptorSet>();
+        desc_writes[desc_count].dstBinding = 2;
+        desc_writes[desc_count].descriptorCount = 1;
+        desc_writes[desc_count].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        desc_writes[desc_count].pBufferInfo = &bda_input_desc_buffer_info;
+        desc_writes[desc_count].dstSet = desc_sets[0];
+        desc_count++;
     }
 
     // Write the descriptor
@@ -2120,15 +2148,14 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     if (pipeline_layout_handle == VK_NULL_HANDLE) {
         ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
         aborted = true;
-        vmaDestroyBuffer(vmaAllocator, bda_input_block.buffer, bda_input_block.allocation);
         vmaDestroyBuffer(vmaAllocator, output_block.buffer, output_block.allocation);
     } else {
         // It is possible to have no descriptor sets bound, for example if using push constants.
         uint32_t di_buf_index =
             cb_node->di_input_buffer_list.size() > 0 ? uint32_t(cb_node->di_input_buffer_list.size()) - 1 : vvl::kU32Max;
         // Record buffer and memory info in CB state tracking
-        cb_node->per_draw_buffer_list.emplace_back(output_block, bda_input_block, pre_draw_resources, pre_dispatch_resources,
-                                                   desc_sets[0], desc_pool, bind_point, uses_robustness, cmd_type, di_buf_index);
+        cb_node->per_draw_buffer_list.emplace_back(output_block, pre_draw_resources, pre_dispatch_resources, desc_sets[0],
+                                                   desc_pool, bind_point, uses_robustness, cmd_type, di_buf_index);
     }
 }
 
