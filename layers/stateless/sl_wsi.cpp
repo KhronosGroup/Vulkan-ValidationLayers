@@ -186,14 +186,6 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
             skip |= ValidateStructPnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
                                         GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
                                         "VUID-VkPresentInfoKHR-sType-unique");
-            skip |= ValidateArray("QueuePresentKHR", "pCreateInfo->pNext->swapchainCount", "pCreateInfo->pNext->pRegions",
-                                  present_regions->swapchainCount, &present_regions->pRegions, true, false, kVUIDUndefined,
-                                  kVUIDUndefined);
-            for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                skip |= ValidateArray("QueuePresentKHR", "pCreateInfo->pNext->pRegions[].rectangleCount",
-                                      "pCreateInfo->pNext->pRegions[].pRectangles", present_regions->pRegions[i].rectangleCount,
-                                      &present_regions->pRegions[i].pRectangles, true, false, kVUIDUndefined, kVUIDUndefined);
-            }
         }
     }
 
