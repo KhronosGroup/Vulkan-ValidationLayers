@@ -727,7 +727,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
 
-    ErrorMonitor monitor;
+    ErrorMonitor monitor = ErrorMonitor(false);
     monitor.CreateCallback(test_instance);
 
     uint32_t physical_device_group_count = 0;

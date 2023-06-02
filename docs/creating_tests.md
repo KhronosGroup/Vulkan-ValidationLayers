@@ -220,6 +220,14 @@ m_errorMonitor->VerifyFound();
 ```
 Here it is obvious that the `aspectMask` parameter is the cause of 02271.
 
+### Viewing VU Messages
+
+When `SetDesiredFailureMsg` is used, nothing is displayed if the test is successful. To see the messages regardless use `--print-vu`
+
+```bash
+./tests/vk_layer_validation_tests --print-vu --gtest_filter=Tests
+```
+
 ## Device Profiles API
 
 There are times a test writer will want to test a case where an implementation returns a certain support for a format feature or limit. Instead of just hoping to find a device that supports a certain case, there is the Device Profiles API layer. This layer will allow a test writer to inject certain values for format features and/or limits.

@@ -33,7 +33,7 @@
 // failure was encountered.
 class ErrorMonitor {
   public:
-    ErrorMonitor();
+    ErrorMonitor(bool print_all_errors);
     ~ErrorMonitor() noexcept = default;
 
     void CreateCallback(VkInstance instance) noexcept;
@@ -99,4 +99,5 @@ class ErrorMonitor {
     mutable std::mutex mutex_;
     std::atomic<bool> *bailout_{};
     bool message_found_{};
+    bool print_all_errors_{};
 };

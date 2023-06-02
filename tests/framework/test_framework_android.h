@@ -38,6 +38,7 @@ class VkTestFramework : public ::testing::Test {
 
     static inline int m_phys_device_index = -1;
     static inline ANativeWindow *window = nullptr;
+    static inline bool m_print_vu = false;
 };
 
 class TestEnvironment : public ::testing::Environment {

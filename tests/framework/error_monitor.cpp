@@ -66,7 +66,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 }
 #endif
 
-ErrorMonitor::ErrorMonitor() {
+ErrorMonitor::ErrorMonitor(bool print_all_errors) : print_all_errors_(print_all_errors) {
     MonitorReset();
     ExpectSuccess(kErrorBit);
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -167,6 +167,9 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
     std::string error_string(msgString);
     bool found_expected = false;
 
+    if (print_all_errors_) {
+        std::cout << error_string << "\n\n";
+    }
     if (!IgnoreMessage(error_string)) {
         for (auto desired_msg_it = desired_message_strings_.begin(); desired_msg_it != desired_message_strings_.end();
              ++desired_msg_it) {
