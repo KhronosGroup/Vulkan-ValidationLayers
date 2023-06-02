@@ -3122,7 +3122,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
                     auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                     if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
                         (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
-                        (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
+                        (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat)) {
                         const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
                             cb_state.activeRenderPass->renderPass());
                         skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08918,
