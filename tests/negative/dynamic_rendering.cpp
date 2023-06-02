@@ -1382,7 +1382,6 @@ TEST_F(NegativeDynamicRendering, MistmatchingAttachmentFormats3) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (::testing::Test::IsSkipped()) return;
 
     const VkViewport viewport = {0, 0, 16, 16, 0, 1};
     const VkRect2D scissor = {{0, 0}, {16, 16}};
