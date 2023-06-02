@@ -51,7 +51,7 @@ static std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(con
         return VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-    return {};
+    return std::nullopt;
 }
 
 static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMemoryHeap &memory_heap,
