@@ -1205,3 +1205,184 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
+    TEST_DESCRIPTION(
+        "Draw with Dynamic Rendering with dynamicRenderingUnusedAttachments enabled and matching formats");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_unused_attachments_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&dynamic_rendering_unused_attachments_features);
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
+    }
+    if (!dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRenderingUnusedAttachments , skipping.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (::testing::Test::IsSkipped()) return;
+
+    const VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    const VkRect2D scissor = {{0, 0}, {16, 16}};
+    m_viewports.push_back(viewport);
+    m_scissors.push_back(scissor);
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+
+    VkPipelineObj pipeline_color(m_device);
+    pipeline_color.AddShader(&vs);
+    pipeline_color.AddShader(&fs);
+    pipeline_color.AddDefaultColorAttachment();
+    pipeline_color.SetViewport(m_viewports);
+    pipeline_color.SetScissor(m_scissors);
+
+    VkFormat color_formats[] = {VK_FORMAT_R8G8B8A8_UNORM};
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = color_formats;
+
+    {
+        auto pipeline_create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipeline_color.InitGraphicsPipelineCreateInfo(&pipeline_create_info);
+        pipeline_create_info.pNext = &pipeline_rendering_info;
+
+        pipeline_color.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &pipeline_create_info);
+    }
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
+    VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
+
+    VkPipelineObj pipeline_depth(m_device);
+    pipeline_depth.AddShader(&vs);
+    pipeline_depth.AddShader(&fs);
+    pipeline_depth.AddDefaultColorAttachment();
+    pipeline_depth.SetViewport(m_viewports);
+    pipeline_depth.SetScissor(m_scissors);
+    pipeline_depth.SetDepthStencil(&ds_state);
+
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.pColorAttachmentFormats = nullptr;
+    pipeline_rendering_info.depthAttachmentFormat = depthStencilFormat;
+
+    {
+        auto pipeline_create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipeline_depth.InitGraphicsPipelineCreateInfo(&pipeline_create_info);
+        pipeline_create_info.pNext = &pipeline_rendering_info;
+
+        pipeline_depth.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &pipeline_create_info);
+    }
+
+    VkPipelineObj pipeline_stencil(m_device);
+    pipeline_stencil.AddShader(&vs);
+    pipeline_stencil.AddShader(&fs);
+    pipeline_stencil.AddDefaultColorAttachment();
+    pipeline_stencil.SetViewport(m_viewports);
+    pipeline_stencil.SetScissor(m_scissors);
+    pipeline_stencil.SetDepthStencil(&ds_state);
+
+    pipeline_rendering_info.colorAttachmentCount = 0;
+    pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    pipeline_rendering_info.stencilAttachmentFormat = depthStencilFormat;
+
+    {
+        auto pipeline_create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipeline_stencil.InitGraphicsPipelineCreateInfo(&pipeline_create_info);
+        pipeline_create_info.pNext = &pipeline_rendering_info;
+
+        pipeline_stencil.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &pipeline_create_info);
+    }
+
+    VkImageObj colorImage(m_device);
+    colorImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    VkImageObj depthStencilImage(m_device);
+    depthStencilImage.Init(32, 32, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    auto color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = VK_NULL_HANDLE;
+
+    auto depth_stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageView = VK_NULL_HANDLE;
+
+    m_commandBuffer->begin();
+
+    {
+        // Null color image view
+        auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+        begin_rendering_info.layerCount = 1;
+        begin_rendering_info.colorAttachmentCount = 1;
+        begin_rendering_info.pColorAttachments = &color_attachment;
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+
+        // Matching color formats
+        color_attachment.imageView = colorImage.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+        color_attachment.imageView = VK_NULL_HANDLE;
+    }
+
+    {
+        // Null depth image view
+        auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+        begin_rendering_info.layerCount = 1;
+        begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+
+        // Matching depth format
+        depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+        depth_stencil_attachment.imageView = VK_NULL_HANDLE;
+    }
+
+    {
+        // Null stencil image view
+        auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+        begin_rendering_info.layerCount = 1;
+        begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+
+        // Matching stencil format
+        depth_stencil_attachment.imageView = depthStencilImage.targetView(depthStencilFormat, VK_IMAGE_ASPECT_STENCIL_BIT);
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.handle());
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRendering();
+        depth_stencil_attachment.imageView = VK_NULL_HANDLE;
+    }
+
+    m_commandBuffer->end();
+}
