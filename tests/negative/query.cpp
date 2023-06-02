@@ -2353,3 +2353,46 @@ TEST_F(NegativeQuery, MultiviewEndQuery) {
         m_commandBuffer->end();
     }
 }
+
+TEST_F(NegativeQuery, NullQueryPoolCreateInfo) {
+    TEST_DESCRIPTION("Invalid usage without meshShaderQueries enabled");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkQueryPool pool = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateQueryPool-pCreateInfo-parameter");
+    vk::CreateQueryPool(m_device->handle(), nullptr, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeQuery, MeshShaderQueries) {
+    TEST_DESCRIPTION("Invalid usage without meshShaderQueries enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkQueryPool pool = VK_NULL_HANDLE;
+
+    VkQueryPoolCreateInfo query_pool_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_info.queryType = VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT;
+    query_pool_info.flags = 0;
+    query_pool_info.queryCount = 1;
+    query_pool_info.pipelineStatistics = 0;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068");
+    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+
+    query_pool_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
+    query_pool_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069");
+    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+
+    query_pool_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069");
+    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    m_errorMonitor->VerifyFound();
+}
