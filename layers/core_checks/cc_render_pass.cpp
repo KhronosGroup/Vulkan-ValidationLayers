@@ -4452,7 +4452,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                 }
                                 if (aii.layerCount != 1 && static_cast<int32_t>(aii.layerCount) <= highest_view_bit) {
                                     skip |= LogError(
-                                        device, kVUIDUndefined,
+                                        device, "VUID-VkFramebufferCreateInfo-renderPass-08921",
                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
                                         "less than or equal to the highest bit in the view mask (%i) of subpass %u.",
                                         i, aii.layerCount, highest_view_bit, j);
