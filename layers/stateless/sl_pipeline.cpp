@@ -285,7 +285,8 @@ bool StatelessValidation::ValidatePipelineMultisampleStateCreateInfo(const VkPip
         ValidateArray("vkCreateGraphicsPipelines",
                       ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{index}),
                       ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{index}),
-                      info.rasterizationSamples, &info.pSampleMask, true, false, kVUIDUndefined, kVUIDUndefined);
+                      info.rasterizationSamples, &info.pSampleMask, true, false, kVUIDUndefined,
+                      "VUID-VkPipelineMultisampleStateCreateInfo-pSampleMask-parameter");
 
     skip |=
         ValidateFlags("vkCreateGraphicsPipelines",
