@@ -179,10 +179,14 @@ class RangeEncoder {
     // For ranges that only have a single mip level...
     template <uint32_t N>
     Subresource DecodeAspectArrayOnly(const IndexType& index) const {
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            return Subresource(aspect_bits_[2], 0, static_cast<uint32_t>(index - aspect_base_[2]), 2);
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            return Subresource(aspect_bits_[1], 0, static_cast<uint32_t>(index - aspect_base_[1]), 1);
+        if constexpr (N > 2) {
+            if (index >= aspect_base_[2]) {
+                return Subresource(aspect_bits_[2], 0, static_cast<uint32_t>(index - aspect_base_[2]), 2);
+            }
+        } else if constexpr (N > 1) {
+            if (index >= aspect_base_[1]) {
+                return Subresource(aspect_bits_[1], 0, static_cast<uint32_t>(index - aspect_base_[1]), 1);
+            }
         }
         // NOTE: aspect_base_[0] is always 0... here and below
         return Subresource(aspect_bits_[0], 0, static_cast<uint32_t>(index), 0);
@@ -191,10 +195,14 @@ class RangeEncoder {
     // For ranges that only have a single array layer...
     template <uint32_t N>
     Subresource DecodeAspectMipOnly(const IndexType& index) const {
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            return Subresource(aspect_bits_[2], static_cast<uint32_t>(index - aspect_base_[2]), 0, 2);
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            return Subresource(aspect_bits_[1], static_cast<uint32_t>(index - aspect_base_[1]), 0, 1);
+        if constexpr (N > 2) {
+            if (index >= aspect_base_[2]) {
+                return Subresource(aspect_bits_[2], static_cast<uint32_t>(index - aspect_base_[2]), 0, 2);
+            }
+        } else if constexpr (N > 1) {
+            if (index >= aspect_base_[1]) {
+                return Subresource(aspect_bits_[1], static_cast<uint32_t>(index - aspect_base_[1]), 0, 1);
+            }
         }
         return Subresource(aspect_bits_[0], static_cast<uint32_t>(index), 0, 0);
     }
@@ -204,10 +212,14 @@ class RangeEncoder {
     Subresource DecodeAspectMipArray(const IndexType& index) const {
         assert(limits_.aspect_index <= N);
         uint32_t aspect_index = 0;
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            aspect_index = 2;
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            aspect_index = 1;
+        if constexpr (N > 2) {
+            if (index >= aspect_base_[2]) {
+                aspect_index = 2;
+            }
+        } else if constexpr (N > 1) {
+            if (index >= aspect_base_[1]) {
+                aspect_index = 1;
+            }
         }
 
         // aspect_base_[0] is always zero, so use the template to cheat
