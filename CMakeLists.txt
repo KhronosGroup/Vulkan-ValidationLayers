@@ -118,10 +118,10 @@ elseif(MSVC)
         /wd4754 # conversion rules for arithmetic operations
         /wd4706 # assignment within conditional expression
         /wd4130 # logical operation on address of string constant
-
-        # TODO: Fix warnings and enable ISO compliance on MSVC
-        # /permissive-
     )
+
+    # Enforce stricter ISO C++
+    add_compile_options(/permissive-)
 
     # PDBs aren't generated on Release builds by default.
     add_compile_options("$<$<CONFIG:Release>:/Zi>")
