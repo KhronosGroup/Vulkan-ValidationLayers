@@ -1380,10 +1380,19 @@ class CommandExecutionContext {
 
     virtual HazardResult DetectFirstUseHazard(const ResourceUsageRange &tag_range) = 0;
     virtual void BeginRenderPassReplay(const SyncOpBeginRenderPass &begin_op, ResourceUsageTag tag) {
-        assert("Must override if use by derived type is valid" == nullptr);
+        // Must override if use by derived type is valid
+        assert(false);
     }
-    virtual void NextSubpassReplay() { assert("Must override if use by derived type is valid" == nullptr); }
-    virtual void EndRenderPassReplay() { assert("Must override if use by derived type is valid" == nullptr); }
+
+    virtual void NextSubpassReplay() {
+        // Must override if use by derived type is valid
+        assert(false);
+    }
+
+    virtual void EndRenderPassReplay() {
+        // Must override if use by derived type is valid
+        assert(false);
+    }
 
     bool ValidForSyncOps() const;
 
