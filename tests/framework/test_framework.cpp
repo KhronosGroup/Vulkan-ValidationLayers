@@ -207,10 +207,15 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_strip_spv = true;
         else if (optionMatch("--canonicalize-SPV", argv[i]))
             m_canonicalize_spv = true;
+        else if (optionMatch("--print-vu", argv[i]))
+            m_print_vu = true;
         else if (optionMatch("--device-index", argv[i]) && ((i + 1) < *argc)) {
             m_phys_device_index = std::atoi(argv[++i]);
         } else if (optionMatch("--help", argv[i]) || optionMatch("-h", argv[i])) {
             printf("\nOther options:\n");
+            printf(
+                "\t--print-vu\n"
+                "\t\tPrints all VUs - help see what new VU will look like.\n");
             printf(
                 "\t--show-images\n"
                 "\t\tDisplay test images in viewer after tests complete.\n");

@@ -219,7 +219,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<VkLayerProperties> available_layers_; // allow caching of available layers
     std::vector<VkExtensionProperties> available_extensions_; // allow caching of available instance extensions
 
-    ErrorMonitor monitor_;
+    ErrorMonitor monitor_ = ErrorMonitor(m_print_vu);
     ErrorMonitor *m_errorMonitor = &monitor_;  // TODO: Removing this properly is it's own PR. It's a big change.
 
     VkApplicationInfo app_info_;
