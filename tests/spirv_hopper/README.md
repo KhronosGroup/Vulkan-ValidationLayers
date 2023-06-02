@@ -2,6 +2,12 @@
 
 The goal of `SPIRV-Hopper` is to feed SPIR-V binaries into the Validation Layers
 
+## How To Build
+
+By default `SPIRV-Hopper` is turned off in the build until SPIRV-Reflect is part of `known_good.json` which requires upstream changes.
+
+Enable it with `-D VVL_SPIRV_HOPPER` when building the validation layers.
+
 ## How To Run
 
 ```bash
