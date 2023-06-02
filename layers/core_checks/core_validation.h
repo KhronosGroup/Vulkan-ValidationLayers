@@ -98,11 +98,14 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_view_mask_06178 = kVUIDUndefined;
     const char* dynamic_rendering_color_count_06179 = kVUIDUndefined;
     const char* dynamic_rendering_color_formats_06180 = kVUIDUndefined;
+    const char* dynamic_rendering_unused_attachments_08911 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_color_formats_07616 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_depth_format_07617 = kVUIDUndefined;
     const char* dynamic_rendering_undefined_stencil_format_07618 = kVUIDUndefined;
     const char* dynamic_rendering_depth_format_06181 = kVUIDUndefined;
+    const char* dynamic_rendering_unused_attachments_08915 = kVUIDUndefined;
     const char* dynamic_rendering_stencil_format_06182 = kVUIDUndefined;
+    const char* dynamic_rendering_unused_attachments_08918 = kVUIDUndefined;
     const char* dynamic_rendering_fsr_06183 = kVUIDUndefined;
     const char* dynamic_rendering_fdm_06184 = kVUIDUndefined;
     const char* dynamic_rendering_color_sample_06185 = kVUIDUndefined;

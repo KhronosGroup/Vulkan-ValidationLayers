@@ -1399,6 +1399,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             shader_tile_image_features) {
             enabled_features.shader_tile_image_features = *shader_tile_image_features;
         }
+
+        if (const auto dynamic_rendering_unused_attachments_features = LvlFindInChain<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT>(pCreateInfo->pNext);
+            dynamic_rendering_unused_attachments_features) {
+            enabled_features.dynamic_rendering_unused_attachments_features = *dynamic_rendering_unused_attachments_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
