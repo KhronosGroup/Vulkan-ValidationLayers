@@ -8790,7 +8790,8 @@ BatchAccessLog::AccessRecord BatchAccessLog::operator[](ResourceUsageTag tag) co
     if (found_log != log_map_.cend()) {
         return found_log->second[tag];
     }
-    assert("tag not found" == nullptr);
+    // tag not found
+    assert(false);
     return AccessRecord();
 }
 

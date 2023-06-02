@@ -117,7 +117,6 @@ elseif(MSVC)
         /wd4389 # signed/unsigned mismatch
         /wd4754 # conversion rules for arithmetic operations
         /wd4706 # assignment within conditional expression
-        /wd4130 # logical operation on address of string constant
     )
 
     # Enforce stricter ISO C++
