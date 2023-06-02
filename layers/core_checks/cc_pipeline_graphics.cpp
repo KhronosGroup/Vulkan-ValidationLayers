@@ -3026,79 +3026,135 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
         }
 
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-            if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
-                    (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED)) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_undefined_color_formats_07616,
-                                     "%s(): VkRenderingInfo::pColorAttachments[%" PRIu32
-                                     "].imageView is VK_NULL_HANDLE, but corresponding format in "
-                                     "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] is %s.",
-                                     caller, i, i, string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+            if (enabled_features.dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
+                if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
+                        (view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
+                        (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED) &&
+                        (view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i])) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                            cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08911,
+                            "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                            "].imageView format (%s) must match corresponding format in "
+                            "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s) "
+                            "when both are not VK_FORMAT_UNDEFINED",
+                            caller, i, string_VkFormat(view_state->create_info.format), i,
+                            string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+                    }
                 }
             } else {
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
-                    view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_06180,
-                                     "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
-                                     "].imageView format (%s) must match corresponding format in "
-                                     "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                     caller, i, string_VkFormat(view_state->create_info.format), i,
-                                     string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                    if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
+                        (pipeline_rendering_ci.pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_undefined_color_formats_07616,
+                                         "%s(): VkRenderingInfo::pColorAttachments[%" PRIu32
+                                         "].imageView is VK_NULL_HANDLE, but corresponding format in "
+                                         "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] is %s.",
+                                         caller, i, i, string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+                    }
+                } else {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    if ((pipeline_rendering_ci.colorAttachmentCount > i) &&
+                        view_state->create_info.format != pipeline_rendering_ci.pColorAttachmentFormats[i]) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_color_formats_06180,
+                                         "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                                         "].imageView format (%s) must match corresponding format in "
+                                         "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                                         caller, i, string_VkFormat(view_state->create_info.format), i,
+                                         string_VkFormat(pipeline_rendering_ci.pColorAttachmentFormats[i]));
+                    }
                 }
             }
         }
 
         if (rendering_info.pDepthAttachment) {
-            if (rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) {
-                if (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |=
-                        LogError(objlist, vuid.dynamic_rendering_undefined_depth_format_07617,
-                                 "%s(): VkRenderingInfo::pDepthAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
-                                 "VkPipelineRenderingCreateInfo::depthAttachmentFormat is %s.",
-                                 caller, string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+            if (enabled_features.dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
+                if (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                    if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
+                        (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+                        (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                            cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08915,
+                            "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                            "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s) "
+                            "if both are not VK_FORMAT_UNDEFINED",
+                            caller, string_VkFormat(view_state->create_info.format),
+                            string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                    }
                 }
             } else {
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
-                if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_format_06181,
-                                     "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
-                                     "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                if (rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) {
+                    if (pipeline_rendering_ci.depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |=
+                            LogError(objlist, vuid.dynamic_rendering_undefined_depth_format_07617,
+                                     "%s(): VkRenderingInfo::pDepthAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
+                                     "VkPipelineRenderingCreateInfo::depthAttachmentFormat is %s.",
+                                     caller, string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                    }
+                } else {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                    if (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_depth_format_06181,
+                                         "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                                         "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
+                                         caller, string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(pipeline_rendering_ci.depthAttachmentFormat));
+                    }
                 }
             }
         }
 
         if (rendering_info.pStencilAttachment) {
-            if (rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) {
-                if (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(
-                        objlist, vuid.dynamic_rendering_undefined_stencil_format_07618,
-                        "%s(): VkRenderingInfo::pStencilAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
-                        "VkPipelineRenderingCreateInfo::stencilAttachmentFormat is %s.",
-                        caller, string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+            if (enabled_features.dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
+                if (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                    if ((view_state->create_info.format != VK_FORMAT_UNDEFINED) &&
+                        (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+                        (view_state->create_info.format != pipeline_rendering_ci.depthAttachmentFormat)) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                            cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_unused_attachments_08918,
+                            "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                            "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s) "
+                            "if both are not VK_FORMAT_UNDEFINED",
+                            caller, string_VkFormat(view_state->create_info.format),
+                            string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+                    }
                 }
             } else {
-                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
-                if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
-                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
-                                                cb_state.activeRenderPass->renderPass());
-                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_06182,
-                                     "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
-                                     "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
-                                     caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+                if (rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) {
+                    if (pipeline_rendering_ci.stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(
+                            objlist, vuid.dynamic_rendering_undefined_stencil_format_07618,
+                            "%s(): VkRenderingInfo::pStencilAttachment.imageView is VK_NULL_HANDLE, but corresponding format in "
+                            "VkPipelineRenderingCreateInfo::stencilAttachmentFormat is %s.",
+                            caller, string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+                    }
+                } else {
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                    if (view_state->create_info.format != pipeline_rendering_ci.stencilAttachmentFormat) {
+                        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                    cb_state.activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format_06182,
+                                         "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                                         "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
+                                         caller, string_VkFormat(view_state->create_info.format),
+                                         string_VkFormat(pipeline_rendering_ci.stencilAttachmentFormat));
+                    }
                 }
             }
         }
