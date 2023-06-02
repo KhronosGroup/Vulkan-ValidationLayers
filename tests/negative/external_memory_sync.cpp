@@ -780,7 +780,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
 
     // a valid type for the platform which we didn't ask for during create
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, other_export_type_vuid);
-    if (other_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+    if constexpr (other_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // SYNC_FD is a special snowflake
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkFenceGetFdInfoKHR-handleType-01454");
     }
@@ -802,7 +802,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
 
     // If handleType is not VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT, name must be NULL
     // However, it looks like at least some windows drivers don't support exporting KMT handles for fences
-    if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) {
+    if constexpr (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01459");
     }
     // If handle is not NULL, name must be NULL
@@ -1020,7 +1020,7 @@ TEST_F(NegativeExternalMemorySync, Semaphore) {
     m_errorMonitor->VerifyFound();
 
     // not specified during create
-    if (other_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+    if constexpr (other_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // SYNC_FD must have pending signal
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254");
     }

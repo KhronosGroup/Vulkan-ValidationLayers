@@ -113,7 +113,6 @@ elseif(MSVC)
         /wd4457 # hiding function parameter
         /wd4459 # hiding global parameter
         /wd4702 # unreachable code
-        /wd4127 # constant conditional expression
         /wd4389 # signed/unsigned mismatch
         /wd4754 # conversion rules for arithmetic operations
         /wd4706 # assignment within conditional expression
