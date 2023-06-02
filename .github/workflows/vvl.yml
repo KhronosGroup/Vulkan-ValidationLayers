@@ -39,6 +39,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         compiler: [{cc: gcc, cxx: g++}]
+        flags: [{c: "-fsanitize=address", ld: "-fsanitize=address"}, {c: "-fsanitize=thread", ld: "-fsanitize=thread"}]
         config: [debug, release]
         cpp_std: [17]
         include:
@@ -69,21 +70,22 @@ jobs:
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}
+          key: ${{ matrix.os }}-${{ matrix.config }}-${{ matrix.compiler.cc }}-${{ matrix.compiler.cxx }}-${{ matrix.cpp_std }}-${{ matrix.flags.c }}-${{ matrix.flags.ld }}
       - name: Install build dependencies
         run: |
           python3 -m pip install jsonschema pyparsing
           sudo apt-get -qq update
           sudo apt-get install -y libwayland-dev xorg-dev
-      # Turn on ccache this way, which is easier than figuring out how to turn it on for all deps
-      # PATH changes need to be done in an action before any action that needs it
-      - name: Add ccache to PATH
-        run: echo "/usr/lib/ccache" >> $GITHUB_PATH
       - name: Build Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }} -DVVL_ENABLE_ASAN=ON'
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }} --cmake='-DVVL_CPP_STANDARD=${{ matrix.cpp_std }}'
         env:
           CC: ${{ matrix.compiler.cc }}
           CXX: ${{ matrix.compiler.cxx }}
+          CFLAGS: ${{ matrix.flags.c }}
+          CXXFLAGS: ${{ matrix.flags.c }}
+          LDFLAGS: ${{ matrix.flags.ld }}
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
         run: python3 scripts/github_ci_win_linux.py --test
         env:
