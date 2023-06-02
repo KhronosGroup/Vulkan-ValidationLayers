@@ -1148,7 +1148,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
         fbai_info.layerCount = 2;
         fb_info.renderPass = rp2.handle();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUIDUndefined);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-08921");
         vk_testing::Framebuffer fb(*m_device, fb_info);
         m_errorMonitor->VerifyFound();
     }
