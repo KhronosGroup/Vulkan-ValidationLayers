@@ -1744,6 +1744,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);

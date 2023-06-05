@@ -1305,6 +1305,10 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     char const *vsSource = R"glsl(
                 #version 450

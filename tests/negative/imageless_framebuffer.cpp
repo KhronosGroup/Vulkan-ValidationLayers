@@ -1400,6 +1400,11 @@ TEST_F(NegativeImagelessFramebuffer, Image3D) {
         GTEST_SKIP() << "multiview feature not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
 
     VkSubpassDescription subpass = {};
 

@@ -218,6 +218,11 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    }
+    
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -250,6 +255,13 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     dev_info.ppEnabledExtensionNames = nullptr;
     dev_info.pEnabledFeatures = nullptr;
 
+    std::vector<const char *> extNamesDevice;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        extNamesDevice.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+        dev_info.enabledExtensionCount = (int)extNamesDevice.size();
+        dev_info.ppEnabledExtensionNames = extNamesDevice.data();
+        }
+    
     VkDevice device;
     err = vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
     ASSERT_VK_SUCCESS(err);
@@ -519,6 +531,10 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
         GTEST_SKIP() << "Test does not run on AMD proprietary driver";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     const auto queue_family = DeviceObj()->GetDefaultQueue()->get_family_index();
     constexpr uint32_t queue_index = 0;
@@ -736,14 +752,18 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    // This test won't work on macOS, can't even get past portability extension enumeration
+    GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+#endif
     auto ici = GetInstanceCreateInfo();
-
+    
     VkInstance test_instance = VK_NULL_HANDLE;
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &test_instance));
     for (const char *instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
-
+    
     ErrorMonitor monitor;
     monitor.CreateCallback(test_instance);
 

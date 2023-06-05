@@ -639,6 +639,10 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     TEST_DESCRIPTION("Suspend in primary and resume in secondary");
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragColorOutputText, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -714,6 +718,10 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     TEST_DESCRIPTION("Suspend in secondary and resume in primary");
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     char const* fsSource = R"glsl(
         #version 450

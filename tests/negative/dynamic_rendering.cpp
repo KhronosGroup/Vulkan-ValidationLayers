@@ -5736,6 +5736,11 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Test drawing in secondary command buffers with dynamic rendering");
     InitBasicDynamicRendering();
     if (::testing::Test::IsSkipped()) return;
+    
+    // Fundamental incompatibility with Metal
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
 

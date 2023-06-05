@@ -495,6 +495,15 @@ TEST_F(VkLayerTest, LayerInfoMessages) {
     TEST_DESCRIPTION("Ensure layer prints startup status messages.");
 
     auto ici = GetInstanceCreateInfo();
+    
+    std::vector<const char *> extNames;
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        ici.enabledExtensionCount = (int)extNames.size();
+        ici.ppEnabledExtensionNames = extNames.data();
+        ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        }
+    
     LayerStatusCheckData callback_data;
     auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *data) {
         std::string message(pCallbackData->pMessage);
@@ -2839,24 +2848,29 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
     TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
 
     auto ici = GetInstanceCreateInfo();
+    ici.enabledExtensionCount = 0;      // Must whip out to get the error
+    ici.ppEnabledExtensionNames = nullptr;
     ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-
-    VkInstance local_instance;
+    
+    VkInstance local_instance = VK_NULL_HANDLE;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
     vk::CreateInstance(&ici, nullptr, &local_instance);
     m_errorMonitor->VerifyFound();
 
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-        std::vector<const char *> enabled_extensions;
-        for (uint32_t i = 0; i < ici.enabledExtensionCount; ++i) {
-            enabled_extensions.push_back(ici.ppEnabledExtensionNames[i]);
-        }
-        enabled_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-
-        ici.enabledExtensionCount++;
+//        std::vector<const char *> enabled_extensions;
+//        for (uint32_t i = 0; i < ici.enabledExtensionCount; ++i) {
+//            enabled_extensions.push_back(ici.ppEnabledExtensionNames[i]);
+//        }
+//        enabled_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+//
+//        ici.enabledExtensionCount++;
+        //ici.ppEnabledExtensionNames = enabled_extensions.data();
+        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
+        ici.enabledExtensionCount = 1;
         ici.ppEnabledExtensionNames = enabled_extensions.data();
-
+        
         ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
         vk::DestroyInstance(local_instance, nullptr);
     }

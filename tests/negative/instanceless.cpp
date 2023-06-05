@@ -218,10 +218,19 @@ void VKAPI_PTR DummyInfoFree(void*, size_t, VkInternalAllocationType, VkSystemAl
 TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
     TEST_DESCRIPTION("Test vkDestroyInstance with incompatible allocation callbacks.");
 
-    const auto ici = GetInstanceCreateInfo();
+    auto ici = GetInstanceCreateInfo();
     const VkAllocationCallbacks alloc_callbacks = {nullptr,    &DummyAlloc,     &DummyRealloc,
                                                    &DummyFree, &DummyInfoAlloc, &DummyInfoFree};
 
+    std::vector<const char *> extNames;
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        ici.enabledExtensionCount = (int)extNames.size();
+        ici.ppEnabledExtensionNames = extNames.data();
+        ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        }
+
+    
     {
         VkInstance instance;
         ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));

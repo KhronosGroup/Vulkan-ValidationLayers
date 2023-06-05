@@ -445,6 +445,14 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
     device_create_info.pEnabledFeatures = nullptr;
     device_create_info.enabledLayerCount = 0;
     device_create_info.enabledExtensionCount = 0;
+    
+    std::vector<const char *> device_extensions;
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
+        device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+            
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
+
 
     // Protect feature not set
     m_errorMonitor->SetUnexpectedError("VUID-VkDeviceQueueCreateInfo-flags-06449");

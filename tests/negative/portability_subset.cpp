@@ -510,8 +510,9 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
     vk_testing::Sampler sampler(*m_device, sampler_info);
 
+    constexpr VkFormat img_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image.Init(32, 32, 1, img_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     image.Layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -519,7 +520,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
                                        });
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     vk_testing::ImageView view;
-    auto image_view_create_info = SafeSaneImageViewCreateInfo(image, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto image_view_create_info = SafeSaneImageViewCreateInfo(image, img_format, VK_IMAGE_ASPECT_COLOR_BIT);
     view.init(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};

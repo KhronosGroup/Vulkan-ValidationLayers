@@ -1970,6 +1970,11 @@ TEST_F(VkPositiveLayerTest, PushConstantsCompatibilityGraphicsOnly) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
 
     char const *const vsSource = R"glsl(
         #version 450
@@ -3885,6 +3890,14 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     ici.enabledLayerCount = instance_layers_.size();
     ici.ppEnabledLayerNames = instance_layers_.data();
 
+    std::vector<const char *> extNames;
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        extNames.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        ici.enabledExtensionCount = (int)extNames.size();
+        ici.ppEnabledExtensionNames = extNames.data();
+        ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        }
+    
     auto dbgUtils0 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     auto dbgUtils1 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>(&dbgUtils0);
     ici.pNext = &dbgUtils1;
@@ -4520,6 +4533,10 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
     }
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     char const *tcsSource = R"glsl(
         #version 450
@@ -4599,6 +4616,10 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
         LvlInitStruct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_TRUE;
@@ -5012,6 +5033,10 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     const char vsSource[] = R"glsl(#version 450
 

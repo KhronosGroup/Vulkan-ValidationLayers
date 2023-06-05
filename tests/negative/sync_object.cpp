@@ -2252,6 +2252,10 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     GetPhysicalDeviceFeatures2(timeline_semaphore_features);
     if (!timeline_semaphore_features.timelineSemaphore) {

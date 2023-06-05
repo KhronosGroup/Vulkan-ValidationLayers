@@ -354,6 +354,10 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     TEST_DESCRIPTION("Test descriptors that need to have identity swizzle set");
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
@@ -2456,6 +2460,11 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -3349,6 +3358,10 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";

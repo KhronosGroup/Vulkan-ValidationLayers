@@ -310,6 +310,10 @@ TEST_F(NegativeCommand, PushConstants) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     VkPipelineLayout pipeline_layout;
     VkPushConstantRange pc_range = {};
@@ -532,6 +536,10 @@ TEST_F(NegativeCommand, SecondaryCommandBufferRerecordedNoReset) {
 TEST_F(NegativeCommand, CascadedInvalidation) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
     eci.flags = 0;
     VkEvent event;
@@ -4008,6 +4016,10 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
 TEST_F(NegativeCommand, ResolveImageImageType) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
@@ -5499,6 +5511,10 @@ TEST_F(NegativeCommand, DrawWithoutUpdatePushConstants) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     // push constant range: 0-99
     char const *const vsSource = R"glsl(
@@ -6606,6 +6622,10 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     TEST_DESCRIPTION("invalid depth stencil state for subpass that uses read only image layout.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 

@@ -191,6 +191,10 @@ TEST_F(PositiveAtomic, Float) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
     }
 
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     // clang-format off
     std::string cs_32_base = R"glsl(
         #version 450
