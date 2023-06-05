@@ -4313,6 +4313,16 @@ void ValidationStateTracker::PostCallRecordCreateXlibSurfaceKHR(VkInstance insta
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+void ValidationStateTracker::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance,
+                                                                   const VkScreenSurfaceCreateInfoQNX *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                   VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordVulkanSurface(pSurface);
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
 void ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance,
                                                                     const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
                                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,

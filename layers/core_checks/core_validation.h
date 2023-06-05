@@ -2315,6 +2315,10 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                     Display* dpy, VisualID visualID) const override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                       struct _screen_window* window) const override;
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) override {
         return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CORE_CMD_BUFFER_STATE>(this, cb, create_info, pool));
