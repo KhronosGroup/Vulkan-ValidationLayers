@@ -1268,6 +1268,11 @@ class ValidationStateTracker : public ValidationObject {
                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                             VkResult result) override;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    void PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                               VkResult result) override;
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
     void PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                 VkResult result) override;

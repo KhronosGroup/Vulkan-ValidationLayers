@@ -1270,6 +1270,17 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t queueFamilyIndex,
+                                                                               struct _screen_window *window) const {
+    auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
+    return ValidateQueueFamilyIndex(pd_state.get(), queueFamilyIndex,
+                                    "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-queueFamilyIndex-04743",
+                                    "vkGetPhysicalDeviceScreenPresentationSupportQNX", "queueFamilyIndex");
+}
+#endif  // VK_USE_PLATFORM_SCREEN_QNX
+
 bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                    VkSurfaceKHR surface, VkBool32 *pSupported) const {
     auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
