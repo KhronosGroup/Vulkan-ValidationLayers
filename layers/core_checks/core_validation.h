@@ -939,9 +939,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state) const;
 
     template <typename RegionType>
-    bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* src_img,
-                                                          const IMAGE_STATE* dst_img, const RegionType* region, const uint32_t i,
-                                                          const char* function, CMD_TYPE cmd_type) const;
+    bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& src_image_state,
+                                                          const IMAGE_STATE& dst_image_state, const RegionType* region,
+                                                          const uint32_t i, const char* function, CMD_TYPE cmd_type) const;
     bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const LogObjectList& objlist,
                             const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
                             char const* usage_str) const;
@@ -963,7 +963,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                      uint32_t attachment_index, const char* variable_name) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
-                                     const IMAGE_STATE* image_state, const char* function, CMD_TYPE cmd_type,
+                                     const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type,
                                      bool image_to_buffer) const;
     bool ValidateBufferViewRange(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
@@ -989,7 +989,7 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RegionType>
     bool ValidateImageCopyData(VkCommandBuffer cb, const uint32_t regionCount, const RegionType* pRegions,
-                               const IMAGE_STATE* src_state, const IMAGE_STATE* dst_state, CMD_TYPE cmd_type) const;
+                               const IMAGE_STATE& src_image_state, const IMAGE_STATE& dst_image_state, CMD_TYPE cmd_type) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
@@ -1030,7 +1030,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool CheckItgOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity, const uint32_t i,
                         const char* function, const char* member, const char* vuid) const;
-    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img) const;
+    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state) const;
 
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
@@ -1219,7 +1219,7 @@ class CoreChecks : public ValidationStateTracker {
                               uint32_t regionCount, const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
-    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img,
+    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
                                                                 const RegionType* region, const uint32_t i, const char* function,
                                                                 const char* vuid) const;
 
