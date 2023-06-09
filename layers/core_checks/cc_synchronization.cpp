@@ -2389,8 +2389,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateImageAspectMask(image_data->image(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
                                         image_data->disjoint, loc.StringFunc().c_str());
 
-        skip |=
-            ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), image_data.get(), mem_barrier.subresourceRange);
+        skip |= ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), *image_data, mem_barrier.subresourceRange);
     }
     return skip;
 }
