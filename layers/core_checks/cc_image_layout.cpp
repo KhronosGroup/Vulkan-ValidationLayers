@@ -951,13 +951,13 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
     TransitionSubpassLayouts(cb_state, render_pass_state, 0, framebuffer_state);
 }
 
-bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE *image_state,
+bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
                                         const VkImageSubresourceRange &range, VkImageLayout dest_image_layout,
                                         const char *func_name) const {
     bool skip = false;
     if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
         if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-            LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+            LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
             skip |= LogError(objlist, "VUID-vkCmdClearDepthStencilImage-imageLayout-00012",
                              "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
                              string_VkImageLayout(dest_image_layout));
@@ -967,7 +967,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
         assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
         if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
             if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-                LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+                LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
                 skip |= LogError(objlist, "VUID-vkCmdClearColorImage-imageLayout-00005",
                                  "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
                                  string_VkImageLayout(dest_image_layout));
@@ -975,7 +975,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
         } else {
             if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
                 (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
-                LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
+                LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
                 skip |= LogError(
                     objlist, "VUID-vkCmdClearColorImage-imageLayout-01394",
                     "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
@@ -985,10 +985,10 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(*image_state);
+    const auto *subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state);
     if (subresource_map) {
         LayoutUseCheckAndMessage layout_check(dest_image_layout);
-        auto normalized_isr = image_state->NormalizeSubresourceRange(range);
+        auto normalized_isr = image_state.NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
         skip |= subresource_map->AnyInRange(
@@ -1093,14 +1093,14 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
 }
 
 template <typename ImgBarrier>
-void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
+void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state,
                                              const ImgBarrier &mem_barrier, bool is_release_op) {
     if (enabled_features.core13.synchronization2) {
         if (mem_barrier.oldLayout == mem_barrier.newLayout) {
             return;
         }
     }
-    auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    auto normalized_isr = image_state.NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
     VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
@@ -1111,9 +1111,9 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     }
 
     if (is_release_op) {
-        cb_state->SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
+        cb_state->SetImageInitialLayout(image_state, normalized_isr, initial_layout);
     } else {
-        cb_state->SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
+        cb_state->SetImageLayout(image_state, normalized_isr, new_layout, initial_layout);
     }
 }
 
@@ -1133,7 +1133,7 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t bar
         const bool is_release_op = cb_state->IsReleaseOp(mem_barrier);
         auto image_state = Get<IMAGE_STATE>(mem_barrier.image);
         if (image_state) {
-            RecordTransitionImageLayout(cb_state, image_state.get(), mem_barrier, is_release_op);
+            RecordTransitionImageLayout(cb_state, *image_state, mem_barrier, is_release_op);
         }
     }
 }
