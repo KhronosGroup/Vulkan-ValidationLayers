@@ -217,24 +217,6 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t--print-vu\n"
                 "\t\tPrints all VUs - help see what new VU will look like.\n");
             printf(
-                "\t--show-images\n"
-                "\t\tDisplay test images in viewer after tests complete.\n");
-            printf(
-                "\t--save-images\n"
-                "\t\tSave tests images as ppm files in current working directory.\n"
-                "\t\tUsed to generate golden images for compare-images.\n");
-            printf(
-                "\t--compare-images\n"
-                "\t\tCompare test images to 'golden' image in golden folder.\n"
-                "\t\tAlso saves the generated test image in current working\n"
-                "\t\t\tdirectory but only if the image is different from the golden\n"
-                "\t\tSetting RENDERTEST_GOLDEN_DIR environment variable can specify\n"
-                "\t\t\tdifferent directory for golden images\n"
-                "\t\tSignal test failure if different.\n");
-            printf(
-                "\t--no-SPV\n"
-                "\t\tUse built-in GLSL compiler rather than SPV code path.\n");
-            printf(
                 "\t--strip-SPV\n"
                 "\t\tStrip SPIR-V debug information (line numbers, names, etc).\n");
             printf(
