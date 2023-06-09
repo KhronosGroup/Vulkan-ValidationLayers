@@ -115,7 +115,6 @@ elseif(MSVC)
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
         /wd4754 # conversion rules for arithmetic operations
-        /wd4706 # assignment within conditional expression
     )
 
     # Enforce stricter ISO C++
