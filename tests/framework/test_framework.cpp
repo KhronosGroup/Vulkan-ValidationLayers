@@ -676,30 +676,30 @@ char **VkTestFramework::ReadFileData(const char *fileName) {
     int errorCode = fopen_s(&in, fileName, "r");
 #endif
 
-    char *fdata;
     size_t count = 0;
     const int maxSourceStrings = 5;
     char **return_data = (char **)malloc(sizeof(char *) * (maxSourceStrings + 1));
 
     if (errorCode) {
         printf("Error: unable to open input file: %s\n", fileName);
-        return 0;
+        return nullptr;
     }
 
     while (fgetc(in) != EOF) count++;
 
     if (fseek(in, 0, SEEK_SET) != 0) {
         printf("Error fseek to start of file\n");
-        return 0;
+        return nullptr;
     }
 
-    if (!(fdata = (char *)malloc(count + 2))) {
+    char *fdata = (char *)malloc(count + 2);
+    if (fdata == nullptr) {
         printf("Error allocating memory\n");
-        return 0;
+        return nullptr;
     }
     if (fread(fdata, 1, count, in) != count) {
         printf("Error reading input file: %s\n", fileName);
-        return 0;
+        return nullptr;
     }
     fdata[count] = '\0';
     fclose(in);

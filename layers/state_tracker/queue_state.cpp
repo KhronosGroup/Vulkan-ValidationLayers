@@ -196,7 +196,12 @@ void QUEUE_STATE::ThreadFunc() {
     };
 
     // Roll this queue forward, one submission at a time.
-    while ((submission = NextSubmission())) {
+    while (true) {
+        submission = NextSubmission();
+        if (submission == nullptr) {
+            break;
+        }
+
         submission->EndUse();
         for (auto &wait : submission->wait_semaphores) {
             wait.semaphore->Retire(this, wait.payload);
