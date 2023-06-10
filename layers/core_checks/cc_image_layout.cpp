@@ -242,24 +242,24 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
                                   layout_mismatch_msg_code, error);
 }
 
-void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                               FRAMEBUFFER_STATE *framebuffer_state) {
-    auto render_pass = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
-    if (!render_pass) return;
+void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state) {
+    auto render_pass_state = cb_state->activeRenderPass.get();
+    auto framebuffer_state = cb_state->activeFramebuffer.get();
+    if (!render_pass_state || !framebuffer_state) {
+        return;
+    }
 
-    const VkRenderPassCreateInfo2 *render_pass_info = render_pass->createInfo.ptr();
-    if (framebuffer_state) {
-        for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-            auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
-            if (view_state) {
-                VkImageLayout stencil_layout = kInvalidLayout;
-                const auto *attachment_description_stencil_layout =
-                    LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-                if (attachment_description_stencil_layout) {
-                    stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
-                }
-                cb_state->SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+    const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->createInfo.ptr();
+    for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
+        auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
+        if (view_state) {
+            VkImageLayout stencil_layout = kInvalidLayout;
+            const auto *attachment_description_stencil_layout =
+                LvlFindInChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+            if (attachment_description_stencil_layout) {
+                stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
             }
+            cb_state->SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
         }
     }
 }
@@ -371,8 +371,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
     return skip;
 }
 
-void CoreChecks::UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE *cb_state) {
-    for (const auto &layout_map_entry : cb_state->image_layout_map) {
+void CoreChecks::UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE &cb_state) {
+    for (const auto &layout_map_entry : cb_state.image_layout_map) {
         const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
         auto guard = image_state->layout_range_map->WriteLock();
@@ -680,15 +680,15 @@ bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
 
 bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, const CMD_BUFFER_STATE &cb_state,
                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                       const FRAMEBUFFER_STATE *framebuffer_state) const {
+                                                       const FRAMEBUFFER_STATE &framebuffer_state) const {
     bool skip = false;
     auto render_pass_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     const auto *render_pass_info = render_pass_state->createInfo.ptr();
     auto render_pass = render_pass_state->renderPass();
-    auto const &framebuffer_info = framebuffer_state->createInfo;
+    auto const &framebuffer_info = framebuffer_state.createInfo;
     const VkImageView *attachments = framebuffer_info.pAttachments;
 
-    auto framebuffer = framebuffer_state->framebuffer();
+    auto framebuffer = framebuffer_state.framebuffer();
 
     if (render_pass_info->attachmentCount != framebuffer_info.attachmentCount) {
         skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidRenderpass,
@@ -708,10 +708,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
         if (!view_state) {
-            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state->framebuffer(), image_view);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                              "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle.",
-                             report_data->FormatHandle(framebuffer_state->framebuffer()).c_str(), i,
+                             report_data->FormatHandle(framebuffer_state.framebuffer()).c_str(), i,
                              report_data->FormatHandle(image_view).c_str());
             continue;
         }
@@ -720,10 +720,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         const auto *image_state = view_state->image_state.get();
 
         if (!image_state) {
-            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state->framebuffer(), image_view, image);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state.framebuffer(), image_view, image);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                              "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
-                             report_data->FormatHandle(framebuffer_state->framebuffer()).c_str(), i,
+                             report_data->FormatHandle(framebuffer_state.framebuffer()).c_str(), i,
                              report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
             continue;
         }
@@ -887,8 +887,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
     return skip;
 }
 
-void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *pFramebuffer,
-                                               const safe_VkAttachmentReference2 &ref) {
+void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         IMAGE_VIEW_STATE *image_view = cb_state->GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
@@ -903,31 +902,26 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *cb_state, FRAME
     }
 }
 
-void CoreChecks::TransitionSubpassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE *render_pass_state,
-                                          const int subpass_index, FRAMEBUFFER_STATE *framebuffer_state) {
-    assert(render_pass_state);
-
-    if (framebuffer_state) {
-        auto const &subpass = render_pass_state->createInfo.pSubpasses[subpass_index];
-        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            TransitionAttachmentRefLayout(cb_state, framebuffer_state, subpass.pInputAttachments[j]);
-        }
-        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            TransitionAttachmentRefLayout(cb_state, framebuffer_state, subpass.pColorAttachments[j]);
-        }
-        if (subpass.pDepthStencilAttachment) {
-            TransitionAttachmentRefLayout(cb_state, framebuffer_state, *subpass.pDepthStencilAttachment);
-        }
+void CoreChecks::TransitionSubpassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE &render_pass_state,
+                                          const int subpass_index) {
+    auto const &subpass = render_pass_state.createInfo.pSubpasses[subpass_index];
+    for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+        TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
+    }
+    for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+        TransitionAttachmentRefLayout(cb_state, subpass.pColorAttachments[j]);
+    }
+    if (subpass.pDepthStencilAttachment) {
+        TransitionAttachmentRefLayout(cb_state, *subpass.pDepthStencilAttachment);
     }
 }
 
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE *render_pass_state,
-                                                  FRAMEBUFFER_STATE *framebuffer_state) {
+void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
-    auto const rpci = render_pass_state->createInfo.ptr();
+    auto const rpci = render_pass_state.createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = cb_state->GetActiveAttachmentImageViewState(i);
         if (view_state) {
@@ -948,7 +942,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
         }
     }
     // Now transition for first subpass (index 0)
-    TransitionSubpassLayouts(cb_state, render_pass_state, 0, framebuffer_state);
+    TransitionSubpassLayouts(cb_state, render_pass_state, 0);
 }
 
 bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,

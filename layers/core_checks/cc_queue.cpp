@@ -357,10 +357,10 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
             if (cb_state) {
                 for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
-                    UpdateCmdBufImageLayouts(secondary_cmd_buffer);
+                    UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
                     RecordQueuedQFOTransfers(secondary_cmd_buffer);
                 }
-                UpdateCmdBufImageLayouts(cb_state.get());
+                UpdateCmdBufImageLayouts(*cb_state);
                 RecordQueuedQFOTransfers(cb_state.get());
             }
         }
@@ -377,10 +377,10 @@ void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const V
             auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
             if (cb_state) {
                 for (auto *secondaryCmdBuffer : cb_state->linkedCommandBuffers) {
-                    UpdateCmdBufImageLayouts(secondaryCmdBuffer);
+                    UpdateCmdBufImageLayouts(*secondaryCmdBuffer);
                     RecordQueuedQFOTransfers(secondaryCmdBuffer);
                 }
-                UpdateCmdBufImageLayouts(cb_state.get());
+                UpdateCmdBufImageLayouts(*cb_state);
                 RecordQueuedQFOTransfers(cb_state.get());
             }
         }
