@@ -462,13 +462,17 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             }
             skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin, function_name);
             skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
-            skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, *cb_state, pRenderPassBegin, fb_state.get());
-            if (fb_state->rp_state->renderPass() != rp_state->renderPass()) {
-                skip |= ValidateRenderPassCompatibility("render pass", *rp_state.get(), "framebuffer", *fb_state->rp_state.get(),
-                                                        function_name, "VUID-VkRenderPassBeginInfo-renderPass-00904");
-            }
 
-            skip |= ValidateDependencies(fb_state.get(), rp_state.get());
+            if (fb_state) {
+                skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, *cb_state, pRenderPassBegin, *fb_state);
+                if (fb_state->rp_state->renderPass() != rp_state->renderPass()) {
+                    skip |=
+                        ValidateRenderPassCompatibility("render pass", *rp_state.get(), "framebuffer", *fb_state->rp_state.get(),
+                                                        function_name, "VUID-VkRenderPassBeginInfo-renderPass-00904");
+                }
+
+                skip |= ValidateDependencies(*fb_state, *rp_state);
+            }
 
             skip |= ValidateCmd(*cb_state, cmd_type);
         }
@@ -519,10 +523,9 @@ void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, 
     }
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto render_pass_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
-    auto framebuffer = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
-    if (render_pass_state) {
+    if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(cb_state.get(), render_pass_state.get(), framebuffer.get());
+        TransitionBeginRenderPassLayouts(cb_state.get(), *render_pass_state);
     }
 }
 
@@ -769,7 +772,9 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer,
 
 void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    TransitionFinalSubpassLayouts(cb_state.get(), cb_state->activeRenderPassBeginInfo.ptr(), cb_state->activeFramebuffer.get());
+    if (cb_state) {
+        TransitionFinalSubpassLayouts(cb_state.get());
+    }
 }
 
 void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
@@ -2052,11 +2057,12 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
     return skip;
 }
 
-bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, RENDER_PASS_STATE const *renderPass) const {
+bool CoreChecks::ValidateDependencies(const FRAMEBUFFER_STATE &framebuffer_state,
+                                      const RENDER_PASS_STATE &render_pass_state) const {
     bool skip = false;
-    auto const framebuffer_info = framebuffer->createInfo.ptr();
-    auto const create_info = renderPass->createInfo.ptr();
-    auto const &subpass_to_node = renderPass->subpass_to_node;
+    auto const framebuffer_info = framebuffer_state.createInfo.ptr();
+    auto const create_info = render_pass_state.createInfo.ptr();
+    auto const &subpass_to_node = render_pass_state.subpass_to_node;
 
     struct Attachment {
         std::vector<SubpassLayout> outputs;
@@ -2077,11 +2083,11 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                     attachments[j].overlapping.emplace_back(i);
                     continue;
                 }
-                if (i >= framebuffer->attachments_view_state.size() || j >= framebuffer->attachments_view_state.size()) {
+                if (i >= framebuffer_state.attachments_view_state.size() || j >= framebuffer_state.attachments_view_state.size()) {
                     continue;
                 }
-                auto *view_state_i = framebuffer->attachments_view_state[i].get();
-                auto *view_state_j = framebuffer->attachments_view_state[j].get();
+                auto *view_state_i = framebuffer_state.attachments_view_state[i].get();
+                auto *view_state_j = framebuffer_state.attachments_view_state[j].get();
                 if (!view_state_i || !view_state_j) {
                     continue;
                 }
@@ -2157,7 +2163,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
 
             if (attachment_indices.count(attachment)) {
                 skip |=
-                    LogError(renderPass->renderPass(), kVUID_Core_DrawState_InvalidRenderpass,
+                    LogError(render_pass_state.renderPass(), kVUID_Core_DrawState_InvalidRenderpass,
                              "Cannot use same attachment (%u) as both color and depth output in same subpass (%u).", attachment, i);
             }
         }
@@ -2169,23 +2175,23 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
-            CheckDependencyExists(renderPass->renderPass(), i, subpass.pInputAttachments[j].layout, attachments[attachment].outputs,
-                                  subpass_to_node, skip);
+            CheckDependencyExists(render_pass_state.renderPass(), i, subpass.pInputAttachments[j].layout,
+                                  attachments[attachment].outputs, subpass_to_node, skip);
         }
         // If the attachment is an output then all subpasses that use the attachment must have a dependency relationship
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             uint32_t attachment = subpass.pColorAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
-            CheckDependencyExists(renderPass->renderPass(), i, subpass.pColorAttachments[j].layout, attachments[attachment].outputs,
-                                  subpass_to_node, skip);
-            CheckDependencyExists(renderPass->renderPass(), i, subpass.pColorAttachments[j].layout, attachments[attachment].inputs,
-                                  subpass_to_node, skip);
+            CheckDependencyExists(render_pass_state.renderPass(), i, subpass.pColorAttachments[j].layout,
+                                  attachments[attachment].outputs, subpass_to_node, skip);
+            CheckDependencyExists(render_pass_state.renderPass(), i, subpass.pColorAttachments[j].layout,
+                                  attachments[attachment].inputs, subpass_to_node, skip);
         }
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             const uint32_t &attachment = subpass.pDepthStencilAttachment->attachment;
-            CheckDependencyExists(renderPass->renderPass(), i, subpass.pDepthStencilAttachment->layout,
+            CheckDependencyExists(render_pass_state.renderPass(), i, subpass.pDepthStencilAttachment->layout,
                                   attachments[attachment].outputs, subpass_to_node, skip);
-            CheckDependencyExists(renderPass->renderPass(), i, subpass.pDepthStencilAttachment->layout,
+            CheckDependencyExists(render_pass_state.renderPass(), i, subpass.pDepthStencilAttachment->layout,
                                   attachments[attachment].inputs, subpass_to_node, skip);
         }
     }
@@ -2194,8 +2200,8 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            CheckPreserved(renderPass->renderPass(), create_info, i, subpass.pInputAttachments[j].attachment, subpass_to_node, 0,
-                           skip);
+            CheckPreserved(render_pass_state.renderPass(), create_info, i, subpass.pInputAttachments[j].attachment, subpass_to_node,
+                           0, skip);
         }
     }
     return skip;
@@ -3934,8 +3940,9 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, c
 
 void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto framebuffer = Get<FRAMEBUFFER_STATE>(cb_state->activeRenderPassBeginInfo.framebuffer);
-    TransitionSubpassLayouts(cb_state.get(), cb_state->activeRenderPass.get(), cb_state->GetActiveSubpass(), framebuffer.get());
+    if (cb_state && cb_state->activeRenderPass) {
+        TransitionSubpassLayouts(cb_state.get(), *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
+    }
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
