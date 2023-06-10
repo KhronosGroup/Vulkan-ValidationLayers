@@ -20,30 +20,34 @@
 import sys,os
 from generator import *
 from common_codegen import *
+from generators.base_generator import BaseGenerator
+
 
 # DispatchTableHelperOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
-class DispatchTableHelperOutputGenerator(OutputGenerator):
+class DispatchTableHelperOutputGenerator(BaseGenerator):
     """Generate dispatch table helper header based on XML element attributes"""
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
         self.instance_dispatch_list = []      # List of entries for instance dispatch list
         self.device_dispatch_list = []        # List of entries for device dispatch list
         self.dev_ext_stub_list = []           # List of stub functions for device extension functions
         self.stub_list = []                   # List of functions with stubs (promoted or extensions)
-        self.extension_type = ''
 
     #
-    # Called once at the beginning of each run
-    def beginFile(self, genOpts):
-        OutputGenerator.beginFile(self, genOpts)
-
-        # Initialize members that require the tree
-        self.handle_types = GetHandleTypes(self.registry.tree)
+    # Write generate and write dispatch tables to output file
+    def endFile(self):
+        self.BuildDispatchCommands()
+        ext_enabled_fcn = ''
+        device_table = ''
+        instance_table = ''
+        ext_enabled_fcn += self.OutputExtEnabledFunction()
+        device_table += self.OutputDispatchTableHelper('device')
+        instance_table += self.OutputDispatchTableHelper('instance')
 
         write("#pragma once", file=self.outFile)
         # File Comment
@@ -79,15 +83,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
-    #
-    # Write generate and write dispatch tables to output file
-    def endFile(self):
-        ext_enabled_fcn = ''
-        device_table = ''
-        instance_table = ''
-        ext_enabled_fcn += self.OutputExtEnabledFunction()
-        device_table += self.OutputDispatchTableHelper('device')
-        instance_table += self.OutputDispatchTableHelper('instance')
 
         for stub in self.dev_ext_stub_list:
             write(stub, file=self.outFile)
@@ -100,80 +95,51 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         write(instance_table, file=self.outFile);
 
         # Finish processing in superclass
-        OutputGenerator.endFile(self)
-    #
-    # Processing at beginning of each feature or extension
-    def beginFeature(self, interface, emit):
-        OutputGenerator.beginFeature(self, interface, emit)
-        self.featureExtraProtect = GetFeatureProtect(interface)
-        self.extension_type = interface.get('type')
-    #
-    # Process commands, adding to appropriate dispatch tables
-    def genCmd(self, cmdinfo, name, alias):
-        OutputGenerator.genCmd(self, cmdinfo, name, alias)
+        BaseGenerator.endFile(self)
 
-        avoid_entries = ['vkCreateInstance',
-                         'vkCreateDevice']
-        # Get first param type
-        params = cmdinfo.elem.findall('param')
-        info = self.getTypeNameTuple(params[0])
+    def BuildDispatchCommands(self):
+        avoid_entries = ['vkCreateInstance', 'vkCreateDevice']
+        for name, command in self.vk.commands.items():
+            handle_type = command.params[0].type
+            if name in avoid_entries:
+                continue
+            if handle_type not in self.handle_types:
+                continue
+            if command.feature.extension or command.feature.IsPromotedCore():
+                # We want feature written for all promoted entrypoints in addition to extensions
+                self.stub_list.append([name, command.feature.name])
+                # Build up stub function
+                return_type = ''
+                decl = command.cFunctionPointer
+                if decl.startswith('typedef VkResult'):
+                    return_type = 'return VK_SUCCESS;'
+                elif decl.startswith('typedef VkDeviceAddress'):
+                    return_type = 'return 0;'
+                elif decl.startswith('typedef VkDeviceSize'):
+                    return_type = 'return 0;'
+                elif decl.startswith('typedef uint32_t'):
+                    return_type = 'return 0;'
+                elif decl.startswith('typedef uint64_t'):
+                    return_type = 'return 0;'
+                elif decl.startswith('typedef VkBool32'):
+                    return_type = 'return VK_FALSE;'
+                pre_decl, decl = decl.split('*PFN_vk')
+                pre_decl = pre_decl.replace('typedef ', '')
+                pre_decl = pre_decl.split(' (')[0]
+                decl = decl.replace(')(', '(')
+                decl = 'static VKAPI_ATTR ' + pre_decl + ' VKAPI_CALL Stub' + decl
+                func_body = ' { ' + return_type + ' };'
+                decl = decl.replace (';', func_body)
+                if command.feature.protect is not None:
+                    self.dev_ext_stub_list.append('#ifdef %s' % command.feature.protect)
+                self.dev_ext_stub_list.append(decl)
+                if command.feature.protect is not None:
+                    self.dev_ext_stub_list.append('#endif // %s' % command.feature.protect)
+            if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
+                self.device_dispatch_list.append((name, command.feature.protect))
+            else:
+                self.instance_dispatch_list.append((name, command.feature.protect))
 
-        if name not in avoid_entries:
-            self.AddCommandToDispatchList(name, info[0], self.featureExtraProtect, cmdinfo)
-
-    #
-    # Determine if this API should be ignored or added to the instance or device dispatch table
-    def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
-        if handle_type not in self.handle_types:
-            return
-        extension = "VK_VERSION" not in self.featureName
-        promoted = not extension and "VK_VERSION_1_0" != self.featureName
-        if promoted or extension:
-            # We want feature written for all promoted entrypoints in addition to extensions
-            self.stub_list.append([name, self.featureName])
-            # Build up stub function
-            return_type = ''
-            decl = self.makeCDecls(cmdinfo.elem)[1]
-            if decl.startswith('typedef VkResult'):
-                return_type = 'return VK_SUCCESS;'
-            elif decl.startswith('typedef VkDeviceAddress'):
-                return_type = 'return 0;'
-            elif decl.startswith('typedef VkDeviceSize'):
-                return_type = 'return 0;'
-            elif decl.startswith('typedef uint32_t'):
-                return_type = 'return 0;'
-            elif decl.startswith('typedef uint64_t'):
-                return_type = 'return 0;'
-            elif decl.startswith('typedef VkBool32'):
-                return_type = 'return VK_FALSE;'
-            pre_decl, decl = decl.split('*PFN_vk')
-            pre_decl = pre_decl.replace('typedef ', '')
-            pre_decl = pre_decl.split(' (')[0]
-            decl = decl.replace(')(', '(')
-            decl = 'static VKAPI_ATTR ' + pre_decl + ' VKAPI_CALL Stub' + decl
-            func_body = ' { ' + return_type + ' };'
-            decl = decl.replace (';', func_body)
-            if self.featureExtraProtect is not None:
-                self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)
-            self.dev_ext_stub_list.append(decl)
-            if self.featureExtraProtect is not None:
-                self.dev_ext_stub_list.append('#endif // %s' % self.featureExtraProtect)
-        if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
-            self.device_dispatch_list.append((name, self.featureExtraProtect))
-        else:
-            self.instance_dispatch_list.append((name, self.featureExtraProtect))
-        return
-    #
-    # Retrieve the type and name for a parameter
-    def getTypeNameTuple(self, param):
-        type = ''
-        name = ''
-        for elem in param:
-            if elem.tag == 'type':
-                type = noneStr(elem.text)
-            elif elem.tag == 'name':
-                name = noneStr(elem.text)
-        return (type, name)
     #
     # Output a function that'll determine if an extension is in the enabled list
     def OutputExtEnabledFunction(self):

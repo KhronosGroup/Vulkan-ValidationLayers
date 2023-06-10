@@ -1,7 +1,6 @@
 # Generated Code
 
-There is a lot of code generated in `layers/vulkan/generated/`. This is done to prevent errors forgetting to add support for new
-values when the Vulkan Headers or SPIR-V Grammer is updated.
+There is a lot of code generated in `layers/vulkan/generated/` (soon to be `layers/vulkan/generated`--or something to that effect). This is done to prevent errors forgetting to add support for new values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 How to generate the code:
 
@@ -21,10 +20,9 @@ cmd /C "python3 scripts/generate_source.py external/Vulkan-Headers/registry/ ext
 ```
 
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
-`scripts/` and `layers/vulkan/generated/` in any PR.
+`scripts/` and `layers/vulkan/generated/` in any PR. i.e., code generation does _not_ happen automatically at build time.
 
 ## CMake helper
-
 A helper CMake target `vvl_codegen` is also provided to simplify the invocation of `scripts/generate_source.py` from the build directory:
 
 ```bash
@@ -36,12 +34,58 @@ NOTE: `VVL_CODEGEN` is `OFF` by default to allow users to build `VVL` via `add_s
 
 ## How it works
 
-`generate_source.py` sets up the environment and then calls into `lvl_genvk.py` where each file is generated at a time. Many of the generation scripts will generate both the `.cpp` source and `.h` header
+`generate_source.py` sets up the environment and then calls into `lvl_genvk.py` where each file is generated at a time. Many of the generation scripts will generate both the `.cpp` source and `.h` header.
 
-The Vulkan code is generated from the [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
+The Vulkan code is generated from [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 
-The SPIR-V code is generated from the [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
+The SPIR-V code is generated from [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json).
 
 ## Tips
 
 If only dealing with a single file, comment out all the other file names in `scripts/generate_source.py` to speed up testing iterations.
+
+## Implementation Details
+
+The `Vulkan-Headers/registry` generation scripts biggest issue is it's designed to generate one file at a time.
+The Validation Layers became very messy as each generated file had to re-parse this and try to create its own containers.
+The new flow was designed to still make use of the `registry` generation file, but allow a more maintainable way to find data when one only wants to add a little extra code to generation.
+
+The `base_generator.py` and `vulkan_object.py` are were added to help reduce the work needed for each script.
+
+Before the workflow was:
+
+1. `SomethingOutputGenerator::beginFile()` (in `./scripts/`)
+2. `OutputGenerator::beginFile()` (in `./external/Vulkan-Headers/registry/`)
+3. `SomethingOutputGenerator::beginFeatures()`
+4. `OutputGenerator::beginFeatures()`
+5. `SomethingOutputGenerator::genCmd()` (or `genGroup`,`genStruc`,`genTyp`,`genEnum`, etc)
+6. `OutputGenerator::genCmd()`
+7. repeat step 3-6
+8. `SomethingOutputGenerator::endFile()`
+9. `OutputGenerator::endFile()`
+
+This is an issue because having to decide to write things out to the file during a `genCmd` or `endFile` call gets messy.
+
+The new flow creates a seperate base class so the workflow now looks like:
+
+1. `BaseGenerator::beginFile()`
+2. `OutputGenerator::beginFile()`
+3. `BaseGenerator::beginFeatures()`
+4. `OutputGenerator::beginFeatures()`
+5. `BaseGenerator::genCmd()`
+6. `OutputGenerator::genCmd()`
+7. repeat step 3-6
+8. `SomethingOutputGenerator::endFile()`
+9. `OutputGenerator::endFile()`
+
+The big difference is `SomethingOutputGenerator` (ex. `CommandValidationOutputGenerator`) only has to be called  **once** at the end.
+This means each generator script doesn't have to worry about understanding how the `registry` file works.
+
+This is possible because of the new `class VulkanObject()`
+
+The `VulkanObject` makes use of the [Python 3.7 Dataclasses](https://docs.python.org/3/library/dataclasses.html) to enforce a schema so developers don't have to go guessing what each random object from the various `registry` is. Most of the schema is derived from the [Spec's registry.rnc](https://github.com/KhronosGroup/Vulkan-Docs/blob/main/xml/registry.rnc) file. This file is used to enforce the `vk.xml` schema and serves as a good understanding of what will be in each element of the XML.
+
+If a developer needs something new, it can be added in the `VulkanObject` class. This provides 2 large advantages
+
+1. Code is properly reused between scripts
+2. Only one file (`base_generator.py`) use to understand the inner working of the `registry`. A developer can just view the `vulkan_object.py` file to see what it can grab in the single pass (`endFile()`)

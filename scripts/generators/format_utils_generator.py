@@ -17,16 +17,17 @@
 import sys,os
 from generator import *
 from common_codegen import *
+from generators.base_generator import BaseGenerator
 
 #
 # FormatUtilsOutputGenerator - Generate SPIR-V validation
 # for SPIR-V extensions and capabilities
-class FormatUtilsOutputGenerator(OutputGenerator):
+class FormatUtilsOutputGenerator(BaseGenerator):
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 
@@ -54,11 +55,10 @@ class FormatUtilsOutputGenerator(OutputGenerator):
 '''
 
     #
-    # Called at beginning of processing as file is opened
-    def beginFile(self, genOpts):
-        OutputGenerator.beginFile(self, genOpts)
-        self.headerFile = (genOpts.filename == 'vk_format_utils.h')
-        self.sourceFile = (genOpts.filename == 'vk_format_utils.cpp')
+    # Write generated file content to output file
+    def endFile(self):
+        self.headerFile = (self.filename == 'vk_format_utils.h')
+        self.sourceFile = (self.filename == 'vk_format_utils.cpp')
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
@@ -99,9 +99,6 @@ extern "C" {
 #endif'''
             write(export, file=self.outFile)
 
-    #
-    # Write generated file content to output file
-    def endFile(self):
         write(self.defines(), file=self.outFile)
         write(self.numericFunctions(), file=self.outFile)
         write(self.compressedFunctions(), file=self.outFile)
@@ -118,104 +115,16 @@ extern "C" {
 #endif'''
             write(export, file=self.outFile)
         # Finish processing in superclass
-        OutputGenerator.endFile(self)
-    #
-    # Capture all Format elements from registry
-    def genFormat(self, format, formatinfo, alias):
-        OutputGenerator.genFormat(self, format, formatinfo, alias)
-        elem = format.elem
-        formatName = elem.get('name')
+        BaseGenerator.endFile(self)
 
-        # Make C++ name friendly class name
-        classBit = elem.get('class')
-        classBit = classBit.replace('-', '')
-        classBit = classBit.replace(' ', '_')
-        classBit = classBit.upper()
-        if classBit[0].isdigit():
-            classBit = '_' + classBit
-        self.classes[elem.get('class')] = classBit
-
-        self.allFormats[formatName] = {
-            'class' : classBit,
-            'blockSize' : int(elem.get('blockSize')),
-            'texelsPerBlock' : int(elem.get('texelsPerBlock')),
-            'blockExtent' : '1,1,1', # default
-            'components' : []
-        }
-
-        if elem.get('blockExtent'):
-            self.allFormats[formatName]['blockExtent'] = elem.get('blockExtent')
-
-        if elem.get('packed'):
-            self.packedFormats.append(formatName)
-
-        if elem.get('chroma'):
-            self.ycbcrFormats[formatName] = elem.get('chroma')
-
-        if elem.get('compressed'):
-            compressed = elem.get('compressed').replace(' ', '_')
-            if compressed not in self.compressedFormats:
-                # create list if first time
-                self.compressedFormats[compressed] = []
-            self.compressedFormats[compressed].append(formatName)
-
-        self.maxComponentCount = max(self.maxComponentCount, sum(1 for _ in elem.iter('component')))
-        # some formats (VK_FORMAT_D16_UNORM_S8_UINT) are not same numeric
-        baseNumeric = elem.find('component').get('numericFormat')
-        sameNumeric = True
-        has64Bit = False
-        for component in elem.iterfind('component'):
-            componentBits = component.get('bits')
-            if componentBits == 'compressed':
-                componentBits = 'COMPRESSED_COMPONENT'
-            elif componentBits == '64':
-                has64Bit = True
-
-            self.allFormats[formatName]['components'].append({
-                'type' : component.get('name'),
-                'bits' : componentBits,
-                'numericFormat' : component.get('numericFormat')
-            })
-
-            if (baseNumeric != component.get('numericFormat')):
-                sameNumeric = False
-
-            # Some duplication with allFormats list,
-            # but much easier then re-loop where the D/S component is later
-            # Note: Make assumption only ever one D or S component in a fomrat
-            if component.get('name') == 'D':
-                self.depthFormats[formatName] = {
-                    'bits' : componentBits,
-                    'numericFormat' : component.get('numericFormat')
-                }
-            elif component.get('name') == 'S':
-                self.stencilFormats[formatName] = {
-                    'bits' : componentBits,
-                    'numericFormat' : component.get('numericFormat')
-                }
-
-        if has64Bit:
-            self.formats64bit.append(formatName)
-
-        for plane in elem.iterfind('plane'):
-            if formatName not in self.planarFormats:
-                # create list if first time
-                self.planarFormats[formatName] = []
-            self.planarFormats[formatName].append({
-                'index' : int(plane.get('index')),
-                'widthDivisor' : int(plane.get('widthDivisor')),
-                'heightDivisor' : int(plane.get('heightDivisor')),
-                'compatible' : plane.get('compatible'),
-            })
-
-            index = int(plane.get('index'))
-            self.maxPlaneCount = max(self.maxPlaneCount, (index + 1))
-
-        if sameNumeric:
-            if baseNumeric not in self.numericFormats:
-                # create list if first time
-                self.numericFormats[baseNumeric] = []
-            self.numericFormats[baseNumeric].append(formatName)
+    def makeClassName(self, className):
+         # Make C++ name friendly class name
+        className = className.replace('-', '')
+        className = className.replace(' ', '_')
+        className = className.upper()
+        if className[0].isdigit():
+            className = '_' + className
+        return className
 
     #
     # Create defines that are used either by other files (headerFile) or just internally (sourceFile)

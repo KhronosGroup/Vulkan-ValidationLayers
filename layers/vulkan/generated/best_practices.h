@@ -2008,8 +2008,6 @@ void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
 
 
 
-
-
 const vvl::unordered_map<std::string, DeprecationData>  deprecated_extensions = {
     {"VK_AMD_draw_indirect_count", {kExtPromoted, "VK_KHR_draw_indirect_count"}},
     {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},

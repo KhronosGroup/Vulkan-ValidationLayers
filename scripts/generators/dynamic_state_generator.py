@@ -17,27 +17,25 @@
 import sys,os
 from generator import *
 from common_codegen import *
+from generators.base_generator import BaseGenerator
 
 #
 # DynamicStateOutputGenerator - Generate SPIR-V validation
 # for SPIR-V extensions and capabilities
-class DynamicStateOutputGenerator(OutputGenerator):
+class DynamicStateOutputGenerator(BaseGenerator):
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 
-        self.dynamic_states = [] # VkDynamicState enum values
-
     #
-    # Called at beginning of processing as file is opened
-    def beginFile(self, genOpts):
-        OutputGenerator.beginFile(self, genOpts)
-        self.headerFile = (genOpts.filename == 'dynamic_state_helper.h')
-        self.sourceFile = (genOpts.filename == 'dynamic_state_helper.cpp')
+    # Write generated file content to output file
+    def endFile(self):
+        self.headerFile = (self.filename == 'dynamic_state_helper.h')
+        self.sourceFile = (self.filename == 'dynamic_state_helper.cpp')
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
@@ -64,29 +62,16 @@ class DynamicStateOutputGenerator(OutputGenerator):
         copyright += ' * limitations under the License.\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
-        if self.sourceFile:
-            write('#include "core_checks/core_validation.h"', file=self.outFile)
-        elif self.headerFile:
+
+        if self.headerFile:
             write('#pragma once', file=self.outFile)
             write('#include <bitset>', file=self.outFile)
-
-    #
-    # Write generated file content to output file
-    def endFile(self):
-        if self.headerFile:
             write(self.dynamicTypeEnum(), file=self.outFile)
         elif self.sourceFile:
+            write('#include "core_checks/core_validation.h"', file=self.outFile)
             write(self.dynamicFunction(), file=self.outFile)
         # Finish processing in superclass
-        OutputGenerator.endFile(self)
-
-    #
-    # List the enum for the commands
-    def genGroup(self, groupinfo, name, alias):
-        if (name == 'VkDynamicState'):
-            for elem in groupinfo.elem.findall('enum'):
-                if elem.get('alias') is None:
-                    self.dynamic_states.append(elem.get('name'))
+        BaseGenerator.endFile(self)
 
     #
     # List the enum for the dynamic command buffer status flags
@@ -95,7 +80,7 @@ class DynamicStateOutputGenerator(OutputGenerator):
 // Reorders VkDynamicState so it can be a bitset
 typedef enum CBDynamicState {\n'''
         counter = 1
-        for name in self.dynamic_states:
+        for name in self.vk.dynamic_states:
             state_name = name[11:] # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
             output += '    CB_DYNAMIC_{} = {},\n'.format(state_name, str(counter))
             counter += 1
@@ -117,7 +102,7 @@ std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
         output = '''
 static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
     switch (dynamic_state) {\n'''
-        for name in self.dynamic_states:
+        for name in self.vk.dynamic_states:
             state_name = name[11:] # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
             output += '        case CB_DYNAMIC_{}:\n'.format(state_name)
             output += '            return {};\n'.format(name)
@@ -129,7 +114,7 @@ static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
         output += '''
 CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state) {
     switch (dynamic_state) {\n'''
-        for name in self.dynamic_states:
+        for name in self.vk.dynamic_states:
             state_name = name[11:] # VK_DYNAMIC_STATE_LINE_WIDTH -> STATE_LINE_WIDTH
             output += '        case {}:\n'.format(name)
             output += '            return CB_DYNAMIC_{};\n'.format(state_name)

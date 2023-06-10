@@ -17,23 +17,22 @@
 import os,sys,json
 from generator import *
 from common_codegen import *
+from generators.base_generator import BaseGenerator
 
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax
 from io import open
 
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
-class CommandValidationOutputGenerator(OutputGenerator):
+class CommandValidationOutputGenerator(BaseGenerator):
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
 
         self.valid_vuids = set()                          # Set of all valid VUIDs
         self.vuid_dict = dict()                           # VUID dictionary (from JSON)
-        self.commands = dict()                            # dictionary of all vkCmd* calls to cmdInfo
-        self.alias_dict = dict()                          # Dict of cmd aliases
         self.header_file = False                          # Header file generation flag
         self.source_file = False                          # Source file generation flag
 
@@ -53,18 +52,12 @@ class CommandValidationOutputGenerator(OutputGenerator):
                             yield s
 
     #
-    # Called at beginning of processing as file is opened
-    def beginFile(self, genOpts):
-        OutputGenerator.beginFile(self, genOpts)
-        self.header_file = (genOpts.filename == 'command_validation.h')
-        self.source_file = (genOpts.filename == 'command_validation.cpp')
-
-        if not self.header_file and not self.source_file:
-            print("Error: Output Filenames have changed, update generator source.\n")
-            sys.exit(1)
+    # Write generated file content to output file
+    def endFile(self):
+        self.header_file = (self.filename == 'command_validation.h')
+        self.source_file = (self.filename == 'command_validation.cpp')
 
         # Build a set of all vuid text strings found in validusage.json
-        self.valid_usage_path = genOpts.valid_usage_path
         vu_json_filename = os.path.join(self.valid_usage_path + os.sep, 'validusage.json')
         if os.path.isfile(vu_json_filename):
             json_file = open(vu_json_filename, 'r', encoding='utf-8')
@@ -101,20 +94,14 @@ class CommandValidationOutputGenerator(OutputGenerator):
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
 
-        if self.source_file:
-            write('#include "error_message/logging.h"', file=self.outFile)
-            write('#include "core_checks/core_validation.h"', file=self.outFile)
-        elif self.header_file:
+        if self.header_file:
             write('#pragma once', file=self.outFile)
             write('#include <array>', file=self.outFile)
-
-    #
-    # Write generated file content to output file
-    def endFile(self):
-        if self.header_file:
             write(self.commandTypeEnum(), file=self.outFile)
             write(self.commandNameList(), file=self.outFile)
         elif self.source_file:
+            write('#include "error_message/logging.h"', file=self.outFile)
+            write('#include "core_checks/core_validation.h"', file=self.outFile)
             write(self.commandRecordingList(), file=self.outFile)
             write(self.commandQueueTypeList(), file=self.outFile)
             write(self.commandRenderPassList(), file=self.outFile)
@@ -122,31 +109,8 @@ class CommandValidationOutputGenerator(OutputGenerator):
             write(self.commandBufferLevelList(), file=self.outFile)
             write(self.validateFunction(), file=self.outFile)
         # Finish processing in superclass
-        OutputGenerator.endFile(self)
+        BaseGenerator.endFile(self)
 
-    #
-    # Retrieve the type and name for a parameter
-    def getTypeNameTuple(self, param):
-        type = ''
-        name = ''
-        for elem in param:
-            if elem.tag == 'type':
-                type = noneStr(elem.text)
-            elif elem.tag == 'name':
-                name = noneStr(elem.text)
-        return (type, name)
-
-    #
-    # Capture command parameter info to be used for param check code generation.
-    def genCmd(self, cmdinfo, name, alias):
-        OutputGenerator.genCmd(self, cmdinfo, name, alias)
-        # Get first param type
-        params = cmdinfo.elem.findall('param')
-        info = self.getTypeNameTuple(params[0])
-        if name.startswith('vkCmd') and info[0] == 'VkCommandBuffer':
-            self.commands[name] = cmdinfo
-            if alias is not None:
-                self.alias_dict[name] = alias
     #
     # List the enum for the commands
     def commandTypeEnum(self):
@@ -157,7 +121,7 @@ typedef enum CMD_TYPE {
     CMD_NONE = 0,\n'''
 
         counter = 1
-        for name, cmdinfo in sorted(self.commands.items()):
+        for name, _ in sorted(self.vk.recording_commands.items()):
             output += '    CMD_' + name[5:].upper() + ' = ' + str(counter) + ',\n'
             counter += 1
 
@@ -172,7 +136,7 @@ typedef enum CMD_TYPE {
         output = '''
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList = {{
     "Command_Undefined",\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
+        for name, _ in sorted(self.vk.recording_commands.items()):
             output += '    \"' + name + '\",\n'
         output += '}};'
         return output
@@ -184,9 +148,9 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList 
         output = '''
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{
     kVUIDUndefined,\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
-            if name in self.alias_dict:
-                name = self.alias_dict[name]
+        for name, command in sorted(self.vk.recording_commands.items()):
+            if command.alias:
+                name = command.alias
             vuid = 'VUID-' + name + '-commandBuffer-recording'
             if vuid not in self.valid_vuids:
                 print("Warning: Could not find {} in validusage.json".format(vuid))
@@ -206,12 +170,11 @@ struct CommandSupportedQueueType {
 };
 static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQueueTypeList = {{
     {VK_QUEUE_FLAG_BITS_MAX_ENUM, kVUIDUndefined},\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
-            if name in self.alias_dict:
-                name = self.alias_dict[name]
+        for name, command in sorted(self.vk.recording_commands.items()):
+            if command.alias:
+                name = command.alias
             flags = []
-            queues = cmdinfo.elem.attrib.get('queues').split(',')
-            for queue in queues:
+            for queue in command.queues:
                 if queue == 'graphics':
                     flags.append("VK_QUEUE_GRAPHICS_BIT")
                 elif queue == 'compute':
@@ -254,11 +217,11 @@ struct CommandSupportedRenderPass {
 };
 static const std::array<CommandSupportedRenderPass, CMD_RANGE_SIZE> kGeneratedRenderPassList = {{
     {CMD_RENDER_PASS_BOTH, kVUIDUndefined}, // CMD_NONE\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
-            if name in self.alias_dict:
-                name = self.alias_dict[name]
+        for name, command in sorted(self.vk.recording_commands.items()):
+            if command.alias:
+                name = command.alias
             render_pass_type = ''
-            render_pass = cmdinfo.elem.attrib.get('renderpass')
+            render_pass = command.renderpass
             if render_pass == 'inside':
                 render_pass_type = 'CMD_RENDER_PASS_INSIDE'
             elif render_pass == 'outside':
@@ -294,11 +257,11 @@ struct CommandSupportedVideoCoding {
 };
 static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedVideoCodingList = {{
     {CMD_VIDEO_CODING_BOTH, kVUIDUndefined}, // CMD_NONE\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
-            if name in self.alias_dict:
-                name = self.alias_dict[name]
+        for name, command in sorted(self.vk.recording_commands.items()):
+            if command.alias:
+                name = command.alias
             video_coding_type = ''
-            video_coding = cmdinfo.elem.attrib.get('videocoding')
+            video_coding = command.videocoding
             if video_coding is None:
                 video_coding = 'outside'
             if video_coding == 'inside':
@@ -327,15 +290,15 @@ static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedV
         output = '''
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedBufferLevelList = {{
     kVUIDUndefined, // CMD_NONE\n'''
-        for name, cmdinfo in sorted(self.commands.items()):
-            if name in self.alias_dict:
-                name = self.alias_dict[name]
-            buffer_level = cmdinfo.elem.attrib.get('cmdbufferlevel')
+        for name, command in sorted(self.vk.recording_commands.items()):
+            if command.alias:
+                name = command.alias
+            buffer_level = command.cmdbufferlevel
             # Currently there is only "primary" or "primary,secondary" in XML
             # Hard to predict what might change, so will error out instead if assumption breaks
-            if buffer_level == "primary,secondary":
+            if len(buffer_level) > 1:
                 output += '    nullptr,\n'
-            elif buffer_level == "primary":
+            elif 'primary' in buffer_level:
                 vuid = 'VUID-' + name + '-bufferlevel'
                 if vuid not in self.valid_vuids:
                     print("Warning: Could not find {} in validusage.json".format(vuid))

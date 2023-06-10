@@ -3253,5 +3253,3 @@ void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKH
 
 
 
-
-

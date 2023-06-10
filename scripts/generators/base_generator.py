@@ -16,8 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 from generator import *
 from common_codegen import *
+from generators.vulkan_object import *
+from typing import *
 
 # Temporary workaround for vkconventions python2 compatibility
 import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
@@ -65,8 +68,95 @@ class BaseGeneratorOptions(GeneratorOptions):
 
         # These are custom fields for VVL
         # This allows passing data from lvl_genvk.py into each Generator (file)
+        self.filename = filename
         self.helper_file_type = helper_file_type
         self.valid_usage_path = valid_usage_path
         self.lvt_file_type =  lvt_file_type
         self.warnExtensions    = warnExtensions
         self.grammar = grammar
+
+#
+# This object handles all the parsing from reg.py generator scripts in the Vulkan-Headers
+# It will grab all the data and form it into a single object the rest of the generators will use
+class BaseGenerator(OutputGenerator):
+    def __init__(self,
+                 errFile = sys.stderr,
+                 warnFile = sys.stderr,
+                 diagFile = sys.stdout):
+        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        self.vk = {}
+
+        # Data from the generator options
+        self.filename = None
+        self.helper_file_type = ''
+        self.valid_usage_path = ''
+        self.lvt_file_type =  ''
+        self.warnExtensions = []
+        self.grammar = None
+
+        self.currentFeature = {}
+
+    def beginFile(self, genOpts):
+        OutputGenerator.beginFile(self, genOpts)
+        self.vk = VulkanObject()
+
+        self.filename = genOpts.filename
+        self.helper_file_type = genOpts.helper_file_type
+        self.valid_usage_path = genOpts.valid_usage_path
+        self.lvt_file_type = genOpts.lvt_file_type
+        self.warnExtensions = genOpts.warnExtensions
+        self.grammar = genOpts.grammar
+
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
+    def endFile(self):
+        # This should not have to do anything but call into OutputGenerator
+        OutputGenerator.endFile(self)
+
+    #
+    # Processing point at beginning of each extension definition
+    def beginFeature(self, interface, emit):
+        OutputGenerator.beginFeature(self, interface, emit)
+        self.currentFeature = Feature(self, interface)
+        self.vk.features.append(self.currentFeature)
+
+        self.featureExtraProtect = GetFeatureProtect(interface)
+
+    #
+    # List the enum for the commands
+    def genGroup(self, groupinfo, name, alias):
+        if (name == 'VkDynamicState'):
+            for elem in groupinfo.elem.findall('enum'):
+                if elem.get('alias') is None:
+                    self.vk.dynamic_states.append(elem.get('name'))
+
+    #
+    # All <command> from XML
+    def genCmd(self, cmdinfo, name, alias):
+        OutputGenerator.genCmd(self, cmdinfo, name, alias)
+
+        # DataClass with typing.List are not mutable, so need to pass in any Lists
+        params = []
+        for param in cmdinfo.elem.findall('param'):
+            params.append(CommandParam(param))
+
+        self.vk.commands[name] = Command(self, cmdinfo, params)
+
+        if name.startswith('vkCmd') and params[0].type == 'VkCommandBuffer':
+            self.vk.recording_commands[name] = self.vk.commands[name]
+
+    #
+    # All <format> from XML
+    def genFormat(self, format, formatinfo, alias):
+        OutputGenerator.genFormat(self, format, formatinfo, alias)
+
+        components = []
+        planes = []
+        for component in format.elem.iterfind('component'):
+            components.append(component)
+        for plane in format.elem.iterfind('plane'):
+            planes.append(plane)
+
+        name = format.elem.get('name')
+        self.vk.formats[name] = Format(format.elem, components, planes)
