@@ -1446,7 +1446,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
                                          const VkAllocationCallbacks* pAllocator) const override;
-    bool ValidatePerformanceQueryResults(const char* cmd_name, const QUERY_POOL_STATE* query_pool_state, uint32_t firstQuery,
+    bool ValidatePerformanceQueryResults(const char* cmd_name, const QUERY_POOL_STATE& query_pool_state, uint32_t firstQuery,
                                          uint32_t queryCount, VkQueryResultFlags flags) const;
     bool ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, void* pData,
                                                 VkDeviceSize stride, VkQueryResultFlags flags, const char* apiName) const;

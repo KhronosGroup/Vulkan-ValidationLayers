@@ -46,7 +46,7 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
     return skip;
 }
 
-bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUERY_POOL_STATE *query_pool_state,
+bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUERY_POOL_STATE &query_pool_state,
                                                  uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags) const {
     bool skip = false;
 
@@ -60,28 +60,28 @@ bool CoreChecks::ValidatePerformanceQueryResults(const char *cmd_name, const QUE
                 invalid_flags_string += string_VkQueryResultFlagBits(flag);
             }
         }
-        skip |= LogError(query_pool_state->pool(),
+        skip |= LogError(query_pool_state.pool(),
                          strcmp(cmd_name, "vkGetQueryPoolResults") == 0 ? "VUID-vkGetQueryPoolResults-queryType-03230"
                                                                         : "VUID-vkCmdCopyQueryPoolResults-queryType-03233",
                          "%s: QueryPool %s was created with a queryType of"
                          "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but flags contains %s.",
-                         cmd_name, report_data->FormatHandle(query_pool_state->pool()).c_str(), invalid_flags_string.c_str());
+                         cmd_name, report_data->FormatHandle(query_pool_state.pool()).c_str(), invalid_flags_string.c_str());
     }
 
     for (uint32_t query_index = firstQuery; query_index < queryCount; query_index++) {
         uint32_t submitted = 0;
-        for (uint32_t pass_index = 0; pass_index < query_pool_state->n_performance_passes; pass_index++) {
-            auto state = query_pool_state->GetQueryState(query_index, pass_index);
+        for (uint32_t pass_index = 0; pass_index < query_pool_state.n_performance_passes; pass_index++) {
+            auto state = query_pool_state.GetQueryState(query_index, pass_index);
             if (state == QUERYSTATE_AVAILABLE) {
                 submitted++;
             }
         }
-        if (submitted < query_pool_state->n_performance_passes) {
-            skip |= LogError(query_pool_state->pool(), "VUID-vkGetQueryPoolResults-queryType-03231",
+        if (submitted < query_pool_state.n_performance_passes) {
+            skip |= LogError(query_pool_state.pool(), "VUID-vkGetQueryPoolResults-queryType-03231",
                              "%s: QueryPool %s has %u performance query passes, but the query has only been "
                              "submitted for %u of the passes.",
-                             cmd_name, report_data->FormatHandle(query_pool_state->pool()).c_str(),
-                             query_pool_state->n_performance_passes, submitted);
+                             cmd_name, report_data->FormatHandle(query_pool_state.pool()).c_str(),
+                             query_pool_state.n_performance_passes, submitted);
         }
     }
 
@@ -105,7 +105,7 @@ bool CoreChecks::ValidateGetQueryPoolPerformanceResults(VkQueryPool queryPool, u
                          apiName, report_data->FormatHandle(queryPool).c_str());
     }
 
-    skip |= ValidatePerformanceQueryResults(apiName, query_pool_state.get(), firstQuery, queryCount, flags);
+    skip |= ValidatePerformanceQueryResults(apiName, *query_pool_state, firstQuery, queryCount, flags);
 
     return skip;
 }
@@ -959,8 +959,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     auto query_pool_state = Get<QUERY_POOL_STATE>(queryPool);
     if (query_pool_state) {
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-            skip |=
-                ValidatePerformanceQueryResults("vkCmdCopyQueryPoolResults", query_pool_state.get(), firstQuery, queryCount, flags);
+            skip |= ValidatePerformanceQueryResults("vkCmdCopyQueryPoolResults", *query_pool_state, firstQuery, queryCount, flags);
             if (!phys_dev_ext_props.performance_query_props.allowCommandBufferQueryCopies) {
                 skip |= LogError(commandBuffer, "VUID-vkCmdCopyQueryPoolResults-queryType-03232",
                                  "vkCmdCopyQueryPoolResults called with query pool %s but "
