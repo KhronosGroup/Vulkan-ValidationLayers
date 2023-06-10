@@ -391,17 +391,17 @@ bool CMD_BUFFER_STATE::UpdatesQuery(const QueryObject &query_obj) const {
 static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
                                QueryMap *localQueryToStateMap) {
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject object = QueryObject(QueryObject(queryPool, firstQuery + i), perfPass);
-        (*localQueryToStateMap)[object] = value;
+        QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
+        (*localQueryToStateMap)[query_obj] = value;
     }
     return false;
 }
 
 void CMD_BUFFER_STATE::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
-        QueryObject query = {queryPool, slot};
-        activeQueries.erase(query);
-        updatedQueries.insert(query);
+        QueryObject query_obj = {queryPool, slot};
+        activeQueries.erase(query_obj);
+        updatedQueries.insert(query_obj);
     }
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
@@ -412,9 +412,9 @@ void CMD_BUFFER_STATE::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, ui
 
 void CMD_BUFFER_STATE::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
-        QueryObject query = {queryPool, slot};
-        resetQueries.insert(query);
-        updatedQueries.insert(query);
+        QueryObject query_obj = {queryPool, slot};
+        resetQueries.insert(query_obj);
+        updatedQueries.insert(query_obj);
     }
 
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
@@ -1468,8 +1468,8 @@ void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFl
         auto pool_state = dev_data->Get<QUERY_POOL_STATE>(queryPool);
         AddChild(pool_state);
     }
-    QueryObject query = {queryPool, slot};
-    EndQuery(query);
+    QueryObject query_obj = {queryPool, slot};
+    EndQuery(query_obj);
 }
 
 void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
@@ -1482,7 +1482,7 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
 
     for (const auto &query_state_pair : local_query_to_state_map) {
         auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
-        query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, query_state_pair.second);
+        query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
     }
 
     for (const auto &function : eventUpdates) {
@@ -1521,7 +1521,7 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<boo
         if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
             auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
             if (query_pool_state) {
-                query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass,
+                query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass,
                                                 QUERYSTATE_AVAILABLE);
             }
         }

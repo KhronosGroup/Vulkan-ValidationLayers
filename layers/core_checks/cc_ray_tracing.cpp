@@ -644,8 +644,8 @@ void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkComm
         if (!do_validate) return false;
         bool skip = false;
         for (uint32_t i = 0; i < accelerationStructureCount; i++) {
-            QueryObject query = {{queryPool, firstQuery + i}, perfPass};
-            skip |= VerifyQueryIsReset(cb_state_arg, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+            QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
+            skip |= VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
         }
         return skip;
     });

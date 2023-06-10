@@ -89,7 +89,7 @@ class QUERY_POOL_STATE : public BASE_NODE {
 
 struct QueryObject {
     VkQueryPool pool;
-    uint32_t query;
+    uint32_t slot;  // use 'slot' as alias to 'query' parameter to help reduce confusing namespace
     uint32_t perf_pass;
 
     // These next five fields are *not* used in hash or comparison, they are effectively a data payload
@@ -102,36 +102,20 @@ struct QueryObject {
     // the end of the query).
     uint64_t end_command_index;
 
-    QueryObject(VkQueryPool pool_, uint32_t query_)
+    QueryObject(VkQueryPool pool_, uint32_t slot_, uint32_t perf_pass_ = 0, bool indexed_ = false, uint32_t index_ = 0)
         : pool(pool_),
-          query(query_),
-          perf_pass(0),
-          active_query_index(query_),
-          last_activatable_query_index(query_),
-          index(0),
-          indexed(false),
-          end_command_index(0) {}
-    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_, uint32_t count_ = 1)
-        : pool(pool_),
-          query(query_),
-          perf_pass(0),
-          active_query_index(query_),
-          last_activatable_query_index(query_ + count_ - 1),
+          slot(slot_),
+          perf_pass(perf_pass_),
+          active_query_index(slot_),
+          last_activatable_query_index(slot_),
           index(index_),
-          indexed(true),
+          indexed(indexed_),
           end_command_index(0) {}
-    QueryObject(const QueryObject &obj)
-        : pool(obj.pool),
-          query(obj.query),
-          perf_pass(obj.perf_pass),
-          active_query_index(obj.active_query_index),
-          last_activatable_query_index(obj.last_activatable_query_index),
-          index(obj.index),
-          indexed(obj.indexed),
-          end_command_index(obj.end_command_index) {}
+
+    // This is needed because CMD_BUFFER_STATE::BeginQuery() and EndQuery() need to make a copy to update
     QueryObject(const QueryObject &obj, uint32_t perf_pass_)
         : pool(obj.pool),
-          query(obj.query),
+          slot(obj.slot),
           perf_pass(perf_pass_),
           active_query_index(obj.active_query_index),
           last_activatable_query_index(obj.last_activatable_query_index),
@@ -139,12 +123,12 @@ struct QueryObject {
           indexed(obj.indexed),
           end_command_index(obj.end_command_index) {}
     bool operator<(const QueryObject &rhs) const {
-        return (pool == rhs.pool) ? ((query == rhs.query) ? (perf_pass < rhs.perf_pass) : (query < rhs.query)) : pool < rhs.pool;
+        return (pool == rhs.pool) ? ((slot == rhs.slot) ? (perf_pass < rhs.perf_pass) : (slot < rhs.slot)) : pool < rhs.pool;
     }
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return ((query1.pool == query2.pool) && (query1.query == query2.query) && (query1.perf_pass == query2.perf_pass));
+    return ((query1.pool == query2.pool) && (query1.slot == query2.slot) && (query1.perf_pass == query2.perf_pass));
 }
 
 typedef std::map<QueryObject, QueryState> QueryMap;
@@ -177,9 +161,9 @@ inline const char *string_QueryResultType(QueryResultType result_type) {
 namespace std {
 template <>
 struct hash<QueryObject> {
-    size_t operator()(QueryObject query) const throw() {
-        return hash<uint64_t>()((uint64_t)(query.pool)) ^
-               hash<uint64_t>()(static_cast<uint64_t>(query.query) | (static_cast<uint64_t>(query.perf_pass) << 32));
+    size_t operator()(QueryObject query_obj) const throw() {
+        return hash<uint64_t>()((uint64_t)(query_obj.pool)) ^
+               hash<uint64_t>()(static_cast<uint64_t>(query_obj.slot) | (static_cast<uint64_t>(query_obj.perf_pass) << 32));
     }
 };
 
