@@ -362,10 +362,10 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
             report_data->FormatHandle(commandBuffer).c_str());
     }
 
-    for (const auto &query : cb_state.activeQueries) {
+    for (const auto &query_obj : cb_state.activeQueries) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00061",
                          "vkEndCommandBuffer(): Ending command buffer with in progress query: %s, query %d.",
-                         report_data->FormatHandle(query.pool).c_str(), query.query);
+                         report_data->FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
     if (cb_state.conditional_rendering_active) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-None-01978",

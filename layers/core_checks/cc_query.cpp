@@ -485,16 +485,16 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
 
     // Check for nested queries
     if (cb_state.activeQueries.size()) {
-        for (const auto &a_query : cb_state.activeQueries) {
-            auto active_query_pool_state = Get<QUERY_POOL_STATE>(a_query.pool);
-            if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType && a_query.index == index) {
-                const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool, a_query.pool);
+        for (const auto &active_query_obj : cb_state.activeQueries) {
+            auto active_query_pool_state = Get<QUERY_POOL_STATE>(active_query_obj.pool);
+            if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType && active_query_obj.index == index) {
+                const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool, active_query_obj.pool);
                 skip |= LogError(objlist, vuids->vuid_dup_query_type,
                                  "%s: Within the same command buffer %s, query %d from pool %s has same queryType as active query "
                                  "%d from pool %s.",
                                  cmd_name, report_data->FormatHandle(cb_state.commandBuffer()).c_str(), query_obj.index,
-                                 report_data->FormatHandle(query_obj.pool).c_str(), a_query.index,
-                                 report_data->FormatHandle(a_query.pool).c_str());
+                                 report_data->FormatHandle(query_obj.pool).c_str(), active_query_obj.index,
+                                 report_data->FormatHandle(active_query_obj.pool).c_str());
             }
         }
     }
@@ -513,10 +513,10 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
         }
     }
 
-    if (query_obj.query >= query_pool_ci.queryCount) {
+    if (query_obj.slot >= query_pool_ci.queryCount) {
         const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
         skip |= LogError(objlist, vuids->vuid_query_count,
-                         "%s: Query index %" PRIu32 " must be less than query count %" PRIu32 " of %s.", cmd_name, query_obj.query,
+                         "%s: Query index %" PRIu32 " must be less than query count %" PRIu32 " of %s.", cmd_name, query_obj.slot,
                          query_pool_ci.queryCount, report_data->FormatHandle(query_obj.pool).c_str());
     }
 
@@ -531,12 +531,12 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
             const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
             if (subpass_desc) {
                 uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
-                if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
+                if (query_obj.slot + bits > query_pool_state->createInfo.queryCount) {
                     const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool);
                     skip |= LogError(objlist, vuids->vuid_multiview_query,
                                      "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
                                      ") is greater than the number of queries in queryPool (%" PRIu32 ").",
-                                     cmd_name, query_obj.query, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
+                                     cmd_name, query_obj.slot, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
                 }
             }
         }
@@ -581,7 +581,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    QueryObject query_obj(queryPool, slot);
+    QueryObject query_obj = {queryPool, slot};
     auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
     if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
         if (!enabled_features.primitives_generated_query_features.primitivesGeneratedQuery) {
@@ -618,7 +618,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 
 static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
                                      uint32_t perfPass) {
-    QueryObject query = QueryObject(QueryObject(queryPool, queryIndex), perfPass);
+    QueryObject query = QueryObject(queryPool, queryIndex, perfPass);
 
     auto iter = localQueryToStateMap->find(query);
     if (iter != localQueryToStateMap->end()) return iter->second;
@@ -634,10 +634,10 @@ bool CoreChecks::VerifyQueryIsReset(const CMD_BUFFER_STATE &cb_state, const Quer
     auto query_pool_state = state_data->Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
 
-    QueryState state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    QueryState state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
     // If reset was in another command buffer, check the global map
     if (state == QUERYSTATE_UNKNOWN) {
-        state = query_pool_state->GetQueryState(query_obj.query, perfPass);
+        state = query_pool_state->GetQueryState(query_obj.slot, perfPass);
     }
     // Performance queries have limitation upon when they can be
     // reset.
@@ -655,7 +655,7 @@ bool CoreChecks::VerifyQueryIsReset(const CMD_BUFFER_STATE &cb_state, const Quer
                                      "After query pool creation, each query must be reset before it is used. "
                                      "Queries must also be reset between uses.",
                                      CommandTypeString(cmd_type), state_data->report_data->FormatHandle(query_obj.pool).c_str(),
-                                     query_obj.query);
+                                     query_obj.slot);
     }
 
     return skip;
@@ -685,7 +685,7 @@ bool CoreChecks::ValidatePerformanceQuery(const CMD_BUFFER_STATE &cb_state, cons
                                      CommandTypeString(cmd_type), state_data->report_data->FormatHandle(cb_state.Handle()).c_str());
     }
 
-    QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         skip |= state_data->LogError(
             cb_state.Handle(), query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-02863" : "VUID-vkCmdBeginQuery-None-02863",
@@ -761,7 +761,7 @@ bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE &cb_state, const Que
     if (!cb_state.activeQueries.count(query_obj)) {
         skip |= LogError(cb_state.commandBuffer(), vuids->vuid_active_queries,
                          "%s: Ending a query before it was started: %s, index %d.", cmd_name,
-                         report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+                         report_data->FormatHandle(query_obj.pool).c_str(), query_obj.slot);
     }
     auto query_pool_state = Get<QUERY_POOL_STATE>(query_obj.pool);
     const auto &query_pool_ci = query_pool_state->createInfo;
@@ -785,11 +785,11 @@ bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE &cb_state, const Que
             const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
             if (subpass_desc) {
                 const uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
-                if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
+                if (query_obj.slot + bits > query_pool_state->createInfo.queryCount) {
                     skip |= LogError(cb_state.commandBuffer(), vuids->vuid_multiview_query,
                                      "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
                                      ") is greater than the number of queries in queryPool (%" PRIu32 ").",
-                                     cmd_name, query_obj.query, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
+                                     cmd_name, query_obj.slot, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
                 }
             }
         }
@@ -1107,13 +1107,13 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query = {queryPool, slot};
+    QueryObject query_obj = {queryPool, slot};
     CMD_TYPE cmd_type = CMD_WRITETIMESTAMP;
-    cb_state->queryUpdates.emplace_back([query, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                          VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                          QueryMap *localQueryToStateMap) {
+    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                              QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
@@ -1122,13 +1122,13 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffe
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query = {queryPool, slot};
+    QueryObject query_obj = {queryPool, slot};
     CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2KHR;
-    cb_state->queryUpdates.emplace_back([query, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                          VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                          QueryMap *localQueryToStateMap) {
+    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                              QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
@@ -1137,22 +1137,22 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, 
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query = {queryPool, slot};
+    QueryObject query_obj = {queryPool, slot};
     CMD_TYPE cmd_type = CMD_WRITETIMESTAMP2;
-    cb_state->queryUpdates.emplace_back([query, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                          VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                          QueryMap *localQueryToStateMap) {
+    cb_state->queryUpdates.emplace_back([query_obj, cmd_type](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                              QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(cb_state_arg, query_obj, cmd_type, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });
 }
 
-bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                         VkQueryControlFlags flags, uint32_t index) const {
     if (disabled[query_validation]) return false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    QueryObject query_obj(queryPool, query, index);
+    QueryObject query_obj = {queryPool, slot, 0, true, index};
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
     struct BeginQueryIndexedVuids : ValidateBeginQueryVuids {
         BeginQueryIndexedVuids() : ValidateBeginQueryVuids() {
@@ -1233,26 +1233,26 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       VkQueryControlFlags flags, uint32_t index) {
     if (disabled[query_validation]) return;
-    QueryObject query_obj = {queryPool, query, index};
+    QueryObject query_obj = {queryPool, slot, 0, true, index};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj, CMD_BEGINQUERYINDEXEDEXT);
 }
 
-void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                     uint32_t index) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    QueryObject query_obj = {queryPool, query, index};
+    QueryObject query_obj = {queryPool, slot, 0, true, index};
     query_obj.end_command_index = cb_state->command_count;  // off by one because cb_state hasn't recorded this yet
     EnqueueVerifyEndQuery(*cb_state, query_obj);
 }
 
-bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       uint32_t index) const {
     if (disabled[query_validation]) return false;
-    QueryObject query_obj = {queryPool, query, index};
+    QueryObject query_obj = {queryPool, slot, 0, true, index};
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     struct EndQueryIndexedVuids : ValidateEndQueryVuids {
@@ -1270,7 +1270,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
     if (query_pool_state) {
         const auto &query_pool_ci = query_pool_state->createInfo;
         const uint32_t available_query_count = query_pool_state->createInfo.queryCount;
-        if (query >= available_query_count) {
+        if (slot >= available_query_count) {
             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-query-02343",
                              "vkCmdEndQueryIndexedEXT(): query index (%" PRIu32
                              ") is greater or equal to the queryPool size (%" PRIu32 ").",
@@ -1287,7 +1287,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
                                      index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
                 }
                 for (const auto &query_object : cb_state->startedQueries) {
-                    if (query_object.pool == queryPool && query_object.query == query) {
+                    if (query_object.pool == queryPool && query_object.slot == slot) {
                         if (query_object.index != index) {
                             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-06696",
                                              "vkCmdEndQueryIndexedEXT(): queryPool is of type %s, but "
