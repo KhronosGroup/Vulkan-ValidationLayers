@@ -104,17 +104,17 @@ bool CoreChecks::ValidateViAgainstVsInputs(const PIPELINE_STATE &pipeline, const
                                  pipeline.create_index, string_VkFormat(attribute_format), location,
                                  module_state.DescribeType(input_base_type_id).c_str());
             } else {
-                // 64-bit can't be used if the other is not also 64-bit.
+                // 64-bit can't be used if both the Vertex Attribute AND Shader Input Variable are both not 64-bit.
                 const bool attribute64 = FormatIs64bit(attribute_format);
                 const bool input64 = module_state.GetBaseTypeInstruction(input_base_type_id)->GetBitWidth() == 64;
                 if (attribute64 && !input64) {
-                    skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Attribute-64bit",
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
                                      " is a 64-bit format (%s) but vertex shader input is 32-bit type (%s)",
                                      pipeline.create_index, location, string_VkFormat(attribute_format),
                                      module_state.DescribeType(input_base_type_id).c_str());
                 } else if (!attribute64 && input64) {
-                    skip |= LogError(module_state.vk_shader_module(), "UNASSIGNED-VkGraphicsPipelineCreateInfo-Input-64bit",
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] Attribute at location %" PRIu32
                                      " is a not a 64-bit format (%s) but vertex shader input is 64-bit type (%s)",
                                      pipeline.create_index, location, string_VkFormat(attribute_format),
