@@ -257,6 +257,12 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineExecutableInternalRepresent
 static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) { return VK_SUCCESS; };
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) { return VK_SUCCESS; };
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) { return VK_SUCCESS; };
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {  };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetEvent2KHR(VkCommandBuffer                   commandBuffer, VkEvent                                             event, const VkDependencyInfo*                             pDependencyInfo) {  };
@@ -929,6 +935,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkGetDeviceQueue2", { "VK_VERSION_1_1" } },
     { "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", { "VK_HUAWEI_subpass_shading" } },
     { "vkGetDynamicRenderingTilePropertiesQCOM", { "VK_QCOM_tile_properties" } },
+    { "vkGetEncodedVideoSessionParametersKHR", { "VK_KHR_video_encode_queue" } },
     { "vkGetFenceFdKHR", { "VK_KHR_external_fence_fd" } },
     { "vkGetFenceWin32HandleKHR", { "VK_KHR_external_fence_win32" } },
     { "vkGetFramebufferTilePropertiesQCOM", { "VK_QCOM_tile_properties" } },
@@ -1487,6 +1494,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->MapMemory2KHR == nullptr) { table->MapMemory2KHR = (PFN_vkMapMemory2KHR)StubMapMemory2KHR; }
     table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR) gpa(device, "vkUnmapMemory2KHR");
     if (table->UnmapMemory2KHR == nullptr) { table->UnmapMemory2KHR = (PFN_vkUnmapMemory2KHR)StubUnmapMemory2KHR; }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->GetEncodedVideoSessionParametersKHR = (PFN_vkGetEncodedVideoSessionParametersKHR) gpa(device, "vkGetEncodedVideoSessionParametersKHR");
+    if (table->GetEncodedVideoSessionParametersKHR == nullptr) { table->GetEncodedVideoSessionParametersKHR = (PFN_vkGetEncodedVideoSessionParametersKHR)StubGetEncodedVideoSessionParametersKHR; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR) gpa(device, "vkCmdEncodeVideoKHR");
     if (table->CmdEncodeVideoKHR == nullptr) { table->CmdEncodeVideoKHR = (PFN_vkCmdEncodeVideoKHR)StubCmdEncodeVideoKHR; }
@@ -2200,6 +2211,10 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     if (table->GetDisplayPlaneCapabilities2KHR == nullptr) { table->GetDisplayPlaneCapabilities2KHR = (PFN_vkGetDisplayPlaneCapabilities2KHR)StubGetDisplayPlaneCapabilities2KHR; }
     table->GetPhysicalDeviceFragmentShadingRatesKHR = (PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR) gpa(instance, "vkGetPhysicalDeviceFragmentShadingRatesKHR");
     if (table->GetPhysicalDeviceFragmentShadingRatesKHR == nullptr) { table->GetPhysicalDeviceFragmentShadingRatesKHR = (PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR)StubGetPhysicalDeviceFragmentShadingRatesKHR; }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = (PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR) gpa(instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR");
+    if (table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR == nullptr) { table->GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = (PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR)StubGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR; }
+#endif // VK_ENABLE_BETA_EXTENSIONS
     table->CreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) gpa(instance, "vkCreateDebugReportCallbackEXT");
     if (table->CreateDebugReportCallbackEXT == nullptr) { table->CreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)StubCreateDebugReportCallbackEXT; }
     table->DestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT) gpa(instance, "vkDestroyDebugReportCallbackEXT");

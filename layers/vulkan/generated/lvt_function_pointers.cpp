@@ -764,6 +764,8 @@ PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
 PFN_vkCmdDecodeVideoKHR CmdDecodeVideoKHR;
 // VK_KHR_video_encode_queue
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
 PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 // VK_KHR_video_queue
@@ -2001,7 +2003,9 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {
-            "VK_KHR_video_encode_queue", [](VkInstance, VkDevice device) {
+            "VK_KHR_video_encode_queue", [](VkInstance instance, VkDevice device) {
+                GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR"));
+                GetEncodedVideoSessionParametersKHR = reinterpret_cast<PFN_vkGetEncodedVideoSessionParametersKHR>(GetDeviceProcAddr(device, "vkGetEncodedVideoSessionParametersKHR"));
                 CmdEncodeVideoKHR = reinterpret_cast<PFN_vkCmdEncodeVideoKHR>(GetDeviceProcAddr(device, "vkCmdEncodeVideoKHR"));
             }
         },
@@ -2642,6 +2646,8 @@ void ResetAllExtensions() {
     CmdDecodeVideoKHR = nullptr;
     // VK_KHR_video_encode_queue
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+    GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = nullptr;
+    GetEncodedVideoSessionParametersKHR = nullptr;
     CmdEncodeVideoKHR = nullptr;
 #endif // VK_ENABLE_BETA_EXTENSIONS
     // VK_KHR_video_queue

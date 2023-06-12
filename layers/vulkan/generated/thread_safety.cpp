@@ -4955,6 +4955,25 @@ void ThreadSafety::PostCallRecordUnmapMemory2KHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
+void ThreadSafety::PreCallRecordGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData) {
+    StartReadObjectParentInstance(device, "vkGetEncodedVideoSessionParametersKHR");
+}
+
+void ThreadSafety::PostCallRecordGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetEncodedVideoSessionParametersKHR");
+}
+
 void ThreadSafety::PreCallRecordCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {

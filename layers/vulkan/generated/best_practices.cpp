@@ -1839,6 +1839,42 @@ void BestPractices::PostCallRecordMapMemory2KHR(
     }
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo, pQualityLevelProperties, result);
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR,VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR,VK_ERROR_VIDEO_PICTURE_LAYOUT_NOT_SUPPORTED_KHR,VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR
+    }
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+void BestPractices::PostCallRecordGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData, result);
+    if (result > VK_SUCCESS) {
+        LogPositiveSuccessCode("vkGetEncodedVideoSessionParametersKHR", result); // VK_INCOMPLETE
+        return;
+    }
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetEncodedVideoSessionParametersKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY
+    }
+}
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 void BestPractices::PostCallRecordQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,

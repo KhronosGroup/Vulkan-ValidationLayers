@@ -1067,52 +1067,6 @@ std::vector<VkRasterizationOrderAMD> ValidationObject::ValidParamValues() const 
     return values;
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
-template<>
-std::vector<VkVideoEncodeH264RateControlStructureEXT> ValidationObject::ValidParamValues() const {
-    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
-    //      Ideally "values" would be something like a static variable that is built once and this function returns
-    //      a span of the container. This does not work for applications which create and destroy many instances and
-    //      devices over the lifespan of the project (e.g., VLT).
-    constexpr std::array CoreVkVideoEncodeH264RateControlStructureEXTEnums = { VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_UNKNOWN_EXT, VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_FLAT_EXT, VK_VIDEO_ENCODE_H264_RATE_CONTROL_STRUCTURE_DYADIC_EXT,  };
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkVideoEncodeH264RateControlStructureEXT>> ExtendedVkVideoEncodeH264RateControlStructureEXTEnums = {
-    };
-    std::vector<VkVideoEncodeH264RateControlStructureEXT> values(CoreVkVideoEncodeH264RateControlStructureEXTEnums.cbegin(), CoreVkVideoEncodeH264RateControlStructureEXTEnums.cend());
-    std::set<VkVideoEncodeH264RateControlStructureEXT> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkVideoEncodeH264RateControlStructureEXTEnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
-template<>
-std::vector<VkVideoEncodeH265RateControlStructureEXT> ValidationObject::ValidParamValues() const {
-    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
-    //      Ideally "values" would be something like a static variable that is built once and this function returns
-    //      a span of the container. This does not work for applications which create and destroy many instances and
-    //      devices over the lifespan of the project (e.g., VLT).
-    constexpr std::array CoreVkVideoEncodeH265RateControlStructureEXTEnums = { VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_UNKNOWN_EXT, VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_FLAT_EXT, VK_VIDEO_ENCODE_H265_RATE_CONTROL_STRUCTURE_DYADIC_EXT,  };
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkVideoEncodeH265RateControlStructureEXT>> ExtendedVkVideoEncodeH265RateControlStructureEXTEnums = {
-    };
-    std::vector<VkVideoEncodeH265RateControlStructureEXT> values(CoreVkVideoEncodeH265RateControlStructureEXTEnums.cbegin(), CoreVkVideoEncodeH265RateControlStructureEXTEnums.cend());
-    std::set<VkVideoEncodeH265RateControlStructureEXT> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkVideoEncodeH265RateControlStructureEXTEnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 template<>
 std::vector<VkShaderInfoTypeAMD> ValidationObject::ValidParamValues() const {

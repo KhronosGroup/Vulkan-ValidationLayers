@@ -798,6 +798,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateUnmapMemory2KHR,
     InterceptIdPreCallRecordUnmapMemory2KHR,
     InterceptIdPostCallRecordUnmapMemory2KHR,
+    InterceptIdPreCallValidateGetEncodedVideoSessionParametersKHR,
+    InterceptIdPreCallRecordGetEncodedVideoSessionParametersKHR,
+    InterceptIdPostCallRecordGetEncodedVideoSessionParametersKHR,
     InterceptIdPreCallValidateCmdEncodeVideoKHR,
     InterceptIdPreCallRecordCmdEncodeVideoKHR,
     InterceptIdPostCallRecordCmdEncodeVideoKHR,
@@ -2439,6 +2442,13 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateUnmapMemory2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordUnmapMemory2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordUnmapMemory2KHR);
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetEncodedVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetEncodedVideoSessionParametersKHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetEncodedVideoSessionParametersKHR);
+#endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdEncodeVideoKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdEncodeVideoKHR);

@@ -449,6 +449,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_extended_dynamic_state{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state2{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state3{kNotEnabled};
+    ExtEnabled vk_ext_external_memory_acquire_unmodified{kNotEnabled};
     ExtEnabled vk_ext_external_memory_dma_buf{kNotEnabled};
     ExtEnabled vk_ext_external_memory_host{kNotEnabled};
     ExtEnabled vk_ext_filter_cubic{kNotEnabled};
@@ -809,6 +810,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_extended_dynamic_state3, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_acquire_unmodified, {{
+                           {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
             {VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_dma_buf, {{
                            {&DeviceExtensions::vk_khr_external_memory_fd, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME}}})},
             {VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_external_memory_host, {{
@@ -1549,6 +1552,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME,
     VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
+    VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
     VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME,
     VK_EXT_FILTER_CUBIC_EXTENSION_NAME,

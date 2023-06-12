@@ -8592,7 +8592,6 @@ void safe_VkPhysicalDevicePresentIdFeaturesKHR::initialize(const safe_VkPhysical
 safe_VkVideoEncodeInfoKHR::safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
-    qualityLevel(in_struct->qualityLevel),
     dstBuffer(in_struct->dstBuffer),
     dstBufferOffset(in_struct->dstBufferOffset),
     dstBufferRange(in_struct->dstBufferRange),
@@ -8617,7 +8616,6 @@ safe_VkVideoEncodeInfoKHR::safe_VkVideoEncodeInfoKHR() :
     sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR),
     pNext(nullptr),
     flags(),
-    qualityLevel(),
     dstBuffer(),
     dstBufferOffset(),
     dstBufferRange(),
@@ -8631,7 +8629,6 @@ safe_VkVideoEncodeInfoKHR::safe_VkVideoEncodeInfoKHR(const safe_VkVideoEncodeInf
 {
     sType = copy_src.sType;
     flags = copy_src.flags;
-    qualityLevel = copy_src.qualityLevel;
     dstBuffer = copy_src.dstBuffer;
     dstBufferOffset = copy_src.dstBufferOffset;
     dstBufferRange = copy_src.dstBufferRange;
@@ -8664,7 +8661,6 @@ safe_VkVideoEncodeInfoKHR& safe_VkVideoEncodeInfoKHR::operator=(const safe_VkVid
 
     sType = copy_src.sType;
     flags = copy_src.flags;
-    qualityLevel = copy_src.qualityLevel;
     dstBuffer = copy_src.dstBuffer;
     dstBufferOffset = copy_src.dstBufferOffset;
     dstBufferRange = copy_src.dstBufferRange;
@@ -8706,7 +8702,6 @@ void safe_VkVideoEncodeInfoKHR::initialize(const VkVideoEncodeInfoKHR* in_struct
         FreePnextChain(pNext);
     sType = in_struct->sType;
     flags = in_struct->flags;
-    qualityLevel = in_struct->qualityLevel;
     dstBuffer = in_struct->dstBuffer;
     dstBufferOffset = in_struct->dstBufferOffset;
     dstBufferRange = in_struct->dstBufferRange;
@@ -8730,7 +8725,6 @@ void safe_VkVideoEncodeInfoKHR::initialize(const safe_VkVideoEncodeInfoKHR* copy
 {
     sType = copy_src->sType;
     flags = copy_src->flags;
-    qualityLevel = copy_src->qualityLevel;
     dstBuffer = copy_src->dstBuffer;
     dstBufferOffset = copy_src->dstBufferOffset;
     dstBufferRange = copy_src->dstBufferRange;
@@ -8759,8 +8753,9 @@ safe_VkVideoEncodeCapabilitiesKHR::safe_VkVideoEncodeCapabilitiesKHR(const VkVid
     flags(in_struct->flags),
     rateControlModes(in_struct->rateControlModes),
     maxRateControlLayers(in_struct->maxRateControlLayers),
+    maxBitrate(in_struct->maxBitrate),
     maxQualityLevels(in_struct->maxQualityLevels),
-    inputImageDataFillAlignment(in_struct->inputImageDataFillAlignment),
+    encodeInputPictureGranularity(in_struct->encodeInputPictureGranularity),
     supportedEncodeFeedbackFlags(in_struct->supportedEncodeFeedbackFlags)
 {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
@@ -8772,8 +8767,9 @@ safe_VkVideoEncodeCapabilitiesKHR::safe_VkVideoEncodeCapabilitiesKHR() :
     flags(),
     rateControlModes(),
     maxRateControlLayers(),
+    maxBitrate(),
     maxQualityLevels(),
-    inputImageDataFillAlignment(),
+    encodeInputPictureGranularity(),
     supportedEncodeFeedbackFlags()
 {}
 
@@ -8783,8 +8779,9 @@ safe_VkVideoEncodeCapabilitiesKHR::safe_VkVideoEncodeCapabilitiesKHR(const safe_
     flags = copy_src.flags;
     rateControlModes = copy_src.rateControlModes;
     maxRateControlLayers = copy_src.maxRateControlLayers;
+    maxBitrate = copy_src.maxBitrate;
     maxQualityLevels = copy_src.maxQualityLevels;
-    inputImageDataFillAlignment = copy_src.inputImageDataFillAlignment;
+    encodeInputPictureGranularity = copy_src.encodeInputPictureGranularity;
     supportedEncodeFeedbackFlags = copy_src.supportedEncodeFeedbackFlags;
     pNext = SafePnextCopy(copy_src.pNext);
 }
@@ -8800,8 +8797,9 @@ safe_VkVideoEncodeCapabilitiesKHR& safe_VkVideoEncodeCapabilitiesKHR::operator=(
     flags = copy_src.flags;
     rateControlModes = copy_src.rateControlModes;
     maxRateControlLayers = copy_src.maxRateControlLayers;
+    maxBitrate = copy_src.maxBitrate;
     maxQualityLevels = copy_src.maxQualityLevels;
-    inputImageDataFillAlignment = copy_src.inputImageDataFillAlignment;
+    encodeInputPictureGranularity = copy_src.encodeInputPictureGranularity;
     supportedEncodeFeedbackFlags = copy_src.supportedEncodeFeedbackFlags;
     pNext = SafePnextCopy(copy_src.pNext);
 
@@ -8822,8 +8820,9 @@ void safe_VkVideoEncodeCapabilitiesKHR::initialize(const VkVideoEncodeCapabiliti
     flags = in_struct->flags;
     rateControlModes = in_struct->rateControlModes;
     maxRateControlLayers = in_struct->maxRateControlLayers;
+    maxBitrate = in_struct->maxBitrate;
     maxQualityLevels = in_struct->maxQualityLevels;
-    inputImageDataFillAlignment = in_struct->inputImageDataFillAlignment;
+    encodeInputPictureGranularity = in_struct->encodeInputPictureGranularity;
     supportedEncodeFeedbackFlags = in_struct->supportedEncodeFeedbackFlags;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
 }
@@ -8834,8 +8833,9 @@ void safe_VkVideoEncodeCapabilitiesKHR::initialize(const safe_VkVideoEncodeCapab
     flags = copy_src->flags;
     rateControlModes = copy_src->rateControlModes;
     maxRateControlLayers = copy_src->maxRateControlLayers;
+    maxBitrate = copy_src->maxBitrate;
     maxQualityLevels = copy_src->maxQualityLevels;
-    inputImageDataFillAlignment = copy_src->inputImageDataFillAlignment;
+    encodeInputPictureGranularity = copy_src->encodeInputPictureGranularity;
     supportedEncodeFeedbackFlags = copy_src->supportedEncodeFeedbackFlags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
@@ -8981,9 +8981,7 @@ safe_VkVideoEncodeRateControlLayerInfoKHR::safe_VkVideoEncodeRateControlLayerInf
     averageBitrate(in_struct->averageBitrate),
     maxBitrate(in_struct->maxBitrate),
     frameRateNumerator(in_struct->frameRateNumerator),
-    frameRateDenominator(in_struct->frameRateDenominator),
-    virtualBufferSizeInMs(in_struct->virtualBufferSizeInMs),
-    initialVirtualBufferSizeInMs(in_struct->initialVirtualBufferSizeInMs)
+    frameRateDenominator(in_struct->frameRateDenominator)
 {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
 }
@@ -8994,9 +8992,7 @@ safe_VkVideoEncodeRateControlLayerInfoKHR::safe_VkVideoEncodeRateControlLayerInf
     averageBitrate(),
     maxBitrate(),
     frameRateNumerator(),
-    frameRateDenominator(),
-    virtualBufferSizeInMs(),
-    initialVirtualBufferSizeInMs()
+    frameRateDenominator()
 {}
 
 safe_VkVideoEncodeRateControlLayerInfoKHR::safe_VkVideoEncodeRateControlLayerInfoKHR(const safe_VkVideoEncodeRateControlLayerInfoKHR& copy_src)
@@ -9006,8 +9002,6 @@ safe_VkVideoEncodeRateControlLayerInfoKHR::safe_VkVideoEncodeRateControlLayerInf
     maxBitrate = copy_src.maxBitrate;
     frameRateNumerator = copy_src.frameRateNumerator;
     frameRateDenominator = copy_src.frameRateDenominator;
-    virtualBufferSizeInMs = copy_src.virtualBufferSizeInMs;
-    initialVirtualBufferSizeInMs = copy_src.initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -9023,8 +9017,6 @@ safe_VkVideoEncodeRateControlLayerInfoKHR& safe_VkVideoEncodeRateControlLayerInf
     maxBitrate = copy_src.maxBitrate;
     frameRateNumerator = copy_src.frameRateNumerator;
     frameRateDenominator = copy_src.frameRateDenominator;
-    virtualBufferSizeInMs = copy_src.virtualBufferSizeInMs;
-    initialVirtualBufferSizeInMs = copy_src.initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -9045,8 +9037,6 @@ void safe_VkVideoEncodeRateControlLayerInfoKHR::initialize(const VkVideoEncodeRa
     maxBitrate = in_struct->maxBitrate;
     frameRateNumerator = in_struct->frameRateNumerator;
     frameRateDenominator = in_struct->frameRateDenominator;
-    virtualBufferSizeInMs = in_struct->virtualBufferSizeInMs;
-    initialVirtualBufferSizeInMs = in_struct->initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
 }
 
@@ -9057,8 +9047,6 @@ void safe_VkVideoEncodeRateControlLayerInfoKHR::initialize(const safe_VkVideoEnc
     maxBitrate = copy_src->maxBitrate;
     frameRateNumerator = copy_src->frameRateNumerator;
     frameRateDenominator = copy_src->frameRateDenominator;
-    virtualBufferSizeInMs = copy_src->virtualBufferSizeInMs;
-    initialVirtualBufferSizeInMs = copy_src->initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -9071,7 +9059,9 @@ safe_VkVideoEncodeRateControlInfoKHR::safe_VkVideoEncodeRateControlInfoKHR(const
     flags(in_struct->flags),
     rateControlMode(in_struct->rateControlMode),
     layerCount(in_struct->layerCount),
-    pLayers(nullptr)
+    pLayers(nullptr),
+    virtualBufferSizeInMs(in_struct->virtualBufferSizeInMs),
+    initialVirtualBufferSizeInMs(in_struct->initialVirtualBufferSizeInMs)
 {
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     if (layerCount && in_struct->pLayers) {
@@ -9088,7 +9078,9 @@ safe_VkVideoEncodeRateControlInfoKHR::safe_VkVideoEncodeRateControlInfoKHR() :
     flags(),
     rateControlMode(),
     layerCount(),
-    pLayers(nullptr)
+    pLayers(nullptr),
+    virtualBufferSizeInMs(),
+    initialVirtualBufferSizeInMs()
 {}
 
 safe_VkVideoEncodeRateControlInfoKHR::safe_VkVideoEncodeRateControlInfoKHR(const safe_VkVideoEncodeRateControlInfoKHR& copy_src)
@@ -9098,6 +9090,8 @@ safe_VkVideoEncodeRateControlInfoKHR::safe_VkVideoEncodeRateControlInfoKHR(const
     rateControlMode = copy_src.rateControlMode;
     layerCount = copy_src.layerCount;
     pLayers = nullptr;
+    virtualBufferSizeInMs = copy_src.virtualBufferSizeInMs;
+    initialVirtualBufferSizeInMs = copy_src.initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src.pNext);
     if (layerCount && copy_src.pLayers) {
         pLayers = new safe_VkVideoEncodeRateControlLayerInfoKHR[layerCount];
@@ -9121,6 +9115,8 @@ safe_VkVideoEncodeRateControlInfoKHR& safe_VkVideoEncodeRateControlInfoKHR::oper
     rateControlMode = copy_src.rateControlMode;
     layerCount = copy_src.layerCount;
     pLayers = nullptr;
+    virtualBufferSizeInMs = copy_src.virtualBufferSizeInMs;
+    initialVirtualBufferSizeInMs = copy_src.initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src.pNext);
     if (layerCount && copy_src.pLayers) {
         pLayers = new safe_VkVideoEncodeRateControlLayerInfoKHR[layerCount];
@@ -9151,6 +9147,8 @@ void safe_VkVideoEncodeRateControlInfoKHR::initialize(const VkVideoEncodeRateCon
     rateControlMode = in_struct->rateControlMode;
     layerCount = in_struct->layerCount;
     pLayers = nullptr;
+    virtualBufferSizeInMs = in_struct->virtualBufferSizeInMs;
+    initialVirtualBufferSizeInMs = in_struct->initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(in_struct->pNext, copy_state);
     if (layerCount && in_struct->pLayers) {
         pLayers = new safe_VkVideoEncodeRateControlLayerInfoKHR[layerCount];
@@ -9167,6 +9165,8 @@ void safe_VkVideoEncodeRateControlInfoKHR::initialize(const safe_VkVideoEncodeRa
     rateControlMode = copy_src->rateControlMode;
     layerCount = copy_src->layerCount;
     pLayers = nullptr;
+    virtualBufferSizeInMs = copy_src->virtualBufferSizeInMs;
+    initialVirtualBufferSizeInMs = copy_src->initialVirtualBufferSizeInMs;
     pNext = SafePnextCopy(copy_src->pNext);
     if (layerCount && copy_src->pLayers) {
         pLayers = new safe_VkVideoEncodeRateControlLayerInfoKHR[layerCount];
@@ -9174,6 +9174,334 @@ void safe_VkVideoEncodeRateControlInfoKHR::initialize(const safe_VkVideoEncodeRa
             pLayers[i].initialize(&copy_src->pLayers[i]);
         }
     }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR(const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    pVideoProfile(nullptr),
+    qualityLevel(in_struct->qualityLevel)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->pVideoProfile)
+        pVideoProfile = new safe_VkVideoProfileInfoKHR(in_struct->pVideoProfile);
+}
+
+safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR),
+    pNext(nullptr),
+    pVideoProfile(nullptr),
+    qualityLevel()
+{}
+
+safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR(const safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    pVideoProfile = nullptr;
+    qualityLevel = copy_src.qualityLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pVideoProfile)
+        pVideoProfile = new safe_VkVideoProfileInfoKHR(*copy_src.pVideoProfile);
+}
+
+safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::operator=(const safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pVideoProfile)
+        delete pVideoProfile;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pVideoProfile = nullptr;
+    qualityLevel = copy_src.qualityLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pVideoProfile)
+        pVideoProfile = new safe_VkVideoProfileInfoKHR(*copy_src.pVideoProfile);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::~safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR()
+{
+    if (pVideoProfile)
+        delete pVideoProfile;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::initialize(const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pVideoProfile)
+        delete pVideoProfile;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pVideoProfile = nullptr;
+    qualityLevel = in_struct->qualityLevel;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->pVideoProfile)
+        pVideoProfile = new safe_VkVideoProfileInfoKHR(in_struct->pVideoProfile);
+}
+
+void safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::initialize(const safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    pVideoProfile = nullptr;
+    qualityLevel = copy_src->qualityLevel;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pVideoProfile)
+        pVideoProfile = new safe_VkVideoProfileInfoKHR(*copy_src->pVideoProfile);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoEncodeQualityLevelPropertiesKHR::safe_VkVideoEncodeQualityLevelPropertiesKHR(const VkVideoEncodeQualityLevelPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    preferredRateControlMode(in_struct->preferredRateControlMode),
+    preferredRateControlLayerCount(in_struct->preferredRateControlLayerCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkVideoEncodeQualityLevelPropertiesKHR::safe_VkVideoEncodeQualityLevelPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_PROPERTIES_KHR),
+    pNext(nullptr),
+    preferredRateControlMode(),
+    preferredRateControlLayerCount()
+{}
+
+safe_VkVideoEncodeQualityLevelPropertiesKHR::safe_VkVideoEncodeQualityLevelPropertiesKHR(const safe_VkVideoEncodeQualityLevelPropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    preferredRateControlMode = copy_src.preferredRateControlMode;
+    preferredRateControlLayerCount = copy_src.preferredRateControlLayerCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoEncodeQualityLevelPropertiesKHR& safe_VkVideoEncodeQualityLevelPropertiesKHR::operator=(const safe_VkVideoEncodeQualityLevelPropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    preferredRateControlMode = copy_src.preferredRateControlMode;
+    preferredRateControlLayerCount = copy_src.preferredRateControlLayerCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoEncodeQualityLevelPropertiesKHR::~safe_VkVideoEncodeQualityLevelPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoEncodeQualityLevelPropertiesKHR::initialize(const VkVideoEncodeQualityLevelPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    preferredRateControlMode = in_struct->preferredRateControlMode;
+    preferredRateControlLayerCount = in_struct->preferredRateControlLayerCount;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkVideoEncodeQualityLevelPropertiesKHR::initialize(const safe_VkVideoEncodeQualityLevelPropertiesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    preferredRateControlMode = copy_src->preferredRateControlMode;
+    preferredRateControlLayerCount = copy_src->preferredRateControlLayerCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoEncodeQualityLevelInfoKHR::safe_VkVideoEncodeQualityLevelInfoKHR(const VkVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    qualityLevel(in_struct->qualityLevel)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkVideoEncodeQualityLevelInfoKHR::safe_VkVideoEncodeQualityLevelInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR),
+    pNext(nullptr),
+    qualityLevel()
+{}
+
+safe_VkVideoEncodeQualityLevelInfoKHR::safe_VkVideoEncodeQualityLevelInfoKHR(const safe_VkVideoEncodeQualityLevelInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    qualityLevel = copy_src.qualityLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoEncodeQualityLevelInfoKHR& safe_VkVideoEncodeQualityLevelInfoKHR::operator=(const safe_VkVideoEncodeQualityLevelInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    qualityLevel = copy_src.qualityLevel;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoEncodeQualityLevelInfoKHR::~safe_VkVideoEncodeQualityLevelInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoEncodeQualityLevelInfoKHR::initialize(const VkVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    qualityLevel = in_struct->qualityLevel;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkVideoEncodeQualityLevelInfoKHR::initialize(const safe_VkVideoEncodeQualityLevelInfoKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    qualityLevel = copy_src->qualityLevel;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoEncodeSessionParametersGetInfoKHR::safe_VkVideoEncodeSessionParametersGetInfoKHR(const VkVideoEncodeSessionParametersGetInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    videoSessionParameters(in_struct->videoSessionParameters)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkVideoEncodeSessionParametersGetInfoKHR::safe_VkVideoEncodeSessionParametersGetInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_GET_INFO_KHR),
+    pNext(nullptr),
+    videoSessionParameters()
+{}
+
+safe_VkVideoEncodeSessionParametersGetInfoKHR::safe_VkVideoEncodeSessionParametersGetInfoKHR(const safe_VkVideoEncodeSessionParametersGetInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    videoSessionParameters = copy_src.videoSessionParameters;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoEncodeSessionParametersGetInfoKHR& safe_VkVideoEncodeSessionParametersGetInfoKHR::operator=(const safe_VkVideoEncodeSessionParametersGetInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    videoSessionParameters = copy_src.videoSessionParameters;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoEncodeSessionParametersGetInfoKHR::~safe_VkVideoEncodeSessionParametersGetInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoEncodeSessionParametersGetInfoKHR::initialize(const VkVideoEncodeSessionParametersGetInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    videoSessionParameters = in_struct->videoSessionParameters;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkVideoEncodeSessionParametersGetInfoKHR::initialize(const safe_VkVideoEncodeSessionParametersGetInfoKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    videoSessionParameters = copy_src->videoSessionParameters;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::safe_VkVideoEncodeSessionParametersFeedbackInfoKHR(const VkVideoEncodeSessionParametersFeedbackInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    hasOverrides(in_struct->hasOverrides)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::safe_VkVideoEncodeSessionParametersFeedbackInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_FEEDBACK_INFO_KHR),
+    pNext(nullptr),
+    hasOverrides()
+{}
+
+safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::safe_VkVideoEncodeSessionParametersFeedbackInfoKHR(const safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    hasOverrides = copy_src.hasOverrides;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::operator=(const safe_VkVideoEncodeSessionParametersFeedbackInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    hasOverrides = copy_src.hasOverrides;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::~safe_VkVideoEncodeSessionParametersFeedbackInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::initialize(const VkVideoEncodeSessionParametersFeedbackInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    hasOverrides = in_struct->hasOverrides;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::initialize(const safe_VkVideoEncodeSessionParametersFeedbackInfoKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    hasOverrides = copy_src->hasOverrides;
+    pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 

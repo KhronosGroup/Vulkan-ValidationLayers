@@ -1157,12 +1157,10 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
     VkAccelerationStructureCompatibilityKHR *pCompatibility) const {
     bool skip = false;
-    const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(device_createinfo_pnext);
-    const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
-    if ((!raytracing_features && !ray_query_features) || ((ray_query_features && !(ray_query_features->rayQuery)) ||
-                                                          (raytracing_features && !raytracing_features->rayTracingPipeline))) {
-        skip |= LogError(device, "VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-rayTracingPipeline-03661",
-                         "vkGetDeviceAccelerationStructureCompatibilityKHR: The rayTracing or rayQuery feature must be enabled.");
+    const auto *accel_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!(accel_struct_features && accel_struct_features->accelerationStructure)) {
+        skip |= LogError(device, "VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-accelerationStructure-08928",
+                         "vkGetDeviceAccelerationStructureCompatibilityKHR: The accelerationStructure feature must be enabled");
     }
     return skip;
 }
@@ -1785,13 +1783,10 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     }
     skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pBuildInfo, 1, total_primitive_count,
                                                               "vkGetAccelerationStructureBuildSizesKHR");
-    const auto *ray_tracing_pipeline_features =
-        LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
-    const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(device_createinfo_pnext);
-    if (!((ray_tracing_pipeline_features && ray_tracing_pipeline_features->rayTracingPipeline == VK_TRUE) ||
-          (ray_query_features && ray_query_features->rayQuery == VK_TRUE))) {
-        skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-rayTracingPipeline-03617",
-                         "vkGetAccelerationStructureBuildSizesKHR: The rayTracingPipeline or rayQuery feature must be enabled");
+    const auto *accel_struct_features = LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
+    if (!(accel_struct_features && accel_struct_features->accelerationStructure)) {
+        skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-accelerationStructure-08933",
+                         "vkGetAccelerationStructureBuildSizesKHR: The accelerationStructure feature must be enabled");
     }
     if (pBuildInfo) {
         if (pBuildInfo->geometryCount != 0 && !pMaxPrimitiveCounts) {

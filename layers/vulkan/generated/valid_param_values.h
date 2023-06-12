@@ -80,12 +80,6 @@ template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamV
 #endif // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkRasterizationOrderAMD> ValidationObject::ValidParamValues() const;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-template<> std::vector<VkVideoEncodeH264RateControlStructureEXT> ValidationObject::ValidParamValues() const;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-template<> std::vector<VkVideoEncodeH265RateControlStructureEXT> ValidationObject::ValidParamValues() const;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkShaderInfoTypeAMD> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkValidationCheckEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkPipelineRobustnessBufferBehaviorEXT> ValidationObject::ValidParamValues() const;
