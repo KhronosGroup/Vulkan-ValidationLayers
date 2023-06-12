@@ -110,8 +110,8 @@ config("vulkan_layer_config") {
 
 core_validation_sources = [
   "layers/utils/android_ndk_types.h",
-  "layers/utils/convert_to_renderpass2.cpp",
-  "layers/utils/convert_to_renderpass2.h",
+  "layers/utils/convert_utils.cpp",
+  "layers/utils/convert_utils.h",
   "layers/core_checks/cc_android.cpp",
   "layers/core_checks/cc_buffer.cpp",
   "layers/core_checks/cc_buffer_address.h",

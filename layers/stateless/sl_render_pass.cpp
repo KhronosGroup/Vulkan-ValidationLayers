@@ -17,7 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
-#include "utils/convert_to_renderpass2.h"
+#include "utils/convert_utils.h"
 
 bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,

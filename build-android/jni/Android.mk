@@ -108,7 +108,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_vuid_maps.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/error_message/core_error_location.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/sync_validation_types.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/convert_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/valid_param_values.cpp
@@ -261,7 +261,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/framework/error_monitor.cpp \
                    $(SRC_DIR)/tests/framework/render.cpp \
                    $(SRC_DIR)/tests/framework/ray_tracing_objects.cpp \
-                   $(SRC_DIR)/layers/utils/convert_to_renderpass2.cpp \
+                   $(SRC_DIR)/layers/utils/convert_utils.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_utils.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_core.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_khr.cpp \
