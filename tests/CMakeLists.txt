@@ -41,7 +41,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/command.cpp
     positive/descriptor_buffer.cpp
     positive/descriptors.cpp
-    positive/dynamic_rendering.cpp
+    tests/dynamic_rendering.cpp
+    tests/dynamic_rendering_inheritance.cpp
     positive/dynamic_state.cpp
     positive/external_memory_sync.cpp
     positive/fragment_shading_rate.cpp
@@ -92,7 +93,6 @@ target_sources(vk_layer_validation_tests PRIVATE
     negative/descriptor_buffer.cpp
     negative/descriptors.cpp
     negative/device_queue.cpp
-    negative/dynamic_rendering.cpp
     negative/dynamic_state.cpp
     negative/external_memory_sync.cpp
     negative/fragment_shading_rate.cpp
