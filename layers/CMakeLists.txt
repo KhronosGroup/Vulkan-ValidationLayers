@@ -46,8 +46,8 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_extension_helper.h
     ${API_TYPE}/generated/vk_typemap_helper.h
     utils/cast_utils.h
-    utils/convert_to_renderpass2.cpp
-    utils/convert_to_renderpass2.h
+    utils/convert_utils.cpp
+    utils/convert_utils.h
     utils/hash_util.h
     utils/hash_vk_types.h
     utils/vk_layer_extension_utils.cpp

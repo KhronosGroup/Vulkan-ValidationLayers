@@ -31,7 +31,7 @@
 #include "generated/vk_extension_helper.h"
 #include "render.h"
 #include "generated/vk_typemap_helper.h"
-#include "utils/convert_to_renderpass2.h"
+#include "utils/convert_utils.h"
 
 #include <algorithm>
 #include <cmath>

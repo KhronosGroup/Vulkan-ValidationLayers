@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "convert_to_renderpass2.h"
+#include "convert_utils.h"
 
 #include <vector>
 
@@ -221,4 +221,26 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
         out_struct.pCorrelatedViewMasks = correlated_view_masks;
     }
     return out_struct;
+}
+
+safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags2 srcStageMask,
+                                                           VkPipelineStageFlags2 dstStageMask) {
+    auto barrier2 = LvlInitStruct<VkImageMemoryBarrier2>();
+
+    // As of Vulkan 1.3.153, the VkImageMemoryBarrier2 supports the same pNext structs as VkImageMemoryBarrier
+    // (VkExternalMemoryAcquireUnmodifiedEXT and VkSampleLocationsInfoEXT). It means we can copy entire pNext
+    // chain (as part of safe_VkImageMemoryBarrier2 constructor) without analyzing which pNext structures are supported in V2.
+    barrier2.pNext = barrier.pNext;
+
+    barrier2.srcStageMask = srcStageMask;
+    barrier2.srcAccessMask = barrier.srcAccessMask;
+    barrier2.dstStageMask = dstStageMask;
+    barrier2.dstAccessMask = barrier.dstAccessMask;
+    barrier2.oldLayout = barrier.oldLayout;
+    barrier2.newLayout = barrier.newLayout;
+    barrier2.srcQueueFamilyIndex = barrier.srcQueueFamilyIndex;
+    barrier2.dstQueueFamilyIndex = barrier.dstQueueFamilyIndex;
+    barrier2.image = barrier.image;
+    barrier2.subresourceRange = barrier.subresourceRange;
+    return safe_VkImageMemoryBarrier2(&barrier2);
 }
