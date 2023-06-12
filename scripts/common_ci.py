@@ -265,6 +265,8 @@ def RunVVLTests():
     failing_tsan_tests += ':NegativeSyncVal.CopyOptimalImageHazards'
     failing_tsan_tests += ':NegativeViewportInheritance.BasicUsage'
     failing_tsan_tests += ':NegativeViewportInheritance.MultiViewport'
+    # NOTE: This test fails sporadically. Make sure to run multiple times.
+    failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
 
     RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)
 
