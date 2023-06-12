@@ -2429,11 +2429,6 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const CMD_BUFFER_ST
 bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
                                         const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
-
-    if (cb_state->activeRenderPass) {
-        skip |= ValidateRenderPassPipelineBarriers(outer_loc, cb_state, dep_info);
-        if (skip) return true;  // Early return to avoid redundant errors from below calls
-    }
     for (uint32_t i = 0; i < dep_info->memoryBarrierCount; ++i) {
         const auto &mem_barrier = dep_info->pMemoryBarriers[i];
         auto loc = outer_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
