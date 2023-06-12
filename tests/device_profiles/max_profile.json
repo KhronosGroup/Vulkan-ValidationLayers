@@ -227,6 +227,9 @@
                 "VkPhysicalDeviceASTCDecodeFeaturesEXT": {
                     "decodeModeSharedExponent": true
                 },
+                "VkPhysicalDeviceShaderObjectFeaturesEXT": {
+                    "shaderObject": true
+                },
                 "VkPhysicalDeviceTransformFeedbackFeaturesEXT": {
                     "transformFeedback": true,
                     "geometryStreams": true
@@ -665,6 +668,11 @@
                 },
                 "VkPhysicalDeviceImageViewMinLodFeaturesEXT": {
                     "minLod": true
+                },
+                "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM": {
+                    "rasterizationOrderColorAttachmentAccess": true,
+                    "rasterizationOrderDepthAttachmentAccess": true,
+                    "rasterizationOrderStencilAttachmentAccess": true
                 },
                 "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT": {
                     "rasterizationOrderColorAttachmentAccess": true,
@@ -1758,6 +1766,7 @@
                 "VK_EXT_shader_demote_to_helper_invocation": 1,
                 "VK_EXT_shader_image_atomic_int64": 1,
                 "VK_EXT_shader_module_identifier": 1,
+                "VK_EXT_shader_object": 1,
                 "VK_EXT_shader_stencil_export": 1,
                 "VK_EXT_shader_subgroup_ballot": 1,
                 "VK_EXT_shader_subgroup_vote": 1,
