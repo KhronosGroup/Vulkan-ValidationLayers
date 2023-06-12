@@ -161,6 +161,11 @@ typedef struct VkLayerInstanceDispatchTable_ {
     // ---- VK_KHR_fragment_shading_rate extension commands
     PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
 
+    // ---- VK_KHR_video_encode_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
     // ---- VK_EXT_debug_report extension commands
     PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT;
     PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT;
@@ -621,6 +626,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUnmapMemory2KHR UnmapMemory2KHR;
 
     // ---- VK_KHR_video_encode_queue extension commands
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+    PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
+#endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS

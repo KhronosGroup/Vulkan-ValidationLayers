@@ -38,15 +38,12 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
-    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&ray_query_features);
-    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
+    auto accel_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(accel_struct_features);
 
-    if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
-        GTEST_SKIP() << "rayTracingPipeline feature not supported";
+    if (accel_struct_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature not supported";
     }
-
-    ray_query_features.rayQuery = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 

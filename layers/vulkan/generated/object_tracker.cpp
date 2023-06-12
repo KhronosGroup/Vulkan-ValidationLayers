@@ -4631,6 +4631,37 @@ bool ObjectLifetimes::PreCallValidateUnmapMemory2KHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
+bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR");
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+bool ObjectLifetimes::PreCallValidateGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetEncodedVideoSessionParametersKHR-device-parameter", kVUIDUndefined, "vkGetEncodedVideoSessionParametersKHR");
+    if (pVideoSessionParametersInfo) {
+        skip |= ValidateObject(pVideoSessionParametersInfo->videoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, false, "VUID-VkVideoEncodeSessionParametersGetInfoKHR-videoSessionParameters-parameter", kVUIDUndefined, "VkVideoEncodeSessionParametersGetInfoKHR");
+    }
+
+    return skip;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) const {

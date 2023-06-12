@@ -726,6 +726,8 @@ extern PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
 extern PFN_vkCmdDecodeVideoKHR CmdDecodeVideoKHR;
 // VK_KHR_video_encode_queue
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+extern PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR;
+extern PFN_vkGetEncodedVideoSessionParametersKHR GetEncodedVideoSessionParametersKHR;
 extern PFN_vkCmdEncodeVideoKHR CmdEncodeVideoKHR;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 // VK_KHR_video_queue

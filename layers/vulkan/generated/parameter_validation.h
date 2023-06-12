@@ -1527,6 +1527,20 @@ bool PreCallValidateUnmapMemory2KHR(
     VkDevice                                    device,
     const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo) const override;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties) const override;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+bool PreCallValidateGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData) const override;
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) const override;

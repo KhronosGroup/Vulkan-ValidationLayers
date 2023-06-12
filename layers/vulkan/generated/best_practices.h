@@ -1104,6 +1104,30 @@ void PostCallRecordMapMemory2KHR(
     VkResult                                    result) override;
 
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties,
+    VkResult                                    result) override;
+
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+void PostCallRecordGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 void PostCallRecordQueueSubmit2KHR(
     VkQueue                                     queue,
     uint32_t                                    submitCount,

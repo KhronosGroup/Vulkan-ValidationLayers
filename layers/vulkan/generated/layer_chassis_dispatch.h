@@ -1556,6 +1556,20 @@ VkResult DispatchUnmapMemory2KHR(
     VkDevice                                    device,
     const VkMemoryUnmapInfoKHR*                 pMemoryUnmapInfo);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+VkResult DispatchGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties);
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+VkResult DispatchGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData);
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void DispatchCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo);

@@ -2015,6 +2015,18 @@ VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties);
+
+VKAPI_ATTR VkResult VKAPI_CALL GetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData);
+
 VKAPI_ATTR void VKAPI_CALL CmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo);
@@ -3515,6 +3527,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(
     VkDeviceAddress                             indirectCommandsAddress,
     VkDeviceAddress                             indirectCommandsCountAddress,
     uint32_t                                    stride);
+
 
 
 
@@ -5214,6 +5227,16 @@ class ValidationObject {
         virtual bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) const { return false; };
         virtual void PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {};
         virtual void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo, VkResult result) {};
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        virtual bool PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) const { return false; };
+        virtual void PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties) {};
+        virtual void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo, VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, VkResult result) {};
+#endif
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        virtual bool PreCallValidateGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) const { return false; };
+        virtual void PreCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData) {};
+        virtual void PostCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo, VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, VkResult result) {};
+#endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         virtual bool PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) const { return false; };
         virtual void PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo) {};

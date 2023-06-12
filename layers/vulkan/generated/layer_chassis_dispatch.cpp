@@ -7108,6 +7108,48 @@ VkResult DispatchUnmapMemory2KHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
+VkResult DispatchGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
+    VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo, pQualityLevelProperties);
+
+    return result;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+VkResult DispatchGetEncodedVideoSessionParametersKHR(
+    VkDevice                                    device,
+    const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo,
+    size_t*                                     pDataSize,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData);
+    safe_VkVideoEncodeSessionParametersGetInfoKHR var_local_pVideoSessionParametersInfo;
+    safe_VkVideoEncodeSessionParametersGetInfoKHR *local_pVideoSessionParametersInfo = nullptr;
+    {
+        if (pVideoSessionParametersInfo) {
+            local_pVideoSessionParametersInfo = &var_local_pVideoSessionParametersInfo;
+            local_pVideoSessionParametersInfo->initialize(pVideoSessionParametersInfo);
+            if (pVideoSessionParametersInfo->videoSessionParameters) {
+                local_pVideoSessionParametersInfo->videoSessionParameters = layer_data->Unwrap(pVideoSessionParametersInfo->videoSessionParameters);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetEncodedVideoSessionParametersKHR(device, (const VkVideoEncodeSessionParametersGetInfoKHR*)local_pVideoSessionParametersInfo, pFeedbackInfo, pDataSize, pData);
+
+    return result;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 void DispatchCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo)

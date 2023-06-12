@@ -1219,6 +1219,9 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM:
             safe_pNext = new safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(reinterpret_cast<const VkPhysicalDeviceImageProcessingPropertiesQCOM *>(pNext), copy_state);
             break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT:
+            safe_pNext = new safe_VkExternalMemoryAcquireUnmodifiedEXT(reinterpret_cast<const VkExternalMemoryAcquireUnmodifiedEXT *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceExtendedDynamicState3FeaturesEXT *>(pNext), copy_state);
             break;
@@ -1352,14 +1355,20 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR:
             safe_pNext = new safe_VkVideoEncodeUsageInfoKHR(reinterpret_cast<const VkVideoEncodeUsageInfoKHR *>(pNext), copy_state);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR:
-            safe_pNext = new safe_VkVideoEncodeRateControlLayerInfoKHR(reinterpret_cast<const VkVideoEncodeRateControlLayerInfoKHR *>(pNext), copy_state);
-            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR:
             safe_pNext = new safe_VkVideoEncodeRateControlInfoKHR(reinterpret_cast<const VkVideoEncodeRateControlInfoKHR *>(pNext), copy_state);
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR:
+            safe_pNext = new safe_VkVideoEncodeQualityLevelInfoKHR(reinterpret_cast<const VkVideoEncodeQualityLevelInfoKHR *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT:
             safe_pNext = new safe_VkVideoEncodeH264CapabilitiesEXT(reinterpret_cast<const VkVideoEncodeH264CapabilitiesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264QualityLevelPropertiesEXT(reinterpret_cast<const VkVideoEncodeH264QualityLevelPropertiesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264SessionCreateInfoEXT(reinterpret_cast<const VkVideoEncodeH264SessionCreateInfoEXT *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH264SessionParametersAddInfoEXT(reinterpret_cast<const VkVideoEncodeH264SessionParametersAddInfoEXT *>(pNext), copy_state);
@@ -1367,8 +1376,14 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH264SessionParametersCreateInfoEXT(reinterpret_cast<const VkVideoEncodeH264SessionParametersCreateInfoEXT *>(pNext), copy_state);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT:
-            safe_pNext = new safe_VkVideoEncodeH264VclFrameInfoEXT(reinterpret_cast<const VkVideoEncodeH264VclFrameInfoEXT *>(pNext), copy_state);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_GET_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264SessionParametersGetInfoEXT(reinterpret_cast<const VkVideoEncodeH264SessionParametersGetInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_FEEDBACK_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT(reinterpret_cast<const VkVideoEncodeH264SessionParametersFeedbackInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PICTURE_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264PictureInfoEXT(reinterpret_cast<const VkVideoEncodeH264PictureInfoEXT *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH264DpbSlotInfoEXT(reinterpret_cast<const VkVideoEncodeH264DpbSlotInfoEXT *>(pNext), copy_state);
@@ -1382,8 +1397,17 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH264RateControlLayerInfoEXT(reinterpret_cast<const VkVideoEncodeH264RateControlLayerInfoEXT *>(pNext), copy_state);
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_GOP_REMAINING_FRAME_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH264GopRemainingFrameInfoEXT(reinterpret_cast<const VkVideoEncodeH264GopRemainingFrameInfoEXT *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT:
             safe_pNext = new safe_VkVideoEncodeH265CapabilitiesEXT(reinterpret_cast<const VkVideoEncodeH265CapabilitiesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265SessionCreateInfoEXT(reinterpret_cast<const VkVideoEncodeH265SessionCreateInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265QualityLevelPropertiesEXT(reinterpret_cast<const VkVideoEncodeH265QualityLevelPropertiesEXT *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH265SessionParametersAddInfoEXT(reinterpret_cast<const VkVideoEncodeH265SessionParametersAddInfoEXT *>(pNext), copy_state);
@@ -1391,8 +1415,14 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH265SessionParametersCreateInfoEXT(reinterpret_cast<const VkVideoEncodeH265SessionParametersCreateInfoEXT *>(pNext), copy_state);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_VCL_FRAME_INFO_EXT:
-            safe_pNext = new safe_VkVideoEncodeH265VclFrameInfoEXT(reinterpret_cast<const VkVideoEncodeH265VclFrameInfoEXT *>(pNext), copy_state);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_GET_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265SessionParametersGetInfoEXT(reinterpret_cast<const VkVideoEncodeH265SessionParametersGetInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_FEEDBACK_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT(reinterpret_cast<const VkVideoEncodeH265SessionParametersFeedbackInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PICTURE_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265PictureInfoEXT(reinterpret_cast<const VkVideoEncodeH265PictureInfoEXT *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH265DpbSlotInfoEXT(reinterpret_cast<const VkVideoEncodeH265DpbSlotInfoEXT *>(pNext), copy_state);
@@ -1405,6 +1435,9 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_EXT:
             safe_pNext = new safe_VkVideoEncodeH265RateControlLayerInfoEXT(reinterpret_cast<const VkVideoEncodeH265RateControlLayerInfoEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_GOP_REMAINING_FRAME_INFO_EXT:
+            safe_pNext = new safe_VkVideoEncodeH265GopRemainingFrameInfoEXT(reinterpret_cast<const VkVideoEncodeH265GopRemainingFrameInfoEXT *>(pNext), copy_state);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV:
             safe_pNext = new safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(reinterpret_cast<const VkPhysicalDeviceDisplacementMicromapFeaturesNV *>(pNext), copy_state);
@@ -2712,6 +2745,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM *>(header);
             break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT:
+            delete reinterpret_cast<const safe_VkExternalMemoryAcquireUnmodifiedEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceExtendedDynamicState3FeaturesEXT *>(header);
             break;
@@ -2845,14 +2881,20 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR:
             delete reinterpret_cast<const safe_VkVideoEncodeUsageInfoKHR *>(header);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR:
-            delete reinterpret_cast<const safe_VkVideoEncodeRateControlLayerInfoKHR *>(header);
-            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR:
             delete reinterpret_cast<const safe_VkVideoEncodeRateControlInfoKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoEncodeQualityLevelInfoKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH264CapabilitiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264QualityLevelPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264SessionCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH264SessionParametersAddInfoEXT *>(header);
@@ -2860,8 +2902,14 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH264SessionParametersCreateInfoEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_VCL_FRAME_INFO_EXT:
-            delete reinterpret_cast<const safe_VkVideoEncodeH264VclFrameInfoEXT *>(header);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_GET_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264SessionParametersGetInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_FEEDBACK_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PICTURE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264PictureInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH264DpbSlotInfoEXT *>(header);
@@ -2875,8 +2923,17 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH264RateControlLayerInfoEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_GOP_REMAINING_FRAME_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH264GopRemainingFrameInfoEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH265CapabilitiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265SessionCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265QualityLevelPropertiesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH265SessionParametersAddInfoEXT *>(header);
@@ -2884,8 +2941,14 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH265SessionParametersCreateInfoEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_VCL_FRAME_INFO_EXT:
-            delete reinterpret_cast<const safe_VkVideoEncodeH265VclFrameInfoEXT *>(header);
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_GET_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265SessionParametersGetInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_FEEDBACK_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PICTURE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265PictureInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH265DpbSlotInfoEXT *>(header);
@@ -2898,6 +2961,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_EXT:
             delete reinterpret_cast<const safe_VkVideoEncodeH265RateControlLayerInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_GOP_REMAINING_FRAME_INFO_EXT:
+            delete reinterpret_cast<const safe_VkVideoEncodeH265GopRemainingFrameInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV *>(header);
