@@ -130,6 +130,15 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // Fill with bad data as should be ignored with dynamic state
+    VkVertexInputBindingDescription input_binding = {5, 7, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {5, 7, VK_FORMAT_UNDEFINED, 9};
+    auto vi_ci = LvlInitStruct<VkPipelineVertexInputStateCreateInfo>();
+    vi_ci.pVertexBindingDescriptions = &input_binding;
+    vi_ci.vertexBindingDescriptionCount = 1;
+    vi_ci.pVertexAttributeDescriptions = &input_attrib;
+    vi_ci.vertexAttributeDescriptionCount = 1;
+
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT};
@@ -138,7 +147,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.InitState();
-    pipe.gp_ci_.pVertexInputState = nullptr;
+    pipe.gp_ci_.pVertexInputState = &vi_ci;  // ignored
     pipe.CreateGraphicsPipeline();
 
     VkVertexInputBindingDescription2EXT binding = LvlInitStruct<VkVertexInputBindingDescription2EXT>();
@@ -152,8 +161,14 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
+    VkBufferObj vtx_buf;
+    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vtx_buf.init(*m_device, info);
+    VkDeviceSize offset = 0;
+
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
@@ -212,8 +227,14 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
+    VkBufferObj vtx_buf;
+    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vtx_buf.init(*m_device, info);
+    VkDeviceSize offset = 0;
+
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
