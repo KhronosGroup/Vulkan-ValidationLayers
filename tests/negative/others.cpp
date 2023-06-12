@@ -118,10 +118,6 @@ TEST_F(VkLayerTest, UnsupportedPnextApiVersion) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
-
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
     auto bad_version_1_1_struct = LvlInitStruct<VkPhysicalDeviceVulkan12Properties>();
     phys_dev_props_2.pNext = &bad_version_1_1_struct;
@@ -2016,9 +2012,6 @@ TEST_F(VkLayerTest, FreeDescriptorSetsNull) {
 TEST_F(VkLayerTest, ValidateStride) {
     TEST_DESCRIPTION("Validate Stride.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (IsPlatform(kPixelC)) {
-        GTEST_SKIP() << "This test should not run on Pixel C";
-    }
 
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);

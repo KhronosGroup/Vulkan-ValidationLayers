@@ -247,7 +247,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+    if (IsPlatform(PlatformType::kShieldTVb)) {
         GTEST_SKIP() << "Test CmdClearAttachmentTestSecondary is unstable on ShieldTV";
     }
 
@@ -650,8 +650,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(kPixel2XL) || IsPlatform(kPixel3) || IsPlatform(kPixel3aXL) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb) ||
-        IsPlatform(kNexusPlayer)) {
+    if (IsPlatform(kPixel3) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test seems super-picky on Android platforms";
     }
 
@@ -882,7 +881,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     InitBestPracticesFramework();
     InitState();
 
-    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+    if (IsPlatform(PlatformType::kShieldTVb)) {
         GTEST_SKIP() << "Test CmdClearAttachmentAfterLoadSecondary is unstable on ShieldTV";
     }
 
