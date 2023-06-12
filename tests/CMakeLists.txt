@@ -74,6 +74,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     positive/shader_storage_image.cpp
     positive/shader_storage_texel.cpp
     positive/sparse.cpp
+    positive/subpass.cpp
     positive/sync_object.cpp
     positive/sync_val.cpp
     positive/tooling.cpp

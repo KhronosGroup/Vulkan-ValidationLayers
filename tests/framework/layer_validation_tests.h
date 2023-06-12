@@ -766,7 +766,9 @@ class PositiveSparse : public SparseTest {};
 
 class NegativeSubgroup : public VkLayerTest {};
 
-class NegativeSubpass : public VkLayerTest {};
+class SubpassTest : public VkLayerTest {};
+class NegativeSubpass : public SubpassTest {};
+class PositiveSubpass : public SubpassTest {};
 
 class SyncObjectTest : public VkLayerTest {
   protected:

@@ -245,6 +245,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/shader_storage_image.cpp \
                    $(SRC_DIR)/tests/positive/shader_storage_texel.cpp \
                    $(SRC_DIR)/tests/positive/sparse.cpp \
+                   $(SRC_DIR)/tests/positive/subpass.cpp \
                    $(SRC_DIR)/tests/positive/sync_object.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
                    $(SRC_DIR)/tests/positive/vertex_input.cpp \
