@@ -903,3 +903,23 @@ VkStencilOpState LAST_BOUND_STATE::GetStencilOpStateBack() const {
     }
     return back;
 }
+
+VkSampleCountFlagBits LAST_BOUND_STATE::GetRasterizationSamples() const {
+    // For given pipeline, return number of MSAA samples, or one if MSAA disabled
+    VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_1_BIT;
+    if (pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
+    } else {
+        const auto ms_state = pipeline_state->MultisampleState();
+        if (ms_state) {
+            rasterization_samples = ms_state->rasterizationSamples;
+        }
+    }
+    return rasterization_samples;
+}
+
+bool LAST_BOUND_STATE::IsRasterizationDisabled() const {
+    return pipeline_state->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
+               ? cb_state.dynamic_state_value.rasterizer_discard_enable
+               : pipeline_state->RasterizationDisabled();
+}

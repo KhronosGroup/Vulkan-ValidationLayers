@@ -215,6 +215,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         VkLineRasterizationModeEXT line_rasterization_mode;
         // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
         bool stippled_line_enable;
+        // VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE
+        bool rasterizer_discard_enable;
 
         uint32_t color_write_enable_attachment_count;
 
@@ -293,8 +295,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool usedDynamicScissorCount;
 
     uint32_t initial_device_mask;
-
-    bool rasterization_disabled = false;
 
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
@@ -568,21 +568,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         return false;
     }
 
-    // For given pipeline, return number of MSAA samples, or one if MSAA disabled
-    VkSampleCountFlagBits GetRasterizationSamples(const PIPELINE_STATE &pipeline) const {
-        VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_1_BIT;
-        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-            rasterization_samples = dynamic_state_value.rasterization_samples;
-        } else {
-            const auto ms_state = pipeline.MultisampleState();
-            if (ms_state) {
-                rasterization_samples = ms_state->rasterizationSamples;
-            }
-        }
-        return rasterization_samples;
-    }
-
-    bool RasterizationDisabled() const;
     inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
     }

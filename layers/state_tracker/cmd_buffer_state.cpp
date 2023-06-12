@@ -1548,17 +1548,3 @@ void CMD_BUFFER_STATE::UnbindResources() {
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();
 }
-
-// Need to think about dynamic state when grabbing state
-bool CMD_BUFFER_STATE::RasterizationDisabled() const {
-    auto pipeline = lastBound[BindPoint_Graphics].pipeline_state;
-    if (pipeline) {
-        if (pipeline->IsDynamic(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)) {
-            return rasterization_disabled;
-        } else {
-            return pipeline->RasterizationDisabled();
-        }
-    }
-
-    return false;
-}
