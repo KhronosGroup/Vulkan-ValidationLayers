@@ -887,10 +887,6 @@ TEST_F(NegativeVertexInput, Attribute64bitInputAttribute) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
-
     char const *vsSource = R"glsl(
         #version 450 core
         layout(location = 0) in float pos; // 32-bit
@@ -930,10 +926,6 @@ TEST_F(NegativeVertexInput, Attribute64bitShaderInput) {
     if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
-
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
 
     char const *vsSource = R"glsl(
         #version 450 core
@@ -976,10 +968,6 @@ TEST_F(NegativeVertexInput, Attribute64bitUnusedComponent) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
-
     char const *vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
@@ -1020,10 +1008,6 @@ TEST_F(NegativeVertexInput, Attribute64bitMissingComponent) {
     if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
-
-    VkBufferObj vtx_buf;
-    auto info = vtx_buf.create_info(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vtx_buf.init(*m_device, info);
 
     char const *vsSource = R"glsl(
         #version 450 core

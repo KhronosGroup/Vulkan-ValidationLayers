@@ -2666,7 +2666,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
     }
 
     // Verify vertex binding
-    if (pipeline.vertex_input_state) {
+    // TODO #5954 - Add proper dynamic support
+    if (pipeline.vertex_input_state && !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         for (size_t i = 0; i < pipeline.vertex_input_state->binding_descriptions.size(); i++) {
             const auto vertex_binding = pipeline.vertex_input_state->binding_descriptions[i].binding;
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
@@ -2738,8 +2739,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
             } else {
                 const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
                 skip |= LogError(objlist, vuid.vertex_binding_attribute_02721,
-                                 "%s: binding #%" PRIu32 " in pVertexAttributeDescriptions[%" PRIu32 "] is an invalid values.",
-                                 caller, vertex_binding, i);
+                                 "%s: pVertexAttributeDescriptions[%" PRIu32 "].binding (%" PRIu32 ") is an invalid value.", caller,
+                                 vertex_binding, i);
             }
         }
     }

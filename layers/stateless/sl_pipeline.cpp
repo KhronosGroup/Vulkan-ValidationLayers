@@ -750,6 +750,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             const bool has_dynamic_exclusive_scissor_nv = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
             const bool has_dynamic_viewport_with_count = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
             const bool has_dynamic_scissor_with_count = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+            const bool has_dynamic_vertex_input = vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -808,7 +809,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 skip |= ValidatePipelineInputAssemblyStateCreateInfo(*create_info.pInputAssemblyState, i);
             }
 
-            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && (create_info.pVertexInputState != nullptr)) {
+            if (!has_dynamic_vertex_input && !(active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) &&
+                (create_info.pVertexInputState != nullptr)) {
                 auto const &vertex_input_state = create_info.pVertexInputState;
 
                 skip |= ValidatePipelineVertexInputStateCreateInfo(*vertex_input_state, i);
