@@ -668,7 +668,7 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
     if (buffer_states.empty()) {
         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
                          "vkCmdBuildAccelerationStructuresKHR(): No buffer is associated with pInfos[%" PRIu32
-                         "].scratchData.deviceAddress (%" PRIx64 ").",
+                         "].scratchData.deviceAddress (0x%" PRIx64 ").",
                          info_index, info.scratchData.deviceAddress);
     } else {
         const bool no_valid_buffer_found = std::none_of(
@@ -682,8 +682,8 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
             }
             skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
                              "vkBuildAccelerationStructuresKHR(): No buffer associated with pInfos[%" PRIu32
-                             "].scratchData.deviceAddress was created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
-                             info_index);
+                             "].scratchData.deviceAddress (0x%" PRIx64 ") was created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
+                             info_index, info.scratchData.deviceAddress);
         }
     }
 
