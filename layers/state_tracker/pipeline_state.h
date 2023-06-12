@@ -823,6 +823,8 @@ struct LAST_BOUND_STATE {
     bool IsStencilTestEnable() const;
     VkStencilOpState GetStencilOpStateFront() const;
     VkStencilOpState GetStencilOpStateBack() const;
+    VkSampleCountFlagBits GetRasterizationSamples() const;
+    bool IsRasterizationDisabled() const;
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,

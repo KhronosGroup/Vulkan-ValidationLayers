@@ -2797,7 +2797,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &last_boun
                     subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
                 }
 
-                const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
+                const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
                 if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
                       IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
                       enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
@@ -3245,7 +3245,7 @@ bool CoreChecks::ValidatePipelineDynamicRenderpassDraw(const LAST_BOUND_STATE &l
             }
         }
     } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
-        const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
+        const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
                 continue;

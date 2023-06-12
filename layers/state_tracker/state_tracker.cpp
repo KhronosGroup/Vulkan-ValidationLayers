@@ -5418,7 +5418,7 @@ void ValidationStateTracker::RecordCmdSetRasterizerDiscardEnable(VkCommandBuffer
                                                                  CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
-    cb_state->rasterization_disabled = rasterizerDiscardEnable == VK_TRUE;
+    cb_state->dynamic_state_value.rasterizer_discard_enable = (rasterizerDiscardEnable == VK_TRUE);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer,
