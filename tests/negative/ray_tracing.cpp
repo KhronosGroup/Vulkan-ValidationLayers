@@ -460,11 +460,11 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03571 requires a small maximum number of per stage "
                 "descriptor update after bind for acceleration structures, "
-                "skipping test");
+                "skipping test\n");
         } else if (max_accel_structs < 1) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03571 requires "
-                "maxPerStageDescriptorAccelerationStructures >= 1, skipping test");
+                "maxPerStageDescriptorAccelerationStructures >= 1, skipping test\n");
         } else {
             std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
             dslb_vec.reserve(max_accel_structs);
@@ -506,11 +506,11 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03572 requires a small maximum number of per stage "
                 "descriptor update after bind for acceleration structures, "
-                "skipping test");
+                "skipping test\n");
         } else if (max_accel_structs < 1) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03572 requires "
-                "maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1, skipping test");
+                "maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1, skipping test\n");
         } else {
             std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
             dslb_vec.reserve(max_accel_structs);
@@ -551,11 +551,11 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03573 requires a small maximum number of per stage "
                 "descriptor update after bind for acceleration structures, "
-                "skipping test");
+                "skipping test\n");
         } else if (max_accel_structs < 1) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03573 requires "
-                "maxDescriptorSetAccelerationStructures >= 1, skipping test");
+                "maxDescriptorSetAccelerationStructures >= 1, skipping test\n");
         } else {
             std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
             dslb_vec.reserve(max_accel_structs);
@@ -597,11 +597,11 @@ TEST_F(NegativeRayTracing, AccelerationStructureBindings) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03574 requires a small maximum number of per stage "
                 "descriptor update after bind for acceleration structures, "
-                "skipping test");
+                "skipping test\n");
         } else if (max_accel_structs < 1) {
             printf(
                 "Testing VUID-VkPipelineLayoutCreateInfo-descriptorType-03574 requires "
-                "maxDescriptorSetUpdateAfterBindAccelerationStructures >= 1, skipping test");
+                "maxDescriptorSetUpdateAfterBindAccelerationStructures >= 1, skipping test\n");
         } else {
             std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
             dslb_vec.reserve(max_accel_structs);
