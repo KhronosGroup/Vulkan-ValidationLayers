@@ -583,12 +583,12 @@ class CoreChecks::ViewportScissorInheritanceTracker {
             viewport_trashed_by_[n] = primary_state->trashedViewportMask & bit ? kTrashedByPrimary : kNotTrashed;
             scissor_trashed_by_[n] = primary_state->trashedScissorMask & bit ? kTrashedByPrimary : kNotTrashed;
             if (viewport_mask_ & bit) {
-                viewports_to_inherit_[n] = primary_state->dynamicViewports[n];
+                viewports_to_inherit_[n] = primary_state->dynamic_state_value.viewports[n];
             }
         }
 
-        viewport_count_to_inherit_ = primary_state->viewportWithCountCount;
-        scissor_count_to_inherit_ = primary_state->scissorWithCountCount;
+        viewport_count_to_inherit_ = primary_state->dynamic_state_value.viewport_count;
+        scissor_count_to_inherit_ = primary_state->dynamic_state_value.scissor_count;
         viewport_count_trashed_by_ = primary_state->trashedViewportCount ? kTrashedByPrimary : kNotTrashed;
         scissor_count_trashed_by_ = primary_state->trashedScissorCount ? kTrashedByPrimary : kNotTrashed;
         return false;
@@ -622,18 +622,18 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         for (uint32_t n = 0; n < kMaxViewports; ++n) {
             uint32_t bit = uint32_t(1) << n;
             if ((secondary_state->viewportMask | secondary_state->viewportWithCountMask) & bit) {
-                viewports_to_inherit_[n] = secondary_state->dynamicViewports[n];
+                viewports_to_inherit_[n] = secondary_state->dynamic_state_value.viewports[n];
                 viewport_trashed_by_[n] = kNotTrashed;
             }
             if ((secondary_state->scissorMask | secondary_state->scissorWithCountMask) & bit) {
                 scissor_trashed_by_[n] = kNotTrashed;
             }
-            if (secondary_state->viewportWithCountCount != 0) {
-                viewport_count_to_inherit_ = secondary_state->viewportWithCountCount;
+            if (secondary_state->dynamic_state_value.viewport_count != 0) {
+                viewport_count_to_inherit_ = secondary_state->dynamic_state_value.viewport_count;
                 viewport_count_trashed_by_ = kNotTrashed;
             }
-            if (secondary_state->scissorWithCountCount != 0) {
-                scissor_count_to_inherit_ = secondary_state->scissorWithCountCount;
+            if (secondary_state->dynamic_state_value.scissor_count != 0) {
+                scissor_count_to_inherit_ = secondary_state->dynamic_state_value.scissor_count;
                 scissor_count_trashed_by_ = kNotTrashed;
             }
             // Order of above vs below matters here.
