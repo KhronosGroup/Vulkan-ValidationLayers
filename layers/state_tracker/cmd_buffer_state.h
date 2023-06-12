@@ -226,10 +226,22 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         std::bitset<32> color_write_mask_attachments;      // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
         std::bitset<32> color_blend_advanced_attachments;  // VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT
 
+        // VK_DYNAMIC_STATE_VIEWPORT
+        std::vector<VkViewport> viewports;
+        // and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT
+        uint32_t viewport_count;
+        // VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
+        uint32_t scissor_count;
+
         // When the Command Buffer resets, the value most things in this struct don't matter because if they are read without
         // setting the state, it will fail in ValidateDynamicStateIsSet() for us. Some values (ex. the bitset) are tracking in
         // replacement for static_status/dynamic_status so this needs to reset along with those
         void reset() {
+            // There are special because the Secondary CB Inheritance is tracking these defaults
+            viewport_count = 0;
+            scissor_count = 0;
+
+            viewports.clear();
             discard_rectangles.reset();
             color_blend_enable_attachments.reset();
             color_blend_equation_attachments.reset();
@@ -274,14 +286,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     uint32_t viewportMask;
     uint32_t viewportWithCountMask;
-    uint32_t viewportWithCountCount;
     uint32_t scissorMask;
     uint32_t scissorWithCountMask;
-    uint32_t scissorWithCountCount;
-
-    // Dynamic viewports set in this command buffer; if bit j of viewportMask is set then dynamicViewports[j] is valid, but the
-    // converse need not be true.
-    std::vector<VkViewport> dynamicViewports;
 
     // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
     // Bits unset by calling a corresponding vkCmdSet[State] cmd.

@@ -2840,9 +2840,9 @@ void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer comman
     cb_state->viewportMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
 
-    cb_state->dynamicViewports.resize(std::max(size_t(firstViewport + viewportCount), cb_state->dynamicViewports.size()));
+    cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
     for (size_t i = 0; i < viewportCount; ++i) {
-        cb_state->dynamicViewports[firstViewport + i] = pViewports[i];
+        cb_state->dynamic_state_value.viewports[firstViewport + i] = pViewports[i];
     }
 }
 
@@ -5193,12 +5193,12 @@ void ValidationStateTracker::RecordCmdSetViewportWithCount(VkCommandBuffer comma
     uint32_t bits = (1u << viewportCount) - 1u;
     cb_state->viewportWithCountMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
-    cb_state->viewportWithCountCount = viewportCount;
+    cb_state->dynamic_state_value.viewport_count = viewportCount;
     cb_state->trashedViewportCount = false;
 
-    cb_state->dynamicViewports.resize(std::max(size_t(viewportCount), cb_state->dynamicViewports.size()));
+    cb_state->dynamic_state_value.viewports.resize(viewportCount);
     for (size_t i = 0; i < viewportCount; ++i) {
-        cb_state->dynamicViewports[i] = pViewports[i];
+        cb_state->dynamic_state_value.viewports[i] = pViewports[i];
     }
 }
 
@@ -5219,7 +5219,7 @@ void ValidationStateTracker::RecordCmdSetScissorWithCount(VkCommandBuffer comman
     uint32_t bits = (1u << scissorCount) - 1u;
     cb_state->scissorWithCountMask |= bits;
     cb_state->trashedScissorMask &= ~bits;
-    cb_state->scissorWithCountCount = scissorCount;
+    cb_state->dynamic_state_value.scissor_count = scissorCount;
     cb_state->trashedScissorCount = false;
 }
 

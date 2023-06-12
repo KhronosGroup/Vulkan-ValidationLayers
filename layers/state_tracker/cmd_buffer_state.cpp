@@ -143,10 +143,8 @@ void CMD_BUFFER_STATE::ResetCBState() {
     pipelineStaticScissorCount = 0;
     viewportMask = 0;
     viewportWithCountMask = 0;
-    viewportWithCountCount = 0;
     scissorMask = 0;
     scissorWithCountMask = 0;
-    scissorWithCountCount = 0;
     trashedViewportMask = 0;
     trashedScissorMask = 0;
     trashedViewportCount = false;
