@@ -3168,7 +3168,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
     }
 
     uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
-    uint64_t invocations = local_size_x * local_size_y;
+    uint64_t invocations = static_cast<uint64_t>(local_size_x) * static_cast<uint64_t>(local_size_y);
     // Prevent overflow.
     bool fail = false;
     if (invocations > vvl::kU32Max || invocations > limit) {
@@ -3346,7 +3346,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
                          string_SpvExecutionModel(entrypoint.execution_model), local_size_z, max_local_size_z);
     }
 
-    uint64_t invocations = local_size_x * local_size_y;
+    uint64_t invocations = static_cast<uint64_t>(local_size_x) * static_cast<uint64_t>(local_size_y);
     // Prevent overflow.
     bool fail = false;
     if (invocations > vvl::kU32Max || invocations > max_workgroup_size) {

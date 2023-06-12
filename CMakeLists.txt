@@ -114,7 +114,6 @@ elseif(MSVC)
         /wd4459 # hiding global parameter
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
-        /wd4754 # conversion rules for arithmetic operations
     )
 
     # Enforce stricter ISO C++
