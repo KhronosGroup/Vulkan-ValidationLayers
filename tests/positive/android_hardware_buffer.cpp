@@ -81,7 +81,7 @@ TEST_F(PositiveAndroidHardwareBuffer, DepthStencil) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 

@@ -140,7 +140,7 @@ TEST_F(PositiveCommand, ClearAttachmentsCalledWithoutFbInSecondaryCB) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
+    if (IsPlatform(PlatformType::kShieldTVb)) {
         GTEST_SKIP() << "Test is unstable on ShieldTV";
     }
 
@@ -816,7 +816,7 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 

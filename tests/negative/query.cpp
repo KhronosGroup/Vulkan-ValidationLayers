@@ -1135,10 +1135,6 @@ TEST_F(NegativeQuery, Sizes) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (IsPlatform(kPixel2XL)) {
-        GTEST_SKIP() << "This test should not run on Pixel 2 XL";
-    }
-
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);

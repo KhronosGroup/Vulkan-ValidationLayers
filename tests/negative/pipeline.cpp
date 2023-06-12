@@ -257,9 +257,6 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
 TEST_F(VkLayerTest, CmdBufferPipelineDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     {

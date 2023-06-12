@@ -217,9 +217,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
     m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);
@@ -668,9 +665,6 @@ TEST_F(PositivePipeline, AttachmentUnused) {
     TEST_DESCRIPTION("Make sure unused attachments are correctly ignored.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *fsSource = R"glsl(
@@ -799,9 +793,6 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
 TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     TEST_DESCRIPTION("Ensure it doesn't crash and trigger error msg when rasterizerDiscardEnable = true");
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkAttachmentDescription att[1] = {{}};

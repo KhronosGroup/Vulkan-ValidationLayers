@@ -214,9 +214,6 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -281,9 +278,6 @@ TEST_F(PositiveQuery, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }

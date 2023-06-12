@@ -1673,9 +1673,6 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     TEST_DESCRIPTION("Delete in-use renderPass.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Create simple renderpass

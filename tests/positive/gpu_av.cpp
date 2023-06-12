@@ -30,7 +30,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOBindDescriptor) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -135,7 +135,7 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
     if (!CanEnableGpuAV()) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on Shield TV";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());

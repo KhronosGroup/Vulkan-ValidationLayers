@@ -253,9 +253,6 @@ TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
     TEST_DESCRIPTION("Update last descriptor in a set that includes an empty binding");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
 
     // Create layout with two uniform buffer descriptors w/ empty binding between them
     OneOffDescriptorSet ds(m_device, {

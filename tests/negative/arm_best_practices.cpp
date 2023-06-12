@@ -189,7 +189,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    if (IsPlatform(kNexusPlayer) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kShieldTVb)) {
         return;
     }
 
@@ -621,9 +621,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test crashes on the NexusPlayer platform";
-    }
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 
     m_depthStencil->Init(m_device, m_width, m_height, m_depth_stencil_fmt);

@@ -187,7 +187,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuDataBuffer) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -234,7 +234,7 @@ TEST_F(NegativeAndroidHardwareBuffer, AllocationSize) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -293,7 +293,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageColor) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -361,7 +361,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageDS) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -439,7 +439,7 @@ TEST_F(NegativeAndroidHardwareBuffer, MipmapChain) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -509,7 +509,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageDimensions) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -577,7 +577,7 @@ TEST_F(NegativeAndroidHardwareBuffer, UnknownFormat) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -642,7 +642,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuUsage) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 
@@ -729,7 +729,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocate) {
     AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "This test should not run on this device";
     }
 

@@ -86,24 +86,14 @@ class VkDepthStencilObj;
 typedef enum {
     kGalaxyS10,
     kPixel3,
-    kPixelC,
-    kNexusPlayer,
-    kShieldTV,
     kShieldTVb,
-    kPixel3aXL,
-    kPixel2XL,
     kMockICD,
 } PlatformType;
 
 const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table = {
     {kGalaxyS10, "Mali-G76"},
     {kPixel3, "Adreno (TM) 630"},
-    {kPixelC, "NVIDIA Tegra X1"},
-    {kNexusPlayer, "PowerVR Rogue G6430"},
-    {kShieldTV, "NVIDIA Tegra X1 (nvgpu)"},
     {kShieldTVb, "NVIDIA Tegra X1 (rev B) (nvgpu)"},
-    {kPixel3aXL, "Adreno (TM) 615"},
-    {kPixel2XL, "Adreno (TM) 540"},
     {kMockICD, "Vulkan Mock Device"},
 };
 struct SurfaceContext {

@@ -3981,9 +3981,6 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenAttachmentsAndDescript
     TEST_DESCRIPTION("Validate if attachments and descriptor set use the same image subresources");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());

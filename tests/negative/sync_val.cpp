@@ -1987,9 +1987,6 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     // CmdCopyQueryPoolResults
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
@@ -2270,10 +2267,6 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
 TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2688,9 +2681,6 @@ struct SyncTestPipeline {
 TEST_F(NegativeSyncVal, LayoutTransition) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
 
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.Init();
@@ -2777,9 +2767,6 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
 TEST_F(NegativeSyncVal, SubpassMultiDep) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
 
     CreateRenderPassHelper rp_helper_positive(m_device);
 
@@ -2922,7 +2909,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
+    if (IsPlatform(kPixel3)) {
         GTEST_SKIP() << "Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash";
     }
 
@@ -5039,9 +5026,6 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
 TEST_F(NegativeSyncVal, QSRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
 
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.InitAllAttachmentsToLayoutGeneral();

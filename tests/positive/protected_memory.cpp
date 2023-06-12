@@ -29,7 +29,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
 
     // NOTE (ncesario): This appears to be failing in the driver on the Shield.
     //      It's clear what is causing this; more investigation is necessary.
-    if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
+    if (IsPlatform(kShieldTVb)) {
         GTEST_SKIP() << "Test not supported by Shield TV";
     }
 

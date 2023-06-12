@@ -4573,9 +4573,6 @@ TEST_F(NegativeDynamicState, LineWidth) {
     TEST_DESCRIPTION("Test non-1.0 lineWidth errors when pipeline is created and in vkCmdSetLineWidth");
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
-    if (IsPlatform(kNexusPlayer)) {
-        GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const std::array test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f),
