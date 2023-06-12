@@ -12,7 +12,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <vector>
-#include "external/spirv_reflect.h"
+#include "spirv_reflect.h"
 
 struct VulkanInstance;
 

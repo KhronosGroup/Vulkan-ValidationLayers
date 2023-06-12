@@ -26,7 +26,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "268a061764ee69f09a477a695bf6a11ffe311b8d"
+            "commit": "8e2ad27488ed2f87c068c01a8f5e8979f7086405"
         },
         {
             "name": "SPIRV-Tools",
@@ -39,6 +39,17 @@
                 "-DSPIRV_WERROR=OFF"
             ],
             "commit": "e7c6084fd1d6d6f5ac393e842728d8be309688ca"
+        },
+        {
+            "name": "SPIRV-Reflect",
+            "url": "https://github.com/KhronosGroup/SPIRV-Reflect.git",
+            "sub_dir": "SPIRV-Reflect",
+            "install_dir": "SPIRV-Reflect",
+            "build_step": "skip",
+            "commit": "87442baff70befd0523a0e7148fc4e68b71f4bb9",
+            "optional": [
+                "tests"
+            ]
         },
         {
             "name": "robin-hood-hashing",
@@ -90,6 +101,7 @@
         "Vulkan-Headers": "VULKAN_HEADERS_INSTALL_DIR",
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
+        "SPIRV-Reflect": "SPIRV_REFLECT_INSTALL_DIR",
         "robin-hood-hashing": "ROBIN_HOOD_HASHING_INSTALL_DIR",
         "googletest": "GOOGLETEST_INSTALL_DIR",
         "mimalloc": "MIMALLOC_INSTALL_DIR"

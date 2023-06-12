@@ -13,7 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-add_subdirectory(external)
+add_library(spirv-reflect STATIC)
+target_sources(spirv-reflect PRIVATE
+    ${SPIRV_REFLECT_INSTALL_DIR}/spirv_reflect.h
+    ${SPIRV_REFLECT_INSTALL_DIR}/spirv_reflect.cpp
+)
+
+target_include_directories(spirv-reflect SYSTEM PUBLIC ${SPIRV_REFLECT_INSTALL_DIR})
+
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    target_compile_options(spirv-reflect PRIVATE
+        -Wno-sign-conversion
+    )
+endif()
+
+# Used so SPIRV-Reflect can use the SPIRV-Headers as SPIRV_HEADERS_INSTALL_DIR
+target_compile_definitions(spirv-reflect PUBLIC SPIRV_REFLECT_USE_SYSTEM_SPIRV_H)
+
+target_link_libraries(spirv-reflect PUBLIC
+    VVL-SPIRV-LIBS
+)
+
 add_executable(spirv-hopper)
 
 target_sources(spirv-hopper PRIVATE

@@ -209,7 +209,7 @@ gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 
 add_subdirectory(layers)
 
-option(VVL_SPIRV_HOPPER "Build SPIRV-Hopper")
+option(VVL_SPIRV_HOPPER "Build SPIRV-Hopper" ON)
 if (VVL_SPIRV_HOPPER)
     add_subdirectory(spirv_hopper)
 endif()
