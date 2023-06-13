@@ -1536,10 +1536,18 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
                          "VK_IMAGE_USAGE_STORAGE_BIT.",
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
     } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(tiling_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02276",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        if (enabled_features.linear_color_attachment_features.linearColorAttachment &&
+            !(tiling_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-08931",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02276",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        }
     } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
                !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02277",
@@ -1548,10 +1556,19 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const IMAGE_STATE &image_state,
                          string_VkFormat(view_format), string_VkImageTiling(image_tiling));
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
-        skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02652",
-                         "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
-                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                         string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        if (enabled_features.linear_color_attachment_features.linearColorAttachment &&
+            !(tiling_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-08932",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT, or "
+                             "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else {
+            skip |= LogError(image_state.image(), "VUID-VkImageViewCreateInfo-usage-02652",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        }
     } else if ((image_usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) &&
                !(tiling_features & VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         if (enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate) {
