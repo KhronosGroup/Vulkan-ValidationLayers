@@ -14,12 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveYcbcr : public VkPositiveLayerTest {
-  public:
-    void InitBasicYcbcr();
-};
-
-void PositiveYcbcr::InitBasicYcbcr() {
+void YcbcrTest::InitBasicYcbcr() {
     // VK_KHR_sampler_ycbcr_conversion was added in 1.2
     const bool use_12 = m_attempted_api_version >= VK_API_VERSION_1_2;
     if (!use_12) {

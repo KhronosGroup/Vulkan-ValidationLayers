@@ -14,8 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeShaderStorageTexel : public VkLayerTest {};
-
 TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
     TEST_DESCRIPTION("Test writing to texel buffer with less components.");
 

@@ -14,8 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeRayTracing : public VkLayerTest {};
-
 TEST_F(NegativeRayTracing, BasicUsage) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 

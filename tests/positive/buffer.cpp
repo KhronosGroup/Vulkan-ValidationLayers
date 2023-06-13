@@ -14,8 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveBuffer : public VkPositiveLayerTest {};
-
 TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));

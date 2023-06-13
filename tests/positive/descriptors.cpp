@@ -18,8 +18,6 @@
 
 #include <array>
 
-class PositiveDescriptors : public VkPositiveLayerTest {};
-
 TEST_F(PositiveDescriptors, CopyNonupdatedDescriptors) {
     TEST_DESCRIPTION("Copy non-updated descriptors");
     unsigned int i;

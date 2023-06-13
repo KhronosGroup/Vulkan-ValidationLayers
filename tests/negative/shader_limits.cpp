@@ -14,8 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeShaderLimits : public VkLayerTest {};
-
 TEST_F(NegativeShaderLimits, MaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 

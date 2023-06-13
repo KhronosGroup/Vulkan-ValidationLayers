@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveMemory : public VkPositiveLayerTest {};
-
 TEST_F(PositiveMemory, MapMemory2) {
     TEST_DESCRIPTION("Validate vkMapMemory2 and vkUnmapMemory2");
 

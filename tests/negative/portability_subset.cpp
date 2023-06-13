@@ -13,8 +13,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativePortabilitySubset : public VkLayerTest {};
-
 TEST_F(NegativePortabilitySubset, Device) {
     TEST_DESCRIPTION("Portability: CreateDevice called and VK_KHR_portability_subset not enabled");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);

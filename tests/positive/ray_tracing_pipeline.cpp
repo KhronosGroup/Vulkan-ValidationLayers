@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveRayTracingPipeline : public VkPositiveLayerTest {};
-
 TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 

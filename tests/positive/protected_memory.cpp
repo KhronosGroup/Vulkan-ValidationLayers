@@ -15,8 +15,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class PositiveProtectedMemory : public VkPositiveLayerTest {};
-
 TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     TEST_DESCRIPTION("Test creating 2 queues, 1 protected, and getting both with vkGetDeviceQueue2");
     SetTargetApiVersion(VK_API_VERSION_1_1);

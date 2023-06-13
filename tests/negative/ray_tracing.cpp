@@ -15,8 +15,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 
-class NegativeRayTracing : public VkLayerTest {};
-
 TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     TEST_DESCRIPTION("Test barrier with access ACCELERATION_STRUCTURE bit.");
 

@@ -14,8 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveSampler : public VkPositiveLayerTest {};
-
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.1 before samplerMirrorClampToEdge feature was added");
 

@@ -21,15 +21,6 @@
 #include <poll.h>
 #endif
 
-class PositiveSyncObject : public VkLayerTest {
-  protected:
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    using ExternalHandle = HANDLE;
-#else
-    using ExternalHandle = int;
-#endif
-};
-
 TEST_F(PositiveSyncObject, ThreadSafetyDisplayObjects) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
 

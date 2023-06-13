@@ -17,44 +17,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeYcbcr : public VkLayerTest {
-  public:
-    void InitBasicYcbcr();
-};
-
-void NegativeYcbcr::InitBasicYcbcr() {
-    // VK_KHR_sampler_ycbcr_conversion was added in 1.2
-    const bool use_12 = m_attempted_api_version >= VK_API_VERSION_1_2;
-    if (!use_12) {
-        AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < m_attempted_api_version) {
-        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
-    }
-
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
-    VkPhysicalDeviceFeatures2 features2;
-    if (use_12) {
-        features2 = GetPhysicalDeviceFeatures2(features11);
-        if (features11.samplerYcbcrConversion != VK_TRUE) {
-            GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
-        }
-    } else {
-        features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
-        if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
-            GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
-        }
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-}
-
 TEST_F(NegativeYcbcr, Sampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 

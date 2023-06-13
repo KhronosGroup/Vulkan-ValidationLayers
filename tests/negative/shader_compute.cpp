@@ -14,8 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeShaderCompute : public VkLayerTest {};
-
 TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize");
 

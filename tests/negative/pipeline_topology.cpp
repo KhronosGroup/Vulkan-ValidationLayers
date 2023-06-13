@@ -14,8 +14,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativePipelineTopology : public VkLayerTest {};
-
 TEST_F(NegativePipelineTopology, PolygonMode) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
     VkPhysicalDeviceFeatures device_features = {};

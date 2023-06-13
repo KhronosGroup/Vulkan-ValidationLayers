@@ -17,8 +17,6 @@
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
-class PositiveAndroidHardwareBuffer : public VkPositiveLayerTest {};
-
 TEST_F(PositiveAndroidHardwareBuffer, MemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");
 

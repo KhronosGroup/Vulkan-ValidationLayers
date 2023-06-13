@@ -18,8 +18,6 @@
 #include <chrono>
 #include <thread>
 
-class PositiveInstance : public VkPositiveLayerTest {};
-
 TEST_F(PositiveInstance, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 

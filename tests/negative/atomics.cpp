@@ -15,8 +15,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeAtomic : public VkLayerTest {};
-
 TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
     TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
 

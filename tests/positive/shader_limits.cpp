@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveShaderLimits : public VkPositiveLayerTest {};
-
 TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION(
         "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "

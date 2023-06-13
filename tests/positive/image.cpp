@@ -22,7 +22,22 @@
 
 #include "utils/vk_layer_utils.h"
 
-class PositiveImage : public VkPositiveLayerTest {};
+// A reasonable well supported default VkImageCreateInfo for image creation
+VkImageCreateInfo ImageTest::DefaultImageInfo() {
+    auto ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;                          // assumably any is supported
+    ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
+    ci.extent = {64, 64, 1};               // limit is 256 for 3D, or 4096
+    ci.mipLevels = 1;                      // any is supported
+    ci.arrayLayers = 1;                    // limit is 256
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
+    // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    return ci;
+}
 
 TEST_F(PositiveImage, OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");

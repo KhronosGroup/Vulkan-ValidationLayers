@@ -12,7 +12,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_format_utils.h"
 
-class PositiveFormatUtils : public VkPositiveLayerTest {};
+class PositiveFormatUtils : public VkLayerTest {};
 
 // These test check utils in the layer without needing to create a full Vulkan instance
 

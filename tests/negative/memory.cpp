@@ -17,8 +17,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeMemory : public VkLayerTest {};
-
 TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
     bool pass;

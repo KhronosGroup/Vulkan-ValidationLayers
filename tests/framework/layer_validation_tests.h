@@ -432,6 +432,8 @@ T NearestSmaller(const T from) {
     return std::nextafter(from, negative_direction);
 }
 
+// VkLayerTest is the main GTest test class
+// It is the root for all other test class variations
 class VkLayerTest : public VkRenderFramework {
   public:
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
@@ -512,6 +514,7 @@ VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDevi
 template <>
 VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2);
 
+// TODO - Want to remove - don't add to any new tests
 class VkPositiveLayerTest : public VkLayerTest {
   public:
   protected:
@@ -570,6 +573,235 @@ class VkSyncValTest : public VkLayerTest {
         VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 4, disables_};
 };
+
+class AndroidHardwareBufferTest : public VkLayerTest {};
+class NegativeAndroidHardwareBuffer : public AndroidHardwareBufferTest {};
+class PositiveAndroidHardwareBuffer : public AndroidHardwareBufferTest {};
+
+class AtomicTest : public VkLayerTest {};
+class NegativeAtomic : public AtomicTest {};
+class PositiveAtomic : public AtomicTest {};
+
+class BufferTest : public VkLayerTest {};
+class NegativeBuffer : public BufferTest {};
+class PositiveBuffer : public BufferTest {};
+
+class CommandTest : public VkLayerTest {};
+class NegativeCommand : public CommandTest {};
+class PositiveCommand : public CommandTest {};
+
+class DescriptorsTest : public VkLayerTest {};
+class NegativeDescriptors : public DescriptorsTest {};
+class PositiveDescriptors : public DescriptorsTest {};
+
+class DescriptorBufferTest : public VkLayerTest {};
+class NegativeDescriptorBuffer : public DescriptorBufferTest {};
+class PositiveDescriptorBuffer : public DescriptorBufferTest {};
+
+class NegativeDeviceQueue : public VkLayerTest {};
+
+class DynamicRenderingTest : public VkLayerTest {
+  public:
+    void InitBasicDynamicRendering();
+};
+class NegativeDynamicRendering : public DynamicRenderingTest {};
+class PositiveDynamicRendering : public DynamicRenderingTest {};
+
+class DynamicStateTest : public VkLayerTest {};
+class NegativeDynamicState : public DynamicStateTest {
+    // helper functions for tests in this file
+  public:
+    // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
+    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
+    // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
+    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
+};
+class PositiveDynamicState : public DynamicStateTest {
+  public:
+    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
+};
+
+class ExternalMemorySyncTest : public VkLayerTest {
+  public:
+    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkBufferCreateInfo &buffer_create_info,
+                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
+    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkImageCreateInfo &image_create_info,
+                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
+    VkExternalFenceHandleTypeFlags GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type);
+    VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkExternalSemaphoreHandleTypeFlagBits handle_type);
+
+    VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkExternalFenceFeatureFlags requested_features);
+    VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(
+        VkExternalSemaphoreFeatureFlags requested_features);
+
+  protected:
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    using ExternalHandle = HANDLE;
+#else
+    using ExternalHandle = int;
+#endif
+};
+class NegativeExternalMemorySync : public ExternalMemorySyncTest {};
+class PositiveExternalMemorySync : public ExternalMemorySyncTest {};
+
+class FragmentShadingRateTest : public VkLayerTest {};
+class NegativeFragmentShadingRate : public FragmentShadingRateTest {};
+class PositiveFragmentShadingRate : public FragmentShadingRateTest {};
+
+class NegativeGeometryTessellation : public VkLayerTest {};
+
+class GraphicsLibraryTest : public VkLayerTest {
+  public:
+    void InitBasicGraphicsLibrary(void *pNextFeatures = nullptr);
+};
+class NegativeGraphicsLibrary : public GraphicsLibraryTest {};
+class PositiveGraphicsLibrary : public GraphicsLibraryTest {};
+
+class ImageTest : public VkLayerTest {
+  public:
+    VkImageCreateInfo DefaultImageInfo();
+};
+class NegativeImage : public ImageTest {};
+class PositiveImage : public ImageTest {};
+
+class ImagelessFramebufferTest : public VkLayerTest {};
+class NegativeImagelessFramebuffer : public ImagelessFramebufferTest {};
+class PositiveImagelessFramebuffer : public ImagelessFramebufferTest {};
+
+class NegativeInstanceless : public VkLayerTest {};
+
+class PositiveInstance : public VkLayerTest {};
+
+class MemoryTest : public VkLayerTest {};
+class NegativeMemory : public MemoryTest {};
+class PositiveMemory : public MemoryTest {};
+
+class MeshTest : public VkLayerTest {};
+class NegativeMesh : public MeshTest {};
+class PositiveMesh : public MeshTest {};
+
+class NegativeMultiview : public VkLayerTest {};
+
+class NegativeObjectLifetime : public VkLayerTest {};
+
+class NegativePipelineAdvancedBlend : public VkLayerTest {};
+
+class PipelineLayoutTest : public VkLayerTest {};
+class NegativePipelineLayout : public PipelineLayoutTest {};
+class PositivePipelineLayout : public PipelineLayoutTest {};
+
+class PipelineTopologyTest : public VkLayerTest {};
+class NegativePipelineTopology : public PipelineTopologyTest {};
+class PositivePipelineTopology : public PipelineTopologyTest {};
+
+class PipelineTest : public VkLayerTest {};
+class NegativePipeline : public PipelineTest {};
+class PositivePipeline : public PipelineTest {};
+
+class NegativePortabilitySubset : public VkLayerTest {};
+
+class ProtectedMemoryTest : public VkLayerTest {};
+class NegativeProtectedMemory : public ProtectedMemoryTest {};
+class PositiveProtectedMemory : public ProtectedMemoryTest {};
+
+class QueryTest : public VkLayerTest {};
+class NegativeQuery : public QueryTest {};
+class PositiveQuery : public QueryTest {};
+
+class RayTracingTest : public VkLayerTest {};
+class NegativeRayTracing : public RayTracingTest {};
+class PositiveRayTracing : public RayTracingTest {};
+
+class RayTracingPipelineTest : public VkLayerTest {};
+class NegativeRayTracingPipeline : public RayTracingPipelineTest {};
+class PositiveRayTracingPipeline : public RayTracingPipelineTest {};
+
+class RenderPassTest : public VkLayerTest {};
+class NegativeRenderPass : public RenderPassTest {};
+class PositiveRenderPass : public RenderPassTest {};
+
+class RobustnessTest : public VkLayerTest {};
+class NegativeRobustness : public RobustnessTest {};
+class PositiveRobustness : public RobustnessTest {};
+
+class SamplerTest : public VkLayerTest {};
+class NegativeSampler : public SamplerTest {};
+class PositiveSampler : public SamplerTest {};
+
+class ShaderComputeTest : public VkLayerTest {};
+class NegativeShaderCompute : public ShaderComputeTest {};
+class PositiveShaderCompute : public ShaderComputeTest {};
+
+class ShaderInterfaceTest : public VkLayerTest {};
+class NegativeShaderInterface : public ShaderInterfaceTest {};
+class PositiveShaderInterface : public ShaderInterfaceTest {};
+
+class PositiveShaderImageAccess : public VkLayerTest {};
+
+class ShaderLimitsTest : public VkLayerTest {};
+class NegativeShaderLimits : public ShaderLimitsTest {};
+class PositiveShaderLimits : public ShaderLimitsTest {};
+
+class NegativeShaderMesh : public VkLayerTest {};
+
+class ShaderPushConstantsTest : public VkLayerTest {};
+class NegativeShaderPushConstants : public ShaderPushConstantsTest {};
+class PositiveShaderPushConstants : public ShaderPushConstantsTest {};
+
+class ShaderSpirvTest : public VkLayerTest {};
+class NegativeShaderSpirv : public ShaderSpirvTest {};
+class PositiveShaderSpirv : public ShaderSpirvTest {};
+
+class ShaderStorageImageTest : public VkLayerTest {};
+class NegativeShaderStorageImage : public ShaderStorageImageTest {};
+class PositiveShaderStorageImage : public ShaderStorageImageTest {};
+
+class ShaderStorageTexelTest : public VkLayerTest {};
+class NegativeShaderStorageTexel : public ShaderStorageTexelTest {};
+class PositiveShaderStorageTexel : public ShaderStorageTexelTest {};
+
+class SparseTest : public VkLayerTest {};
+class NegativeSparse : public SparseTest {};
+class PositiveSparse : public SparseTest {};
+
+class NegativeSubgroup : public VkLayerTest {};
+
+class NegativeSubpass : public VkLayerTest {};
+
+class SyncObjectTest : public VkLayerTest {
+  protected:
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    using ExternalHandle = HANDLE;
+#else
+    using ExternalHandle = int;
+#endif
+};
+class NegativeSyncObject : public SyncObjectTest {};
+class PositiveSyncObject : public SyncObjectTest {};
+
+class NegativeTransformFeedback : public VkLayerTest {
+  public:
+    void InitBasicTransformFeedback();
+};
+
+class PositiveTooling : public VkLayerTest {};
+
+class VertexInputTest : public VkLayerTest {};
+class NegativeVertexInput : public VertexInputTest {};
+class PositiveVertexInput : public VertexInputTest {};
+
+class NegativeViewportInheritance : public VkLayerTest {};
+
+class WsiTest : public VkLayerTest {};
+class NegativeWsi : public WsiTest {};
+class PositiveWsi : public WsiTest {};
+
+class YcbcrTest : public VkLayerTest {
+  public:
+    void InitBasicYcbcr();
+};
+class NegativeYcbcr : public YcbcrTest {};
+class PositiveYcbcr : public YcbcrTest {};
 
 class VkBufferTest {
   public:

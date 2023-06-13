@@ -17,8 +17,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
 
-class NegativeDescriptorBuffer : public VkLayerTest {};
-
 TEST_F(NegativeDescriptorBuffer, SetLayout) {
     TEST_DESCRIPTION("Descriptor buffer set layout tests.");
     SetTargetApiVersion(VK_API_VERSION_1_2);

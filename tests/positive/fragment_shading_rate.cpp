@@ -11,8 +11,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveFragmentShadingRate : public VkPositiveLayerTest {};
-
 TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     TEST_DESCRIPTION("Specify shading rate pipeline stage with attachmentFragmentShadingRate feature enabled");
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);

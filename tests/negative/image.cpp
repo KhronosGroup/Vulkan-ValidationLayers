@@ -18,26 +18,6 @@
 #include "utils/vk_layer_utils.h"
 #include "error_message/validation_error_enums.h"
 
-class NegativeImage : public VkLayerTest {
-  public:
-    // A reasonable well supported default VkImageCreateInfo for image creation
-    static VkImageCreateInfo DefaultImageInfo() {
-        auto ci = LvlInitStruct<VkImageCreateInfo>();
-        ci.flags = 0;                          // assumably any is supported
-        ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
-        ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
-        ci.extent = {64, 64, 1};               // limit is 256 for 3D, or 4096
-        ci.mipLevels = 1;                      // any is supported
-        ci.arrayLayers = 1;                    // limit is 256
-        ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
-        // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
-        ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-        ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
-        ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        return ci;
-    }
-};
-
 TEST_F(NegativeImage, UsageBits) {
     TEST_DESCRIPTION(
         "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "
@@ -3404,8 +3384,8 @@ TEST_F(NegativeImage, ImageMinLimits) {
 
     VkImage null_image;  // throwaway target for all the vk::CreateImage
 
-    const VkImageCreateInfo safe_image_ci = []() {
-        auto ci = NegativeImage::DefaultImageInfo();
+    const VkImageCreateInfo safe_image_ci = [this]() {
+        auto ci = DefaultImageInfo();
         ci.extent = {1, 1, 1};
         return ci;
     }();
@@ -3503,8 +3483,8 @@ TEST_F(NegativeImage, ImageMaxLimits) {
     const bool push_fragment_density_offset_support = IsExtensionsEnabled(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
-    const VkImageCreateInfo safe_image_ci = []() {
-        auto ci = NegativeImage::DefaultImageInfo();
+    const VkImageCreateInfo safe_image_ci = [this]() {
+        auto ci = DefaultImageInfo();
         ci.extent = {1, 1, 1};
         return ci;
     }();
@@ -6319,7 +6299,7 @@ TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
         GTEST_SKIP() << "Only run on MockICD.";
     }
 
-    auto ci = NegativeImage::DefaultImageInfo();
+    auto ci = DefaultImageInfo();
     ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     ci.imageType = VK_IMAGE_TYPE_1D;

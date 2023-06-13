@@ -16,8 +16,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeViewportInheritance : public VkLayerTest {};
-
 // Common data structures needed for tests.
 class ViewportInheritanceTestData {
     // Borrowed owner device.

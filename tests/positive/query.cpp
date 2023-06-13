@@ -14,8 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveQuery : public VkPositiveLayerTest {};
-
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
     TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
 

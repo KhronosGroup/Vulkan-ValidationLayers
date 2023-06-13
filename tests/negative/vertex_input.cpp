@@ -15,8 +15,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeVertexInput : public VkLayerTest {};
-
 TEST_F(NegativeVertexInput, AttributeFormat) {
     TEST_DESCRIPTION("Test that pipeline validation catches invalid vertex attribute formats");
 

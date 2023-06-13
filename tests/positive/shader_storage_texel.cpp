@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveShaderStorageTexel : public VkPositiveLayerTest {};
-
 TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 

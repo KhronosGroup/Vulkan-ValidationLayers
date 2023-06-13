@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveShaderInterface : public VkPositiveLayerTest {};
-
 TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
     TEST_DESCRIPTION("Test shader layout in and out with different components.");
 

@@ -15,8 +15,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeSubgroup : public VkLayerTest {};
-
 TEST_F(NegativeSubgroup, Properties) {
     TEST_DESCRIPTION(
         "Test shader validation support for subgroup VkPhysicalDeviceSubgroupProperties such as supportedStages, and "

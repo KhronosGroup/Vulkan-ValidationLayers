@@ -17,8 +17,6 @@
 #include <algorithm>
 #include <chrono>
 
-class PositiveTooling : public VkPositiveLayerTest {};
-
 TEST_F(PositiveTooling, BasicUsage) {
     TEST_DESCRIPTION("Call Tooling Extension and verify layer results");
 

@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveShaderSpirv : public VkPositiveLayerTest {};
-
 TEST_F(PositiveShaderSpirv, NonSemanticInfo) {
     // This is a positive test, no errors expected
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled

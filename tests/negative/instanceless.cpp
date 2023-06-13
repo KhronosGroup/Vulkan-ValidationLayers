@@ -35,8 +35,6 @@
 
 static VkInstance dummy_instance;
 
-class NegativeInstanceless : public VkLayerTest {};
-
 TEST_F(NegativeInstanceless, InstanceExtensionDependencies) {
     TEST_DESCRIPTION("Test enabling instance extension without dependencies met.");
 
