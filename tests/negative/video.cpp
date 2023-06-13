@@ -3979,33 +3979,25 @@ TEST_F(VkVideoLayerTest, CreateBufferInvalidProfileList) {
     VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.usage = VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR;
     buffer_ci.size = 2048;
-
-    VkBuffer buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-04813");
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-04813");
 
     VkVideoProfileListInfoKHR video_profiles = LvlInitStruct<VkVideoProfileListInfoKHR>();
     VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
     video_profiles.profileCount = 2;
     video_profiles.pProfiles = profiles;
     buffer_ci.pNext = &video_profiles;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
 
     video_profiles.profileCount = 1;
     video_profiles.pProfiles = config.Profile();
 
+    VkBuffer buffer;
     vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
     vk::DestroyBuffer(device(), buffer, nullptr);
 
     buffer_ci.usage |= VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-04814");
-    vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-04814");
 }
 
 TEST_F(VkVideoLayerTest, CreateImageInvalidProfileList) {
@@ -4028,21 +4020,14 @@ TEST_F(VkVideoLayerTest, CreateImageInvalidProfileList) {
     image_ci.tiling = config.PictureFormatProps()->imageTiling;
     image_ci.usage = config.PictureFormatProps()->imageUsageFlags;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    VkImage image;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-usage-04815");
-    vk::CreateImage(device(), &image_ci, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-04815");
 
     VkVideoProfileListInfoKHR video_profiles = LvlInitStruct<VkVideoProfileListInfoKHR>();
     VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
     video_profiles.profileCount = 2;
     video_profiles.pProfiles = profiles;
     image_ci.pNext = &video_profiles;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
-    vk::CreateImage(device(), &image_ci, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_ci, "VUID-VkVideoProfileListInfoKHR-pProfiles-06813");
 }
 
 TEST_F(VkVideoLayerTest, CreateImageIncompatibleProfile) {
@@ -4076,12 +4061,8 @@ TEST_F(VkVideoLayerTest, CreateImageIncompatibleProfile) {
     image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkImage image = VK_NULL_HANDLE;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06811");
     image_ci.format = VK_FORMAT_D16_UNORM;
-    vk::CreateImage(m_device->device(), &image_ci, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-pNext-06811");
 }
 
 TEST_F(VkVideoLayerTest, CreateImageViewInvalidViewType) {
@@ -4128,10 +4109,7 @@ TEST_F(VkVideoLayerTest, CreateImageViewInvalidViewType) {
     image_view_ci.subresourceRange.layerCount = 6;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-image-01003");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04817");
-    VkImageView image_view = VK_NULL_HANDLE;
-    vk::CreateImageView(m_device->device(), &image_view_ci, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-image-04817");
 }
 
 TEST_F(VkVideoLayerTest, BeginQueryIncompatibleQueueFamily) {

@@ -25,16 +25,12 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01079");
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     // Set the modes to cause the error
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01079");
 }
 
 TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
@@ -46,13 +42,9 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01079");
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01079");
 }
 
 TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
@@ -715,8 +707,6 @@ TEST_F(NegativeSampler, FilterMinmax) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    VkSampler sampler;
-
     // Create Ycbcr conversion
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
     ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -743,16 +733,12 @@ TEST_F(NegativeSampler, FilterMinmax) {
 
     // Wrong mode with a YCbCr Conversion used
     reduction_info.pNext = &ycbcr_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-None-01647");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-None-01647");
 
     // Wrong mode with compareEnable
     reduction_info.pNext = nullptr;
     sampler_info.compareEnable = VK_TRUE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-compareEnable-01423");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01423");
 
     vk::DestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
 }
@@ -777,32 +763,25 @@ TEST_F(NegativeSampler, CustomBorderColor) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &border_color_features));
 
-    VkSampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
     // No SCBCCreateInfo in pNext
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-borderColor-04011");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-borderColor-04011");
 
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
     // Format mismatch
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605");
 
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     // Format undefined with no customBorderColorWithoutFormat
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
 
     custom_color_cinfo.format = VK_FORMAT_R8G8B8A8_UINT;
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_info);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler};
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &dsl_binding};
     VkDescriptorSetLayout ds_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009");
@@ -828,7 +807,6 @@ TEST_F(NegativeSampler, CustomBorderColor) {
             vk::DestroySampler(m_device->device(), samplers[i], nullptr);
         }
     }
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
@@ -1388,10 +1366,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
 
     auto sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &sampler_reduction_mode_ci;
-    VkSampler sampler;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-pNext-06726");
-    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-pNext-06726");
 }
 
 TEST_F(NegativeSampler, ReductionMode) {
@@ -1410,11 +1385,8 @@ TEST_F(NegativeSampler, ReductionMode) {
     VkSamplerCreateInfo sampler_ci = LvlInitStruct<VkSamplerCreateInfo>(&sampler_reduction_mode_ci);
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
 
-    VkSampler sampler;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-01422");
-    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-01422");
 }
 
 TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
@@ -1434,13 +1406,9 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
     non_seamless_cube_map_features.nonSeamlessCubeMap = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788");
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.flags = VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT;
-
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788");
 }
 
 TEST_F(NegativeSampler, BorderColorSwizzle) {
@@ -1466,27 +1434,19 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
 TEST_F(NegativeSampler, BorderColorValue) {
     TEST_DESCRIPTION("Using a bad VkBorderColor value.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     sampler_info.borderColor = static_cast<VkBorderColor>(0xFFFFBAD0);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01078");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01078");
 }
 
 TEST_F(NegativeSampler, CompareOpValue) {
     TEST_DESCRIPTION("Using a bad VkCompareOp value.");
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkSampler sampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;
     sampler_info.compareOp = static_cast<VkCompareOp>(0xFFFFBAD0);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-compareEnable-01080");
-    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01080");
 }
 
 TEST_F(NegativeSampler, CustomBorderColorsFeature) {

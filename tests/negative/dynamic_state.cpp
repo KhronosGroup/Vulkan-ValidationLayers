@@ -3240,10 +3240,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
         image_create_info.flags = VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT;
         image_create_info.format = VK_FORMAT_S8_UINT;
-        VkImage temp_image;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-01533");
-        vk::CreateImage(m_device->device(), &image_create_info, nullptr, &temp_image);
-        m_errorMonitor->VerifyFound();
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-01533");
     }
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());

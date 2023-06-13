@@ -1494,7 +1494,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     image.Init(128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView imageview;
     VkImageViewCreateInfo createinfo = LvlInitStruct<VkImageViewCreateInfo>();
     createinfo.image = image.handle();
     createinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1511,9 +1510,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     }
 
     // Create a view with the fragment shading rate attachment usage, but that doesn't support it
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04550");
-    vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &createinfo, "VUID-VkImageViewCreateInfo-usage-04550");
 
     auto fsrProperties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     GetPhysicalDeviceProperties2(fsrProperties);
@@ -1534,10 +1531,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
             createinfo.format = VK_FORMAT_R8_UINT;
             createinfo.subresourceRange.layerCount = 2;
             createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-usage-04551");
-            vk::CreateImageView(m_device->device(), &createinfo, NULL, &imageview);
-            m_errorMonitor->VerifyFound();
+            CreateImageViewTest(*this, &createinfo, "VUID-VkImageViewCreateInfo-usage-04551");
         }
     }
 }

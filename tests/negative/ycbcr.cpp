@@ -153,21 +153,15 @@ TEST_F(NegativeYcbcr, Sampler) {
     // Try to create a Sampler with non-matching filters without feature bit set
     VkSamplerYcbcrConversionInfo sampler_ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     sampler_ycbcr_info.conversion = conversion.handle();
-    VkSampler sampler;
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.minFilter = VK_FILTER_NEAREST;  // Different than chromaFilter
     sampler_info.magFilter = VK_FILTER_LINEAR;
     sampler_info.pNext = (void *)&sampler_ycbcr_info;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-minFilter-01645");
-    vk::CreateSampler(device(), &sampler_info, nullptr, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-minFilter-01645");
 
     sampler_info.magFilter = VK_FILTER_NEAREST;
     sampler_info.minFilter = VK_FILTER_LINEAR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-minFilter-01645");
-    vk::CreateSampler(device(), &sampler_info, nullptr, &sampler);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-minFilter-01645");
 }
 
 TEST_F(NegativeYcbcr, Swizzle) {
@@ -307,7 +301,6 @@ TEST_F(NegativeYcbcr, Swizzle) {
     VkSamplerYcbcrConversionInfo conversion_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
     conversion_info.conversion = conversion.handle();
 
-    VkImageView image_view;
     VkImageViewCreateInfo image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>(&conversion_info);
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -318,9 +311,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_view_create_info.components = identity;
     image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_B;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-01970");
-    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-01970");
 }
 
 TEST_F(NegativeYcbcr, Formats) {

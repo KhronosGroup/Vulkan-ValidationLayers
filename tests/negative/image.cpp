@@ -53,7 +53,6 @@ TEST_F(NegativeImage, UsageBits) {
     image.Init(128, 128, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
 
-    VkImageView dsv;
     VkImageViewCreateInfo dsvci = LvlInitStruct<VkImageViewCreateInfo>();
     dsvci.image = image.handle();
     dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -64,9 +63,7 @@ TEST_F(NegativeImage, UsageBits) {
     dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     // Create a view with depth / stencil aspect for image with different usage
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04441");
-    vk::CreateImageView(m_device->device(), &dsvci, NULL, &dsv);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-image-04441");
 
     // Initialize buffer with TRANSFER_DST usage
     VkBufferObj buffer;
@@ -3646,8 +3643,6 @@ TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     // The image format check comes 2nd in validation so we trigger it first,
     //  then when we cause aspect fail next, bad format check will be preempted
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
@@ -3687,10 +3682,7 @@ TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     image_view_create_info.subresourceRange.layerCount = 1;
     image_view_create_info.subresourceRange.levelCount = 1;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-
-    VkImageView view;
-    vk::CreateImageView(m_device->device(), &image_view_create_info, NULL, &view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
 }
 
 TEST_F(NegativeImage, CornerSampledImageNV) {
@@ -3919,7 +3911,6 @@ TEST_F(NegativeImage, AstcDecodeMode) {
     VkImageViewASTCDecodeModeEXT astc_decode_mode = LvlInitStruct<VkImageViewASTCDecodeModeEXT>();
     astc_decode_mode.decodeMode = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-    VkImageView image_view;
     VkImageViewCreateInfo image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>(&astc_decode_mode);
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -3930,23 +3921,18 @@ TEST_F(NegativeImage, AstcDecodeMode) {
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // image view format is not ASTC
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-format-04084");
-    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-format-04084");
 
     // Non-valid decodeMode
     image_view_create_info.image = astc_image.handle();
     image_view_create_info.format = ldr_format;
     astc_decode_mode.decodeMode = ldr_format;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230");
-    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230");
 
     // decodeModeSharedExponent not enabled
     astc_decode_mode.decodeMode = VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231");
-    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231");
 }
 
 TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
@@ -4164,15 +4150,12 @@ TEST_F(NegativeImage, ImageFormatList) {
                                    nullptr,
                                    VK_IMAGE_LAYOUT_UNDEFINED};
 
-    VkImage badImage = VK_NULL_HANDLE;
     VkImageObj mutableImage(m_device);
     VkImageObj mutableImageZero(m_device);
     VkImageObj normalImage(m_device);
 
     // Not all 4 formats are compatible
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06722");
-    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-pNext-06722");
 
     // Should work with only first 3 in array
     formatList.viewFormatCount = 3;
@@ -4189,10 +4172,8 @@ TEST_F(NegativeImage, ImageFormatList) {
     formatList.pViewFormats = formats;
 
     // Can't use 2 or higher formats if no mutable flag
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-04738");
     imageInfo.flags = 0;
-    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-flags-04738");
 
     // Make sure no error if 1 format
     formatList.viewFormatCount = 1;
@@ -4267,10 +4248,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 
     // The second image in the list should NOT be size-compatible (64-bit)
     formatList.viewFormatCount = 2;
-    VkImage badImage = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06722");
-    vk::CreateImage(device(), &imageInfo, nullptr, &badImage);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-pNext-06722");
 }
 
 TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
@@ -4998,11 +4976,8 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     image_ci.flags = 0;
     VkImageObj image_3d_no_flag(m_device);
     image_3d_no_flag.init(&image_ci);
-    VkImageView view;
     view_ci.image = image_3d_no_flag.handle();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06728");
-    vk::CreateImageView(m_device->device(), &view_ci, nullptr, &view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &view_ci, "VUID-VkImageViewCreateInfo-image-06728");
 
     const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
     view_ci.subresourceRange = range;
@@ -5010,9 +4985,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06723");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-06724");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
-    vk::CreateImageView(m_device->device(), &view_ci, nullptr, &view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &view_ci, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
 }
 
 TEST_F(NegativeImage, Image2DViewOf3DFeature) {
@@ -5410,12 +5383,8 @@ TEST_F(NegativeImage, DrmFormatModifer) {
     drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
     drm_format_mod_explicit.pPlaneLayouts = &dummyPlaneLayout;
 
-    VkImage image = VK_NULL_HANDLE;
-
     // No pNext
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-tiling-02261");
-    vk::CreateImage(device(), &image_info, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02261");
 
     // Having wrong size, arrayPitch and depthPitch in VkSubresourceLayout
     dummyPlaneLayout.size = 1;
@@ -5425,9 +5394,7 @@ TEST_F(NegativeImage, DrmFormatModifer) {
     image_info.pNext = (void *)&drm_format_mod_explicit;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
-    vk::CreateImage(device(), &image_info, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
 
     // reset dummy plane layout
     memset(&dummyPlaneLayout, 0, sizeof(dummyPlaneLayout));
@@ -5440,6 +5407,7 @@ TEST_F(NegativeImage, DrmFormatModifer) {
         printf("Format VK_FORMAT_R8G8B8A8_UNORM not supported with format modifiers, Skipping the remaining tests.\n");
         return;
     }
+    VkImage image = VK_NULL_HANDLE;
     // Postive check if only 1
     image_info.pNext = (void *)&drm_format_mod_list;
     vk::CreateImage(device(), &image_info, nullptr, &image);
@@ -5451,16 +5419,12 @@ TEST_F(NegativeImage, DrmFormatModifer) {
 
     // Having both in pNext
     drm_format_mod_explicit.pNext = (void *)&drm_format_mod_list;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-tiling-02261");
-    vk::CreateImage(device(), &image_info, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02261");
 
     // Only 1 pNext but wrong tiling
     image_info.pNext = (void *)&drm_format_mod_list;
     image_info.tiling = VK_IMAGE_TILING_LINEAR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02262");
-    vk::CreateImage(device(), &image_info, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-pNext-02262");
 }
 
 TEST_F(NegativeImage, ImageCompressionControl) {

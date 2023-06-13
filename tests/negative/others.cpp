@@ -2488,10 +2488,7 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
         GTEST_SKIP() << "image format is not supported";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-physicalDeviceCount-01421");
-    VkImage test_image;
-    vk::CreateImage(device(), &ici, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-physicalDeviceCount-01421");
 }
 
 TEST_F(VkLayerTest, Features12AndppEnabledExtensionNames) {
@@ -2676,30 +2673,21 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     ici.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     ici.pNext = &metal_object_create_info;
-    VkImage image;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06783");
-    vk::CreateImage(device(), &ici, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06783");
 
     auto import_metal_texture_info = LvlInitStruct<VkImportMetalTextureInfoEXT>();
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
     ici.pNext = &import_metal_texture_info;
     ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06784");
-    vk::CreateImage(device(), &ici, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06784");
 
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06785");
-    vk::CreateImage(device(), &ici, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06785");
 
     ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06786");
-    vk::CreateImage(device(), &ici, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06786");
 
     uint32_t queue_family_index = 0;
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -2714,15 +2702,11 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buffer_view;
     buff_view_ci.pNext = &metal_object_create_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferViewCreateInfo-pNext-06782");
-    vk::CreateBufferView(device(), &buff_view_ci, NULL, &buffer_view);
-    m_errorMonitor->VerifyFound();
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-06782"});
 
     VkImageObj image_obj(m_device);
     image_obj.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageView image_view;
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
     ivci.image = image_obj.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -2732,9 +2716,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.pNext = &metal_object_create_info;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06787");
-    vk::CreateImageView(m_device->device(), &ivci, nullptr, &image_view);
-    m_errorMonitor->VerifyFound();
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-pNext-06787");
 
     auto sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     sem_info.pNext = &metal_object_create_info;
