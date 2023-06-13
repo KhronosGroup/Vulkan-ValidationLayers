@@ -253,13 +253,7 @@ TEST_F(NegativeSparse, ImageUsageBits) {
     image_create_info.queueFamilyIndexCount = 0;
     image_create_info.pQueueFamilyIndices = NULL;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkImageObj image(m_device);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-None-01925");
-    VkImage img = image.image();
-    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &img);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-None-01925");
 }
 
 TEST_F(NegativeSparse, MemoryBindOffset) {
@@ -891,22 +885,14 @@ TEST_F(NegativeSparse, BufferFlagsFeature) {
     buffer_create_info.size = 64;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-    VkBuffer buffer;
-
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00915");
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-00915");
 
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00916");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00918");
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-00918");
 
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00917");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-00918");
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-00918");
 }

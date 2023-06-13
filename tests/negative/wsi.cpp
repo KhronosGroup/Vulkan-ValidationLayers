@@ -223,7 +223,6 @@ TEST_F(NegativeWsi, SwapchainImage) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
-    VkImage image;
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
     image_swapchain_create_info.swapchain = m_swapchain;
 
@@ -246,45 +245,33 @@ TEST_F(NegativeWsi, SwapchainImage) {
     // imageType
     image_create_info = good_create_info;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, vuid);
 
     // mipLevels
     image_create_info = good_create_info;
     image_create_info.mipLevels = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, vuid);
 
     // samples
     image_create_info = good_create_info;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, vuid);
 
     // tiling
     image_create_info = good_create_info;
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, vuid);
 
     // initialLayout
     image_create_info = good_create_info;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    vk::CreateImage(device(), &image_create_info, NULL, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, vuid);
 
     // flags
     if (m_device->phy().features().sparseBinding) {
         image_create_info = good_create_info;
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-        vk::CreateImage(device(), &image_create_info, NULL, &image);
-        m_errorMonitor->VerifyFound();
+        CreateImageTest(*this, &image_create_info, vuid);
     }
 }
 

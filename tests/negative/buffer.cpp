@@ -749,11 +749,7 @@ TEST_F(NegativeBuffer, DedicatedAllocationBufferFlags) {
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
-
-    VkBuffer buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-pNext-01571");
-    vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-pNext-01571");
 }
 
 TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
@@ -976,9 +972,5 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
     auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = maintenance4_properties.maxBufferSize + 1;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    VkBuffer buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-size-06409");
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-size-06409");
 }

@@ -1488,11 +1488,7 @@ TEST_F(NegativeExternalMemorySync, MemoryAndMemoryNV) {
     }
     external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryFeatureFlagBitsNV>(supported_types_nv);
     external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-00988");
-    VkImage test_image;
-    vk::CreateImage(device(), &ici, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-00988");
 }
 
 TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
@@ -1520,10 +1516,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
     const auto supported_types = FindSupportedExternalMemoryHandleTypes(gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (supported_types) {
         external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
-        VkImage test_image;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
-        vk::CreateImage(device(), &ici, nullptr, &test_image);
-        m_errorMonitor->VerifyFound();
+        CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-01443");
     }
     if (IsExtensionsEnabled(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         auto external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
@@ -1532,10 +1525,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
         if (supported_types_nv) {
             external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBitsNV>(supported_types_nv);
             ici.pNext = &external_mem_nv;
-            VkImage test_image;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
-            vk::CreateImage(device(), &ici, nullptr, &test_image);
-            m_errorMonitor->VerifyFound();
+            CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-01443");
         }
     }
 }

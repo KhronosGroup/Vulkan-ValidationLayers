@@ -105,17 +105,13 @@ TEST_F(NegativeProtectedMemory, Submit) {
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
     m_errorMonitor->VerifyFound();
 
-    VkBuffer buffer;
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-01887");
-    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-01887");
 
-    VkImage image;
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_create_info.extent = {64, 64, 1};
@@ -126,9 +122,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.arrayLayers = 1;
     image_create_info.mipLevels = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-01890");
-    vk::CreateImage(device(), &image_create_info, nullptr, &image);
-    m_errorMonitor->VerifyFound();
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-01890");
 
     // Try to find memory with protected bit in it at all
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
@@ -203,9 +197,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (sparse_support == true) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-None-01888");
-        vk::CreateBuffer(device(), &buffer_create_info, nullptr, &buffer_protected);
-        m_errorMonitor->VerifyFound();
+        CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-None-01888");
     }
 
     // Create actual protected and unprotected buffers
@@ -228,9 +220,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     image_create_info.mipLevels = 1;
 
     if (sparse_support == true) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-None-01891");
-        vk::CreateImage(device(), &image_create_info, nullptr, &image_protected);
-        m_errorMonitor->VerifyFound();
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-None-01891");
     }
 
     // Create actual protected and unprotected images

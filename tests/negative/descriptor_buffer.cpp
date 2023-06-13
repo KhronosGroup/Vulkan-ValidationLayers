@@ -268,33 +268,24 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             buffCI.queueFamilyIndexCount = 1;
             buffCI.pQueueFamilyIndices = &qfi;
 
-            VkBuffer buffer;
-
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-flags-08099");
             buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-            vk::CreateBuffer(m_device->device(), &buffCI, NULL, &buffer);
-            m_errorMonitor->VerifyFound();
+            CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-flags-08099");
 
             buffCI.flags = 0;
 
             if (descriptor_buffer_properties.bufferlessPushDescriptors) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08102");
             }
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08101");
             buffCI.usage =
                 VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-            vk::CreateBuffer(m_device->device(), &buffCI, NULL, &buffer);
-            m_errorMonitor->VerifyFound();
+            CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-usage-08101");
 
             buffCI.pNext = &ocddci;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-pNext-08100");
             buffCI.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-            vk::CreateBuffer(m_device->device(), &buffCI, NULL, &buffer);
-            m_errorMonitor->VerifyFound();
+            CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-pNext-08100");
         }
 
         {
-            VkImage temp_image;
             auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
             image_create_info.flags |= VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
             image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -308,16 +299,11 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             image_create_info.format = VK_FORMAT_D32_SFLOAT;
             image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             image_create_info.pNext = &ocddci;
-
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-08104");
-            vk::CreateImage(m_device->device(), &image_create_info, nullptr, &temp_image);
-            m_errorMonitor->VerifyFound();
+            CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-08104");
 
             image_create_info.pNext = &ocddci;
             image_create_info.flags &= ~VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-08105");
-            vk::CreateImage(m_device->device(), &image_create_info, nullptr, &temp_image);
-            m_errorMonitor->VerifyFound();
+            CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-08105");
         }
 
         {
@@ -334,7 +320,6 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             vk_testing::Image temp_image(*m_device, image_create_info);
 
-            VkImageView dsv;
             auto dsvci = LvlInitStruct<VkImageViewCreateInfo>();
             dsvci.flags |= VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
             dsvci.image = temp_image.handle();
@@ -344,16 +329,11 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
             dsvci.subresourceRange.baseMipLevel = 0;
             dsvci.subresourceRange.levelCount = 1;
             dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-flags-08106");
-            vk::CreateImageView(m_device->device(), &dsvci, NULL, &dsv);
-            m_errorMonitor->VerifyFound();
+            CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-flags-08106");
 
             dsvci.pNext = &ocddci;
             dsvci.flags &= ~VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-08107");
-            vk::CreateImageView(m_device->device(), &dsvci, NULL, &dsv);
-            m_errorMonitor->VerifyFound();
+            CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-pNext-08107");
         }
 
         if (IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
@@ -383,19 +363,14 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         }
 
         {
-            VkSampler sampler2;
             auto sampler_ci = SafeSaneSamplerCreateInfo();
             sampler_ci.flags |= VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-flags-08110");
-            vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler2);
-            m_errorMonitor->VerifyFound();
+            CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-flags-08110");
 
             sampler_ci.pNext = &ocddci;
             sampler_ci.flags &= ~VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-pNext-08111");
-            vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler2);
-            m_errorMonitor->VerifyFound();
+            CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-pNext-08111");
         }
     }
 
@@ -1533,24 +1508,17 @@ TEST_F(NegativeDescriptorBuffer, SetBufferAddressSpaceLimits) {
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = descriptor_buffer_properties.descriptorBufferAddressSpaceSize + 1;
-    VkBuffer buffer = VK_NULL_HANDLE;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08097");
     buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08097");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08098");
     buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08097");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08098");
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                       VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
+    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5826
