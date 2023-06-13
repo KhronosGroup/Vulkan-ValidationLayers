@@ -970,9 +970,9 @@ TEST_F(PositiveImage, DrmFormatModifier) {
 
             vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &fmtp);
 
-            for (auto i = 0u; i < modp.drmFormatModifierCount; ++i) {
+            for (uint32_t i = 0; i < modp.drmFormatModifierCount; ++i) {
                 auto &mod = modp.pDrmFormatModifierProperties[i];
-                auto features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+                uint32_t features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
 
                 if ((mod.drmFormatModifierTilingFeatures & features) != features) {
                     continue;
@@ -1019,7 +1019,7 @@ TEST_F(PositiveImage, DrmFormatModifier) {
 
         for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
             if ((mem_reqs.memoryTypeBits & (1 << type)) &&
-                ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+                ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == static_cast<uint32_t>(mem_props))) {
                 VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
                 alloc_info.allocationSize = mem_reqs.size;
                 alloc_info.memoryTypeIndex = type;
@@ -1096,7 +1096,7 @@ TEST_F(PositiveImage, CreateDrmImageWithExternalMemory) {
 
         for (uint32_t i = 0; i < modp.drmFormatModifierCount; ++i) {
             auto &mod = modp.pDrmFormatModifierProperties[i];
-            auto features = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+            const uint32_t features = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
 
             if ((mod.drmFormatModifierTilingFeatures & features) != features) {
                 continue;

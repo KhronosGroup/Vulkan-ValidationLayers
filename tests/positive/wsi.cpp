@@ -915,8 +915,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     // VK_KHR_surface_protected_capabilities is needed for other platforms
     // Without device to test with, blocking this test from non-Android platforms for now
     GTEST_SKIP() << "VK_KHR_surface_protected_capabilities test logic not implemented, skipping test for non-Android";
-#endif
-
+#else
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddSurfaceExtension();
@@ -1049,4 +1048,5 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     vk::CmdDraw(protectedCommandBuffer.handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
+#endif
 }

@@ -21,6 +21,17 @@
 set(API_TYPE "vulkan")
 set(LAYER_NAME "VkLayer_khronos_validation")
 
+if (MSVC)
+    add_compile_options(
+        # Disable warnings for layer code
+        /wd4324 # padding
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
+    )
+endif()
+
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
     containers/custom_containers.h

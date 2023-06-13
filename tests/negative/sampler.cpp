@@ -1394,10 +1394,9 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeSampler, ReductionMode) {
+// Not possible to hit 01422 without first hitting an early return in parameter validation.
+TEST_F(NegativeSampler, DISABLED_ReductionMode) {
     TEST_DESCRIPTION("Create sampler with invalid combination of filter and reduction mode.");
-
-    GTEST_SKIP() << "Not possible to hit 01422 without first hitting an early return in parameter validation.";
 
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());

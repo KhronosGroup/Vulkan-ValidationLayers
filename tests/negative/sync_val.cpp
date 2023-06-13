@@ -2663,8 +2663,8 @@ struct SyncTestPipeline {
           sampler_info(SafeSaneSamplerCreateInfo()),
           sampler() {}
     void InitState() {
-        VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-        sampler.init(*test.DeviceObj(), sampler_info);
+        VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
+        sampler.init(*test.DeviceObj(), sampler_create_info);
         g_pipe.InitInfo();
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};

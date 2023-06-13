@@ -84,7 +84,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
             !indexing_features.shaderSampledImageArrayNonUniformIndexing ||
             !indexing_features.shaderStorageBufferArrayNonUniformIndexing) {
             GTEST_SKIP() << "Not all descriptor indexing features supported, skipping descriptor indexing tests";
-            descriptor_indexing = false;
         }
     }
 

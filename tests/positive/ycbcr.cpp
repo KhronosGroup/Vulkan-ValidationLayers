@@ -218,7 +218,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
     VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
         if ((mem_reqs.memoryTypeBits & (1 << type)) &&
-            ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+            ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == static_cast<uint32_t>(mem_props))) {
             VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
             alloc_info.allocationSize = mem_reqs.size;
             alloc_info.memoryTypeIndex = type;
@@ -282,7 +282,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageTests) {
         uint32_t mem_type = 0;
         for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
             if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
-                ((phys_mem_props2.memoryProperties.memoryTypes[mem_type].propertyFlags & mem_props) == mem_props)) {
+                ((phys_mem_props2.memoryProperties.memoryTypes[mem_type].propertyFlags & mem_props) ==
+                 static_cast<uint32_t>(mem_props))) {
                 alloc_info.memoryTypeIndex = mem_type;
                 break;
             }

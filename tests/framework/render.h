@@ -279,7 +279,7 @@ class VkRenderFramework : public VkTestFramework {
     // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
 
-    VkValidationFeaturesEXT validation_features;
+    VkValidationFeaturesEXT m_validation_features;
     VkValidationFeatureEnableEXT validation_enable_all[4] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                                              VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
                                                              VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
