@@ -15,8 +15,6 @@
 #include "wayland-client.h"
 #endif
 
-class PositiveWsi : public VkPositiveLayerTest {};
-
 TEST_F(PositiveWsi, CreateWaylandSurface) {
     TEST_DESCRIPTION("Test creating wayland surface");
 

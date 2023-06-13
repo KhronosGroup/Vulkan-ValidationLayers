@@ -18,17 +18,12 @@
 #include <array>
 #include <chrono>
 
-class PositiveDynamicRendering : public VkPositiveLayerTest {
-  public:
-    void InitBasicDynamicRendering();
-};
-
-void PositiveDynamicRendering::InitBasicDynamicRendering() {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+void DynamicRenderingTest::InitBasicDynamicRendering() {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";

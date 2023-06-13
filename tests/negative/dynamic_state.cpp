@@ -15,15 +15,6 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeDynamicState : public VkLayerTest {
-    // helper functions for tests in this file
-  public:
-    // VK_EXT_extended_dynamic_state - not calling vkCmdSet before draw
-    void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
-    // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
-    void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
-};
-
 TEST_F(NegativeDynamicState, DepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");

@@ -15,8 +15,6 @@
 
 #include <array>
 
-class PositiveRenderPass : public VkPositiveLayerTest {};
-
 TEST_F(PositiveRenderPass, AttachmentUsedTwiceOK) {
     TEST_DESCRIPTION("Attachment is used simultaneously as color and input, with the same layout. This is OK.");
 

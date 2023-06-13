@@ -16,8 +16,6 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeObjectLifetime : public VkLayerTest {};
-
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());

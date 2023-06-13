@@ -13,8 +13,83 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
+#include "generated/enum_flag_bits.h"
 
-class PositiveExternalMemorySync : public VkPositiveLayerTest {};
+VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(const VkBufferCreateInfo &buffer_create_info,
+                                                                                 VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    external_info.flags = buffer_create_info.flags;
+    external_info.usage = buffer_create_info.usage;
+    external_info.handleType = handle_type;
+    auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+    vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_buffer_properties);
+    return external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalMemoryHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(const VkImageCreateInfo &image_create_info,
+                                                                                 VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    external_info.handleType = handle_type;
+    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    image_info.format = image_create_info.format;
+    image_info.type = image_create_info.imageType;
+    image_info.tiling = image_create_info.tiling;
+    image_info.usage = image_create_info.usage;
+    image_info.flags = image_create_info.flags;
+    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+    if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) return 0;
+    return external_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalFenceHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
+}
+
+VkExternalSemaphoreHandleTypeFlags ExternalMemorySyncTest::GetCompatibleHandleTypes(
+    VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
+}
+
+VkExternalFenceHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalFenceHandleTypes(
+    VkExternalFenceFeatureFlags requested_features) {
+    VkExternalFenceHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalFenceHandleTypeFlagBits>(
+        AllVkExternalFenceHandleTypeFlagBits, [&](VkExternalFenceHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+            vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
+            if ((external_properties.externalFenceFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
+
+VkExternalSemaphoreHandleTypeFlags ExternalMemorySyncTest::FindSupportedExternalSemaphoreHandleTypes(
+    VkExternalSemaphoreFeatureFlags requested_features) {
+    VkExternalSemaphoreHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(
+        AllVkExternalSemaphoreHandleTypeFlagBits, [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+            vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
+            if ((external_properties.externalSemaphoreFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
 
 TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     TEST_DESCRIPTION("Get POXIS handle for memory allocation");

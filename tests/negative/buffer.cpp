@@ -17,8 +17,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "utils/vk_layer_utils.h"
 
-class NegativeBuffer : public VkLayerTest {};
-
 TEST_F(NegativeBuffer, Extents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
 

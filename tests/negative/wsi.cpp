@@ -19,8 +19,6 @@
 #include "wayland-client.h"
 #endif
 
-class NegativeWsi : public VkLayerTest {};
-
 TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
     TEST_DESCRIPTION("Initialize swapchain with potentially incompatible flags");
 

@@ -12,8 +12,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class NegativeDeviceQueue : public VkLayerTest {};
-
 TEST_F(NegativeDeviceQueue, FamilyIndex) {
     TEST_DESCRIPTION("Create device queue with invalid queue family index.");
 

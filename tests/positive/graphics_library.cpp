@@ -19,12 +19,8 @@
 #include <chrono>
 
 class VkPositiveGraphicsLibraryLayerTest : public VkLayerTest {};
-class PositiveGraphicsLibrary : public VkLayerTest {
-  public:
-    void InitBasicGraphicsLibrary(void* pNextFeatures = nullptr);
-};
 
-void PositiveGraphicsLibrary::InitBasicGraphicsLibrary(void* pNextFeatures) {
+void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 

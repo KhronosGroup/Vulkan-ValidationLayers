@@ -11,8 +11,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveImagelessFramebuffer : public VkLayerTest {};
-
 TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     TEST_DESCRIPTION("Create an imageless framebuffer");
 

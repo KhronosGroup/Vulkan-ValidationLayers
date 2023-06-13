@@ -15,8 +15,6 @@
 #include "../framework/ray_tracing_objects.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveRayTracing : public VkPositiveLayerTest {};
-
 TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
     TEST_DESCRIPTION("Test enabled features for GetAccelerationStructureBuildSizes");
 

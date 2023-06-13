@@ -14,11 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-class PositiveDynamicState : public VkPositiveLayerTest {
-  public:
-    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
-};
-
 void PositiveDynamicState::InitBasicExtendedDynamicState() {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

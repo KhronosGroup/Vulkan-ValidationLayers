@@ -16,8 +16,6 @@
 #include "generated/enum_flag_bits.h"
 #include "../framework/layer_validation_tests.h"
 
-class NegativeSparse : public VkLayerTest {};
-
 TEST_F(NegativeSparse, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
 

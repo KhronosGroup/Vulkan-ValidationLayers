@@ -13,8 +13,6 @@
 
 #include "../framework/layer_validation_tests.h"
 
-class PositiveShaderPushConstants : public VkPositiveLayerTest {};
-
 TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     TEST_DESCRIPTION("Test overlapping push-constant ranges.");
 
