@@ -347,7 +347,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     auto full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
     auto win32_full_screen_info_copy = LvlInitStruct<VkSurfaceFullScreenExclusiveWin32InfoEXT>();
     const auto *full_screen_info = LvlFindInChain<VkSurfaceFullScreenExclusiveInfoEXT>(pCreateInfo->pNext);
-    if (full_screen_info) {
+    if (full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
         full_screen_info_copy_addr = &full_screen_info_copy;
         full_screen_info_copy = *full_screen_info;
         full_screen_info_copy.pNext = nullptr;

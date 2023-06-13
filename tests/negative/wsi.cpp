@@ -2856,6 +2856,56 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
 #endif
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(NegativeWsi, CreateSwapchainFullscreenExclusive) {
+    TEST_DESCRIPTION("Test creating a swapchain with VkSurfaceFullScreenExclusiveWin32InfoEXT");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Only run test MockICD due to CI stability";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain";
+    }
+
+    auto surface_full_screen_exlusive_info = LvlInitStruct<VkSurfaceFullScreenExclusiveInfoEXT>();
+
+    auto swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>(&surface_full_screen_exlusive_info);
+    swapchain_create_info.flags = 0;
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = m_surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
+    swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
+    surface_full_screen_exlusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-pNext-02679");
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    m_errorMonitor->VerifyFound();
+}
+#endif
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
 TEST_F(NegativeWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     TEST_DESCRIPTION("Test vkAcquireFullScreenExclusiveModeEXT.");
 
