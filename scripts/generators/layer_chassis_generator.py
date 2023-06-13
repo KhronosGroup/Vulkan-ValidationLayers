@@ -521,7 +521,8 @@ class ValidationObject {
 
     inline_custom_source_preamble_1 = """
 
-#include <string.h>
+#include <array>
+#include <cstring>
 #include <mutex>
 
 #include "chassis.h"
@@ -714,15 +715,19 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice p
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
                                                                     VkExtensionProperties *pProperties) {
-    if (pLayerName && !strcmp(pLayerName, global_layer.layerName))
-        return util_GetExtensionProperties(ARRAY_SIZE(instance_extensions), instance_extensions, pCount, pProperties);
+    if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
+        return util_GetExtensionProperties(static_cast<uint32_t>(kInstanceExtensions.size()), kInstanceExtensions.data(), pCount, pProperties);
+    }
 
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
                                                                   uint32_t *pCount, VkExtensionProperties *pProperties) {
-    if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) return util_GetExtensionProperties(ARRAY_SIZE(device_extensions), device_extensions, pCount, pProperties);
+    if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
+        return util_GetExtensionProperties(static_cast<uint32_t>(kDeviceExtensions.size()), kDeviceExtensions.data(), pCount, pProperties);
+    }
+
     assert(physicalDevice);
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
@@ -1649,14 +1654,14 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
     # Generate extension lists exposed by the validation layer
     def genExtensionLists(self):
         extensions = []
-        extensions.append('static const VkExtensionProperties instance_extensions[] = {')
+        extensions.append('static constexpr std::array kInstanceExtensions = {')
         for instance_extension in self.getInstanceExtensions():
-            extensions.append('    {{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(instance_extension.upper()))
+            extensions.append('    VkExtensionProperties{{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(instance_extension.upper()))
         extensions.append('};')
         extensions.append('')
-        extensions.append('static const VkExtensionProperties device_extensions[] = {')
+        extensions.append('static constexpr std::array kDeviceExtensions = {')
         for device_extension in self.getDeviceExtensions():
-            extensions.append('    {{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(device_extension.upper()))
+            extensions.append('    VkExtensionProperties{{{0}_EXTENSION_NAME, {0}_SPEC_VERSION}},'.format(device_extension.upper()))
         extensions.append('};')
         extensions.append('')
         return '\n'.join(extensions)
