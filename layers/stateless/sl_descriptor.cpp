@@ -18,29 +18,30 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-
-struct SampleOrderInfo {
-    VkShadingRatePaletteEntryNV shadingRate;
-    uint32_t width;
-    uint32_t height;
-};
-
-// All palette entries with more than one pixel per fragment
-static SampleOrderInfo sample_order_infos[] = {
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 1, 2},
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X1_PIXELS_NV, 2, 1},
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X2_PIXELS_NV, 2, 2},
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X2_PIXELS_NV, 4, 2},
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X4_PIXELS_NV, 2, 4},
-    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
-};
+#include <array>
 
 bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const {
     bool skip = false;
 
-    SampleOrderInfo *sample_order_info;
+    struct SampleOrderInfo {
+        VkShadingRatePaletteEntryNV shadingRate;
+        uint32_t width;
+        uint32_t height;
+    };
+
+    // All palette entries with more than one pixel per fragment
+    constexpr std::array sample_order_infos = {
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 1, 2},
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X1_PIXELS_NV, 2, 1},
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X2_PIXELS_NV, 2, 2},
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X2_PIXELS_NV, 4, 2},
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X4_PIXELS_NV, 2, 4},
+        SampleOrderInfo{VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
+    };
+
+    const SampleOrderInfo *sample_order_info;
     uint32_t info_idx = 0;
-    for (sample_order_info = nullptr; info_idx < ARRAY_SIZE(sample_order_infos); ++info_idx) {
+    for (sample_order_info = nullptr; info_idx < sample_order_infos.size(); ++info_idx) {
         if (sample_order_infos[info_idx].shadingRate == order->shadingRate) {
             sample_order_info = &sample_order_infos[info_idx];
             break;

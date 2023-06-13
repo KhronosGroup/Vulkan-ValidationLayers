@@ -111,7 +111,6 @@ elseif(MSVC)
         /wd4324 # padding
         /wd4458 # hiding class member
         /wd4457 # hiding function parameter
-        /wd4459 # hiding global parameter
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
     )
