@@ -714,6 +714,24 @@ TEST_F(PositiveImage, ImageCompressionControl) {
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
+    // Create with disabled image compression
+    {
+        auto compressionControl = LvlInitStruct<VkImageCompressionControlEXT>();
+        compressionControl.flags = VK_IMAGE_COMPRESSION_DISABLED_EXT;
+        image_ci.pNext = &compressionControl;
+
+        vk_testing::Image image(*m_device, image_ci);
+    }
+
+    // Create with default image compression, without fixed rate
+    {
+        auto compressionControl = LvlInitStruct<VkImageCompressionControlEXT>();
+        compressionControl.flags = VK_IMAGE_COMPRESSION_DEFAULT_EXT;
+        image_ci.pNext = &compressionControl;
+
+        vk_testing::Image image(*m_device, image_ci);
+    }
+
     // Create with fixed rate compression image
     {
         auto compressionControl = LvlInitStruct<VkImageCompressionControlEXT>();
