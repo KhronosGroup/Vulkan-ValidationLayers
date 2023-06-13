@@ -18,6 +18,18 @@
 #include "utils/vk_layer_utils.h"
 
 class NegativeExternalMemorySync : public VkLayerTest {
+  public:
+    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkBufferCreateInfo &buffer_create_info,
+                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
+    VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkImageCreateInfo &image_create_info,
+                                                             VkExternalMemoryHandleTypeFlagBits handle_type);
+    VkExternalFenceHandleTypeFlags GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type);
+    VkExternalSemaphoreHandleTypeFlags GetCompatibleHandleTypes(VkExternalSemaphoreHandleTypeFlagBits handle_type);
+
+    VkExternalFenceHandleTypeFlags FindSupportedExternalFenceHandleTypes(VkExternalFenceFeatureFlags requested_features);
+    VkExternalSemaphoreHandleTypeFlags FindSupportedExternalSemaphoreHandleTypes(
+        VkExternalSemaphoreFeatureFlags requested_features);
+
   protected:
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     using ExternalHandle = HANDLE;
@@ -25,6 +37,82 @@ class NegativeExternalMemorySync : public VkLayerTest {
     using ExternalHandle = int;
 #endif
 };
+
+VkExternalMemoryHandleTypeFlags NegativeExternalMemorySync::GetCompatibleHandleTypes(
+    const VkBufferCreateInfo &buffer_create_info, VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    external_info.flags = buffer_create_info.flags;
+    external_info.usage = buffer_create_info.usage;
+    external_info.handleType = handle_type;
+    auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+    vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_info, &external_buffer_properties);
+    return external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalMemoryHandleTypeFlags NegativeExternalMemorySync::GetCompatibleHandleTypes(
+    const VkImageCreateInfo &image_create_info, VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    external_info.handleType = handle_type;
+    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    image_info.format = image_create_info.format;
+    image_info.type = image_create_info.imageType;
+    image_info.tiling = image_create_info.tiling;
+    image_info.usage = image_create_info.usage;
+    image_info.flags = image_create_info.flags;
+    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+    if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) return 0;
+    return external_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalFenceHandleTypeFlags NegativeExternalMemorySync::GetCompatibleHandleTypes(VkExternalFenceHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+    vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
+}
+
+VkExternalSemaphoreHandleTypeFlags NegativeExternalMemorySync::GetCompatibleHandleTypes(
+    VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+    external_info.handleType = handle_type;
+    auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
+    return external_properties.compatibleHandleTypes;
+}
+
+VkExternalFenceHandleTypeFlags NegativeExternalMemorySync::FindSupportedExternalFenceHandleTypes(
+    VkExternalFenceFeatureFlags requested_features) {
+    VkExternalFenceHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalFenceHandleTypeFlagBits>(
+        AllVkExternalFenceHandleTypeFlagBits, [&](VkExternalFenceHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalFenceInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalFenceProperties>();
+            vk::GetPhysicalDeviceExternalFenceProperties(gpu(), &external_info, &external_properties);
+            if ((external_properties.externalFenceFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
+
+VkExternalSemaphoreHandleTypeFlags NegativeExternalMemorySync::FindSupportedExternalSemaphoreHandleTypes(
+    VkExternalSemaphoreFeatureFlags requested_features) {
+    VkExternalSemaphoreHandleTypeFlags supported_types = 0;
+    IterateFlags<VkExternalSemaphoreHandleTypeFlagBits>(
+        AllVkExternalSemaphoreHandleTypeFlagBits, [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
+            auto external_info = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfo>();
+            external_info.handleType = flag;
+            auto external_properties = LvlInitStruct<VkExternalSemaphoreProperties>();
+            vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu(), &external_info, &external_properties);
+            if ((external_properties.externalSemaphoreFeatures & requested_features) == requested_features) {
+                supported_types |= flag;
+            }
+        });
+    return supported_types;
+}
 
 TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
@@ -301,7 +389,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(gpu(), buffer_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(buffer_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -406,7 +494,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(gpu(), image_info, handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(image_info, handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -1260,7 +1348,7 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithUnsupportedHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -1288,12 +1376,12 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalFenceHandleTypes(gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalFenceHandleTypes(VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalFenceHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
@@ -1318,7 +1406,7 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
@@ -1346,12 +1434,12 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(gpu(), VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
+    const auto exportable_types = FindSupportedExternalSemaphoreHandleTypes(VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT);
     if (!exportable_types) {
         GTEST_SKIP() << "Unable to find exportable handle type";
     }
     const auto handle_type = LeastSignificantFlag<VkExternalSemaphoreHandleTypeFlagBits>(exportable_types);
-    const auto compatible_types = GetCompatibleHandleTypes(gpu(), handle_type);
+    const auto compatible_types = GetCompatibleHandleTypes(handle_type);
     if ((exportable_types & compatible_types) == exportable_types) {
         GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
     }
