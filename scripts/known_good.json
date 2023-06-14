@@ -36,9 +36,11 @@
             "install_dir": "SPIRV-Tools/build/install",
             "cmake_options": [
                 "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers",
-                "-DSPIRV_WERROR=OFF"
+                "-DSPIRV_WERROR=OFF",
+                "-DSPIRV_SKIP_TESTS=ON",
+                "-DSPIRV_SKIP_EXECUTABLES=ON"
             ],
-            "commit": "e7c6084fd1d6d6f5ac393e842728d8be309688ca"
+            "commit": "d33bea584707c3509065010c45d9b79c54c8376b"
         },
         {
             "name": "SPIRV-Reflect",
