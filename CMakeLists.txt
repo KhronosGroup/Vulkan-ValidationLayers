@@ -106,13 +106,6 @@ elseif(MSVC)
     add_compile_options(
         /W4
         /we5038 # Enable warning about MIL ordering in constructors
-
-        # Disable warnings
-        /wd4324 # padding
-        /wd4458 # hiding class member
-        /wd4457 # hiding function parameter
-        /wd4702 # unreachable code
-        /wd4389 # signed/unsigned mismatch
     )
 
     # Enforce stricter ISO C++
