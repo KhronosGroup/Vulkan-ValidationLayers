@@ -258,8 +258,7 @@ def RunVVLTests():
     lvt_cmd = os.path.join(TEST_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
     # The following test fail with thread sanitization enabled.
-    failing_tsan_tests = '-PositiveCommand.ThreadedCommandBuffersWithLabels'
-    failing_tsan_tests += ':VkPositiveLayerTest.QueueThreading'
+    failing_tsan_tests = '-VkPositiveLayerTest.QueueThreading'
     failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedExplicitReset'
     failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedNoReset'
     failing_tsan_tests += ':NegativeSyncVal.CopyOptimalImageHazards'
