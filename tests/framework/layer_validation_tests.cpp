@@ -186,18 +186,25 @@ void UpdateDescriptor(ThreadTestData *data) {
 
 bool ThreadTimeoutHelper::WaitForThreads(int timeout_in_seconds) {
     std::unique_lock lock(mutex_);
-    return cv_.wait_for(lock, std::chrono::seconds{timeout_in_seconds}, [this] { return active_threads_ == 0; });
+    return cv_.wait_for(lock, std::chrono::seconds{timeout_in_seconds}, [this] {
+        std::lock_guard lock_guard(active_thread_mutex_);
+        return active_threads_ == 0;
+    });
 }
 
 void ThreadTimeoutHelper::OnThreadDone() {
     bool last_worker = false;
     {
-        std::lock_guard lock(mutex_);
+        std::lock_guard lock(active_thread_mutex_);
         active_threads_--;
         assert(active_threads_ >= 0);
-        if (!active_threads_) last_worker = true;
+        if (!active_threads_) {
+            last_worker = true;
+        }
     }
-    if (last_worker) cv_.notify_one();
+    if (last_worker) {
+        cv_.notify_one();
+    }
 }
 
 void ReleaseNullFence(ThreadTestData *data) {

@@ -1031,7 +1031,9 @@ class ThreadTimeoutHelper {
   private:
     void OnThreadDone();
 
+    std::mutex active_thread_mutex_;
     int active_threads_;
+
     std::condition_variable cv_;
     std::mutex mutex_;
 };
