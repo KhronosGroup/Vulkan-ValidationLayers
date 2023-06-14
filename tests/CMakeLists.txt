@@ -165,8 +165,13 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
         )
     endif()
 elseif(MSVC)
-    # Disable some signed/unsigned mismatch warnings.
-    target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
+    target_compile_options(vk_layer_validation_tests PRIVATE
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
+        /wd4267 # Disable some signed/unsigned mismatch warnings.
+    )
 
     set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:vvl>")
 

@@ -126,6 +126,14 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
     )
+elseif(MSVC)
+    target_compile_options(VkLayer_utils PRIVATE
+        /wd4324 # padding
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
+    )
 endif()
 
 if (NOT BUILD_LAYERS)
@@ -354,6 +362,14 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(vvl PRIVATE
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
+    )
+elseif(MSVC)
+    target_compile_options(vvl PRIVATE
+        /wd4324 # padding
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
     )
 endif()
 

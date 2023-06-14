@@ -46,6 +46,13 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
             -Wno-implicit-int-conversion
         )
     endif()
+elseif(MSVC)
+    target_compile_options(VkLayer_device_profile_api PRIVATE
+        /wd4458 # hiding class member
+        /wd4457 # hiding function parameter
+        /wd4702 # unreachable code
+        /wd4389 # signed/unsigned mismatch
+    )
 endif()
 
 target_include_directories(VkLayer_device_profile_api PRIVATE .)
