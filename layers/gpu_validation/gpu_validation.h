@@ -70,10 +70,11 @@ struct GpuAssistedBufferInfo {
     VkPipelineBindPoint pipeline_bind_point;
     bool uses_robustness;
     CMD_TYPE cmd_type;
+    uint32_t desc_binding_index;
     GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedDeviceMemoryBlock bda_input_mem_block,
                           GpuAssistedPreDrawResources pre_draw_resources, GpuAssistedPreDispatchResources pre_dispatch_resources,
                           VkDescriptorSet desc_set, VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point,
-                          bool uses_robustness, CMD_TYPE cmd_type)
+                          bool uses_robustness, CMD_TYPE cmd_type, uint32_t desc_binding_index)
         : output_mem_block(output_mem_block),
           bda_input_mem_block(bda_input_mem_block),
           pre_draw_resources(pre_draw_resources),
@@ -82,7 +83,8 @@ struct GpuAssistedBufferInfo {
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
           uses_robustness(uses_robustness),
-          cmd_type(cmd_type){};
+          cmd_type(cmd_type),
+          desc_binding_index(desc_binding_index){};
 };
 
 struct GpuVuid {
@@ -218,8 +220,8 @@ class GpuAssisted : public GpuAssistedBase {
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo& buffer_info,
-                                    uint32_t operation_index, uint32_t* const debug_output_buffer);
-
+                                    uint32_t operation_index, uint32_t* const debug_output_buffer,
+                                    const std::vector<GpuAssistedDescSetState>& descriptor_sets);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
 
     void UpdateBoundDescriptors(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint);
@@ -330,7 +332,7 @@ class GpuAssisted : public GpuAssistedBase {
     VkPipeline GetValidationPipeline(VkRenderPass render_pass);
 
     VkBool32 shaderInt64;
-    bool buffer_oob_enabled;
+    bool validate_descriptors;
     bool validate_draw_indirect;
     bool validate_dispatch_indirect;
     bool warn_on_robust_oob;
@@ -339,6 +341,5 @@ class GpuAssisted : public GpuAssistedBase {
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
 
-    bool descriptor_indexing = false;
     bool buffer_device_address;
 };
