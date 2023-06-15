@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ -z "${ANDROID_SDK_HOME}" ];
-then echo "Please set ANDROID_SDK_HOME, exiting"; exit 1;
-else echo "ANDROID_SDK_HOME is ${ANDROID_SDK_HOME}";
+if [ -z "${ANDROID_SDK_ROOT}" ];
+then echo "Please set ANDROID_SDK_ROOT, exiting"; exit 1;
+else echo "ANDROID_SDK_ROOT is ${ANDROID_SDK_ROOT}";
 fi
 
 if [ -z "${ANDROID_NDK_HOME}" ];
@@ -73,7 +73,7 @@ fi
 echo "Building Layer using ${ANDROID_STL_TYPE}";
 
 function create_APK() {
-    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
+    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_ROOT/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
     # If zipalign was run after signing, it won't be a valid signature
     zipalign -f 4 bin/$1-unaligned.apk bin/$1.apk
     # jarsigner used to be used until it was removed from the Android SDK
