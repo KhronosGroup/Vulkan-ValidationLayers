@@ -162,3 +162,125 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_commandBuffer->end();
 }
+
+// Regression test for semaphore timeout described here:
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
+TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreFromHost) {
+    TEST_DESCRIPTION("Signal and wait semaphore multiple times on the host from different threads ");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>(&sync2_features);
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "synchronization2 not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    constexpr std::uint64_t max_signal_value = 100'000;
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    auto waiter_thread = std::thread{[&] {
+        std::uint64_t wait_value = 1;
+        while (wait_value <= max_signal_value) {
+            auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+            wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
+            wait_info.semaphoreCount = 1;
+            wait_info.pSemaphores = &semaphore.handle();
+            wait_info.pValues = &wait_value;
+            ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
+            ++wait_value;
+
+            if (bailout.load()) {
+                break;
+            }
+        }
+    }};
+
+    std::uint64_t last_signalled_value = 0;
+    while (last_signalled_value != max_signal_value) {
+        auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+        signal_info.semaphore = semaphore;
+        signal_info.value = ++last_signalled_value;
+        vk::SignalSemaphore(*m_device, &signal_info);
+
+        if (bailout.load()) {
+            break;
+        }
+    }
+    waiter_thread.join();
+}
+
+TEST_F(PositiveSyncVal, SignalFromSubmitAndWaitOnHost) {
+    TEST_DESCRIPTION("Signal and wait semaphore multiple times on the host from different threads ");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>(&sync2_features);
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    constexpr std::uint64_t max_signal_value = 100'000;
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    std::atomic<bool> bailout{false};
+    m_errorMonitor->SetBailout(&bailout);
+
+    auto waiter_thread = std::thread{[&] {
+        std::uint64_t wait_value = 1;
+        while (wait_value <= max_signal_value) {
+            auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+            wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
+            wait_info.semaphoreCount = 1;
+            wait_info.pSemaphores = &semaphore.handle();
+            wait_info.pValues = &wait_value;
+            ASSERT_VK_SUCCESS(vk::WaitSemaphores(*m_device, &wait_info, vvl::kU64Max));
+            ++wait_value;
+
+            if (bailout.load()) {
+                break;
+            }
+        }
+    }};
+
+    std::uint64_t last_signalled_value = 0;
+    while (last_signalled_value != max_signal_value) {
+        auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+        signal_info.semaphore = semaphore;
+        signal_info.value = ++last_signalled_value;
+        signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        auto submit_info = LvlInitStruct<VkSubmitInfo2>();
+        submit_info.signalSemaphoreInfoCount = 1;
+        submit_info.pSignalSemaphoreInfos = &signal_info;
+        ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+
+        if (bailout.load()) {
+            break;
+        }
+    }
+    waiter_thread.join();
+}
