@@ -331,7 +331,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     // create a non-sparse index buffer
     std::vector<uint16_t> nonsparse_indices;
     nonsparse_indices.resize(128);
-    std::generate(nonsparse_indices.begin(), nonsparse_indices.end(), [n = 0]() mutable { return ++n; });
+    std::generate(nonsparse_indices.begin(), nonsparse_indices.end(), [n = uint16_t(0)]() mutable { return ++n; });
 
     // another example of non-sparsity where the number of indices is also very small
     std::vector<uint16_t> nonsparse_indices_2 = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -342,7 +342,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     // another example of non-sparsity, all the indices are the same value (42)
     std::vector<uint16_t> nonsparse_indices_4 = {};
     nonsparse_indices_4.resize(128);
-    std::fill(nonsparse_indices_4.begin(), nonsparse_indices_4.end(), 42);
+    std::fill(nonsparse_indices_4.begin(), nonsparse_indices_4.end(), uint16_t(42));
 
     std::vector<uint16_t> sparse_indices = nonsparse_indices;
     // The buffer (0, 1, 2, ..., n) is completely un-sparse. However, if n < 0xFFFF, by adding 0xFFFF at the end, we

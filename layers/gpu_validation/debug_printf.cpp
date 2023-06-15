@@ -34,11 +34,11 @@ void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     output_buffer_size = *size_string ? atoi(size_string) : 1024;
 
     std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
-    transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
+    vvl::ToLower(verbose_string);
     verbose = !verbose_string.compare("true");
 
     std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
-    transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
+    vvl::ToLower(stdout_string);
     use_stdout = !stdout_string.compare("true");
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
 

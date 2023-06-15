@@ -179,7 +179,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     }
     bool GpuGetOption(const char *option, bool default_value) {
         std::string option_string = getLayerOption(option);
-        transform(option_string.begin(), option_string.end(), option_string.begin(), ::tolower);
+        vvl::ToLower(option_string);
         return !option_string.empty() ? !option_string.compare("true") : default_value;
     }
 

@@ -773,4 +773,20 @@ static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) 
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
 }
 
+namespace vvl {
+
+static inline void ToLower(std::string &str) {
+    // std::tolower() returns int which can cause compiler warnings
+    transform(str.begin(), str.end(), str.begin(),
+              [](char c) { return static_cast<char>(std::tolower(c)); });
+}
+
+static inline void ToUpper(std::string &str) {
+    // std::toupper() returns int which can cause compiler warnings
+    transform(str.begin(), str.end(), str.begin(),
+              [](char c) { return static_cast<char>(std::toupper(c)); });
+}
+
+}  // namespace vvl
+
 #endif

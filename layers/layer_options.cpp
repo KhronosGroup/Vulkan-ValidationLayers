@@ -354,7 +354,7 @@ static bool SetBool(const std::string &config_string, const std::string &env_str
         setting = config_string;
     }
     if (!setting.empty()) {
-        transform(setting.begin(), setting.end(), setting.begin(), ::tolower);
+        vvl::ToLower(setting);
         if (setting == "true") {
             result = true;
         } else {
@@ -376,7 +376,7 @@ static std::string GetConfigValue(const char *setting) {
 
 static std::string GetEnvVarValue(const char *setting) {
     std::string env_var = setting;
-    std::transform(env_var.begin(), env_var.end(), env_var.begin(), ::toupper);
+    vvl::ToUpper(env_var);
     return GetEnvironment((std::string("VK_LAYER_") + env_var).c_str());
 }
 
