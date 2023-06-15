@@ -110,25 +110,5 @@ def main():
     # Align APK
     common_ci.RunShellCmd(f'zipalign -f 4 {unaligned_apk} {aligned_apk}')
 
-    # Generate Key
-    #
-    # keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
-
-    # TODO: Support both jarsigner and apksigner for flexibility. Jenkins still uses jarsigner.
-    #
-    ## jarsigner used to be used until it was removed from the Android SDK
-    # apksigner sign --verbose --ks ~/.android/debug.keystore --ks-pass pass:android bin/$1.apk
-
-    # jarsigner -verbose -keystore /home/lunarg/.android/debug.keystore -storepass android -keypass android VulkanLayerValidationTests-unaligned.apk androiddebugkey
-    # 
-    # /home/lunarg/Android/Sdk/build-tools/29.0.2/zipalign -f 4 VulkanLayerValidationTests-unaligned.apk VulkanLayerValidationTests.apk
-
-    # Sign....
-    # /home/juan/Android/Sdk/build-tools/33.0.2/apksigner /home/juan/projects/vvl/build/install/VulkanLayerValidationTests.apk
-    # 
-    # # List android device
-    # /home/juan/Android/Sdk/platform-tools/adb devices -l
-    # ```
-
 if __name__ == '__main__':
     main()

@@ -1,20 +1,21 @@
 # Build Instructions
 
 1. [Requirements](#requirements)
-1. [Building Overview](#building-overview)
-1. [Generated source code](#generated-source-code)
-1. [Dependencies](#dependencies)
-1. [Windows Build](#building-on-windows)
-1. [Linux Build](#building-on-linux)
-1. [Android Build](#building-on-android)
-1. [MacOS build](#building-on-macos)
-1. [Installed Files](#installed-files)
+2. [Building Overview](#building-overview)
+3. [Generated source code](#generated-source-code)
+4. [Dependencies](#dependencies)
+5. [Linux Build](#building-on-linux)
+6. [Windows Build](#building-on-windows)
+7. [MacOS build](#building-on-macos)
+8. [Android Build](#building-on-android)
+9. [Installed Files](#installed-files)
 
 ## Requirements
 
 1. CMake >= 3.17.2
 2. C++ >= c++17 compiler. See platform-specific sections below for supported compiler versions.
 3. Python >= 3.8
+4. Git
 
 NOTE: Python is needed for working on generated code, and helping grab dependencies.
 While it's not technically required, it's practically required for most users.
@@ -175,31 +176,6 @@ Add `-D BUILD_WERROR=ON` to your workflow. Or use the `dev` preset shown below w
 cmake -S . -B build/ --preset dev
 ```
 
-## Building On Windows
-
-### Windows Development Environment Requirements
-
-- Windows 10+
-- Visual Studio
-- CMake
-- Git
-
-Note: Anything less than `Visual Studio 2019` is not guaranteed to compile/work.
-
-### Windows Build - Microsoft Visual Studio
-
-Run CMake to generate [Visual Studio project files](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#command-line-g-option).
-
-```bash
-# NOTE: By default CMake picks the latest version of Visual Studio as the default generator.
-cmake -S . -B build --preset dev
-
-# Open the Visual Studio solution
-cmake --open build
-```
-
-Check the [official CMake documentation](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators) for further information on Visual Studio generators.
-
 ## Building On Linux
 
 ### Linux Build Requirements
@@ -248,13 +224,61 @@ export CXXFLAGS=-m32
 export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
 ```
 
+## Building On Windows
+
+### Windows Development Environment Requirements
+
+- Windows 10+
+- Visual Studio
+
+Note: Anything less than `Visual Studio 2019` is not guaranteed to compile/work.
+
+### Visual Studio Generator
+
+Run CMake to generate [Visual Studio project files](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#command-line-g-option).
+
+```bash
+# NOTE: By default CMake picks the latest version of Visual Studio as the default generator.
+cmake -S . -B build --preset dev
+
+# Open the Visual Studio solution
+cmake --open build
+```
+
+See the [CMake documentation](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators) for further information on Visual Studio generators.
+
+NOTE: Windows developers don't have to develop in Visual Studio. Visual Studio just helps streamlining the needed C++ toolchain requirements (compilers, linker, etc).
+
+## Building on MacOS
+
+### MacOS Development Environment Requirements
+
+- Xcode
+
+NOTE: MacOS developers don't have to develop in Xcode. Xcode just helps streamlining the needed C++ toolchain requirements (compilers, linker, etc). Similar to Visual Studio on Windows.
+
+### Xcode Generator
+
+To create and open an Xcode project:
+
+```bash
+# Create the Xcode project
+cmake -S . -B build -G Xcode --preset dev
+
+# Open the Xcode project
+cmake --open build
+```
+
+See the [CMake documentation](https://cmake.org/cmake/help/latest/generator/Xcode.html) for further information on the Xcode generator.
+
 ## Building On Android
 
 ### Android Build Requirements
 
-- Install [Android Studio 2.3](https://developer.android.com/studio/index.html) or later.
-- From the `Welcome to Android Studio` splash screen, add the following components using Configure > SDK Manager:
-  - SDK Platforms > Android 8.0.0 and newer
+- Download [Android Studio](https://developer.android.com/studio)
+- Install (https://developer.android.com/studio/install)
+- From the `Welcome to Android Studio` splash screen, add the following components using the SDK Manager:
+  - SDK Platforms > Android 8.0 and newer (API Level 26 or higher)
   - SDK Tools > Android SDK Build-Tools
   - SDK Tools > Android SDK Platform-Tools
   - SDK Tools > Android SDK Tools
@@ -264,56 +288,35 @@ export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
 
 For each of the below, you may need to specify a different build-tools version, as Android Studio will roll it forward fairly regularly.
 
-On Linux:
+NOTE: The following commands are streamlined for Linux but easily transferable to other platforms.
+The main intent is setting 2 environment variables and ensuring the NDK and build tools are in the `PATH`.
 
-```bash
-export ANDROID_SDK_HOME=$HOME/Android/sdk
-export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
-export PATH=$ANDROID_SDK_HOME:$PATH
+```sh
+# Set environment variables
+# https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#environment-variables-2
+export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+export ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/X.Y.Z
+
+# Modify path
 export PATH=$ANDROID_NDK_HOME:$PATH
-# Where X.Y.Z is the most recent version number inside the build-tools directory.
-export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
-```
+export PATH=$ANDROID_SDK_ROOT/build-tools/X.Y.Z:$PATH
 
-On Windows:
+# Verify SDK build-tools is set correctly
+which aapt
 
-```
-set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
-set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
-set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
-```
+# Verify NDK path is set correctly
+which ndk-build
 
-On OSX:
-
-```bash
-export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
-export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
-export PATH=$ANDROID_NDK_HOME:$PATH
-# Where X.Y.Z is the most recent version number inside the build-tools directory.
-export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
+# Check apksigner
+apksigner --help
 ```
 
 Note: If `apksigner` gives a `java: not found` error you do not have Java in your path.
 
-A common way to install on the system:
-
 ```bash
+# A common way to install on the system
 sudo apt install default-jre
 ```
-
-#### Additional OSX System Requirements
-
-Setup Homebrew and components
-
-- Ensure Homebrew is at the beginning of your PATH:
-
-```
-export PATH=/usr/local/bin:$PATH
-```
-
-- Add packages with the following:
-
-      brew install python
 
 ### Android Build
 
@@ -327,6 +330,9 @@ demos, and APK packaging: This script does retrieve and use the upstream SPRIV
 tools.
 
 ```bash
+# NOTE: If you haven't already you will need to generate a key with keytool before running build_all.sh
+keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
+
 cd build-android
 ./build_all.sh
 ```
@@ -335,10 +341,11 @@ cd build-android
 
 > **NOTE:** By default, the `build_all.sh` script will build for all Android ABI variations. To **speed up the build time** if you know your target(s), set `APP_ABI` in both [build-android/jni/Application.mk](build-android/jni/Application.mk) and [build-android/jni/shaderc/Application.mk](build-android/jni/shaderc/Application.mk) to the desired [Android ABI](https://developer.android.com/ndk/guides/application_mk#app_abi)
 
-Resulting validation layer binaries will be in build-android/libs. Test and
-demo APKs can be installed on production devices with:
+Resulting validation layer binaries will be in `build-android/libs`. Test and demo APKs can be installed on production devices with:
 
-    ./install_all.sh [-s <serial number>]
+```sh
+./install_all.sh [-s <serial number>]
+```
 
 Note that there are no equivalent scripts on Windows yet, that work needs to
 be completed. The following per platform commands can be used for layer only
@@ -360,37 +367,7 @@ Follow the setup steps for Windows above, then from the Developer Command Prompt
     update_external_sources_android.bat
     ndk-build
 
-## Building on MacOS
-
-### MacOS Build Requirements
-
-[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Darwin-x86_64.tar.gz) is recommended.
-
-Setup Homebrew and components
-
-
-- Ensure Homebrew is at the beginning of your PATH:
-
-```
-export PATH=/usr/local/bin:$PATH
-```
-
-- Add packages with the following (may need refinement)
-
-      brew install python python3 git
-
-### Building with the Xcode Generator
-
-To create and open an Xcode project:
-
-```bash
-cmake -G Xcode -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --open .
-```
-
-Within Xcode, you can select Debug or Release builds in the Build Settings of the project.
-
-## Installed Files
+## CMake Installed Files
 
 The installation depends on the target platform
 
@@ -399,7 +376,9 @@ For UNIX operating systems:
 - *install_dir*`/lib` : The Vulkan validation layer library
 - *install_dir*`/share/vulkan/explicit_layer.d` : The VkLayer_khronos_validation.json manifest
 
-For WIN32/MINGW:
+`NOTE`: Android doesn't use json manifests for Vulkan layers.
+
+For WIN32:
 
 - *install_dir*`/bin` : The Vulkan validation layer library
 - *install_dir*`/bin` : The VkLayer_khronos_validation.json manifest
