@@ -15,17 +15,19 @@
 // limitations under the License.
 // Values used between the GLSL shaders and the GPU-AV logic
 
-#pragma once
+// NOTE: This header is included by the instrumentation shaders and glslang doesn't support #pragma once
+#ifndef GPU_SHADERS_CONSTANTS_H
+#define GPU_SHADERS_CONSTANTS_H
 
 // values match those found in SPIRV-Tools instrument.hpp file.
-#define _kInstErrorMax 7
+#define _kInstErrorMax 4
 #define _kInstValidationOutError 7
 // The values in instrument.hpp are for the spirv-opt pass but these values are for the
 // internal gpu_shaders in the VVL. GLSL can't understand .hpp header file so these
 // are defined internally here extending the max values
-#define _kInstErrorPreDrawValidate _kInstErrorMax + 1
-#define _kInstErrorPreDispatchValidate _kInstErrorMax + 2
-#define _kPreValidateSubError _kInstValidationOutError + 1
+#define _kInstErrorPreDrawValidate (_kInstErrorMax + 1)
+#define _kInstErrorPreDispatchValidate (_kInstErrorMax + 2)
+#define _kPreValidateSubError (_kInstValidationOutError + 1)
 
 // These values all share the byte at (_kPreValidateSubError + 1) location since only
 // one will be used at a time. Also equivalent to (kInstStageOutCnt + 1)
@@ -36,3 +38,5 @@
 #define pre_dispatch_count_exceeds_limit_x_error 1
 #define pre_dispatch_count_exceeds_limit_y_error 2
 #define pre_dispatch_count_exceeds_limit_z_error 3
+
+#endif

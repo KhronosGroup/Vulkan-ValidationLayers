@@ -40,7 +40,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=ON"
             ],
-            "commit": "d33bea584707c3509065010c45d9b79c54c8376b"
+            "commit": "daee1e7d34704d5f9966f221a1ae060b7438329b"
         },
         {
             "name": "SPIRV-Reflect",

@@ -848,29 +848,9 @@
                                             }
                                         },
                                         {
-                                            "key": "gpuav_descriptor_indexing",
-                                            "label": "Check descriptor indexing accesses",
-                                            "description": "Enable descriptor indexing access checking",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "gpuav_buffer_oob",
-                                            "label": "Check Out of Bounds",
-                                            "description": "Enable buffer out of bounds checking",
+                                            "key": "gpuav_descriptor_checks",
+                                            "label": "Descriptor and OOB Checks",
+                                            "description": "Enable descriptor and buffer out of bounds checking",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [
@@ -901,7 +881,7 @@
                                                         "mode": "ALL",
                                                         "settings": [
                                                             {
-                                                                "key": "gpuav_buffer_oob",
+                                                                "key": "gpuav_descriptor_checks",
                                                                 "value": true
                                                             }
                                                         ]
