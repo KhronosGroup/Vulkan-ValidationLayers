@@ -2241,6 +2241,23 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffe
     }
 }
 
+bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
+                                                     const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo) const {
+    bool skip = false;
+    return skip;
+};
+
+bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
+                                                     const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo) const {
+    bool skip = false;
+    return skip;
+};
+
+bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo) const {
+    bool skip = false;
+    return skip;
+};
+
 template <typename RegionType>
 bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
