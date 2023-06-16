@@ -310,6 +310,8 @@ extern PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
 extern PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
 extern PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
 extern PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
+// VK_EXT_depth_bias_control
+extern PFN_vkCmdSetDepthBias2EXT CmdSetDepthBias2EXT;
 // VK_EXT_descriptor_buffer
 extern PFN_vkGetDescriptorSetLayoutSizeEXT GetDescriptorSetLayoutSizeEXT;
 extern PFN_vkGetDescriptorSetLayoutBindingOffsetEXT GetDescriptorSetLayoutBindingOffsetEXT;
@@ -855,6 +857,10 @@ extern PFN_vkCmdSetCoarseSampleOrderNV CmdSetCoarseSampleOrderNV;
 // VK_QCOM_tile_properties
 extern PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
 extern PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
+// VK_QNX_external_memory_screen_buffer
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+extern PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 // VK_QNX_screen_surface
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 extern PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;

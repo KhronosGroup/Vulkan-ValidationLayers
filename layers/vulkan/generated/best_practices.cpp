@@ -3164,6 +3164,21 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(
     }
 }
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, result);
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetScreenBufferPropertiesQNX", result); // VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR
+    }
+}
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

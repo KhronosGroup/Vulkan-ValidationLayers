@@ -9749,6 +9749,15 @@ void DispatchDestroyIndirectCommandsLayoutNV(
 
 }
 
+void DispatchCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+
+}
+
 VkResult DispatchAcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     int32_t                                     drmFd,
@@ -11578,6 +11587,20 @@ void DispatchCmdSetAttachmentFeedbackLoopEnableEXT(
     layer_data->device_dispatch_table.CmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);
 
 }
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VkResult DispatchGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = layer_data->device_dispatch_table.GetScreenBufferPropertiesQNX(device, buffer, pProperties);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,

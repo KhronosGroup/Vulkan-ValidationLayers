@@ -853,6 +853,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCreateIndirectCommandsLayoutNV CreateIndirectCommandsLayoutNV;
     PFN_vkDestroyIndirectCommandsLayoutNV DestroyIndirectCommandsLayoutNV;
 
+    // ---- VK_EXT_depth_bias_control extension commands
+    PFN_vkCmdSetDepthBias2EXT CmdSetDepthBias2EXT;
+
     // ---- VK_EXT_private_data extension commands
     PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
     PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
@@ -1039,6 +1042,11 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
+
+    // ---- VK_QNX_external_memory_screen_buffer extension commands
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;

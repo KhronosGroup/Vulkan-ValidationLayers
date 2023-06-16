@@ -118,6 +118,7 @@ template<> std::vector<VkFullScreenExclusiveEXT> ValidationObject::ValidParamVal
 #endif // VK_USE_PLATFORM_WIN32_KHR
 template<> std::vector<VkLineRasterizationModeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkDepthBiasRepresentationEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDeviceMemoryReportEventTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkFragmentShadingRateTypeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkFragmentShadingRateNV> ValidationObject::ValidParamValues() const;

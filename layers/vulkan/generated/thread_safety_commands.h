@@ -4995,6 +4995,14 @@ void PostCallRecordDestroyIndirectCommandsLayoutNV(
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator) override;
 
+void PreCallRecordCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) override;
+
+void PostCallRecordCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) override;
+
 void PreCallRecordAcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     int32_t                                     drmFd,
@@ -6219,6 +6227,20 @@ void PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
 void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkImageAspectFlags                          aspectMask) override;
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void PreCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties) override;
+
+void PostCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties,
+    VkResult                                    result) override;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 void PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,

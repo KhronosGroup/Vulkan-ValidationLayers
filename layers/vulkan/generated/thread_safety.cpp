@@ -7561,6 +7561,20 @@ void ThreadSafety::PostCallRecordDestroyIndirectCommandsLayoutNV(
     // Host access to indirectCommandsLayout must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) {
+    StartWriteObject(commandBuffer, "vkCmdSetDepthBias2EXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) {
+    FinishWriteObject(commandBuffer, "vkCmdSetDepthBias2EXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordAcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     int32_t                                     drmFd,
@@ -9482,6 +9496,24 @@ void ThreadSafety::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
     FinishWriteObject(commandBuffer, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
     // Host access to commandBuffer must be externally synchronized
 }
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void ThreadSafety::PreCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties) {
+    StartReadObjectParentInstance(device, "vkGetScreenBufferPropertiesQNX");
+}
+
+void ThreadSafety::PostCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetScreenBufferPropertiesQNX");
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,

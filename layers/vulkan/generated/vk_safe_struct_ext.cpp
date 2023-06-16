@@ -9760,6 +9760,210 @@ void safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT(const VkPhysicalDeviceDepthBiasControlFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    depthBiasControl(in_struct->depthBiasControl),
+    leastRepresentableValueForceUnormRepresentation(in_struct->leastRepresentableValueForceUnormRepresentation),
+    floatRepresentation(in_struct->floatRepresentation),
+    depthBiasExact(in_struct->depthBiasExact)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT),
+    pNext(nullptr),
+    depthBiasControl(),
+    leastRepresentableValueForceUnormRepresentation(),
+    floatRepresentation(),
+    depthBiasExact()
+{}
+
+safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT(const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    depthBiasControl = copy_src.depthBiasControl;
+    leastRepresentableValueForceUnormRepresentation = copy_src.leastRepresentableValueForceUnormRepresentation;
+    floatRepresentation = copy_src.floatRepresentation;
+    depthBiasExact = copy_src.depthBiasExact;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::operator=(const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    depthBiasControl = copy_src.depthBiasControl;
+    leastRepresentableValueForceUnormRepresentation = copy_src.leastRepresentableValueForceUnormRepresentation;
+    floatRepresentation = copy_src.floatRepresentation;
+    depthBiasExact = copy_src.depthBiasExact;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::~safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::initialize(const VkPhysicalDeviceDepthBiasControlFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    depthBiasControl = in_struct->depthBiasControl;
+    leastRepresentableValueForceUnormRepresentation = in_struct->leastRepresentableValueForceUnormRepresentation;
+    floatRepresentation = in_struct->floatRepresentation;
+    depthBiasExact = in_struct->depthBiasExact;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT::initialize(const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    depthBiasControl = copy_src->depthBiasControl;
+    leastRepresentableValueForceUnormRepresentation = copy_src->leastRepresentableValueForceUnormRepresentation;
+    floatRepresentation = copy_src->floatRepresentation;
+    depthBiasExact = copy_src->depthBiasExact;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDepthBiasInfoEXT::safe_VkDepthBiasInfoEXT(const VkDepthBiasInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    depthBiasConstantFactor(in_struct->depthBiasConstantFactor),
+    depthBiasClamp(in_struct->depthBiasClamp),
+    depthBiasSlopeFactor(in_struct->depthBiasSlopeFactor)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkDepthBiasInfoEXT::safe_VkDepthBiasInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEPTH_BIAS_INFO_EXT),
+    pNext(nullptr),
+    depthBiasConstantFactor(),
+    depthBiasClamp(),
+    depthBiasSlopeFactor()
+{}
+
+safe_VkDepthBiasInfoEXT::safe_VkDepthBiasInfoEXT(const safe_VkDepthBiasInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    depthBiasConstantFactor = copy_src.depthBiasConstantFactor;
+    depthBiasClamp = copy_src.depthBiasClamp;
+    depthBiasSlopeFactor = copy_src.depthBiasSlopeFactor;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDepthBiasInfoEXT& safe_VkDepthBiasInfoEXT::operator=(const safe_VkDepthBiasInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    depthBiasConstantFactor = copy_src.depthBiasConstantFactor;
+    depthBiasClamp = copy_src.depthBiasClamp;
+    depthBiasSlopeFactor = copy_src.depthBiasSlopeFactor;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDepthBiasInfoEXT::~safe_VkDepthBiasInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDepthBiasInfoEXT::initialize(const VkDepthBiasInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    depthBiasConstantFactor = in_struct->depthBiasConstantFactor;
+    depthBiasClamp = in_struct->depthBiasClamp;
+    depthBiasSlopeFactor = in_struct->depthBiasSlopeFactor;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkDepthBiasInfoEXT::initialize(const safe_VkDepthBiasInfoEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    depthBiasConstantFactor = copy_src->depthBiasConstantFactor;
+    depthBiasClamp = copy_src->depthBiasClamp;
+    depthBiasSlopeFactor = copy_src->depthBiasSlopeFactor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDepthBiasRepresentationInfoEXT::safe_VkDepthBiasRepresentationInfoEXT(const VkDepthBiasRepresentationInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    depthBiasRepresentation(in_struct->depthBiasRepresentation),
+    depthBiasExact(in_struct->depthBiasExact)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkDepthBiasRepresentationInfoEXT::safe_VkDepthBiasRepresentationInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT),
+    pNext(nullptr),
+    depthBiasRepresentation(),
+    depthBiasExact()
+{}
+
+safe_VkDepthBiasRepresentationInfoEXT::safe_VkDepthBiasRepresentationInfoEXT(const safe_VkDepthBiasRepresentationInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    depthBiasRepresentation = copy_src.depthBiasRepresentation;
+    depthBiasExact = copy_src.depthBiasExact;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDepthBiasRepresentationInfoEXT& safe_VkDepthBiasRepresentationInfoEXT::operator=(const safe_VkDepthBiasRepresentationInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    depthBiasRepresentation = copy_src.depthBiasRepresentation;
+    depthBiasExact = copy_src.depthBiasExact;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDepthBiasRepresentationInfoEXT::~safe_VkDepthBiasRepresentationInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDepthBiasRepresentationInfoEXT::initialize(const VkDepthBiasRepresentationInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    depthBiasRepresentation = in_struct->depthBiasRepresentation;
+    depthBiasExact = in_struct->depthBiasExact;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkDepthBiasRepresentationInfoEXT::initialize(const safe_VkDepthBiasRepresentationInfoEXT* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    depthBiasRepresentation = copy_src->depthBiasRepresentation;
+    depthBiasExact = copy_src->depthBiasExact;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT::safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     deviceMemoryReport(in_struct->deviceMemoryReport)
