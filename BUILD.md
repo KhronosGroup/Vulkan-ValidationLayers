@@ -13,9 +13,9 @@
 ## Requirements
 
 1. CMake >= 3.17.2
-2. C++ >= c++17 compiler. See platform-specific sections below for supported compiler versions.
-3. Python >= 3.8
-4. Git
+2. C++17 compatible toolchain
+3. Git
+4. Python >= 3.8
 
 NOTE: Python is needed for working on generated code, and helping grab dependencies.
 While it's not technically required, it's practically required for most users.
@@ -36,137 +36,6 @@ cmake -S . -B build --preset dev
 cmake --build build --config Debug
 ```
 
-## Generated source code
-
-This repository contains generated source code in the `layers/vulkan/generated`
-directory which is not intended to be modified directly.
-
-Please see the [Generated Code documentation](./docs/generated_code.md) for more information
-
-## Dependencies
-
-### Display Drivers
-
-This repository does not contain a Vulkan-capable driver. You will need to
-obtain and install a Vulkan driver from your graphics hardware vendor or from
-some other suitable source if you intend to run Vulkan applications.
-
-### Building dependencies with script and Known-Good revisions
-
-There is a Python utility script, `scripts/update_deps.py`, that you can use to
-gather and build the dependent repositories mentioned above. This script uses
-information stored in the `scripts/known_good.json` file to check out dependent
-repository revisions that are known to be compatible with the revision of this
-repository that you currently have checked out.
-
-The script will produce a `helper.cmake` file that can be consumed by the cmake
-
-run './scripts/update_deps.py --help' for more information
-
-#### Updating with CMAKE_TOOLCHAIN_FILE
-
-When cross compiling, you may want to pass arguments to the CMake build
-
-```bash
-update_deps.py ... --cmake_var CMAKE_TOOLCHAIN_FILE=/home/.../arm64.cmake
-```
-
-### Repository Dependencies
-
-This repository attempts to resolve some of its dependencies by using
-components found from the following places, in this order:
-
-1. CMake or Environment variable overrides (e.g., -DVULKAN_HEADERS_INSTALL_DIR)
-1. LunarG Vulkan SDK, located by the `VULKAN_SDK` environment variable
-1. System-installed packages, mostly applicable on Linux
-
-Dependencies that cannot be resolved by the SDK or installed packages must be
-resolved with the "install directory" override and are listed below. The
-"install directory" override can also be used to force the use of a specific
-version of that dependency.
-
-> Note: All test will be downloaded, built, and installed with `update_deps.py`
-
-- [Vulkan Headers repository](https://github.com/KhronosGroup/Vulkan-Headers)
-    - You must clone the headers repository and build its `install` target
-- [SPIRV-Headers repository](https://github.com/KhronosGroup/SPIRV-Headers)
-    - You must clone the headers repository and build its `install` target
-- [SPIRV-Tools repository](https://github.com/KhronosGroup/SPIRV-Tools)
-    - You must clone the headers repository and build its `install` target
-- [robin-hood-hashing repository](https://github.com/martinus/robin-hood-hashing)
-    - This is a header-only reimplementation of `std::unordered_map` and `std::unordered_set` which provides substantial performance improvements on all platforms.
-    - You must clone this repository and build its `install` target
-- [mimalloc repository](https://github.com/microsoft/mimalloc)
-    - This is a reimplementation of malloc()/free() and their c++ equivalents.
-    - It is currently only used for windows 64 bit builds, where it is statically linked into the layer.
-    - For window 64 bit builds, you must clone this repository and build its `install` target
-
-For running the tests:
-
-- [Vulkan-Loader repository](https://github.com/KhronosGroup/Vulkan-Loader.git)
-- [glslang repository](https://github.com/KhronosGroup/glslang)
-    - You must clone the headers repository and build its `install` target
-- [Google Test](https://github.com/google/googletest)
-
-### Build and Install Directories
-
-A common convention is to place the build directory in the top directory of
-the repository with a name of `build` and place the install directory as a
-child of the build directory with the name `install`. The remainder of these
-instructions follow this convention, although you can use any name for these
-directories and place them in any location (see option `--dir` in the
-[notes](#notes)).
-
-### Notes
-
-- You may need to adjust some of the CMake options based on your platform. See
-  the platform-specific sections later in this document.
-- When using update_deps.py to change architectures (x64, Win32...)
-  or build configurations (debug, release...) it is strongly recommended to
-  add the '--clean-repo' parameter. This ensures compatibility among dependent
-  components.
-  dependent components will produce consistent build artifacts.
-- The `update_deps.py` script fetches and builds the dependent repositories in
-  the current directory when it is invoked. In this case, they are built in
-  the `build` directory.
-- The `build` directory is also being used to build this
-  (Vulkan-ValidationLayers) repository. But there shouldn't be any conflicts
-  inside the `build` directory between the dependent repositories and the
-  build files for this repository.
-- The `--dir` option for `update_deps.py` can be used to relocate the
-  dependent repositories to another arbitrary directory using an absolute or
-  relative path.
-- The `update_deps.py` script generates a file named `helper.cmake` and places
-  it in the same directory as the dependent repositories (`build` in this
-  case). This file contains CMake commands to set the CMake `*_INSTALL_DIR`
-  variables that are used to point to the install artifacts of the dependent
-  repositories. You can use this file with the `cmake -C` option to set these
-  variables when you generate your build files with CMake. This lets you avoid
-  entering several `*_INSTALL_DIR` variable settings on the CMake command line.
-- If using "MINGW" (Git For Windows), you may wish to run
-  `winpty update_deps.py` in order to avoid buffering all of the script's
-  "print" output until the end and to retain the ability to interrupt script
-  execution.
-- Please use `update_deps.py --help` to list additional options and read the
-  internal documentation in `update_deps.py` for further information.
-- You can build against different C++ standards by setting the
-  `VVL_CPP_STANDARD` option at cmake generation time. Current code is written
-  to compile under C++17.
-
-## CMake
-
-### Warnings as errors off by default!
-
-By default `BUILD_WERROR` is `OFF`
-
-The idiom for open source projects is to NOT enable warnings as errors.
-
-System package managers, and language package managers have to build on multiple different platforms and compilers.
-
-By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings until CMake 3.24
-
-Add `-D BUILD_WERROR=ON` to your workflow. Or use the `dev` preset shown below which will also enabling warnings as errors.
-
 ### CMakePresets.json (3.21+)
 
 [CMakePresets.json](./CMakePresets.json) can save developer time by specifying common build flags.
@@ -176,16 +45,59 @@ Add `-D BUILD_WERROR=ON` to your workflow. Or use the `dev` preset shown below w
 cmake -S . -B build/ --preset dev
 ```
 
+### Warnings as errors off by default!
+
+By default `BUILD_WERROR` is `OFF`. The idiom for open source projects is to NOT enable warnings as errors.
+
+System/language package managers have to build on multiple different platforms and compilers.
+
+By defaulting to `ON` we cause issues for package managers since there is no standard way to disable warnings until CMake 3.24
+
+Add `-D BUILD_WERROR=ON` to your workflow. Or use the `dev` preset shown below which will also enabling warnings as errors.
+
+## Generated source code
+
+This repository contains generated source code in the `layers/vulkan/generated` directory which is not intended to be modified directly.
+
+Please see the [Generated Code documentation](./docs/generated_code.md) for more information
+
+## Dependencies
+
+Currently this repo has a custom process for grabbing C/C++ dependencies.
+
+Keep in mind this repo predates tools like `vcpkg`, `conan`, etc. Our process is most similar to `vcpkg`.
+
+By specifying `-D UPDATE_DEPS=ON` when configuring CMake we grab dependencies listed in [known_good.json](scripts/known_good.json).
+
+All we are doing is streamlining `building`/`installing` the `known good` dependencies and helping CMake `find` the dependencies.
+
+This is done via a combination of `Python` and `CMake` scripting.
+
+Misc Useful Information:
+
+- By default `UPDATE_DEPS` is `OFF`. The intent is to be friendly by default to system/language package managers.
+- You can run `update_deps.py` manually but it isn't recommended for most users.
+
+### How to test new dependency versions
+
+Typically most developers alter `known_good.json` with the commit/branch they are testing.
+
+Alternatively you can modify `CMAKE_PREFIX_PATH` as follows.
+
+```sh
+# Delete the CMakeCache.txt which will cache find_* results
+rm build -rf/
+cmake -S . -B build/ ... -D CMAKE_PREFIX_PATH=~/foobar/my_custom_glslang_install/ ...
+```
+
 ## Building On Linux
 
 ### Linux Build Requirements
 
 This repository is regularly built and tested on the two most recent Ubuntu LTS versions.
 
-[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.tar.gz) is recommended.
-
 ```bash
-sudo apt-get install git build-essential python3
+sudo apt-get install git build-essential python3 cmake
 
 # Linux WSI system libraries
 sudo apt-get install libwayland-dev xorg-dev
