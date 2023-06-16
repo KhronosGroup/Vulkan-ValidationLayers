@@ -602,7 +602,7 @@ class NegativeDeviceQueue : public VkLayerTest {};
 
 class DynamicRenderingTest : public VkLayerTest {
   public:
-    void InitBasicDynamicRendering();
+    void InitBasicDynamicRendering(void *pNextFeatures = nullptr);
 };
 class NegativeDynamicRendering : public DynamicRenderingTest {};
 class PositiveDynamicRendering : public DynamicRenderingTest {};
@@ -783,7 +783,7 @@ class PositiveSyncObject : public SyncObjectTest {};
 
 class NegativeTransformFeedback : public VkLayerTest {
   public:
-    void InitBasicTransformFeedback();
+    void InitBasicTransformFeedback(void *pNextFeatures = nullptr);
 };
 
 class PositiveTooling : public VkLayerTest {};
@@ -800,7 +800,7 @@ class PositiveWsi : public WsiTest {};
 
 class YcbcrTest : public VkLayerTest {
   public:
-    void InitBasicYcbcr();
+    void InitBasicYcbcr(void *pNextFeatures = nullptr);
 };
 class NegativeYcbcr : public YcbcrTest {};
 class PositiveYcbcr : public YcbcrTest {};

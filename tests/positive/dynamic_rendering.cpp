@@ -18,18 +18,18 @@
 #include <array>
 #include <chrono>
 
-void DynamicRenderingTest::InitBasicDynamicRendering() {
+void DynamicRenderingTest::InitBasicDynamicRendering(void* pNextFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    if (DeviceValidationVersion() < m_attempted_api_version) {
+        GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(pNextFeatures);
     GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
@@ -180,25 +180,15 @@ TEST_F(PositiveDynamicRendering, DrawMultiBind) {
 
 TEST_F(PositiveDynamicRendering, BeginQuery) {
     TEST_DESCRIPTION("Test calling vkCmdBeginQuery with a dynamic render pass.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    InitBasicDynamicRendering(&sync2_features);
+    if (::testing::Test::IsSkipped()) return;
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    auto vk13features = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
-    auto features2 = GetPhysicalDeviceFeatures2(vk13features);
-    if (!vk13features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    if (!vk13features.synchronization2) {
+    if (!sync2_features.synchronization2) {
         GTEST_SKIP() << "Test requires (unsupported) synchronization2";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
@@ -557,35 +547,16 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
     TEST_DESCRIPTION("vkCmdDraw* with shader tile image read extension using dynamic Rendering Tests.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
-    dynamic_rendering_features.pNext = &shader_tile_image_features;
-    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
+    InitBasicDynamicRendering(&shader_tile_image_features);
+    if (::testing::Test::IsSkipped()) return;
 
     // shader tile image read features not supported skip the test.
     if (!shader_tile_image_features.shaderTileImageDepthReadAccess &&
         !shader_tile_image_features.shaderTileImageStencilReadAccess) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     auto fs =
@@ -688,28 +659,12 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
 TEST_F(PositiveDynamicRendering, DualSourceBlending) {
     TEST_DESCRIPTION("Test drawing with dynamic rendering and dual source blending.");
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (features2.features.dualSrcBlend == VK_FALSE) {
+    if (!m_device->phy().features().dualSrcBlend) {
         GTEST_SKIP() << "Test requires (unsupported) dualSrcBlend";
     }
-    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     char const* fsSource = R"glsl(
         #version 450
@@ -979,34 +934,21 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
 
 TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     TEST_DESCRIPTION("Test setting memory barrier with shader tile image features are enabled.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>(&sync2_features);
+    InitBasicDynamicRendering(&shader_tile_image_features);
+    if (::testing::Test::IsSkipped()) return;
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    auto vk13features = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
-    auto shader_tile_image_features = LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>();
-    vk13features.pNext = &shader_tile_image_features;
-
-    auto features2 = GetPhysicalDeviceFeatures2(vk13features);
-    if (!vk13features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    if (!vk13features.synchronization2) {
+    if (!sync2_features.synchronization2) {
         GTEST_SKIP() << "Test requires (unsupported) synchronization2";
     }
-
     if (!shader_tile_image_features.shaderTileImageColorReadAccess && !shader_tile_image_features.shaderTileImageDepthReadAccess &&
         !shader_tile_image_features.shaderTileImageStencilReadAccess) {
         GTEST_SKIP() << "Test requires (unsupported) shader tile image extension.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_commandBuffer->begin();
@@ -1050,28 +992,8 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
     TEST_DESCRIPTION(
         "Draw with Dynamic Rendering with attachment specified as VK_NULL_HANDLE in VkRenderingInfoKHR, and with corresponding "
         "format in VkPipelineRenderingCreateInfoKHR set to VK_FORMAT_UNDEFINED");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    InitBasicDynamicRendering();
+    if (::testing::Test::IsSkipped()) return;
 
     const VkViewport viewport = {0, 0, 16, 16, 0, 1};
     const VkRect2D scissor = {{0, 0}, {16, 16}};
@@ -1202,31 +1124,15 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats) {
 }
 
 TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
-    TEST_DESCRIPTION(
-        "Draw with Dynamic Rendering with dynamicRenderingUnusedAttachments enabled and matching formats");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    TEST_DESCRIPTION("Draw with Dynamic Rendering with dynamicRenderingUnusedAttachments enabled and matching formats");
     AddRequiredExtensions(VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
     auto dynamic_rendering_unused_attachments_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT>();
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&dynamic_rendering_unused_attachments_features);
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
-    }
+    InitBasicDynamicRendering(&dynamic_rendering_unused_attachments_features);
+    if (::testing::Test::IsSkipped()) return;
+
     if (!dynamic_rendering_unused_attachments_features.dynamicRenderingUnusedAttachments) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRenderingUnusedAttachments , skipping.";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     const VkViewport viewport = {0, 0, 16, 16, 0, 1};
     const VkRect2D scissor = {{0, 0}, {16, 16}};
