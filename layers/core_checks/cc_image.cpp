@@ -2323,6 +2323,12 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
     return skip;
 }
 
+bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
+                                                         const VkHostImageLayoutTransitionInfoEXT *pTransitions) const {
+    bool skip = false;
+    return skip;
+};
+
 // Validates the image is allowed to be protected
 bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state, const char *cmd_name,
                                         const char *vuid, const char *more_message) const {
