@@ -15,34 +15,33 @@
 # limitations under the License.
 
 import sys,os
-from generator import *
 from common_codegen import *
+from generators.base_generator import BaseGenerator
 
 #
 # DynamicStateOutputGenerator - Generate SPIR-V validation
 # for SPIR-V extensions and capabilities
-class DynamicStateOutputGenerator(OutputGenerator):
+class DynamicStateOutputGenerator(BaseGenerator):
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 
-        self.dynamic_states = [] # VkDynamicState enum values
+        self.dynamic_states = []
 
-    #
-    # Called at beginning of processing as file is opened
-    def beginFile(self, genOpts):
-        OutputGenerator.beginFile(self, genOpts)
-        self.headerFile = (genOpts.filename == 'dynamic_state_helper.h')
-        self.sourceFile = (genOpts.filename == 'dynamic_state_helper.cpp')
+    def generate(self):
+        self.headerFile = (self.filename == 'dynamic_state_helper.h')
+        self.sourceFile = (self.filename == 'dynamic_state_helper.cpp')
+        for field in self.vk.enums['VkDynamicState'].fields:
+            self.dynamic_states.append(field.name)
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See {} for modifications\n'.format(os.path.basename(__file__))
-        write(file_comment, file=self.outFile)
+        self.write(file_comment)
         # Copyright Statement
         copyright = ''
         copyright += '\n'
@@ -63,30 +62,14 @@ class DynamicStateOutputGenerator(OutputGenerator):
         copyright += ' * See the License for the specific language governing permissions and\n'
         copyright += ' * limitations under the License.\n'
         copyright += ' ****************************************************************************/\n'
-        write(copyright, file=self.outFile)
+        self.write(copyright)
         if self.sourceFile:
-            write('#include "core_checks/core_validation.h"', file=self.outFile)
+            self.write('#include "core_checks/core_validation.h"')
+            self.write(self.dynamicFunction())
         elif self.headerFile:
-            write('#pragma once', file=self.outFile)
-            write('#include <bitset>', file=self.outFile)
-
-    #
-    # Write generated file content to output file
-    def endFile(self):
-        if self.headerFile:
-            write(self.dynamicTypeEnum(), file=self.outFile)
-        elif self.sourceFile:
-            write(self.dynamicFunction(), file=self.outFile)
-        # Finish processing in superclass
-        OutputGenerator.endFile(self)
-
-    #
-    # List the enum for the commands
-    def genGroup(self, groupinfo, name, alias):
-        if (name == 'VkDynamicState'):
-            for elem in groupinfo.elem.findall('enum'):
-                if elem.get('alias') is None:
-                    self.dynamic_states.append(elem.get('name'))
+            self.write('#pragma once')
+            self.write('#include <bitset>')
+            self.write(self.dynamicTypeEnum())
 
     #
     # List the enum for the dynamic command buffer status flags
