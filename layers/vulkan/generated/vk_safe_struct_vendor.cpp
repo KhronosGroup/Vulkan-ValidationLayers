@@ -13181,3 +13181,377 @@ void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const
         memcpy ((void *)pPerViewRenderAreas, (void *)copy_src->pPerViewRenderAreas, sizeof(VkRect2D)*copy_src->perViewRenderAreaCount);
     }
 }
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkScreenBufferPropertiesQNX::safe_VkScreenBufferPropertiesQNX(const VkScreenBufferPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    allocationSize(in_struct->allocationSize),
+    memoryTypeBits(in_struct->memoryTypeBits)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkScreenBufferPropertiesQNX::safe_VkScreenBufferPropertiesQNX() :
+    sType(VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX),
+    pNext(nullptr),
+    allocationSize(),
+    memoryTypeBits()
+{}
+
+safe_VkScreenBufferPropertiesQNX::safe_VkScreenBufferPropertiesQNX(const safe_VkScreenBufferPropertiesQNX& copy_src)
+{
+    sType = copy_src.sType;
+    allocationSize = copy_src.allocationSize;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkScreenBufferPropertiesQNX& safe_VkScreenBufferPropertiesQNX::operator=(const safe_VkScreenBufferPropertiesQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    allocationSize = copy_src.allocationSize;
+    memoryTypeBits = copy_src.memoryTypeBits;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkScreenBufferPropertiesQNX::~safe_VkScreenBufferPropertiesQNX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkScreenBufferPropertiesQNX::initialize(const VkScreenBufferPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    allocationSize = in_struct->allocationSize;
+    memoryTypeBits = in_struct->memoryTypeBits;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkScreenBufferPropertiesQNX::initialize(const safe_VkScreenBufferPropertiesQNX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    allocationSize = copy_src->allocationSize;
+    memoryTypeBits = copy_src->memoryTypeBits;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkScreenBufferFormatPropertiesQNX::safe_VkScreenBufferFormatPropertiesQNX(const VkScreenBufferFormatPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    format(in_struct->format),
+    externalFormat(in_struct->externalFormat),
+    screenUsage(in_struct->screenUsage),
+    formatFeatures(in_struct->formatFeatures),
+    samplerYcbcrConversionComponents(in_struct->samplerYcbcrConversionComponents),
+    suggestedYcbcrModel(in_struct->suggestedYcbcrModel),
+    suggestedYcbcrRange(in_struct->suggestedYcbcrRange),
+    suggestedXChromaOffset(in_struct->suggestedXChromaOffset),
+    suggestedYChromaOffset(in_struct->suggestedYChromaOffset)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkScreenBufferFormatPropertiesQNX::safe_VkScreenBufferFormatPropertiesQNX() :
+    sType(VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX),
+    pNext(nullptr),
+    format(),
+    externalFormat(),
+    screenUsage(),
+    formatFeatures(),
+    samplerYcbcrConversionComponents(),
+    suggestedYcbcrModel(),
+    suggestedYcbcrRange(),
+    suggestedXChromaOffset(),
+    suggestedYChromaOffset()
+{}
+
+safe_VkScreenBufferFormatPropertiesQNX::safe_VkScreenBufferFormatPropertiesQNX(const safe_VkScreenBufferFormatPropertiesQNX& copy_src)
+{
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    screenUsage = copy_src.screenUsage;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkScreenBufferFormatPropertiesQNX& safe_VkScreenBufferFormatPropertiesQNX::operator=(const safe_VkScreenBufferFormatPropertiesQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    format = copy_src.format;
+    externalFormat = copy_src.externalFormat;
+    screenUsage = copy_src.screenUsage;
+    formatFeatures = copy_src.formatFeatures;
+    samplerYcbcrConversionComponents = copy_src.samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src.suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src.suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src.suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src.suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkScreenBufferFormatPropertiesQNX::~safe_VkScreenBufferFormatPropertiesQNX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkScreenBufferFormatPropertiesQNX::initialize(const VkScreenBufferFormatPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    format = in_struct->format;
+    externalFormat = in_struct->externalFormat;
+    screenUsage = in_struct->screenUsage;
+    formatFeatures = in_struct->formatFeatures;
+    samplerYcbcrConversionComponents = in_struct->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = in_struct->suggestedYcbcrModel;
+    suggestedYcbcrRange = in_struct->suggestedYcbcrRange;
+    suggestedXChromaOffset = in_struct->suggestedXChromaOffset;
+    suggestedYChromaOffset = in_struct->suggestedYChromaOffset;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkScreenBufferFormatPropertiesQNX::initialize(const safe_VkScreenBufferFormatPropertiesQNX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    format = copy_src->format;
+    externalFormat = copy_src->externalFormat;
+    screenUsage = copy_src->screenUsage;
+    formatFeatures = copy_src->formatFeatures;
+    samplerYcbcrConversionComponents = copy_src->samplerYcbcrConversionComponents;
+    suggestedYcbcrModel = copy_src->suggestedYcbcrModel;
+    suggestedYcbcrRange = copy_src->suggestedYcbcrRange;
+    suggestedXChromaOffset = copy_src->suggestedXChromaOffset;
+    suggestedYChromaOffset = copy_src->suggestedYChromaOffset;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const VkImportScreenBufferInfoQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    buffer(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->buffer) {
+        buffer = new _screen_buffer(*in_struct->buffer);
+    }
+}
+
+safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX() :
+    sType(VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX),
+    pNext(nullptr),
+    buffer(nullptr)
+{}
+
+safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const safe_VkImportScreenBufferInfoQNX& copy_src)
+{
+    sType = copy_src.sType;
+    buffer = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.buffer) {
+        buffer = new _screen_buffer(*copy_src.buffer);
+    }
+}
+
+safe_VkImportScreenBufferInfoQNX& safe_VkImportScreenBufferInfoQNX::operator=(const safe_VkImportScreenBufferInfoQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (buffer)
+        delete buffer;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    buffer = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.buffer) {
+        buffer = new _screen_buffer(*copy_src.buffer);
+    }
+
+    return *this;
+}
+
+safe_VkImportScreenBufferInfoQNX::~safe_VkImportScreenBufferInfoQNX()
+{
+    if (buffer)
+        delete buffer;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImportScreenBufferInfoQNX::initialize(const VkImportScreenBufferInfoQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (buffer)
+        delete buffer;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    buffer = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+    if (in_struct->buffer) {
+        buffer = new _screen_buffer(*in_struct->buffer);
+    }
+}
+
+void safe_VkImportScreenBufferInfoQNX::initialize(const safe_VkImportScreenBufferInfoQNX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    buffer = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->buffer) {
+        buffer = new _screen_buffer(*copy_src->buffer);
+    }
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkExternalFormatQNX::safe_VkExternalFormatQNX(const VkExternalFormatQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    externalFormat(in_struct->externalFormat)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkExternalFormatQNX::safe_VkExternalFormatQNX() :
+    sType(VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX),
+    pNext(nullptr),
+    externalFormat()
+{}
+
+safe_VkExternalFormatQNX::safe_VkExternalFormatQNX(const safe_VkExternalFormatQNX& copy_src)
+{
+    sType = copy_src.sType;
+    externalFormat = copy_src.externalFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkExternalFormatQNX& safe_VkExternalFormatQNX::operator=(const safe_VkExternalFormatQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    externalFormat = copy_src.externalFormat;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkExternalFormatQNX::~safe_VkExternalFormatQNX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkExternalFormatQNX::initialize(const VkExternalFormatQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    externalFormat = in_struct->externalFormat;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkExternalFormatQNX::initialize(const safe_VkExternalFormatQNX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    externalFormat = copy_src->externalFormat;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+
+safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    screenBufferImport(in_struct->screenBufferImport)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX),
+    pNext(nullptr),
+    screenBufferImport()
+{}
+
+safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX& copy_src)
+{
+    sType = copy_src.sType;
+    screenBufferImport = copy_src.screenBufferImport;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX& safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::operator=(const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    screenBufferImport = copy_src.screenBufferImport;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::~safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::initialize(const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    screenBufferImport = in_struct->screenBufferImport;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::initialize(const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    screenBufferImport = copy_src->screenBufferImport;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX

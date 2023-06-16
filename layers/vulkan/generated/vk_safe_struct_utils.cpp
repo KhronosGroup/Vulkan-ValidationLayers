@@ -934,6 +934,12 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             safe_pNext = new safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(reinterpret_cast<const VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(pNext), copy_state);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDepthBiasControlFeaturesEXT *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT:
+            safe_pNext = new safe_VkDepthBiasRepresentationInfoEXT(reinterpret_cast<const VkDepthBiasRepresentationInfoEXT *>(pNext), copy_state);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(pNext), copy_state);
             break;
@@ -1520,6 +1526,20 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             safe_pNext = new safe_VkImportMetalSharedEventInfoEXT(reinterpret_cast<const VkImportMetalSharedEventInfoEXT *>(pNext), copy_state);
             break;
 #endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        case VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX:
+            safe_pNext = new safe_VkScreenBufferFormatPropertiesQNX(reinterpret_cast<const VkScreenBufferFormatPropertiesQNX *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX:
+            safe_pNext = new safe_VkImportScreenBufferInfoQNX(reinterpret_cast<const VkImportScreenBufferInfoQNX *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX:
+            safe_pNext = new safe_VkExternalFormatQNX(reinterpret_cast<const VkExternalFormatQNX *>(pNext), copy_state);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX:
+            safe_pNext = new safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(reinterpret_cast<const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *>(pNext), copy_state);
+            break;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR:
             safe_pNext = new safe_VkImportMemoryWin32HandleInfoKHR(reinterpret_cast<const VkImportMemoryWin32HandleInfoKHR *>(pNext), copy_state);
@@ -2460,6 +2480,12 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             delete reinterpret_cast<const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDepthBiasControlFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT:
+            delete reinterpret_cast<const safe_VkDepthBiasRepresentationInfoEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(header);
             break;
@@ -3046,6 +3072,20 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkImportMetalSharedEventInfoEXT *>(header);
             break;
 #endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        case VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX:
+            delete reinterpret_cast<const safe_VkScreenBufferFormatPropertiesQNX *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX:
+            delete reinterpret_cast<const safe_VkImportScreenBufferInfoQNX *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX:
+            delete reinterpret_cast<const safe_VkExternalFormatQNX *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX *>(header);
+            break;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR:
             delete reinterpret_cast<const safe_VkImportMemoryWin32HandleInfoKHR *>(header);

@@ -449,6 +449,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdExecuteGeneratedCommandsNV(VkCommandBuf
 static VKAPI_ATTR void VKAPI_CALL StubCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline, uint32_t groupIndex) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout, const VkAllocationCallbacks* pAllocator) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT*         pDepthBiasInfo) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR* display) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) { return VK_SUCCESS; };
@@ -599,6 +600,9 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdBindShadersEXT(VkCommandBuffer commandB
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo, VkTilePropertiesQCOM* pProperties) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {  };
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdBuildAccelerationStructuresKHR(VkCommandBuffer                                    commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {  };
@@ -753,6 +757,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkCmdSetCoverageToColorLocationNV", { "VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object" } },
     { "vkCmdSetCullMode", { "VK_VERSION_1_3" } },
     { "vkCmdSetCullModeEXT", { "VK_EXT_extended_dynamic_state", "VK_EXT_shader_object" } },
+    { "vkCmdSetDepthBias2EXT", { "VK_EXT_depth_bias_control" } },
     { "vkCmdSetDepthBiasEnable", { "VK_VERSION_1_3" } },
     { "vkCmdSetDepthBiasEnableEXT", { "VK_EXT_extended_dynamic_state2", "VK_EXT_shader_object" } },
     { "vkCmdSetDepthBoundsTestEnable", { "VK_VERSION_1_3" } },
@@ -977,6 +982,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkGetRayTracingShaderGroupStackSizeKHR", { "VK_KHR_ray_tracing_pipeline" } },
     { "vkGetRefreshCycleDurationGOOGLE", { "VK_GOOGLE_display_timing" } },
     { "vkGetSamplerOpaqueCaptureDescriptorDataEXT", { "VK_EXT_descriptor_buffer" } },
+    { "vkGetScreenBufferPropertiesQNX", { "VK_QNX_external_memory_screen_buffer" } },
     { "vkGetSemaphoreCounterValue", { "VK_VERSION_1_2" } },
     { "vkGetSemaphoreCounterValueKHR", { "VK_KHR_timeline_semaphore" } },
     { "vkGetSemaphoreFdKHR", { "VK_KHR_external_semaphore_fd" } },
@@ -1774,6 +1780,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CreateIndirectCommandsLayoutNV == nullptr) { table->CreateIndirectCommandsLayoutNV = (PFN_vkCreateIndirectCommandsLayoutNV)StubCreateIndirectCommandsLayoutNV; }
     table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV) gpa(device, "vkDestroyIndirectCommandsLayoutNV");
     if (table->DestroyIndirectCommandsLayoutNV == nullptr) { table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV)StubDestroyIndirectCommandsLayoutNV; }
+    table->CmdSetDepthBias2EXT = (PFN_vkCmdSetDepthBias2EXT) gpa(device, "vkCmdSetDepthBias2EXT");
+    if (table->CmdSetDepthBias2EXT == nullptr) { table->CmdSetDepthBias2EXT = (PFN_vkCmdSetDepthBias2EXT)StubCmdSetDepthBias2EXT; }
     table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT) gpa(device, "vkCreatePrivateDataSlotEXT");
     if (table->CreatePrivateDataSlotEXT == nullptr) { table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT)StubCreatePrivateDataSlotEXT; }
     table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT) gpa(device, "vkDestroyPrivateDataSlotEXT");
@@ -2012,6 +2020,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetDynamicRenderingTilePropertiesQCOM == nullptr) { table->GetDynamicRenderingTilePropertiesQCOM = (PFN_vkGetDynamicRenderingTilePropertiesQCOM)StubGetDynamicRenderingTilePropertiesQCOM; }
     table->CmdSetAttachmentFeedbackLoopEnableEXT = (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT) gpa(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
     if (table->CmdSetAttachmentFeedbackLoopEnableEXT == nullptr) { table->CmdSetAttachmentFeedbackLoopEnableEXT = (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT)StubCmdSetAttachmentFeedbackLoopEnableEXT; }
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX) gpa(device, "vkGetScreenBufferPropertiesQNX");
+    if (table->GetScreenBufferPropertiesQNX == nullptr) { table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)StubGetScreenBufferPropertiesQNX; }
+#endif // VK_USE_PLATFORM_SCREEN_QNX
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR) gpa(device, "vkCreateAccelerationStructureKHR");
     if (table->CreateAccelerationStructureKHR == nullptr) { table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)StubCreateAccelerationStructureKHR; }
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR) gpa(device, "vkDestroyAccelerationStructureKHR");

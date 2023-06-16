@@ -348,6 +348,8 @@ PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
 PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
 PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
 PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
+// VK_EXT_depth_bias_control
+PFN_vkCmdSetDepthBias2EXT CmdSetDepthBias2EXT;
 // VK_EXT_descriptor_buffer
 PFN_vkGetDescriptorSetLayoutSizeEXT GetDescriptorSetLayoutSizeEXT;
 PFN_vkGetDescriptorSetLayoutBindingOffsetEXT GetDescriptorSetLayoutBindingOffsetEXT;
@@ -893,6 +895,10 @@ PFN_vkCmdSetCoarseSampleOrderNV CmdSetCoarseSampleOrderNV;
 // VK_QCOM_tile_properties
 PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
 PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
+// VK_QNX_external_memory_screen_buffer
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 // VK_QNX_screen_surface
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
@@ -1434,6 +1440,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdDebugMarkerBeginEXT = reinterpret_cast<PFN_vkCmdDebugMarkerBeginEXT>(GetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT"));
                 CmdDebugMarkerEndEXT = reinterpret_cast<PFN_vkCmdDebugMarkerEndEXT>(GetDeviceProcAddr(device, "vkCmdDebugMarkerEndEXT"));
                 CmdDebugMarkerInsertEXT = reinterpret_cast<PFN_vkCmdDebugMarkerInsertEXT>(GetDeviceProcAddr(device, "vkCmdDebugMarkerInsertEXT"));
+            }
+        },
+        {
+            "VK_EXT_depth_bias_control", [](VkInstance, VkDevice device) {
+                CmdSetDepthBias2EXT = reinterpret_cast<PFN_vkCmdSetDepthBias2EXT>(GetDeviceProcAddr(device, "vkCmdSetDepthBias2EXT"));
             }
         },
         {
@@ -2161,6 +2172,13 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetDynamicRenderingTilePropertiesQCOM = reinterpret_cast<PFN_vkGetDynamicRenderingTilePropertiesQCOM>(GetDeviceProcAddr(device, "vkGetDynamicRenderingTilePropertiesQCOM"));
             }
         },
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        {
+            "VK_QNX_external_memory_screen_buffer", [](VkInstance, VkDevice device) {
+                GetScreenBufferPropertiesQNX = reinterpret_cast<PFN_vkGetScreenBufferPropertiesQNX>(GetDeviceProcAddr(device, "vkGetScreenBufferPropertiesQNX"));
+            }
+        },
+#endif // VK_USE_PLATFORM_SCREEN_QNX
         {
             "VK_VALVE_descriptor_set_host_mapping", [](VkInstance, VkDevice device) {
                 GetDescriptorSetLayoutHostMappingInfoVALVE = reinterpret_cast<PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutHostMappingInfoVALVE"));
@@ -2230,6 +2248,8 @@ void ResetAllExtensions() {
     CreateDebugUtilsMessengerEXT = nullptr;
     DestroyDebugUtilsMessengerEXT = nullptr;
     SubmitDebugUtilsMessageEXT = nullptr;
+    // VK_EXT_depth_bias_control
+    CmdSetDepthBias2EXT = nullptr;
     // VK_EXT_descriptor_buffer
     GetDescriptorSetLayoutSizeEXT = nullptr;
     GetDescriptorSetLayoutBindingOffsetEXT = nullptr;
@@ -2775,6 +2795,10 @@ void ResetAllExtensions() {
     // VK_QCOM_tile_properties
     GetFramebufferTilePropertiesQCOM = nullptr;
     GetDynamicRenderingTilePropertiesQCOM = nullptr;
+    // VK_QNX_external_memory_screen_buffer
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    GetScreenBufferPropertiesQNX = nullptr;
+#endif // VK_USE_PLATFORM_SCREEN_QNX
     // VK_QNX_screen_surface
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     CreateScreenSurfaceQNX = nullptr;

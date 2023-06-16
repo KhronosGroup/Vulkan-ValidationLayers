@@ -6891,6 +6891,15 @@ void ObjectLifetimes::PreCallRecordDestroyIndirectCommandsLayoutNV(
 
 }
 
+bool ObjectLifetimes::PreCallValidateCmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdSetDepthBias2EXT-commandBuffer-parameter", kVUIDUndefined, "vkCmdSetDepthBias2EXT");
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateAcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     int32_t                                     drmFd,
@@ -8404,6 +8413,19 @@ bool ObjectLifetimes::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+bool ObjectLifetimes::PreCallValidateGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetScreenBufferPropertiesQNX-device-parameter", kVUIDUndefined, "vkGetScreenBufferPropertiesQNX");
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,

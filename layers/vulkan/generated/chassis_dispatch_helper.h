@@ -1179,6 +1179,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateDestroyIndirectCommandsLayoutNV,
     InterceptIdPreCallRecordDestroyIndirectCommandsLayoutNV,
     InterceptIdPostCallRecordDestroyIndirectCommandsLayoutNV,
+    InterceptIdPreCallValidateCmdSetDepthBias2EXT,
+    InterceptIdPreCallRecordCmdSetDepthBias2EXT,
+    InterceptIdPostCallRecordCmdSetDepthBias2EXT,
     InterceptIdPreCallValidateCreatePrivateDataSlotEXT,
     InterceptIdPreCallRecordCreatePrivateDataSlotEXT,
     InterceptIdPostCallRecordCreatePrivateDataSlotEXT,
@@ -1506,6 +1509,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT,
     InterceptIdPreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
     InterceptIdPostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT,
+    InterceptIdPreCallValidateGetScreenBufferPropertiesQNX,
+    InterceptIdPreCallRecordGetScreenBufferPropertiesQNX,
+    InterceptIdPostCallRecordGetScreenBufferPropertiesQNX,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2859,6 +2865,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateDestroyIndirectCommandsLayoutNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordDestroyIndirectCommandsLayoutNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordDestroyIndirectCommandsLayoutNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDepthBias2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDepthBias2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDepthBias2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePrivateDataSlotEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreatePrivateDataSlotEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePrivateDataSlotEXT);
@@ -3218,6 +3227,11 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT);
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetScreenBufferPropertiesQNX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetScreenBufferPropertiesQNX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetScreenBufferPropertiesQNX);
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

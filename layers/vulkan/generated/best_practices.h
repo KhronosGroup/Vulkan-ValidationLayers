@@ -1959,6 +1959,17 @@ void PostCallRecordGetFramebufferTilePropertiesQCOM(
     VkResult                                    result) override;
 
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+void PostCallRecordGetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties,
+    VkResult                                    result) override;
+
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 void PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -2139,6 +2150,7 @@ const vvl::unordered_map<std::string, std::string> special_use_extensions = {
     {"VK_EXT_debug_marker", "debugging"},
     {"VK_EXT_debug_report", "debugging"},
     {"VK_EXT_debug_utils", "debugging"},
+    {"VK_EXT_depth_bias_control", "d3demulation"},
     {"VK_EXT_depth_clip_control", "glemulation"},
     {"VK_EXT_depth_clip_enable", "d3demulation"},
     {"VK_EXT_device_address_binding_report", "debugging, devtools"},

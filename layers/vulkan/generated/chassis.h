@@ -3051,6 +3051,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo);
+
+
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
@@ -3765,6 +3770,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
     VkCommandBuffer                             commandBuffer,
     VkImageAspectFlags                          aspectMask);
+
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties);
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -5722,6 +5735,9 @@ class ValidationObject {
         virtual bool PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout, const VkAllocationCallbacks* pAllocator) const { return false; };
         virtual void PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout, const VkAllocationCallbacks* pAllocator) {};
         virtual void PostCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout, const VkAllocationCallbacks* pAllocator) {};
+        virtual bool PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT*         pDepthBiasInfo) const { return false; };
+        virtual void PreCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT*         pDepthBiasInfo) {};
+        virtual void PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT*         pDepthBiasInfo) {};
         virtual bool PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) const { return false; };
         virtual void PreCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display) {};
         virtual void PostCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display, VkResult result) {};
@@ -6108,6 +6124,11 @@ class ValidationObject {
         virtual bool PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) const { return false; };
         virtual void PreCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {};
         virtual void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {};
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+        virtual bool PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties) const { return false; };
+        virtual void PreCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties) {};
+        virtual void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, VkResult result) {};
+#endif
         virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const { return false; };
         virtual void PreCallRecordCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) {};
         virtual void PostCallRecordCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure, VkResult result) {};

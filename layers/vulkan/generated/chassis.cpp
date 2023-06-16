@@ -12046,6 +12046,28 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDepthBiasInfoEXT*                   pDepthBiasInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdSetDepthBias2EXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdSetDepthBias2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+    }
+    DispatchCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetDepthBias2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdSetDepthBias2EXT(commandBuffer, pDepthBiasInfo);
+    }
+}
+
+
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
@@ -14807,6 +14829,32 @@ VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
     }
 }
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
+VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(
+    VkDevice                                    device,
+    const struct _screen_buffer*                buffer,
+    VkScreenBufferPropertiesQNX*                pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetScreenBufferPropertiesQNX]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetScreenBufferPropertiesQNX(device, buffer, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetScreenBufferPropertiesQNX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties);
+    }
+    VkResult result = DispatchGetScreenBufferPropertiesQNX(device, buffer, pProperties);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetScreenBufferPropertiesQNX]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, result);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
@@ -15943,6 +15991,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdBindPipelineShaderGroupNV", {kFuncTypeDev, (void*)CmdBindPipelineShaderGroupNV}},
     {"vkCreateIndirectCommandsLayoutNV", {kFuncTypeDev, (void*)CreateIndirectCommandsLayoutNV}},
     {"vkDestroyIndirectCommandsLayoutNV", {kFuncTypeDev, (void*)DestroyIndirectCommandsLayoutNV}},
+    {"vkCmdSetDepthBias2EXT", {kFuncTypeDev, (void*)CmdSetDepthBias2EXT}},
     {"vkAcquireDrmDisplayEXT", {kFuncTypePdev, (void*)AcquireDrmDisplayEXT}},
     {"vkGetDrmDisplayEXT", {kFuncTypePdev, (void*)GetDrmDisplayEXT}},
     {"vkCreatePrivateDataSlotEXT", {kFuncTypeDev, (void*)CreatePrivateDataSlotEXT}},
@@ -16093,6 +16142,9 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
     {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
     {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {kFuncTypeDev, (void*)CmdSetAttachmentFeedbackLoopEnableEXT}},
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+    {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
+#endif
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

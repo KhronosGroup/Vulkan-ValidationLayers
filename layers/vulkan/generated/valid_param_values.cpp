@@ -1808,6 +1808,27 @@ std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() 
 
 
 template<>
+std::vector<VkDepthBiasRepresentationEXT> ValidationObject::ValidParamValues() const {
+    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
+    //      Ideally "values" would be something like a static variable that is built once and this function returns
+    //      a span of the container. This does not work for applications which create and destroy many instances and
+    //      devices over the lifespan of the project (e.g., VLT).
+    constexpr std::array CoreVkDepthBiasRepresentationEXTEnums = { VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT, VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT, VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT,  };
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkDepthBiasRepresentationEXT>> ExtendedVkDepthBiasRepresentationEXTEnums = {
+    };
+    std::vector<VkDepthBiasRepresentationEXT> values(CoreVkDepthBiasRepresentationEXTEnums.cbegin(), CoreVkDepthBiasRepresentationEXTEnums.cend());
+    std::set<VkDepthBiasRepresentationEXT> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkDepthBiasRepresentationEXTEnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+
+template<>
 std::vector<VkFragmentShadingRateNV> ValidationObject::ValidParamValues() const {
     // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
     //      Ideally "values" would be something like a static variable that is built once and this function returns

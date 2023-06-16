@@ -5273,6 +5273,33 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_REND
     typedef VkCommandBufferInheritanceRenderPassTransformInfoQCOM Type;
 };
 
+// Map type VkPhysicalDeviceDepthBiasControlFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceDepthBiasControlFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT> {
+    typedef VkPhysicalDeviceDepthBiasControlFeaturesEXT Type;
+};
+
+// Map type VkDepthBiasInfoEXT to id VK_STRUCTURE_TYPE_DEPTH_BIAS_INFO_EXT
+template <> struct LvlTypeMap<VkDepthBiasInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEPTH_BIAS_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEPTH_BIAS_INFO_EXT> {
+    typedef VkDepthBiasInfoEXT Type;
+};
+
+// Map type VkDepthBiasRepresentationInfoEXT to id VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT
+template <> struct LvlTypeMap<VkDepthBiasRepresentationInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT> {
+    typedef VkDepthBiasRepresentationInfoEXT Type;
+};
+
 // Map type VkPhysicalDeviceDeviceMemoryReportFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceDeviceMemoryReportFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT;
@@ -7065,6 +7092,61 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEED
     typedef VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT Type;
 };
 
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkScreenBufferPropertiesQNX to id VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX
+template <> struct LvlTypeMap<VkScreenBufferPropertiesQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX> {
+    typedef VkScreenBufferPropertiesQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkScreenBufferFormatPropertiesQNX to id VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX
+template <> struct LvlTypeMap<VkScreenBufferFormatPropertiesQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX> {
+    typedef VkScreenBufferFormatPropertiesQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkImportScreenBufferInfoQNX to id VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX
+template <> struct LvlTypeMap<VkImportScreenBufferInfoQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX> {
+    typedef VkImportScreenBufferInfoQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkExternalFormatQNX to id VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX
+template <> struct LvlTypeMap<VkExternalFormatQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX> {
+    typedef VkExternalFormatQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+// Map type VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX
+template <> struct LvlTypeMap<VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX> {
+    typedef VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX Type;
+};
+
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkAccelerationStructureGeometryTrianglesDataKHR to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR
 template <> struct LvlTypeMap<VkAccelerationStructureGeometryTrianglesDataKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
