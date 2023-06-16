@@ -4677,3 +4677,81 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
         }
     }
 }
+
+TEST_F(NegativeRenderPass, NullImageViewState) {
+    TEST_DESCRIPTION(
+        "This test lead to null image view states that would cause null pointers dereferencing in "
+        "CoreChecks::PreCallValidateCreateFramebuffer, FRAMEBUFFER_STATE::LinkChildNodes() and FRAMEBUFFER_STATE::Destroy(). "
+        "Before adding null checks, just bumping the Vulkan API version for this test from 1.0 to 1.1 would cause image view "
+        "states to not be null");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // A renderpass with one color attachment.
+    VkAttachmentDescription attachment = {0,
+                                          VK_FORMAT_R8G8B8A8_UNORM,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_STORE,
+                                          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                          VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &attachment, 1, &subpass, 0, nullptr};
+    vk_testing::RenderPass rp(*m_device, rpci);
+
+    // A compatible framebuffer.
+    VkImageCreateInfo image_3d_ci = LvlInitStruct<VkImageCreateInfo>();
+    // VK_khr_maintenance1 is not enabled, so using this flag is
+    // incorrect. This causes null image view states, and null pointer
+    // dereferencing at validation time.
+    image_3d_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_3d_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_3d_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_3d_ci.extent.width = 32;
+    image_3d_ci.extent.height = 32;
+    image_3d_ci.extent.depth = 4;
+    image_3d_ci.mipLevels = 1;
+    image_3d_ci.arrayLayers = 1;
+    image_3d_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_3d_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_3d_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_3d_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image(m_device);
+    image.init(&image_3d_ci);
+
+    VkImageViewCreateInfo array_2d_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
+    array_2d_view_ci.image = image.handle();
+    array_2d_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    array_2d_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    array_2d_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    array_2d_view_ci.subresourceRange.baseMipLevel = 0;
+    array_2d_view_ci.subresourceRange.layerCount = 1;
+    array_2d_view_ci.subresourceRange.baseArrayLayer = 0;
+    array_2d_view_ci.subresourceRange.levelCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+    vk_testing::ImageView array_2d_view_layer_0(*m_device, array_2d_view_ci);
+    m_errorMonitor->VerifyFound();
+
+    array_2d_view_ci.subresourceRange.baseArrayLayer = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subresourceRange-01480");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subresourceRange-01719");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+    vk_testing::ImageView array_2d_view_layer_1(*m_device, array_2d_view_ci);
+    m_errorMonitor->VerifyFound();
+
+    VkFramebufferCreateInfo fci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fci.renderPass = rp;
+    fci.attachmentCount = 1;
+    fci.pAttachments = &array_2d_view_layer_0.handle();
+    fci.width = 32;
+    fci.height = 32;
+    fci.layers = 1;
+    vk_testing::Framebuffer fb(*m_device, fci);  // Crash when validation framebuffer creation
+}

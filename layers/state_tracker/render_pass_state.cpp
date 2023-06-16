@@ -387,14 +387,18 @@ FRAMEBUFFER_STATE::FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreate
 
 void FRAMEBUFFER_STATE::LinkChildNodes() {
     // Connect child node(s), which cannot safely be done in the constructor.
-    for (auto &a : attachments_view_state) {
-        a->AddParent(this);
+    for (auto &view : attachments_view_state) {
+        if (view) {
+            view->AddParent(this);
+        }
     }
 }
 
 void FRAMEBUFFER_STATE::Destroy() {
     for (auto &view : attachments_view_state) {
-        view->RemoveParent(this);
+        if (view) {
+            view->RemoveParent(this);
+        }
     }
     attachments_view_state.clear();
     BASE_NODE::Destroy();

@@ -4121,6 +4121,9 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                 const VkImageView *image_views = pCreateInfo->pAttachments;
                 for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
                     auto view_state = Get<IMAGE_VIEW_STATE>(image_views[i]);
+                    if (!view_state) {
+                        continue;
+                    }
                     auto &ivci = view_state->create_info;
                     auto &subresource_range = view_state->normalized_subresource_range;
                     if (ivci.format != rpci->pAttachments[i].format) {
