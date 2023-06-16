@@ -110,5 +110,15 @@ def main():
     # Align APK
     common_ci.RunShellCmd(f'zipalign -f 4 {unaligned_apk} {aligned_apk}')
 
+    # Create Key (If it doesn't already exist)
+    debug_key = common_ci.RepoRelative('build-android/obj/debug.keystore')
+    ks_pass = 'android'
+    if not os.path.isfile(debug_key):
+        dname = 'CN=Android-Debug,O=Android,C=US'
+        common_ci.RunShellCmd(f'keytool -genkey -v -keystore {debug_key} -alias androiddebugkey -storepass {ks_pass} -keypass {ks_pass} -keyalg RSA -keysize 2048 -validity 10000 -dname {dname}')
+
+    # Sign APK
+    common_ci.RunShellCmd(f'apksigner sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {aligned_apk}')
+
 if __name__ == '__main__':
     main()
