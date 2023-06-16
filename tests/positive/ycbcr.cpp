@@ -14,7 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-void YcbcrTest::InitBasicYcbcr() {
+void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
     // VK_KHR_sampler_ycbcr_conversion was added in 1.2
     const bool use_12 = m_attempted_api_version >= VK_API_VERSION_1_2;
     if (!use_12) {
@@ -29,8 +29,8 @@ void YcbcrTest::InitBasicYcbcr() {
         GTEST_SKIP() << "At least Vulkan version 1." << m_attempted_api_version.minor() << " is required";
     }
 
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(pNextFeatures);
+    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(pNextFeatures);
     VkPhysicalDeviceFeatures2 features2;
     if (use_12) {
         features2 = GetPhysicalDeviceFeatures2(features11);

@@ -1032,6 +1032,9 @@ void VkLayerTest::AddSurfaceExtension() {
 
 void VkLayerTest::SetTargetApiVersion(APIVersion target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
+    // If we set target twice, make sure higest version always wins
+    if (target_api_version < m_attempted_api_version) return;
+
     m_attempted_api_version = target_api_version;  // used to know if request failed
 
     m_target_api_version = std::min(target_api_version, m_instance_api_version);

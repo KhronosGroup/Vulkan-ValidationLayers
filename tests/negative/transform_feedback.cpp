@@ -15,7 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-void NegativeTransformFeedback::InitBasicTransformFeedback() {
+void NegativeTransformFeedback::InitBasicTransformFeedback(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < m_attempted_api_version) {
@@ -25,7 +25,7 @@ void NegativeTransformFeedback::InitBasicTransformFeedback() {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pNextFeatures);
     GetPhysicalDeviceFeatures2(tf_features);
     if (tf_features.transformFeedback == VK_FALSE) {
         GTEST_SKIP() << "transformFeedback not supported";

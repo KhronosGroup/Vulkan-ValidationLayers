@@ -18,12 +18,9 @@
 #include <array>
 #include <chrono>
 
-class VkPositiveGraphicsLibraryLayerTest : public VkLayerTest {};
-
 void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -416,37 +413,25 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
     frag_shader_lib.CreateGraphicsPipeline();
 }
 
-TEST_F(VkPositiveGraphicsLibraryLayerTest, NotAttachmentDynamicBlendEnable) {
+TEST_F(PositiveGraphicsLibrary, NotAttachmentDynamicBlendEnable) {
     TEST_DESCRIPTION("make sure using an empty pAttachments doesn't crash a GPL pipeline");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    InitBasicGraphicsLibrary(&extended_dynamic_state3_features);
+    if (::testing::Test::IsSkipped()) return;
 
-    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&gpl_features);
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-
-    if (features2.features.dualSrcBlend == VK_FALSE) {
+    if (!m_device->phy().features().dualSrcBlend) {
         GTEST_SKIP() << "dualSrcBlend feature is not available";
     }
+
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
         GTEST_SKIP() << "DynamicState3 features not supported";
     }
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
