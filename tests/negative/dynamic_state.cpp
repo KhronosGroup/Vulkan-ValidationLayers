@@ -2571,8 +2571,7 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicState, RasterizationLine) {
-    TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state");
+void NegativeDynamicState::InitLineRasterizationFeatureDisabled() {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -2595,127 +2594,143 @@ TEST_F(NegativeDynamicState, RasterizationLine) {
     line_raster_features.stippledBresenhamLines = VK_FALSE;
     line_raster_features.stippledSmoothLines = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state3_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state3_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+}
+
+TEST_F(NegativeDynamicState, RasterizationLineModeDefault) {
+    TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state with VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT");
+    InitLineRasterizationFeatureDisabled();
+    if (::testing::Test::IsSkipped()) return;
 
     // set both from dynamic state, don't need a VkPipelineRasterizationLineStateCreateInfoEXT in pNext
-    {
-        CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
-        const VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                              VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
-        pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;  // ignored
-        pipe.line_state_ci_.stippledLineEnable = VK_TRUE;                                        // ignored
-        pipe.line_state_ci_.lineStippleFactor = 1;
-        pipe.InitState();
-        pipe.CreateGraphicsPipeline();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;  // ignored
+    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;                                        // ignored
+    pipe.line_state_ci_.lineStippleFactor = 1;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-stippledLineEnable-07498");  // default values undefined
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07637");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07638");
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-stippledLineEnable-07496");  // default values undefined
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-stippledLineEnable-07498");  // default values undefined
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07637");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07638");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
 
-        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-        vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07498");
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_errorMonitor->VerifyFound();
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    vk::CmdSetLineRasterizationModeEXT(m_commandBuffer->handle(), VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07498");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
 
-        // is valid now
-        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    // is valid now
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
 
-    {
-        CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
-        const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
-        pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
-        pipe.line_state_ci_.stippledLineEnable = VK_TRUE;  // ignored
-        pipe.line_state_ci_.lineStippleFactor = 1;
-        pipe.InitState();
-        pipe.CreateGraphicsPipeline();
+TEST_F(NegativeDynamicState, RasterizationLineModeRectangular) {
+    TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state with VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT");
+    InitLineRasterizationFeatureDisabled();
+    if (::testing::Test::IsSkipped()) return;
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
+    pipe.line_state_ci_.stippledLineEnable = VK_TRUE;  // ignored
+    pipe.line_state_ci_.lineStippleFactor = 1;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
-        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07495");
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_errorMonitor->VerifyFound();
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07495");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
 
-    {
-        CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
-        const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
-        pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
-        pipe.line_state_ci_.lineStippleFactor = 1;
-        pipe.InitState();
-        pipe.CreateGraphicsPipeline();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+TEST_F(NegativeDynamicState, RasterizationLineModeBresenham) {
+    TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state with VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT");
+    InitLineRasterizationFeatureDisabled();
+    if (::testing::Test::IsSkipped()) return;
 
-        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07496");
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_errorMonitor->VerifyFound();
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+    pipe.line_state_ci_.lineStippleFactor = 1;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    {
-        CreatePipelineHelper pipe(*this);
-        pipe.InitInfo();
-        const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
-        auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
-        dyn_state_ci.dynamicStateCount = size(dyn_states);
-        dyn_state_ci.pDynamicStates = dyn_states;
-        pipe.dyn_state_ci_ = dyn_state_ci;
-        pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
-        pipe.line_state_ci_.lineStippleFactor = 1;
-        pipe.InitState();
-        pipe.CreateGraphicsPipeline();
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07496");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
 
-        vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07497");
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_errorMonitor->VerifyFound();
+TEST_F(NegativeDynamicState, RasterizationLineModeSmooth) {
+    TEST_DESCRIPTION("tests VK_EXT_line_rasterization dynamic state with VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT");
+    InitLineRasterizationFeatureDisabled();
+    if (::testing::Test::IsSkipped()) return;
 
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    const VkDynamicState dyn_states[1] = {VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT};
+    auto dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+    pipe.dyn_state_ci_ = dyn_state_ci;
+    pipe.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
+    pipe.line_state_ci_.lineStippleFactor = 1;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    vk::CmdSetLineStippleEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-stippledLineEnable-07497");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(NegativeDynamicState, PipelineColorWriteCreateInfoEXTDynaimcState3) {

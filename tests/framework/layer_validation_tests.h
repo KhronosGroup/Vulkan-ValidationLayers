@@ -615,6 +615,8 @@ class NegativeDynamicState : public DynamicStateTest {
     void ExtendedDynamicStateDrawNotSet(VkDynamicState dynamic_state, const char *vuid);
     // VK_EXT_extended_dynamic_state3 - Create a pipeline with dynamic state, but the feature disabled
     void ExtendedDynamicState3PipelineFeatureDisabled(VkDynamicState dynamic_state, const char *vuid);
+    // VK_EXT_line_rasterization - Init with LineRasterization features off
+    void InitLineRasterizationFeatureDisabled();
 };
 class PositiveDynamicState : public DynamicStateTest {
   public:
