@@ -243,6 +243,17 @@ bool Hopper::CreatePassThroughTessellationControl() {
     return BuildPassThroughShader(shader, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 }
 
+bool Hopper::CreatePassThroughMesh() {
+    static const uint32_t simple_mesh_spv[52] = {
+        0x07230203, 0x00010600, 0x00070000, 0x00000005, 0x00000000, 0x00020011, 0x000014A3, 0x0006000A, 0x5F565053,
+        0x5F545845, 0x6873656D, 0x6168735F, 0x00726564, 0x0003000E, 0x00000000, 0x00000001, 0x0005000F, 0x000014F5,
+        0x00000001, 0x6E69616D, 0x00000000, 0x00060010, 0x00000001, 0x00000011, 0x00000001, 0x00000001, 0x00000001,
+        0x00040010, 0x00000001, 0x0000001A, 0x00000003, 0x00040010, 0x00000001, 0x00001496, 0x00000001, 0x00030010,
+        0x00000001, 0x000014B2, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00050036, 0x00000002,
+        0x00000001, 0x00000000, 0x00000003, 0x000200F8, 0x00000004, 0x000100FD, 0x00010038};
+    return CreateShaderStage(sizeof(simple_mesh_spv), simple_mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT);
+}
+
 static TBuiltInResource InitResources() {
     TBuiltInResource resources;
     resources.maxLights = 32;
