@@ -34,6 +34,7 @@ class Hopper {
     bool CreatePipelineLayout();
     bool CreateVertexAttributeDescriptions(SpvReflectInterfaceVariable& variable);
     bool CreateGraphicsPipeline();
+    bool CreateGraphicsMeshPipeline();
     bool CreateComputePipeline();
 
     // For Pass Through shaders
@@ -45,6 +46,7 @@ class Hopper {
     bool CreatePassThroughVertexNoInterface();
     bool CreatePassThroughTessellationEval();
     bool CreatePassThroughTessellationControl();
+    bool CreatePassThroughMesh();
 
     SpvReflectShaderModule module;
 

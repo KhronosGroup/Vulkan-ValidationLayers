@@ -414,6 +414,59 @@ bool Hopper::CreateGraphicsPipeline() {
     return success;
 }
 
+bool Hopper::CreateGraphicsMeshPipeline() {
+    bool success = true;
+    // Only a mesh shader is required, if it is a task shader, create a mesh shader to match
+    if (shader_stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
+        CreatePassThroughMesh();
+    }
+
+    // Renderpass
+    {
+        color_attachment_references.resize(1);
+        color_attachment_references[0].attachment = 0;
+        color_attachment_references[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        // Find all the attachments and create a Framebuffer and RenderPass
+        VkSubpassDescription subpass_dscription = {};
+        subpass_dscription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass_dscription.colorAttachmentCount = 1;
+        subpass_dscription.pColorAttachments = color_attachment_references.data();
+        subpass_dscription.inputAttachmentCount = 0;  // inputAttachment only allowed in Frag
+        subpass_dscription.pResolveAttachments = nullptr;
+        subpass_dscription.pDepthStencilAttachment = nullptr;
+        auto render_pass_info = LvlInitStruct<VkRenderPassCreateInfo>();
+        render_pass_info.flags = 0;
+        render_pass_info.attachmentCount = 1;
+        render_pass_info.pAttachments = &vk.basic_attachment_description;
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass_dscription;
+        render_pass_info.dependencyCount = 0;
+        render_pass_info.pDependencies = nullptr;
+        VK_SUCCESS(vk::CreateRenderPass(vk.device, &render_pass_info, nullptr, &render_pass));
+    }
+
+    auto pipeline_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    pipeline_info.flags = 0;
+    pipeline_info.stageCount = static_cast<uint32_t>(shader_stages_info.size());
+    pipeline_info.pStages = shader_stages_info.data();
+    pipeline_info.pVertexInputState = nullptr;
+    pipeline_info.pInputAssemblyState = nullptr;
+    pipeline_info.pTessellationState = nullptr;
+    pipeline_info.pViewportState = nullptr;
+    pipeline_info.pRasterizationState = nullptr;
+    pipeline_info.pMultisampleState = &vk.multisample_state;
+    pipeline_info.pDepthStencilState = nullptr;
+    pipeline_info.pColorBlendState = nullptr;
+    pipeline_info.pDynamicState = nullptr;
+    pipeline_info.layout = pipeline_layout;
+    pipeline_info.renderPass = render_pass;
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+
+    VK_SUCCESS(vk::CreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline));
+    return success;
+}
+
 bool Hopper::CreateComputePipeline() {
     auto pipeline_info = LvlInitStruct<VkComputePipelineCreateInfo>();
     pipeline_info.flags = 0;
@@ -446,7 +499,7 @@ bool Hopper::Run() {
             break;
         case VK_SHADER_STAGE_TASK_BIT_EXT:
         case VK_SHADER_STAGE_MESH_BIT_EXT:
-            std::cout << "Currently Mesh/Task stages not supported\n";
+            success = CreateGraphicsMeshPipeline();
             break;
         case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
         case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:

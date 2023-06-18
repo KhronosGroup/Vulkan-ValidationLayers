@@ -150,7 +150,9 @@ VulkanInstance::VulkanInstance() {
 
         // TODO - Generate these
         // Currently assumes using MockICD and profiles so all of these are enabled
-        auto physical_device_ray_tracing_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+        auto physical_device_mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>();
+        auto physical_device_ray_tracing_pipeline_features =
+            LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&physical_device_mesh_shader_features);
         auto physical_device_fragment_shader_interlock_features =
             LvlInitStruct<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(&physical_device_ray_tracing_pipeline_features);
         auto physical_device_shader_atomic_float_features =
