@@ -543,7 +543,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     const VkPipelineLayoutObj pipeline_layout(m_device);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -574,7 +574,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     if (pipeline_libraries) {
         CreatePipelineHelper pre_raster_lib(*this);
-        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
         auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
         vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
         vs_ci.pCode = vs_spv.data();
@@ -635,7 +635,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     // Create device without protected access features
     VkDeviceObj test_device(0, gpu());
-    VkShaderObj vs2(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj vs2(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     vs2.InitFromGLSLTry(false, &test_device);
     VkPipelineObj featureless_pipe(&test_device);
     featureless_pipe.AddShader(&vs2);

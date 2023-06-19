@@ -378,16 +378,16 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
                          &descriptor_set_buffer, 5, "(set = 0, binding = 1) Descriptor index 5 is uninitialized"});
         if (m_device->phy().features().geometryShader) {
             // OOB Geometry
-            tests.push_back({vsSourceForGS, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
-                             &pipeline_layout_buffer, &descriptor_set_buffer, 25, "Stage = Geometry"});
+            tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, false, &pipeline_layout_buffer,
+                             &descriptor_set_buffer, 25, "Stage = Geometry"});
             // Uninitialized Geometry
-            tests.push_back({vsSourceForGS, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
-                             &pipeline_layout_buffer, &descriptor_set_buffer, 5, "Stage = Geometry"});
+            tests.push_back({vsSourceForGS, kFragmentMinimalGlsl, gsSource, nullptr, nullptr, false, &pipeline_layout_buffer,
+                             &descriptor_set_buffer, 5, "Stage = Geometry"});
         }
         if (m_device->phy().features().tessellationShader) {
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, nullptr, bindStateTscShaderText, tesSource, false,
+            tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource, false,
                              &pipeline_layout_buffer, &descriptor_set_buffer, 25, "Stage = Tessellation Eval"});
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, nullptr, bindStateTscShaderText, tesSource, false,
+            tests.push_back({kVertexMinimalGlsl, kFragmentMinimalGlsl, nullptr, kTessellationControlMinimalGlsl, tesSource, false,
                              &pipeline_layout_buffer, &descriptor_set_buffer, 5, "Stage = Tessellation Eval"});
         }
     }
@@ -1331,7 +1331,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
@@ -1441,7 +1441,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
@@ -1510,7 +1510,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
@@ -1657,7 +1657,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
@@ -1950,7 +1950,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     buffer0.memory().unmap();
 
     // Destroy pipeline layout after creating pipeline
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();

@@ -762,8 +762,8 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj ps(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipelineobj(m_device);
     pipelineobj.AddDefaultColorAttachment();
@@ -1568,7 +1568,7 @@ void CreatePipelineHelper::InitDynamicStateInfo() {
     // during late bind
 }
 
-void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(bindStateVertShaderText, bindStateFragShaderText); }
+void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
 
 void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
     vs_.reset(new VkShaderObj(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT));
@@ -1845,7 +1845,7 @@ void CreateComputePipelineHelper::InitPipelineLayoutInfo() {
 }
 
 void CreateComputePipelineHelper::InitShaderInfo() {
-    cs_.reset(new VkShaderObj(&layer_test_, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT));
+    cs_.reset(new VkShaderObj(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT));
     // We shouldn't need a fragment shader but add it to be able to run on more devices
 }
 

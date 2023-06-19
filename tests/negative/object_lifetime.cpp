@@ -338,7 +338,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
                x = imageLoad(s, 0);
             }
         )glsl";
-        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         pipe.InitInfo();
@@ -582,7 +582,7 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
     vk_testing::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // Create PSO to be used for draw-time errors below
-    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -953,7 +953,7 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create PSO to use the sampler
-    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -1110,7 +1110,7 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create PSO to use the sampler
-    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();

@@ -78,8 +78,8 @@ TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
         GTEST_SKIP() << "Device doesn't support geometry shaders";
     }
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj gs(this, bindStateGeomShaderText, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, kGeometryMinimalGlsl, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -169,7 +169,7 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderDontWrite) {
         }
     )glsl";
 
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
@@ -248,7 +248,7 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
                OpFunctionEnd
         )";
 
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
@@ -340,7 +340,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockOrderMismatchVsGs) {
                OpFunctionEnd
         )";
 
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
@@ -381,7 +381,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
         }
     )glsl";
 
-    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     auto set_info = [&](CreatePipelineHelper &helper) {
@@ -466,7 +466,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
             "}\n";
 
         VkShaderObj tcs(this, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        VkShaderObj tes(this, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+        VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
         inputAssemblyInfo.flags = 0;
@@ -583,7 +583,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
             "void main(){\n"
             "}\n";
 
-        VkShaderObj tcs(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         VkShaderObj tes(this, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
@@ -937,8 +937,8 @@ TEST_F(NegativeGeometryTessellation, PatchListTopology) {
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
     }
-    VkShaderObj tcs(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
@@ -1005,10 +1005,10 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
     VkPipelineShaderStageCreateInfo shaderStages[3];
     memset(&shaderStages, 0, 3 * sizeof(VkPipelineShaderStageCreateInfo));
 
-    VkShaderObj vs(this,bindStateVertShaderText,VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this,kVertexMinimalGlsl,VK_SHADER_STAGE_VERTEX_BIT);
     // Just using VS txt for Tess shaders as we don't care about functionality
-    VkShaderObj tc(this,bindStateVertShaderText,VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj te(this,bindStateVertShaderText,VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    VkShaderObj tc(this,kVertexMinimalGlsl,VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    VkShaderObj te(this,kVertexMinimalGlsl,VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
     shaderStages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;

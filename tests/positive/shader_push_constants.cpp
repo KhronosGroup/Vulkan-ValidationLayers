@@ -288,7 +288,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     )glsl";
 
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // range A and B are the same while range C is different
     // All 3 ranges fit the range from the shader
@@ -444,7 +444,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
 
     VkShaderObj vsUnused(this, vsSourceUnused, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj vsEmpty(this, vsSourceEmpty, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Just in layout
     CreatePipelineHelper pipeline_unused(*this);
@@ -502,7 +502,7 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
     )glsl";
 
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 32};
@@ -566,7 +566,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
     )glsl";
 
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Use exact range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 28};
@@ -721,7 +721,7 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     )";
 
     VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 32, 16};
     const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});

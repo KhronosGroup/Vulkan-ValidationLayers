@@ -381,7 +381,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fragment_source = R"glsl(
 #version 450
@@ -442,7 +442,7 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fragment_source = R"glsl(
 #version 450
@@ -677,7 +677,7 @@ TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
 }
 
 TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
@@ -831,7 +831,7 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
         }
     }
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char *fsSource = R"(
                OpCapability Shader

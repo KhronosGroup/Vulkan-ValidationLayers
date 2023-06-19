@@ -45,7 +45,7 @@ TEST_F(PositiveMesh, BasicUsage) {
     )glsl";
 
     VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -106,7 +106,7 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     )glsl";
 
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
     helper.InitInfo();
@@ -158,7 +158,7 @@ TEST_F(PositiveMesh, PointSize) {
     )glsl";
 
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
     helper.InitInfo();

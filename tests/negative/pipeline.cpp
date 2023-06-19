@@ -150,8 +150,8 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     vk_testing::RenderPass renderpass(*m_device, rpci);
     ASSERT_TRUE(renderpass.initialized());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipeline.AddShader(&vs);
     pipeline.AddShader(&fs);
 
@@ -219,8 +219,8 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     rpci.pAttachments = &attach_desc;
 
     vk_testing::RenderPass rp(*m_device, rpci);
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipeline.AddShader(&vs);
     pipeline.AddShader(&fs);
 
@@ -380,8 +380,8 @@ TEST_F(NegativePipeline, ShaderStageName) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Attempt to Create Gfx Pipeline w/o a VS
     VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
@@ -559,8 +559,8 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipeline_1(m_device);
     pipeline_1.AddShader(&vs);
@@ -674,8 +674,8 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
         }
     )glsl";
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderObj fs_sampleRate(this, sampleRateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipeline.AddShader(&vs);
     pipeline.AddShader(&fs);
@@ -734,8 +734,8 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     const VkPipelineShaderStageCreateInfo stages[] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
@@ -803,7 +803,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr};
@@ -928,8 +928,8 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);  // We shouldn't need a fragment shader
     // but add it to be able to run on more devices
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -1082,7 +1082,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
 
     // Graphics
     {
-        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
+        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr,
                        "foo");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1093,7 +1093,7 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
     // Compute
     {
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+            helper.cs_.reset(new VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
                                              SPV_SOURCE_GLSL, nullptr, "foo"));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
@@ -1107,8 +1107,8 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
         pipe_0.LateBindPipelineInfo();
         CreateComputePipelineHelper pipe_1(*this);  // invalid
         pipe_1.InitInfo();
-        pipe_1.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
-                                         SPV_SOURCE_GLSL, nullptr, "foo"));
+        pipe_1.cs_.reset(new VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                                         nullptr, "foo"));
         pipe_1.InitState();
         pipe_1.LateBindPipelineInfo();
 
@@ -1127,8 +1127,8 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
@@ -1180,7 +1180,7 @@ TEST_F(NegativePipeline, NullStagepName) {
     TEST_DESCRIPTION("Test that an error is produced for a stage with a null pName pointer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -2167,7 +2167,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     )glsl";
     VkShaderObj fs_function(this, fs_source_function, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkRenderpassObj render_pass(m_device);
 
     VkPipelineObj pipeline_combined(m_device);
@@ -2769,7 +2769,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineNullRenderPass) {
         }
     )glsl";
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
@@ -3155,7 +3155,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageDepthReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageDepthReadSpv, "main", nullptr);
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3167,8 +3167,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     }
 
     if (shader_tile_image_features.shaderTileImageStencilReadAccess) {
-        auto fs =
-            VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageStencilReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageStencilReadSpv, "main", nullptr);
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3180,7 +3179,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
     }
 
     if (shader_tile_image_features.shaderTileImageColorReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageColorReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageColorReadSpv, "main", nullptr);
         auto pipeline_createinfo_with_ms = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3235,7 +3234,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     if (shader_tile_image_features.shaderTileImageDepthReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageDepthReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageDepthReadSpv, "main", nullptr);
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             ds_ci.depthWriteEnable = true;
 
@@ -3249,8 +3248,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     }
 
     if (shader_tile_image_features.shaderTileImageStencilReadAccess) {
-        auto fs =
-            VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageStencilReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageStencilReadSpv, "main", nullptr);
 
         VkStencilOpState stencil_state = {};
         stencil_state.failOp = VK_STENCIL_OP_KEEP;
@@ -3276,7 +3274,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
     }
 
     if (shader_tile_image_features.shaderTileImageColorReadAccess) {
-        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, bindShaderTileImageColorReadSpv, "main", nullptr);
+        auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, kShaderTileImageColorReadSpv, "main", nullptr);
 
         VkAttachmentReference attachmentRefs[1] = {};
         attachmentRefs[0].layout = VK_IMAGE_LAYOUT_GENERAL;

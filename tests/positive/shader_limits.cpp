@@ -282,7 +282,7 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     )glsl";
 
     VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
-    VkShaderObj mesh(this, bindStateMeshShaderText, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
