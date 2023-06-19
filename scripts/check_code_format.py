@@ -37,7 +37,6 @@ from subprocess import check_output
 from datetime import date
 from argparse import RawDescriptionHelpFormatter
 
-os.system("")
 #
 #
 # Color print routine, takes a string matching a txtcolor above and the output string, resets color upon exit
@@ -227,8 +226,8 @@ def VerifyTypeAssign(commit, target_files):
 def main():
     DEFAULT_REFSPEC = 'origin/main'
 
-    parser = argparse.ArgumentParser(description='''Usage: python3 ./scripts/check_code_format.py
-    - Reqires python3 and clang-format 7.0+
+    parser = argparse.ArgumentParser(description='''Usage: python ./scripts/check_code_format.py
+    - Reqires python3 and clang-format
     - Run script in repo root
     - May produce inaccurate clang-format results if local branch is not rebased on the TARGET_REFSPEC
     ''', formatter_class=RawDescriptionHelpFormatter)
@@ -239,10 +238,6 @@ def main():
     parser.add_argument('--fetch-main', dest='fetch_main', action='store_true', help='Fetch the main branch first.'
         + ' Useful with --target-refspec=FETCH_HEAD to compare against what is currently on main')
     args = parser.parse_args()
-
-    if sys.version_info[0] != 3:
-        print("This script requires Python 3. Run script with [-h] option for more details.")
-        exit()
 
     if os.path.isfile('check_code_format.py'):
         os.chdir('..')

@@ -50,6 +50,7 @@ If you choose to work on an issue that is assigned, simply coordinate with the c
   will merge the PR.
 
 ### **Coding Conventions and Formatting**
+
 * Use the **[Google style guide](https://google.github.io/styleguide/cppguide.html)** for source code with the following exceptions:
     * The column limit is 132 (as opposed to the default value 80). The clang-format tool will handle this. See below.
     * The indent is 4 spaces instead of the default 2 spaces. Access modifier (e.g. `public:`) is indented 2 spaces instead of the
@@ -65,7 +66,7 @@ a good reason is "This violates the style guide, but it improves type safety."
     * There are `.clang-format` files present in the repository to define clang-format settings
       which are found and used automatically by clang-format.
 	* **clang-format** binaries are available from the LLVM orginization, here: [LLVM](https://clang.llvm.org/). Our CI system
-	  currently uses clang-format version 7.0.0 to check that the lines of code you have changed are formatted properly. It is
+	  currently uses clang-format version `14` to check that the lines of code you have changed are formatted properly. It is
 	  recommended that you use the same version to format your code prior to submission.
     * A sample git workflow may look like:
 
@@ -76,6 +77,8 @@ a good reason is "This violates the style guide, but it improves type safety."
 >        $ git add -u .
 >        $ git commit
 
+`NOTE`: `scripts/check_code_format.py` will run clang-format for you and is required for passing CI.
+
 * **Commit Messages**
     * Limit the subject line to 64 characters -- this allows the information to display correctly in git/GitHub logs
     * Begin subject line with a one-word component description followed by a colon (e.g. build, docs, layers, tests, etc.)
@@ -85,6 +88,8 @@ a good reason is "This violates the style guide, but it improves type safety."
     * Do not end the subject line with a period
     * Use the body to explain what and why vs. how
     * Use the imperative mode in the subject line. This just means to write it as a command (e.g. Fix the sprocket)
+
+`NOTE`: `scripts/check_code_format.py` will check your commit for you and is required for passing CI.
 
 Strive for commits that implement a single or related set of functionality, using as many commits as is necessary (more is better).
 That said, please ensure that the repository compiles and passes tests without error for each commit in your pull request.  Note
@@ -112,6 +117,7 @@ if (render_pass == VK_NULL_HANDLE) {
 ```
 
 #### **Testing Your Changes**
+
 * Run the included layer validation tests (`vk_layer_validation_tests`) in the repository before and after each of your commits to check for any regressions.
 
 * Write additional layer validation tests that explicitly exercise your changes.
@@ -120,6 +126,7 @@ if (render_pass == VK_NULL_HANDLE) {
 
 * [How to setup tests to run](./tests) and [overview for creating tests](docs/creating_tests.md).
 
+`TIP`: It's ideal to test your changes in a fork and let Github Actions verify your changes before making a PR.
 
 #### **Special Considerations for Validation Layers**
 * **Validation Checks:**  Validation checks are carried out by the Khronos Validation layer. The CoreChecks validation object
