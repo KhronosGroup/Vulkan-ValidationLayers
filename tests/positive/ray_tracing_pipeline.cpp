@@ -30,8 +30,8 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-    VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -137,8 +137,8 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-    VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 

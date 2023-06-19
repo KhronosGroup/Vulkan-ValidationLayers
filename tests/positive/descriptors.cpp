@@ -376,7 +376,7 @@ TEST_F(PositiveDescriptors, PushDescriptorUnboundSet) {
            x = vec4(bar1.x) + vec4(bar2.y);
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -493,7 +493,7 @@ TEST_F(PositiveDescriptors, BindingPartiallyBound) {
     )glsl";
 
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
@@ -572,7 +572,7 @@ TEST_F(PositiveDescriptors, PushDescriptorSetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         VkPipelineObj &pipe = pipe0;
         pipe.SetViewport(m_viewports);
@@ -610,7 +610,7 @@ TEST_F(PositiveDescriptors, PushDescriptorSetUpdatingSetNumber) {
             }
         )glsl";
 
-        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         VkPipelineObj &pipe = pipe1;
         pipe.SetViewport(m_viewports);
@@ -696,7 +696,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
            x = vec4(bar1.y) + vec4(bar2.y);
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
@@ -1124,7 +1124,7 @@ TEST_F(PositiveDescriptors, tImageViewAsDescriptorReadAndInputAttachment) {
             }
         )glsl";
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
@@ -1375,7 +1375,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
         vec4 color = subpassLoad(x);
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -1458,8 +1458,8 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         vk_testing::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderObj fs(this, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
         pipeline_layout_ci.setLayoutCount = 1;

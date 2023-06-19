@@ -474,8 +474,8 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
     err = vk::CreateRenderPass(device(), &rp_info, NULL, &rp);
     ASSERT_VK_SUCCESS(err);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
@@ -768,7 +768,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
         }
     )glsl";
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create descriptor set and friends.

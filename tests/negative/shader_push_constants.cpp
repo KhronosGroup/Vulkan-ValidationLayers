@@ -181,7 +181,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     )glsl";
 
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};

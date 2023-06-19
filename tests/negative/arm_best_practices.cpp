@@ -919,10 +919,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     CreatePipelineHelper graphics_pipeline(*this);
 
-    graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
-    graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
+    graphics_pipeline.vs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT));
+    graphics_pipeline.fs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
@@ -1027,10 +1025,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
 
     CreatePipelineHelper graphics_pipeline(*this);
 
-    graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
-    graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
+    graphics_pipeline.vs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT));
+    graphics_pipeline.fs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1137,10 +1133,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
 
     CreatePipelineHelper graphics_pipeline(*this);
 
-    graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
-    graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
+    graphics_pipeline.vs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT));
+    graphics_pipeline.fs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1250,10 +1244,8 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
 
     CreatePipelineHelper graphics_pipeline(*this);
 
-    graphics_pipeline.vs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
-    graphics_pipeline.fs_ =
-        std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
+    graphics_pipeline.vs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT));
+    graphics_pipeline.fs_ = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
 
     graphics_pipeline.dsl_bindings_.resize(2);

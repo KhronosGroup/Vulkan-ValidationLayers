@@ -476,8 +476,8 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     auto fbci = LvlInitStruct<VkFramebufferCreateInfo>(nullptr, 0u, rp.handle(), 1u, &imageView, 32u, 32u, 1u);
     vk_testing::Framebuffer fb(*m_device, fbci);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
     pipe.AddShader(&vs);
@@ -645,7 +645,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     vk_testing::Sampler sampler(*m_device, sampler_info);
     ASSERT_TRUE(sampler.initialized());
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     {
         // input index is wrong, it doesn't exist in supbass input attachments and the set and binding is undefined
@@ -1264,7 +1264,7 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
                OpFunctionEnd
     )";
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
 
     VkPipelineObj pipe(m_device);

@@ -410,7 +410,7 @@ TEST_F(NegativeSampler, ImageViewFormatUnsupportedFilter) {
         pipe.InitInfo();
 
         if (test_struct.format_type == FLOAT) {
-            fs = new VkShaderObj(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+            fs = new VkShaderObj(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
         } else if (test_struct.format_type == SINT) {
             fs = new VkShaderObj(this, bindStateFragiSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
         } else if (test_struct.format_type == UINT) {
@@ -493,7 +493,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     VkImageView view = test_image.targetView(image_info.format);
 
     CreatePipelineHelper pipe(*this);
-    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     pipe.InitInfo();
 
@@ -867,7 +867,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
            x = texture(s, vec2(1));
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -912,7 +912,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
         }
     }
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -1013,7 +1013,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
         }
     }
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const char fsSource[] = R"glsl(
         #version 450
@@ -1113,7 +1113,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     const char fsSource[] = R"glsl(
@@ -1183,7 +1183,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     const char fsSource[] = R"glsl(
@@ -1259,7 +1259,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     // layout (set = 0, binding = 0) uniform sampler2D tex[2];
     // void main() {
     //     vec4 x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));

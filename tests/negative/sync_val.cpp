@@ -1612,7 +1612,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vbo.init(*m_device, vbo.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
     vbo2.init(*m_device, vbo2.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
@@ -2654,7 +2654,7 @@ struct CreateRenderPassHelper {
 
     void InitPipelineHelper(CreatePipelineHelper& g_pipe) {
         g_pipe.InitInfo();
-        g_pipe.ResetShaderInfo(bindStateVertShaderText, bindStateFragSubpassLoadInputText);
+        g_pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
         g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe.gp_ci_.renderPass = render_pass->handle();
         g_pipe.InitState();
@@ -2682,8 +2682,8 @@ struct SyncTestPipeline {
         : test(test_),
           rp(rp_),
           g_pipe(test),
-          vs(&test, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT),
-          fs(&test, bindStateFragSubpassLoadInputText, VK_SHADER_STAGE_FRAGMENT_BIT),
+          vs(&test, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT),
+          fs(&test, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT),
           sampler_info(SafeSaneSamplerCreateInfo()),
           sampler() {}
     void InitState() {
@@ -3072,8 +3072,8 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler.init(*m_device, sampler_info);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, bindStateFragSubpassLoadInputText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkClearValue clear = {};
     clear.color = m_clear_color;
@@ -4296,7 +4296,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     vbo.init(*m_device, vbo.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
     vbo2.init(*m_device, vbo2.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
 
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);

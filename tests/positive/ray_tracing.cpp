@@ -160,8 +160,8 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
     {
         const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
-        VkShaderObj rgen_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-        VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+        VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+        VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
         const VkPipelineLayoutObj pipeline_layout(m_device, {});
 

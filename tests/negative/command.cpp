@@ -981,7 +981,7 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
            color = texture(s, vec3(0));
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
@@ -1034,7 +1034,7 @@ TEST_F(NegativeCommand, DrawTimeImageMultisampleMismatchWithPipeline) {
            color = texelFetch(s, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
@@ -1086,7 +1086,7 @@ TEST_F(NegativeCommand, DrawTimeImageComponentTypeMismatchWithPipeline) {
            color = texelFetch(s, ivec2(0), 0);
         }
     )glsl";
-    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPipelineObj pipe(m_device);
@@ -5588,7 +5588,7 @@ TEST_F(NegativeCommand, FilterCubicSamplerInCmdDraw) {
     sampler_ci.pNext = &reduction_mode_ci;
     vk_testing::Sampler sampler_reduction(*m_device, sampler_ci);
 
-    VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();

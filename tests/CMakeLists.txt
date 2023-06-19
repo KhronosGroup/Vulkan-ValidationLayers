@@ -24,6 +24,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/layer_validation_tests.h
     framework/layer_validation_tests.cpp
     framework/test_common.h
+    framework/shader_templates.h
     framework/error_monitor.cpp
     framework/error_monitor.h
     framework/video_objects.h
