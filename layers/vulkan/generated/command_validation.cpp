@@ -19,6 +19,7 @@
 * limitations under the License.
 ****************************************************************************/
 
+// NOLINTBEGIN
 #include "error_message/logging.h"
 #include "core_checks/core_validation.h"
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{
@@ -1295,3 +1296,4 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cm
 
     return skip;
 }
+// NOLINTEND

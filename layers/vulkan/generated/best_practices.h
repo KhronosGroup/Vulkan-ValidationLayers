@@ -1,27 +1,29 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See best_practices_generator.py for modifications
 
-
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
-
+// NOLINTBEGIN
+#pragma once
+#include <vulkan/vulkan_core.h>
+#include "containers/custom_containers.h"
 void PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -683,7 +685,6 @@ void PostCallRecordCreateSharedSwapchainsKHR(
 
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-
 void PostCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
@@ -691,11 +692,9 @@ void PostCallRecordCreateXlibSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_XLIB_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-
 void PostCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
@@ -703,11 +702,9 @@ void PostCallRecordCreateXcbSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-
 void PostCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
@@ -715,11 +712,9 @@ void PostCallRecordCreateWaylandSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 void PostCallRecordCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
@@ -727,18 +722,15 @@ void PostCallRecordCreateAndroidSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -811,25 +803,21 @@ void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
     VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -849,23 +837,19 @@ void PostCallRecordGetMemoryFdPropertiesKHR(
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -905,23 +889,19 @@ void PostCallRecordGetSwapchainStatusKHR(
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1105,18 +1085,15 @@ void PostCallRecordMapMemory2KHR(
 
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR*     pQualityLevelProperties,
     VkResult                                    result) override;
 
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordGetEncodedVideoSessionParametersKHR(
     VkDevice                                    device,
     const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
@@ -1124,7 +1101,6 @@ void PostCallRecordGetEncodedVideoSessionParametersKHR(
     size_t*                                     pDataSize,
     void*                                       pData,
     VkResult                                    result) override;
-
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -1190,14 +1166,12 @@ void PostCallRecordGetShaderInfoAMD(
 
 
 #ifdef VK_USE_PLATFORM_GGP
-
 void PostCallRecordCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_GGP
 
@@ -1214,7 +1188,6 @@ void PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
@@ -1222,11 +1195,9 @@ void PostCallRecordGetMemoryWin32HandleNV(
     HANDLE*                                     pHandle,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_VI_NN
-
 void PostCallRecordCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
@@ -1234,29 +1205,24 @@ void PostCallRecordCreateViSurfaceNN(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_VI_NN
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
 void PostCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     VkDisplayKHR                                display,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
 void PostCallRecordGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     RROutput                                    rrOutput,
     VkDisplayKHR*                               pDisplay,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -1315,7 +1281,6 @@ void PostCallRecordGetPastPresentationTimingGOOGLE(
 
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
-
 void PostCallRecordCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
@@ -1323,18 +1288,15 @@ void PostCallRecordCreateIOSSurfaceMVK(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_IOS_MVK
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
-
 void PostCallRecordCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
@@ -1359,24 +1321,20 @@ void PostCallRecordCreateDebugUtilsMessengerEXT(
 
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
     VkAndroidHardwareBufferPropertiesANDROID*   pProperties,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
     struct AHardwareBuffer**                    pBuffer,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -1523,7 +1481,6 @@ void PostCallRecordGetPerformanceParameterINTEL(
 
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
@@ -1531,18 +1488,15 @@ void PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 void PostCallRecordCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_METAL_EXT
 
@@ -1568,7 +1522,6 @@ void PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinations
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
@@ -1576,37 +1529,30 @@ void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPresentModeKHR*                           pPresentModes,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     VkDeviceGroupPresentModeFlagsKHR*           pModes,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1707,28 +1653,23 @@ void PostCallRecordGetDeviceFaultInfoEXT(
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordAcquireWinrtDisplayNV(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void PostCallRecordGetWinrtDisplayNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    deviceRelativeId,
     VkDisplayKHR*                               pDisplay,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-
 void PostCallRecordCreateDirectFBSurfaceEXT(
     VkInstance                                  instance,
     const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
@@ -1736,22 +1677,18 @@ void PostCallRecordCreateDirectFBSurfaceEXT(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordGetMemoryZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
@@ -1759,32 +1696,26 @@ void PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkMemoryZirconHandlePropertiesFUCHSIA*      pMemoryZirconHandleProperties,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
     zx_handle_t*                                pZirconHandle,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordCreateBufferCollectionFUCHSIA(
     VkDevice                                    device,
     const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
@@ -1792,39 +1723,32 @@ void PostCallRecordCreateBufferCollectionFUCHSIA(
     VkBufferCollectionFUCHSIA*                  pCollection,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
     const VkImageConstraintsInfoFUCHSIA*        pImageConstraintsInfo,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
     const VkBufferConstraintsInfoFUCHSIA*       pBufferConstraintsInfo,
     VkResult                                    result) override;
 
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void PostCallRecordGetBufferCollectionPropertiesFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
     VkBufferCollectionPropertiesFUCHSIA*        pProperties,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
@@ -1850,14 +1774,12 @@ void PostCallRecordGetPipelinePropertiesEXT(
 
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 void PostCallRecordCreateScreenSurfaceQNX(
     VkInstance                                  instance,
     const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -1960,13 +1882,11 @@ void PostCallRecordGetFramebufferTilePropertiesQCOM(
 
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 void PostCallRecordGetScreenBufferPropertiesQNX(
     VkDevice                                    device,
     const struct _screen_buffer*                buffer,
     VkScreenBufferPropertiesQNX*                pProperties,
     VkResult                                    result) override;
-
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
@@ -2041,138 +1961,135 @@ void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkResult                                    result) override;
 
 
-
-
-
-
 const vvl::unordered_map<std::string, DeprecationData>  deprecated_extensions = {
-    {"VK_AMD_draw_indirect_count", {kExtPromoted, "VK_KHR_draw_indirect_count"}},
-    {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
-    {"VK_AMD_gpu_shader_int16", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
-    {"VK_AMD_negative_viewport_height", {kExtObsoleted, "VK_KHR_maintenance1"}},
-    {"VK_ARM_rasterization_order_attachment_access", {kExtPromoted, "VK_EXT_rasterization_order_attachment_access"}},
-    {"VK_EXT_4444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_buffer_device_address", {kExtDeprecated, "VK_KHR_buffer_device_address"}},
-    {"VK_EXT_debug_marker", {kExtPromoted, "VK_EXT_debug_utils"}},
-    {"VK_EXT_debug_report", {kExtDeprecated, "VK_EXT_debug_utils"}},
-    {"VK_EXT_descriptor_indexing", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_extended_dynamic_state", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_extended_dynamic_state2", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_global_priority", {kExtPromoted, "VK_KHR_global_priority"}},
-    {"VK_EXT_global_priority_query", {kExtPromoted, "VK_KHR_global_priority"}},
-    {"VK_EXT_host_query_reset", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_image_robustness", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_inline_uniform_block", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_pipeline_creation_cache_control", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_pipeline_creation_feedback", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_private_data", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_sampler_filter_minmax", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_scalar_block_layout", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_separate_stencil_usage", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_shader_demote_to_helper_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_shader_subgroup_ballot", {kExtDeprecated, "VK_VERSION_1_2"}},
-    {"VK_EXT_shader_subgroup_vote", {kExtDeprecated, "VK_VERSION_1_1"}},
-    {"VK_EXT_shader_viewport_index_layer", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_EXT_subgroup_size_control", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_texel_buffer_alignment", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_texture_compression_astc_hdr", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_tooling_info", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_EXT_validation_flags", {kExtDeprecated, "VK_EXT_validation_features"}},
-    {"VK_EXT_ycbcr_2plane_444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_IMG_format_pvrtc", {kExtDeprecated, ""}},
-    {"VK_KHR_16bit_storage", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_8bit_storage", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_bind_memory2", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_buffer_device_address", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_copy_commands2", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_create_renderpass2", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_dedicated_allocation", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_depth_stencil_resolve", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_descriptor_update_template", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_device_group", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_device_group_creation", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_draw_indirect_count", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_driver_properties", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_dynamic_rendering", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_external_fence", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_external_fence_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_external_memory", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_external_memory_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_external_semaphore", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_external_semaphore_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_format_feature_flags2", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_get_memory_requirements2", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_get_physical_device_properties2", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_image_format_list", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_imageless_framebuffer", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_maintenance1", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_maintenance2", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_maintenance3", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_maintenance4", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_multiview", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_relaxed_block_layout", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_sampler_mirror_clamp_to_edge", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_sampler_ycbcr_conversion", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_separate_depth_stencil_layouts", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_shader_atomic_int64", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_dynamic_rendering", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_multiview", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_get_physical_device_properties2", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_device_group", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_shader_draw_parameters", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_maintenance1", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_device_group_creation", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_external_memory_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_external_memory", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_external_semaphore_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_external_semaphore", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_shader_float16_int8", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_shader_float_controls", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_shader_integer_dot_product", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_shader_non_semantic_info", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_16bit_storage", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_descriptor_update_template", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_imageless_framebuffer", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_create_renderpass2", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_external_fence_capabilities", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_external_fence", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_maintenance2", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_variable_pointers", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_dedicated_allocation", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_storage_buffer_storage_class", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_relaxed_block_layout", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_get_memory_requirements2", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_image_format_list", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_sampler_ycbcr_conversion", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_bind_memory2", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_maintenance3", {kExtPromoted, "VK_VERSION_1_1"}},
+    {"VK_KHR_draw_indirect_count", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_shader_subgroup_extended_types", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_8bit_storage", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_shader_atomic_int64", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_driver_properties", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_shader_float_controls", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_depth_stencil_resolve", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_timeline_semaphore", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_vulkan_memory_model", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_shader_terminate_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_spirv_1_4", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_storage_buffer_storage_class", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_synchronization2", {kExtPromoted, "VK_VERSION_1_3"}},
-    {"VK_KHR_timeline_semaphore", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_separate_depth_stencil_layouts", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_uniform_buffer_standard_layout", {kExtPromoted, "VK_VERSION_1_2"}},
-    {"VK_KHR_variable_pointers", {kExtPromoted, "VK_VERSION_1_1"}},
-    {"VK_KHR_vulkan_memory_model", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_buffer_device_address", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_KHR_shader_integer_dot_product", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_shader_non_semantic_info", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_synchronization2", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_KHR_zero_initialize_workgroup_memory", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_copy_commands2", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_format_feature_flags2", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_KHR_maintenance4", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_debug_report", {kExtDeprecated, "VK_EXT_debug_utils"}},
+    {"VK_NV_glsl_shader", {kExtDeprecated, ""}},
+    {"VK_EXT_debug_marker", {kExtPromoted, "VK_EXT_debug_utils"}},
+    {"VK_NV_dedicated_allocation", {kExtDeprecated, "VK_KHR_dedicated_allocation"}},
+    {"VK_AMD_draw_indirect_count", {kExtPromoted, "VK_KHR_draw_indirect_count"}},
+    {"VK_AMD_negative_viewport_height", {kExtObsoleted, "VK_KHR_maintenance1"}},
+    {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
+    {"VK_IMG_format_pvrtc", {kExtDeprecated, ""}},
+    {"VK_NV_external_memory_capabilities", {kExtDeprecated, "VK_KHR_external_memory_capabilities"}},
+    {"VK_NV_external_memory", {kExtDeprecated, "VK_KHR_external_memory"}},
+    {"VK_NV_external_memory_win32", {kExtDeprecated, "VK_KHR_external_memory_win32"}},
+    {"VK_NV_win32_keyed_mutex", {kExtPromoted, "VK_KHR_win32_keyed_mutex"}},
+    {"VK_EXT_validation_flags", {kExtDeprecated, "VK_EXT_validation_features"}},
+    {"VK_EXT_shader_subgroup_ballot", {kExtDeprecated, "VK_VERSION_1_2"}},
+    {"VK_EXT_shader_subgroup_vote", {kExtDeprecated, "VK_VERSION_1_1"}},
+    {"VK_EXT_texture_compression_astc_hdr", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_MVK_ios_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
     {"VK_MVK_macos_surface", {kExtDeprecated, "VK_EXT_metal_surface"}},
-    {"VK_NV_dedicated_allocation", {kExtDeprecated, "VK_KHR_dedicated_allocation"}},
-    {"VK_NV_external_memory", {kExtDeprecated, "VK_KHR_external_memory"}},
-    {"VK_NV_external_memory_capabilities", {kExtDeprecated, "VK_KHR_external_memory_capabilities"}},
-    {"VK_NV_external_memory_win32", {kExtDeprecated, "VK_KHR_external_memory_win32"}},
+    {"VK_EXT_sampler_filter_minmax", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_AMD_gpu_shader_int16", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
+    {"VK_EXT_inline_uniform_block", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_descriptor_indexing", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_shader_viewport_index_layer", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_global_priority", {kExtPromoted, "VK_KHR_global_priority"}},
+    {"VK_EXT_pipeline_creation_feedback", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_NV_fragment_shader_barycentric", {kExtPromoted, "VK_KHR_fragment_shader_barycentric"}},
-    {"VK_NV_glsl_shader", {kExtDeprecated, ""}},
-    {"VK_NV_win32_keyed_mutex", {kExtPromoted, "VK_KHR_win32_keyed_mutex"}},
+    {"VK_EXT_scalar_block_layout", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_subgroup_size_control", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_buffer_device_address", {kExtDeprecated, "VK_KHR_buffer_device_address"}},
+    {"VK_EXT_tooling_info", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_separate_stencil_usage", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_host_query_reset", {kExtPromoted, "VK_VERSION_1_2"}},
+    {"VK_EXT_extended_dynamic_state", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_shader_demote_to_helper_invocation", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_texel_buffer_alignment", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_private_data", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_pipeline_creation_cache_control", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_ycbcr_2plane_444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_image_robustness", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_4444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_ARM_rasterization_order_attachment_access", {kExtPromoted, "VK_EXT_rasterization_order_attachment_access"}},
     {"VK_VALVE_mutable_descriptor_type", {kExtPromoted, "VK_EXT_mutable_descriptor_type"}},
+    {"VK_EXT_extended_dynamic_state2", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_EXT_global_priority_query", {kExtPromoted, "VK_KHR_global_priority"}},
 };
 
 const vvl::unordered_map<std::string, std::string> special_use_extensions = {
-    {"VK_AMD_buffer_marker", "devtools"},
-    {"VK_AMD_shader_info", "devtools"},
-    {"VK_EXT_border_color_swizzle", "glemulation, d3demulation"},
-    {"VK_EXT_custom_border_color", "glemulation, d3demulation"},
-    {"VK_EXT_debug_marker", "debugging"},
-    {"VK_EXT_debug_report", "debugging"},
-    {"VK_EXT_debug_utils", "debugging"},
-    {"VK_EXT_depth_bias_control", "d3demulation"},
-    {"VK_EXT_depth_clip_control", "glemulation"},
-    {"VK_EXT_depth_clip_enable", "d3demulation"},
-    {"VK_EXT_device_address_binding_report", "debugging, devtools"},
-    {"VK_EXT_device_memory_report", "devtools"},
-    {"VK_EXT_image_2d_view_of_3d", "glemulation"},
-    {"VK_EXT_image_sliced_view_of_3d", "d3demulation"},
-    {"VK_EXT_legacy_dithering", "glemulation"},
-    {"VK_EXT_line_rasterization", "cadsupport"},
-    {"VK_EXT_mutable_descriptor_type", "d3demulation"},
-    {"VK_EXT_non_seamless_cube_map", "d3demulation, glemulation"},
-    {"VK_EXT_pipeline_creation_feedback", "devtools"},
-    {"VK_EXT_primitive_topology_list_restart", "glemulation"},
-    {"VK_EXT_primitives_generated_query", "glemulation"},
-    {"VK_EXT_provoking_vertex", "glemulation"},
-    {"VK_EXT_transform_feedback", "glemulation, d3demulation, devtools"},
-    {"VK_EXT_validation_features", "debugging"},
-    {"VK_EXT_validation_flags", "debugging"},
-    {"VK_GOOGLE_surfaceless_query", "glemulation"},
-    {"VK_INTEL_performance_query", "devtools"},
     {"VK_KHR_performance_query", "devtools"},
     {"VK_KHR_pipeline_executable_properties", "devtools"},
-    {"VK_VALVE_descriptor_set_host_mapping", "d3demulation"},
+    {"VK_EXT_debug_report", "debugging"},
+    {"VK_EXT_debug_marker", "debugging"},
+    {"VK_EXT_transform_feedback", "glemulation, d3demulation, devtools"},
+    {"VK_AMD_shader_info", "devtools"},
+    {"VK_EXT_validation_flags", "debugging"},
+    {"VK_EXT_depth_clip_enable", "d3demulation"},
+    {"VK_EXT_debug_utils", "debugging"},
+    {"VK_AMD_buffer_marker", "devtools"},
+    {"VK_EXT_pipeline_creation_feedback", "devtools"},
+    {"VK_INTEL_performance_query", "devtools"},
+    {"VK_EXT_validation_features", "debugging"},
+    {"VK_EXT_provoking_vertex", "glemulation"},
+    {"VK_EXT_line_rasterization", "cadsupport"},
+    {"VK_EXT_depth_bias_control", "d3demulation"},
+    {"VK_EXT_device_memory_report", "devtools"},
+    {"VK_EXT_custom_border_color", "glemulation, d3demulation"},
     {"VK_VALVE_mutable_descriptor_type", "d3demulation"},
+    {"VK_EXT_device_address_binding_report", "debugging, devtools"},
+    {"VK_EXT_depth_clip_control", "glemulation"},
+    {"VK_EXT_primitive_topology_list_restart", "glemulation"},
+    {"VK_EXT_primitives_generated_query", "glemulation"},
+    {"VK_EXT_image_2d_view_of_3d", "glemulation"},
+    {"VK_EXT_border_color_swizzle", "glemulation, d3demulation"},
+    {"VK_EXT_image_sliced_view_of_3d", "d3demulation"},
+    {"VK_VALVE_descriptor_set_host_mapping", "d3demulation"},
+    {"VK_EXT_non_seamless_cube_map", "d3demulation, glemulation"},
+    {"VK_GOOGLE_surfaceless_query", "glemulation"},
+    {"VK_EXT_legacy_dithering", "glemulation"},
+    {"VK_EXT_mutable_descriptor_type", "d3demulation"},
 };
 
+// NOLINTEND

@@ -63,6 +63,8 @@ class DynamicStateOutputGenerator(BaseGenerator):
         copyright += ' * limitations under the License.\n'
         copyright += ' ****************************************************************************/\n'
         self.write(copyright)
+
+        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
         if self.sourceFile:
             self.write('#include "core_checks/core_validation.h"')
             self.write(self.dynamicFunction())
@@ -70,6 +72,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
             self.write('#pragma once')
             self.write('#include <bitset>')
             self.write(self.dynamicTypeEnum())
+        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
     #
     # List the enum for the dynamic command buffer status flags

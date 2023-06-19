@@ -20,6 +20,7 @@
  * limitations under the License.
  ****************************************************************************/
 
+// NOLINTBEGIN
 #include "core_checks/core_validation.h"
 
 static VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {
@@ -342,3 +343,4 @@ std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states) {
     return ret;
 }
 
+// NOLINTEND
