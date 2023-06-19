@@ -89,7 +89,7 @@ class Command:
     successCodes: List[str]   # ex. [ 'VK_SUCCESS', 'VK_INCOMPLETE' ]
     errorCodes: List[str]     # ex. [ 'VK_ERROR_OUT_OF_HOST_MEMORY' ]
 
-    # The command can be inside either a primary or secondary command buffer
+    # Shows support if command can be in a primary and/or secondary command buffer
     primary: bool
     secondary: bool
 

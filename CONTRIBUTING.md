@@ -62,6 +62,8 @@ a good reason is "This violates the style guide, but it improves type safety."
 
 > New code should target the above Google style guide, avoid copying/pasting incorrectly formatted code.
 
+* For the [python generated code scripts](docs/generated_code.md), please follow the [python coding style guide](docs/python_scripts_code_style.md)
+
 * Run **clang-format** on your changes to maintain consistent formatting
     * There are `.clang-format` files present in the repository to define clang-format settings
       which are found and used automatically by clang-format.

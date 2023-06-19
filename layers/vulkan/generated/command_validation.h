@@ -19,6 +19,7 @@
 * limitations under the License.
 ****************************************************************************/
 
+// NOLINTBEGIN
 #pragma once
 #include <array>
 
@@ -506,3 +507,4 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList 
     "vkCmdDrawMeshTasksIndirectEXT",
     "vkCmdDrawMeshTasksIndirectCountEXT",
 }};
+// NOLINTEND

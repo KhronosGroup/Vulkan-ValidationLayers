@@ -55,11 +55,14 @@ class CommandValidationOutputGenerator(BaseGenerator):
 * limitations under the License.
 ****************************************************************************/\n'''
         self.write(copyright)
+        self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         if self.headerFile:
             self.generateHeader()
         else:
             self.generateSource()
+
+        self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
     def generateHeader(self):
         self.write('#pragma once')

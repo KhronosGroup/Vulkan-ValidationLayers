@@ -20,6 +20,7 @@
  * limitations under the License.
  ****************************************************************************/
 
+// NOLINTBEGIN
 #pragma once
 #include <bitset>
 
@@ -105,3 +106,4 @@ CBDynamicState ConvertToCBDynamicState(VkDynamicState dynamic_state);
 const char* DynamicStateToString(CBDynamicState dynamic_state);
 std::string DynamicStatesToString(CBDynamicFlags const &dynamic_states);
 
+// NOLINTEND

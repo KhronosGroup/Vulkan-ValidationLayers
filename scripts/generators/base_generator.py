@@ -123,7 +123,9 @@ class BaseGenerator(OutputGenerator):
         self.valid_vuids = set() # Set of all valid VUIDs
 
     def write(self, data):
-        write(data, file=self.outFile)
+        # Prevents having to check before writting
+        if data is not None and data != "":
+            write(data, file=self.outFile)
 
 
     def beginFile(self, genOpts):
