@@ -138,6 +138,11 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
                    "VK_EXT_shader_Object is enabled, but GPU-AV does not currently support validation of shader objects");
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
+        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+                   "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers");
+    }
+
     output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
 
     if (validate_descriptor_indexing) {
