@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass, field
+from enum import IntFlag, Enum, auto
 # Use the List and Dict types because support for default dict/list is
 # not supported until Python 3.9+
 from typing import List, Dict
@@ -54,6 +55,22 @@ class CommandParam:
     optional: bool
     noAutoValidity: bool
 
+class Queues(IntFlag):
+    TRANSFER = auto()       # VK_QUEUE_TRANSFER_BIT
+    GRAPHICS = auto()       # VK_QUEUE_GRAPHICS_BIT
+    COMPUTE = auto()        # VK_QUEUE_COMPUTE_BIT
+    PROTECTED = auto()      # VK_QUEUE_PROTECTED_BIT
+    SPARSE_BINDING = auto() # VK_QUEUE_SPARSE_BINDING_BIT
+    OPTICAL_FLOW = auto()   # VK_QUEUE_OPTICAL_FLOW_BIT_NV
+    DECODE = auto()         # VK_QUEUE_VIDEO_DECODE_BIT_KHR
+    ENCODE = auto()         # VK_QUEUE_VIDEO_ENCODE_BIT_KHR
+
+class CommandScope(Enum):
+    NONE = auto()
+    INSIDE = auto()
+    OUTSIDE = auto()
+    BOTH = auto()
+
 @dataclass(frozen=True)
 class Command:
     """<command>"""
@@ -68,16 +85,16 @@ class Command:
 
     api: List[str]            # ex. [ 'vulkan' ]
     tasks: List[str]          # ex. [ 'action', 'state', 'synchronization' ]
-    queues: List[str]         # ex. [ 'graphics', 'compute' ]
+    queues: Queues            # zero == No Queues found
     successCodes: List[str]   # ex. [ 'VK_SUCCESS', 'VK_INCOMPLETE' ]
     errorCodes: List[str]     # ex. [ 'VK_ERROR_OUT_OF_HOST_MEMORY' ]
 
     # The command can be inside either a primary or secondary command buffer
-    cmdBufferPrimary: bool
-    cmdBufferSecondary: bool
+    primary: bool
+    secondary: bool
 
-    renderPass: str  # 'inside' | 'outside' | 'both'
-    videoCoding: str # 'inside' | 'outside' | 'both'
+    renderPass: CommandScope
+    videoCoding: CommandScope
 
     params: List[CommandParam] # <command/param>
 
