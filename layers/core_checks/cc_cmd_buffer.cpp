@@ -578,7 +578,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         viewport_mask_ = primary_state->viewportMask | primary_state->viewportWithCountMask;
         scissor_mask_ = primary_state->scissorMask | primary_state->scissorWithCountMask;
 
-        for (uint32_t n = 0; n < kMaxViewports; ++n) {
+        for (uint32_t n = 0; n < primary_state->dynamic_state_value.viewports.size(); ++n) {
             uint32_t bit = uint32_t(1) << n;
             viewport_trashed_by_[n] = primary_state->trashedViewportMask & bit ? kTrashedByPrimary : kNotTrashed;
             scissor_trashed_by_[n] = primary_state->trashedScissorMask & bit ? kTrashedByPrimary : kNotTrashed;
@@ -619,7 +619,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         viewport_mask_ |= secondary_state->viewportMask | secondary_state->viewportWithCountMask;
         scissor_mask_ |= secondary_state->scissorMask | secondary_state->scissorWithCountMask;
 
-        for (uint32_t n = 0; n < kMaxViewports; ++n) {
+        for (uint32_t n = 0; n < secondary_state->dynamic_state_value.viewports.size(); ++n) {
             uint32_t bit = uint32_t(1) << n;
             if ((secondary_state->viewportMask | secondary_state->viewportWithCountMask) & bit) {
                 viewports_to_inherit_[n] = secondary_state->dynamic_state_value.viewports[n];
