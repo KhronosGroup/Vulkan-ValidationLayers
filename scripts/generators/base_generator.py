@@ -396,10 +396,13 @@ class BaseGenerator(OutputGenerator):
         packed = intIfGet(formatElem, 'packed')
         chroma = formatElem.get('chroma')
         compressed = formatElem.get('compressed')
+        spirvImageFormat = formatElem.find('spirvimageformat')
+        if spirvImageFormat is not None:
+            spirvImageFormat = spirvImageFormat.get('name')
 
         self.vk.formats[name] = Format(name, className, blockSize, texelsPerBlock,
                                        blockExtent, packed, chroma, compressed,
-                                       components, planes)
+                                       components, planes, spirvImageFormat)
 
     def genSyncStage(self, sync):
         OutputGenerator.genSyncStage(self, sync)
