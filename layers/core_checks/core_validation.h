@@ -1567,6 +1567,9 @@ class CoreChecks : public ValidationStateTracker {
                                              uint16_t lineStipplePattern) const override;
     bool PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                         float depthBiasSlopeFactor) const override;
+    bool ValidateDepthBiasRepresentationInfo(const char* caller, const LogObjectList& objlist,
+                                             const VkDepthBiasRepresentationInfoEXT& depth_bias_representation) const;
+    bool PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo) const override;
     bool PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) const override;
     bool PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) const override;
     bool PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,

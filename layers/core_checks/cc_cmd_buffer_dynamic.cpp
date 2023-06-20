@@ -600,11 +600,60 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETDEPTHBIAS, VK_TRUE, nullptr, nullptr);
-    if ((depthBiasClamp != 0.0) && (!enabled_features.core.depthBiasClamp)) {
+    if ((depthBiasClamp != 0.0) && !enabled_features.core.depthBiasClamp) {
         skip |= LogError(commandBuffer, "VUID-vkCmdSetDepthBias-depthBiasClamp-00790",
-                         "vkCmdSetDepthBias(): the depthBiasClamp device feature is disabled: the depthBiasClamp parameter must "
-                         "be set to 0.0.");
+                         "vkCmdSetDepthBias(): the depthBiasClamp device feature is disabled but depthBiasClamp is %f.",
+                         depthBiasClamp);
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateDepthBiasRepresentationInfo(const char *caller, const LogObjectList &objlist,
+                                                     const VkDepthBiasRepresentationInfoEXT &depth_bias_representation) const {
+    bool skip = false;
+
+    if ((depth_bias_representation.depthBiasRepresentation ==
+         VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT) &&
+        !enabled_features.depth_bias_control_features.leastRepresentableValueForceUnormRepresentation) {
+        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-leastRepresentableValueForceUnormRepresentation-08947",
+                         "%s: the "
+                         "VkPhysicalDeviceDepthBiasControlFeaturesEXT::leastRepresentableValueForceUnormRepresentation device "
+                         "feature is disabled but depthBiasRepresentation is %s.",
+                         caller, string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
+    }
+
+    if ((depth_bias_representation.depthBiasRepresentation == VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT) &&
+        !enabled_features.depth_bias_control_features.floatRepresentation) {
+        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948",
+                         "%s: the VkPhysicalDeviceDepthBiasControlFeaturesEXT::floatReprensentation "
+                         "device feature is disabled but depthBiasRepresentation is %s.",
+                         caller, string_VkDepthBiasRepresentationEXT(depth_bias_representation.depthBiasRepresentation));
+    }
+
+    if ((depth_bias_representation.depthBiasExact != VK_FALSE) && !enabled_features.depth_bias_control_features.depthBiasExact) {
+        skip |= LogError(objlist, "VUID-VkDepthBiasRepresentationInfoEXT-depthBiasExact-08949",
+                         "%s: the VkPhysicalDeviceDepthBiasControlFeaturesEXT::depthBiasExact device "
+                         "feature is disabled but depthBiasExact is %" PRIu32 ".",
+                         caller, depth_bias_representation.depthBiasExact);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT *pDepthBiasInfo) const {
+    bool skip = false;
+
+    if ((pDepthBiasInfo->depthBiasClamp != 0.0) && !enabled_features.core.depthBiasClamp) {
+        skip |= LogError(commandBuffer, "VUID-VkDepthBiasInfoEXT-depthBiasClamp-08950",
+                         "vkCmdSetDepthBias2EXT(): the depthBiasClamp device feature is disabled but depthBiasClamp is %f.",
+                         pDepthBiasInfo->depthBiasClamp);
+    }
+
+    if (const auto *depth_bias_representation = LvlFindInChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
+        skip |= ValidateDepthBiasRepresentationInfo("vkCmdSetDepthBias2EXT()", LogObjectList(commandBuffer),
+                                                    *depth_bias_representation);
+    }
+
     return skip;
 }
 
