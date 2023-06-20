@@ -203,6 +203,7 @@ class Format:
     compressed: str
     components: List[FormatComponent] # <format/component>
     planes: List[FormatPlane]  # <format/plane>
+    spirvImageFormat: str
 
 @dataclass(frozen=True)
 class SyncSupport:
