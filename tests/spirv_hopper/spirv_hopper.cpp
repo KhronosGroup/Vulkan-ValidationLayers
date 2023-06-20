@@ -366,10 +366,10 @@ bool Hopper::CreateGraphicsPipeline() {
     // Subpass and Renderpass
     {
         // Find all the attachments and create a Framebuffer and RenderPass
-        VkSubpassDescription subpass_dscription = {};
-        subpass_dscription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass_dscription.colorAttachmentCount = attachment_count;
-        subpass_dscription.pColorAttachments = color_attachment_references.data();
+        VkSubpassDescription subpass_description = {};
+        subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass_description.colorAttachmentCount = attachment_count;
+        subpass_description.pColorAttachments = color_attachment_references.data();
 
         // Create dummy input attachments if the shader requires input attachments.
         std::vector<VkAttachmentReference> input_attachment_reference;
@@ -378,15 +378,15 @@ bool Hopper::CreateGraphicsPipeline() {
             // input_attachment_reference.push_back({input_attachments[i].input_attachment_index, VK_IMAGE_LAYOUT_GENERAL});
             input_attachment_reference.push_back({0, VK_IMAGE_LAYOUT_GENERAL});
         }
-        subpass_dscription.inputAttachmentCount = static_cast<uint32_t>(input_attachment_reference.size());
-        subpass_dscription.pInputAttachments = input_attachment_reference.data();
+        subpass_description.inputAttachmentCount = static_cast<uint32_t>(input_attachment_reference.size());
+        subpass_description.pInputAttachments = input_attachment_reference.data();
 
         auto render_pass_info = LvlInitStruct<VkRenderPassCreateInfo>();
         render_pass_info.flags = 0;
         render_pass_info.attachmentCount = 1;
         render_pass_info.pAttachments = &vk.basic_attachment_description;
         render_pass_info.subpassCount = 1;
-        render_pass_info.pSubpasses = &subpass_dscription;
+        render_pass_info.pSubpasses = &subpass_description;
         render_pass_info.dependencyCount = 0;
         render_pass_info.pDependencies = nullptr;
         VK_SUCCESS(vk::CreateRenderPass(vk.device, &render_pass_info, nullptr, &render_pass));
@@ -423,23 +423,19 @@ bool Hopper::CreateGraphicsMeshPipeline() {
 
     // Renderpass
     {
-        color_attachment_references.resize(1);
-        color_attachment_references[0].attachment = 0;
-        color_attachment_references[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         // Find all the attachments and create a Framebuffer and RenderPass
-        VkSubpassDescription subpass_dscription = {};
-        subpass_dscription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass_dscription.colorAttachmentCount = 1;
-        subpass_dscription.pColorAttachments = color_attachment_references.data();
-        subpass_dscription.inputAttachmentCount = 0;  // inputAttachment only allowed in Frag
-        subpass_dscription.pResolveAttachments = nullptr;
-        subpass_dscription.pDepthStencilAttachment = nullptr;
+        VkSubpassDescription subpass_description = {};
+        subpass_description.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass_description.colorAttachmentCount = 0;
+        subpass_description.inputAttachmentCount = 0;  // inputAttachment only allowed in Frag
+        subpass_description.pResolveAttachments = nullptr;
+        subpass_description.pDepthStencilAttachment = nullptr;
         auto render_pass_info = LvlInitStruct<VkRenderPassCreateInfo>();
         render_pass_info.flags = 0;
         render_pass_info.attachmentCount = 1;
         render_pass_info.pAttachments = &vk.basic_attachment_description;
         render_pass_info.subpassCount = 1;
-        render_pass_info.pSubpasses = &subpass_dscription;
+        render_pass_info.pSubpasses = &subpass_description;
         render_pass_info.dependencyCount = 0;
         render_pass_info.pDependencies = nullptr;
         VK_SUCCESS(vk::CreateRenderPass(vk.device, &render_pass_info, nullptr, &render_pass));
@@ -452,8 +448,8 @@ bool Hopper::CreateGraphicsMeshPipeline() {
     pipeline_info.pVertexInputState = nullptr;
     pipeline_info.pInputAssemblyState = nullptr;
     pipeline_info.pTessellationState = nullptr;
-    pipeline_info.pViewportState = nullptr;
-    pipeline_info.pRasterizationState = nullptr;
+    pipeline_info.pViewportState = &vk.viewport_input_state;
+    pipeline_info.pRasterizationState = &vk.rasterization_state;
     pipeline_info.pMultisampleState = &vk.multisample_state;
     pipeline_info.pDepthStencilState = nullptr;
     pipeline_info.pColorBlendState = nullptr;
