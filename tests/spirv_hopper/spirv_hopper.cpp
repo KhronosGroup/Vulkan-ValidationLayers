@@ -76,21 +76,21 @@ bool Hopper::Reflect() {
     shader_stage = static_cast<VkShaderStageFlagBits>(module.shader_stage);
 
     uint32_t count = 0;
-    REFLECT_SUCCESS(spvReflectEnumerateInputVariables(&module, &count, nullptr));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &count, nullptr));
     input_variables.resize(count);
-    REFLECT_SUCCESS(spvReflectEnumerateInputVariables(&module, &count, input_variables.data()));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &count, input_variables.data()));
 
-    REFLECT_SUCCESS(spvReflectEnumerateOutputVariables(&module, &count, nullptr));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &count, nullptr));
     output_variables.resize(count);
-    REFLECT_SUCCESS(spvReflectEnumerateOutputVariables(&module, &count, output_variables.data()));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &count, output_variables.data()));
 
-    REFLECT_SUCCESS(spvReflectEnumeratePushConstantBlocks(&module, &count, nullptr));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointPushConstantBlocks(&module, entry_point.name, &count, nullptr));
     push_constants.resize(count);
-    REFLECT_SUCCESS(spvReflectEnumeratePushConstantBlocks(&module, &count, push_constants.data()));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointPushConstantBlocks(&module, entry_point.name, &count, push_constants.data()));
 
-    REFLECT_SUCCESS(spvReflectEnumerateDescriptorSets(&module, &count, nullptr));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointDescriptorSets(&module, entry_point.name, &count, nullptr));
     descriptor_sets.resize(count);
-    REFLECT_SUCCESS(spvReflectEnumerateDescriptorSets(&module, &count, descriptor_sets.data()));
+    REFLECT_SUCCESS(spvReflectEnumerateEntryPointDescriptorSets(&module, entry_point.name, &count, descriptor_sets.data()));
     return true;
 }
 
