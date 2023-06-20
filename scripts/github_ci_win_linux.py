@@ -36,6 +36,7 @@ def Build(args):
         common_ci.BuildLoader()
         common_ci.BuildProfileLayer()
         common_ci.BuildMockICD()
+        common_ci.GetSpirvDatabase()
         common_ci.CheckVVL(config = config)
 
     except subprocess.CalledProcessError as proc_error:
@@ -60,6 +61,20 @@ def Test():
 
     sys.exit(0)
 
+def SpirvHopper():
+    try:
+        common_ci.RunSpirvHopper()
+
+    except subprocess.CalledProcessError as proc_error:
+        print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
+        sys.exit(proc_error.returncode)
+    except Exception as unknown_error:
+        print('An unknown error occured: %s', unknown_error)
+        sys.exit(1)
+
+    sys.exit(0)
+
+
 if __name__ == '__main__':
     parser = common_ci.GetArgParser()
     args = parser.parse_args()
@@ -68,3 +83,5 @@ if __name__ == '__main__':
         Build(args)
     if (args.test):
         Test()
+    if (args.hopper):
+        SpirvHopper()

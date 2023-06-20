@@ -51,3 +51,5 @@ target_link_libraries(spirv-hopper PRIVATE
     VkLayer_utils
     spirv-reflect
 )
+
+install(TARGETS spirv-hopper)

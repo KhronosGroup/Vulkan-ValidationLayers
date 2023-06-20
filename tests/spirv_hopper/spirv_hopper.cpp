@@ -59,18 +59,19 @@ bool Hopper::Reflect() {
     REFLECT_SUCCESS(spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NO_COPY, file_size, spirv_data, &module));
 
     if (module.entry_point_count == 0) {
-        std::cout << "WARNING: No entrypoint, no way to test\n";
+        if (kVerbose) std::cout << "WARNING: No entrypoint, no way to test\n";
         return true;
     } else if (module.entry_point_count > 1) {
         uint32_t shader_stage_set = 0x0;
         for (uint32_t i = 0; i < module.entry_point_count; i++) {
             if (shader_stage_set & module.entry_points[i].shader_stage) {
-                std::cout << "Warning: Can't handle duplicate Execution Modes in moudle, might have duplciated objects\n";
+                if (kVerbose)
+                    std::cout << "WARNING: Can't handle duplicate Execution Modes in moudle, might have duplciated objects\n";
             }
             shader_stage_set |= module.entry_points[i].shader_stage;
         }
         // TODO - Just take first entry point for now
-        std::cout << "WARNING: Only the first entry point modules is used\n";
+        if (kVerbose) std::cout << "WARNING: Only the first entry point modules is used\n";
     }
     entry_point = module.entry_points[0];
     shader_stage = static_cast<VkShaderStageFlagBits>(module.shader_stage);
@@ -503,14 +504,14 @@ bool Hopper::Run() {
         case VK_SHADER_STAGE_MISS_BIT_KHR:
         case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
         case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
-            std::cout << "Currently Ray Tracing stages not supported\n";
+            if (kVerbose) std::cout << "WARNING: Currently Ray Tracing stages not supported\n";
             break;
         case VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI:
         case VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI:
-            std::cout << "Currently Subpass Shading stages not supported\n";
+            if (kVerbose) std::cout << "WARNING: Currently Subpass Shading stages not supported\n";
             break;
         default:
-            std::cout << "Shader stage not found\n";
+            std::cout << "ERROR: Shader stage not found\n";
             return false;
             break;
     }

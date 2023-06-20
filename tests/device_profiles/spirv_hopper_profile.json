@@ -352,6 +352,7 @@
                     },
                     "limits": {
                         "bufferImageGranularity": 1024,
+                        "maxBoundDescriptorSets": 4294967000,
                         "maxClipDistances": 4294967000,
                         "maxColorAttachments": 4294967000,
                         "maxCombinedClipAndCullDistances": 4294967000,

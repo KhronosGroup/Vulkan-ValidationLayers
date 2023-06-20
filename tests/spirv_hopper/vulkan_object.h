@@ -12,6 +12,9 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 
+// TODO - Add proper logging system with args to toggle it
+constexpr static bool kVerbose = false;
+
 // Holds all Vulkan objects for the entire run
 struct VulkanInstance {
   public:

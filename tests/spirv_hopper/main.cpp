@@ -32,10 +32,10 @@ static bool IsValidSPIRV(size_t file_size, const char* spirv_data) {
 
 int main(int argc, char** argv) {
     if (argc != 2) {
-        std::cout << "Error:\n\tUsage: ./spirv-hopper [file | directory]\n";
+        std::cout << "ERROR:\n\tUsage: ./spirv-hopper [file | directory]\n";
         return EXIT_FAILURE;
     } else if (!std::filesystem::exists(argv[1])) {
-        std::cout << "Error: " << argv[1] << " Does not exists\n";
+        std::cout << "ERROR: " << argv[1] << " Does not exists\n";
         return EXIT_FAILURE;
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
         for (const auto& file : file_list) {
             std::ifstream spirv_file(file, std::ios::binary);
             if (!spirv_file.good()) {
-                std::cout << "Error: Unable to open the file " << file << "\n";
+                std::cout << "ERROR: Unable to open the file " << file << "\n";
                 failed_files.push_back(file);
                 continue;
             }
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
                 vk.is_valid = true;
                 Hopper hopper(vk, file_size, spirv_data.data());
 
-                std::cout << "[" << files_ran_count++ << "|" << files_list_count << "] Running " << file << "\n";
+                if (kVerbose) std::cout << "[" << files_ran_count++ << "|" << files_list_count << "] Running " << file << "\n";
 
                 if (!hopper.Run() || !vk.is_valid) {
                     failed_files.push_back(file);

@@ -102,6 +102,10 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+      - name: Test Vulkan-ValidationLayers - SPIRV-Hopper
+        run: python3 scripts/github_ci_win_linux.py --hopper
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/spirv_hopper_profile.json
 
   gn:
     runs-on: ubuntu-22.04

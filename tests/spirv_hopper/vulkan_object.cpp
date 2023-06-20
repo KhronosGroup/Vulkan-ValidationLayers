@@ -52,13 +52,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilMessengerCallback(VkDebugUtilsMessageSev
     } else if (callback_data->messageIdNumber == static_cast<int32_t>(0x4e2c336f)) {
         // TODO - When parsing Geometry shaders, the BuiltIn block might not be the default
         // block used in the Vertex Shader
-        std::cerr << callback_data->pMessage << "\n";
+        if (kVerbose) std::cerr << callback_data->pMessage << "\n";
     } else if (callback_data->messageIdNumber == static_cast<int32_t>(0x2a1bf17f)) {
         // spirv-val failed error message, don't quit, issue with SPIR-V or spirv-val
         // Usually the SPIR-V is just missing the OpCapability for what it is using
-        std::cerr << callback_data->pMessage << "\n";
+        if (kVerbose) std::cerr << callback_data->pMessage << "\n";
     } else {
-        std::cerr << callback_data->pMessage << "\n";
+        if (kVerbose) std::cerr << callback_data->pMessage << "\n";
         *(static_cast<bool *>(is_valid)) = false;
     }
     return VK_FALSE;

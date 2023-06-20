@@ -52,7 +52,7 @@ def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), co
 
 # Returns true if we are running in GitHub actions
 # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
-def IsGHA(): 
+def IsGHA():
     if 'GITHUB_ACTION' in os.environ:
         return True
     return False
@@ -221,11 +221,19 @@ def BuildProfileLayer():
     install_cmd = f'cmake --install {BUILD_DIR} --prefix {TEST_INSTALL_DIR}'
     RunShellCmd(install_cmd)
 
-#
-# Run the Layer Validation Tests
-def RunVVLTests():
-    print("Run VVL Tests using Mock ICD")
+def GetSpirvDatabase():
+    # Currentlly don't tests on Windows, so save time cloning
+    # Fails to clone also because "Filename too long" error
+    if IsWindows():
+        return
 
+    SD_DIR = RepoRelative("%s/SPIRV-Database" % EXTERNAL_DIR_NAME)
+    if not os.path.exists(SD_DIR):
+        print("Clone SPIRV-Database Repository")
+        clone_cmd = 'git clone https://github.com/LunarG/SPIRV-Database'
+        RunShellCmd(clone_cmd, EXTERNAL_DIR_NAME)
+
+def GetEnvironment() -> dict:
     lvt_env = dict(os.environ)
 
     # Because we installed everything to TEST_INSTALL_DIR all the libraries/json files are in pre-determined locations
@@ -254,6 +262,13 @@ def RunVVLTests():
         lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
 
     lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
+    return lvt_env
+
+#
+# Run the Layer Validation Tests
+def RunVVLTests():
+    print("Run VVL Tests using Mock ICD")
+    lvt_env = GetEnvironment()
 
     lvt_cmd = os.path.join(TEST_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
@@ -272,6 +287,13 @@ def RunVVLTests():
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING disabled", flush=True)
     lvt_env['VK_LAYER_FINE_GRAINED_LOCKING'] = '0'
     RunShellCmd(lvt_cmd + f' --gtest_filter=*Thread*:{failing_tsan_tests}', env=lvt_env)
+
+def RunSpirvHopper():
+    print("Run SPIR-V Hopper on the VVL")
+    lvt_env = GetEnvironment()
+    lvt_cmd = os.path.join(TEST_INSTALL_DIR, 'bin', 'spirv-hopper')
+    spirv_db = RepoRelative("%s/SPIRV-Database/vulkan" % EXTERNAL_DIR_NAME)
+    RunShellCmd(f"{lvt_cmd} {spirv_db}", env=lvt_env)
 
 def GetArgParser():
     configs = ['release', 'debug']
@@ -297,6 +319,9 @@ def GetArgParser():
     parser.add_argument(
         '--test', dest='test',
         action='store_true', help='Tests the layers')
+    parser.add_argument(
+        '--hopper', dest='hopper',
+        action='store_true', help='Run SPIRV-Hopper')
     parser.add_argument(
         '--osx', dest='osx', action='store',
         choices=osx_choices, default=osx_default,
