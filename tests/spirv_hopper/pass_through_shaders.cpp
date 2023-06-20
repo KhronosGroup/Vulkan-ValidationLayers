@@ -93,7 +93,7 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
             if (description.type_name != nullptr) {
                 return description.type_name;
             }
-            type += "UNKNOWN_TYPE";  // Unsupported type
+            type += "UNKNOWN_STRUCT_" + std::to_string(description.id);  // Unsupported type
             break;
     }
     return type;
@@ -102,14 +102,14 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
 std::string Hopper::DefineCustomStruct(SpvReflectInterfaceVariable& variable) {
     SpvReflectTypeDescription& description = *variable.type_description;
     std::string shader = "struct ";
-    shader += (description.type_name) ? description.type_name : "UNKNOWN_TYPE";
+    shader += (description.type_name) ? description.type_name : "UNKNOWN_STRUCT_" + std::to_string(description.id);
     shader += " {\n";
     for (uint32_t i = 0; i < description.member_count; i++) {
         shader += "\t";
         shader += GetTypeDescription(description.members[i], variable.members[i].format);
         shader += " ";
         shader += (description.members[i].struct_member_name) ? description.members[i].struct_member_name
-                                                              : "UNKNOWN_TYPE_MEMBER_" + std::to_string(i);
+                                                              : "UNKNOWN_MEMBER_" + std::to_string(i);
         for (uint32_t j = 0; j < description.members[i].traits.array.dims_count; j++) {
             shader += "[" + std::to_string(description.members[i].traits.array.dims[j]) + "]";
         }
