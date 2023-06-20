@@ -16,11 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import sys
+import json
 from generator import *
 from common_codegen import *
 
-# Temporary workaround for vkconventions python2 compatibility
-import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
 from vkconventions import VulkanConventions
 from generators.vulkan_object import *
 
@@ -50,18 +51,33 @@ def intIfGet(elem, name):
 def boolGet(elem, name):
     return elem.get(name) is None or elem.get(name) != "true"
 
+#
+# Walk the JSON-derived dict and find all "vuid" key values
+def ExtractVUIDs(vuid_dict):
+    if hasattr(vuid_dict, 'items'):
+        for key, value in vuid_dict.items():
+            if key == "vuid":
+                yield value
+            elif isinstance(value, dict):
+                for vuid in ExtractVUIDs(value):
+                    yield vuid
+            elif isinstance (value, list):
+                for listValue in value:
+                    for vuid in ExtractVUIDs(listValue):
+                        yield vuid
+
 # This Generator Option is used across all Validation Layer generators
 # After years of use, it has shown that all the options are unified across each generator (file)
 # as it is easier to modifiy things per-file that need the difference
 class BaseGeneratorOptions(GeneratorOptions):
     def __init__(self,
-                 filename = None,
-                 helper_file_type = '',
-                 valid_usage_path = '',
-                 lvt_file_type = '',
-                 mergeApiNames = None,
-                 warnExtensions = [],
-                 grammar = None):
+                 filename: str = None,
+                 helper_file_type: str = None,
+                 valid_usage_path: str = None,
+                 lvt_file_type: str = None,
+                 mergeApiNames: str = None,
+                 warnExtensions: list = [],
+                 grammar: str = None):
         GeneratorOptions.__init__(self,
                 conventions = vulkanConventions,
                 filename = filename,
@@ -83,8 +99,8 @@ class BaseGeneratorOptions(GeneratorOptions):
         self.filename = filename
         self.helper_file_type = helper_file_type
         self.valid_usage_path = valid_usage_path
-        self.lvt_file_type =  lvt_file_type
-        self.warnExtensions    = warnExtensions
+        self.lvt_file_type = lvt_file_type
+        self.warnExtensions = warnExtensions
         self.grammar = grammar
 
 #
@@ -98,21 +114,17 @@ class BaseGenerator(OutputGenerator):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         self.vk = VulkanObject()
 
-        # Data from the generator options
-        self.filename = None
-        self.helper_file_type = ''
-        self.valid_usage_path = ''
-        self.lvt_file_type =  ''
-        self.warnExtensions = []
-        self.grammar = None
-
         # Needed because beginFeature()/endFeatures() wraps all
         # the genCmd() calls that are created with a given
         # Version or Extension
         self.currentFeature = None
 
+        # These are custom fields for the Validation Layers
+        self.valid_vuids = set() # Set of all valid VUIDs
+
     def write(self, data):
         write(data, file=self.outFile)
+
 
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
@@ -123,6 +135,21 @@ class BaseGenerator(OutputGenerator):
         self.lvt_file_type = genOpts.lvt_file_type
         self.warnExtensions = genOpts.warnExtensions
         self.grammar = genOpts.grammar
+
+        # Build a set of all vuid text strings found in validusage.json
+        if self.valid_usage_path is not None:
+            vu_json_filename = os.path.join(self.valid_usage_path, 'validusage.json')
+            if not os.path.isfile(vu_json_filename):
+                print(f'Error: Could not find, or error loading {vu_json_filename}')
+                sys.exit(1)
+            json_file = open(vu_json_filename, 'r', encoding='utf-8')
+            vuid_dict = json.load(json_file)
+            json_file.close()
+            if len(vuid_dict) == 0:
+                print(f'Error: Failed to load {vu_json_filename}')
+                sys.exit(1)
+            for json_vuid_string in ExtractVUIDs(vuid_dict):
+                self.valid_vuids.add(json_vuid_string)
 
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
@@ -188,14 +215,29 @@ class BaseGenerator(OutputGenerator):
         alias = attrib.get('alias')
         api = splitIfGet(attrib, 'api')
         tasks = splitIfGet(attrib, 'tasks')
-        queues = splitIfGet(attrib, 'queues')
+
+        queues = 0
+        queues_list = splitIfGet(attrib, 'queues')
+        if queues_list is not None:
+            queues |= Queues.TRANSFER if 'transfer' in queues_list else 0
+            queues |= Queues.GRAPHICS if 'graphics' in queues_list else 0
+            queues |= Queues.COMPUTE if 'compute' in queues_list else 0
+            queues |= Queues.PROTECTED if 'protected' in queues_list else 0
+            queues |= Queues.SPARSE_BINDING if 'sparse_binding' in queues_list else 0
+            queues |= Queues.OPTICAL_FLOW if 'opticalflow' in queues_list else 0
+            queues |= Queues.DECODE if 'decode' in queues_list else 0
+            queues |= Queues.ENCODE if 'encode' in queues_list else 0
+
         successcodes = splitIfGet(attrib, 'successcodes')
         errorcodes = splitIfGet(attrib, 'errorcodes')
         cmdbufferlevel = attrib.get('cmdbufferlevel')
-        cmdBufferPrimary = cmdbufferlevel is not None and 'primary' in cmdbufferlevel
-        cmdBufferSecondary = cmdbufferlevel is not None and 'secondary' in cmdbufferlevel
+        primary = cmdbufferlevel is not None and 'primary' in cmdbufferlevel
+        secondary = cmdbufferlevel is not None and 'secondary' in cmdbufferlevel
+
         renderpass = attrib.get('renderpass')
+        renderpass = CommandScope.NONE if renderpass is None else getattr(CommandScope, renderpass.upper())
         videocoding = attrib.get('videocoding')
+        videocoding = CommandScope.NONE if videocoding is None else getattr(CommandScope, videocoding.upper())
 
         protoElem = cmdinfo.elem.find('proto')
         returnType = textIfFind(protoElem, 'type')
@@ -217,9 +259,8 @@ class BaseGenerator(OutputGenerator):
 
         self.vk.commands[name] = Command(name, alias, self.currentFeature, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
-                                         cmdBufferPrimary, cmdBufferSecondary,
-                                        renderpass, videocoding, params, cPrototype,
-                                        cFunctionPointer)
+                                         primary, secondary, renderpass, videocoding,
+                                         params, cPrototype, cFunctionPointer)
 
     #
     # List the enum for the commands
