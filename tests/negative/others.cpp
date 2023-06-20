@@ -2848,30 +2848,23 @@ TEST_F(VkLayerTest, InstanceCreateEnumeratePortability) {
     TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
 
     auto ici = GetInstanceCreateInfo();
-    ici.enabledExtensionCount = 0;      // Must whip out to get the error
-    ici.ppEnabledExtensionNames = nullptr;
     ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    
+    ici.enabledExtensionCount = 0;
     VkInstance local_instance = VK_NULL_HANDLE;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
-    vk::CreateInstance(&ici, nullptr, &local_instance);
-    m_errorMonitor->VerifyFound();
-
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-//        std::vector<const char *> enabled_extensions;
-//        for (uint32_t i = 0; i < ici.enabledExtensionCount; ++i) {
-//            enabled_extensions.push_back(ici.ppEnabledExtensionNames[i]);
-//        }
-//        enabled_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-//
-//        ici.enabledExtensionCount++;
-        //ici.ppEnabledExtensionNames = enabled_extensions.data();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-flags-06559");
+        vk::CreateInstance(&ici, nullptr, &local_instance);
+        m_errorMonitor->VerifyFound();
+        printf("Local instance handle == %d\n", local_instance);
+    }
+    
+    if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
         std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
         ici.enabledExtensionCount = 1;
         ici.ppEnabledExtensionNames = enabled_extensions.data();
         
         ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+        printf("Local instance handle (2nd time) == %d\n", local_instance);
         vk::DestroyInstance(local_instance, nullptr);
     }
 }

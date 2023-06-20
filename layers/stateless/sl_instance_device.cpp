@@ -64,17 +64,29 @@ bool StatelessValidation::ValidateInstanceExtensions(const VkInstanceCreateInfo 
     InstanceExtensions local_instance_extensions;
     local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
+    printf("Instance extension count = %d\n", pCreateInfo->enabledExtensionCount);
+    
+
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
                                       pCreateInfo->ppEnabledExtensionNames[i]);
     }
+    printf("TESTING....\n\n");
+    if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR)
+        printf("Flag is set\n");
+    
+    // This comes back 1, It should not be, no one is seeing it. I'm even hard coding enabledExtensionsCount == 0 and
+    // ppEnabledExtensionNames = nullptr;
+    printf("Enumeration flag: %d\n",local_instance_extensions.vk_khr_portability_enumeration);
+    
     if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
         !local_instance_extensions.vk_khr_portability_enumeration) {
+        printf("SHOULD HAVE TRIGGERED\n");
         skip |= LogError(instance, "VUID-VkInstanceCreateInfo-flags-06559",
                          "vkCreateInstance(): pCreateInfo->flags has VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR set, but "
                          "pCreateInfo->ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
     }
-
+    printf("Well, how did I get here? Skip = %d\n", skip);
     return skip;
 }
 

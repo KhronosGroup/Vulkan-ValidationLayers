@@ -565,12 +565,14 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.ia_ci_ = iasci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.tess_ci_ = tsci;
-    pipe.shader_stages_.emplace_back(tsc_obj.GetStageCreateInfo());
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo()};
     pipe.InitState();
 
     // Attempt to use isolines in the TES shader when not available
@@ -595,15 +597,15 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
             #version 450
             layout(triangles, point_mode) in;
             void main() {
+                gl_PointSize = 1.0;
                 gl_Position = vec4(1);
             }
         )glsl";
 
         // Reset TES shader stage
         pipe.InitShaderInfo();
-        pipe.shader_stages_.emplace_back(tsc_obj.GetStageCreateInfo());
         VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-        pipe.shader_stages_.emplace_back(tes_obj.GetStageCreateInfo());
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo(), tes_obj.GetStageCreateInfo()};
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-tessellationShader-06327");
         pipe.CreateGraphicsPipeline();
@@ -620,6 +622,8 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 gl_Position = vec4(1);
             }
         )glsl";
+        VkShaderObj vs_obj(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
         static const char *fs_source = R"glsl(
             #version 450
             layout(location = 0) in vec4 c;
@@ -628,19 +632,19 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
                 frag_out = interpolateAtCentroid(c);
             }
         )glsl";
-
-        // Reset shader stages
-        pipe.shader_stages_.clear();
-        VkShaderObj vs_obj(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-        pipe.shader_stages_.emplace_back(vs_obj.GetStageCreateInfo());
         VkShaderObj fs_obj(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
-        pipe.shader_stages_.emplace_back(fs_obj.GetStageCreateInfo());
 
+        CreatePipelineHelper raster_pipe(*this);
+        raster_pipe.InitInfo();
         iasci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        pipe.ia_ci_ = iasci;
+        raster_pipe.ia_ci_ = iasci;
+        raster_pipe.ia_ci_ = iasci;
+        raster_pipe.tess_ci_ = tsci;
+        raster_pipe.shader_stages_ = {vs_obj.GetStageCreateInfo(), fs_obj.GetStageCreateInfo()};
+        raster_pipe.InitState();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
-        pipe.CreateGraphicsPipeline();
+        raster_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
     }
 }
