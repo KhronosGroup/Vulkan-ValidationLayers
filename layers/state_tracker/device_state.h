@@ -106,6 +106,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR ray_tracing_position_fetch_features;
     VkPhysicalDeviceShaderTileImageFeaturesEXT shader_tile_image_features;
     VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT dynamic_rendering_unused_attachments_features;
+    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

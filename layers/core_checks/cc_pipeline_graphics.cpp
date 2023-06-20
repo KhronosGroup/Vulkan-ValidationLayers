@@ -1354,6 +1354,11 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
             }
         }
+
+        if (const auto *depth_bias_representation = LvlFindInChain<VkDepthBiasRepresentationInfoEXT>(raster_state->pNext);
+            depth_bias_representation != nullptr) {
+            ValidateDepthBiasRepresentationInfo("vkCreateGraphicsPipelines()", LogObjectList(device), *depth_bias_representation);
+        }
     }
     return skip;
 }

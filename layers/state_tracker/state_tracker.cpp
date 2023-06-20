@@ -1393,6 +1393,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             dynamic_rendering_unused_attachments_features) {
             enabled_features.dynamic_rendering_unused_attachments_features = *dynamic_rendering_unused_attachments_features;
         }
+
+        if (const auto depth_bias_control_features =
+                LvlFindInChain<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(pCreateInfo->pNext)) {
+            enabled_features.depth_bias_control_features = *depth_bias_control_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
