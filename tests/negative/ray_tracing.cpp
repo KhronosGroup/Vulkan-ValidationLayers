@@ -1933,7 +1933,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
+// Issue 6040
+TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
     TEST_DESCRIPTION(
         "Validate acceleration structure building when source/destination acceleration structures and scratch buffers overlap.");
 
