@@ -88,7 +88,16 @@ std::string GetEnvironment(const char *variable) {
     delete[] buffer;
     return output;
 #elif defined(__ANDROID__)
-    const prop_info *prop_info = __system_property_find(variable);
+    std::string var = variable;
+
+    if (std::string_view{variable} != kForceDefaultCallbackKey) {
+        // kForceDefaultCallbackKey is a special key that needs to be recognized for backwards compatibilty.
+        // For all other strings, prefix the requested variable with "debug.vvl." so that desktop environment settings can be used
+        // on Android.
+        var = "debug.vvl." + var;
+    }
+
+    const prop_info *prop_info = __system_property_find(var.data());
 
     if (prop_info) {
         std::string property;
