@@ -1571,8 +1571,8 @@ void CreatePipelineHelper::InitDynamicStateInfo() {
 void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
 
 void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
-    vs_.reset(new VkShaderObj(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT));
-    fs_.reset(new VkShaderObj(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT));
+    vs_ = std::make_unique<VkShaderObj>(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
+    fs_ = std::make_unique<VkShaderObj>(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
     shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
 }
@@ -1845,7 +1845,7 @@ void CreateComputePipelineHelper::InitPipelineLayoutInfo() {
 }
 
 void CreateComputePipelineHelper::InitShaderInfo() {
-    cs_.reset(new VkShaderObj(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT));
+    cs_ = std::make_unique<VkShaderObj>(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
 }
 
@@ -2039,9 +2039,10 @@ void CreateNVRayTracingPipelineHelper::InitShaderInfoKHR() {
         }
     )glsl";
 
-    rgs_.reset(new VkShaderObj(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2));
-    chs_.reset(new VkShaderObj(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2));
-    mis_.reset(new VkShaderObj(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
+    rgs_ = std::make_unique<VkShaderObj>(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    chs_ =
+        std::make_unique<VkShaderObj>(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    mis_ = std::make_unique<VkShaderObj>(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
 }
@@ -2091,9 +2092,9 @@ void CreateNVRayTracingPipelineHelper::InitShaderInfo() {  // DONE
         }
     )glsl";
 
-    rgs_.reset(new VkShaderObj(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV));
-    chs_.reset(new VkShaderObj(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV));
-    mis_.reset(new VkShaderObj(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_NV));
+    rgs_ = std::make_unique<VkShaderObj>(&layer_test_, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    chs_ = std::make_unique<VkShaderObj>(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    mis_ = std::make_unique<VkShaderObj>(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
 
     shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
 }
