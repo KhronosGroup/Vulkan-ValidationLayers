@@ -8274,10 +8274,8 @@ class ApplySemaphoreBarrierAction {
 
 class ApplyAcquireNextSemaphoreAction {
   public:
-    static const SyncStageAccessFlags kPresentValidAccesses;
-    static const SyncExecScope kPresentSrcScope;
     ApplyAcquireNextSemaphoreAction(const SyncExecScope &wait_scope, ResourceUsageTag acquire_tag)
-        : barrier_(1, SyncBarrier(kPresentSrcScope, kPresentValidAccesses, wait_scope, SyncStageAccessFlags())),
+        : barrier_(1, SyncBarrier(getPresentSrcScope(), getPresentValidAccesses(), wait_scope, SyncStageAccessFlags())),
           acq_tag_(acquire_tag) {}
     void operator()(ResourceAccessState *access) const {
         // Note that the present operations may or may not be present, given that the fence wait may have cleared them out.
@@ -8288,17 +8286,28 @@ class ApplyAcquireNextSemaphoreAction {
     }
 
   private:
+    // kPresentSrcScope/kPresentValidAccesses cannot be regular global variables, because they use global
+    // variables from another compilation unit (through syncStageAccessMaskByStageBit() call) for initialization,
+    // and initialization of globals between compilation units is undefined. Instead they get initialized
+    // on the first use (it's important to ensure this first use is also not initialization of some global!).
+    const SyncExecScope &getPresentSrcScope() const {
+        static const SyncExecScope kPresentSrcScope =
+            SyncExecScope(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // mask_param (unused)
+                          VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // expanded_mask
+                          VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // exec_scope
+                          getPresentValidAccesses());                      // valid_accesses
+        return kPresentSrcScope;
+    }
+    const SyncStageAccessFlags &getPresentValidAccesses() const {
+        static const SyncStageAccessFlags kPresentValidAccesses =
+            SyncStageAccessFlags(SyncStageAccess::AccessScopeByStage(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL));
+        return kPresentValidAccesses;
+    }
+
+  private:
     std::vector<SyncBarrier> barrier_;
     ResourceUsageTag acq_tag_;
 };
-
-const SyncStageAccessFlags ApplyAcquireNextSemaphoreAction::kPresentValidAccesses =
-    SyncStageAccessFlags(SyncStageAccess::AccessScopeByStage(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL));
-const SyncExecScope ApplyAcquireNextSemaphoreAction::kPresentSrcScope =
-    SyncExecScope(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,           // mask_param (unused)
-                  VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,           // expanded_mask
-                  VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,           // exec_scope
-                  ApplyAcquireNextSemaphoreAction::kPresentValidAccesses);  // valid_accesses
 
 // Overload for QueuePresent semaphore waiting.  Not applicable to QueueSubmit semaphores
 std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem,
