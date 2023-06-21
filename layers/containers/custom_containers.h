@@ -138,8 +138,8 @@ class small_vector {
     small_vector(std::initializer_list<T> list) : size_(0), capacity_(N) {
         DebugUpdateWorkingStore();
         reserve(list.size());
-        for (auto &obj : list) {
-            emplace_back(std::move(obj));
+        for (const auto &obj : list) {
+            emplace_back(obj);
         }
     }
 
