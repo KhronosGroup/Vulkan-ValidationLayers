@@ -78,7 +78,7 @@ target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 find_package(robin_hood CONFIG)
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
 if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_utils PRIVATE robin_hood::robin_hood)
+    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
