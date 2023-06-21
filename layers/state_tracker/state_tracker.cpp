@@ -333,6 +333,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
         if (opaque_capture_address && (opaque_capture_address->opaqueCaptureAddress != 0)) {
+#ifdef ENABLE_BUFFER_ADDRESS_MAP_UPDATES
             WriteLockGuard guard(buffer_address_lock_);
             // address is used for GPU-AV and ray tracing buffer validation
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
@@ -346,6 +347,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                         current_buffer_list.emplace_back(new_buffer[0]);
                     }
                 });
+#endif
         }
 
         const VkBufferUsageFlags descriptor_buffer_usages =
@@ -472,6 +474,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
         }
 
         if (buffer_state->deviceAddress != 0) {
+#ifdef ENABLE_BUFFER_ADDRESS_MAP_UPDATES
             const auto address_range = buffer_state->DeviceAddressRange();
 
             buffer_address_map_.erase_range_or_touch(address_range, [&buffer_state](auto &buffers) {
@@ -495,6 +498,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
 
                 return false;
             });
+#endif
         }
     }
     Destroy<BUFFER_STATE>(buffer);
@@ -5686,6 +5690,7 @@ void ValidationStateTracker::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer com
 }
 
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
+#ifdef ENABLE_BUFFER_ADDRESS_MAP_UPDATES
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     if (buffer_state && address != 0) {
         WriteLockGuard guard(buffer_address_lock_);
@@ -5702,6 +5707,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
                 }
             });
     }
+#endif
 }
 
 void ValidationStateTracker::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,

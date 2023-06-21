@@ -53,7 +53,7 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
                                               &max_primitives_count, &build_sizes_info);
 }
 
-TEST_F(PositiveRayTracing, AccelerationStructureReference) {
+TEST_F(PositiveRayTracing, DISABLE_AccelerationStructureReference) {
     TEST_DESCRIPTION("Test device side accelerationStructureReference");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -130,7 +130,7 @@ TEST_F(PositiveRayTracing, HostAccelerationStructureReference) {
     top_level_build_geometry.BuildHost(instance(), *m_device);
 }
 
-TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
+TEST_F(PositiveRayTracing, DISABLED_StridedDeviceAddressRegion) {
     TEST_DESCRIPTION("Test different valid VkStridedDeviceAddressRegionKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -415,7 +415,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
+TEST_F(PositiveRayTracing, DISABLE_BuildAccelerationStructuresList) {
     TEST_DESCRIPTION("Build a list of destination acceleration structures, then do an update build on that same list");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

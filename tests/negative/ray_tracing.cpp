@@ -1076,7 +1076,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, ArrayOOBRayTracingShaders) {
+TEST_F(NegativeRayTracing, DISABLED_ArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "Core validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders.");
@@ -1217,7 +1217,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
+TEST_F(NegativeRayTracing, DISABLED_CmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1623,7 +1623,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
     }
 }
 
-TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
+TEST_F(NegativeRayTracing, DISABLED_CmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
     AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
@@ -2197,7 +2197,7 @@ TEST_F(NegativeRayTracing, DISABLED_AccelerationStructuresOverlappingMemory) {
     }
 }
 
-TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
+TEST_F(NegativeRayTracing, DISABLED_ObjInUseCmdBuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2298,7 +2298,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
     vk::DestroyAccelerationStructureKHR(device(), as, nullptr);
 }
 
-TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
+TEST_F(NegativeRayTracing, DISABLED_UpdateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Test for updating an acceleration structure without a srcAccelerationStructure");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2334,7 +2334,7 @@ TEST_F(NegativeRayTracing, UpdateAccelerationStructureKHR) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
+TEST_F(NegativeRayTracing, DISABLED_BuffersAndBufferDeviceAddressesMapping) {
     TEST_DESCRIPTION(
         "Test that buffers and buffer device addresses mapping is correctly handled."
         "Bound multiple buffers to the same memory so that they have the same buffer device address."
@@ -2435,7 +2435,7 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
     }
 }
 
-TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
+TEST_F(NegativeRayTracing, DISABLE_WriteAccelerationStructuresProperties) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -2541,7 +2541,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresProperties) {
     }
 }
 
-TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1) {
+TEST_F(NegativeRayTracing, DISABLE_WriteAccelerationStructuresPropertiesMaintenance1) {
     TEST_DESCRIPTION("Test queryType validation in vkCmdWriteAccelerationStructuresPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

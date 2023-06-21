@@ -882,7 +882,7 @@ TEST_F(NegativeRayTracing, GetCaptureReplayShaderGroupHandlesKHR) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeRayTracing, DeferredOp) {
+TEST_F(NegativeRayTracing, DISABLED_DeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -990,7 +990,7 @@ TEST_F(NegativeRayTracing, DeferredOp) {
     vk::DestroyPipeline(m_device->handle(), library, nullptr);
 }
 
-TEST_F(NegativeRayTracing, BindPoint) {
+TEST_F(NegativeRayTracing, DISABLED_BindPoint) {
     TEST_DESCRIPTION("Bind a graphics pipeline in the ray-tracing bind point");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

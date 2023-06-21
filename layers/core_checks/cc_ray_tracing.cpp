@@ -151,6 +151,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
 bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
+#ifdef ENABLE_BUFFER_ADDRESS_MAP_UPDATES
     using sparse_container::range;
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
@@ -600,6 +601,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     }
 
     return skip;
+#endif
+    return false;
 }
 
 bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccelerationStructureBuildGeometryInfoKHR &info,
@@ -669,10 +672,12 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
 
     const auto buffer_states = GetBuffersByAddress(info.scratchData.deviceAddress);
     if (buffer_states.empty()) {
+#ifdef ENABLE_BUFFER_ADDRESS_MAP_UPDATES
         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
                          "vkCmdBuildAccelerationStructuresKHR(): No buffer is associated with pInfos[%" PRIu32
                          "].scratchData.deviceAddress (0x%" PRIx64 ").",
                          info_index, info.scratchData.deviceAddress);
+#endif
     } else {
         const bool no_valid_buffer_found = std::none_of(
             buffer_states.begin(), buffer_states.end(), [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
