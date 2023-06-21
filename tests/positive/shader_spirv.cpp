@@ -169,7 +169,8 @@ TEST_F(PositiveShaderSpirv, GroupDecorations) {
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(dslb_size);
     memcpy(pipe.dsl_bindings_.data(), dslb, dslb_size * sizeof(VkDescriptorSetLayoutBinding));
-    pipe.cs_.reset(new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.InitState();
     pipe.CreateComputePipeline();
 }
@@ -628,8 +629,8 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     pipe.InitInfo();
     pipe.dsl_bindings_.resize(bindings.size());
     memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
-    pipe.cs_.reset(new VkShaderObj(this, cs_src.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
-                                   &specialization_info));
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_src.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                             &specialization_info);
     pipe.InitState();
     pipe.CreateComputePipeline();
 
@@ -770,16 +771,16 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
 
     // Use default value for spec constant
     const auto set_info_nospec = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
-                                         SPV_SOURCE_ASM, nullptr));
+        helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                   SPV_SOURCE_ASM, nullptr);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info_nospec, kErrorBit | kWarningBit);
 
     // Use spec constant to update value
     const auto set_info_spec = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
-                                         SPV_SOURCE_ASM, &specialization_info));
+        helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                   SPV_SOURCE_ASM, &specialization_info);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit | kWarningBit);
@@ -804,7 +805,7 @@ TEST_F(PositiveShaderSpirv, OpTypeStructRuntimeArray) {
     )glsl";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+        helper.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -1272,8 +1273,8 @@ TEST_F(PositiveShaderSpirv, SpecializationUnused) {
     };
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(
-            new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, &specialization_info));
+        helper.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                                   &specialization_info);
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
@@ -1341,8 +1342,8 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(
-                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                       SPV_SOURCE_ASM);
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -1359,8 +1360,8 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(
-                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                       SPV_SOURCE_ASM);
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -1377,8 +1378,8 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(
-                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                       SPV_SOURCE_ASM);
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -1395,8 +1396,8 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(
-                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                       SPV_SOURCE_ASM);
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -1413,8 +1414,8 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(
-                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_ = std::make_unique<VkShaderObj>(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
+                                                       SPV_SOURCE_ASM);
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -1807,7 +1808,7 @@ void main() {}
         )glsl";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+        helper.cs_ = std::make_unique<VkShaderObj>(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }

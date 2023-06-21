@@ -5936,7 +5936,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
-    cs_pipeline.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&combined_image_set.layout_, &storage_image_set.layout_});
     cs_pipeline.CreateComputePipeline();

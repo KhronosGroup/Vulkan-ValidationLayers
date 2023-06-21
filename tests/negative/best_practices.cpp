@@ -1331,7 +1331,8 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
         )";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+        helper.cs_ =
+            std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kWarningBit,
                                              "UNASSIGNED-BestPractices-SpirvDeprecated_WorkgroupSize");
