@@ -102,6 +102,36 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+
+  hopper:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [debug, release]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: lukka/get-cmake@latest
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: spirv-hopper-${{ matrix.config }}
+      - name: Install build dependencies
+        run: |
+          python3 -m pip install jsonschema pyparsing
+          sudo apt-get -qq update
+          sudo apt-get install -y libwayland-dev xorg-dev
+      - name: Build Vulkan-ValidationLayers
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }}
+        env:
+          CFLAGS: -fsanitize=address
+          CXXFLAGS: -fsanitize=address
+          LDFLAGS: -fsanitize=address
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Vulkan-ValidationLayers - SPIRV-Hopper
         run: python3 scripts/github_ci_win_linux.py --hopper
         env:
