@@ -95,3 +95,103 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     buff_view_ci.offset = minTexelBufferOffsetAlignment + block_size;
     CreateBufferViewTest(*this, &buff_view_ci, {});
 }
+
+TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
+    TEST_DESCRIPTION("Add elements to buffer_address_map, worst case scenario");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto buffer_addr_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(buffer_addr_features);
+    if (!buffer_addr_features.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+    alloc_info.allocationSize = 100 * 4096 * 4096;
+    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    // Create buffers. They have the same starting offset, but a growing size.
+    // This is the worst case scenario for adding an element in the current buffer_address_map: inserted range will have to be split
+    // for every range currently in the map.
+    constexpr size_t N = 1400;
+    std::vector<VkBufferObj> buffers(N);
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VkDeviceAddress ref_address = 0;
+
+    for (size_t i = 0; i < N; ++i) {
+        VkBufferObj &buffer = buffers[i];
+        buffer_ci.size = (i + 1) * 4096;
+        buffer.init_no_mem(*m_device, buffer_ci);
+        vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
+        VkDeviceAddress addr = buffer.address(DeviceValidationVersion());
+        if (ref_address == 0) {
+            ref_address = addr;
+        }
+        if (addr != ref_address) {
+            GTEST_SKIP() << "At iteration " << i << ", retrieved buffer address (" << addr << ") != reference address ("
+                         << ref_address << ")";
+        }
+    }
+}
+
+TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
+    TEST_DESCRIPTION("Add elements to buffer_address_map, good case scenario");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto buffer_addr_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(buffer_addr_features);
+    if (!buffer_addr_features.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Allocate common buffer memory, all buffers will be bound to it so that they have the same starting address
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
+    alloc_info.allocationSize = 100 * 4096 * 4096;
+    vk_testing::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    // Create buffers. They have consecutive device address ranges, so no overlaps: no split will be needed when inserting, it
+    // should be fast.
+    constexpr size_t N = 1400;  // 100 * 4096;
+    std::vector<VkBufferObj> buffers(N);
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_ci.size = 4096;
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    for (size_t i = 0; i < N; ++i) {
+        VkBufferObj &buffer = buffers[i];
+        buffer.init_no_mem(*m_device, buffer_ci);
+        // Consecutive offsets
+        vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), i * buffer_ci.size);
+        (void)buffer.address(DeviceValidationVersion());
+    }
+}
