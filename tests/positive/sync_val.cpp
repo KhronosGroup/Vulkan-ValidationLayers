@@ -120,3 +120,45 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     m_commandBuffer->QueueCommandBuffer();
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+// Image transition ensures that image data is made visible and available when necessary.
+// The user's responsibility is only to properly define the barrier. This test checks that
+// writing to the image immediately after the transition  does not produce WAW hazard against
+// the writes performed by the transition.
+TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
+    TEST_DESCRIPTION("Perform image transition then copy to image from buffer");
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    constexpr uint32_t width = 256;
+    constexpr uint32_t height = 128;
+    constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+
+    VkBufferObj buffer(*m_device, width * height * 4, 0, VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    VkImageObj image(m_device);
+    image.InitNoLayout(width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    auto barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent.width = width;
+    region.imageExtent.height = height;
+    region.imageExtent.depth = 1;
+
+    m_commandBuffer->begin();
+    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+                           1, &barrier);
+    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    m_commandBuffer->end();
+}
