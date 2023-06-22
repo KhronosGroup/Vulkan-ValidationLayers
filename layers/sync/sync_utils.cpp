@@ -188,7 +188,7 @@ std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask) {
     if (sync1_mask) {
         return string_VkPipelineStageFlags(sync1_mask);
     }
-    return string_VkPipelineStageFlags2KHR(mask);
+    return string_VkPipelineStageFlags2(mask);
 }
 
 std::string StringAccessFlags(VkAccessFlags2KHR mask) {
@@ -196,7 +196,7 @@ std::string StringAccessFlags(VkAccessFlags2KHR mask) {
     if (sync1_mask) {
         return string_VkAccessFlags(sync1_mask);
     }
-    return string_VkAccessFlags2KHR(mask);
+    return string_VkAccessFlags2(mask);
 }
 
 ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {

@@ -63,28 +63,28 @@ def makeGenOpts(args):
 
     # ValidationLayer Generators
     # Options for thread safety header code-generation
-    
+
     genOpts['thread_safety_counter_definitions.h'] = [
           ThreadOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_definitions.h',
             mergeApiNames     = mergeApiNames)
         ]
-    
+
     genOpts['thread_safety_counter_instances.h'] = [
           ThreadOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_instances.h',
             mergeApiNames     = mergeApiNames)
         ]
-    
+
     genOpts['thread_safety_counter_bodies.h'] = [
           ThreadOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_bodies.h',
             mergeApiNames     = mergeApiNames)
         ]
-    
+
     genOpts['thread_safety_commands.h'] = [
           ThreadOutputGenerator,
           BaseGeneratorOptions(
@@ -178,11 +178,10 @@ def makeGenOpts(args):
 
     # Helper file generator options for vk_enum_string_helper.h
     genOpts['vk_enum_string_helper.h'] = [
-          HelperFileOutputGenerator,
+          EnumStringHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_enum_string_helper.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'enum_string_header')
+            mergeApiNames     = mergeApiNames)
         ]
 
     # Helper file generator options for vk_safe_struct.h
@@ -529,6 +528,7 @@ if __name__ == '__main__':
     from generators.format_utils_generator import FormatUtilsOutputGenerator
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
+    from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):

@@ -1218,7 +1218,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                              "In %s, VkFormatFeatureFlags (0x%" PRIxLEAST64
                              ") does not support required feature %s for the external format "
                              "found in VkAndroidHardwareBufferFormatPropertiesANDROID::formatFeatures used by %s.",
-                             func_name, image_format_features, string_VkFormatFeatureFlags2KHR(desired).c_str(),
+                             func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(),
                              report_data->FormatHandle(image_state.image()).c_str());
         } else {
             skip |= LogError(
@@ -1226,7 +1226,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE
                 "In %s, VkFormatFeatureFlags (0x%" PRIxLEAST64 ") does not support required feature %s for format %" PRIu32
                 " used by %s "
                 "with tiling %s.",
-                func_name, image_format_features, string_VkFormatFeatureFlags2KHR(desired).c_str(), image_state.createInfo.format,
+                func_name, image_format_features, string_VkFormatFeatureFlags2(desired).c_str(), image_state.createInfo.format,
                 report_data->FormatHandle(image_state.image()).c_str(), string_VkImageTiling(image_state.createInfo.tiling));
         }
     }

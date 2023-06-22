@@ -111,34 +111,41 @@ class Command:
     cFunctionPointer: str
 
 @dataclass(frozen=True)
-class Enum:
+class EnumField:
     """<enum> of type enum"""
     name: str
     negative: bool # True if negative values are allowed (ex. VkResult)
-    extension: str # None if part of 1.0 core
+    # some fields are enabled from 2 extensions (ex. VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
+    extensions: List[str] # None if part of 1.0 core
+    protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
 @dataclass(frozen=True)
-class Enums:
+class Enum:
     """<enums> of type enum"""
     name: str
     bitWidth: int # 32 or 64
-    fields: List[Enum]
+    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    fields: List[EnumField]
 
 @dataclass(frozen=True)
-class FlagBit:
+class Flag:
     """<enum> of type bitmask"""
     name: str
-    value: int # Value of flag
+    value: int     # Value of flag
     multiBit: bool # if true, more than one bit is set (ex. VK_SHADER_STAGE_ALL_GRAPHICS)
-    zero: bool # if true, the value is zero (ex. VK_PIPELINE_STAGE_NONE)
-    extension: str # None if part of 1.0 core
+    zero: bool     # if true, the value is zero (ex. VK_PIPELINE_STAGE_NONE)
+    # some fields are enabled from 2 extensions (ex. VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
+    extensions: List[str] # None if part of 1.0 core
+    protect: str   # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
 @dataclass(frozen=True)
-class Flags:
+class Bitmask:
     """<enums> of type bitmask"""
-    name: str
+    name: str     # ex. 'VkAccessFlagBits2'
+    flagName: str # ex. 'VkAccessFlags2'
     bitWidth: int # 32 or 64
-    fields: List[FlagBit]
+    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    flags: List[Flag]
 
 @dataclass(frozen=True)
 class Member:
@@ -275,8 +282,8 @@ class VulkanObject():
     versions:   Dict[str, Version]   = field(default_factory=dict, init=False)
 
     commands: Dict[str, Command]     = field(default_factory=dict, init=False)
-    enums:    Dict[str, Enums]       = field(default_factory=dict, init=False)
-    flags:    Dict[str, Flags]       = field(default_factory=dict, init=False)
+    enums:    Dict[str, Enum]        = field(default_factory=dict, init=False)
+    bitmasks: Dict[str, Bitmask]     = field(default_factory=dict, init=False)
     structs:  Dict[str, Struct]      = field(default_factory=dict, init=False)
     unions:   Dict[str, Union]       = field(default_factory=dict, init=False)
     formats:  Dict[str, Format]      = field(default_factory=dict, init=False)
@@ -291,5 +298,3 @@ class VulkanObject():
     platforms: Dict[str, str]        = field(default_factory=dict, init=False)
     # # List of all vendor Sufix names (ex. 'KHR', 'EXT', etc. )
     vendorTags: List[str]            = field(default_factory=list, init=False)
-    # # ex. [ 'VkAccessFlags' : 'VkAccessFlagBits' ]
-    flagToBitsMap: Dict[str, str]    = field(default_factory=dict, init=False)
