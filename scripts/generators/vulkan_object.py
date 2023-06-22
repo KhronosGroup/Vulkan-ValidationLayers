@@ -152,7 +152,6 @@ class Member:
     """<member>"""
     name: str
     type: str
-    sType: str # if 'type' != 'VkStructureType' will be None
     externSync: bool
     optional: bool
     noAutoValidity: bool
@@ -170,6 +169,8 @@ class Struct:
     """<type category="struct">"""
     name: str
     structExtends: List[str]
+    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    sType: str # if 'members[0].type' != 'VkStructureType' will be None
     returnedOnly: bool
     allowDuplicate: bool
     members: List[Member]
@@ -179,6 +180,7 @@ class Union:
     """<type category="union">"""
     name: str
     structExtends: List[str]
+    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
     members: List[Member]
 
 @dataclass(frozen=True)

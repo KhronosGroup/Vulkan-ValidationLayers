@@ -68,9 +68,9 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
         out.append('    switch (input_value) {\n')
-        for struct in filter(lambda x: x.allowDuplicate and len(x.members) > 0, self.vk.structs.values()):
+        for struct in filter(lambda x: x.allowDuplicate and x.sType is not None, self.vk.structs.values()):
             # The sType will always be first member of struct
-            out.append(f'        case {struct.members[0].sType}:\n')
+            out.append(f'        case {struct.sType}:\n')
         out.append('            return true;\n')
         out.append('        default:\n')
         out.append('            return false;\n')

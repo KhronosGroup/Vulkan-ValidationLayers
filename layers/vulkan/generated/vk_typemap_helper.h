@@ -1,27 +1,26 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See helper_file_generator.py for modifications
-
+// See typemap_helper_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
-
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
+// NOLINTBEGIN
 #pragma once
 #include <vulkan/vulkan.h>
 
@@ -2056,7 +2055,6 @@ template <> struct LvlTypeMap<VkDisplayPresentInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR> {
     typedef VkDisplayPresentInfoKHR Type;
 };
-
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 // Map type VkXlibSurfaceCreateInfoKHR to id VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR
 template <> struct LvlTypeMap<VkXlibSurfaceCreateInfoKHR> {
@@ -2066,7 +2064,6 @@ template <> struct LvlTypeMap<VkXlibSurfaceCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR> {
     typedef VkXlibSurfaceCreateInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_XLIB_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 // Map type VkXcbSurfaceCreateInfoKHR to id VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
@@ -2077,7 +2074,6 @@ template <> struct LvlTypeMap<VkXcbSurfaceCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR> {
     typedef VkXcbSurfaceCreateInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 // Map type VkWaylandSurfaceCreateInfoKHR to id VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR
@@ -2088,7 +2084,6 @@ template <> struct LvlTypeMap<VkWaylandSurfaceCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR> {
     typedef VkWaylandSurfaceCreateInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkAndroidSurfaceCreateInfoKHR to id VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR
@@ -2099,7 +2094,6 @@ template <> struct LvlTypeMap<VkAndroidSurfaceCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR> {
     typedef VkAndroidSurfaceCreateInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkWin32SurfaceCreateInfoKHR to id VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR
@@ -2110,8 +2104,8 @@ template <> struct LvlTypeMap<VkWin32SurfaceCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR> {
     typedef VkWin32SurfaceCreateInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkQueueFamilyQueryResultStatusPropertiesKHR to id VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR
 template <> struct LvlTypeMap<VkQueueFamilyQueryResultStatusPropertiesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR;
@@ -2381,7 +2375,6 @@ template <> struct LvlTypeMap<VkMultiviewPerViewAttributesInfoNVX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX> {
     typedef VkMultiviewPerViewAttributesInfoNVX Type;
 };
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkImportMemoryWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR
 template <> struct LvlTypeMap<VkImportMemoryWin32HandleInfoKHR> {
@@ -2391,7 +2384,6 @@ template <> struct LvlTypeMap<VkImportMemoryWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR> {
     typedef VkImportMemoryWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkExportMemoryWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR
@@ -2402,7 +2394,6 @@ template <> struct LvlTypeMap<VkExportMemoryWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR> {
     typedef VkExportMemoryWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkMemoryWin32HandlePropertiesKHR to id VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR
@@ -2413,7 +2404,6 @@ template <> struct LvlTypeMap<VkMemoryWin32HandlePropertiesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR> {
     typedef VkMemoryWin32HandlePropertiesKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkMemoryGetWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR
@@ -2424,8 +2414,8 @@ template <> struct LvlTypeMap<VkMemoryGetWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR> {
     typedef VkMemoryGetWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkImportMemoryFdInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR
 template <> struct LvlTypeMap<VkImportMemoryFdInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR;
@@ -2452,7 +2442,6 @@ template <> struct LvlTypeMap<VkMemoryGetFdInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR> {
     typedef VkMemoryGetFdInfoKHR Type;
 };
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkWin32KeyedMutexAcquireReleaseInfoKHR to id VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR
 template <> struct LvlTypeMap<VkWin32KeyedMutexAcquireReleaseInfoKHR> {
@@ -2462,7 +2451,6 @@ template <> struct LvlTypeMap<VkWin32KeyedMutexAcquireReleaseInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR> {
     typedef VkWin32KeyedMutexAcquireReleaseInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkImportSemaphoreWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR
@@ -2473,7 +2461,6 @@ template <> struct LvlTypeMap<VkImportSemaphoreWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR> {
     typedef VkImportSemaphoreWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkExportSemaphoreWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR
@@ -2484,7 +2471,6 @@ template <> struct LvlTypeMap<VkExportSemaphoreWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR> {
     typedef VkExportSemaphoreWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkD3D12FenceSubmitInfoKHR to id VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR
@@ -2495,7 +2481,6 @@ template <> struct LvlTypeMap<VkD3D12FenceSubmitInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR> {
     typedef VkD3D12FenceSubmitInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkSemaphoreGetWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR
@@ -2506,8 +2491,8 @@ template <> struct LvlTypeMap<VkSemaphoreGetWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR> {
     typedef VkSemaphoreGetWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkImportSemaphoreFdInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR
 template <> struct LvlTypeMap<VkImportSemaphoreFdInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR;
@@ -2552,7 +2537,6 @@ template <> struct LvlTypeMap<VkSharedPresentSurfaceCapabilitiesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR> {
     typedef VkSharedPresentSurfaceCapabilitiesKHR Type;
 };
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkImportFenceWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR
 template <> struct LvlTypeMap<VkImportFenceWin32HandleInfoKHR> {
@@ -2562,7 +2546,6 @@ template <> struct LvlTypeMap<VkImportFenceWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR> {
     typedef VkImportFenceWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkExportFenceWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_EXPORT_FENCE_WIN32_HANDLE_INFO_KHR
@@ -2573,7 +2556,6 @@ template <> struct LvlTypeMap<VkExportFenceWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_FENCE_WIN32_HANDLE_INFO_KHR> {
     typedef VkExportFenceWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkFenceGetWin32HandleInfoKHR to id VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR
@@ -2584,8 +2566,8 @@ template <> struct LvlTypeMap<VkFenceGetWin32HandleInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR> {
     typedef VkFenceGetWin32HandleInfoKHR Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkImportFenceFdInfoKHR to id VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR
 template <> struct LvlTypeMap<VkImportFenceFdInfoKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR;
@@ -2738,7 +2720,6 @@ template <> struct LvlTypeMap<VkDisplayPlaneCapabilities2KHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DISPLAY_PLANE_CAPABILITIES_2_KHR> {
     typedef VkDisplayPlaneCapabilities2KHR Type;
 };
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDevicePortabilitySubsetFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDevicePortabilitySubsetFeaturesKHR> {
@@ -2748,7 +2729,6 @@ template <> struct LvlTypeMap<VkPhysicalDevicePortabilitySubsetFeaturesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR> {
     typedef VkPhysicalDevicePortabilitySubsetFeaturesKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDevicePortabilitySubsetPropertiesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR
@@ -2759,8 +2739,8 @@ template <> struct LvlTypeMap<VkPhysicalDevicePortabilitySubsetPropertiesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_PROPERTIES_KHR> {
     typedef VkPhysicalDevicePortabilitySubsetPropertiesKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
 // Map type VkPhysicalDeviceShaderClockFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDeviceShaderClockFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
@@ -3012,7 +2992,6 @@ template <> struct LvlTypeMap<VkPhysicalDevicePresentIdFeaturesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR> {
     typedef VkPhysicalDevicePresentIdFeaturesKHR Type;
 };
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR
 template <> struct LvlTypeMap<VkVideoEncodeInfoKHR> {
@@ -3022,7 +3001,6 @@ template <> struct LvlTypeMap<VkVideoEncodeInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR> {
     typedef VkVideoEncodeInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeCapabilitiesKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR
@@ -3033,7 +3011,6 @@ template <> struct LvlTypeMap<VkVideoEncodeCapabilitiesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR> {
     typedef VkVideoEncodeCapabilitiesKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkQueryPoolVideoEncodeFeedbackCreateInfoKHR to id VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_FEEDBACK_CREATE_INFO_KHR
@@ -3044,7 +3021,6 @@ template <> struct LvlTypeMap<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUERY_POOL_VIDEO_ENCODE_FEEDBACK_CREATE_INFO_KHR> {
     typedef VkQueryPoolVideoEncodeFeedbackCreateInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeUsageInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR
@@ -3055,7 +3031,6 @@ template <> struct LvlTypeMap<VkVideoEncodeUsageInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR> {
     typedef VkVideoEncodeUsageInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeRateControlLayerInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR
@@ -3066,7 +3041,6 @@ template <> struct LvlTypeMap<VkVideoEncodeRateControlLayerInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR> {
     typedef VkVideoEncodeRateControlLayerInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeRateControlInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR
@@ -3077,7 +3051,6 @@ template <> struct LvlTypeMap<VkVideoEncodeRateControlInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_INFO_KHR> {
     typedef VkVideoEncodeRateControlInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR
@@ -3088,7 +3061,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR> {
     typedef VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeQualityLevelPropertiesKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_PROPERTIES_KHR
@@ -3099,7 +3071,6 @@ template <> struct LvlTypeMap<VkVideoEncodeQualityLevelPropertiesKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_PROPERTIES_KHR> {
     typedef VkVideoEncodeQualityLevelPropertiesKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeQualityLevelInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR
@@ -3110,7 +3081,6 @@ template <> struct LvlTypeMap<VkVideoEncodeQualityLevelInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUALITY_LEVEL_INFO_KHR> {
     typedef VkVideoEncodeQualityLevelInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeSessionParametersGetInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_GET_INFO_KHR
@@ -3121,7 +3091,6 @@ template <> struct LvlTypeMap<VkVideoEncodeSessionParametersGetInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_GET_INFO_KHR> {
     typedef VkVideoEncodeSessionParametersGetInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeSessionParametersFeedbackInfoKHR to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_FEEDBACK_INFO_KHR
@@ -3132,8 +3101,8 @@ template <> struct LvlTypeMap<VkVideoEncodeSessionParametersFeedbackInfoKHR> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_FEEDBACK_INFO_KHR> {
     typedef VkVideoEncodeSessionParametersFeedbackInfoKHR Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
 // Map type VkQueueFamilyCheckpointProperties2NV to id VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV
 template <> struct LvlTypeMap<VkQueueFamilyCheckpointProperties2NV> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV;
@@ -3349,7 +3318,6 @@ template <> struct LvlTypeMap<VkImageViewAddressPropertiesNVX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX> {
     typedef VkImageViewAddressPropertiesNVX Type;
 };
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264CapabilitiesEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT
 template <> struct LvlTypeMap<VkVideoEncodeH264CapabilitiesEXT> {
@@ -3359,7 +3327,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264CapabilitiesEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_CAPABILITIES_EXT> {
     typedef VkVideoEncodeH264CapabilitiesEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264QualityLevelPropertiesEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_EXT
@@ -3370,7 +3337,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264QualityLevelPropertiesEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_EXT> {
     typedef VkVideoEncodeH264QualityLevelPropertiesEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264SessionCreateInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT
@@ -3381,7 +3347,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264SessionCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_CREATE_INFO_EXT> {
     typedef VkVideoEncodeH264SessionCreateInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264SessionParametersAddInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT
@@ -3392,7 +3357,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264SessionParametersAddInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_EXT> {
     typedef VkVideoEncodeH264SessionParametersAddInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264SessionParametersCreateInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT
@@ -3403,7 +3367,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264SessionParametersCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_CREATE_INFO_EXT> {
     typedef VkVideoEncodeH264SessionParametersCreateInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264SessionParametersGetInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_GET_INFO_EXT
@@ -3414,7 +3377,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264SessionParametersGetInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_GET_INFO_EXT> {
     typedef VkVideoEncodeH264SessionParametersGetInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264SessionParametersFeedbackInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_FEEDBACK_INFO_EXT
@@ -3425,7 +3387,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264SessionParametersFeedbackInfoEXT>
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_FEEDBACK_INFO_EXT> {
     typedef VkVideoEncodeH264SessionParametersFeedbackInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264NaluSliceInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_INFO_EXT
@@ -3436,7 +3397,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264NaluSliceInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_NALU_SLICE_INFO_EXT> {
     typedef VkVideoEncodeH264NaluSliceInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264PictureInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PICTURE_INFO_EXT
@@ -3447,7 +3407,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264PictureInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PICTURE_INFO_EXT> {
     typedef VkVideoEncodeH264PictureInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264DpbSlotInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT
@@ -3458,7 +3417,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264DpbSlotInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_DPB_SLOT_INFO_EXT> {
     typedef VkVideoEncodeH264DpbSlotInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264ProfileInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_EXT
@@ -3469,7 +3427,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264ProfileInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_EXT> {
     typedef VkVideoEncodeH264ProfileInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264RateControlInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_INFO_EXT
@@ -3480,7 +3437,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264RateControlInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_INFO_EXT> {
     typedef VkVideoEncodeH264RateControlInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264RateControlLayerInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_EXT
@@ -3491,7 +3447,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264RateControlLayerInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_EXT> {
     typedef VkVideoEncodeH264RateControlLayerInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH264GopRemainingFrameInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_GOP_REMAINING_FRAME_INFO_EXT
@@ -3502,7 +3457,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH264GopRemainingFrameInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_GOP_REMAINING_FRAME_INFO_EXT> {
     typedef VkVideoEncodeH264GopRemainingFrameInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265CapabilitiesEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT
@@ -3513,7 +3467,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265CapabilitiesEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_CAPABILITIES_EXT> {
     typedef VkVideoEncodeH265CapabilitiesEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265SessionCreateInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT
@@ -3524,7 +3477,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265SessionCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_CREATE_INFO_EXT> {
     typedef VkVideoEncodeH265SessionCreateInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265QualityLevelPropertiesEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_EXT
@@ -3535,7 +3487,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265QualityLevelPropertiesEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_EXT> {
     typedef VkVideoEncodeH265QualityLevelPropertiesEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265SessionParametersAddInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT
@@ -3546,7 +3497,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265SessionParametersAddInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_EXT> {
     typedef VkVideoEncodeH265SessionParametersAddInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265SessionParametersCreateInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT
@@ -3557,7 +3507,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265SessionParametersCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_CREATE_INFO_EXT> {
     typedef VkVideoEncodeH265SessionParametersCreateInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265SessionParametersGetInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_GET_INFO_EXT
@@ -3568,7 +3517,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265SessionParametersGetInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_GET_INFO_EXT> {
     typedef VkVideoEncodeH265SessionParametersGetInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265SessionParametersFeedbackInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_FEEDBACK_INFO_EXT
@@ -3579,7 +3527,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265SessionParametersFeedbackInfoEXT>
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_FEEDBACK_INFO_EXT> {
     typedef VkVideoEncodeH265SessionParametersFeedbackInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265NaluSliceSegmentInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_INFO_EXT
@@ -3590,7 +3537,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265NaluSliceSegmentInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_NALU_SLICE_SEGMENT_INFO_EXT> {
     typedef VkVideoEncodeH265NaluSliceSegmentInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265PictureInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PICTURE_INFO_EXT
@@ -3601,7 +3547,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265PictureInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PICTURE_INFO_EXT> {
     typedef VkVideoEncodeH265PictureInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265DpbSlotInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT
@@ -3612,7 +3557,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265DpbSlotInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_DPB_SLOT_INFO_EXT> {
     typedef VkVideoEncodeH265DpbSlotInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265ProfileInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_EXT
@@ -3623,7 +3567,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265ProfileInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_EXT> {
     typedef VkVideoEncodeH265ProfileInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265RateControlInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_INFO_EXT
@@ -3634,7 +3577,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265RateControlInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_INFO_EXT> {
     typedef VkVideoEncodeH265RateControlInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265RateControlLayerInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_EXT
@@ -3645,7 +3587,6 @@ template <> struct LvlTypeMap<VkVideoEncodeH265RateControlLayerInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_EXT> {
     typedef VkVideoEncodeH265RateControlLayerInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoEncodeH265GopRemainingFrameInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_GOP_REMAINING_FRAME_INFO_EXT
@@ -3656,8 +3597,8 @@ template <> struct LvlTypeMap<VkVideoEncodeH265GopRemainingFrameInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_GOP_REMAINING_FRAME_INFO_EXT> {
     typedef VkVideoEncodeH265GopRemainingFrameInfoEXT Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
 // Map type VkTextureLODGatherFormatPropertiesAMD to id VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD
 template <> struct LvlTypeMap<VkTextureLODGatherFormatPropertiesAMD> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD;
@@ -3666,7 +3607,6 @@ template <> struct LvlTypeMap<VkTextureLODGatherFormatPropertiesAMD> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD> {
     typedef VkTextureLODGatherFormatPropertiesAMD Type;
 };
-
 #ifdef VK_USE_PLATFORM_GGP
 // Map type VkStreamDescriptorSurfaceCreateInfoGGP to id VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP
 template <> struct LvlTypeMap<VkStreamDescriptorSurfaceCreateInfoGGP> {
@@ -3676,8 +3616,8 @@ template <> struct LvlTypeMap<VkStreamDescriptorSurfaceCreateInfoGGP> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP> {
     typedef VkStreamDescriptorSurfaceCreateInfoGGP Type;
 };
-
 #endif // VK_USE_PLATFORM_GGP
+
 // Map type VkPhysicalDeviceCornerSampledImageFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV
 template <> struct LvlTypeMap<VkPhysicalDeviceCornerSampledImageFeaturesNV> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV;
@@ -3704,7 +3644,6 @@ template <> struct LvlTypeMap<VkExportMemoryAllocateInfoNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_NV> {
     typedef VkExportMemoryAllocateInfoNV Type;
 };
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkImportMemoryWin32HandleInfoNV to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV
 template <> struct LvlTypeMap<VkImportMemoryWin32HandleInfoNV> {
@@ -3714,7 +3653,6 @@ template <> struct LvlTypeMap<VkImportMemoryWin32HandleInfoNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV> {
     typedef VkImportMemoryWin32HandleInfoNV Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkExportMemoryWin32HandleInfoNV to id VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV
@@ -3725,7 +3663,6 @@ template <> struct LvlTypeMap<VkExportMemoryWin32HandleInfoNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV> {
     typedef VkExportMemoryWin32HandleInfoNV Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkWin32KeyedMutexAcquireReleaseInfoNV to id VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV
@@ -3736,8 +3673,8 @@ template <> struct LvlTypeMap<VkWin32KeyedMutexAcquireReleaseInfoNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV> {
     typedef VkWin32KeyedMutexAcquireReleaseInfoNV Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkValidationFlagsEXT to id VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT
 template <> struct LvlTypeMap<VkValidationFlagsEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT;
@@ -3746,7 +3683,6 @@ template <> struct LvlTypeMap<VkValidationFlagsEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT> {
     typedef VkValidationFlagsEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_VI_NN
 // Map type VkViSurfaceCreateInfoNN to id VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN
 template <> struct LvlTypeMap<VkViSurfaceCreateInfoNN> {
@@ -3756,8 +3692,8 @@ template <> struct LvlTypeMap<VkViSurfaceCreateInfoNN> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN> {
     typedef VkViSurfaceCreateInfoNN Type;
 };
-
 #endif // VK_USE_PLATFORM_VI_NN
+
 // Map type VkImageViewASTCDecodeModeEXT to id VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT
 template <> struct LvlTypeMap<VkImageViewASTCDecodeModeEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT;
@@ -3973,7 +3909,6 @@ template <> struct LvlTypeMap<VkHdrMetadataEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_HDR_METADATA_EXT> {
     typedef VkHdrMetadataEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_IOS_MVK
 // Map type VkIOSSurfaceCreateInfoMVK to id VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK
 template <> struct LvlTypeMap<VkIOSSurfaceCreateInfoMVK> {
@@ -3983,7 +3918,6 @@ template <> struct LvlTypeMap<VkIOSSurfaceCreateInfoMVK> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK> {
     typedef VkIOSSurfaceCreateInfoMVK Type;
 };
-
 #endif // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 // Map type VkMacOSSurfaceCreateInfoMVK to id VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK
@@ -3994,8 +3928,8 @@ template <> struct LvlTypeMap<VkMacOSSurfaceCreateInfoMVK> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK> {
     typedef VkMacOSSurfaceCreateInfoMVK Type;
 };
-
 #endif // VK_USE_PLATFORM_MACOS_MVK
+
 // Map type VkDebugUtilsLabelEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
 template <> struct LvlTypeMap<VkDebugUtilsLabelEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
@@ -4040,7 +3974,6 @@ template <> struct LvlTypeMap<VkDebugUtilsObjectTagInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT> {
     typedef VkDebugUtilsObjectTagInfoEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkAndroidHardwareBufferUsageANDROID to id VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID
 template <> struct LvlTypeMap<VkAndroidHardwareBufferUsageANDROID> {
@@ -4050,7 +3983,6 @@ template <> struct LvlTypeMap<VkAndroidHardwareBufferUsageANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID> {
     typedef VkAndroidHardwareBufferUsageANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkAndroidHardwareBufferPropertiesANDROID to id VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID
@@ -4061,7 +3993,6 @@ template <> struct LvlTypeMap<VkAndroidHardwareBufferPropertiesANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID> {
     typedef VkAndroidHardwareBufferPropertiesANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkAndroidHardwareBufferFormatPropertiesANDROID to id VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID
@@ -4072,7 +4003,6 @@ template <> struct LvlTypeMap<VkAndroidHardwareBufferFormatPropertiesANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID> {
     typedef VkAndroidHardwareBufferFormatPropertiesANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkImportAndroidHardwareBufferInfoANDROID to id VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID
@@ -4083,7 +4013,6 @@ template <> struct LvlTypeMap<VkImportAndroidHardwareBufferInfoANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID> {
     typedef VkImportAndroidHardwareBufferInfoANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkMemoryGetAndroidHardwareBufferInfoANDROID to id VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID
@@ -4094,7 +4023,6 @@ template <> struct LvlTypeMap<VkMemoryGetAndroidHardwareBufferInfoANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID> {
     typedef VkMemoryGetAndroidHardwareBufferInfoANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkExternalFormatANDROID to id VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID
@@ -4105,7 +4033,6 @@ template <> struct LvlTypeMap<VkExternalFormatANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID> {
     typedef VkExternalFormatANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Map type VkAndroidHardwareBufferFormatProperties2ANDROID to id VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID
@@ -4116,8 +4043,8 @@ template <> struct LvlTypeMap<VkAndroidHardwareBufferFormatProperties2ANDROID> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID> {
     typedef VkAndroidHardwareBufferFormatProperties2ANDROID Type;
 };
-
 #endif // VK_USE_PLATFORM_ANDROID_KHR
+
 // Map type VkSampleLocationsInfoEXT to id VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT
 template <> struct LvlTypeMap<VkSampleLocationsInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
@@ -4558,7 +4485,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT> {
     typedef VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_GGP
 // Map type VkPresentFrameTokenGGP to id VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP
 template <> struct LvlTypeMap<VkPresentFrameTokenGGP> {
@@ -4568,8 +4494,8 @@ template <> struct LvlTypeMap<VkPresentFrameTokenGGP> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP> {
     typedef VkPresentFrameTokenGGP Type;
 };
-
 #endif // VK_USE_PLATFORM_GGP
+
 // Map type VkPhysicalDeviceComputeShaderDerivativesFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV
 template <> struct LvlTypeMap<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV;
@@ -4731,7 +4657,6 @@ template <> struct LvlTypeMap<VkSwapchainDisplayNativeHdrCreateInfoAMD> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD> {
     typedef VkSwapchainDisplayNativeHdrCreateInfoAMD Type;
 };
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImagePipeSurfaceCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA
 template <> struct LvlTypeMap<VkImagePipeSurfaceCreateInfoFUCHSIA> {
@@ -4741,7 +4666,6 @@ template <> struct LvlTypeMap<VkImagePipeSurfaceCreateInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA> {
     typedef VkImagePipeSurfaceCreateInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkMetalSurfaceCreateInfoEXT to id VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT
@@ -4752,8 +4676,8 @@ template <> struct LvlTypeMap<VkMetalSurfaceCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT> {
     typedef VkMetalSurfaceCreateInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
+
 // Map type VkPhysicalDeviceFragmentDensityMapFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceFragmentDensityMapFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT;
@@ -4969,7 +4893,6 @@ template <> struct LvlTypeMap<VkPipelineRasterizationProvokingVertexStateCreateI
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT> {
     typedef VkPipelineRasterizationProvokingVertexStateCreateInfoEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkSurfaceFullScreenExclusiveInfoEXT to id VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT
 template <> struct LvlTypeMap<VkSurfaceFullScreenExclusiveInfoEXT> {
@@ -4979,7 +4902,6 @@ template <> struct LvlTypeMap<VkSurfaceFullScreenExclusiveInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT> {
     typedef VkSurfaceFullScreenExclusiveInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkSurfaceCapabilitiesFullScreenExclusiveEXT to id VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT
@@ -4990,7 +4912,6 @@ template <> struct LvlTypeMap<VkSurfaceCapabilitiesFullScreenExclusiveEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT> {
     typedef VkSurfaceCapabilitiesFullScreenExclusiveEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 // Map type VkSurfaceFullScreenExclusiveWin32InfoEXT to id VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT
@@ -5001,8 +4922,8 @@ template <> struct LvlTypeMap<VkSurfaceFullScreenExclusiveWin32InfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT> {
     typedef VkSurfaceFullScreenExclusiveWin32InfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_WIN32_KHR
+
 // Map type VkHeadlessSurfaceCreateInfoEXT to id VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkHeadlessSurfaceCreateInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT;
@@ -5425,7 +5346,6 @@ template <> struct LvlTypeMap<VkQueryLowLatencySupportNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV> {
     typedef VkQueryLowLatencySupportNV Type;
 };
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalObjectCreateInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkExportMetalObjectCreateInfoEXT> {
@@ -5435,7 +5355,6 @@ template <> struct LvlTypeMap<VkExportMetalObjectCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT> {
     typedef VkExportMetalObjectCreateInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalObjectsInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT
@@ -5446,7 +5365,6 @@ template <> struct LvlTypeMap<VkExportMetalObjectsInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT> {
     typedef VkExportMetalObjectsInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalDeviceInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT
@@ -5457,7 +5375,6 @@ template <> struct LvlTypeMap<VkExportMetalDeviceInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT> {
     typedef VkExportMetalDeviceInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalCommandQueueInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT
@@ -5468,7 +5385,6 @@ template <> struct LvlTypeMap<VkExportMetalCommandQueueInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT> {
     typedef VkExportMetalCommandQueueInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalBufferInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT
@@ -5479,7 +5395,6 @@ template <> struct LvlTypeMap<VkExportMetalBufferInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT> {
     typedef VkExportMetalBufferInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkImportMetalBufferInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT
@@ -5490,7 +5405,6 @@ template <> struct LvlTypeMap<VkImportMetalBufferInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT> {
     typedef VkImportMetalBufferInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalTextureInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT
@@ -5501,7 +5415,6 @@ template <> struct LvlTypeMap<VkExportMetalTextureInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT> {
     typedef VkExportMetalTextureInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkImportMetalTextureInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT
@@ -5512,7 +5425,6 @@ template <> struct LvlTypeMap<VkImportMetalTextureInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT> {
     typedef VkImportMetalTextureInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalIOSurfaceInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT
@@ -5523,7 +5435,6 @@ template <> struct LvlTypeMap<VkExportMetalIOSurfaceInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT> {
     typedef VkExportMetalIOSurfaceInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkImportMetalIOSurfaceInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT
@@ -5534,7 +5445,6 @@ template <> struct LvlTypeMap<VkImportMetalIOSurfaceInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT> {
     typedef VkImportMetalIOSurfaceInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkExportMetalSharedEventInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT
@@ -5545,7 +5455,6 @@ template <> struct LvlTypeMap<VkExportMetalSharedEventInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT> {
     typedef VkExportMetalSharedEventInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_METAL_EXT
 // Map type VkImportMetalSharedEventInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT
@@ -5556,8 +5465,8 @@ template <> struct LvlTypeMap<VkImportMetalSharedEventInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT> {
     typedef VkImportMetalSharedEventInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_METAL_EXT
+
 // Map type VkPhysicalDeviceDescriptorBufferPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceDescriptorBufferPropertiesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;
@@ -5908,7 +5817,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RGBA10X6_FORMATS_FEATURES_EXT> {
     typedef VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 // Map type VkDirectFBSurfaceCreateInfoEXT to id VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkDirectFBSurfaceCreateInfoEXT> {
@@ -5918,8 +5826,8 @@ template <> struct LvlTypeMap<VkDirectFBSurfaceCreateInfoEXT> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT> {
     typedef VkDirectFBSurfaceCreateInfoEXT Type;
 };
-
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
+
 // Map type VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
@@ -6018,7 +5926,6 @@ template <> struct LvlTypeMap<VkPhysicalDevicePrimitiveTopologyListRestartFeatur
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT> {
     typedef VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImportMemoryZirconHandleInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA
 template <> struct LvlTypeMap<VkImportMemoryZirconHandleInfoFUCHSIA> {
@@ -6028,7 +5935,6 @@ template <> struct LvlTypeMap<VkImportMemoryZirconHandleInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA> {
     typedef VkImportMemoryZirconHandleInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkMemoryZirconHandlePropertiesFUCHSIA to id VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA
@@ -6039,7 +5945,6 @@ template <> struct LvlTypeMap<VkMemoryZirconHandlePropertiesFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_ZIRCON_HANDLE_PROPERTIES_FUCHSIA> {
     typedef VkMemoryZirconHandlePropertiesFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkMemoryGetZirconHandleInfoFUCHSIA to id VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA
@@ -6050,7 +5955,6 @@ template <> struct LvlTypeMap<VkMemoryGetZirconHandleInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA> {
     typedef VkMemoryGetZirconHandleInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImportSemaphoreZirconHandleInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA
@@ -6061,7 +5965,6 @@ template <> struct LvlTypeMap<VkImportSemaphoreZirconHandleInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA> {
     typedef VkImportSemaphoreZirconHandleInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkSemaphoreGetZirconHandleInfoFUCHSIA to id VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA
@@ -6072,7 +5975,6 @@ template <> struct LvlTypeMap<VkSemaphoreGetZirconHandleInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA> {
     typedef VkSemaphoreGetZirconHandleInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferCollectionCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA
@@ -6083,7 +5985,6 @@ template <> struct LvlTypeMap<VkBufferCollectionCreateInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA> {
     typedef VkBufferCollectionCreateInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImportMemoryBufferCollectionFUCHSIA to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA
@@ -6094,7 +5995,6 @@ template <> struct LvlTypeMap<VkImportMemoryBufferCollectionFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA> {
     typedef VkImportMemoryBufferCollectionFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferCollectionImageCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA
@@ -6105,7 +6005,6 @@ template <> struct LvlTypeMap<VkBufferCollectionImageCreateInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_IMAGE_CREATE_INFO_FUCHSIA> {
     typedef VkBufferCollectionImageCreateInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferCollectionConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA
@@ -6116,7 +6015,6 @@ template <> struct LvlTypeMap<VkBufferCollectionConstraintsInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CONSTRAINTS_INFO_FUCHSIA> {
     typedef VkBufferCollectionConstraintsInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA
@@ -6127,7 +6025,6 @@ template <> struct LvlTypeMap<VkBufferConstraintsInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_CONSTRAINTS_INFO_FUCHSIA> {
     typedef VkBufferConstraintsInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferCollectionBufferCreateInfoFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA
@@ -6138,7 +6035,6 @@ template <> struct LvlTypeMap<VkBufferCollectionBufferCreateInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_BUFFER_CREATE_INFO_FUCHSIA> {
     typedef VkBufferCollectionBufferCreateInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkSysmemColorSpaceFUCHSIA to id VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA
@@ -6149,7 +6045,6 @@ template <> struct LvlTypeMap<VkSysmemColorSpaceFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA> {
     typedef VkSysmemColorSpaceFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkBufferCollectionPropertiesFUCHSIA to id VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA
@@ -6160,7 +6055,6 @@ template <> struct LvlTypeMap<VkBufferCollectionPropertiesFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_COLLECTION_PROPERTIES_FUCHSIA> {
     typedef VkBufferCollectionPropertiesFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImageFormatConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA
@@ -6171,7 +6065,6 @@ template <> struct LvlTypeMap<VkImageFormatConstraintsInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_FORMAT_CONSTRAINTS_INFO_FUCHSIA> {
     typedef VkImageFormatConstraintsInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
 // Map type VkImageConstraintsInfoFUCHSIA to id VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA
@@ -6182,8 +6075,8 @@ template <> struct LvlTypeMap<VkImageConstraintsInfoFUCHSIA> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_CONSTRAINTS_INFO_FUCHSIA> {
     typedef VkImageConstraintsInfoFUCHSIA Type;
 };
-
 #endif // VK_USE_PLATFORM_FUCHSIA
+
 // Map type VkSubpassShadingPipelineCreateInfoHUAWEI to id VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI
 template <> struct LvlTypeMap<VkSubpassShadingPipelineCreateInfoHUAWEI> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBPASS_SHADING_PIPELINE_CREATE_INFO_HUAWEI;
@@ -6291,7 +6184,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT> 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT> {
     typedef VkPhysicalDeviceExtendedDynamicState2FeaturesEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkScreenSurfaceCreateInfoQNX to id VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX
 template <> struct LvlTypeMap<VkScreenSurfaceCreateInfoQNX> {
@@ -6301,8 +6193,8 @@ template <> struct LvlTypeMap<VkScreenSurfaceCreateInfoQNX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX> {
     typedef VkScreenSurfaceCreateInfoQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
 // Map type VkPhysicalDeviceColorWriteEnableFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceColorWriteEnableFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT;
@@ -6482,7 +6374,6 @@ template <> struct LvlTypeMap<VkAccelerationStructureTrianglesOpacityMicromapEXT
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT> {
     typedef VkAccelerationStructureTrianglesOpacityMicromapEXT Type;
 };
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDeviceDisplacementMicromapFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV
 template <> struct LvlTypeMap<VkPhysicalDeviceDisplacementMicromapFeaturesNV> {
@@ -6492,7 +6383,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceDisplacementMicromapFeaturesNV> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_FEATURES_NV> {
     typedef VkPhysicalDeviceDisplacementMicromapFeaturesNV Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkPhysicalDeviceDisplacementMicromapPropertiesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV
@@ -6503,7 +6393,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceDisplacementMicromapPropertiesNV> 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV> {
     typedef VkPhysicalDeviceDisplacementMicromapPropertiesNV Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkAccelerationStructureTrianglesDisplacementMicromapNV to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV
@@ -6514,8 +6403,8 @@ template <> struct LvlTypeMap<VkAccelerationStructureTrianglesDisplacementMicrom
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV> {
     typedef VkAccelerationStructureTrianglesDisplacementMicromapNV Type;
 };
-
 #endif // VK_ENABLE_BETA_EXTENSIONS
+
 // Map type VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI
 template <> struct LvlTypeMap<VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI;
@@ -7091,7 +6980,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceAttachmentFeedbackLoopDynamicState
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_FEATURES_EXT> {
     typedef VkPhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT Type;
 };
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkScreenBufferPropertiesQNX to id VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX
 template <> struct LvlTypeMap<VkScreenBufferPropertiesQNX> {
@@ -7101,7 +6989,6 @@ template <> struct LvlTypeMap<VkScreenBufferPropertiesQNX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX> {
     typedef VkScreenBufferPropertiesQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkScreenBufferFormatPropertiesQNX to id VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX
@@ -7112,7 +6999,6 @@ template <> struct LvlTypeMap<VkScreenBufferFormatPropertiesQNX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCREEN_BUFFER_FORMAT_PROPERTIES_QNX> {
     typedef VkScreenBufferFormatPropertiesQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkImportScreenBufferInfoQNX to id VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX
@@ -7123,7 +7009,6 @@ template <> struct LvlTypeMap<VkImportScreenBufferInfoQNX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX> {
     typedef VkImportScreenBufferInfoQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkExternalFormatQNX to id VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX
@@ -7134,7 +7019,6 @@ template <> struct LvlTypeMap<VkExternalFormatQNX> {
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_QNX> {
     typedef VkExternalFormatQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 // Map type VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX
@@ -7145,8 +7029,8 @@ template <> struct LvlTypeMap<VkPhysicalDeviceExternalMemoryScreenBufferFeatures
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX> {
     typedef VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX Type;
 };
-
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
 // Map type VkAccelerationStructureGeometryTrianglesDataKHR to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR
 template <> struct LvlTypeMap<VkAccelerationStructureGeometryTrianglesDataKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
@@ -7399,3 +7283,4 @@ T LvlInitStruct(void *p_next = nullptr) {
     out.pNext = p_next;
     return out;
 }
+// NOLINTEND
