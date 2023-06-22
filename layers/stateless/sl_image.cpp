@@ -43,17 +43,17 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        skip |= ValidateGreaterThanZero(pCreateInfo->extent.width, "pCreateInfo->extent.width",
-                                        "VUID-VkImageCreateInfo-extent-00944", "vkCreateImage");
-        skip |= ValidateGreaterThanZero(pCreateInfo->extent.height, "pCreateInfo->extent.height",
-                                        "VUID-VkImageCreateInfo-extent-00945", "vkCreateImage");
-        skip |= ValidateGreaterThanZero(pCreateInfo->extent.depth, "pCreateInfo->extent.depth",
-                                        "VUID-VkImageCreateInfo-extent-00946", "vkCreateImage");
+        skip |= ValidateNotZero(pCreateInfo->extent.width == 0, "pCreateInfo->extent.width", "VUID-VkImageCreateInfo-extent-00944",
+                                "vkCreateImage");
+        skip |= ValidateNotZero(pCreateInfo->extent.height == 0, "pCreateInfo->extent.height",
+                                "VUID-VkImageCreateInfo-extent-00945", "vkCreateImage");
+        skip |= ValidateNotZero(pCreateInfo->extent.depth == 0, "pCreateInfo->extent.depth", "VUID-VkImageCreateInfo-extent-00946",
+                                "vkCreateImage");
 
-        skip |= ValidateGreaterThanZero(pCreateInfo->mipLevels, "pCreateInfo->mipLevels", "VUID-VkImageCreateInfo-mipLevels-00947",
-                                        "vkCreateImage");
-        skip |= ValidateGreaterThanZero(pCreateInfo->arrayLayers, "pCreateInfo->arrayLayers",
-                                        "VUID-VkImageCreateInfo-arrayLayers-00948", "vkCreateImage");
+        skip |= ValidateNotZero(pCreateInfo->mipLevels == 0, "pCreateInfo->mipLevels", "VUID-VkImageCreateInfo-mipLevels-00947",
+                                "vkCreateImage");
+        skip |= ValidateNotZero(pCreateInfo->arrayLayers == 0, "pCreateInfo->arrayLayers",
+                                "VUID-VkImageCreateInfo-arrayLayers-00948", "vkCreateImage");
 
         // InitialLayout must be PREINITIALIZED or UNDEFINED
         if ((pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) &&

@@ -18,26 +18,6 @@
 
 #include "stateless/stateless_validation.h"
 
-static const int kMaxParamCheckerStringLength = 256;
-
-bool StatelessValidation::ValidateString(const char *apiName, const ParameterName &stringName, const std::string &vuid,
-                                         const char *validateString) const {
-    bool skip = false;
-
-    VkStringErrorFlags result = vk_string_validate(kMaxParamCheckerStringLength, validateString);
-
-    if (result == VK_STRING_ERROR_NONE) {
-        return skip;
-    } else if (result & VK_STRING_ERROR_LENGTH) {
-        skip = LogError(device, vuid, "%s: string %s exceeds max length %d", apiName, stringName.get_name().c_str(),
-                        kMaxParamCheckerStringLength);
-    } else if (result & VK_STRING_ERROR_BAD_DATA) {
-        skip = LogError(device, vuid, "%s: string %s contains invalid characters or is badly formed", apiName,
-                        stringName.get_name().c_str());
-    }
-    return skip;
-}
-
 bool StatelessValidation::ValidateApiVersion(uint32_t api_version, APIVersion effective_api_version) const {
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
@@ -53,6 +33,36 @@ bool StatelessValidation::ValidateApiVersion(uint32_t api_version, APIVersion ef
                                "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                                api_version, effective_api_version.major(), effective_api_version.minor());
         }
+    }
+    return skip;
+}
+
+template <typename ExtensionState>
+bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
+                                                const char *extension_name) const {
+    bool skip = false;
+    if (!extension_name) {
+        return skip;  // Robust to invalid char *
+    }
+    auto info = ExtensionState::get_info(extension_name);
+
+    if (!info.state) {
+        return skip;  // Unknown extensions cannot be checked so report OK
+    }
+
+    // Check against the required list in the info
+    std::vector<const char *> missing;
+    for (const auto &req : info.requirements) {
+        if (!(extensions.*(req.enabled))) {
+            missing.push_back(req.name);
+        }
+    }
+
+    // Report any missing requirements
+    if (missing.size()) {
+        std::string missing_joined_list = string_join(", ", missing);
+        skip |= LogError(instance, vuid, "Missing extension%s required by the %s extension %s: %s.",
+                         ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
     }
     return skip;
 }
@@ -76,19 +86,6 @@ bool StatelessValidation::ValidateInstanceExtensions(const VkInstanceCreateInfo 
     }
 
     return skip;
-}
-
-bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const {
-    if (instance_extensions.vk_khr_get_physical_device_properties2) {
-        // Struct is legal IF it's supported
-        const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
-        if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
-        auto enum_iter = dev_exts_enumerated->second.find(ext_name);
-        if (enum_iter != dev_exts_enumerated->second.cend()) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool StatelessValidation::ValidateValidationFeatures(const VkInstanceCreateInfo *pCreateInfo,
@@ -130,7 +127,7 @@ bool StatelessValidation::ValidateValidationFeatures(const VkInstanceCreateInfo 
 }
 
 template <typename ExtensionState>
-ExtEnabled extension_state_by_name(const ExtensionState &extensions, const char *extension_name) {
+ExtEnabled ExtensionStateByName(const ExtensionState &extensions, const char *extension_name) {
     if (!extension_name) return kNotEnabled;  // null strings specify nothing
     auto info = ExtensionState::get_info(extension_name);
     ExtEnabled state =
@@ -422,10 +419,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        const bool maint1 =
-            IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
+        const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
         bool negative_viewport =
-            IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
         if (negative_viewport) {
             // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
             // integration into api version 1.1
@@ -452,9 +448,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     {
         bool khr_bda =
-            IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
         bool ext_bda =
-            IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
         if (khr_bda && ext_bda) {
             skip |= LogError(device, "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328",
                              "vkCreateDevice(): ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
@@ -597,7 +593,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             }
         }
         if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
-            if (IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))) {
+            if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))) {
                 skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-04748",
                                  "vkCreateDevice(): pNext chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");

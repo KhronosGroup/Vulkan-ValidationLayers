@@ -69,8 +69,8 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const char *func_name, VkS
             }
         }
 
-        skip |= ValidateGreaterThanZero(pCreateInfo->imageArrayLayers, "pCreateInfo->imageArrayLayers",
-                                        "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", func_name);
+        skip |= ValidateNotZero(pCreateInfo->imageArrayLayers == 0, "pCreateInfo->imageArrayLayers",
+                                "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", func_name);
 
         // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
         const auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
