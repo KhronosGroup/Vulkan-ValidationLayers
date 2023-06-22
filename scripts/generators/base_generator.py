@@ -49,7 +49,7 @@ def intIfGet(elem, name):
     return None if elem.get(name) is None else int(elem.get(name), 0)
 
 def boolGet(elem, name):
-    return elem.get(name) is None or elem.get(name) != "true"
+    return elem.get(name) is not None and elem.get(name) == "true"
 
 #
 # Walk the JSON-derived dict and find all "vuid" key values
@@ -267,6 +267,11 @@ class BaseGenerator(OutputGenerator):
     #
     # List the enum for the commands
     def genGroup(self, groupinfo, name, alias):
+        if alias is not None:
+            return
+        # There can be case where the Enum/Bitmask is in a protect, but the individual
+        # fields also have their own protect
+        groupProtect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
         enumElem = groupinfo.elem
         bitwidth = 32 if enumElem.get('bitwidth') is None else enumElem.get('bitwidth')
         fields = []
@@ -276,10 +281,19 @@ class BaseGenerator(OutputGenerator):
                     continue
                 fieldName = elem.get('name')
                 negative = elem.get('dir') != None
-                extension = elem.get('extname')
-                fields.append(Enum(fieldName, negative, extension))
+                extensions = None if elem.get('extname') is None else [elem.get('extname')]
+                protect = elem.get('protect')
 
-            self.vk.enums[name] = Enums(name, bitwidth, fields)
+                # Some values have multiple extensions (ex VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
+                # genGroup() lists them twice, so need to just remove, update, re-add if we find a duplicate
+                for field in fields:
+                    if field.name == fieldName:
+                        extensions.append(field.extensions)
+                        fields.remove(field)
+
+                fields.append(EnumField(fieldName, negative, extensions, protect))
+
+            self.vk.enums[name] = Enum(name, bitwidth, groupProtect, fields)
 
         else: # "bitmask"
             for elem in enumElem.findall('enum'):
@@ -293,21 +307,31 @@ class BaseGenerator(OutputGenerator):
                     fieldMultiBit = fieldValue != 0
                     fieldZero = fieldValue == 0
                 fieldName = elem.get('name')
-                extension = elem.get('extname')
-                fields.append(FlagBit(fieldName, fieldValue, fieldMultiBit, fieldZero, extension))
+                extensions = None if elem.get('extname') is None else [elem.get('extname')]
+                protect = elem.get('protect')
 
-            self.vk.flags[name] = Flags(name, bitwidth, fields)
+                # Some values have multiple extensions (ex VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
+                # genGroup() lists them twice, so need to just remove, update, re-add if we find a duplicate
+                for field in fields:
+                    if field.name == fieldName:
+                        extensions.append(field.extensions)
+                        fields.remove(field)
+
+                fields.append(Flag(fieldName, fieldValue, fieldMultiBit, fieldZero,
+                                      extensions, protect))
+
+            flagName = name.replace('FlagBits', 'Flags')
+            self.vk.bitmasks[name] = Bitmask(name, flagName, bitwidth, groupProtect, fields)
 
     def genType(self, typeinfo, typeName, alias):
         OutputGenerator.genType(self, typeinfo, typeName, alias)
         typeElem = typeinfo.elem
         category = typeElem.get('category')
         if (category == 'bitmask'):
-            flagBitsName = typeElem.get('requires')
-            flagName = typeElem.get('name')
-            if flagBitsName is None:
+            bitsName = typeElem.get('requires')
+            flagsName = typeElem.get('name')
+            if bitsName is None:
                 return
-            self.vk.flagToBitsMap[flagName] = flagBitsName
 
         elif (category == 'struct' or category == 'union'):
             returnedOnly = boolGet(typeElem, 'returnedonly')

@@ -73,11 +73,6 @@ class HelperFileOutputGenerator(OutputGenerator):
             'VkPipelineRenderingCreateInfo' : ''
         }
 
-        # Some bits are helper that include multiple bits, but it is more useful to use the flag name instead
-        self.custom_bit_flag_print = {
-            'VkShaderStageFlags' : ['VK_SHADER_STAGE_ALL', 'VK_SHADER_STAGE_ALL_GRAPHICS']
-        }
-
     vk_api_version_definition = """
 #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
 
@@ -212,19 +207,7 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
     def genGroup(self, groupinfo, groupName, alias):
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
         groupElem = groupinfo.elem
-        bitwidth = int(groupElem.get('bitwidth','32'))
-        # For enum_string_header
-        if self.helper_file_type == 'enum_string_header':
-            value_set = set()
-            protect_dict = dict()
-            for elem in groupElem.findall('enum'):
-                if elem.get('supported') != 'disabled' and elem.get('alias') is None:
-                    value_set.add(elem.get('name'))
-                    if elem.get('protect') is not None:
-                        protect_dict[elem.get('name')] = elem.get('protect')
-            if value_set != set():
-                self.enum_output += self.GenerateEnumStringConversion(groupName, value_set, bitwidth, protect_dict)
-        elif self.helper_file_type == 'object_types_header':
+        if self.helper_file_type == 'object_types_header':
             if groupName == 'VkDebugReportObjectTypeEXT':
                 for elem in groupElem.findall('enum'):
                     if elem.get('supported') != 'disabled':
@@ -373,112 +356,7 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         if typeinfo.elem.attrib.get('structextends') is not None:
             self.structextends_list.append(typeName)
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo, ifdef_protect=self.featureExtraProtect, allowduplicate=allowduplicate))
-    #
-    # Enum_string_header: Create a routine to convert an enumerated value into a string
-    def GenerateEnumStringConversion(self, groupName, value_list, bitwidth, protect_dict):
-        outstring = '\n'
-        if self.featureExtraProtect is not None:
-            outstring += '\n#ifdef %s\n\n' % self.featureExtraProtect
-        groupType = 'uint64_t' if bitwidth == 64 else groupName
 
-        outstring += 'static inline const char* string_%s(%s input_value)\n' % (groupName, groupType)
-        outstring += '{\n'
-        outstring += '    switch (input_value)\n'
-        outstring += '    {\n'
-        # Emit these in a repeatable order so file is generated with the same contents each time.
-        # This helps compiler caching systems like ccache.
-        for item in sorted(value_list):
-            if item in protect_dict:
-                outstring += '#ifdef %s\n' % protect_dict[item]
-            outstring += '        case %s:\n' % item
-            outstring += '            return "%s";\n' % item
-            if item in protect_dict:
-                outstring += '#endif // %s\n' % protect_dict[item]
-        outstring += '        default:\n'
-        outstring += '            return "Unhandled %s";\n' % groupName
-        outstring += '    }\n'
-        outstring += '}\n'
-
-        bitsIndex = groupName.find('Bits')
-        if (bitsIndex != -1):
-            outstring += '\n'
-            flagsName = groupName[0:bitsIndex] + "s" +  groupName[bitsIndex+4:]
-            intsuffix = 'ULL' if bitwidth == 64 else 'U'
-            outstring += 'static inline std::string string_%s(%s input_value)\n' % (flagsName, flagsName)
-            outstring += '{\n'
-            if flagsName in self.custom_bit_flag_print:
-                for custom in self.custom_bit_flag_print[flagsName]:
-                    outstring += '    if (input_value == %s) { return "%s"; }\n' % (custom, custom)
-            outstring += '    std::string ret;\n'
-            outstring += '    int index = 0;\n'
-            outstring += '    while(input_value) {\n'
-            outstring += '        if (input_value & 1) {\n'
-            outstring += '            if( !ret.empty()) ret.append("|");\n'
-            outstring += '            ret.append(string_%s(static_cast<%s>(1%s << index)));\n' % (groupName, groupType, intsuffix)
-            outstring += '        }\n'
-            outstring += '        ++index;\n'
-            outstring += '        input_value >>= 1;\n'
-            outstring += '    }\n'
-            outstring += '    if (ret.empty()) ret.append("%s(0)");\n' % flagsName
-            outstring += '    return ret;\n'
-            outstring += '}\n'
-
-        if self.featureExtraProtect is not None:
-            outstring += '#endif // %s\n' % self.featureExtraProtect
-        return outstring
-    #
-    # Enum_string_header: Create a routine to determine whether or not a structure type can appear multiple times in a pNext chain
-    def GenerateDuplicatePnextInfo(self, value_list):
-        outstring = '\nstatic inline bool IsDuplicatePnext(VkStructureType input_value)\n'
-        outstring += '{\n'
-        outstring += '    switch (input_value)\n'
-        outstring += '    {\n'
-        # Emit these in a repeatable order so file is generated with the same contents each time.
-        # This helps compiler caching systems like ccache.
-        for item in sorted(value_list):
-            outstring += '        case %s:\n' % item
-        outstring += '            return true;\n'
-        outstring += '        default:\n'
-        outstring += '            return false;\n'
-        outstring += '    }\n'
-        outstring += '}\n'
-        return outstring
-    def DuplicatePnextInfo(self):
-        return self.GenerateDuplicatePnextInfo([self.structTypes[struct.name].value for struct in self.structMembers if struct.allowduplicate])
-
-    #
-    # Tack on a helper which, given an index into a VkPhysicalDeviceFeatures structure, will print the corresponding feature name
-    def DeIndexPhysDevFeatures(self):
-        pdev_members = None
-        for name, members, ifdef, allowduplicate in self.structMembers:
-            if name == 'VkPhysicalDeviceFeatures':
-                pdev_members = members
-                break
-        deindex = '\n'
-        deindex += 'static inline const char * GetPhysDevFeatureString(uint32_t index) {\n'
-        deindex += '    const char * IndexToPhysDevFeatureString[] = {\n'
-        for feature in pdev_members:
-            deindex += '        "%s",\n' % feature.name
-        deindex += '    };\n\n'
-        deindex += '    return IndexToPhysDevFeatureString[index];\n'
-        deindex += '}\n'
-        return deindex
-    #
-    # Combine enum string helper header file preamble with body text and return
-    def GenerateEnumStringHelperHeader(self):
-            enum_string_helper_header = '\n'
-            enum_string_helper_header += '#pragma once\n'
-            enum_string_helper_header += '#ifdef _MSC_VER\n'
-            enum_string_helper_header += '#pragma warning( disable : 4065 )\n'
-            enum_string_helper_header += '#endif\n'
-            enum_string_helper_header += '\n'
-            enum_string_helper_header += '#include <string>\n'
-            enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
-            enum_string_helper_header += '\n'
-            enum_string_helper_header += self.enum_output
-            enum_string_helper_header += self.DeIndexPhysDevFeatures()
-            enum_string_helper_header += self.DuplicatePnextInfo()
-            return enum_string_helper_header
     #
     # Helper function for declaring a counter variable only once
     def DeclareCounter(self, string_var, declare_flag):
@@ -2103,9 +1981,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
     #
     # Create a helper file and return it as a string
     def OutputDestFile(self):
-        if self.helper_file_type == 'enum_string_header':
-            return self.GenerateEnumStringHelperHeader()
-        elif self.helper_file_type == 'safe_struct_header':
+        if self.helper_file_type == 'safe_struct_header':
             return self.GenerateSafeStructHelperHeader()
         elif self.helper_file_type == 'safe_struct_source':
             return self.GenerateSafeStructHelperSource()

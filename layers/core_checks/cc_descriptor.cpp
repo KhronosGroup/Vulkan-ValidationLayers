@@ -135,9 +135,8 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
         }
         error_str << report_data->FormatHandle(layout_dsl_handle)
                   << " from pipeline layout does not have the same binding flags at binding " << i << " ( "
-                  << string_VkDescriptorBindingFlagsEXT(ds_layout_flags[i]) << " ) as "
-                  << report_data->FormatHandle(bound_dsl_handle) << " ( "
-                  << string_VkDescriptorBindingFlagsEXT(bound_layout_flags[i]) << " ), which is bound";
+                  << string_VkDescriptorBindingFlags(ds_layout_flags[i]) << " ) as " << report_data->FormatHandle(bound_dsl_handle)
+                  << " ( " << string_VkDescriptorBindingFlags(bound_layout_flags[i]) << " ), which is bound";
         error_msg = error_str.str();
         return false;
     }
@@ -1545,7 +1544,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
                                     report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                                     report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                    string_VkFormatFeatureFlags2KHR(buf_format_features).c_str());
+                                    string_VkFormatFeatureFlags2(buf_format_features).c_str());
                 }
 
                 if ((variable.is_write_without_format) &&
@@ -1559,7 +1558,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
                                     report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                                     report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                    string_VkFormatFeatureFlags2KHR(buf_format_features).c_str());
+                                    string_VkFormatFeatureFlags2(buf_format_features).c_str());
                 }
             }
         }

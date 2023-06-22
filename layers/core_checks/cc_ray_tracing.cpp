@@ -798,8 +798,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-dst-02488",
                              "vkCmdBuildAccelerationStructureNV(): create info VkAccelerationStructureInfoNV::type"
                              "[%s] must be identical to build info VkAccelerationStructureInfoNV::type [%s].",
-                             string_VkAccelerationStructureTypeNV(dst_as_state->create_infoNV.info.type),
-                             string_VkAccelerationStructureTypeNV(pInfo->type));
+                             string_VkAccelerationStructureTypeKHR(dst_as_state->create_infoNV.info.type),
+                             string_VkAccelerationStructureTypeKHR(pInfo->type));
         }
         if (dst_as_state->create_infoNV.info.flags != pInfo->flags) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-dst-02488",

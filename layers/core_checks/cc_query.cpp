@@ -1057,9 +1057,8 @@ bool CoreChecks::ValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPip
 
     Location loc(Func::vkCmdWriteTimestamp2, Field::stage);
     if ((stage & (stage - 1)) != 0) {
-        skip |=
-            LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-stage-03859",
-                     "%s (%s) must only set a single pipeline stage.", func_name, string_VkPipelineStageFlags2KHR(stage).c_str());
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdWriteTimestamp2-stage-03859",
+                         "%s (%s) must only set a single pipeline stage.", func_name, string_VkPipelineStageFlags2(stage).c_str());
     }
     skip |= ValidatePipelineStage(LogObjectList(cb_state->commandBuffer()), loc, cb_state->GetQueueFlags(), stage);
 

@@ -288,7 +288,7 @@ std::ostream &operator<<(std::ostream &out, const HazardResult &hazard) {
     out << "prior_usage: " << stage_access_name;
     if (IsHazardVsRead(hazard.hazard)) {
         const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
-        out << ", read_barriers: " << string_VkPipelineStageFlags2KHR(barriers);
+        out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
     } else {
         SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
         out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
