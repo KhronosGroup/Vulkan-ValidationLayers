@@ -1634,6 +1634,60 @@ Iterator split(Iterator in, Map &map, const Range &range) {
     return pos;
 }
 
+// Apply an operation over a range map, infilling where content is absent, updating where content is present.
+// Trims to range boundaries.
+// infill op doesn't have to alter map, but mustn't invalidate iterators passed to it. (i.e. no erasure)
+// infill data (default mapped value or other initial value) is contained with ops.
+// update allows existing ranges to be updated (merged, whatever) based on data contained in ops.  All iterators
+// passed to update are already trimmed to fit within range.
+template <typename RangeMap, typename InfillUpdateOps>
+void infill_update_range(RangeMap &map, const typename RangeMap::key_type &range, const InfillUpdateOps &ops) {
+    using KeyType = typename RangeMap::key_type;
+    using IndexType = typename RangeMap::index_type;
+    const auto map_end = map.end();
+
+    if (range.empty()) return;
+
+    // Starting with
+    auto pos = map.lower_bound(range);
+    if ((pos != map_end) && (range.begin > pos->first.begin)) {
+        // lower bound starts before the range, trim and advance
+        pos = map.split(pos, range.begin, sparse_container::split_op_keep_both());
+        ++pos;
+    }
+
+    IndexType current_begin = range.begin;
+    while ((pos != map_end) && (current_begin < range.end)) {
+        // The current_begin is either pointing to the next existing value to update or the beginning of a gap to infill
+        assert(pos->first.begin >= current_begin);
+
+        if (current_begin < pos->first.begin) {
+            // We have a gap to infill (we supply pos for ("insert in front of" calls)
+            ops.infill(map, pos, KeyType(current_begin, std::min(range.end, pos->first.begin)));
+            // Advance current begin, but *not* pos as it's the next valid value. (infill shall not invalidate pos)
+            current_begin = pos->first.begin;
+        } else {
+            // We need to run the update operation on the valid portion of the current value
+            if (pos->first.end > range.end) {
+                // If this entry overlaps end-of-range we need to trim it to the range
+                pos = map.split(pos, range.end, sparse_container::split_op_keep_both());
+            }
+
+            // We have a valid fully contained range, merge with it
+            ops.update(pos);
+
+            // Advance the current location and map entry
+            current_begin = pos->first.end;
+            ++pos;
+        }
+    }
+
+    // Fill to the end as needed
+    if (current_begin < range.end) {
+        ops.infill(map, pos, KeyType(current_begin, range.end));
+    }
+}
+
 // Parallel iterator
 // Traverse to range maps over the the same range, but without assumptions of aligned ranges.
 // ++ increments to the next point where on of the two maps changes range, giving a range over which the two
