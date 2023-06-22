@@ -220,6 +220,7 @@ Legal options include:
 "windows"
 "linux"
 "darwin"
+"android"
 
 Builds on all platforms by default.
 
@@ -341,9 +342,16 @@ class GoodRepo(object):
             self.build_dir = os.path.join(dir_top, self.build_dir)
         if self.install_dir:
             self.install_dir = os.path.join(dir_top, self.install_dir)
-	    # Check if platform is one to build on
+
+        # By default the target platform is the host platform.
+        target_platform = platform.system().lower()
+        # However, we need to account for cross-compiling.
+        for cmake_var in self._args.cmake_var:
+            if "android.toolchain.cmake" in cmake_var:
+                target_platform = 'android'
+
         self.on_build_platform = False
-        if self.build_platforms == [] or platform.system().lower() in self.build_platforms:
+        if self.build_platforms == [] or target_platform in self.build_platforms:
             self.on_build_platform = True
 
     def Clone(self, retries=10, retry_seconds=60):
