@@ -327,26 +327,22 @@ class BaseGenerator(OutputGenerator):
         OutputGenerator.genType(self, typeinfo, typeName, alias)
         typeElem = typeinfo.elem
         category = typeElem.get('category')
-        if (category == 'bitmask'):
-            bitsName = typeElem.get('requires')
-            flagsName = typeElem.get('name')
-            if bitsName is None:
-                return
-
-        elif (category == 'struct' or category == 'union'):
+        if (category == 'struct' or category == 'union'):
+            protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
             structExtends = splitIfGet(typeElem, 'structextends')
 
             membersElem = typeinfo.elem.findall('.//member')
             members = []
+            sType = None
             for member in membersElem:
                 for comment in member.findall('comment'):
                     member.remove(comment)
 
                 name = textIfFind(member, 'name')
                 type = textIfFind(member, 'type')
-                sType = member.get('values')
+                sType = member.get('values') if member.get('values') is not None else sType
                 externSync = boolGet(member, 'externsync')
                 optional = boolGet(member, 'optional')
                 noautovalidity = boolGet(member, 'noautovalidity')
@@ -354,18 +350,18 @@ class BaseGenerator(OutputGenerator):
                 limittype = member.get('limittype')
                 cdecl = self.makeCParamDecl(member, 0)
 
-                members.append(Member(name, type, sType, externSync, optional,
+                members.append(Member(name, type, externSync, optional,
                                       noautovalidity, length, limittype, cdecl))
 
             if category == 'union':
-                self.vk.unions[typeName] = Union(typeName, structExtends, members)
+                self.vk.unions[typeName] = Union(typeName, structExtends, protect, members)
             else:
-                self.vk.structs[typeName] = Struct(typeName, structExtends, returnedOnly,
-                                                   allowDuplicate, members)
+                self.vk.structs[typeName] = Struct(typeName, structExtends, protect, sType,
+                                                   returnedOnly, allowDuplicate, members)
 
         else:
             # not all categories are used
-            #   'group'/'enum' are routed to genGroup instead
+            #   'group'/'enum'/'bitmask' are routed to genGroup instead
             #   'basetype'/`define`/'handle'/'include' are only for headers
             #   'funcpointer` ingore until needed
             return

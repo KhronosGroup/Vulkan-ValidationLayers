@@ -258,11 +258,10 @@ def makeGenOpts(args):
 
     # Helper file generator options for typemap_helper.h
     genOpts['vk_typemap_helper.h'] = [
-          HelperFileOutputGenerator,
+          TypemapHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_typemap_helper.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'typemap_helper_header')
+            mergeApiNames     = mergeApiNames)
         ]
 
     # Layer chassis related generation structs
@@ -529,6 +528,7 @@ if __name__ == '__main__':
     from generators.dynamic_state_generator import DynamicStateOutputGenerator
     from generators.sync_validation_generator import SyncValidationOutputGenerator
     from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
+    from generators.typemap_helper_generator import TypemapHelperOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):
