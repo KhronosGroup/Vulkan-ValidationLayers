@@ -1651,47 +1651,35 @@ SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2KHR stage
     return AccessScopeByStage(stages) & AccessScopeByAccess(accesses);
 }
 
+// The semantics of the InfillUpdateOps of infill_update_range are slightly different than for the UpdateMemoryAccessState Action
+// operations, as this simplifies the generic traversal.  So we wrap them in a semantics Adapter to get the same effect.
+template <typename Action>
+struct ActionToOpsAdapter {
+    using Map = ResourceAccessRangeMap;
+    using Range = typename Map::key_type;
+    using Iterator = typename Map::iterator;
+    using IndexType = typename Map::index_type;
+
+    void infill(Map &accesses, const Iterator &pos, const Range &infill_range) const {
+        // Combine Infill and update operations to make the generic implementation simpler
+        Iterator infill = action.Infill(&accesses, pos, infill_range);
+        if (infill == accesses.end()) return;  // Allow action to 'pass' on filling in the blanks
+
+        // Need to apply the action to the Infill.  'infill_update_range' expect ops.infill to be completely done with
+        // the infill_range, where as Action::Infill assumes the caller will apply the action() logic to the infill_range
+        for (; infill != pos; ++infill) {
+            assert(infill != accesses.end());
+            action(infill);
+        }
+    }
+    void update(const Iterator &pos) const { action(pos); }
+    const Action &action;
+};
+
 template <typename Action>
 void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const ResourceAccessRange &range, const Action &action) {
-    // TODO: Optimization for operations that do a pure overwrite (i.e. WRITE usages which rewrite the state, vs READ usages
-    //       that do incrementalupdates
-    assert(accesses);
-    if (range.empty()) return;
-    auto pos = accesses->lower_bound(range);
-    if (pos == accesses->end() || !pos->first.intersects(range)) {
-        // The range is empty, fill it with a default value.
-        pos = action.Infill(accesses, pos, range);
-    } else if (range.begin < pos->first.begin) {
-        // Leading empty space, infill
-        pos = action.Infill(accesses, pos, ResourceAccessRange(range.begin, pos->first.begin));
-    } else if (pos->first.begin < range.begin) {
-        // Trim the beginning if needed
-        pos = accesses->split(pos, range.begin, sparse_container::split_op_keep_both());
-        ++pos;
-    }
-
-    const auto the_end = accesses->end();
-    while ((pos != the_end) && pos->first.intersects(range)) {
-        if (pos->first.end > range.end) {
-            pos = accesses->split(pos, range.end, sparse_container::split_op_keep_both());
-        }
-
-        pos = action(accesses, pos);
-        if (pos == the_end) break;
-
-        auto next = pos;
-        ++next;
-
-        // Do gap infill or infill to end of range, if needed.
-        if (pos->first.end < range.end) {
-            VkDeviceSize limit = (next == the_end) ? range.end : std::min(range.end, next->first.begin);
-            ResourceAccessRange new_range(pos->first.end, limit);
-            if (new_range.non_empty()) {
-                next = action.Infill(accesses, next, new_range);
-            }
-        }
-        pos = next;
-    }
+    ActionToOpsAdapter<Action> ops{action};
+    infill_update_range(*accesses, range, ops);
 }
 
 // Give a comparable interface for range generators and ranges
@@ -1726,10 +1714,9 @@ struct UpdateMemoryAccessStateFunctor {
         return accesses->lower_bound(range);
     }
 
-    Iterator operator()(ResourceAccessRangeMap *accesses, const Iterator &pos) const {
+    void operator()(const Iterator &pos) const {
         auto &access_state = pos->second;
         access_state.Update(usage, ordering_rule, tag);
-        return pos;
     }
 
     UpdateMemoryAccessStateFunctor(AccessAddressType type_, const AccessContext &context_, SyncStageAccessIndex usage_,
@@ -1801,7 +1788,7 @@ class ApplyBarrierOpsFunctor {
         return inserted;
     }
 
-    Iterator operator()(ResourceAccessRangeMap *accesses, const Iterator &pos) const {
+    void operator()(const Iterator &pos) const {
         auto &access_state = pos->second;
         for (const auto &op : barrier_ops_) {
             op(&access_state);
@@ -1812,7 +1799,6 @@ class ApplyBarrierOpsFunctor {
             // another walk
             access_state.ApplyPendingBarriers(tag_);
         }
-        return pos;
     }
 
     // A valid tag is required IFF layout_transition is true, as transitions are write ops
