@@ -195,7 +195,10 @@ class BaseGenerator(OutputGenerator):
             deprecatedby = interface.get('deprecatedby')
             obsoletedby = interface.get('obsoletedby')
             specialuse = splitIfGet(interface, 'specialuse')
-            self.currentFeature = Extension(name, instance, device, depends, vendorTag,
+            # Not sure if better way to get this info
+            nameEnum = self.featureDictionary[name]['enumconstant'][None][None][1]
+
+            self.currentFeature = Extension(name, nameEnum, instance, device, depends, vendorTag,
                                             platform, self.featureExtraProtect,
                                             provisional, promotedto, deprecatedby,
                                             obsoletedby, specialuse)
@@ -323,17 +326,17 @@ class BaseGenerator(OutputGenerator):
             flagName = name.replace('FlagBits', 'Flags')
             self.vk.bitmasks[name] = Bitmask(name, flagName, bitwidth, groupProtect, fields)
 
-    def genType(self, typeinfo, typeName, alias):
-        OutputGenerator.genType(self, typeinfo, typeName, alias)
-        typeElem = typeinfo.elem
+    def genType(self, typeInfo, typeName, alias):
+        OutputGenerator.genType(self, typeInfo, typeName, alias)
+        typeElem = typeInfo.elem
+        protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
-            protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
             structExtends = splitIfGet(typeElem, 'structextends')
 
-            membersElem = typeinfo.elem.findall('.//member')
+            membersElem = typeInfo.elem.findall('.//member')
             members = []
             sType = None
             for member in membersElem:
@@ -359,10 +362,19 @@ class BaseGenerator(OutputGenerator):
                 self.vk.structs[typeName] = Struct(typeName, structExtends, protect, sType,
                                                    returnedOnly, allowDuplicate, members)
 
+        elif category == 'handle':
+            if alias is not None:
+                return
+            type = typeElem.get('objtypeenum')
+            instance = typeElem.get('parent') == 'VkInstance'
+            device = not instance
+            dispatchable = self.handle_types[typeName] == 'VK_DEFINE_HANDLE'
+            self.vk.handles[typeName] = Handle(typeName, type, protect, instance, device, dispatchable)
+
         else:
             # not all categories are used
             #   'group'/'enum'/'bitmask' are routed to genGroup instead
-            #   'basetype'/`define`/'handle'/'include' are only for headers
+            #   'basetype'/`define`/''include' are only for headers
             #   'funcpointer` ingore until needed
             return
 

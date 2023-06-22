@@ -240,11 +240,10 @@ def makeGenOpts(args):
 
     # Helper file generator options for vk_object_types.h
     genOpts['vk_object_types.h'] = [
-          HelperFileOutputGenerator,
+          ObjectTypesOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_object_types.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'object_types_header')
+            mergeApiNames     = mergeApiNames)
         ]
 
     # Helper file generator options for extension_helper.h
@@ -529,6 +528,7 @@ if __name__ == '__main__':
     from generators.sync_validation_generator import SyncValidationOutputGenerator
     from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
     from generators.typemap_helper_generator import TypemapHelperOutputGenerator
+    from generators.object_types_generator import ObjectTypesOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):

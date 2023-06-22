@@ -25,6 +25,8 @@ from typing import List, Dict
 class Extension:
     """<extension>"""
     name: str
+    nameEnum: str # ex 'VK_KHR_SURFACE_EXTENSION_NAME'
+
     # Only one will be True, the other is False
     instance: bool
     device: bool
@@ -44,6 +46,17 @@ class Version:
     """<feature> which represents a version"""
     name: str # VK_VERSION_1_0
     number: str # 1.0
+
+@dataclass(frozen=True)
+class Handle:
+    """<type> which represents a dispatch handle"""
+    name: str
+    type: str    # ex. 'VK_OBJECT_TYPE_BUFFER'
+    protect: str # ex. 'VK_USE_PLATFORM_ANDROID_KHR'
+    # Only one will be True, the other is False
+    instance: bool
+    device: bool
+    dispatchable: bool
 
 @dataclass(frozen=True)
 class CommandParam:
@@ -283,6 +296,7 @@ class VulkanObject():
     extensions: Dict[str, Extension] = field(default_factory=dict, init=False)
     versions:   Dict[str, Version]   = field(default_factory=dict, init=False)
 
+    handles:  Dict[str, Handle]      = field(default_factory=dict, init=False)
     commands: Dict[str, Command]     = field(default_factory=dict, init=False)
     enums:    Dict[str, Enum]        = field(default_factory=dict, init=False)
     bitmasks: Dict[str, Bitmask]     = field(default_factory=dict, init=False)

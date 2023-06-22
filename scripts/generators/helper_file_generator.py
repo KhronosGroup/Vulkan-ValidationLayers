@@ -39,10 +39,6 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.structNames = []                             # List of Vulkan struct typenames
         self.structTypes = dict()                         # Map of Vulkan struct typename to required VkStructureType
         self.structMembers = []                           # List of StructMemberData records for all Vulkan structs
-        self.object_types = []                            # List of all handle types
-        self.object_guards = {}                           # Ifdef guards for object types
-        self.object_type_aliases = []                     # Aliases to handles types (for handles that were extensions)
-        self.debug_report_object_types = []               # Handy copy of debug_report_object_type enum data
         self.core_object_types = []                       # Handy copy of core_object_type enum data
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
@@ -206,21 +202,6 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
     # Grab group (e.g. C "enum" type) info to output for enum-string conversion helper
     def genGroup(self, groupinfo, groupName, alias):
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
-        groupElem = groupinfo.elem
-        if self.helper_file_type == 'object_types_header':
-            if groupName == 'VkDebugReportObjectTypeEXT':
-                for elem in groupElem.findall('enum'):
-                    if elem.get('supported') != 'disabled':
-                        if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
-                            item_name = elem.get('name')
-                            if self.debug_report_object_types.count(item_name) == 0: # TODO: Strangely there are duplicates
-                                self.debug_report_object_types.append(item_name)
-            elif groupName == 'VkObjectType':
-                for elem in groupElem.findall('enum'):
-                    if elem.get('supported') != 'disabled':
-                        if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
-                            item_name = elem.get('name')
-                            self.core_object_types.append(item_name)
 
     #
     # Called for each type -- if the type is a struct/union, grab the metadata
@@ -230,14 +211,8 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         # If the type is a struct type, traverse the imbedded <member> tags generating a structure.
         # Otherwise, emit the tag text.
         category = typeElem.get('category')
-        if category == 'handle':
-            if alias:
-                self.object_type_aliases.append((name,alias))
-            else:
-                self.object_types.append(name)
-                self.object_guards[name] = self.featureExtraProtect
 
-        elif (category == 'struct' or category == 'union'):
+        if (category == 'struct' or category == 'union'):
             self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
             if (category == 'union'):
@@ -719,222 +694,6 @@ Times to NOT use it
             output.extend(struct)
 
         return '\n'.join(output)
-    #
-    # Combine object types helper header file preamble with body text and return
-    def GenerateObjectTypesHelperHeader(self):
-        object_types_helper_header = '\n'
-        object_types_helper_header += '#pragma once\n'
-        object_types_helper_header += '\n'
-        object_types_helper_header += self.GenerateObjectTypesHeader()
-        return object_types_helper_header
-    #
-    # Object types header: create object enum type header file
-    def GenerateObjectTypesHeader(self):
-        object_types_header = '#include "utils/cast_utils.h"\n'
-        object_types_header += '\n'
-        object_types_header += '// Object Type enum for validation layer internal object handling\n'
-        object_types_header += 'typedef enum VulkanObjectType {\n'
-        object_types_header += '    kVulkanObjectTypeUnknown = 0,\n'
-        enum_num = 1
-        type_list = []
-        enum_entry_map = {}
-        non_dispatchable = {}
-        dispatchable = {}
-        object_type_info = {}
-
-        # Output enum definition as each handle is processed, saving the names to use for the conversion routine
-        for item in self.object_types:
-            fixup_name = item[2:]
-            enum_entry = 'kVulkanObjectType%s' % fixup_name
-            enum_entry_map[item] = enum_entry
-            object_types_header += '    ' + enum_entry
-            object_types_header += ' = %d,\n' % enum_num
-            enum_num += 1
-            type_list.append(enum_entry)
-            object_type_info[enum_entry] = { 'VkType': item , 'Guard': self.object_guards[item]}
-            # We'll want lists of the dispatchable and non dispatchable handles below with access to the same info
-            if self.handle_types.IsNonDispatchable(item):
-                non_dispatchable[item] = enum_entry
-            else:
-                dispatchable[item] = enum_entry
-
-        object_types_header += '    kVulkanObjectTypeMax = %d,\n' % enum_num
-        object_types_header += '    // Aliases for backwards compatibilty of "promoted" types\n'
-        for (name, alias) in self.object_type_aliases:
-            fixup_name = name[2:]
-            object_types_header += '    kVulkanObjectType{} = {},\n'.format(fixup_name, enum_entry_map[alias])
-        object_types_header += '} VulkanObjectType;\n\n'
-
-        # Output name string helper
-        object_types_header += '// Array of object name strings for OBJECT_TYPE enum conversion\n'
-        object_types_header += 'static const char * const object_string[kVulkanObjectTypeMax] = {\n'
-        object_types_header += '    "VkNonDispatchableHandle",\n'
-        for item in self.object_types:
-            object_types_header += '    "%s",\n' % item
-        object_types_header += '};\n'
-
-        # Helpers to create unified dict key from k<Name>, VK_OBJECT_TYPE_<Name>, and VK_DEBUG_REPORT_OBJECT_TYPE_<Name>
-        def dro_to_key(raw_key): return re.search('^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$', raw_key).group(1).lower().replace("_","")
-        def vko_to_key(raw_key): return re.search('^VK_OBJECT_TYPE_(.*)', raw_key).group(1).lower().replace("_","")
-        def kenum_to_key(raw_key): return re.search('^kVulkanObjectType(.*)', raw_key).group(1).lower()
-
-        dro_dict = {dro_to_key(dro) : dro for dro in self.debug_report_object_types}
-        vko_dict = {vko_to_key(vko) : vko for vko in self.core_object_types}
-
-        # Output a conversion routine from the layer object definitions to the debug report definitions
-        object_types_header += '\n'
-        object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
-        object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
-        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n' # no unknown handle, so this must be here explicitly
-
-        for object_type in type_list:
-            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
-            kenum_type = dro_dict.get(kenum_to_key(object_type), 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT')
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
-            object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#else\n'
-                object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // %s\n' % object_type
-                object_types_header += '#endif\n'
-            object_type_info[object_type]['DbgType'] = kenum_type
-        object_types_header += '};\n'
-
-        # Output a conversion routine from the layer object definitions to the core object type definitions
-        # This will intentionally *fail* for unmatched types as the VK_OBJECT_TYPE list should match the kVulkanObjectType list
-        object_types_header += '\n'
-        object_types_header += '// Helper function to get Official Vulkan VkObjectType enum from the internal layers version\n'
-        object_types_header += 'static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType internal_type) {\n'
-        object_types_header += '    switch (internal_type) {\n'
-
-        for object_type in type_list:
-            kenum_type = vko_dict[kenum_to_key(object_type)]
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
-            object_types_header += '        case %s: return %s;\n' % (object_type, kenum_type)
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#endif\n'
-            object_type_info[object_type]['VkoType'] = kenum_type
-        object_types_header += '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
-        object_types_header += '    }\n'
-        object_types_header += '};\n'
-
-        # Output a function converting from core object type definitions to the Vulkan object type enums
-        object_types_header += '\n'
-        object_types_header += '// Helper function to get internal layers object ids from the official Vulkan VkObjectType enum\n'
-        object_types_header += 'static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulkan_object_type) {\n'
-        object_types_header += '    switch (vulkan_object_type) {\n'
-
-        for object_type in type_list:
-            kenum_type = vko_dict[kenum_to_key(object_type)]
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
-            object_types_header += '        case %s: return %s;\n' % (kenum_type, object_type)
-            if object_type_info[object_type]['Guard']:
-                object_types_header += '#endif\n'
-        object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
-        object_types_header += '    }\n'
-        object_types_header += '};\n'
-
-        # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
-        object_types_header +=     '\n'
-        object_types_header +=     'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj) {\n'
-        object_types_header +=     '    switch (debug_report_obj) {\n'
-        for dr_object_type in self.debug_report_object_types:
-            object_types_header += '        case %s: return %s;\n' % (dr_object_type, vko_dict[dro_to_key(dr_object_type)])
-        object_types_header +=     '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
-        object_types_header +=     '    }\n'
-        object_types_header +=     '}\n'
-
-        object_types_header +=         '\n'
-        object_types_header +=         'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {\n'
-        object_types_header +=         '    switch (core_report_obj) {\n'
-        for core_object_type in self.core_object_types:
-            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
-            dr_object_type = dro_dict.get(vko_to_key(core_object_type))
-            if dr_object_type is not None:
-                object_types_header += '        case %s: return %s;\n' % (core_object_type, dr_object_type)
-        object_types_header +=         '        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
-        object_types_header +=         '    }\n'
-        object_types_header +=         '}\n'
-
-        #
-        object_types_header += '\n'
-        traits_format = Outdent('''
-            template <> struct VkHandleInfo<{vk_type}> {{
-                static const VulkanObjectType kVulkanObjectType = {obj_type};
-                static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {dbg_type};
-                static const VkObjectType kVkObjectType = {vko_type};
-                static const char* Typename() {{
-                    return "{vk_type}";
-                }}
-            }};
-            template <> struct VulkanObjectTypeInfo<{obj_type}> {{
-                typedef {vk_type} Type;
-            }};
-            ''')
-
-        object_types_header += Outdent('''
-            // Traits objects from each type statically map from Vk<handleType> to the various enums
-            template <typename VkType> struct VkHandleInfo {};
-            template <VulkanObjectType id> struct VulkanObjectTypeInfo {};
-
-            // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
-            #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-                defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-            #define TYPESAFE_NONDISPATCHABLE_HANDLES
-            #else
-            VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkNonDispatchableHandle)
-            ''')  +'\n'
-        object_types_header += traits_format.format(vk_type='VkNonDispatchableHandle', obj_type='kVulkanObjectTypeUnknown',
-                                                  dbg_type='VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT',
-                                                  vko_type='VK_OBJECT_TYPE_UNKNOWN') + '\n'
-        object_types_header += '#endif //  VK_DEFINE_HANDLE logic duplication\n'
-
-        for vk_type, object_type in sorted(dispatchable.items()):
-            info = object_type_info[object_type]
-            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
-                                                      vko_type=info['VkoType'])
-        object_types_header += '#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n'
-        for vk_type, object_type in sorted(non_dispatchable.items()):
-            info = object_type_info[object_type]
-            if info['Guard']:
-                object_types_header += '#ifdef {}\n'.format(info['Guard'])
-            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
-                                                      vko_type=info['VkoType'])
-            if info['Guard']:
-                object_types_header += '#endif\n'
-        object_types_header += '#endif // TYPESAFE_NONDISPATCHABLE_HANDLES\n'
-
-        object_types_header += Outdent('''
-            struct VulkanTypedHandle {
-                uint64_t handle;
-                VulkanObjectType type;
-                template <typename Handle>
-                VulkanTypedHandle(Handle handle_, VulkanObjectType type_) :
-                    handle(CastToUint64(handle_)),
-                    type(type_) {
-            #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
-                    // For 32 bit it's not always safe to check for traits <-> type
-                    // as all non-dispatchable handles have the same type-id and thus traits,
-                    // but on 64 bit we can validate the passed type matches the passed handle
-                    assert(type == VkHandleInfo<Handle>::kVulkanObjectType);
-            #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
-                }
-                template <typename Handle>
-                Handle Cast() const {
-            #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
-                    assert(type == VkHandleInfo<Handle>::kVulkanObjectType);
-            #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
-                    return CastFromUint64<Handle>(handle);
-                }
-                VulkanTypedHandle() :
-                    handle(CastToUint64(VK_NULL_HANDLE)),
-                    type(kVulkanObjectTypeUnknown) {}
-                operator bool() const { return handle != 0; }
-            }; ''')  +'\n'
-
-        return object_types_header
     #
     # Generate pNext handling function
     def build_safe_struct_utility_funcs(self):
@@ -1869,8 +1628,6 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
             return self.GenerateSafeStructHelperHeader()
         elif self.helper_file_type == 'safe_struct_source':
             return self.GenerateSafeStructHelperSource()
-        elif self.helper_file_type == 'object_types_header':
-            return self.GenerateObjectTypesHelperHeader()
         elif self.helper_file_type == 'extension_helper_header':
             return self.GenerateExtensionHelperHeader()
         else:
