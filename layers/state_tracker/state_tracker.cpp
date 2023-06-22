@@ -342,6 +342,29 @@ void ValidationStateTracker::PreCallRecordCmdBlitImage2(VkCommandBuffer commandB
                                 Get<IMAGE_STATE>(pBlitImageInfo->dstImage));
 }
 
+struct BufferAddressInfillUpdateOps {
+    using Map = typename ValidationStateTracker::BufferAddressRangeMap;
+    using Iterator = typename Map::iterator;
+    using Value = typename Map::value_type;
+    using Mapped = typename Map::mapped_type;
+    using Range = typename Map::key_type;
+    void infill(Map &map, const Iterator &pos, const Range &infill_range) const {
+        map.insert(pos, Value(infill_range, insert_value));
+    }
+    void update(const Iterator &pos) const {
+        auto &current_buffer_list = pos->second;
+        assert(!current_buffer_list.empty());
+        const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), insert_value[0]);
+        if (buffer_found_it == current_buffer_list.end()) {
+            if (current_buffer_list.capacity() <= (current_buffer_list.size() + 1)) {
+                current_buffer_list.reserve(current_buffer_list.capacity() * 2);
+            }
+            current_buffer_list.emplace_back(insert_value[0]);
+        }
+    }
+    const Mapped &insert_value;
+};
+
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                                         VkResult result) {
@@ -366,14 +389,8 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
             const auto address_range = buffer_state->DeviceAddressRange();
 
-            buffer_address_map_.split_and_merge_insert(
-                {address_range, {buffer_state}}, [](auto &current_buffer_list, const auto &new_buffer) {
-                    assert(!current_buffer_list.empty());
-                    const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), new_buffer[0]);
-                    if (buffer_found_it == current_buffer_list.end()) {
-                        current_buffer_list.emplace_back(new_buffer[0]);
-                    }
-                });
+            BufferAddressInfillUpdateOps ops{{buffer_state}};
+            sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
         }
 
         const VkBufferUsageFlags descriptor_buffer_usages =
@@ -5707,14 +5724,8 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
         buffer_state->deviceAddress = address;
         const auto address_range = buffer_state->DeviceAddressRange();
 
-        buffer_address_map_.split_and_merge_insert(
-            {address_range, {buffer_state}}, [](auto &current_buffer_list, const auto &new_buffer) {
-                assert(!current_buffer_list.empty());
-                const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), new_buffer[0]);
-                if (buffer_found_it == current_buffer_list.end()) {
-                    current_buffer_list.emplace_back(new_buffer[0]);
-                }
-            });
+        BufferAddressInfillUpdateOps ops{{buffer_state}};
+        sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
     }
 }
 
