@@ -357,6 +357,7 @@ class small_vector {
     inline const_iterator cend() const { return GetWorkingStore() + size_; }
     inline const_iterator end() const { return GetWorkingStore() + size_; }
     inline size_type size() const { return size_; }
+    auto capacity() const { return capacity_; }
 
     inline pointer data() { return GetWorkingStore(); }
     inline const_pointer data() const { return GetWorkingStore(); }
