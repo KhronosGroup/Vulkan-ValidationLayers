@@ -327,6 +327,7 @@ target_sources(vvl PRIVATE
     stateless/sl_ray_tracing.cpp
     stateless/sl_render_pass.cpp
     stateless/sl_synchronization.cpp
+    stateless/sl_utils.cpp
     stateless/sl_wsi.cpp
     stateless/stateless_validation.h
     sync/sync_validation.cpp

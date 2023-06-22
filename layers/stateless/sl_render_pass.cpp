@@ -19,6 +19,41 @@
 #include "stateless/stateless_validation.h"
 #include "utils/convert_utils.h"
 
+bool StatelessValidation::ValidateSubpassGraphicsFlags(const debug_report_data *report_data,
+                                                       const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t dependency_index,
+                                                       uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
+                                                       const char *target, const char *func_name) const {
+    bool skip = false;
+    // make sure we consider all of the expanded and un-expanded graphics bits to be valid
+    const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
+                                VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
+                                VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
+    const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
+                                     VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
+    const auto kGraphicsStages =
+        (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
+        ~kExcludeStages;
+
+    const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
+        if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount)
+            return false;
+        else
+            return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
+    };
+
+    const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
+    if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
+        skip |= LogError(VkRenderPass(0), vuid,
+                         "%s: Dependency pDependencies[%" PRIu32
+                         "] specifies a %sStageMask that contains stages (%s) that are not part "
+                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                         func_name, dependency_index, target,
+                         sync_utils::StringPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                    RenderPassCreateVersion rp_version) const {
@@ -465,11 +500,35 @@ bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice de
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
+void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
+    std::unique_lock<std::mutex> lock(renderpass_map_mutex);
+    auto &renderpass_state = renderpasses_states[renderPass];
+    lock.unlock();
+
+    renderpass_state.subpasses_flags.resize(pCreateInfo->subpassCount);
+    for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+        bool uses_color = false;
+        renderpass_state.color_attachment_count = pCreateInfo->pSubpasses[subpass].colorAttachmentCount;
+
+        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
+            if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
+
+        bool uses_depthstencil = false;
+        if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment)
+            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)
+                uses_depthstencil = true;
+
+        if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
+        if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
+        renderpass_state.subpasses_flags[subpass] = pCreateInfo->pSubpasses[subpass].flags;
+    }
+}
 void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                          VkResult result) {
     if (result != VK_SUCCESS) return;
-    RecordRenderPass(*pRenderPass, pCreateInfo);
+    safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
+    RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
 void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
@@ -477,7 +536,8 @@ void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, co
                                                              VkResult result) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     if (result != VK_SUCCESS) return;
-    RecordRenderPass(*pRenderPass, pCreateInfo);
+    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
+    RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
 void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,

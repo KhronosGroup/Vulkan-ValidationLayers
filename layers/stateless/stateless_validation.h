@@ -90,75 +90,11 @@ class StatelessValidation : public ValidationObject {
         }
     }
 
-    /**
-     * Validate a minimum value.
-     *
-     * Verify that the specified value is greater than the specified lower bound.
-     *
-     * @param api_name Name of API call being validated.
-     * @param parameter_name Name of parameter being validated.
-     * @param value Value to validate.
-     * @param lower_bound Lower bound value to use for validation.
-     * @return Boolean value indicating that the call should be skipped.
-     */
-    template <typename T>
-    bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string &vuid,
-                             const char *api_name) const {
-        bool skip_call = false;
+    bool ValidateNotZero(bool is_zero, const ParameterName &parameter_name, const std::string &vuid, const char *api_name) const;
 
-        if (value <= lower_bound) {
-            std::ostringstream ss;
-            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is not greater than "
-               << lower_bound;
-            skip_call |= LogError(device, vuid, "%s", ss.str().c_str());
-        }
-
-        return skip_call;
-    }
-
-    template <typename T>
-    bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string &vuid,
-                                 const char *api_name) const {
-        return ValidateGreaterThan(value, T{0}, parameter_name, vuid, api_name);
-    }
-    /**
-     * Validate a required pointer.
-     *
-     * Verify that a required pointer is not NULL.
-     *
-     * @param apiName Name of API call being validated.
-     * @param parameterName Name of parameter being validated.
-     * @param value Pointer to validate.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateRequiredPointer(const char *apiName, const ParameterName &parameterName, const void *value,
-                                 const std::string &vuid) const {
-        bool skip_call = false;
+                                 const std::string &vuid) const;
 
-        if (value == nullptr) {
-            skip_call |=
-                LogError(device, vuid, "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
-        }
-
-        return skip_call;
-    }
-
-    /**
-     * Validate array count and pointer to array.
-     *
-     * Verify that required count and array parameters are not 0 or NULL.  If the
-     * count parameter is not optional, verify that it is not 0.  If the array
-     * parameter is NULL, and it is not optional, verify that count is 0.
-     *
-     * @param apiName Name of API call being validated.
-     * @param countName Name of count parameter.
-     * @param arrayName Name of array parameter.
-     * @param count Number of elements in the array.
-     * @param array Array to validate.
-     * @param countRequired The 'count' parameter may not be 0 when true.
-     * @param arrayRequired The 'array' parameter may not be NULL when true.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     template <typename T1, typename T2>
     bool ValidateArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, T1 count,
                        const T2 *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
@@ -442,45 +378,10 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
-    /**
-     * Validate string array count and content.
-     *
-     * Verify that required count and array parameters are not 0 or NULL.  If the
-     * count parameter is not optional, verify that it is not 0.  If the array
-     * parameter is NULL, and it is not optional, verify that count is 0.  If the
-     * array parameter is not NULL, verify that none of the strings are NULL.
-     *
-     * @param apiName Name of API call being validated.
-     * @param countName Name of count parameter.
-     * @param arrayName Name of array parameter.
-     * @param count Number of strings in the array.
-     * @param array Array of strings to validate.
-     * @param countRequired The 'count' parameter may not be 0 when true.
-     * @param arrayRequired The 'array' parameter may not be NULL when true.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateStringArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
                              const char *const *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
-                             const char *array_required_vuid) const {
-        bool skip_call = false;
+                             const char *array_required_vuid) const;
 
-        if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                       count_required_vuid, array_required_vuid);
-        } else {
-            // Verify that strings in the array are not NULL
-            for (uint32_t i = 0; i < count; ++i) {
-                if (array[i] == nullptr) {
-                    skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s[%d] specified as NULL", apiName,
-                                          arrayName.get_name().c_str(), i);
-                }
-            }
-        }
-
-        return skip_call;
-    }
-
-    // Forward declarations
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
     bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const;
@@ -488,159 +389,15 @@ class StatelessValidation : public ValidationObject {
     bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
                                      const char *pnext_vuid, bool is_physdev_api = false, bool is_const_param = true) const;
 
-    /**
-     * Validate a structure's pNext member.
-     *
-     * Verify that the specified pNext value points to the head of a list of
-     * allowed extension structures.  If no extension structures are allowed,
-     * verify that pNext is null.
-     *
-     * @param api_name Name of API call being validated.
-     * @param parameter_name Name of parameter being validated.
-     * @param allowed_struct_names Names of allowed structs.
-     * @param next Pointer to validate.
-     * @param allowed_type_count Total number of allowed structure types.
-     * @param allowed_types Array of structure types allowed for pNext.
-     * @param header_version Version of header defining the pNext validation rules.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateStructPnext(const char *api_name, const ParameterName &parameter_name, const char *allowed_struct_names,
                              const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
                              uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
-                             const bool is_physdev_api = false, const bool is_const_param = true) const {
-        bool skip_call = false;
+                             const bool is_physdev_api = false, const bool is_const_param = true) const;
 
-        if (next != nullptr) {
-            vvl::unordered_set<const void *> cycle_check;
-            vvl::unordered_set<VkStructureType, vvl::hash<int>> unique_stype_check;
+    bool ValidateBool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) const;
 
-            const char *disclaimer =
-                "This error is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that "
-                "you are using a struct from a private extension or an extension that was added to a later version of the Vulkan "
-                "header, in which case the use of %s is undefined and may not work correctly with validation enabled";
-
-            if ((allowed_type_count == 0) && (custom_stype_info.size() == 0)) {
-                std::string message = "%s: value of %s must be NULL. ";
-                message += disclaimer;
-                skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                      header_version, parameter_name.get_name().c_str());
-            } else {
-                const VkStructureType *start = allowed_types;
-                const VkStructureType *end = allowed_types + allowed_type_count;
-                const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
-
-                while (current != nullptr) {
-                    if (((strncmp(api_name, "vkCreateInstance", strlen(api_name)) != 0) ||
-                         (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
-                        ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
-                         (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
-                        std::string type_name = string_VkStructureType(current->sType);
-                        if (unique_stype_check.find(current->sType) != unique_stype_check.end() &&
-                            !IsDuplicatePnext(current->sType)) {
-                            // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
-                            std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
-                            skip_call |= LogError(device, stype_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                                  type_name.c_str());
-                        } else {
-                            unique_stype_check.insert(current->sType);
-                        }
-
-                        // Search custom stype list -- if sType found, skip this entirely
-                        bool custom = false;
-                        for (const auto &item : custom_stype_info) {
-                            if (item.first == current->sType) {
-                                custom = true;
-                                break;
-                            }
-                        }
-                        if (!custom) {
-                            if (std::find(start, end, current->sType) == end) {
-                                if (type_name.compare(UnsupportedStructureTypeString) == 0) {
-                                    std::string message =
-                                        "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures "
-                                        "are [%s]. ";
-                                    message += disclaimer;
-                                    skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name,
-                                                          parameter_name.get_name().c_str(), current->sType, allowed_struct_names,
-                                                          header_version, parameter_name.get_name().c_str());
-                                } else {
-                                    std::string message =
-                                        "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures "
-                                        "are [%s]. ";
-                                    message += disclaimer;
-                                    skip_call |= LogError(device, pnext_vuid, message.c_str(), api_name,
-                                                          parameter_name.get_name().c_str(), type_name.c_str(),
-                                                          allowed_struct_names, header_version, parameter_name.get_name().c_str());
-                                }
-                            }
-                            skip_call |= ValidatePnextStructContents(api_name, parameter_name, current, pnext_vuid, is_physdev_api,
-                                                                     is_const_param);
-                        }
-                    }
-                    current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
-                }
-            }
-        }
-
-        return skip_call;
-    }
-
-    /**
-     * Validate a VkBool32 value.
-     *
-     * Generate an error if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
-     *
-     * @param apiName Name of API call being validated.
-     * @param parameterName Name of parameter being validated.
-     * @param value Boolean value to validate.
-     * @return Boolean value indicating that the call should be skipped.
-     */
-    bool ValidateBool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) const {
-        bool skip_call = false;
-        if ((value != VK_TRUE) && (value != VK_FALSE)) {
-            skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
-                                  "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
-                                  "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
-                                  apiName, parameterName.get_name().c_str(), value);
-        }
-        return skip_call;
-    }
-
-    /**
-     * Validate an array of VkBool32 values.
-     *
-     * Generate an error if any VkBool32 value in an array is neither VK_TRUE nor VK_FALSE.
-     *
-     * @param apiName Name of API call being validated.
-     * @param countName Name of count parameter.
-     * @param arrayName Name of array parameter.
-     * @param count Number of values in the array.
-     * @param array Array of VkBool32 values to validate.
-     * @param countRequired The 'count' parameter may not be 0 when true.
-     * @param arrayRequired The 'array' parameter may not be NULL when true.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateBool32Array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
-                             const VkBool32 *array, bool countRequired, bool arrayRequired) const {
-        bool skip_call = false;
-
-        if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
-                                       kVUIDUndefined);
-        } else {
-            for (uint32_t i = 0; i < count; ++i) {
-                if ((array[i] != VK_TRUE) && (array[i] != VK_FALSE)) {
-                    skip_call |=
-                        LogError(device, kVUID_PVError_UnrecognizedValue,
-                                 "%s: value of %s[%d] (%d) is neither VK_TRUE nor VK_FALSE. Applications MUST not pass any other "
-                                 "values than VK_TRUE or VK_FALSE into a Vulkan implementation where a VkBool32 is expected.",
-                                 apiName, arrayName.get_name().c_str(), i, array[i]);
-                }
-            }
-        }
-
-        return skip_call;
-    }
+                             const VkBool32 *array, bool countRequired, bool arrayRequired) const;
 
     /**
      * Validate a Vulkan enumeration value.
@@ -744,26 +501,7 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
-    /**
-     * Verify that a reserved VkFlags value is zero.
-     *
-     * Verify that the specified value is zero, to check VkFlags values that are reserved for
-     * future use.
-     *
-     * @param api_name Name of API call being validated.
-     * @param parameter_name Name of parameter being validated.
-     * @param value Value to validate.
-     * @return Boolean value indicating that the call should be skipped.
-     */
-    bool ValidateReservedFlags(const char *api_name, const ParameterName &parameter_name, VkFlags value, const char *vuid) const {
-        bool skip_call = false;
-
-        if (value != 0) {
-            skip_call |= LogError(device, vuid, "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
-        }
-
-        return skip_call;
-    }
+    bool ValidateReservedFlags(const char *api_name, const ParameterName &parameter_name, VkFlags value, const char *vuid) const;
 
     enum FlagType { kRequiredFlags, kOptionalFlags, kRequiredSingleBit, kOptionalSingleBit };
 
@@ -771,214 +509,33 @@ class StatelessValidation : public ValidationObject {
     template <typename FlagTypedef>
     bool ValidateFlagsImplementation(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name,
                                      FlagTypedef all_flags, FlagTypedef value, const FlagType flag_type, const char *vuid,
-                                     const char *flags_zero_vuid = nullptr) const {
-        bool skip_call = false;
+                                     const char *flags_zero_vuid = nullptr) const;
 
-        if ((value & ~all_flags) != 0) {
-            skip_call |= LogError(device, vuid, "%s: value of %s contains flag bits that are not recognized members of %s",
-                                  api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        }
-
-        const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
-        const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
-        if (required && value == 0) {
-            skip_call |= LogError(device, zero_vuid, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
-        }
-
-        const auto HasMaxOneBitSet = [](const FlagTypedef f) {
-            // Decrement flips bits from right upto first 1.
-            // Rest stays same, and if there was any other 1s &ded together they would be non-zero. QED
-            return f == 0 || !(f & (f - 1));
-        };
-
-        const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
-        if (is_bits_type && !HasMaxOneBitSet(value)) {
-            skip_call |=
-                LogError(device, vuid, "%s: value of %s contains multiple members of %s when only a single value is allowed",
-                         api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        }
-
-        return skip_call;
-    }
-
-    /**
-     * Validate a 32 bit Vulkan bitmask value.
-     *
-     * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
-     * for that type.
-     *
-     * @param api_name Name of API call being validated.
-     * @param parameter_name Name of parameter being validated.
-     * @param flag_bits_name Name of the VkFlags type being validated.
-     * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
-     * @param value VkFlags value to validate.
-     * @param flag_type The type of flag, like optional, or single bit.
-     * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
-     * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateFlags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
-                       VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const {
-        return ValidateFlagsImplementation<VkFlags>(api_name, parameter_name, flag_bits_name, all_flags, value, flag_type, vuid,
-                                                    flags_zero_vuid);
-    }
+                       VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    /**
-     * Validate a 64 bit Vulkan bitmask value.
-     *
-     * Generate a warning if a value with a VkFlags64 derived type does not contain valid flag bits
-     * for that type.
-     *
-     * @param api_name Name of API call being validated.
-     * @param parameter_name Name of parameter being validated.
-     * @param flag_bits_name Name of the VkFlags64 type being validated.
-     * @param all_flags A bit mask combining all valid flag bits for the VkFlags64 type being validated.
-     * @param value VkFlags64 value to validate.
-     * @param flag_type The type of flag, like optional, or single bit.
-     * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
-     * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateFlags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags64 all_flags,
-                       VkFlags64 value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const {
-        return ValidateFlagsImplementation<VkFlags64>(api_name, parameter_name, flag_bits_name, all_flags, value, flag_type, vuid,
-                                                      flags_zero_vuid);
-    }
+                       VkFlags64 value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
-    /**
-     * Validate an array of Vulkan bitmask values.
-     *
-     * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
-     * for that type.
-     *
-     * @param api_name Name of API call being validated.
-     * @param count_name Name of parameter being validated.
-     * @param array_name Name of parameter being validated.
-     * @param flag_bits_name Name of the VkFlags type being validated.
-     * @param all_flags A bitmask combining all valid flag bits for the VkFlags type being validated.
-     * @param count Number of VkFlags values in the array.
-     * @param array Array of VkFlags value to validate.
-     * @param count_required The 'count' parameter may not be 0 when true.
-     * @param array_required_vuid The VUID for the 'array' parameter.
-     * @return Boolean value indicating that the call should be skipped.
-     */
     bool ValidateFlagsArray(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
                             const char *flag_bits_name, VkFlags all_flags, uint32_t count, const VkFlags *array,
-                            bool count_required, const char *array_required_vuid) const {
-        bool skip_call = false;
-
-        if (array == nullptr) {
-            // Flag arrays always need to have a valid array
-            skip_call |= ValidateArray(api_name, count_name, array_name, count, &array, count_required, true, kVUIDUndefined,
-                                       array_required_vuid);
-        } else {
-            // Verify that all VkFlags values in the array
-            for (uint32_t i = 0; i < count; ++i) {
-                if ((array[i] & (~all_flags)) != 0) {
-                    skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
-                                          "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
-                                          array_name.get_name().c_str(), i, flag_bits_name);
-                }
-            }
-        }
-
-        return skip_call;
-    }
+                            bool count_required, const char *array_required_vuid) const;
 
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                               const char *extension_name) const {
-        bool skip = false;
-        if (!extension_name) {
-            return skip;  // Robust to invalid char *
-        }
-        auto info = ExtensionState::get_info(extension_name);
-
-        if (!info.state) {
-            return skip;  // Unknown extensions cannot be checked so report OK
-        }
-
-        // Check against the required list in the info
-        std::vector<const char *> missing;
-        for (const auto &req : info.requirements) {
-            if (!(extensions.*(req.enabled))) {
-                missing.push_back(req.name);
-            }
-        }
-
-        // Report any missing requirements
-        if (missing.size()) {
-            std::string missing_joined_list = string_join(", ", missing);
-            skip |= LogError(instance, vuid, "Missing extension%s required by the %s extension %s: %s.",
-                             ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
-        }
-        return skip;
-    }
+                               const char *extension_name) const;
 
     enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
     bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const VkRenderPassCreateInfo2 *pCreateInfo,
                                       uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
-                                      const char *target, const char *func_name) const {
-        bool skip = false;
-        // make sure we consider all of the expanded and un-expanded graphics bits to be valid
-        const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
-                                    VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
-                                    VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
-        const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
-                                         VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
-        const auto kGraphicsStages =
-            (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
-            ~kExcludeStages;
-
-        const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
-            if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount)
-                return false;
-            else
-                return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
-        };
-
-        const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
-        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
-            skip |= LogError(VkRenderPass(0), vuid,
-                             "%s: Dependency pDependencies[%" PRIu32
-                             "] specifies a %sStageMask that contains stages (%s) that are not part "
-                             "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                             func_name, dependency_index, target,
-                             sync_utils::StringPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
-        }
-
-        return skip;
-    }
+                                      const char *target, const char *func_name) const;
 
     bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                   RenderPassCreateVersion rp_version) const;
 
-    template <typename T>
-    void RecordRenderPass(VkRenderPass renderPass, const T *pCreateInfo) {
-        std::unique_lock<std::mutex> lock(renderpass_map_mutex);
-        auto &renderpass_state = renderpasses_states[renderPass];
-        lock.unlock();
-
-        renderpass_state.subpasses_flags.resize(pCreateInfo->subpassCount);
-        for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
-            bool uses_color = false;
-            renderpass_state.color_attachment_count = pCreateInfo->pSubpasses[subpass].colorAttachmentCount;
-
-            for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
-                if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
-
-            bool uses_depthstencil = false;
-            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment)
-                if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)
-                    uses_depthstencil = true;
-
-            if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
-            if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
-            renderpass_state.subpasses_flags[subpass] = pCreateInfo->pSubpasses[subpass].flags;
-        }
-    }
+    void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
 
     // Pre/PostCallRecord declarations
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,

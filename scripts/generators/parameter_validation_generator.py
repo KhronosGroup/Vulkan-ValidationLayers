@@ -475,34 +475,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 write(string, file=self.outFile)
 
         elif self.source_file:
-            api_func  = 'bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {\n'
-            api_func += '    bool skip = false;\n'
-            api_func += '    if (api_version < promoted_version) {\n'
-            api_func += '        skip = LogError(instance,\n'
-            api_func += '                        kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s"\n'
-            api_func += '                        "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),\n'
-            api_func += '                        StringAPIVersion(promoted_version).c_str());\n'
-            api_func += '    }\n'
-            api_func += '    return skip;\n'
-            api_func += '}\n\n'
-            api_func += 'bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const {\n'
-            api_func += '    bool skip = false;\n'
-            api_func += '    const auto &target_pdev = physical_device_properties_map.find(pdev);\n'
-            api_func += '    if (target_pdev != physical_device_properties_map.end()) {\n'
-            api_func += '        auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);\n'
-            api_func += '        if (effective_api_version < promoted_version) {\n'
-            api_func += '            skip = LogError(instance,\n'
-            api_func += '                            kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "\n'
-            api_func += '                            "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "\n'
-            api_func += '                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(effective_api_version).c_str(),\n'
-            api_func += '                            StringAPIVersion(api_version).c_str(), StringAPIVersion(target_pdev->second->apiVersion).c_str(),\n'
-            api_func += '                            StringAPIVersion(promoted_version).c_str());\n'
-            api_func += '        }\n'
-            api_func += '    }\n'
-            api_func += '    return skip;\n'
-            api_func += '}\n'
-            write(api_func, file=self.outFile)
-
             pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,\n'
             pnext_handler += '                                                      const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api, bool is_const_param) const {\n'
             pnext_handler += '    bool skip = false;\n'
@@ -607,13 +579,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(pnext_handler, file=self.outFile)
             self.newline()
 
-            ext_template  = 'bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) const {\n'
-            ext_template += '    return LogError(instance,\n'
-            ext_template += '                    kVUID_PVError_ExtensionNotEnabled, "Attempted to call %s() but its required extension %s has not been enabled\\n",\n'
-            ext_template += '                    api_name.c_str(), extension_name.c_str());\n'
-            ext_template += '}\n'
-            write(ext_template, file=self.outFile)
-            self.newline()
             commands_text = '\n'.join(self.validation)
             write(commands_text, file=self.outFile)
             self.newline()

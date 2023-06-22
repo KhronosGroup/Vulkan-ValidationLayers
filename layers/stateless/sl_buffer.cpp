@@ -24,7 +24,7 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
 
     if (pCreateInfo != nullptr) {
         skip |=
-            ValidateGreaterThanZero(pCreateInfo->size, "pCreateInfo->size", "VUID-VkBufferCreateInfo-size-00912", "vkCreateBuffer");
+            ValidateNotZero(pCreateInfo->size == 0, "pCreateInfo->size", "VUID-VkBufferCreateInfo-size-00912", "vkCreateBuffer");
 
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {

@@ -25,34 +25,6 @@
 #include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
-bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {
-    bool skip = false;
-    if (api_version < promoted_version) {
-        skip = LogError(instance,
-                        kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s"
-                        "but this API was not promoted until version %s.", api_name, StringAPIVersion(api_version).c_str(),
-                        StringAPIVersion(promoted_version).c_str());
-    }
-    return skip;
-}
-
-bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const {
-    bool skip = false;
-    const auto &target_pdev = physical_device_properties_map.find(pdev);
-    if (target_pdev != physical_device_properties_map.end()) {
-        auto effective_api_version = std::min(APIVersion(target_pdev->second->apiVersion), api_version);
-        if (effective_api_version < promoted_version) {
-            skip = LogError(instance,
-                            kVUID_PVError_ApiVersionViolation, "Attempted to call %s() with an effective API version of %s, "
-                            "which is the minimum of version requested in pApplicationInfo (%s) and supported by this physical device (%s), "
-                            "but this API was not promoted until version %s.", api_name, StringAPIVersion(effective_api_version).c_str(),
-                            StringAPIVersion(api_version).c_str(), StringAPIVersion(target_pdev->second->apiVersion).c_str(),
-                            StringAPIVersion(promoted_version).c_str());
-        }
-    }
-    return skip;
-}
-
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
                                                       const VkBaseOutStructure* header, const char *pnext_vuid, bool is_physdev_api, bool is_const_param) const {
     bool skip = false;
@@ -5438,13 +5410,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip = false;
     }
     return skip;
-}
-
-
-bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) const {
-    return LogError(instance,
-                    kVUID_PVError_ExtensionNotEnabled, "Attempted to call %s() but its required extension %s has not been enabled\n",
-                    api_name.c_str(), extension_name.c_str());
 }
 
 

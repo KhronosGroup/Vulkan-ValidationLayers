@@ -133,6 +133,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_pipeline.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_ray_tracing.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_render_pass.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_synchronization.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/sl_wsi.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker/object_tracker_utils.cpp
