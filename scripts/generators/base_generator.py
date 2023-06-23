@@ -259,8 +259,9 @@ class BaseGenerator(OutputGenerator):
             paramExternsync = boolGet(param, 'externsync')
             paramOptional = boolGet(param, 'optional')
             paramNoautovalidity = boolGet(param, 'noautovalidity')
+            paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
             params.append(CommandParam(paramName, paramType, paramAlias, paramExternsync,
-                                       paramOptional, paramNoautovalidity))
+                                       paramOptional, paramNoautovalidity, paramLength))
 
         self.vk.commands[name] = Command(name, alias, self.currentFeature, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
@@ -328,10 +329,13 @@ class BaseGenerator(OutputGenerator):
 
     def genType(self, typeInfo, typeName, alias):
         OutputGenerator.genType(self, typeInfo, typeName, alias)
+        if alias is not None:
+            return
         typeElem = typeInfo.elem
         protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
+            union = category == 'union'
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
             structExtends = splitIfGet(typeElem, 'structextends')
@@ -349,22 +353,20 @@ class BaseGenerator(OutputGenerator):
                 externSync = boolGet(member, 'externsync')
                 optional = boolGet(member, 'optional')
                 noautovalidity = boolGet(member, 'noautovalidity')
-                length = member.get('altlen') if member.get('altlen') is not None else member.get('length')
+                length = member.get('altlen') if member.get('altlen') is not None else member.get('len')
                 limittype = member.get('limittype')
                 cdecl = self.makeCParamDecl(member, 0)
+                pointer = '*' in cdecl
 
                 members.append(Member(name, type, externSync, optional,
-                                      noautovalidity, length, limittype, cdecl))
+                                      noautovalidity, length, limittype, pointer, cdecl))
+            if len(members) == 0:
+                print(typeName)
 
-            if category == 'union':
-                self.vk.unions[typeName] = Union(typeName, structExtends, protect, members)
-            else:
-                self.vk.structs[typeName] = Struct(typeName, structExtends, protect, sType,
-                                                   returnedOnly, allowDuplicate, members)
+            self.vk.structs[typeName] = Struct(typeName, union, structExtends, protect, sType,
+                                                returnedOnly, allowDuplicate, members)
 
         elif category == 'handle':
-            if alias is not None:
-                return
             type = typeElem.get('objtypeenum')
             instance = typeElem.get('parent') == 'VkInstance'
             device = not instance

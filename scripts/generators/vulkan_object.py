@@ -67,6 +67,7 @@ class CommandParam:
     externSync: bool
     optional: bool
     noAutoValidity: bool
+    length: str
 
 class Queues(IntFlag):
     TRANSFER = auto()       # VK_QUEUE_TRANSFER_BIT
@@ -170,6 +171,7 @@ class Member:
     noAutoValidity: bool
     length: str
     limitType: str
+    pointer: bool # type contains a pointer
 
     # C string of member, example:
     #   - const void* pNext
@@ -179,21 +181,14 @@ class Member:
 
 @dataclass(frozen=True)
 class Struct:
-    """<type category="struct">"""
+    """<type category="struct"> or <type category="union">"""
     name: str
+    union: bool # Unions are just a subset of a Structs
     structExtends: List[str]
     protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
     sType: str # if 'members[0].type' != 'VkStructureType' will be None
     returnedOnly: bool
     allowDuplicate: bool
-    members: List[Member]
-
-@dataclass(frozen=True)
-class Union:
-    """<type category="union">"""
-    name: str
-    structExtends: List[str]
-    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
     members: List[Member]
 
 @dataclass(frozen=True)
@@ -301,7 +296,6 @@ class VulkanObject():
     enums:    Dict[str, Enum]        = field(default_factory=dict, init=False)
     bitmasks: Dict[str, Bitmask]     = field(default_factory=dict, init=False)
     structs:  Dict[str, Struct]      = field(default_factory=dict, init=False)
-    unions:   Dict[str, Union]       = field(default_factory=dict, init=False)
     formats:  Dict[str, Format]      = field(default_factory=dict, init=False)
 
     syncStage:    List[SyncStage]    = field(default_factory=list, init=False)
