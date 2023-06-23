@@ -961,6 +961,9 @@ bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::
     opt_options.set_validator_options(val_options);
     Optimizer optimizer(target_env);
     optimizer.SetMessageConsumer(gpu_console_message_consumer);
+    // NOTE: The dead code elimination pass within spirv-opt does not currently work without first running the inline pass.
+    //       See https://github.com/KhronosGroup/SPIRV-Tools/issues/5270.
+    optimizer.RegisterPass(CreateInlineExhaustivePass());
     optimizer.RegisterPass(CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing,
                                                        descriptor_indexing, buffer_oob_enabled, buffer_oob_enabled));
     // Call CreateAggressiveDCEPass with preserve_interface == true
