@@ -23,7 +23,6 @@
 #include <android_native_app_glue.h>
 #endif
 
-#include "icd-spv.h"
 #include "test_common.h"
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
