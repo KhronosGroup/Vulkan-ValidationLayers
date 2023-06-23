@@ -57,10 +57,6 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
 
         self.write('''
 #pragma once
-#ifdef _MSC_VER
-#pragma warning( disable : 4065 )
-#endif
-
 #include <string>
 #include <vulkan/vulkan.h>''')
 
@@ -68,7 +64,8 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
         out.append('    switch (input_value) {\n')
-        for struct in filter(lambda x: x.allowDuplicate and x.sType is not None, self.vk.structs.values()):
+
+        for struct in [x for x in self.vk.structs.values() if x.allowDuplicate and x.sType is not None]:
             # The sType will always be first member of struct
             out.append(f'        case {struct.sType}:\n')
         out.append('            return true;\n')
@@ -79,7 +76,8 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
         self.write("".join(out))
 
         out = []
-        for enum in self.vk.enums.values():
+        # If there are no fields (empty enum) ignore
+        for enum in [x for x in self.vk.enums.values() if len(x.fields) > 0]:
             groupType = enum.name if enum.bitWidth == 32 else 'uint64_t'
             out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
             out.append(f'static inline const char* string_{enum.name}({groupType} input_value) {{\n')
@@ -98,12 +96,13 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
 
         # For bitmask, first create a string for FlagBits, then a Flags version that calls into it
         out = []
-        for bitmask in self.vk.bitmasks.values():
+        # If there are no flags (empty bitmask) ignore
+        for bitmask in [x for x in self.vk.bitmasks.values() if len(x.flags) > 0]:
             groupType = bitmask.name if bitmask.bitWidth == 32 else 'uint64_t'
             out.extend([f'#ifdef {bitmask.protect}\n'] if bitmask.protect else [])
             out.append(f'static inline const char* string_{bitmask.name}({groupType} input_value) {{\n')
             out.append('    switch (input_value) {\n')
-            for flag in filter(lambda x: not x.multiBit, bitmask.flags):
+            for flag in [x for x in bitmask.flags if not x.multiBit]:
                 out.extend([f'#ifdef {flag.protect}\n'] if flag.protect else [])
                 out.append(f'        case {flag.name}:\n')
                 out.append(f'            return "{flag.name}";\n')
@@ -114,7 +113,7 @@ class EnumStringHelperOutputGenerator(BaseGenerator):
             out.append('}\n')
 
             mulitBitChecks = ''
-            for flag in filter(lambda x: x.multiBit, bitmask.flags):
+            for flag in [x for x in bitmask.flags if x.multiBit]:
                 mulitBitChecks += f'    if (input_value == {flag.name}) {{ return "{flag.name}"; }}\n'
             intSuffix = 'U' if bitmask.bitWidth == 32 else 'ULL'
 

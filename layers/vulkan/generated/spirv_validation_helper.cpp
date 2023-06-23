@@ -930,12 +930,6 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
                 if (IsExtEnabled(device_extensions.*(it->second.extension))) {
                     has_support = true;
                 }
-            } else if (it->second.property) {
-                // support is or'ed as only one has to be supported (if applicable)
-                switch (insn.Word(1)) {
-                    default:
-                        break;
-                }
             }
         }
 

@@ -24,10 +24,6 @@
 // NOLINTBEGIN
 
 #pragma once
-#ifdef _MSC_VER
-#pragma warning( disable : 4065 )
-#endif
-
 #include <string>
 #include <vulkan/vulkan.h>
 
@@ -7510,27 +7506,6 @@ static inline std::string string_VkPerformanceCounterDescriptionFlagsKHR(VkPerfo
     if (ret.empty()) ret.append("VkPerformanceCounterDescriptionFlagsKHR(0)");
     return ret;
 }
-static inline const char* string_VkAcquireProfilingLockFlagBitsKHR(VkAcquireProfilingLockFlagBitsKHR input_value) {
-    switch (input_value) {
-        default:
-            return "Unhandled VkAcquireProfilingLockFlagBitsKHR";
-    }
-}
-
-static inline std::string string_VkAcquireProfilingLockFlagsKHR(VkAcquireProfilingLockFlagsKHR input_value) {
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkAcquireProfilingLockFlagBitsKHR(static_cast<VkAcquireProfilingLockFlagBitsKHR>(1U << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if (ret.empty()) ret.append("VkAcquireProfilingLockFlagsKHR(0)");
-    return ret;
-}
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static inline const char* string_VkVideoEncodeCapabilityFlagBitsKHR(VkVideoEncodeCapabilityFlagBitsKHR input_value) {
     switch (input_value) {
@@ -8302,48 +8277,6 @@ static inline std::string string_VkBuildAccelerationStructureFlagsKHR(VkBuildAcc
         input_value >>= 1;
     }
     if (ret.empty()) ret.append("VkBuildAccelerationStructureFlagsKHR(0)");
-    return ret;
-}
-static inline const char* string_VkPipelineCompilerControlFlagBitsAMD(VkPipelineCompilerControlFlagBitsAMD input_value) {
-    switch (input_value) {
-        default:
-            return "Unhandled VkPipelineCompilerControlFlagBitsAMD";
-    }
-}
-
-static inline std::string string_VkPipelineCompilerControlFlagsAMD(VkPipelineCompilerControlFlagsAMD input_value) {
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkPipelineCompilerControlFlagBitsAMD(static_cast<VkPipelineCompilerControlFlagBitsAMD>(1U << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if (ret.empty()) ret.append("VkPipelineCompilerControlFlagsAMD(0)");
-    return ret;
-}
-static inline const char* string_VkShaderCorePropertiesFlagBitsAMD(VkShaderCorePropertiesFlagBitsAMD input_value) {
-    switch (input_value) {
-        default:
-            return "Unhandled VkShaderCorePropertiesFlagBitsAMD";
-    }
-}
-
-static inline std::string string_VkShaderCorePropertiesFlagsAMD(VkShaderCorePropertiesFlagsAMD input_value) {
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkShaderCorePropertiesFlagBitsAMD(static_cast<VkShaderCorePropertiesFlagBitsAMD>(1U << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if (ret.empty()) ret.append("VkShaderCorePropertiesFlagsAMD(0)");
     return ret;
 }
 static inline const char* string_VkPresentScalingFlagBitsEXT(VkPresentScalingFlagBitsEXT input_value) {
