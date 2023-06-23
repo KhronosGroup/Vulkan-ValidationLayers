@@ -14,64 +14,63 @@
 
 #include "../framework/layer_validation_tests.h"
 
+struct icd_spv_header {
+    uint32_t magic = 0x07230203;
+    uint32_t version = 99;
+    uint32_t gen_magic = 0;  // Generator's magic number
+};
+
 TEST_F(NegativeShaderSpirv, CodeSize) {
     TEST_DESCRIPTION("Test that errors are produced for a spirv modules with invalid code sizes");
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V header");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderModule module;
-    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
-    struct icd_spv_header spv;
+    {
+        VkShaderModule module;
+        auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
 
-    spv.magic = ICD_SPV_MAGIC;
-    spv.version = ICD_SPV_VERSION;
-    spv.gen_magic = 0;
+        icd_spv_header spv = {};
+        module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+        module_create_info.codeSize = 4;
 
-    moduleCreateInfo.pCode = (const uint32_t *)&spv;
-    moduleCreateInfo.codeSize = 4;
-    moduleCreateInfo.flags = 0;
-    vk::CreateShaderModule(m_device->device(), &moduleCreateInfo, NULL, &module);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V header");
+        vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
+        m_errorMonitor->VerifyFound();
+    }
 
-    m_errorMonitor->VerifyFound();
+    {
+        std::vector<uint32_t> shader;
+        auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
+        VkShaderModule module;
+        this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
+        module_create_info.pCode = shader.data();
+        // Introduce failure by making codeSize a non-multiple of 4
+        module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-codeSize-08735");
-    std::vector<uint32_t> shader;
-    VkShaderModuleCreateInfo module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-    VkShaderModule shader_module;
-    this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
-    module_create_info.pCode = shader.data();
-    // Introduce failure by making codeSize a non-multiple of 4
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
-    module_create_info.flags = 0;
-    vk::CreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
-
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-codeSize-08735");
+        vk::CreateShaderModule(m_device->handle(), &module_create_info, nullptr, &module);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeShaderSpirv, Magic) {
     TEST_DESCRIPTION("Test that an error is produced for a spirv module with a bad magic number");
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V magic number");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkShaderModule module;
-    VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
-    struct icd_spv_header spv;
+    auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
 
-    spv.magic = (uint32_t)~ICD_SPV_MAGIC;
-    spv.version = ICD_SPV_VERSION;
-    spv.gen_magic = 0;
+    constexpr uint32_t bad_magic = 4175232508U;
+    constexpr icd_spv_header spv = {bad_magic};
 
-    moduleCreateInfo.pCode = (const uint32_t *)&spv;
-    moduleCreateInfo.codeSize = sizeof(spv);
-    moduleCreateInfo.flags = 0;
-    vk::CreateShaderModule(m_device->device(), &moduleCreateInfo, NULL, &module);
+    module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+    module_create_info.codeSize = sizeof(spv);
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Invalid SPIR-V magic number");
+    vk::CreateShaderModule(m_device->device(), &module_create_info, nullptr, &module);
     m_errorMonitor->VerifyFound();
 }
 

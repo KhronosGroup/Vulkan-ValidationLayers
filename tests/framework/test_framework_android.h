@@ -24,8 +24,6 @@
 // Can be used by tests to record additional details / description of test
 #define TEST_DESCRIPTION(desc) RecordProperty("description", desc)
 
-#define ICD_SPV_MAGIC 0x07230203
-
 class VkTestFramework : public ::testing::Test {
   public:
     static void InitArgs(int *argc, char *argv[]);
