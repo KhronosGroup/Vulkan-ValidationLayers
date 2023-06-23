@@ -4957,6 +4957,16 @@ bool ObjectLifetimes::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixPropertiesKHR*           pProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-physicalDevice-parameter", kVUIDUndefined, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR");
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

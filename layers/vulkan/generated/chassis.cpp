@@ -8885,6 +8885,30 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirementsKHR(
 
 
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixPropertiesKHR*           pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    }
+    VkResult result = DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    for (ValidationObject* intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
+    }
+    return result;
+}
+
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -15825,6 +15849,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetDeviceBufferMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceBufferMemoryRequirementsKHR}},
     {"vkGetDeviceImageMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageMemoryRequirementsKHR}},
     {"vkGetDeviceImageSparseMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageSparseMemoryRequirementsKHR}},
+    {"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesKHR}},
     {"vkCreateDebugReportCallbackEXT", {kFuncTypeInst, (void*)CreateDebugReportCallbackEXT}},
     {"vkDestroyDebugReportCallbackEXT", {kFuncTypeInst, (void*)DestroyDebugReportCallbackEXT}},
     {"vkDebugReportMessageEXT", {kFuncTypeInst, (void*)DebugReportMessageEXT}},

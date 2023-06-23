@@ -9866,6 +9866,228 @@ void safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR::initialize(const s
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkCooperativeMatrixPropertiesKHR::safe_VkCooperativeMatrixPropertiesKHR(const VkCooperativeMatrixPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    MSize(in_struct->MSize),
+    NSize(in_struct->NSize),
+    KSize(in_struct->KSize),
+    AType(in_struct->AType),
+    BType(in_struct->BType),
+    CType(in_struct->CType),
+    ResultType(in_struct->ResultType),
+    saturatingAccumulation(in_struct->saturatingAccumulation),
+    scope(in_struct->scope)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkCooperativeMatrixPropertiesKHR::safe_VkCooperativeMatrixPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR),
+    pNext(nullptr),
+    MSize(),
+    NSize(),
+    KSize(),
+    AType(),
+    BType(),
+    CType(),
+    ResultType(),
+    saturatingAccumulation(),
+    scope()
+{}
+
+safe_VkCooperativeMatrixPropertiesKHR::safe_VkCooperativeMatrixPropertiesKHR(const safe_VkCooperativeMatrixPropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    MSize = copy_src.MSize;
+    NSize = copy_src.NSize;
+    KSize = copy_src.KSize;
+    AType = copy_src.AType;
+    BType = copy_src.BType;
+    CType = copy_src.CType;
+    ResultType = copy_src.ResultType;
+    saturatingAccumulation = copy_src.saturatingAccumulation;
+    scope = copy_src.scope;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkCooperativeMatrixPropertiesKHR& safe_VkCooperativeMatrixPropertiesKHR::operator=(const safe_VkCooperativeMatrixPropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    MSize = copy_src.MSize;
+    NSize = copy_src.NSize;
+    KSize = copy_src.KSize;
+    AType = copy_src.AType;
+    BType = copy_src.BType;
+    CType = copy_src.CType;
+    ResultType = copy_src.ResultType;
+    saturatingAccumulation = copy_src.saturatingAccumulation;
+    scope = copy_src.scope;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkCooperativeMatrixPropertiesKHR::~safe_VkCooperativeMatrixPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkCooperativeMatrixPropertiesKHR::initialize(const VkCooperativeMatrixPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    MSize = in_struct->MSize;
+    NSize = in_struct->NSize;
+    KSize = in_struct->KSize;
+    AType = in_struct->AType;
+    BType = in_struct->BType;
+    CType = in_struct->CType;
+    ResultType = in_struct->ResultType;
+    saturatingAccumulation = in_struct->saturatingAccumulation;
+    scope = in_struct->scope;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkCooperativeMatrixPropertiesKHR::initialize(const safe_VkCooperativeMatrixPropertiesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    MSize = copy_src->MSize;
+    NSize = copy_src->NSize;
+    KSize = copy_src->KSize;
+    AType = copy_src->AType;
+    BType = copy_src->BType;
+    CType = copy_src->CType;
+    ResultType = copy_src->ResultType;
+    saturatingAccumulation = copy_src->saturatingAccumulation;
+    scope = copy_src->scope;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    cooperativeMatrix(in_struct->cooperativeMatrix),
+    cooperativeMatrixRobustBufferAccess(in_struct->cooperativeMatrixRobustBufferAccess)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR),
+    pNext(nullptr),
+    cooperativeMatrix(),
+    cooperativeMatrixRobustBufferAccess()
+{}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    cooperativeMatrix = copy_src.cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src.cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::operator=(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    cooperativeMatrix = copy_src.cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src.cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::~safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::initialize(const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    cooperativeMatrix = in_struct->cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = in_struct->cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR::initialize(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    cooperativeMatrix = copy_src->cooperativeMatrix;
+    cooperativeMatrixRobustBufferAccess = copy_src->cooperativeMatrixRobustBufferAccess;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const VkPhysicalDeviceCooperativeMatrixPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
+    sType(in_struct->sType),
+    cooperativeMatrixSupportedStages(in_struct->cooperativeMatrixSupportedStages)
+{
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR),
+    pNext(nullptr),
+    cooperativeMatrixSupportedStages()
+{}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src)
+{
+    sType = copy_src.sType;
+    cooperativeMatrixSupportedStages = copy_src.cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::operator=(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    cooperativeMatrixSupportedStages = copy_src.cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::~safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::initialize(const VkPhysicalDeviceCooperativeMatrixPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    cooperativeMatrixSupportedStages = in_struct->cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(in_struct->pNext, copy_state);
+}
+
+void safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR::initialize(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR* copy_src, [[maybe_unused]] PNextCopyState* copy_state)
+{
+    sType = copy_src->sType;
+    cooperativeMatrixSupportedStages = copy_src->cooperativeMatrixSupportedStages;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct, PNextCopyState*)
 {
     initialize(in_struct);

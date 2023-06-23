@@ -1020,6 +1020,48 @@ std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() con
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 template<>
+std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const {
+    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
+    //      Ideally "values" would be something like a static variable that is built once and this function returns
+    //      a span of the container. This does not work for applications which create and destroy many instances and
+    //      devices over the lifespan of the project (e.g., VLT).
+    constexpr std::array CoreVkComponentTypeKHREnums = { VK_COMPONENT_TYPE_FLOAT16_KHR, VK_COMPONENT_TYPE_FLOAT32_KHR, VK_COMPONENT_TYPE_FLOAT64_KHR, VK_COMPONENT_TYPE_SINT8_KHR, VK_COMPONENT_TYPE_SINT16_KHR, VK_COMPONENT_TYPE_SINT32_KHR, VK_COMPONENT_TYPE_SINT64_KHR, VK_COMPONENT_TYPE_UINT8_KHR, VK_COMPONENT_TYPE_UINT16_KHR, VK_COMPONENT_TYPE_UINT32_KHR, VK_COMPONENT_TYPE_UINT64_KHR,  };
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkComponentTypeKHR>> ExtendedVkComponentTypeKHREnums = {
+    };
+    std::vector<VkComponentTypeKHR> values(CoreVkComponentTypeKHREnums.cbegin(), CoreVkComponentTypeKHREnums.cend());
+    std::set<VkComponentTypeKHR> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkComponentTypeKHREnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+
+template<>
+std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const {
+    // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
+    //      Ideally "values" would be something like a static variable that is built once and this function returns
+    //      a span of the container. This does not work for applications which create and destroy many instances and
+    //      devices over the lifespan of the project (e.g., VLT).
+    constexpr std::array CoreVkScopeKHREnums = { VK_SCOPE_DEVICE_KHR, VK_SCOPE_WORKGROUP_KHR, VK_SCOPE_SUBGROUP_KHR, VK_SCOPE_QUEUE_FAMILY_KHR,  };
+    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkScopeKHR>> ExtendedVkScopeKHREnums = {
+    };
+    std::vector<VkScopeKHR> values(CoreVkScopeKHREnums.cbegin(), CoreVkScopeKHREnums.cend());
+    std::set<VkScopeKHR> unique_exts;
+    for (const auto& [extension, enums]: ExtendedVkScopeKHREnums) {
+        if (IsExtEnabled(device_extensions.*extension)) {
+            unique_exts.insert(enums.cbegin(), enums.cend());
+        }
+    }
+    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
+    return values;
+}
+
+
+template<>
 std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const {
     // TODO (ncesario) This is not ideal as we compute the enabled extensions every time this function is called.
     //      Ideally "values" would be something like a static variable that is built once and this function returns

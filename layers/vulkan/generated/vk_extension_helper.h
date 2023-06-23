@@ -571,6 +571,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_bind_memory2{kNotEnabled};
     ExtEnabled vk_khr_buffer_device_address{kNotEnabled};
+    ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_copy_commands2{kNotEnabled};
     ExtEnabled vk_khr_create_renderpass2{kNotEnabled};
     ExtEnabled vk_khr_dedicated_allocation{kNotEnabled};
@@ -1062,6 +1063,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_device_group, VK_KHR_DEVICE_GROUP_EXTENSION_NAME}}})},
+            {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_cooperative_matrix, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_copy_commands2, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass2, {{
@@ -1701,6 +1704,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
     VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
     VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME,
     VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
     VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,

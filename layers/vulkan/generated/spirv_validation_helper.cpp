@@ -304,6 +304,8 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityTileImageColorReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
+    // Not found in current SPIR-V Headers
+    //    {spv::CapabilityCooperativeMatrixKHR, {0, &VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix, nullptr, ""}},
 };
 // clang-format on
 
@@ -395,6 +397,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_ray_tracing_position_fetch", {0, nullptr, &DeviceExtensions::vk_khr_ray_tracing_position_fetch, ""}},
     {"SPV_EXT_shader_tile_image", {0, nullptr, &DeviceExtensions::vk_ext_shader_tile_image, ""}},
     {"SPV_EXT_opacity_micromap", {0, nullptr, &DeviceExtensions::vk_ext_opacity_micromap, ""}},
+    {"SPV_KHR_cooperative_matrix", {0, nullptr, &DeviceExtensions::vk_khr_cooperative_matrix, ""}},
 };
 // clang-format on
 

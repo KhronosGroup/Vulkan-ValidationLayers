@@ -78,6 +78,8 @@ template<> std::vector<VkPipelineExecutableStatisticFormatKHR> ValidationObject:
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 template<> std::vector<VkVideoEncodeTuningModeKHR> ValidationObject::ValidParamValues() const;
 #endif // VK_ENABLE_BETA_EXTENSIONS
+template<> std::vector<VkComponentTypeKHR> ValidationObject::ValidParamValues() const;
+template<> std::vector<VkScopeKHR> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkDebugReportObjectTypeEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkRasterizationOrderAMD> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkShaderInfoTypeAMD> ValidationObject::ValidParamValues() const;

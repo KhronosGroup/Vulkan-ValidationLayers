@@ -597,6 +597,8 @@ PFN_vkBindImageMemory2KHR BindImageMemory2KHR;
 PFN_vkGetBufferDeviceAddressKHR GetBufferDeviceAddressKHR;
 PFN_vkGetBufferOpaqueCaptureAddressKHR GetBufferOpaqueCaptureAddressKHR;
 PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR GetDeviceMemoryOpaqueCaptureAddressKHR;
+// VK_KHR_cooperative_matrix
+PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
 // VK_KHR_copy_commands2
 PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
 PFN_vkCmdCopyImage2KHR CmdCopyImage2KHR;
@@ -1788,6 +1790,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_KHR_cooperative_matrix", [](VkInstance instance, VkDevice) {
+                GetPhysicalDeviceCooperativeMatrixPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR"));
+            }
+        },
+        {
             "VK_KHR_copy_commands2", [](VkInstance, VkDevice device) {
                 CmdCopyBuffer2KHR = reinterpret_cast<PFN_vkCmdCopyBuffer2KHR>(GetDeviceProcAddr(device, "vkCmdCopyBuffer2KHR"));
                 CmdCopyImage2KHR = reinterpret_cast<PFN_vkCmdCopyImage2KHR>(GetDeviceProcAddr(device, "vkCmdCopyImage2KHR"));
@@ -2497,6 +2504,8 @@ void ResetAllExtensions() {
     GetBufferDeviceAddressKHR = nullptr;
     GetBufferOpaqueCaptureAddressKHR = nullptr;
     GetDeviceMemoryOpaqueCaptureAddressKHR = nullptr;
+    // VK_KHR_cooperative_matrix
+    GetPhysicalDeviceCooperativeMatrixPropertiesKHR = nullptr;
     // VK_KHR_copy_commands2
     CmdCopyBuffer2KHR = nullptr;
     CmdCopyImage2KHR = nullptr;
