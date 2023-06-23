@@ -107,9 +107,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const core_error::Location &loc, V
                                    core->report_data->FormatHandle(other_queue).c_str(),
                                    core->report_data->FormatHandle(semaphore).c_str());
         } else if (CannotWait(semaphore_state)) {
-            auto error = IsExtEnabled(core->device_extensions.vk_khr_timeline_semaphore) ? SubmitError::kBinaryCannotBeSignalled
-                                                                                         : SubmitError::kOldBinaryCannotBeSignalled;
-            const auto &vuid = GetQueueSubmitVUID(loc, error);
+            const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kBinaryCannotBeSignalled);
             const LogObjectList objlist(semaphore, queue);
             skip |= core->LogError(
                 objlist, semaphore_state.Scope() == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
@@ -800,11 +798,11 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     const auto &rp_state = cb_state->activeRenderPass;
-    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-pDependencies-02285",
+    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier-None-07889",
                              cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
                              rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
     if (state.self_dependencies.size() == 0) {
-        skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
+        skip |= LogError(state.rp_handle, "VUID-vkCmdPipelineBarrier-None-07889",
                          "%s Barriers cannot be set during subpass %d of %s with no self-dependency specified.",
                          outer_loc.Message().c_str(), state.active_subpass, report_data->FormatHandle(state.rp_handle).c_str());
         return skip;
@@ -853,7 +851,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     if (rp_state->UsesDynamicRendering()) {
         return skip;
     }
-    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-pDependencies-02285",
+    RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-None-07889",
                              cb_state->GetActiveSubpass(), rp_state->renderPass(), enabled_features,
                              rp_state->self_dependencies[cb_state->GetActiveSubpass()], rp_state->createInfo.pDependencies);
 
@@ -1246,16 +1244,9 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
         }
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
-        // In dynamic rendering, vkCmdPipelineBarrier is only allowed if
-        // VK_EXT_shader_tile_image extension is enabled
-        if (IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
-            skip |=
-                ValidateBarriersForShaderTileImage(objlist, loc, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
+        // In dynamic rendering, vkCmdPipelineBarrier is only allowed for VK_EXT_shader_tile_image
+        skip |= ValidateBarriersForShaderTileImage(objlist, loc, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                                    bufferMemoryBarrierCount, imageMemoryBarrierCount, srcStageMask, dstStageMask);
-        } else {
-            skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier-None-06191",
-                             "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
-        }
     }
     skip |= ValidateBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -1287,17 +1278,10 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
         }
     }
     if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
-        // In dynamic rendering, vkCmdPipelineBarrier2 is only allowed if
-        // VK_EXT_shader_tile_image extension is enabled
-        if (IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
-            skip |= ValidateBarriersForShaderTileImage(objlist, loc, pDependencyInfo->dependencyFlags,
-                                                       pDependencyInfo->memoryBarrierCount, pDependencyInfo->pMemoryBarriers,
-                                                       pDependencyInfo->bufferMemoryBarrierCount,
-                                                       pDependencyInfo->imageMemoryBarrierCount);
-        } else {
-            skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-None-06191",
-                             "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
-        }
+        // In dynamic rendering, vkCmdPipelineBarrier2 is only allowed for  VK_EXT_shader_tile_image
+        skip |= ValidateBarriersForShaderTileImage(
+            objlist, loc, pDependencyInfo->dependencyFlags, pDependencyInfo->memoryBarrierCount, pDependencyInfo->pMemoryBarriers,
+            pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->imageMemoryBarrierCount);
     }
     skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), pDependencyInfo);
     return skip;
@@ -1642,10 +1626,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 }
             } else {
                 if (!has_depth_mask || !has_stencil_mask) {
-                    auto error = IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)
-                                     ? ImageError::kNotSeparateDepthAndStencilAspect
-                                     : ImageError::kNotDepthAndStencilAspect;
-                    auto vuid = GetImageBarrierVUID(image_loc, error);
+                    auto vuid = GetImageBarrierVUID(image_loc, ImageError::kNotDepthAndStencilAspect);
                     skip |= LogError(img_barrier.image, vuid,
                                      "%s references %s of format %s that must have the depth and stencil "
                                      "aspects set, but its aspectMask is 0x%" PRIx32 ".",
@@ -1689,9 +1670,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         if ((FormatIsColor(image_format) == true) &&
             ((FormatIsMultiplane(image_format) == false) || (image_state->disjoint == false))) {
             if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
-                auto error = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion) ? ImageError::kNotColorAspect
-                                                                                             : ImageError::kNotColorAspectYcbcr;
-                const auto &vuid = GetImageBarrierVUID(loc, error);
+                const auto &vuid = GetImageBarrierVUID(loc, ImageError::kNotColorAspect);
                 skip |= LogError(img_barrier.image, vuid,
                                  "%s references %s of format %s that must be only VK_IMAGE_ASPECT_COLOR_BIT, "
                                  "but its aspectMask is 0x%" PRIx32 ".",

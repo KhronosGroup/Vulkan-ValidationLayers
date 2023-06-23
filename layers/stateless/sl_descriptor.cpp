@@ -202,7 +202,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
             if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
                 if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
-                    skip |= LogError(device, "VUID-VkSamplerCreateInfo-magFilter-01422",
+                    skip |= LogError(device, "VUID-VkSamplerCreateInfo-magFilter-07911",
                                      "vkCreateSampler(): sampler reduction mode is %s, magFilter is %s and minFilter is %s, but "
                                      "extension %s is not enabled.",
                                      string_VkSamplerReductionMode(sampler_reduction->reductionMode),

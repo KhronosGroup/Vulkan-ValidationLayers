@@ -589,39 +589,21 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
-        if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
-             layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-             layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-             layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
-            !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            const char *vuid =
-                use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
-            skip |= LogError(objlist, vuid,
-                             "%s: Layout/usage mismatch for attachment %" PRIu32
-                             " in %s"
-                             " - the %s is %s but the image attached to %s via %s"
-                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
-                             function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
-                             string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                             report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
-        }
-    } else {
-        // The create render pass 2 extension requires maintenance 2 (the previous branch), so no vuid switch needed here.
-        if ((layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-             layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
-            !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            const LogObjectList objlist(renderpass, framebuffer, image_view, image);
-            skip |= LogError(objlist, "VUID-vkCmdBeginRenderPass-initialLayout-00896",
-                             "%s: Layout/usage mismatch for attachment %" PRIu32
-                             " in %s"
-                             " - the %s is %s but the image attached to %s via %s"
-                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
-                             function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
-                             string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
-                             report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
-        }
+    if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+         layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
+         layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
+        !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+        const char *vuid =
+            use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
+        const LogObjectList objlist(renderpass, framebuffer, image_view, image);
+        skip |= LogError(objlist, vuid,
+                         "%s: Layout/usage mismatch for attachment %" PRIu32
+                         " in %s"
+                         " - the %s is %s but the image attached to %s via %s"
+                         " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT. Image usage: %s.",
+                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                         report_data->FormatHandle(image_view).c_str(), string_VkImageUsageFlags(image_usage).c_str());
     }
 
     if ((IsImageLayoutDepthOnly(layout) || IsImageLayoutStencilOnly(layout)) &&
@@ -959,22 +941,13 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE &cb_state, const 
 
     } else {
         assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
-        if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)) {
-            if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
-                LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-                skip |= LogError(objlist, "VUID-vkCmdClearColorImage-imageLayout-00005",
-                                 "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
-                                 string_VkImageLayout(dest_image_layout));
-            }
-        } else {
-            if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
-                (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
-                LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
-                skip |= LogError(
-                    objlist, "VUID-vkCmdClearColorImage-imageLayout-01394",
-                    "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
-                    func_name, string_VkImageLayout(dest_image_layout));
-            }
+        if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
+            (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
+            LogObjectList objlist(cb_state.commandBuffer(), image_state.image());
+            skip |=
+                LogError(objlist, "VUID-vkCmdClearColorImage-imageLayout-01394",
+                         "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
+                         func_name, string_VkImageLayout(dest_image_layout));
         }
     }
 

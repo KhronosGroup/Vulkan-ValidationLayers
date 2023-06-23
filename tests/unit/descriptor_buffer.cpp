@@ -804,7 +804,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
             large_buffer = nullptr;
             // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
             // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08062");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
             vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                  pipeline_layout.handle(), 0, 1, &index, &offset);
             m_errorMonitor->VerifyFound();
@@ -1212,13 +1212,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
 
         {
             dai.range = 4;
-
-            if (!IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08120");
-            } else {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08125");
-            }
-
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08125");
             vk::GetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize - 1, &buffer);
             m_errorMonitor->VerifyFound();
         }

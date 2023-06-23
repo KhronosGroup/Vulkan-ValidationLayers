@@ -1513,13 +1513,13 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with wrong image
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-01509");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memory-02628");
     vk::BindImageMemory(m_device->handle(), wrong_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset (same VUID)
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkBindImageMemory-memory-01509");  // offset must be zero
+                                         "VUID-vkBindImageMemory-memory-02628");  // offset must be zero
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
     auto image_offset = image.memory_requirements().alignment;
@@ -2069,25 +2069,14 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     dedicated_allocate_info.image = normal_image;
     dedicated_allocate_info.buffer = VK_NULL_HANDLE;
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    const char *image_vuid = IsExtensionsEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
-                                 ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
-                                 : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
-    const char *buffer_vuid = IsExtensionsEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
-                                  ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
-                                  : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
-#else
-    const char *image_vuid = "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
-    const char *buffer_vuid = "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
-#endif
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, image_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-02964");
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
     memory_allocate_info.allocationSize = normal_buffer_memory_req.size - 1;
     dedicated_allocate_info.image = VK_NULL_HANDLE;
     dedicated_allocate_info.buffer = normal_buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, buffer_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965");
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
@@ -2109,7 +2098,6 @@ TEST_F(NegativeMemory, MemoryRequirements) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    const bool drm_format_modifier = IsExtensionsEnabled(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -2202,10 +2190,8 @@ TEST_F(NegativeMemory, MemoryRequirements) {
         mem_req_info2.image = image;
 
         // Disjoint bit isn't set as likely not even supported by non-planar format
-        const char *vuid = drm_format_modifier ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
-                                               : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
         m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02280");
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
         m_errorMonitor->VerifyFound();
 

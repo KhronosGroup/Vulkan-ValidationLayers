@@ -797,20 +797,16 @@ void CoreChecks::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, 
 bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPassBegin, const char *func_name) const {
     bool skip = false;
 
-    bool device_group = false;
-    uint32_t device_group_area_count = 0;
     const VkDeviceGroupRenderPassBeginInfo *device_group_render_pass_begin_info =
         LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
-    if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
-        device_group = true;
-        if (device_group_render_pass_begin_info) {
-            device_group_area_count = device_group_render_pass_begin_info->deviceRenderAreaCount;
-        }
-    }
+    const uint32_t device_group_area_count =
+        device_group_render_pass_begin_info ? device_group_render_pass_begin_info->deviceRenderAreaCount : 0;
+
     auto framebuffer_state = Get<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer);
     const auto *framebuffer_info = &framebuffer_state->createInfo;
-    if (device_group && device_group_area_count > 0) {
-        for (uint32_t i = 0; i < device_group_render_pass_begin_info->deviceRenderAreaCount; ++i) {
+    // These VUs depend on count being non-zero, or else acts like struct is not there
+    if (device_group_area_count > 0) {
+        for (uint32_t i = 0; i < device_group_area_count; ++i) {
             const auto &deviceRenderArea = device_group_render_pass_begin_info->pDeviceRenderAreas[i];
             if (deviceRenderArea.offset.x < 0) {
                 skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166",
@@ -843,78 +839,38 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
         }
     } else {
         if (pRenderPassBegin->renderArea.offset.x < 0) {
-            if (device_group) {
-                skip |=
-                    LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02850",
-                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
-                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
-                             "deviceRenderAreaCount is 0, renderArea.offset.x is negative (%" PRIi32 ") .",
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02850",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
+                             "renderArea.offset.x is negative (%" PRIi32 ") .",
                              func_name, pRenderPassBegin->renderArea.offset.x);
-            } else {
-                skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02846",
-                                 "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
-                                 "renderArea.offset.x is negative (%" PRIi32 ") .",
-                                 func_name, pRenderPassBegin->renderArea.offset.x);
-            }
         }
         if (pRenderPassBegin->renderArea.offset.y < 0) {
-            if (device_group) {
-                skip |=
-                    LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02851",
-                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
-                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
-                             "deviceRenderAreaCount is 0, renderArea.offset.y is negative (%" PRIi32 ") .",
+            skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02851",
+                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
+                             "renderArea.offset.y is negative (%" PRIi32 ") .",
                              func_name, pRenderPassBegin->renderArea.offset.y);
-            } else {
-                skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02847",
-                                 "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, "
-                                 "renderArea.offset.y is negative (%" PRIi32 ") .",
-                                 func_name, pRenderPassBegin->renderArea.offset.y);
-            }
         }
 
         const auto x_adjusted_extent = static_cast<int64_t>(pRenderPassBegin->renderArea.offset.x) +
                                        static_cast<int64_t>(pRenderPassBegin->renderArea.extent.width);
         if (x_adjusted_extent > static_cast<int64_t>(framebuffer_info->width)) {
-            if (device_group) {
-                skip |=
-                    LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02852",
-                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
-                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
-                             "deviceRenderAreaCount is 0, renderArea.offset.x (%" PRIi32 ") + renderArea.extent.width (%" PRIi32
-                             ") is greater than framebuffer width (%" PRIi32 ").",
-                             func_name, pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.extent.width,
-                             framebuffer_info->width);
-            } else {
-                skip |= LogError(
-                    pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02848",
-                    "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.x "
-                    "(%" PRIi32 ") + renderArea.extent.width (%" PRIi32 ") is greater than framebuffer width (%" PRIi32 ").",
-                    func_name, pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.extent.width,
-                    framebuffer_info->width);
-            }
+            skip |= LogError(
+                pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02852",
+                "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.x "
+                "(%" PRIi32 ") + renderArea.extent.width (%" PRIi32 ") is greater than framebuffer width (%" PRIi32 ").",
+                func_name, pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.extent.width,
+                framebuffer_info->width);
         }
 
         const auto y_adjusted_extent = static_cast<int64_t>(pRenderPassBegin->renderArea.offset.y) +
                                        static_cast<int64_t>(pRenderPassBegin->renderArea.extent.height);
         if (y_adjusted_extent > static_cast<int64_t>(framebuffer_info->height)) {
-            if (device_group) {
-                skip |=
-                    LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02853",
-                             "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer and pNext "
-                             "of VkRenderPassBeginInfo does not contain VkDeviceGroupRenderPassBeginInfo or its "
-                             "deviceRenderAreaCount is 0, renderArea.offset.y (%" PRIi32 ") + renderArea.extent.height (%" PRIi32
-                             ") is greater than framebuffer height (%" PRIi32 ").",
-                             func_name, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.height,
-                             framebuffer_info->height);
-            } else {
-                skip |= LogError(
-                    pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-renderArea-02849",
-                    "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.y "
-                    "(%" PRIi32 ") + renderArea.extent.height (%" PRIi32 ") is greater than framebuffer height (%" PRIi32 ").",
-                    func_name, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.height,
-                    framebuffer_info->height);
-            }
+            skip |= LogError(
+                pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02853",
+                "%s: Cannot execute a render pass with renderArea not within the bound of the framebuffer, renderArea.offset.y "
+                "(%" PRIi32 ") + renderArea.extent.height (%" PRIi32 ") is greater than framebuffer height (%" PRIi32 ").",
+                func_name, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.height,
+                framebuffer_info->height);
         }
     }
     return skip;
@@ -1388,25 +1344,15 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         // Track if attachments are used as input as well as another type
         vvl::unordered_set<uint32_t> input_attachments;
 
-        if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading)) {
-            if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-03062"
-                                           : "VUID-VkSubpassDescription-pipelineBindPoint-00844";
-                skip |= LogError(device, vuid,
-                                 "%s: Pipeline bind point for pSubpasses[%" PRIu32 "] must be VK_PIPELINE_BIND_POINT_GRAPHICS.",
-                                 function_name, i);
-            }
-        } else {
-            if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
-                subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
-                const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
-                                           : "VUID-VkSubpassDescription-pipelineBindPoint-04952";
-                skip |= LogError(device, vuid,
-                                 "%s: Pipeline bind point for pSubpasses[%" PRIu32
-                                 "] must be VK_PIPELINE_BIND_POINT_GRAPHICS or "
-                                 "VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI.",
-                                 function_name, i);
-            }
+        if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
+            subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
+            const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
+                                       : "VUID-VkSubpassDescription-pipelineBindPoint-04952";
+            skip |= LogError(device, vuid,
+                             "%s: Pipeline bind point for pSubpasses[%" PRIu32
+                             "] must be VK_PIPELINE_BIND_POINT_GRAPHICS or "
+                             "VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI.",
+                             function_name, i);
         }
 
         // Check input attachments first
@@ -2958,35 +2904,19 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
     const bool y_extent_valid =
         static_cast<int64_t>(image_view->image_state->createInfo.extent.height) >=
         static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
-    if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
-        auto device_group_render_pass_begin_info = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
-        if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
-            if (!x_extent_valid) {
-                skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06079",
-                                 "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIi32
-                                 ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
-                                 func_name, attachment, image_view->image_state->createInfo.extent.width,
-                                 pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
-            }
 
-            if (!y_extent_valid) {
-                skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
-                                 "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIi32
-                                 ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
-                                 func_name, attachment, image_view->image_state->createInfo.extent.height,
-                                 pRenderingInfo->renderArea.offset.y, pRenderingInfo->renderArea.extent.height);
-            }
-        }
-    } else {
+    auto device_group_render_pass_begin_info = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
         if (!x_extent_valid) {
-            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06075",
+            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06079",
                              "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.width,
                              pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
         }
+
         if (!y_extent_valid) {
-            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06076",
+            skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
                              "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.height,
@@ -3045,45 +2975,31 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         }
 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
-            if (!IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06132",
-                                 "%s(): Image sample count must not have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s", func_name,
+            const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
+            if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06861",
+                                 "%s(): imageView %s must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s", func_name,
+                                 report_data->FormatHandle(pAttachment->imageView).c_str(),
                                  string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
-            } else {
-                const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
-                if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06861",
-                                     "%s(): imageView %s must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s", func_name,
-                                     report_data->FormatHandle(pAttachment->imageView).c_str(),
-                                     string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
-                }
-                if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
-                    (pAttachment->resolveImageView != VK_NULL_HANDLE)) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06863",
-                                     "%s(): If resolve mode is not VK_RESOLVE_MODE_NONE and the pNext chain of VkRenderingInfo "
-                                     "includes a VkMultisampledRenderToSingleSampledInfoEXT structure with the "
-                                     "multisampledRenderToSingleSampledEnable field equal to VK_TRUE, and imageView has a sample "
-                                     "count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE, but it is %s",
-                                     func_name, report_data->FormatHandle(pAttachment->resolveImageView).c_str());
-                }
+            }
+            if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
+                (pAttachment->resolveImageView != VK_NULL_HANDLE)) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06863",
+                                 "%s(): If resolve mode is not VK_RESOLVE_MODE_NONE and the pNext chain of VkRenderingInfo "
+                                 "includes a VkMultisampledRenderToSingleSampledInfoEXT structure with the "
+                                 "multisampledRenderToSingleSampledEnable field equal to VK_TRUE, and imageView has a sample "
+                                 "count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE, but it is %s",
+                                 func_name, report_data->FormatHandle(pAttachment->resolveImageView).c_str());
             }
         }
 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE && pAttachment->resolveImageView == VK_NULL_HANDLE) {
-            if (!IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+            const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
+            if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
                 skip |=
-                    LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06860",
+                    LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06862",
                              "%s(): If resolve mode (%s) is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE",
                              func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
-            } else {
-                const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
-                if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
-                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06862",
-                                     "%s(): If resolve mode (%s) is not VK_RESOLVE_MODE_NONE, and there is no "
-                                     "VkMultisampledRenderToSingleSampledInfoEXT with multisampledRenderToSingleSampledEnable "
-                                     "field equal to VK_TRUE, resolveImageView must not be VK_NULL_HANDLE",
-                                     func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
-                }
             }
         }
 
@@ -3242,9 +3158,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width))) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06119"
-                                                                                       : "VUID-VkRenderingInfo-imageView-06117";
-                skip |= LogError(commandBuffer, vuid,
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06119",
                                  "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                  ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
@@ -3258,9 +3172,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height))) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06121"
-                                                                                       : "VUID-VkRenderingInfo-imageView-06118";
-                skip |= LogError(commandBuffer, vuid,
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06121",
                                  "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                  ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIi32
                                  ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
@@ -3410,7 +3322,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             }
             int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
             if (layer_count != 1) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06160",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908",
                                  "%s(): imageView of VkRenderingFragmentDensityMapAttachmentInfoEXT must "
                                  "have a layer count ("
                                  "%" PRIi32 ") equal to 1.",
@@ -3442,21 +3354,17 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     if (!non_zero_device_render_area) {
         if (pRenderingInfo->renderArea.offset.x < 0) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06077"
-                                                                                   : "VUID-VkRenderingInfo-renderArea-06071";
-            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.x (%" PRIi32 ") must not be negative.",
-                             func_name, pRenderingInfo->renderArea.offset.x);
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06077",
+                             "%s(): pRenderingInfo->renderArea.offset.x (%" PRIi32 ") must not be negative.", func_name,
+                             pRenderingInfo->renderArea.offset.x);
         }
         if (pRenderingInfo->renderArea.offset.y < 0) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06078"
-                                                                                   : "VUID-VkRenderingInfo-renderArea-06072";
-            skip |= LogError(commandBuffer, vuid, "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32 ") must not be negative.",
-                             func_name, pRenderingInfo->renderArea.offset.y);
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06078",
+                             "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32 ") must not be negative.", func_name,
+                             pRenderingInfo->renderArea.offset.y);
         }
         if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07815"
-                                                                                   : "VUID-VkRenderingInfo-renderArea-06073";
-            skip |= LogError(commandBuffer, vuid,
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-07815",
                              "%s(): pRenderingInfo->renderArea.offset.x (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
                              ") is not less than or equal to maxFramebufferWidth (%" PRIu32 ").",
@@ -3464,9 +3372,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              phys_dev_props.limits.maxFramebufferWidth);
         }
         if (y_adjusted_extent > phys_dev_props.limits.maxFramebufferHeight) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-07816"
-                                                                                   : "VUID-VkRenderingInfo-renderArea-06074";
-            skip |= LogError(commandBuffer, vuid,
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-07816",
                              "%s(): pRenderingInfo->renderArea.offset.y (%" PRIi32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
                              ") is not less than or equal to maxFramebufferHeight (%" PRIu32 ").",
@@ -3481,10 +3387,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06112"
-                                                                                       : "VUID-VkRenderingInfo-imageView-06110";
                 skip |= LogError(
-                    commandBuffer, vuid,
+                    commandBuffer, "VUID-VkRenderingInfo-pNext-06112",
                     "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                     ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRIi32
                     ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
@@ -3497,10 +3401,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 vvl::GetQuotientCeil(
                     y_adjusted_extent,
                     static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06114"
-                                                                                       : "VUID-VkRenderingInfo-imageView-06111";
                 skip |= LogError(
-                    commandBuffer, vuid,
+                    commandBuffer, "VUID-VkRenderingInfo-pNext-06114",
                     "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
                     ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRIi32
                     ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
@@ -4300,7 +4202,7 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                     i, subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                             }
                             if (view_state->normalized_subresource_range.layerCount != 1 && !IsExtEnabled(device_extensions.vk_khr_multiview)) {
-                                skip |= LogError(device, "VUID-VkFramebufferCreateInfo-pAttachments-02744",
+                                skip |= LogError(device, "VUID-VkFramebufferCreateInfo-renderPass-02747",
                                                  "vkCreateFramebuffer(): pCreateInfo->pAttachments[%" PRIu32
                                                  "] is referenced by "
                                                  "VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment in "
@@ -4481,13 +4383,10 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                                 i, aii.height, pCreateInfo->height);
                         }
 
-                        const char *mismatched_layers_no_multiview_vuid = IsExtEnabled(device_extensions.vk_khr_multiview)
-                                                                              ? "VUID-VkFramebufferCreateInfo-renderPass-04546"
-                                                                              : "VUID-VkFramebufferCreateInfo-flags-04547";
                         if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
                             if (aii.layerCount < pCreateInfo->layers) {
                                 skip |= LogError(
-                                    device, mismatched_layers_no_multiview_vuid,
+                                    device, "VUID-VkFramebufferCreateInfo-renderPass-04546",
                                     "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has only #%u layers, "
                                     "but framebuffer has #%u layers.",
                                     i, aii.layerCount, pCreateInfo->layers);

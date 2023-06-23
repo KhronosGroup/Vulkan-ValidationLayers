@@ -189,18 +189,14 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");
     if ((max_samplers + max_combined) > sum_samplers) {
-        const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");  // expect all-stages sum too
     }
     if (max_combined > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if ((max_samplers + max_combined) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
@@ -239,18 +235,14 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");
     if (dslb.descriptorCount > sum_uniform_buffers) {
-        const char *max_all_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029");  // expect all-stages sum too
     }
     if (dslb.descriptorCount > sum_dyn_uniform_buffers) {
-        const char *max_all_uniform_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
-                                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_dynamic_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
@@ -289,19 +281,15 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");
     if (dslb.descriptorCount > sum_dyn_storage_buffers) {
-        const char *max_all_storage_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
-                                                                         : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_dynamic_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");  // expect all-stages sum too
     }
     const uint32_t storage_buffer_count = dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount;
     if (storage_buffer_count > sum_storage_buffers) {
-        const char *max_all_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (storage_buffer_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
@@ -341,19 +329,15 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                              : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sample_image_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");
     const uint32_t sampled_image_count = max_combined + 2 * max_sampled_images;
     if (sampled_image_count > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // expect all-stages sum too
     }
     if (max_combined > sum_samplers) {
-        const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                                 : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (sampled_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
@@ -392,14 +376,11 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
-                                                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_image_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");
     const uint32_t storage_image_count = 2 * dslb.descriptorCount;
     if (storage_image_count > sum_storage_images) {
-        const char *max_all_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_image_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (storage_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
@@ -428,13 +409,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
-                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_input_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");
     if (dslb.descriptorCount > sum_input_attachments) {
-        const char *max_all_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
-                                                               : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_input_vuid);  // expect all-stages sum too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");  // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
@@ -520,25 +498,20 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampler_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");
     if (dslb.descriptorCount > max_samplers) {
-        const char *max_sampler_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_sampler_vuid);  // Expect max-per-stage samplers exceeds limits
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");  // Expect max-per-stage samplers exceeds limits
     }
     if (dslb.descriptorCount > sum_sampled_images) {
-        const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                       : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_all_sampled_image_vuid);  // Expect max overall sampled image count exceeds limits
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit,
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // Expect max overall sampled image count exceeds limits
     }
     if (dslb.descriptorCount > max_sampled_images) {
-        const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                                  : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_sample_image_vuid);  // Expect max per-stage sampled image count exceeds limits
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit,
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max per-stage sampled image count exceeds limits
     }
     if (descriptor_indexing) {
         if ((sum_samplers + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
@@ -575,13 +548,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029");
     if (dslb.descriptorCount > max_uniform_buffers) {
-        const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
@@ -611,13 +581,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_uniform_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
-                                                                     : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_uniform_dynamic_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030");
     if (dslb.descriptorCount > max_uniform_buffers) {
-        const char *max_uniform_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_uniform_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
@@ -647,13 +614,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");
     if (dslb.descriptorCount > max_storage_buffers) {
-        const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
@@ -683,13 +647,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_storage_dynamic_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
-                                                                     : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_dynamic_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");
     if (dslb.descriptorCount > max_storage_buffers) {
-        const char *max_storage_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
-                                                             : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
@@ -730,15 +691,12 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_sampled_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_sampled_image_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");
     // Takes max since VUID only checks per shader stage
     if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) > max_sampled_images) {
-        const char *max_sample_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
-                                                                  : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             max_sample_image_vuid);  // Expect max-per-stage sampled images to exceed limits
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit,
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max-per-stage sampled images to exceed limits
     }
     if (descriptor_indexing) {
         if (max_samplers > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
@@ -781,13 +739,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_storage_image_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");
     if (dslb.descriptorCount > max_storage_images) {
-        const char *max_storage_image_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_storage_image_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if ((sum_storage_images + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
@@ -818,13 +773,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_all_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
-                                                           : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_input_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");
     if (dslb.descriptorCount > max_input_attachments) {
-        const char *max_input_vuid = (descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
-                                                           : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_input_vuid);  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");  // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
@@ -869,7 +821,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07989");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -892,7 +844,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
         helper.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07989");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07990");
 }
 
 TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
@@ -944,13 +896,13 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_sampled_image, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07989");
+    CreatePipelineHelper::OneshotTest(*this, set_sampled_image, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 
     const auto set_sampler = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_sampler, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07989");
+    CreatePipelineHelper::OneshotTest(*this, set_sampler, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 }
 
 TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {

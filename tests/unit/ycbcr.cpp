@@ -41,13 +41,13 @@ TEST_F(NegativeYcbcr, Sampler) {
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
 
     // test non external conversion with a VK_FORMAT_UNDEFINED
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
     // test for non unorm
     sycci.format = VK_FORMAT_R8G8B8A8_SNORM;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04060");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-04061");
     m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
     vk::CreateSamplerYcbcrConversion(device(), &sycci, nullptr, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
@@ -1021,9 +1021,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     } else {
         // Same as 01048 but with bindImageMemory2 call
         if (image_mem_reqs.alignment > 1) {
-            const char *vuid =
-                (mp_supported) ? "VUID-VkBindImageMemoryInfo-pNext-01616" : "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01616");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1074,9 +1072,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         VkDeviceSize image_offset = (image_mem_reqs.size - 1) & ~(image_mem_reqs.alignment - 1);
         if ((image_offset > 0) && (image_mem_reqs.size < (image_alloc_info.allocationSize - image_mem_reqs.alignment))) {
             bind_image_info.memoryOffset = image_offset;
-            const char *vuid =
-                (mp_supported) ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-VkBindImageMemoryInfo-memory-01614";
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01617");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }
@@ -1141,9 +1137,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
             vk_testing::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             ASSERT_TRUE(image_mem_tmp.initialized());
             bind_image_info.memory = image_mem_tmp.handle();
-            const char *vuid =
-                (mp_supported) ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-VkBindImageMemoryInfo-memory-01612";
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01615");
             vk::BindImageMemory2KHR(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
         }

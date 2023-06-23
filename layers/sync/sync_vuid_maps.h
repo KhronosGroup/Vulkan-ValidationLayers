@@ -71,12 +71,10 @@ enum class ImageError {
     kBadSync2OldLayout,
     kBadSync2NewLayout,
     kNotColorAspect,
-    kNotColorAspectYcbcr,
     kBadMultiplanarAspect,
     kBadPlaneCount,
     kNotDepthOrStencilAspect,
     kNotDepthAndStencilAspect,
-    kNotSeparateDepthAndStencilAspect,
     kSeparateDepthWithStencilLayout,
     kSeparateStencilhWithDepthLayout,
     kRenderPassMismatch,
@@ -96,8 +94,7 @@ const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc);
 enum class SubmitError {
     kTimelineSemSmallValue,
     kSemAlreadySignalled,
-    kOldBinaryCannotBeSignalled,  // timeline semaphores not supported
-    kBinaryCannotBeSignalled,     // timeline semaphores supported
+    kBinaryCannotBeSignalled,
     kTimelineSemMaxDiff,
     kProtectedFeatureDisabled,
     kBadUnprotectedSubmit,

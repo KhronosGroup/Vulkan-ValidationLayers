@@ -500,9 +500,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSize) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
-                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maintenance4-06817");
 }
 
 TEST_F(NegativeShaderInterface, VsFsMismatchByLocation) {

@@ -33,8 +33,8 @@ TEST_F(NegativeSubpass, NonGraphicsPipeline) {
 
     auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pipelineBindPoint-00844",
-                         "VUID-VkSubpassDescription2-pipelineBindPoint-03062");
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pipelineBindPoint-04952",
+                         "VUID-VkSubpassDescription2-pipelineBindPoint-04953");
 }
 
 TEST_F(NegativeSubpass, InputAttachmentParameters) {

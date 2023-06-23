@@ -296,41 +296,41 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     commandBuffer.begin();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08564",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08971",
                           VK_CULL_MODE_NONE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthBoundsTestEnableEXT,
-                          "VUID-vkCmdSetDepthBoundsTestEnable-None-08510", VK_FALSE);
+                          "VUID-vkCmdSetDepthBoundsTestEnable-None-08971", VK_FALSE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthCompareOpEXT,
-                          "VUID-vkCmdSetDepthCompareOp-None-08518", VK_COMPARE_OP_NEVER);
+                          "VUID-vkCmdSetDepthCompareOp-None-08971", VK_COMPARE_OP_NEVER);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthTestEnableEXT,
-                          "VUID-vkCmdSetDepthTestEnable-None-08516", VK_FALSE);
+                          "VUID-vkCmdSetDepthTestEnable-None-08971", VK_FALSE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthWriteEnableEXT,
-                          "VUID-vkCmdSetDepthWriteEnable-None-08520", VK_FALSE);
+                          "VUID-vkCmdSetDepthWriteEnable-None-08971", VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08562",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08971",
                           VK_FRONT_FACE_CLOCKWISE);
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetPrimitiveTopologyEXT,
-                          "VUID-vkCmdSetPrimitiveTopology-None-08502", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+                          "VUID-vkCmdSetPrimitiveTopology-None-08971", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-08590");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-None-08971");
     VkRect2D scissor = {{0, 0}, {1, 1}};
     vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), 1, &scissor);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-08514");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetStencilOp-None-08971");
     vk::CmdSetStencilOpEXT(commandBuffer.handle(), VK_STENCIL_FACE_BACK_BIT, VK_STENCIL_OP_ZERO, VK_STENCIL_OP_ZERO,
                            VK_STENCIL_OP_ZERO, VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
 
     ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetStencilTestEnableEXT,
-                          "VUID-vkCmdSetStencilTestEnable-None-08512", VK_FALSE);
+                          "VUID-vkCmdSetStencilTestEnable-None-08971", VK_FALSE);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-08588");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-None-08971");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), 1, &viewport);
     m_errorMonitor->VerifyFound();
@@ -697,7 +697,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, buffers.data(), offsets.data(), 0, strides);
 
     vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-primitiveTopology-03420");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-dynamicPrimitiveTopologyUnrestricted-07500");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -831,15 +831,15 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
     m_commandBuffer.begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-08548");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizerDiscardEnable-None-08970");
     vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-08568");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBiasEnable-None-08970");
     vk::CmdSetDepthBiasEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-08500");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPrimitiveRestartEnable-None-08970");
     vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
     m_errorMonitor->VerifyFound();
 
@@ -2531,10 +2531,7 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_4_BIT);
-    const char *vuid = IsExtensionsEnabled(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME)
-                           ? "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284"
-                           : "VUID-vkCmdDraw-rasterizationSamples-04740";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3941,7 +3938,7 @@ TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayNonDynamic) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const auto set_info = [](CreatePipelineHelper &helper) { helper.cb_ci_.pAttachments = nullptr; };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
 }
 
 TEST_F(NegativeDynamicState, PipelineColorBlendStateCreateInfoArrayDynamic) {
@@ -4011,7 +4008,7 @@ TEST_F(NegativeDynamicState, SettingCommands) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
     vk::CmdSetLineWidth(m_commandBuffer->handle(), 1);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02859");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4146,11 +4143,11 @@ TEST_F(NegativeDynamicState, DepthRangeUnrestricted) {
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-minDepthBounds-02508");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-minDepthBounds-00600");
     vk::CmdSetDepthBounds(m_commandBuffer->handle(), 1.5f, 0.0f);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-maxDepthBounds-02509");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthBounds-maxDepthBounds-00601");
     vk::CmdSetDepthBounds(m_commandBuffer->handle(), 0.0f, 1.5f);
     m_errorMonitor->VerifyFound();
 
@@ -4254,7 +4251,7 @@ TEST_F(NegativeDynamicState, Viewport) {
          viewports,
          1,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
@@ -4266,7 +4263,7 @@ TEST_F(NegativeDynamicState, Viewport) {
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {1,
          viewports,
@@ -4290,15 +4287,13 @@ TEST_F(NegativeDynamicState, Viewport) {
          viewports,
          2,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136", "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          nullptr,
@@ -4310,8 +4305,8 @@ TEST_F(NegativeDynamicState, Viewport) {
          nullptr,
          0,
          nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
     };
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -4364,20 +4359,20 @@ TEST_F(NegativeDynamicState, MultiViewport) {
          viewports,
          2,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {0,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
         {2, nullptr, 2, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
         {2, viewports, 2, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
         {2,
@@ -4389,8 +4384,8 @@ TEST_F(NegativeDynamicState, MultiViewport) {
          nullptr,
          0,
          nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
     };
 
     const auto max_viewports = m_device->phy().properties().limits.maxViewports;
@@ -4439,26 +4434,26 @@ TEST_F(NegativeDynamicState, MultiViewport) {
          viewports,
          2,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {2,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength",
+         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136",
           "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
         {0,
          viewports,
          0,
          scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
         {0,
          nullptr,
          0,
          nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength"}},
+         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
+          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"}},
     };
 
     if (!max_viewports_maxxed) {
@@ -4666,7 +4661,7 @@ TEST_F(NegativeDynamicState, SetAfterStaticPipeline) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_static.pipeline_);
     vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02859");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08608");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

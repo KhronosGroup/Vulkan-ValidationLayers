@@ -40,7 +40,7 @@ TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     const vk_testing::Event event2(*m_device, LvlInitStruct<VkEventCreateInfo>());
 
     m_commandBuffer->begin();
-    // Different API calls to cover three category of VUIDs: 07317, 07319, 07315
+    // Different API calls to cover three category of VUIDs: 07316, 07318, 07314
     vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);

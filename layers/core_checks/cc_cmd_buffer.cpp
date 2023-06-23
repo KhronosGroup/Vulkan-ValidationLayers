@@ -186,21 +186,13 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         if (attachment_format != VK_FORMAT_UNDEFINED) {
                             const VkFormatFeatureFlags2KHR potential_format_features =
                                 GetPotentialFormatFeatures(attachment_format);
-                            if ((potential_format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
-                                if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
-                                    skip |= LogError(commandBuffer,
-                                                     "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
-                                                     "vkBeginCommandBuffer(): "
-                                                     "pColorAttachmentFormats[%" PRIu32 "] is %s.",
-                                                     i, string_VkFormat(attachment_format));
-                                } else if ((potential_format_features & VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV) == 0) {
-                                    skip |=
-                                        LogError(commandBuffer,
-                                                 "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492",
+                            if ((potential_format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR |
+                                                              VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                                skip |= LogError(commandBuffer,
+                                                 "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06492",
                                                  "vkBeginCommandBuffer(): "
                                                  "pColorAttachmentFormats[%" PRIu32 "] is %s.",
                                                  i, string_VkFormat(attachment_format));
-                                }
                             }
                         }
                     }
@@ -295,7 +287,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
                         if (render_pass) {
                             if (info->subpass >= render_pass->createInfo.subpassCount) {
-                                skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00054",
+                                // TODO - Combine logic with other location
+                                skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06001",
                                                  "vkBeginCommandBuffer(): Secondary %s has a subpass index (%" PRIu32
                                                  ") that is "
                                                  "superior or equal to the number of subpasses (%" PRIu32 ").",
@@ -304,7 +297,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                             }
                         }
                     } else {
-                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-00053",
+                        skip |= LogError(commandBuffer, "VUID-VkCommandBufferBeginInfo-flags-06000",
                                          "vkBeginCommandBuffer(): Flags contains VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT "
                                          "but the renderpass member of pInheritanceInfo is VK_NULL_HANDLE.");
                     }

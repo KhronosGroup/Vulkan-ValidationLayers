@@ -392,10 +392,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
     // Shared Present Mode must have a minImageCount of 1
     if ((pCreateInfo->minImageCount < surface_caps2.surfaceCapabilities.minImageCount) && !shared_present_mode) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
-                               ? "VUID-VkSwapchainCreateInfoKHR-presentMode-02839"
-                               : "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271";
-        if (LogError(device, vuid,
+        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-02839",
                      "%s called with minImageCount = %d, which is outside the bounds returned by "
                      "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
                      func_name, pCreateInfo->minImageCount, surface_caps2.surfaceCapabilities.minImageCount,
@@ -569,8 +566,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
             }
             if (!IsExtentInsideBounds(pCreateInfo->imageExtent, cached_capabilities.surfaceCapabilities.minImageExtent,
                                       cached_capabilities.surfaceCapabilities.maxImageExtent)) {
+                // TODO - Combine VUs with other same VUID
                 skip |= LogError(
-                    device, "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
+                    device, "VUID-VkSwapchainCreateInfoKHR-pNext-07781",
                     "%s called with imageExtent = (%" PRIu32 ",%" PRIu32
                     "), which is outside the bounds returned by "
                     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%" PRIu32 ",%" PRIu32
@@ -818,20 +816,15 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
-            // VU currently is 2-in-1, covers being a valid index and valid layout
-            const char *validation_error = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
-                                               ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
-                                               : "VUID-VkPresentInfoKHR-pImageIndices-01296";
-
             // Check if index is even possible to be acquired to give better error message
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
                 skip |= LogError(
-                    pPresentInfo->pSwapchains[i], validation_error,
+                    pPresentInfo->pSwapchains[i], "VUID-VkPresentInfoKHR-pImageIndices-01430",
                     "vkQueuePresentKHR: pSwapchains[%u] image index is too large (%u). There are only %u images in this swapchain.",
                     i, pPresentInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_data->images.size()));
             } else if (!swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state ||
                        !swapchain_data->images[pPresentInfo->pImageIndices[i]].acquired) {
-                skip |= LogError(pPresentInfo->pSwapchains[i], validation_error,
+                skip |= LogError(pPresentInfo->pSwapchains[i], "VUID-VkPresentInfoKHR-pImageIndices-01430",
                                  "vkQueuePresentKHR: pSwapchains[%" PRIu32 "] image at index %" PRIu32
                                  " was not acquired from the swapchain.",
                                  i, pPresentInfo->pImageIndices[i]);
@@ -845,7 +838,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                         if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
                             (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ||
                              (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
-                            skip |= LogError(queue, validation_error,
+                            skip |= LogError(queue, "VUID-VkPresentInfoKHR-pImageIndices-01430",
                                              "vkQueuePresentKHR(): pSwapchains[%u] images passed to present must be in layout "
                                              "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
                                              "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
@@ -1484,7 +1477,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysi
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06210",
+                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06522",
                                                  "vkGetPhysicalDeviceSurfacePresentModes2EXT");
 
     return skip;
@@ -1540,7 +1533,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06210",
+                                                 "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-06522",
                                                  "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
 
     const auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
@@ -1607,7 +1600,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDe
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06210",
+                                                 "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceInfo-06522",
                                                  "vkGetPhysicalDeviceSurfaceFormats2KHR");
 
     return skip;
@@ -1618,7 +1611,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
                                                                    VkSurfaceFormatKHR *pSurfaceFormats) const {
     bool skip = false;
 
-    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06211",
+    skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06525",
                                                  "vkGetPhysicalDeviceSurfaceFormatsKHR");
 
     return skip;
@@ -1630,7 +1623,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
-                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06211",
+                                                 "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-surface-06525",
                                                  "vkGetPhysicalDeviceSurfacePresentModesKHR");
 
     return skip;

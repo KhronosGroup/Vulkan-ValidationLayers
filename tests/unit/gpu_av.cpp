@@ -732,18 +732,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
     tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
 
     for (const auto &test : tests) {
@@ -785,7 +785,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         uint32_t *data = (uint32_t *)offset_buffer.memory().map();
         *data = 8;
         offset_buffer.memory().unmap();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-02706");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiIndexedEXT-None-08613");
         m_commandBuffer->QueueCommandBuffer();
         m_errorMonitor->VerifyFound();
 
@@ -803,7 +803,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         data = (uint32_t *)offset_buffer.memory().map();
         *data = 0;
         offset_buffer.memory().unmap();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-02705");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMultiEXT-None-08612");
         m_commandBuffer->QueueCommandBuffer();
         m_errorMonitor->VerifyFound();
     }
@@ -2363,18 +2363,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
     tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
 
     for (const auto &test : tests) {
@@ -2576,18 +2576,18 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         char const *expected_error;
     };
     std::vector<TestCase> tests;
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     // tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
     // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
     // so u_index.index[4] accesses bytes 64, 65, 66, and 67
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     // tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
     // tests.push_back({true, 1, ""});
-    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // "VUID-vkCmdDispatchBase-None-08612" Uniform
     tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
-    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // "VUID-vkCmdDispatchBase-None-08613" Storage
     tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
 
     for (const auto &test : tests) {

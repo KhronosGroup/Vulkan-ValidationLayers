@@ -920,16 +920,16 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
         layout (set = 0, binding = 1) uniform sampler2D tex[2];
         layout (set = 0, binding = 2) uniform sampler2DShadow tex_dep[2];
         void main() {
-            // VUID 02702
+            // VUID 08609
             // 3D Image View is used with unnormalized coordinates
-            // Also is VUID 02703 but the invalid image view is reported first
+            // Also is VUID 08610 but the invalid image view is reported first
             vec4 x = texture(image_view_3d, vec3(0));
 
-            // VUID 02703
+            // VUID 08610
             // OpImageSampleDrefImplicitLod is used with unnormalized coordinates
             float f = texture(tex_dep[0], vec3(0));
 
-            // VUID 02704
+            // VUID 08611
             // OpImageSampleExplicitLod instructions that incudes a offset with unnormalized coordinates
             x = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
         }
@@ -981,9 +981,9 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02703");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02704");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08609");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08610");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08611");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1026,16 +1026,16 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
         layout(set = 0, binding = 4) uniform texture3D si_bad[2]; // 3D image view
 
         void main() {
-            // VUID 02702
+            // VUID 08609
             // 3D Image View is used with unnormalized coordinates
-            // Also is VUID 02703 but the invalid image view is reported first
+            // Also is VUID 08610 but the invalid image view is reported first
             vec4 x = texture(sampler3D(si_bad[1], s1), vec3(0));
 
-            // VUID 02703
+            // VUID 08610
             // OpImageSampleImplicitLod is used with unnormalized coordinates
             x = texture(sampler2D(si_good, s1), vec2(0));
 
-            // VUID 02704
+            // VUID 08611
             // OpImageSampleExplicitLod instructions that incudes a offset with unnormalized coordinates
             x = textureLodOffset(sampler2D(si_good_2, s2), vec2(0), 0, ivec2(0));
         }
@@ -1073,7 +1073,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
                                                 VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
 
     // Need 2 samplers (and ImageView) because testing both VUID and it will tie both errors to the same sampler/imageView, but only
-    // 02703 will be triggered since it's first in the validation code
+    // 08610 will be triggered since it's first in the validation code
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.unnormalizedCoordinates = VK_TRUE;
     sampler_ci.maxLod = 0;
@@ -1096,9 +1096,9 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02703");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02704");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08609");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08610");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08611");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1168,7 +1168,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedImage) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02703");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1243,8 +1243,8 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSamplerSharedSampler) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02702");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02703");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08609");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08610");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1342,7 +1342,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesInBoundsAccess) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02704");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-08611");
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1370,7 +1370,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
 TEST_F(NegativeSampler, ReductionMode) {
     TEST_DESCRIPTION("Create sampler with invalid combination of filter and reduction mode.");
 
-    GTEST_SKIP() << "Not possible to hit 01422 without first hitting an early return in parameter validation.";
+    GTEST_SKIP() << "Not possible to hit 07911 without first hitting an early return in parameter validation.";
 
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -1384,7 +1384,7 @@ TEST_F(NegativeSampler, ReductionMode) {
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
-    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-01422");
+    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-07911");
 }
 
 TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
