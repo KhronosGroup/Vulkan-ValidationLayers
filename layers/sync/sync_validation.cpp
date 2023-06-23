@@ -1622,6 +1622,7 @@ void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const ResourceAcc
     // TODO: Optimization for operations that do a pure overwrite (i.e. WRITE usages which rewrite the state, vs READ usages
     //       that do incrementalupdates
     assert(accesses);
+    if (range.empty()) return;
     auto pos = accesses->lower_bound(range);
     if (pos == accesses->end() || !pos->first.intersects(range)) {
         // The range is empty, fill it with a default value.
@@ -1646,11 +1647,14 @@ void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const ResourceAcc
 
         auto next = pos;
         ++next;
-        if ((pos->first.end < range.end) && (next != the_end) && !next->first.is_subsequent_to(pos->first)) {
-            // Need to infill if next is disjoint
+
+        // Do gap infill or infill to end of range, if needed.
+        if (pos->first.end < range.end) {
             VkDeviceSize limit = (next == the_end) ? range.end : std::min(range.end, next->first.begin);
             ResourceAccessRange new_range(pos->first.end, limit);
-            next = action.Infill(accesses, next, new_range);
+            if (new_range.non_empty()) {
+                next = action.Infill(accesses, next, new_range);
+            }
         }
         pos = next;
     }
