@@ -339,87 +339,7 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
             string_var += '        uint32_t i = 0;\n'
             declare_flag = True
         return string_var, declare_flag
-    #
-    # Combine safe struct helper header file preamble with body text and return
-    def GenerateSafeStructHelperHeader(self):
-        safe_struct_helper_header = '''
-#pragma once
-#include <vulkan/vulkan.h>
-#include <cstdlib>
-#include <algorithm>
-#include <functional>
 
-// State that elements in a pNext chain may need to be aware of
-struct PNextCopyState {
-    // Custom initialization function. Returns true if the structure passed to init was initialized, false otherwise
-    std::function<bool(VkBaseOutStructure* /* safe_sruct */, const VkBaseOutStructure* /* in_struct */)> init;
-};
-
-void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state = {});
-void FreePnextChain(const void *pNext);
-char *SafeStringCopy(const char *in_string);
-'''
-        safe_struct_helper_header += self.GenerateSafeStructHeader()
-        return safe_struct_helper_header
-    #
-    # safe_struct header: build function prototypes for header file
-    def GenerateSafeStructHeader(self):
-        safe_struct_header = ''
-        for item in self.structMembers:
-            if self.NeedSafeStruct(item) == True:
-                safe_struct_header += '\n'
-                if item.ifdef_protect is not None:
-                    safe_struct_header += '#ifdef %s\n' % item.ifdef_protect
-                safe_struct_header += self.structOrUnion[item.name] + ' safe_%s {\n' % (item.name)
-                firstMemberInUnion = True
-                isUnion = self.structOrUnion[item.name] == 'union'
-                for member in item.members:
-                    if member.type in self.structNames:
-                        member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
-                        if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
-                            if member.ispointer:
-                                num_indirections = member.cdecl.count('*')
-                                initString = '{}' if ((not isUnion) or (isUnion and firstMemberInUnion)) else ''
-                                safe_struct_header += '    safe_%s%s %s%s;\n' % (member.type, '*' * num_indirections, member.name, initString)
-                                if isUnion and firstMemberInUnion:
-                                    firstMemberInUnion = False
-                            else:
-                                safe_struct_header += '    safe_%s %s;\n' % (member.type, member.name)
-                            continue
-                    if member.len is not None and (self.TypeContainsObjectHandle(member.type, True) or self.TypeContainsObjectHandle(member.type, False)):
-                            safe_struct_header += '    %s* %s{};\n' % (member.type, member.name)
-                    elif member.ispointer and firstMemberInUnion:
-                        safe_struct_header += '%s{};\n' % member.cdecl
-                        if isUnion and firstMemberInUnion:
-                            firstMemberInUnion = False
-                    else:
-                        safe_struct_header += '%s;\n' % member.cdecl
-                if (isUnion and item.name == 'VkDescriptorDataEXT'):
-                    safe_struct_header += '    char type_at_end[sizeof(%s)+sizeof(%s)];\n' % (item.name, 'VkDescriptorGetInfoEXT::type')
-                safe_struct_header += '    safe_%s(const %s* in_struct%s, PNextCopyState* copy_state = {});\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
-                safe_struct_header += '    safe_%s(const safe_%s& copy_src);\n' % (item.name, item.name)
-                safe_struct_header += '    safe_%s& operator=(const safe_%s& copy_src);\n' % (item.name, item.name)
-                safe_struct_header += '    safe_%s();\n' % item.name
-                safe_struct_header += '    ~safe_%s();\n' % item.name
-                safe_struct_header += '    void initialize(const %s* in_struct%s, PNextCopyState* copy_state = {});\n' % (item.name, self.custom_construct_params.get(item.name, ''))
-                safe_struct_header += '    void initialize(const safe_%s* copy_src, PNextCopyState* copy_state = {});\n' % (item.name)
-                safe_struct_header += '    %s *ptr() { return reinterpret_cast<%s *>(this); }\n' % (item.name, item.name)
-                safe_struct_header += '    %s const *ptr() const { return reinterpret_cast<%s const *>(this); }\n' % (item.name, item.name)
-                if item.name == 'VkShaderModuleCreateInfo':
-                    safe_struct_header += '''
-    // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
-    template<typename Container>
-    void SetCode(const Container &code) {
-        delete[] pCode;
-        codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
-        pCode = new uint32_t[code.size()];
-        std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));
-    }
-'''
-                safe_struct_header += '};\n'
-                if item.ifdef_protect is not None:
-                    safe_struct_header += '#endif // %s\n' % item.ifdef_protect
-        return safe_struct_header
     #
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
@@ -694,130 +614,7 @@ Times to NOT use it
             output.extend(struct)
 
         return '\n'.join(output)
-    #
-    # Generate pNext handling function
-    def build_safe_struct_utility_funcs(self):
-        # Construct Safe-struct helper functions
 
-        string_copy_proc = '\n\n'
-        string_copy_proc += 'extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;\n\n'
-        string_copy_proc += 'char *SafeStringCopy(const char *in_string) {\n'
-        string_copy_proc += '    if (nullptr == in_string) return nullptr;\n'
-        string_copy_proc += '    char* dest = new char[std::strlen(in_string) + 1];\n'
-        string_copy_proc += '    return std::strcpy(dest, in_string);\n'
-        string_copy_proc += '}\n'
-
-        build_pnext_proc = '''
-void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
-    if (!pNext) return nullptr;
-
-    void *safe_pNext{};
-    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
-
-    switch (header->sType) {
-        // Add special-case code to copy beloved secret loader structs
-        // Special-case Loader Instance Struct passed to/from layer in pNext chain
-        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
-            VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;
-            // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses
-            memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));
-            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
-            safe_pNext = struct_copy;
-            break;
-        }
-        // Special-case Loader Device Struct passed to/from layer in pNext chain
-        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
-            VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;
-            // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses
-            memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));
-            struct_copy->pNext = SafePnextCopy(header->pNext, copy_state);
-            safe_pNext = struct_copy;
-            break;
-        }
-'''
-
-        free_pnext_proc = '\n'
-        free_pnext_proc += 'void FreePnextChain(const void *pNext) {\n'
-        free_pnext_proc += '    if (!pNext) return;\n'
-        free_pnext_proc += '\n'
-        free_pnext_proc += '    auto header = reinterpret_cast<const VkBaseOutStructure *>(pNext);\n'
-        free_pnext_proc += '\n'
-        free_pnext_proc += '    switch (header->sType) {\n'
-        free_pnext_proc += '        // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
-        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO:\n'
-        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '            delete reinterpret_cast<const VkLayerInstanceCreateInfo *>(pNext);\n'
-        free_pnext_proc += '            break;\n'
-        free_pnext_proc += '        // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
-        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO:\n'
-        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '            delete reinterpret_cast<const VkLayerDeviceCreateInfo *>(pNext);\n'
-        free_pnext_proc += '            break;\n'
-
-        chain_structs = tuple(s for s in self.structMembers if s.name in self.structextends_list)
-        ifdefs = sorted({cs.ifdef_protect for cs in chain_structs}, key = lambda i : i if i is not None else '')
-        for ifdef in ifdefs:
-            if ifdef is not None:
-                build_pnext_proc += '#ifdef %s\n' % ifdef
-                free_pnext_proc += '#ifdef %s\n' % ifdef
-
-            assorted_chain_structs = tuple(s for s in chain_structs if s.ifdef_protect == ifdef)
-            for struct in assorted_chain_structs:
-                build_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
-                build_pnext_proc += '            safe_pNext = new safe_%s(reinterpret_cast<const %s *>(pNext), copy_state);\n' % (struct.name, struct.name)
-                build_pnext_proc += '            break;\n'
-
-                free_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
-                free_pnext_proc += '            delete reinterpret_cast<const safe_%s *>(header);\n' % struct.name
-                free_pnext_proc += '            break;\n'
-
-            if ifdef is not None:
-                build_pnext_proc += '#endif // %s\n' % ifdef
-                free_pnext_proc += '#endif // %s\n' % ifdef
-
-        build_pnext_proc += '        default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain\n'
-        build_pnext_proc += '            // If sType is in custom list, construct blind copy\n'
-        build_pnext_proc += '            for (auto item : custom_stype_info) {\n'
-        build_pnext_proc += '                if (item.first == header->sType) {\n'
-        build_pnext_proc += '                    safe_pNext = malloc(item.second);\n'
-        build_pnext_proc += '                    memcpy(safe_pNext, header, item.second);\n'
-        build_pnext_proc += '                    // Deep copy the rest of the pNext chain\n'
-        build_pnext_proc += '                    VkBaseOutStructure *custom_struct = reinterpret_cast<VkBaseOutStructure *>(safe_pNext);\n'
-        build_pnext_proc += '                    if (custom_struct->pNext) {\n'
-        build_pnext_proc += '                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext, copy_state));\n'
-        build_pnext_proc += '                    }\n'
-        build_pnext_proc += '                }\n'
-        build_pnext_proc += '            }\n'
-        build_pnext_proc += '            if (!safe_pNext) {\n'
-        build_pnext_proc += '                safe_pNext = SafePnextCopy(header->pNext, copy_state);\n'
-        build_pnext_proc += '            }\n'
-        build_pnext_proc += '            break;\n'
-        build_pnext_proc += '    }\n'
-        build_pnext_proc += '\n'
-        build_pnext_proc += '    return safe_pNext;\n'
-        build_pnext_proc += '}\n'
-
-        free_pnext_proc += '        default: // Encountered an unknown sType\n'
-        free_pnext_proc += '            // If sType is in custom list, free custom struct memory and clean up\n'
-        free_pnext_proc += '            for (auto item : custom_stype_info) {\n'
-        free_pnext_proc += '                if (item.first == header->sType) {\n'
-        free_pnext_proc += '                    if (header->pNext) {\n'
-        free_pnext_proc += '                        FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '                    }\n'
-        free_pnext_proc += '                    free(const_cast<void *>(pNext));\n'
-        free_pnext_proc += '                    pNext = nullptr;\n'
-        free_pnext_proc += '                    break;\n'
-        free_pnext_proc += '                }\n'
-        free_pnext_proc += '            }\n'
-        free_pnext_proc += '            if (pNext) {\n'
-        free_pnext_proc += '                FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '            }\n'
-        free_pnext_proc += '            break;\n'
-        free_pnext_proc += '    }\n'
-        free_pnext_proc += '}\n'
-
-        pnext_procs = string_copy_proc + build_pnext_proc + free_pnext_proc
-        return pnext_procs
     #
     # Determine if a structure needs a safe_struct helper function
     # That is, it has an sType or one of its members is a pointer
@@ -846,10 +643,7 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
 #include <vulkan/vk_layer.h>
 
 """
-        if self.genOpts.filename.endswith('_utils.cpp'):
-            safe_struct_helper_source += self.build_safe_struct_utility_funcs()
-        else:
-            safe_struct_helper_source += self.GenerateSafeStructSource()
+        safe_struct_helper_source += self.GenerateSafeStructSource()
 
         return safe_struct_helper_source
     #
@@ -1624,9 +1418,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
     #
     # Create a helper file and return it as a string
     def OutputDestFile(self):
-        if self.helper_file_type == 'safe_struct_header':
-            return self.GenerateSafeStructHelperHeader()
-        elif self.helper_file_type == 'safe_struct_source':
+        if self.helper_file_type == 'safe_struct_source':
             return self.GenerateSafeStructHelperSource()
         elif self.helper_file_type == 'extension_helper_header':
             return self.GenerateExtensionHelperHeader()
