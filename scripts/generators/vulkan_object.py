@@ -199,9 +199,9 @@ class Union:
 @dataclass(frozen=True)
 class FormatComponent:
     """<format/component>"""
-    type: str
-    bits: str
-    numericFormat: str
+    type: str # 'R', 'G', 'B', 'A', 'D', 'S', etc
+    bits: str # will be an INT or 'compressed'
+    numericFormat: str # 'UNORM', 'SINT', etc
     planeIndex: int # None if no planeIndex in format
 
 @dataclass(frozen=True)
