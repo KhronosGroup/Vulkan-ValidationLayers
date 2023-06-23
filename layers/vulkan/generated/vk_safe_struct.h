@@ -6454,6 +6454,60 @@ struct safe_VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR {
     VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR const *>(this); }
 };
 
+struct safe_VkCooperativeMatrixPropertiesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t MSize;
+    uint32_t NSize;
+    uint32_t KSize;
+    VkComponentTypeKHR AType;
+    VkComponentTypeKHR BType;
+    VkComponentTypeKHR CType;
+    VkComponentTypeKHR ResultType;
+    VkBool32 saturatingAccumulation;
+    VkScopeKHR scope;
+    safe_VkCooperativeMatrixPropertiesKHR(const VkCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkCooperativeMatrixPropertiesKHR(const safe_VkCooperativeMatrixPropertiesKHR& copy_src);
+    safe_VkCooperativeMatrixPropertiesKHR& operator=(const safe_VkCooperativeMatrixPropertiesKHR& copy_src);
+    safe_VkCooperativeMatrixPropertiesKHR();
+    ~safe_VkCooperativeMatrixPropertiesKHR();
+    void initialize(const VkCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkCooperativeMatrixPropertiesKHR* copy_src, PNextCopyState* copy_state = {});
+    VkCooperativeMatrixPropertiesKHR *ptr() { return reinterpret_cast<VkCooperativeMatrixPropertiesKHR *>(this); }
+    VkCooperativeMatrixPropertiesKHR const *ptr() const { return reinterpret_cast<VkCooperativeMatrixPropertiesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 cooperativeMatrix;
+    VkBool32 cooperativeMatrixRobustBufferAccess;
+    safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& operator=(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR& copy_src);
+    safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR();
+    ~safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR();
+    void initialize(const VkPhysicalDeviceCooperativeMatrixFeaturesKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesKHR* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR *>(this); }
+    VkPhysicalDeviceCooperativeMatrixFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceCooperativeMatrixFeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR {
+    VkStructureType sType;
+    void* pNext{};
+    VkShaderStageFlags cooperativeMatrixSupportedStages;
+    safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const VkPhysicalDeviceCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& operator=(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR& copy_src);
+    safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR();
+    ~safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR();
+    void initialize(const VkPhysicalDeviceCooperativeMatrixPropertiesKHR* in_struct, PNextCopyState* copy_state = {});
+    void initialize(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesKHR* copy_src, PNextCopyState* copy_state = {});
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(this); }
+    VkPhysicalDeviceCooperativeMatrixPropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceCooperativeMatrixPropertiesKHR const *>(this); }
+};
+
 struct safe_VkDebugReportCallbackCreateInfoEXT {
     VkStructureType sType;
     const void* pNext{};

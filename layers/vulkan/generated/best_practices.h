@@ -1112,6 +1112,13 @@ void PostCallRecordQueueSubmit2KHR(
     VkResult                                    result) override;
 
 
+void PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixPropertiesKHR*           pProperties,
+    VkResult                                    result) override;
+
+
 void PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,

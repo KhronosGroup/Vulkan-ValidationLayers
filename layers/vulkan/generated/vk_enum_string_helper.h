@@ -1805,6 +1805,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value) {
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
+            return "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM";
         case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM:
@@ -3647,6 +3653,48 @@ static inline const char* string_VkVideoEncodeTuningModeKHR(VkVideoEncodeTuningM
     }
 }
 #endif //VK_ENABLE_BETA_EXTENSIONS
+static inline const char* string_VkComponentTypeKHR(VkComponentTypeKHR input_value) {
+    switch (input_value) {
+        case VK_COMPONENT_TYPE_FLOAT16_KHR:
+            return "VK_COMPONENT_TYPE_FLOAT16_KHR";
+        case VK_COMPONENT_TYPE_FLOAT32_KHR:
+            return "VK_COMPONENT_TYPE_FLOAT32_KHR";
+        case VK_COMPONENT_TYPE_FLOAT64_KHR:
+            return "VK_COMPONENT_TYPE_FLOAT64_KHR";
+        case VK_COMPONENT_TYPE_SINT8_KHR:
+            return "VK_COMPONENT_TYPE_SINT8_KHR";
+        case VK_COMPONENT_TYPE_SINT16_KHR:
+            return "VK_COMPONENT_TYPE_SINT16_KHR";
+        case VK_COMPONENT_TYPE_SINT32_KHR:
+            return "VK_COMPONENT_TYPE_SINT32_KHR";
+        case VK_COMPONENT_TYPE_SINT64_KHR:
+            return "VK_COMPONENT_TYPE_SINT64_KHR";
+        case VK_COMPONENT_TYPE_UINT8_KHR:
+            return "VK_COMPONENT_TYPE_UINT8_KHR";
+        case VK_COMPONENT_TYPE_UINT16_KHR:
+            return "VK_COMPONENT_TYPE_UINT16_KHR";
+        case VK_COMPONENT_TYPE_UINT32_KHR:
+            return "VK_COMPONENT_TYPE_UINT32_KHR";
+        case VK_COMPONENT_TYPE_UINT64_KHR:
+            return "VK_COMPONENT_TYPE_UINT64_KHR";
+        default:
+            return "Unhandled VkComponentTypeKHR";
+    }
+}
+static inline const char* string_VkScopeKHR(VkScopeKHR input_value) {
+    switch (input_value) {
+        case VK_SCOPE_DEVICE_KHR:
+            return "VK_SCOPE_DEVICE_KHR";
+        case VK_SCOPE_WORKGROUP_KHR:
+            return "VK_SCOPE_WORKGROUP_KHR";
+        case VK_SCOPE_SUBGROUP_KHR:
+            return "VK_SCOPE_SUBGROUP_KHR";
+        case VK_SCOPE_QUEUE_FAMILY_KHR:
+            return "VK_SCOPE_QUEUE_FAMILY_KHR";
+        default:
+            return "Unhandled VkScopeKHR";
+    }
+}
 static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectTypeEXT input_value) {
     switch (input_value) {
         case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT:

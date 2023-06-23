@@ -1858,6 +1858,21 @@ void BestPractices::PostCallRecordQueueSubmit2KHR(
     }
 }
 
+void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixPropertiesKHR*           pProperties,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties, result);
+    if (result > VK_SUCCESS) {
+        LogPositiveSuccessCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", result); // VK_INCOMPLETE
+        return;
+    }
+    if (result < VK_SUCCESS) {
+        LogErrorCode("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", result); // VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY
+    }
+}
+
 void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
