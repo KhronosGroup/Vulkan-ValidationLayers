@@ -30,7 +30,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         VkShaderModule module;
         auto module_create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
 
-        icd_spv_header spv = {};
+        constexpr icd_spv_header spv = {};
         module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
         module_create_info.codeSize = 4;
 

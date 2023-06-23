@@ -22,6 +22,7 @@
 #include "glslang/SPIRV/SPVRemapper.h"
 #include <filesystem>
 #include <cmath>
+#include <string_view>
 
 // Command-line options
 enum TOptions {
@@ -192,26 +193,18 @@ void TestEnvironment::SetUp() {
 
 void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
 
-bool VkTestFramework::optionMatch(const char *option, char *optionLine) {
-    if (strncmp(option, optionLine, strlen(option)) == 0)
-        return true;
-    else
-        return false;
-}
-
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {
-    int i, n;
-
-    for (i = 1, n = 1; i < *argc; i++) {
-        if (optionMatch("--strip-SPV", argv[i]))
+    for (int i = 1; i < *argc; ++i) {
+        const std::string_view current_argument = argv[i];
+        if (current_argument == "--strip-SPV") {
             m_strip_spv = true;
-        else if (optionMatch("--canonicalize-SPV", argv[i]))
+        } else if (current_argument == "--canonicalize-SPV") {
             m_canonicalize_spv = true;
-        else if (optionMatch("--print-vu", argv[i]))
+        } else if (current_argument == "--print-vu") {
             m_print_vu = true;
-        else if (optionMatch("--device-index", argv[i]) && ((i + 1) < *argc)) {
+        } else if (current_argument == "--device-index" && ((i + 1) < *argc)) {
             m_phys_device_index = std::atoi(argv[++i]);
-        } else if (optionMatch("--help", argv[i]) || optionMatch("-h", argv[i])) {
+        } else if ((current_argument == "--help") || (current_argument == "-h")) {
             printf("\nOther options:\n");
             printf(
                 "\t--print-vu\n"
@@ -233,14 +226,6 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             printf("\nUse --help or -h for option list.\n");
             exit(0);
         }
-
-        /*
-         * Since the above "consume" inputs, update argv
-         * so that it contains the trimmed list of args for glutInit
-         */
-
-        argv[n] = argv[i];
-        n++;
     }
 }
 
