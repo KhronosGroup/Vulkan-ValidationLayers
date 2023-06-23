@@ -226,3 +226,57 @@ TEST_F(PositiveGpuAssistedLayer, SetSSBOPushDescriptor) {
 
     vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
 }
+
+TEST_F(PositiveGpuAssistedLayer, DeadFunctionWithBufferReference) {
+    TEST_DESCRIPTION("Make sure that shaders with dead functions doesn't crash in spirv-opt");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    auto validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+    GetPhysicalDeviceFeatures2(bda_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &bda_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceProperties properties = {};
+    vk::GetPhysicalDeviceProperties(gpu(), &properties);
+    if (properties.limits.maxBoundDescriptorSets < 8) {
+        GTEST_SKIP() << "maxBoundDescriptorSets is too low";
+    }
+
+    const char *vs_source = R"glsl(#version 450
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_scalar_block_layout : require
+
+layout(location = 0) out vec4 color;
+layout(buffer_reference, scalar, buffer_reference_align = 4) buffer TestBufferRef {
+    uint data;
+};
+layout(push_constant, scalar) uniform push {
+    TestBufferRef test_buffer_ref;
+};
+TestBufferRef get_ref() {
+    return test_buffer_ref;
+}
+void main() {
+    TestBufferRef ref = get_ref();
+    color = vec4(1, 0, 1, 1);
+}
+)glsl";
+
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {{VK_SHADER_STAGE_VERTEX_BIT, 0, 8}});
+    pipe.CreateGraphicsPipeline();
+}
