@@ -695,9 +695,8 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     auto cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr);
     const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
     if (cs) {
-        const char *vuid = zero_initialize_workgroup_memory ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
-                                                            : "VUID-RuntimeSpirv-OpVariable-06373";
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                                 "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372");
     }
 }
 

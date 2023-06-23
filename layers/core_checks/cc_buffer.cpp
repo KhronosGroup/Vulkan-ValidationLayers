@@ -167,11 +167,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)
-                               ? "VUID-VkBufferCreateInfo-sharingMode-01419"
-                               : "VUID-VkBufferCreateInfo-sharingMode-01391";
         skip |= ValidatePhysicalDeviceQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", vuid);
+                                                    "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+                                                    "VUID-VkBufferCreateInfo-sharingMode-01419");
     }
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) != 0) {
@@ -339,10 +337,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
     if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0 &&
         !enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_ext_texel_buffer_alignment)
-                               ? "VUID-VkBufferViewCreateInfo-offset-02749"
-                               : "VUID-VkBufferViewCreateInfo-offset-00926";
-        skip |= LogError(buffer_state.buffer(), vuid,
+        skip |= LogError(buffer_state.buffer(), "VUID-VkBufferViewCreateInfo-offset-02749",
                          "vkCreateBufferView(): VkBufferViewCreateInfo offset (%" PRIuLEAST64
                          ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
                          pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
@@ -463,7 +458,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 
     if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
         skip |= ValidateCmdQueueFlags(cb_state, "vkCmdFillBuffer()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdFillBuffer-commandBuffer-00030");
+                                      "VUID-vkCmdFillBuffer-apiVersion-07894");
     }
 
     return skip;

@@ -2041,7 +2041,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     char data_space;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02827");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetQueryPoolResults-flags-02828");
     vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
                             VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();

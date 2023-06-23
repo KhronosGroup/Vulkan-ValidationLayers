@@ -64,14 +64,12 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     buffCI.pQueueFamilyIndices = qfi;
     buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
 
-    const char *vuid = (get_physical_device_properties2) ? "VUID-VkBufferCreateInfo-sharingMode-01419"
-                                                         : "VUID-VkBufferCreateInfo-sharingMode-01391";
     // Test for queue family index out of range
-    CreateBufferTest(*this, &buffCI, vuid);
+    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     // Test for non-unique QFI in array
     qfi[0] = 0;
-    CreateBufferTest(*this, &buffCI, vuid);
+    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     if (m_device->queue_props.size() > 2) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pSubmits-04626");
@@ -174,9 +172,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
     device_create_info.enabledLayerCount = 0;
     device_create_info.enabledExtensionCount = 0;
 
-    const char *vuid = (DeviceValidationVersion() == VK_API_VERSION_1_0) ? "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372"
-                                                                         : "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceCreateInfo-queueFamilyIndex-02802");
     vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
 }

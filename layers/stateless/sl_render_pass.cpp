@@ -400,20 +400,12 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         }
         if (FormatHasStencil(attachment_format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
             if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                if (use_rp2) {
-                    skip |= LogError(device, "VUID-VkAttachmentDescription2-pNext-06704",
-                                     "%s: pCreateInfo->pAttachments[%" PRIu32
-                                     "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
-                                     "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                                     func_name, i);
-                } else if (!IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06703" : "VUID-VkAttachmentDescription-format-06700";
-                    skip |= LogError(device, vuid,
-                                     "%s: pCreateInfo->pAttachments[%" PRIu32
-                                     "] format is %s and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is "
-                                     "VK_IMAGE_LAYOUT_UNDEFINED.",
-                                     func_name, i, string_VkFormat(attachment_format));
-                }
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-pNext-06704" : "VUID-VkAttachmentDescription-format-06700";
+                skip |= LogError(device, vuid,
+                                 "%s: pCreateInfo->pAttachments[%" PRIu32
+                                 "] format (%s) includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                 "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                 func_name, i, string_VkFormat(attachment_format));
             }
 
             // rp2 can have seperate depth/stencil layout and need to look in pNext

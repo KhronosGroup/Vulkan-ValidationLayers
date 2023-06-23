@@ -903,7 +903,7 @@ TEST_F(NegativeGeometryTessellation, Tessellation) {
     p_iasci = &iasci;
     shader_stages = {};
     // Pass patch topology without tessellation shaders
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08889");
 
     shader_stages = {tcs.GetStageCreateInfo(), tes.GetStageCreateInfo()};
     // Pass a NULL pTessellationState (with active tessellation shader stages)
@@ -950,11 +950,7 @@ TEST_F(NegativeGeometryTessellation, PatchListTopology) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(),
                                  tes.GetStageCreateInfo()};
     };
-
-    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
-                           ? "VUID-VkGraphicsPipelineCreateInfo-pStages-08888"
-                           : "VUID-VkGraphicsPipelineCreateInfo-pStages-00736";
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
 }
 
 /*// TODO : This test should be good, but needs Tess support in compiler to run

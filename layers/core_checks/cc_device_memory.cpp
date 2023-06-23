@@ -241,7 +241,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
     } else {
         if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
-            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-07898", "vkAllocateMemory: allocationSize is 0.");
+            skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-07899", "vkAllocateMemory: allocationSize is 0.");
         }
     }
 
@@ -315,11 +315,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             } else {
                 if (!IsZeroAllocationSizeAllowed(pAllocateInfo) &&
                     (pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
-                    const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
-                                           ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
-                                           : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
                     skip |=
-                        LogError(device, vuid,
+                        LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-02964",
                                  "vkAllocateMemory: Allocation Size (%" PRIu64
                                  ") needs to be equal to VkImage %s VkMemoryRequirements::size (%" PRIu64 ")",
                                  pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
@@ -338,10 +335,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             auto buffer_state = Get<BUFFER_STATE>(dedicated_allocate_info->buffer);
             if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
                 (imported_ahb == false)) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
-                                       ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
-                                       : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
-                skip |= LogError(device, vuid,
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965",
                                  "vkAllocateMemory: Allocation Size (%" PRIu64
                                  ") needs to be equal to VkBuffer %s VkMemoryRequirements::size (%" PRIu64 ")",
                                  pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
@@ -663,17 +657,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             skip |= ValidateBufferImportedHandleANDROID(api_name, buffer_state->external_memory_handle_types, mem, buffer);
         } else if (mem_info->IsImport() &&
                    (mem_info->import_handle_type.value() & buffer_state->external_memory_handle_types) == 0) {
-            const char *vuid = nullptr;
-            if ((bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                vuid = "VUID-VkBindBufferMemoryInfo-memory-02985";
-            } else if ((!bind_buffer_mem_2) && IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                vuid = "VUID-vkBindBufferMemory-memory-02985";
-            } else if ((bind_buffer_mem_2) && !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                vuid = "VUID-VkBindBufferMemoryInfo-memory-02727";
-            } else if ((!bind_buffer_mem_2) &&
-                       !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                vuid = "VUID-vkBindBufferMemory-memory-02727";
-            }
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02985" : "VUID-vkBindBufferMemory-memory-02985";
             const LogObjectList objlist(buffer, mem);
             skip |= LogError(objlist, vuid,
                              "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
@@ -786,10 +771,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
         }
 
         if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)
-                                   ? "VUID-VkImageMemoryRequirementsInfo2-image-02280"
-                                   : "VUID-VkImageMemoryRequirementsInfo2-image-01591";
-            skip |= LogError(pInfo->image, vuid,
+            skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02280",
                              "%s: %s image is a single-plane format (%s) and does not have tiling of "
                              "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
                              "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
@@ -1066,14 +1048,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     // Validate memory requirements alignment
                     if (SafeModulo(bind_info.memoryOffset, mem_req.alignment) != 0) {
-                        const char *validation_error;
-                        if (bind_image_mem_2 == false) {
-                            validation_error = "VUID-vkBindImageMemory-memoryOffset-01048";
-                        } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                            validation_error = "VUID-VkBindImageMemoryInfo-pNext-01616";
-                        } else {
-                            validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
-                        }
+                        const char *validation_error = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616"
+                                                                        : "VUID-vkBindImageMemory-memoryOffset-01048";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |=
                             LogError(objlist, validation_error,
@@ -1087,14 +1063,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         safe_VkMemoryAllocateInfo alloc_info = mem_info->alloc_info;
                         // Validate memory requirements size
                         if (mem_req.size > alloc_info.allocationSize - bind_info.memoryOffset) {
-                            const char *validation_error;
-                            if (bind_image_mem_2 == false) {
-                                validation_error = "VUID-vkBindImageMemory-size-01049";
-                            } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                                validation_error = "VUID-VkBindImageMemoryInfo-pNext-01617";
-                            } else {
-                                validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
-                            }
+                            const char *validation_error =
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-size-01049";
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(objlist, validation_error,
                                              "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
@@ -1105,14 +1075,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                         // Validate memory type used
                         {
-                            const char *validation_error;
-                            if (bind_image_mem_2 == false) {
-                                validation_error = "VUID-vkBindImageMemory-memory-01047";
-                            } else if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                                validation_error = "VUID-VkBindImageMemoryInfo-pNext-01615";
-                            } else {
-                                validation_error = "VUID-VkBindImageMemoryInfo-memory-01612";
-                            }
+                            const char *validation_error =
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-vkBindImageMemory-memory-01047";
                             skip |= ValidateMemoryTypes(mem_info.get(), mem_req.memoryTypeBits, error_prefix, validation_error);
                         }
                     }
@@ -1209,12 +1173,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         if ((bind_info.memoryOffset != 0) || !current_image_state ||
                             !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
                                 mem_info->dedicated->create_info.image)) {
-                            const char *validation_error;
-                            if (bind_image_mem_2 == false) {
-                                validation_error = "VUID-vkBindImageMemory-memory-02629";
-                            } else {
-                                validation_error = "VUID-VkBindImageMemoryInfo-memory-02629";
-                            }
+                            const char *validation_error = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02629"
+                                                                            : "VUID-vkBindImageMemory-memory-02629";
                             const LogObjectList objlist(bind_info.image, bind_info.memory, mem_info->dedicated->handle);
                             skip |= LogError(
                                 objlist, validation_error,
@@ -1226,12 +1186,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         }
                     } else {
                         if ((bind_info.memoryOffset != 0) || (mem_info->dedicated->handle.Cast<VkImage>() != bind_info.image)) {
-                            const char *validation_error;
-                            if (bind_image_mem_2 == false) {
-                                validation_error = "VUID-vkBindImageMemory-memory-01509";
-                            } else {
-                                validation_error = "VUID-VkBindImageMemoryInfo-memory-01509";
-                            }
+                            const char *validation_error = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02628"
+                                                                            : "VUID-vkBindImageMemory-memory-02628";
                             const LogObjectList objlist(bind_info.image, bind_info.memory, mem_info->dedicated->handle);
                             skip |=
                                 LogError(objlist, validation_error,
@@ -1379,20 +1335,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                                                bind_info.memory, bind_info.image);
                 } else if (mem_info->IsImport() == true) {
                     if ((mem_info->import_handle_type.value() & image_state->external_memory_handle_types) == 0) {
-                        const char *vuid = nullptr;
-                        if ((bind_image_mem_2) &&
-                            IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                            vuid = "VUID-VkBindImageMemoryInfo-memory-02989";
-                        } else if ((!bind_image_mem_2) &&
-                                   IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                            vuid = "VUID-vkBindImageMemory-memory-02989";
-                        } else if ((bind_image_mem_2) &&
-                                   !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                            vuid = "VUID-VkBindImageMemoryInfo-memory-02729";
-                        } else if ((!bind_image_mem_2) &&
-                                   !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
-                            vuid = "VUID-vkBindImageMemory-memory-02729";
-                        }
+                        const char *vuid =
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02989" : "VUID-vkBindImageMemory-memory-02989";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(objlist, vuid,
                                          "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s "

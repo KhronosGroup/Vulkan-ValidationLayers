@@ -830,14 +830,14 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
         const auto decorations = module_state.GetDecorationSet(var_id);
 
         if (!enabled_features.core.shaderStorageImageReadWithoutFormat && !decorations.Has(DecorationSet::nonreadable_bit)) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06270",
+            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-apiVersion-07955",
                              "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
                              "format and is not decorated with NonReadable",
                              module_state.FindDef(var_id)->Describe().c_str(), type_def->Describe().c_str());
         }
 
         if (!enabled_features.core.shaderStorageImageWriteWithoutFormat && !decorations.Has(DecorationSet::nonwritable_bit)) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06269",
+            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-apiVersion-07954",
                              "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
                              "Unknown format and is not decorated with NonWritable",
                              module_state.FindDef(var_id)->Describe().c_str(), type_def->Describe().c_str());
@@ -1301,9 +1301,7 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
             // Validate Floats
             if (atomic.storage_class == spv::StorageClassStorageBuffer) {
                 if (valid_storage_buffer_float == false) {
-                    const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06284"
-                                                                                                   : "VUID-RuntimeSpirv-None-06280";
-                    skip |= LogError(device, vuid,
+                    skip |= LogError(device, "VUID-RuntimeSpirv-None-06284",
                                      "%s: Can't use float atomics operations\n%s\nwith StorageBuffer storage class without "
                                      "shaderBufferFloat32Atomics or shaderBufferFloat32AtomicAdd or shaderBufferFloat64Atomics or "
                                      "shaderBufferFloat64AtomicAdd or shaderBufferFloat16Atomics or shaderBufferFloat16AtomicAdd "
@@ -1375,10 +1373,8 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                 }
             } else if (atomic.storage_class == spv::StorageClassWorkgroup) {
                 if (valid_workgroup_float == false) {
-                    const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06285"
-                                                                                                   : "VUID-RuntimeSpirv-None-06281";
                     skip |= LogError(
-                        device, vuid,
+                        device, "VUID-RuntimeSpirv-None-06285",
                         "%s: Can't use float atomics operations\n%s\nwith Workgroup storage class without "
                         "shaderSharedFloat32Atomics or "
                         "shaderSharedFloat32AtomicAdd or shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd or "
@@ -1448,10 +1444,8 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                     }
                 }
             } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_float == false)) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06286"
-                                                                                               : "VUID-RuntimeSpirv-None-06282";
                 skip |= LogError(
-                    device, vuid,
+                    device, "VUID-RuntimeSpirv-None-06286",
                     "%s: Can't use float atomics operations\n%s\nwith Image storage class without shaderImageFloat32Atomics or "
                     "shaderImageFloat32AtomicAdd or shaderImageFloat32AtomicMinMax enabled.",
                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(), atomic_def->Describe().c_str());
@@ -1463,10 +1457,8 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                              "shaderSharedFloat16AtomicAdd or shaderSharedFloat16AtomicMinMax enabled.",
                              report_data->FormatHandle(module_state.vk_shader_module()).c_str(), atomic_def->Describe().c_str());
             } else if ((atomic.bit_width == 32) && (valid_32_float == false)) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06338"
-                                                                                               : "VUID-RuntimeSpirv-None-06335";
                 skip |=
-                    LogError(device, vuid,
+                    LogError(device, "VUID-RuntimeSpirv-None-06338",
                              "%s: Can't use 32-bit float atomics operations\n%s\nwithout shaderBufferFloat32AtomicMinMax, "
                              "shaderSharedFloat32AtomicMinMax, shaderImageFloat32AtomicMinMax, sparseImageFloat32AtomicMinMax, "
                              "shaderBufferFloat32Atomics, shaderBufferFloat32AtomicAdd, shaderSharedFloat32Atomics, "
@@ -1474,10 +1466,8 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
                              "sparseImageFloat32Atomics or sparseImageFloat32AtomicAdd enabled.",
                              report_data->FormatHandle(module_state.vk_shader_module()).c_str(), atomic_def->Describe().c_str());
             } else if ((atomic.bit_width == 64) && (valid_64_float == false)) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_ext_shader_atomic_float2) ? "VUID-RuntimeSpirv-None-06339"
-                                                                                               : "VUID-RuntimeSpirv-None-06336";
                 skip |=
-                    LogError(device, vuid,
+                    LogError(device, "VUID-RuntimeSpirv-None-06339",
                              "%s: Can't use 64-bit float atomics operations\n%s\nwithout shaderBufferFloat64AtomicMinMax, "
                              "shaderSharedFloat64AtomicMinMax, shaderBufferFloat64Atomics, shaderBufferFloat64AtomicAdd, "
                              "shaderSharedFloat64Atomics or shaderSharedFloat64AtomicAdd enabled.",
@@ -1569,12 +1559,13 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
     }
 
     if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_id_bit)) {
+        // Special case to print error by extension and feature bit
         if (!enabled_features.core13.maintenance4) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-LocalSizeId-06434",
                              "LocalSizeId execution mode used but maintenance4 feature not enabled");
         }
         if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-LocalSizeId-06433",
+            skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-LocalSizeId-06434",
                              "LocalSizeId execution mode used but maintenance4 extension is not enabled and used "
                              "Vulkan api version is 1.2 or less");
         }
@@ -1702,10 +1693,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
         const bool ignore_topology = pipeline.IsDynamic(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                      phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
         if (!entrypoint.written_builtin_point_size && !ignore_topology) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
-                                   ? "VUID-VkGraphicsPipelineCreateInfo-topology-08890"
-                                   : "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722";
-            skip |= LogError(module_state.vk_shader_module(), vuid,
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-topology-08890",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST, but "
                              "PointSize is not written in the Vertex shader.",
@@ -1983,11 +1971,8 @@ bool CoreChecks::ValidateShaderModuleId(const PIPELINE_STATE &pipeline) const {
                                      string_VkShaderStageFlagBits(stage_ci.stage));
                 }
             } else if (stage_ci.module == VK_NULL_HANDLE) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_pipeline_library)
-                                       ? "VUID-VkPipelineShaderStageCreateInfo-stage-06846"
-                                       : "VUID-VkPipelineShaderStageCreateInfo-stage-06847";
                 skip |= LogError(
-                    device, vuid,
+                    device, "VUID-VkPipelineShaderStageCreateInfo-stage-06846",
                     "%s pCreateInfos[%" PRIu32
                     "] module (stage %s) VkPipelineShaderStageCreateInfo has no VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
                     "struct in the pNext chain, the graphicsPipelineLibrary feature is not enabled, and module is not a valid "
@@ -2031,11 +2016,8 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
         if (storage_class == spv::StorageClassWorkgroup) {
             // If Workgroup variable is initalized, make sure the feature is enabled
             if (insn->Length() > 4 && !enabled_features.core13.shaderZeroInitializeWorkgroupMemory) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)
-                                       ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
-                                       : "VUID-RuntimeSpirv-OpVariable-06373";
                 skip |= LogError(
-                    module_state.vk_shader_module(), vuid,
+                    module_state.vk_shader_module(), "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372",
                     "vkCreateShaderModule(): "
                     "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is not enabled, "
                     "but shader contains an OpVariable with Workgroup Storage Class with an Initializer operand.\n%s",
@@ -2124,31 +2106,26 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
     bool skip = false;
 
     std::string vuid_07988;
-    std::string vuid_07989;
     std::string vuid_07990;
     std::string vuid_07991;
     switch (pipeline.GetCreateInfoSType()) {
         case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
             vuid_07988 = "VUID-VkGraphicsPipelineCreateInfo-layout-07988";
-            vuid_07989 = "VUID-VkGraphicsPipelineCreateInfo-layout-07989";
             vuid_07990 = "VUID-VkGraphicsPipelineCreateInfo-layout-07990";
             vuid_07991 = "VUID-VkGraphicsPipelineCreateInfo-layout-07991";
             break;
         case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
             vuid_07988 = "VUID-VkComputePipelineCreateInfo-layout-07988";
-            vuid_07989 = "VUID-VkComputePipelineCreateInfo-layout-07989";
             vuid_07990 = "VUID-VkComputePipelineCreateInfo-layout-07990";
             vuid_07991 = "VUID-VkComputePipelineCreateInfo-layout-07991";
             break;
         case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
             vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988";
-            vuid_07989 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07989";
             vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990";
             vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991";
             break;
         case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
             vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
-            vuid_07989 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07989";
             vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
             vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
             break;
@@ -2182,13 +2159,9 @@ bool CoreChecks::ValidateShaderDescriptorVariable(const SHADER_MODULE_STATE &mod
                              string_VkShaderStageFlagBits(stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-            std::string vuid = (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type) ||
-                                IsExtEnabled(device_extensions.vk_ext_mutable_descriptor_type))
-                                   ? vuid_07990
-                                   : vuid_07989;
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |=
-                LogError(objlist, vuid,
+                LogError(objlist, vuid_07990,
                          "%s(): pCreateInfos[%" PRIu32 "] has a type mismatch for descriptor slot [Set %" PRIu32 " Binding %" PRIu32
                          "] for shader (%s), uses type %s but expected (%s).",
                          pipeline.GetCreateFunctionName(), pipeline.create_index, variable.decorations.set,
@@ -2634,9 +2607,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
 
         // Apply the specialization-constant values and revalidate the shader module is valid.
-        const char *pSpecializationInfo_vuid = IsExtEnabled(device_extensions.vk_ext_shader_module_identifier)
-                                                   ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
-                                                   : "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719";
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
             optimizer.Run(module_state.words_.data(), module_state.words_.size(), &specialized_spirv, options, true);
@@ -2646,7 +2616,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             spv_diagnostic diag = nullptr;
             auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
-                skip |= LogError(device, pSpecializationInfo_vuid,
+                skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849",
                                  "%s(): pCreateInfos[%" PRIu32
                                  "] After specialization was applied, %s does not contain valid spirv for stage %s.",
                                  pipeline.GetCreateFunctionName(), pipeline.create_index,
@@ -2676,7 +2646,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         } else {
             // Should never get here, but better then asserting
             skip |=
-                LogError(device, pSpecializationInfo_vuid,
+                LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849",
                          "%s(): pCreateInfos[%" PRIu32
                          "] %s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
                          pipeline.GetCreateFunctionName(), pipeline.create_index,
@@ -2850,11 +2820,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                     const uint32_t input_vec_size = input_var->base_type.Word(3);
                     if (output_vec_size > input_vec_size) {
                         const LogObjectList objlist(producer.vk_shader_module(), consumer.vk_shader_module());
-                        const char *vuid = IsExtEnabled(device_extensions.vk_khr_maintenance4)
-                                               ? "VUID-RuntimeSpirv-maintenance4-06817"
-                                               : "VUID-RuntimeSpirv-OpTypeVector-06816";
                         skip |=
-                            LogError(objlist, vuid,
+                            LogError(objlist, "VUID-RuntimeSpirv-maintenance4-06817",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] starting at Location %" PRIu32
                                      " Component %" PRIu32 " the Output (%s) has a Vec%" PRIu32 " while Input (%s) as a Vec%" PRIu32
                                      ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching "

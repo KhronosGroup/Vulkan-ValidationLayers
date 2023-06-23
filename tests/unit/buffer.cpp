@@ -270,7 +270,6 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     // Attempt to enable texel buffer alignmnet extension
     AddOptionalExtensions(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
-    const bool texel_buffer_alignment = IsExtensionsEnabled(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
     const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
@@ -312,9 +311,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
     buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
-    const char *offset_vuid =
-        (texel_buffer_alignment == true) ? "VUID-VkBufferViewCreateInfo-offset-02749" : "VUID-VkBufferViewCreateInfo-offset-00926";
-    CreateBufferViewTest(*this, &buff_view_ci, {offset_vuid});
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-02749"});
 
     // Set offset to acceptable value for range tests
     buff_view_ci.offset = minTexelBufferOffsetAlignment;
@@ -407,7 +404,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     buff_view_ci.range = VK_WHOLE_SIZE;
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
-    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-00926"});
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-02749"});
 }
 
 TEST_F(NegativeBuffer, TexelBufferAlignment) {
@@ -771,7 +768,7 @@ TEST_F(NegativeBuffer, FillBufferCmdPoolUnsupported) {
     buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
 
     cb.begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-commandBuffer-00030");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdFillBuffer-apiVersion-07894");
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
     m_errorMonitor->VerifyFound();
     cb.end();

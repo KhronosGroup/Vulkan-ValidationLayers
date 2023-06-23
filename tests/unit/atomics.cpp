@@ -61,7 +61,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
                 info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
             };
 
-            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06341"};
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06286", "VUID-RuntimeSpirv-NonWritable-06341"};
             // extra VU for not enabling atomic float support
             CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT, vuids);
         }
@@ -115,7 +115,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
             };
 
             // extra VU for not enabling atomic float support
-            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06340"};
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06286", "VUID-RuntimeSpirv-NonWritable-06340"};
             CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT, vuids);
         }
     }
@@ -766,72 +766,72 @@ TEST_F(NegativeAtomic, Float) {
 
     // shaderBufferFloat32Atomics
     current_shader = cs_buffer_float_32_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
     current_shader = cs_buffer_float_32_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
     current_shader = cs_buffer_float_32_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
     // shaderBufferFloat32AtomicAdd
     current_shader = cs_buffer_float_32_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                            "VUID-RuntimeSpirv-None-06280"});
+                            "VUID-RuntimeSpirv-None-06284"});
 
     // shaderSharedFloat32Atomics
     current_shader = cs_shared_float_32_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
     current_shader = cs_shared_float_32_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
     current_shader = cs_shared_float_32_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
     // shaderSharedFloat32AtomicAdd
     current_shader = cs_shared_float_32_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                            "VUID-RuntimeSpirv-None-06281"});
+                            "VUID-RuntimeSpirv-None-06285"});
 
     // shaderBufferFloat64Atomics
     if (available_features.shaderFloat64) {
         current_shader = cs_buffer_float_64_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         current_shader = cs_buffer_float_64_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         current_shader = cs_buffer_float_64_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         // shaderBufferFloat64AtomicAdd
         current_shader = cs_buffer_float_64_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                                "VUID-RuntimeSpirv-None-06280"});
+                                "VUID-RuntimeSpirv-None-06284"});
 
         // shaderSharedFloat64Atomics
         current_shader = cs_shared_float_64_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         current_shader = cs_shared_float_64_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         current_shader = cs_shared_float_64_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         // shaderSharedFloat64AtomicAdd
         current_shader = cs_shared_float_64_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                                "VUID-RuntimeSpirv-None-06281"});
+                                "VUID-RuntimeSpirv-None-06285"});
     } else {
         printf("Skipping 64-bit float tests\n");
     }
@@ -841,20 +841,20 @@ TEST_F(NegativeAtomic, Float) {
 
     // shaderImageFloat32Atomics
     current_shader = cs_image_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06286");
 
     current_shader = cs_image_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06286");
 
     current_shader = cs_image_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06282");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06286");
 
     // shaderImageFloat32AtomicAdd
     current_shader = cs_image_add.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
         std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08740", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                            "VUID-RuntimeSpirv-None-06282"});
+                            "VUID-RuntimeSpirv-None-06286"});
 }
 
 TEST_F(NegativeAtomic, Float2) {
@@ -1047,59 +1047,59 @@ TEST_F(NegativeAtomic, Float2) {
     if (support_16_bit) {
         // shaderBufferFloat16Atomics
         current_shader = cs_buffer_float_16_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         current_shader = cs_buffer_float_16_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         current_shader = cs_buffer_float_16_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06280");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06284");
 
         // shaderBufferFloat16AtomicAdd
         current_shader = cs_buffer_float_16_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                                "VUID-RuntimeSpirv-None-06280"});
+                                "VUID-RuntimeSpirv-None-06284"});
 
         // shaderBufferFloat16AtomicMinMax
         current_shader = cs_buffer_float_16_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
         current_shader = cs_buffer_float_16_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
         // shaderSharedFloat16Atomics
         current_shader = cs_shared_float_16_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         current_shader = cs_shared_float_16_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         current_shader = cs_shared_float_16_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06281");
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-None-06285");
 
         // shaderSharedFloat16AtomicAdd
         current_shader = cs_shared_float_16_add.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
             std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-VkShaderModuleCreateInfo-pCode-08742",
-                                "VUID-RuntimeSpirv-None-06281"});
+                                "VUID-RuntimeSpirv-None-06285"});
 
         // shaderSharedFloat16AtomicMinMax
         current_shader = cs_shared_float_16_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
 
         current_shader = cs_shared_float_16_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
     } else {
         printf("Skipping 16-bit tests\n");
     }
@@ -1108,46 +1108,46 @@ TEST_F(NegativeAtomic, Float2) {
     current_shader = cs_buffer_float_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
     current_shader = cs_buffer_float_32_max.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
     // shaderSharedFloat32AtomicMinMax
     current_shader = cs_shared_float_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
 
     current_shader = cs_shared_float_32_max.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
 
     if (features2.features.shaderFloat64 == VK_TRUE) {
         // shaderBufferFloat64AtomicMinMax
         current_shader = cs_buffer_float_64_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
         current_shader = cs_buffer_float_64_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06280"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06284"});
 
         // shaderSharedFloat64AtomicMinMax
         current_shader = cs_shared_float_64_min.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
 
         current_shader = cs_shared_float_64_max.c_str();
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06281"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06285"});
     } else {
         printf("Skipping 64-bit float tests\n");
     }
@@ -1159,12 +1159,12 @@ TEST_F(NegativeAtomic, Float2) {
     current_shader = cs_image_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06282"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06286"});
 
     current_shader = cs_image_32_min.c_str();
     CreateComputePipelineHelper::OneshotTest(
         *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06282"});
+        std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-08742", "VUID-RuntimeSpirv-None-06286"});
 }
 
 TEST_F(NegativeAtomic, Float2WidthMismatch) {

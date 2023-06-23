@@ -3251,7 +3251,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                                       test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
                                       test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
         } else {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-None-02697");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-None-08600");
         }
 
         if (gpu_assisted) {

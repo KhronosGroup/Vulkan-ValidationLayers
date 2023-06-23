@@ -34,7 +34,8 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             if (!pCreateInfo->pSetLayouts[i]) {
-                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-06561",
+                // TODO - Combine with other check in CoreChecks
+                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753",
                                  "vkCreatePipelineLayout(): pSetLayouts[%" PRIu32
                                  "] is VK_NULL_HANDLE, but VK_EXT_graphics_pipeline_library is not enabled.",
                                  i);
@@ -634,7 +635,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
                 }
                 if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
+                    // TODO - Combined with other VU in CC as IsExtEnabled is not needed
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606",
                                      "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                      "]->flags (0x%x) must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                                      i, flags);
@@ -1003,11 +1005,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                     } else {
                         if (viewport_state.viewportCount == 0) {
-                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                                   ? "VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135"
-                                                   : "VUID-VkPipelineViewportStateCreateInfo-viewportCount-arraylength";
                             skip |= LogError(
-                                device, vuid,
+                                device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-04135",
                                 "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                 "].pViewportState->viewportCount can't be 0 unless VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT is used.",
                                 i);
@@ -1040,11 +1039,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
                     } else {
                         if (viewport_state.scissorCount == 0) {
-                            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)
-                                                   ? "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136"
-                                                   : "VUID-VkPipelineViewportStateCreateInfo-scissorCount-arraylength";
                             skip |= LogError(
-                                device, vuid,
+                                device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04136",
                                 "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                 "].pViewportState->scissorCount can't be 0 unless VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT is used.",
                                 i);
@@ -1678,23 +1674,17 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                     // If any of the dynamic states are not set still need a valid array
                     if ((color_blend_state.attachmentCount > 0) && dynamic_not_set) {
-                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
-                                               ? "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353"
-                                               : "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354";
-
                         skip |= ValidateArray(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
                             ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
-                            color_blend_state.attachmentCount, &color_blend_state.pAttachments, false, true, kVUIDUndefined, vuid);
+                            color_blend_state.attachmentCount, &color_blend_state.pAttachments, false, true, kVUIDUndefined,
+                            "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
                     }
 
                     auto color_write = LvlFindInChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state.pNext);
                     if (color_write && (color_write->attachmentCount != color_blend_state.attachmentCount) && dynamic_not_set) {
-                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
-                                               ? "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608"
-                                               : "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802";
-                        skip |= LogError(device, vuid,
+                        skip |= LogError(device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608",
                                          "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of "
                                          "pCreateInfo[%" PRIu32 "].pColorBlendState has different attachmentCount (%" PRIu32
                                          ") than pColorBlendState.attachmentCount (%" PRIu32 ").",
@@ -1731,27 +1721,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                      "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_FILL_RECTANGLE_NV "
                                      "if the extension VK_NV_fill_rectangle is not enabled.");
-                    } else if ((create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
-                               (physical_device_features.fillModeNonSolid == false)) {
-                        skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01413",
-                                         "vkCreateGraphicsPipelines parameter, VkPolygonMode "
-                                         "pCreateInfos[%" PRIu32
-                                         "]->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
-                                         "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
-                                         i);
                     }
-                } else {
-                    if ((create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
-                        (create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
-                        (physical_device_features.fillModeNonSolid == false)) {
-                        skip |=
-                            LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507",
+                }
+
+                if ((create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
+                    (create_info.pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
+                    (physical_device_features.fillModeNonSolid == false)) {
+                    skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507",
                                      "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                      "pCreateInfos[%" PRIu32
                                      "]->pRasterizationState->polygonMode must be VK_POLYGON_MODE_FILL or "
                                      "VK_POLYGON_MODE_FILL_RECTANGLE_NV if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
                                      i);
-                    }
                 }
 
                 if (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&

@@ -42,7 +42,7 @@ TEST_F(NegativeGraphicsLibrary, DSLs) {
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-06561");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }
@@ -202,13 +202,13 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
                                       });
     std::array<VkDescriptorSet, 2> sets = {
         ds.set_,
-        VK_NULL_HANDLE,  // Triggers 06563
+        VK_NULL_HANDLE,  // Triggers 06754
     };
 
     VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -449,13 +449,13 @@ TEST_F(NegativeGraphicsLibrary, ImplicitVUIDs) {
     pipe.LateBindPipelineInfo();
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-None-07826");
     pipe.CreateGraphicsPipeline(true, false);
     m_errorMonitor->VerifyFound();
 
     pipe.gp_ci_.layout = pipe.pipeline_layout_.handle();
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06574");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06575");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
     pipe.CreateGraphicsPipeline(true, false);
     m_errorMonitor->VerifyFound();
@@ -1035,8 +1035,8 @@ TEST_F(NegativeGraphicsLibrary, MissingShaderStages) {
         pipe.InitPreRasterLibInfo(0, nullptr);
         pipe.InitState();
 
-        // 00727 is effectively unrelated, but gets triggered due to lack of mesh shader extension
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00727");
+        // 02096 is effectively unrelated, but gets triggered due to lack of mesh shader extension
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-02096");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -1330,7 +1330,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         libs[1] = pre_raster_lib.pipeline_;
         auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08889");
         vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }
@@ -1407,7 +1407,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         libs[1] = pre_raster_lib.pipeline_;
         auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
         exe_pipe_ci.layout = fs_lib.gp_ci_.layout;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-08888");
         vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         m_errorMonitor->VerifyFound();
     }

@@ -802,7 +802,7 @@ TEST_F(NegativeRayTracing, LibraryFlags) {
         GetPhysicalDeviceProperties2(ray_tracing_properties);
         std::vector<uint8_t> handle_buffer;
         handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07830");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829");
         vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
             m_device->handle(), library, 0, 1, ray_tracing_properties.shaderGroupHandleCaptureReplaySize, handle_buffer.data());
         m_errorMonitor->VerifyFound();

@@ -425,11 +425,9 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    bool multiviewSupported = IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-
     auto mv_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>();
     auto imageless_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
-    if (multiviewSupported) {
+    if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         imageless_features.pNext = &mv_features;
     }
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(imageless_features);
@@ -515,9 +513,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
 
     // Mismatched layer count, multiview disabled
     framebufferCreateInfo.layers = 2;
-    const char* mismatchedLayersNoMultiviewVuid =
-        multiviewSupported ? "VUID-VkFramebufferCreateInfo-renderPass-04546" : "VUID-VkFramebufferCreateInfo-flags-04547";
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, mismatchedLayersNoMultiviewVuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-04546");
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
     framebufferCreateInfo.layers = 1;
