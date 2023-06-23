@@ -8196,7 +8196,8 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) 
         ApplyPredicatedWait(predicate);
     }
 
-    if (queue_id == GetQueueId() || any_queue) {
+    // SwapChain acquire QBC's have no queue, but also, events are always empty.
+    if (queue_state_ && (queue_id == GetQueueId() || any_queue)) {
         events_context_.ApplyTaggedWait(GetQueueFlags(), tag);
     }
 }
