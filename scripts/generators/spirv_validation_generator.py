@@ -285,6 +285,13 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
         out.append('};\n')
         self.write("".join(out))
 
+        # The chance of an SPIR-V extension having a property as a requirement is low
+        # Instead of writting complex (and more confusing) code, just go back match what
+        # we do for capabilities if one is ever added to the XML
+        if len([infos for infos in self.propertyInfo.values() if infos[0]['isExtension']]) > 0:
+            print("Error: XML has added a property requirement to a SPIR-V Extension")
+            sys.exit(1)
+
         #
         # The main function to validate all the extensions and capabilities
         out = []
@@ -397,31 +404,6 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
             } else if (it->second.extension) {
                 if (IsExtEnabled(device_extensions.*(it->second.extension))) {
                     has_support = true;
-                }
-            } else if (it->second.property) {
-                // support is or'ed as only one has to be supported (if applicable)
-                switch (insn.Word(1)) {''')
-
-        for name, infos in sorted(self.propertyInfo.items()):
-            # Only extensions here (all items in array are the same)
-            if not infos[0]['isExtension']:
-                continue
-
-            # use triple-tick syntax to keep tab alignment for generated code
-            out.append(f'''
-                    case spv::Capability{name}:''')
-            for info in infos:
-                # Need to string replace property string to create valid C++ logic
-                logic = info['logic'].replace('::', '.')
-                logic = logic.replace(info['struct'], self.propertyMap[info['struct']])
-                out.append(f'''
-                    has_support |= ({logic});''')
-            out.append('''
-                    break;''')
-
-        out.append('''
-                    default:
-                        break;
                 }
             }
         }
