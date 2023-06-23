@@ -102,15 +102,15 @@ extern "C" {
     #
     # Write generated file content to output file
     def endFile(self):
-        write(self.defines(), file=self.outFile)
-        write(self.numericFunctions(), file=self.outFile)
-        write(self.compressedFunctions(), file=self.outFile)
-        write(self.depthStencilFunctions(), file=self.outFile)
-        write(self.packedFunctions(), file=self.outFile)
-        write(self.ycbcrFunctions(), file=self.outFile)
-        write(self.multiplaneFunctions(), file=self.outFile)
-        write(self.sizeFunctions(), file=self.outFile)
-        write(self.utilFunctions(), file=self.outFile)
+        self.defines()
+        self.numericFunctions()
+        self.compressedFunctions()
+        self.depthStencilFunctions()
+        self.packedFunctions()
+        self.ycbcrFunctions()
+        self.multiplaneFunctions()
+        self.sizeFunctions()
+        self.utilFunctions()
         if self.headerFile:
             export = '''
 #ifdef __cplusplus
@@ -220,9 +220,9 @@ extern "C" {
     #
     # Create defines that are used either by other files (headerFile) or just internally (sourceFile)
     def defines(self):
-        output = '\n'
+        out = ['\n']
         if self.sourceFile:
-            output += '''
+            out.append('''
 enum class COMPONENT_TYPE {
     NONE,
     R,
@@ -265,21 +265,21 @@ struct hash<VkFormat> {
 
 // clang-format off
 static const vvl::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
-'''
+''')
             for f, info in sorted(self.allFormats.items()):
-                output += '    {{{},\n'.format(f)
-                output += '        {{FORMAT_COMPATIBILITY_CLASS::{}, {}, {}, {{{}}}, {},\n        {{'.format(
-                    info['class'], info['blockSize'], info['texelsPerBlock'], info['blockExtent'].replace(',', ', '), len(info['components']))
+                out.append(f'    {{{f},\n')
+                out.append('        {{FORMAT_COMPATIBILITY_CLASS::{}, {}, {}, {{{}}}, {},\n        {{'.format(
+                    info['class'], info['blockSize'], info['texelsPerBlock'], info['blockExtent'].replace(',', ', '), len(info['components'])))
                 for index, component in enumerate(info['components']):
-                    output += '{{COMPONENT_TYPE::{}, {}}}'.format(component['type'], component['bits'])
-                    output += ', ' if (index + 1 != len(info['components'])) else ''
-                output += '} }},\n'
+                    out.append('{{COMPONENT_TYPE::{}, {}}}'.format(component['type'], component['bits']))
+                    out.append(', ' if (index + 1 != len(info['components'])) else '')
+                out.append('} }},\n')
 
-            output += '    {VK_FORMAT_UNDEFINED, {FORMAT_COMPATIBILITY_CLASS::NONE, 0, 0, {0, 0, 0}, 0, {}}}'
-            output += '};\n'
-            output += '// clang-format on\n'
+            out.append('    {VK_FORMAT_UNDEFINED, {FORMAT_COMPATIBILITY_CLASS::NONE, 0, 0, {0, 0, 0}, 0, {}}}')
+            out.append('};\n')
+            out.append('// clang-format on\n')
 
-            output += '''
+            out.append('''
 struct PER_PLANE_COMPATIBILITY {
     uint32_t width_divisor;
     uint32_t height_divisor;
@@ -301,49 +301,48 @@ struct MULTIPLANE_COMPATIBILITY {
 // Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
 static const vvl::unordered_map<VkFormat, MULTIPLANE_COMPATIBILITY> kVkMultiplaneCompatibilityMap {
-'''
+''')
 
             for f in sorted(self.planarFormats.keys()):
-                output += '    {{ {}, {{{{\n'.format(f)
+                out.append(f'    {{ {f}, {{{{\n')
                 for index, plane in enumerate(self.planarFormats[f]):
                     if (index != plane['index']):
                         self.logMsg('error', 'index of planes were not added in order')
-                    output += '        {{ {}, {}, {} }}'.format(plane['widthDivisor'], plane['heightDivisor'], plane['compatible'])
-                    output += ',\n' if (index + 1 != len(self.planarFormats[f])) else '\n    }}},\n'
-            output += '};\n'
-            output += '// clang-format on\n'
+                    out.append('        {{ {}, {}, {} }}'.format(plane['widthDivisor'], plane['heightDivisor'], plane['compatible']))
+                    out.append(',\n' if (index + 1 != len(self.planarFormats[f])) else '\n    }}},\n')
+            out.append('};\n')
+            out.append('// clang-format on\n')
 
         elif self.headerFile:
-            output += 'static constexpr uint32_t FORMAT_MAX_PLANES = {};\n'.format(self.maxPlaneCount)
-            output += 'static constexpr uint32_t FORMAT_MAX_COMPONENTS = {};\n'.format(self.maxComponentCount)
-            output += '\n'
-            output += 'enum class FORMAT_NUMERICAL_TYPE {\n'
-            output += '    NONE = 0,\n'
+            out.append(f'static constexpr uint32_t FORMAT_MAX_PLANES = {self.maxPlaneCount};\n')
+            out.append(f'static constexpr uint32_t FORMAT_MAX_COMPONENTS = {self.maxComponentCount};\n')
+            out.append('\n')
+            out.append('enum class FORMAT_NUMERICAL_TYPE {\n')
+            out.append('    NONE = 0,\n')
             for index, numericFormat in enumerate(sorted(self.numericFormats.keys()), start=1):
-                output += '    {}'.format(numericFormat)
-                output += ',\n' if (index != len(self.numericFormats.keys())) else '\n'
-            output += '};\n'
-            output += '\n'
+                out.append(f'    {numericFormat}')
+                out.append(',\n' if (index != len(self.numericFormats.keys())) else '\n')
+            out.append('};\n')
+            out.append('\n')
             count = 0
-            output += 'enum class FORMAT_COMPATIBILITY_CLASS {\n'
-            output += '    NONE = 0,\n'
+            out.append('enum class FORMAT_COMPATIBILITY_CLASS {\n')
+            out.append('    NONE = 0,\n')
             for name, classBit in sorted(self.classes.items()):
                 count += 1
-                output += '    {}'.format(classBit)
-                output += ',\n' if (count != len(self.classes)) else '\n'
-            output += '};\n'
-
-        return output
+                out.append(f'    {classBit}')
+                out.append(',\n' if (count != len(self.classes)) else '\n')
+            out.append('};\n')
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for numeric based functions
     def numericFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '// Numeric\n'
-            output += '// Formats with more then one numeric type (VK_FORMAT_D16_UNORM_S8_UINT) will return false\n'
+            out.append('// Numeric\n')
+            out.append('// Formats with more then one numeric type (VK_FORMAT_D16_UNORM_S8_UINT) will return false\n')
             for key in self.numericFormats.keys():
-                output += 'bool FormatIs{}(VkFormat format);\n'.format(key)
-            output += '''
+                out.append(f'bool FormatIs{key}(VkFormat format);\n')
+            out.append('''
 // Types from "Interpretation of Numeric Format" table (OpTypeFloat vs OpTypeInt)
 static inline bool FormatIsSampledInt(VkFormat format) { return (FormatIsSINT(format) || FormatIsUINT(format)); }
 static inline bool FormatIsSampledFloat(VkFormat format) {
@@ -352,53 +351,53 @@ static inline bool FormatIsSampledFloat(VkFormat format) {
             FormatIsUFLOAT(format)  || FormatIsSFLOAT(format)  ||
             FormatIsSRGB(format));
 }
-'''
+''')
         elif self.sourceFile:
             for key in self.numericFormats.keys():
-                output += '\n// Return true if all components in the format are an {}\n'.format(key)
-                output += 'bool FormatIs{}(VkFormat format) {{\n'.format(key)
-                output += '    bool found = false;\n'
-                output += '    switch (format) {\n'
+                out.append(f'\n// Return true if all components in the format are an {key}\n')
+                out.append(f'bool FormatIs{key}(VkFormat format) {{\n')
+                out.append('    bool found = false;\n')
+                out.append('    switch (format) {\n')
                 for f in self.numericFormats[key]:
-                    output += '        case {}:\n'.format(f)
-                output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+                out.append(self.commonBoolSwitch)
 
-        return output;
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for compressed based functions
     def compressedFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '// Compressed\n'
+            out.append('// Compressed\n')
             for key in sorted(self.compressedFormats.keys()):
-                output += 'bool FormatIsCompressed_{}(VkFormat format);\n'.format(key)
-            output += 'bool FormatIsCompressed(VkFormat format);\n'
+                out.append(f'bool FormatIsCompressed_{key}(VkFormat format);\n')
+            out.append('bool FormatIsCompressed(VkFormat format);\n')
 
         elif self.sourceFile:
             for key in sorted(self.compressedFormats.keys()):
-                output += '\n// Return true if the format is a {} compressed image format\n'.format(key)
-                output += 'bool FormatIsCompressed_{}(VkFormat format) {{\n'.format(key)
-                output += '    bool found = false;\n'
-                output += '    switch (format) {\n'
+                out.append(f'\n// Return true if the format is a {key} compressed image format\n')
+                out.append(f'bool FormatIsCompressed_{key}(VkFormat format) {{\n')
+                out.append('    bool found = false;\n')
+                out.append('    switch (format) {\n')
                 for f in sorted(self.compressedFormats[key]):
-                    output += '        case {}:\n'.format(f)
-                output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+                out.append(self.commonBoolSwitch)
 
-            output += '\n// Return true if the format is any compressed image format\n'
-            output += 'bool FormatIsCompressed(VkFormat format) {\n'
-            output += '    return (\n'
+            out.append('\n// Return true if the format is any compressed image format\n')
+            out.append('bool FormatIsCompressed(VkFormat format) {\n')
+            out.append('    return (\n')
             for index, key in enumerate(sorted(self.compressedFormats.keys()), start=1):
-                output += '      FormatIsCompressed_{}(format)'.format(key)
-                output += ' ||\n' if (index != len(self.compressedFormats.keys())) else ');\n'
-            output += '}\n'
+                out.append(f'      FormatIsCompressed_{key}(format)')
+                out.append(' ||\n' if (index != len(self.compressedFormats.keys())) else ');\n')
+            out.append('}\n')
 
-        return output;
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for depth/stencil based functions
     def depthStencilFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '''// Depth/Stencil
+            out.append('''// Depth/Stencil
 bool FormatIsDepthOrStencil(VkFormat format);
 bool FormatIsDepthAndStencil(VkFormat format);
 bool FormatIsDepthOnly(VkFormat format);
@@ -409,48 +408,48 @@ uint32_t FormatDepthSize(VkFormat format);
 uint32_t FormatStencilSize(VkFormat format);
 FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format);
 FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
-'''
+''')
         elif self.sourceFile:
-            output += '\n// Return true if format is a depth OR stencil format\n'
-            output += 'bool FormatIsDepthOrStencil(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format is a depth OR stencil format\n')
+            out.append('bool FormatIsDepthOrStencil(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.allFormats.keys()):
                 if f in self.depthFormats.keys() or f in self.stencilFormats.keys():
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\n// Return true if format is a depth AND stencil format\n'
-            output += 'bool FormatIsDepthAndStencil(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format is a depth AND stencil format\n')
+            out.append('bool FormatIsDepthAndStencil(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.depthFormats.keys()):
                 if f in self.stencilFormats.keys():
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\n// Return true if format is a depth ONLY format\n'
-            output += 'bool FormatIsDepthOnly(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format is a depth ONLY format\n')
+            out.append('bool FormatIsDepthOnly(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.depthFormats.keys()):
                 if f not in self.stencilFormats.keys():
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\n// Return true if format is a stencil ONLY format\n'
-            output += 'bool FormatIsStencilOnly(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format is a stencil ONLY format\n')
+            out.append('bool FormatIsStencilOnly(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.stencilFormats.keys()):
                 if f not in self.depthFormats.keys():
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\n// Returns size of depth component in bits'
-            output += '\n// Returns zero if no depth component\n'
-            output += 'uint32_t FormatDepthSize(VkFormat format) {\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Returns size of depth component in bits')
+            out.append('\n// Returns zero if no depth component\n')
+            out.append('uint32_t FormatDepthSize(VkFormat format) {\n')
+            out.append('    switch (format) {\n')
             # sorts case statments together with same return value
             used = []
             for key, value in sorted(self.depthFormats.items()):
@@ -458,17 +457,17 @@ FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
                     for key_dup, value_dup in sorted(self.depthFormats.items()):
                         if value_dup['bits'] == value['bits']:
                             used.append(key_dup)
-                            output += '           case {}:\n'.format(key_dup)
-                    output += '            return {};\n'.format(value['bits'])
-            output += '        default:\n'
-            output += '            return 0;\n'
-            output += '     }\n'
-            output += '}\n'
+                            out.append(f'           case {key_dup}:\n')
+                    out.append('            return {};\n'.format(value['bits']))
+            out.append('        default:\n')
+            out.append('            return 0;\n')
+            out.append('     }\n')
+            out.append('}\n')
 
-            output += '\n// Returns size of stencil component in bits'
-            output += '\n// Returns zero if no stencil component\n'
-            output += 'uint32_t FormatStencilSize(VkFormat format) {\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Returns size of stencil component in bits')
+            out.append('\n// Returns zero if no stencil component\n')
+            out.append('uint32_t FormatStencilSize(VkFormat format) {\n')
+            out.append('    switch (format) {\n')
             # sorts case statments together with same return value
             used = []
             for key, value in sorted(self.stencilFormats.items()):
@@ -476,16 +475,16 @@ FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
                     for key_dup, value_dup in sorted(self.stencilFormats.items()):
                         if value_dup['bits'] == value['bits']:
                             used.append(key_dup)
-                            output += '           case {}:\n'.format(key_dup)
-                    output += '            return {};\n'.format(value['bits'])
-            output += '        default:\n'
-            output += '            return 0;\n'
-            output += '     }\n'
-            output += '}\n'
+                            out.append(f'           case {key_dup}:\n')
+                    out.append('            return {};\n'.format(value['bits']))
+            out.append('        default:\n')
+            out.append('            return 0;\n')
+            out.append('     }\n')
+            out.append('}\n')
 
-            output += '\n// Returns NONE if no depth component\n'
-            output += 'FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format) {\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Returns NONE if no depth component\n')
+            out.append('FORMAT_NUMERICAL_TYPE FormatDepthNumericalType(VkFormat format) {\n')
+            out.append('    switch (format) {\n')
             # sorts case statments together with same return value
             used = []
             for key, value in sorted(self.depthFormats.items()):
@@ -493,16 +492,16 @@ FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
                     for key_dup, value_dup in sorted(self.depthFormats.items()):
                         if value_dup['numericFormat'] == value['numericFormat']:
                             used.append(key_dup)
-                            output += '           case {}:\n'.format(key_dup)
-                    output += '            return FORMAT_NUMERICAL_TYPE::{};\n'.format(value['numericFormat'])
-            output += '        default:\n'
-            output += '            return FORMAT_NUMERICAL_TYPE::NONE;\n'
-            output += '     }\n'
-            output += '}\n'
+                            out.append(f'           case {key_dup}:\n')
+                    out.append('            return FORMAT_NUMERICAL_TYPE::{};\n'.format(value['numericFormat']))
+            out.append('        default:\n')
+            out.append('            return FORMAT_NUMERICAL_TYPE::NONE;\n')
+            out.append('     }\n')
+            out.append('}\n')
 
-            output += '\n// Returns NONE if no stencil component\n'
-            output += 'FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format) {\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Returns NONE if no stencil component\n')
+            out.append('FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format) {\n')
+            out.append('    switch (format) {\n')
             # sorts case statments together with same return value
             used = []
             for key, value in sorted(self.stencilFormats.items()):
@@ -510,105 +509,105 @@ FORMAT_NUMERICAL_TYPE FormatStencilNumericalType(VkFormat format);
                     for key_dup, value_dup in sorted(self.stencilFormats.items()):
                         if value_dup['numericFormat'] == value['numericFormat']:
                             used.append(key_dup)
-                            output += '           case {}:\n'.format(key_dup)
-                    output += '            return FORMAT_NUMERICAL_TYPE::{};\n'.format(value['numericFormat'])
-            output += '        default:\n'
-            output += '            return FORMAT_NUMERICAL_TYPE::NONE;\n'
-            output += '     }\n'
-            output += '}\n'
+                            out.append(f'           case {key_dup}:\n')
+                    out.append('            return FORMAT_NUMERICAL_TYPE::{};\n'.format(value['numericFormat']))
+            out.append('        default:\n')
+            out.append('            return FORMAT_NUMERICAL_TYPE::NONE;\n')
+            out.append('     }\n')
+            out.append('}\n')
 
-        return output;
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for packed based functions
     def packedFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '''// Packed
+            out.append('''// Packed
 bool FormatIsPacked(VkFormat format);
-'''
+''')
         elif self.sourceFile:
-            output += '\n// Return true if format is a packed format\n'
-            output += 'bool FormatIsPacked(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format is a packed format\n')
+            out.append('bool FormatIsPacked(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in self.packedFormats:
-                output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-        return output;
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for YCbCr based functions
     def ycbcrFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '''// YCbCr
+            out.append('''// YCbCr
 bool FormatRequiresYcbcrConversion(VkFormat format);
 bool FormatIsXChromaSubsampled(VkFormat format);
 bool FormatIsYChromaSubsampled(VkFormat format);
-'''
+''')
         elif self.sourceFile:
-            output += '\n// Return true if format requires sampler YCBCR conversion\n'
-            output += '// for VK_IMAGE_ASPECT_COLOR_BIT image views\n'
-            output += '// Table found in spec\n'
-            output += 'bool FormatRequiresYcbcrConversion(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Return true if format requires sampler YCBCR conversion\n')
+            out.append('// for VK_IMAGE_ASPECT_COLOR_BIT image views\n')
+            out.append('// Table found in spec\n')
+            out.append('bool FormatRequiresYcbcrConversion(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.ycbcrFormats.keys()):
-                output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\nbool FormatIsXChromaSubsampled(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\nbool FormatIsXChromaSubsampled(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.ycbcrFormats.keys()):
                 if self.ycbcrFormats[f] == '420' or self.ycbcrFormats[f] == '422':
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\nbool FormatIsYChromaSubsampled(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('\nbool FormatIsYChromaSubsampled(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.ycbcrFormats.keys()):
                 if self.ycbcrFormats[f] == '420':
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-        return output;
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for Multiplane based functions
     def multiplaneFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '// Multiplane\n'
-            output += '// Single-plane "_422" formats are treated as 2x1 compressed (for copies)\n'
-            output += '\nconstexpr bool FormatIsSinglePlane_422(VkFormat format) {\n'
-            output += '    bool found = false;\n'
-            output += '    switch (format) {\n'
+            out.append('// Multiplane\n')
+            out.append('// Single-plane "_422" formats are treated as 2x1 compressed (for copies)\n')
+            out.append('\nconstexpr bool FormatIsSinglePlane_422(VkFormat format) {\n')
+            out.append('    bool found = false;\n')
+            out.append('    switch (format) {\n')
             for f in sorted(self.ycbcrFormats.keys()):
                 if self.ycbcrFormats[f] == '422' and f not in self.planarFormats.keys():
-                    output += '        case {}:\n'.format(f)
-            output += self.commonBoolSwitch
+                    out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
 
-            output += '\n// Returns number of planes in format (which is 1 by default)\n'
-            output += 'constexpr uint32_t FormatPlaneCount(VkFormat format) {\n'
-            output += '    switch (format) {\n'
+            out.append('\n// Returns number of planes in format (which is 1 by default)\n')
+            out.append('constexpr uint32_t FormatPlaneCount(VkFormat format) {\n')
+            out.append('    switch (format) {\n')
             for i in range(2, self.maxPlaneCount + 1):
                 for f in sorted(self.planarFormats.keys()):
                     if len(self.planarFormats[f]) == i:
-                        output += '        case {}:\n'.format(f)
-                output += '            return {};\n'.format(i)
-            output += '        default:\n'
-            output += '            return 1;\n'
-            output += '     }\n'
-            output += '}\n'
-            output += '''
+                        out.append(f'        case {f}:\n')
+                out.append(f'            return {i};\n')
+            out.append('        default:\n')
+            out.append('            return 1;\n')
+            out.append('     }\n')
+            out.append('}\n')
+            out.append('''
 constexpr bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
 VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-'''
+''')
 
         elif self.sourceFile:
-            output += '''
+            out.append('''
 // Will return VK_FORMAT_UNDEFINED if given a plane aspect that doesn't exist for the format
 VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
     const uint32_t plane_idx = GetPlaneIndex(plane_aspect);
@@ -633,31 +632,31 @@ VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plan
     divisors.height = it->second.per_plane[plane_idx].height_divisor;
     return divisors;
 }
-'''
-        return output;
+''')
+        write("".join(out), file=self.outFile)
     #
     # Generate functions for size based functions
     def sizeFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '''// Size
+            out.append('''// Size
 uint32_t FormatComponentCount(VkFormat format);
 VkExtent3D FormatTexelBlockExtent(VkFormat format);
 FORMAT_COMPATIBILITY_CLASS FormatCompatibilityClass(VkFormat format);
 bool FormatElementIsTexel(VkFormat format);
 uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-'''
+''')
              # Could loop the components, but faster to just list these
-            output += '''// True if Format contains a 64-bit component\n
+            out.append('''// True if Format contains a 64-bit component\n
 constexpr bool FormatIs64bit(VkFormat format) {
     bool found = false;
     switch (format) {
-'''
+''')
             for f in sorted(self.formats64bit):
-                output += f'        case {f}:\n'
-            output += self.commonBoolSwitch
-            output += '''
+                out.append(f'        case {f}:\n')
+            out.append(self.commonBoolSwitch)
+            out.append('''
 // Components
 bool FormatHasComponentSize(VkFormat format, uint32_t size);
 bool FormatHasRed(VkFormat format);
@@ -665,9 +664,9 @@ bool FormatHasGreen(VkFormat format);
 bool FormatHasBlue(VkFormat format);
 bool FormatHasAlpha(VkFormat format);
 bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b);
-'''
+''')
         elif self.sourceFile:
-            output += '''
+            out.append('''
 uint32_t FormatComponentCount(VkFormat format) {
     auto format_info = kVkFormatTable.find(format);
     if (format_info != kVkFormatTable.end()) {
@@ -795,15 +794,15 @@ bool FormatsSameComponentBits(VkFormat format_a, VkFormat format_b) {
         }
     }
     return true;
-}'''
-        return output;
+}''')
+        write("".join(out), file=self.outFile)
 
     #
     # Misc functions
     def utilFunctions(self):
-        output = ''
+        out = []
         if self.headerFile:
-            output += '''
+            out.append('''
 // Utils/misc
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
 // "blocked image" are defined in the spec (vkspec.html#blocked-image)
@@ -814,5 +813,5 @@ static inline bool FormatIsBlockedImage(VkFormat format) {
 // So anything that could NOT be a "color format" is a color format
 static inline bool FormatIsColor(VkFormat format) {
     return !(FormatIsUndef(format) || FormatIsDepthOrStencil(format) || FormatIsMultiplane(format));
-}'''
-        return output
+}''')
+        write("".join(out), file=self.outFile)
