@@ -27,7 +27,7 @@ typedef struct {
     const void *pnext_chain;
     CHECK_ENABLED &enables;
     CHECK_DISABLED &disables;
-    std::vector<uint32_t> &message_filter_list;
+    std::unordered_set<uint32_t> &message_filter_list;
     int32_t *duplicate_message_limit;
     bool *fine_grained_locking;
 } ConfigAndEnvSettings;

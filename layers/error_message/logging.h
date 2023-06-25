@@ -24,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <unordered_set>
 
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
@@ -167,7 +168,8 @@ typedef struct _debug_report_data {
     vvl::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
     vvl::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
     vvl::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
-    std::vector<uint32_t> filter_message_ids{};
+    // We use std::unordered_set to use trivial hashing for filter_message_ids as we already store hashed values
+    std::unordered_set<uint32_t> filter_message_ids{};
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
