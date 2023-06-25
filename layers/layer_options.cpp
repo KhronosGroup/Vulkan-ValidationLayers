@@ -273,7 +273,7 @@ uint32_t TokenToUint(std::string &token) {
     return int_id;
 }
 
-void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::vector<uint32_t> &filter_list) {
+void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::unordered_set<uint32_t> &filter_list) {
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
@@ -285,8 +285,8 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
                 int_id = id_hash;
             }
         }
-        if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
-            filter_list.push_back(int_id);
+        if ((int_id != 0) && filter_list.find(int_id) == filter_list.end()) {
+            filter_list.insert(int_id);
         }
     }
 }

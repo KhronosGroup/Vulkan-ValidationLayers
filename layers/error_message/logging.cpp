@@ -324,8 +324,7 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view 
     }
     // If message is in filter list, bail out very early
     const uint32_t message_id = vvl_vuid_hash(vuid_text);
-    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
-        != debug_data->filter_message_ids.end()) {
+    if (debug_data->filter_message_ids.find(message_id) != debug_data->filter_message_ids.end()) {
         return false;
     }
     if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, static_cast<int32_t>(message_id))) {
