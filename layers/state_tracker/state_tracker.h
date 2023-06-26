@@ -445,7 +445,11 @@ class ValidationStateTracker : public ValidationObject {
     // address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
     // device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
     // a device address, a VkBuffer is selected such that valid usage passes, if it exists.
-    using BUFFER_STATE_PTR = std::shared_ptr<BUFFER_STATE>;
+    // Regarding using raw pointers instead of shared: The reason is performance, because arrays of BUFFER_STATE_PTR are used, it is
+    // more efficient to store them using raw pointers. It is safe to do so (at time of writing) because those raw pointers come
+    // from shared ones created when the buffer is first recorded, and they are removed from buffer_address_map_ at BufferDestroy
+    // time
+    using BUFFER_STATE_PTR = BUFFER_STATE*;
     vvl::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
@@ -1609,7 +1613,7 @@ class ValidationStateTracker : public ValidationObject {
 
     mutable VideoProfileDesc::Cache video_profile_cache_;
 
-    using BufferAddressMapStore = small_vector<std::shared_ptr<BUFFER_STATE>, 1, size_t>;
+    using BufferAddressMapStore = small_vector<BUFFER_STATE_PTR, 1, size_t>;
     using BufferAddressRangeMap = sparse_container::range_map<VkDeviceAddress, BufferAddressMapStore>;
 
   protected:
