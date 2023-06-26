@@ -3329,3 +3329,67 @@ TEST_F(NegativePipeline, ShaderTileImage) {
                                           "VUID-RuntimeSpirv-minSampleShading-08732");
     }
 }
+
+TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
+    TEST_DESCRIPTION(
+        "VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo pNext chain, but with "
+        "VkPhysicalDeviceDepthBiasControlFeaturesEXT features disabled");
+
+    AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto depth_bias_control_features = LvlInitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
+
+    if (!depth_bias_control_features.depthBiasControl) {
+        GTEST_SKIP() << "depthBiasControl not supported";
+    }
+
+    features2.features.depthBiasClamp =
+        VK_FALSE;  // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not
+                   // rely on depthBiasClamp being enabled
+    depth_bias_control_features.leastRepresentableValueForceUnormRepresentation = VK_FALSE;
+    depth_bias_control_features.floatRepresentation = VK_FALSE;
+    depth_bias_control_features.depthBiasExact = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
+        const VkPipelineLayoutObj pl(m_device);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddDefaultColorAttachment();
+
+        VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        pipe.AddShader(&vs);
+
+        VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+        pipe.AddShader(&fs);
+
+        const auto raster_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&depth_bias_representation);
+        pipe.SetRasterization(&raster_state);
+
+        pipe.CreateVKPipeline(pl.handle(), m_renderPass);
+    };
+
+    auto depth_bias_representation = LvlInitStruct<VkDepthBiasRepresentationInfoEXT>();
+    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
+    depth_bias_representation.depthBiasExact = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-leastRepresentableValueForceUnormRepresentation-08947");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-depthBiasExact-08949");
+    create_pipe_with_depth_bias_representation(depth_bias_representation);
+    m_errorMonitor->VerifyFound();
+
+    depth_bias_representation.depthBiasExact = VK_FALSE;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948");
+    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT;
+    create_pipe_with_depth_bias_representation(depth_bias_representation);
+    m_errorMonitor->VerifyFound();
+}

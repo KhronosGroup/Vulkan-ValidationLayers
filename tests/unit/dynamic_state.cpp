@@ -794,8 +794,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -4776,5 +4776,113 @@ TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-08863");
     vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_commandBuffer->handle(), VK_IMAGE_ASPECT_PLANE_0_BIT);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
+    TEST_DESCRIPTION("Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp feature disabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto depth_bias_control_features =
+        LvlInitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(&extended_dynamic_state2_features);
+    auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
+    features2.features.depthBiasClamp = VK_FALSE;
+
+    if (!extended_dynamic_state2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
+    }
+    if (!depth_bias_control_features.depthBiasControl) {
+        GTEST_SKIP() << "depthBiasControl not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_commandBuffer->begin();
+
+    vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+
+    auto depth_bias_info = LvlInitStruct<VkDepthBiasInfoEXT>();
+    depth_bias_info.depthBiasConstantFactor = 1.0f;
+    depth_bias_info.depthBiasClamp = 1.0f;
+    depth_bias_info.depthBiasSlopeFactor = 1.0f;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasInfoEXT-depthBiasClamp-08950");
+    vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
+    TEST_DESCRIPTION(
+        "Call vkCmdSetDepthBias2EXT with VkPhysicalDeviceFeatures::depthBiasClamp and VkPhysicalDeviceDepthBiasControlFeaturesEXT "
+        "features disabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
+    auto depth_bias_control_features =
+        LvlInitStruct<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(&extended_dynamic_state2_features);
+    auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
+    features2.features.depthBiasClamp = VK_FALSE;
+    depth_bias_control_features.leastRepresentableValueForceUnormRepresentation = VK_FALSE;
+    depth_bias_control_features.floatRepresentation = VK_FALSE;
+    depth_bias_control_features.depthBiasExact = VK_FALSE;
+
+    if (!extended_dynamic_state2_features.extendedDynamicState2) {
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
+    }
+    if (!depth_bias_control_features.depthBiasControl) {
+        GTEST_SKIP() << "depthBiasControl not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_commandBuffer->begin();
+
+    vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_TRUE);
+
+    auto depth_bias_info = LvlInitStruct<VkDepthBiasInfoEXT>();
+    depth_bias_info.depthBiasConstantFactor = 1.0f;
+    depth_bias_info.depthBiasClamp = 0.0f;
+    depth_bias_info.depthBiasSlopeFactor = 1.0f;
+    vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
+
+    auto depth_bias_representation = LvlInitStruct<VkDepthBiasRepresentationInfoEXT>();
+    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
+    depth_bias_representation.depthBiasExact = VK_TRUE;
+    depth_bias_info.pNext = &depth_bias_representation;
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-leastRepresentableValueForceUnormRepresentation-08947");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-depthBiasExact-08949");
+    vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
+    m_errorMonitor->VerifyFound();
+
+    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT;
+    depth_bias_representation.depthBiasExact = VK_FALSE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948");
+    vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
 }

@@ -772,6 +772,12 @@
                 },
                 "VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT": {
                     "dynamicRenderingUnusedAttachments": true
+                },
+                "VkPhysicalDeviceDepthBiasControlFeaturesEXT": {
+                    "depthBiasControl": true,
+                    "leastRepresentableValueForceUnormRepresentation": true,
+                    "floatRepresentation": true,
+                    "depthBiasExact": true
                 }
             },
             "properties": {
@@ -1688,6 +1694,7 @@
                 "VK_EXT_debug_marker": 1,
                 "VK_EXT_debug_report": 1,
                 "VK_EXT_debug_utils": 1,
+                "VK_EXT_depth_bias_control": 1,
                 "VK_EXT_depth_clamp_zero_one": 1,
                 "VK_EXT_depth_clip_control": 1,
                 "VK_EXT_depth_clip_enable": 1,
