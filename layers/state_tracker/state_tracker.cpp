@@ -361,7 +361,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
             const auto address_range = buffer_state->DeviceAddressRange();
 
-            BufferAddressInfillUpdateOps ops{{buffer_state}};
+            BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
             sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
         }
 
@@ -491,9 +491,9 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
         if (buffer_state->deviceAddress != 0) {
             const auto address_range = buffer_state->DeviceAddressRange();
 
-            buffer_address_map_.erase_range_or_touch(address_range, [&buffer_state](auto &buffers) {
+            buffer_address_map_.erase_range_or_touch(address_range, [buffer_state_raw = buffer_state.get()](auto &buffers) {
                 assert(!buffers.empty());
-                const auto buffer_found_it = std::find(buffers.begin(), buffers.end(), buffer_state);
+                const auto buffer_found_it = std::find(buffers.begin(), buffers.end(), buffer_state_raw);
                 assert(buffer_found_it != buffers.end());
 
                 // If buffer list only has one element, remove range map entry.
@@ -503,7 +503,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
                         return true;
                     } else {
                         assert(!buffers.empty());
-                        size_t i = std::distance(buffers.begin(), buffer_found_it);
+                        const size_t i = std::distance(buffers.begin(), buffer_found_it);
                         std::swap(buffers[i], buffers[buffers.size() - 1]);
                         buffers.resize(buffers.size() - 1);
                         return false;
@@ -5710,7 +5710,7 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
         buffer_state->deviceAddress = address;
         const auto address_range = buffer_state->DeviceAddressRange();
 
-        BufferAddressInfillUpdateOps ops{{buffer_state}};
+        BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
     }
 }

@@ -405,10 +405,11 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         auto base = std::static_pointer_cast<BASE_NODE>(child_node);
         AddChild(base);
     }
-    template <typename StateObject>
-    void AddChildren(vvl::span<std::shared_ptr<StateObject>> &child_nodes) {
+
+    void AddChildren(vvl::span<BUFFER_STATE *> &child_nodes) {
         for (auto &child_node : child_nodes) {
-            AddChild(child_node);
+            auto child_node_shared_ptr = child_node->shared_from_this();
+            AddChild(child_node_shared_ptr);
         }
     }
 
