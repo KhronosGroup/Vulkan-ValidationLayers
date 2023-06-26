@@ -953,16 +953,16 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     }
 }
 
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+// Protected swapchains are guaranteed in Android Loader
+// VK_KHR_surface_protected_capabilities is needed for other platforms
+// Without device to test with, blocking this test from non-Android platforms for now
+TEST_F(PositiveWsi, DISABLED_ProtectedSwapchainImageColorAttachment) {
+#else
 TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
+#endif
     TEST_DESCRIPTION(
         "Make sure images from protected swapchain are considered protected image when writing to it as a color attachment");
-
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
-    // Protected swapchains are guaranteed in Android Loader
-    // VK_KHR_surface_protected_capabilities is needed for other platforms
-    // Without device to test with, blocking this test from non-Android platforms for now
-    GTEST_SKIP() << "VK_KHR_surface_protected_capabilities test logic not implemented, skipping test for non-Android";
-#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
