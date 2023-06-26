@@ -6,7 +6,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "d1517d64cfca91f573af1bf7341dc3a5113349c0",
+            "commit": "9575e33186c74a68831c469f7271edf386ea43a5",
             "optional": [
                 "tests"
             ]
@@ -75,7 +75,7 @@
                 "-Dgtest_force_shared_crt=ON",
                 "-DBUILD_SHARED_LIBS=OFF"
             ],
-            "commit": "v1.13.0",
+            "commit": "ec4fed93217bc2830959bb8e86798c1d86956949",
             "optional": [
                 "tests"
             ]
