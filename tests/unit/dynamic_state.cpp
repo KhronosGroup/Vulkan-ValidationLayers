@@ -3745,10 +3745,9 @@ TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
     m_commandBuffer->end();
 }
 
-TEST_F(NegativeDynamicState, ExtensionDynamicStatesSetWOExtensionEnabled) {
+// Not possible to hit the desired failure messages given invalid enums.
+TEST_F(NegativeDynamicState, DISABLED_ExtensionDynamicStatesSetWOExtensionEnabled) {
     TEST_DESCRIPTION("Create a graphics pipeline with Extension dynamic states without enabling the required Extensions.");
-
-    GTEST_SKIP() << "Not possible to hit the desired failure messages given invalid enums.";
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
