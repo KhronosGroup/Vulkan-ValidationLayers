@@ -72,6 +72,9 @@ int fopen_s(FILE **pFile, const char *filename, const char *mode) {
 
 #endif
 
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
+// NOTE: Android doesn't use environment variables like desktop does!
+//
 // Certain VK_* environment variables accept lists.
 // Return a vector of std::string containing each member in the list.
 //
@@ -176,12 +179,15 @@ static void CheckEnvironmentVariables() {
         std::exit(EXIT_FAILURE);
     }
 }
+#endif
 
 // Set up environment for GLSL compiler
 // Must be done once per process
 void TestEnvironment::SetUp() {
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     // Helps ensure common developer environment variables are set correctly
     CheckEnvironmentVariables();
+#endif
 
     // Initialize GLSL to SPV compiler utility
     glslang::InitializeProcess();

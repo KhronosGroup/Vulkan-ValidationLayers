@@ -62,11 +62,7 @@ target_link_options(android_glue PUBLIC -u ANativeActivity_onCreate)
 
 target_link_libraries(vk_layer_validation_tests PRIVATE android_glue)
 
-# 'VulkanLayerValidationTests.so' needed for Android.mk backcompat
-set_target_properties(vk_layer_validation_tests PROPERTIES
-    OUTPUT_NAME "VulkanLayerValidationTests"
-    PREFIX ""
-)
+set_target_properties(vk_layer_validation_tests PROPERTIES OUTPUT_NAME "VulkanLayerValidationTests")
 
 install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
