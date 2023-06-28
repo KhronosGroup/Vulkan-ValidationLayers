@@ -104,6 +104,10 @@ class Command:
     version: Version # None if Version 1.0
     protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
+    # Only one will be True, the other is False
+    instance: bool
+    device: bool
+
     returnType: str # 'void', 'VkResult', etc
 
     api: List[str]            # ex. [ 'vulkan' ]
