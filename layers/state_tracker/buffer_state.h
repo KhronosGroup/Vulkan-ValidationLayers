@@ -117,4 +117,12 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
         BASE_NODE::Destroy();
     }
     bool Invalid() const override { return Destroyed() || !buffer_state || buffer_state->Invalid(); }
+
+    VkDeviceSize Size() const {
+        VkDeviceSize size = create_info.range;
+        if (size == VK_WHOLE_SIZE) {
+            size = buffer_state->createInfo.size - create_info.offset;
+        }
+        return size;
+    }
 };
