@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include "vulkan_object.h"
 
-#include "generated/lvt_function_pointers.h"
+#include "generated/vk_function_pointers.h"
 #include "generated/vk_typemap_helper.h"
 
 #define REFLECT_SUCCESS(err)                                          \

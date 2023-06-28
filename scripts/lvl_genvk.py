@@ -161,19 +161,18 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    genOpts['lvt_function_pointers.h'] = [
-          LvtFileOutputGenerator,
+    genOpts['vk_function_pointers.h'] = [
+          FunctionPointersOutputGenerator,
           BaseGeneratorOptions(
-            filename          = 'lvt_function_pointers.h',
-            mergeApiNames     = mergeApiNames,
-            lvt_file_type     = 'function_pointer_header')
+            filename          = 'vk_function_pointers.h',
+            mergeApiNames     = mergeApiNames)
         ]
 
-    genOpts['lvt_function_pointers.cpp'] = [
-          LvtFileOutputGenerator,
+    genOpts['vk_function_pointers.cpp'] = [
+          FunctionPointersOutputGenerator,
           BaseGeneratorOptions(
-            filename          = 'lvt_function_pointers.cpp',
-            lvt_file_type     = 'function_pointer_source')
+            filename          = 'vk_function_pointers.cpp',
+            mergeApiNames     = mergeApiNames)
         ]
 
     # Options for Layer dispatch table generator
@@ -516,6 +515,7 @@ if __name__ == '__main__':
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
     from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
     from generators.lvt_file_generator import LvtFileOutputGenerator
+    from generators.function_pointers_generator import FunctionPointersOutputGenerator
     from generators.best_practices_generator import BestPracticesOutputGenerator
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
     from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator

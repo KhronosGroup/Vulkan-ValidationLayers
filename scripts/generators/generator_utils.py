@@ -23,14 +23,6 @@ from generators.vulkan_object import *
 def fileIsGeneratedWarning(file: str) -> str:
     return f'// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n// See {file} for modifications\n'
 
-def getProtectMacro(command: Command, ifdef: bool = False, endif: bool = False) -> str:
-    result = ""
-    if not isinstance(command.feature, Extension) or (command.feature.protect is None):
-        return result
-    macro = "ifdef" if ifdef else "endif //"
-    result = "#{} {}\n".format(macro, command.feature.protect)
-    return result
-
 # Takes the `len` or `altlen` found in the XML and formats it in C++ friendly way
 def getFormatedLength(length: str):
     result = None

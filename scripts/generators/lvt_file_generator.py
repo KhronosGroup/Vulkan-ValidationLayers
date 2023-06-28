@@ -23,7 +23,7 @@ from collections import namedtuple
 from common_codegen import *
 
 funcptr_source_preamble = '''
-#include "lvt_function_pointers.h"
+#include "vk_function_pointers.h"
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>

@@ -41,6 +41,10 @@ class Extension:
     obsoletedBy: str
     specialUse: List[str]
 
+    # These are here to allow for easy reverse lookups
+    # Quotes allow us to forward declare the datacalss
+    commands: List['Command']
+
 @dataclass
 class Version:
     """
@@ -96,9 +100,9 @@ class Command:
     # Attributes of <command>
     name: str
     alias: str # Because commands are interfaces into layers/drivers, we need all command alias
-
-    # This is the union of (Extension | Version | None) - but requires Python 3.9
-    feature: object
+    extension: Extension # Extensions that enable the commanads
+    version: Version # None if Version 1.0
+    protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
     returnType: str # 'void', 'VkResult', etc
 

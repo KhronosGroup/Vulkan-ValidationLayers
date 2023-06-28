@@ -88,14 +88,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('#pragma once\n')
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
-            out.append(getProtectMacro(command, ifdef=True))
+            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'bool PreCallValidate{prototype[2:]}'
             prototype = prototype.replace(');', ') const override;\n')
             if 'ValidationCache' in command.name:
                 prototype = prototype.replace('const override', 'const')
             out.append(prototype)
-            out.append(getProtectMacro(command, endif=True))
+            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
         self.write("".join(out))
 
     def generatePnextStruct(self):
