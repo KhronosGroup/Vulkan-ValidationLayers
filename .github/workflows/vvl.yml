@@ -237,12 +237,13 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: macos-${{ matrix.macos_version }}
-      - name: Add ccache to PATH
-        run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
       - name: Install python dependencies
         run: python3 -m pip install jsonschema pyparsing
       - name: Build
         run: python3 scripts/github_ci_build_desktop.py --config release --osx ${{ matrix.macos_version }}
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
   mingw:
     runs-on: windows-latest
