@@ -168,7 +168,6 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     endif()
 elseif(MSVC)
     target_compile_options(vk_layer_validation_tests PRIVATE
-        /wd4458 # hiding class member
         /wd4389 # signed/unsigned mismatch
         /wd4267 # Disable some signed/unsigned mismatch warnings.
     )
