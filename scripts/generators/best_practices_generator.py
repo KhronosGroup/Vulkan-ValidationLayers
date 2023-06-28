@@ -158,12 +158,12 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 continue
 
             out = []
-            out.append(getProtectMacro(command, ifdef=True))
+            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             out.append(createPostCallRecordPrototype(command.cPrototype,
                                                      extraParam=(name in self.extra_parameter_list),
                                                      override=True))
             out.append('\n')
-            out.append(getProtectMacro(command, endif=True))
+            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
             self.write("".join(out))
 
         # Create deprecated extension map
@@ -209,7 +209,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
             params = ', '.join(paramList)
 
             out = []
-            out.append(getProtectMacro(command, ifdef=True))
+            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             out.append(createPostCallRecordPrototype(command.cPrototype,
                                                      extraParam=(name in self.extra_parameter_list),
                                                      className='BestPractices::'))
@@ -230,5 +230,5 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 out.append('    }\n')
 
             out.append('}\n')
-            out.append(getProtectMacro(command, endif=True))
+            out.extend([f'#endif // {command.protect}\n'] if command.protect else [])
             self.write(''.join(out))
