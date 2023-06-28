@@ -1763,7 +1763,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
             chassis_hdr_content += self.inline_custom_validation_class_definitions
             chassis_hdr_content += '};\n\n'
             chassis_hdr_content += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
-            chassis_hdr_content += f'\n#include "{ParameterValidationOutputGenerator.VALID_PARAM_VALUES_PATH}"'
+            chassis_hdr_content += f'\n#include "valid_enum_values.h"'
             write(chassis_hdr_content, file=self.outFile)
         elif self.helper_header:
             self.newline()

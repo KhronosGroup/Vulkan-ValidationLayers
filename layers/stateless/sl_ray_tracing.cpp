@@ -167,7 +167,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
         }
     }
     skip |=
-        ValidateFlags(func_name, "info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV,
+        ValidateFlags(func_name, "info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsKHR,
                       info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
     return skip;
 }

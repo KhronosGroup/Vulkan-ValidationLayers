@@ -16603,7 +16603,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
 
         skip |= ValidateRangedEnum("vkCreateAccelerationStructureNV", "pCreateInfo->info.type", "VkAccelerationStructureTypeNV", pCreateInfo->info.type, "VUID-VkAccelerationStructureInfoNV-type-parameter");
 
-        skip |= ValidateFlags("vkCreateAccelerationStructureNV", "pCreateInfo->info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV, pCreateInfo->info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
+        skip |= ValidateFlags("vkCreateAccelerationStructureNV", "pCreateInfo->info.flags", "VkBuildAccelerationStructureFlagBitsKHR", AllVkBuildAccelerationStructureFlagBitsKHR, pCreateInfo->info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
 
         skip |= ValidateStructTypeArray("vkCreateAccelerationStructureNV", "pCreateInfo->info.geometryCount", "pCreateInfo->info.pGeometries", "VK_STRUCTURE_TYPE_GEOMETRY_NV", pCreateInfo->info.geometryCount, pCreateInfo->info.pGeometries, VK_STRUCTURE_TYPE_GEOMETRY_NV, false, true, "VUID-VkGeometryNV-sType-sType", "VUID-VkAccelerationStructureInfoNV-pGeometries-parameter", kVUIDUndefined);
 
@@ -16754,7 +16754,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
 
         skip |= ValidateRangedEnum("vkCmdBuildAccelerationStructureNV", "pInfo->type", "VkAccelerationStructureTypeNV", pInfo->type, "VUID-VkAccelerationStructureInfoNV-type-parameter");
 
-        skip |= ValidateFlags("vkCmdBuildAccelerationStructureNV", "pInfo->flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV, pInfo->flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
+        skip |= ValidateFlags("vkCmdBuildAccelerationStructureNV", "pInfo->flags", "VkBuildAccelerationStructureFlagBitsKHR", AllVkBuildAccelerationStructureFlagBitsKHR, pInfo->flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
 
         skip |= ValidateStructTypeArray("vkCmdBuildAccelerationStructureNV", "pInfo->geometryCount", "pInfo->pGeometries", "VK_STRUCTURE_TYPE_GEOMETRY_NV", pInfo->geometryCount, pInfo->pGeometries, VK_STRUCTURE_TYPE_GEOMETRY_NV, false, true, "VUID-VkGeometryNV-sType-sType", "VUID-VkAccelerationStructureInfoNV-pGeometries-parameter", kVUIDUndefined);
 

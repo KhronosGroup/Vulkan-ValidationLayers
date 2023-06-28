@@ -243,17 +243,18 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/best_practices.cpp
     ${API_TYPE}/generated/best_practices.h
     ${API_TYPE}/generated/chassis.cpp
-    ${API_TYPE}/generated/valid_param_values.cpp
+    ${API_TYPE}/generated/valid_enum_values.cpp
+    ${API_TYPE}/generated/valid_enum_values.h
     ${API_TYPE}/generated/command_validation.cpp
     ${API_TYPE}/generated/dynamic_state_helper.cpp
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/layer_chassis_dispatch.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker.h
-    ${API_TYPE}/generated/parameter_validation.cpp
-    ${API_TYPE}/generated/parameter_validation.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
+    ${API_TYPE}/generated/stateless_validation_helper.cpp
+    ${API_TYPE}/generated/stateless_validation_helper.h
     ${API_TYPE}/generated/sync_validation_types.cpp
     ${API_TYPE}/generated/thread_safety.cpp
     ${API_TYPE}/generated/thread_safety_commands.h
