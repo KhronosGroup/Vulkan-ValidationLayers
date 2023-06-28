@@ -1067,7 +1067,13 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                 break;
             }
             oob_access = true;
-            switch (binding_state->descriptor_class) {
+            auto desc_class = binding_state->descriptor_class;
+            if (desc_class == cvdescriptorset::DescriptorClass::Mutable) {
+                desc_class =
+                    static_cast<const cvdescriptorset::MutableBinding *>(binding_state)->descriptors[desc_index].ActiveClass();
+            }
+
+            switch (desc_class) {
                 case cvdescriptorset::DescriptorClass::GeneralBuffer:
                     strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                          << " access out of bounds. Descriptor size is " << size << " and highest byte accessed was " << offset;

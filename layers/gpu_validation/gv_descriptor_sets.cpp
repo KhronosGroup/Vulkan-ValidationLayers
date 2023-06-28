@@ -172,10 +172,7 @@ void gpuav_state::DescriptorSet::SetBindingState(uint32_t *data, uint32_t index,
                     data[index++] = vvl::kU32Max;
                 } else {
                     auto buffer_view_state = desc.GetBufferViewState();
-                    VkDeviceSize view_size = buffer_view_state->create_info.range;
-                    if (view_size == VK_WHOLE_SIZE) {
-                        view_size = buffer_view_state->buffer_state->createInfo.size - buffer_view_state->create_info.offset;
-                    }
+                    auto view_size = buffer_view_state->Size();
                     data[index++] = static_cast<uint32_t>(view_size / FormatElementSize(buffer_view_state->create_info.format));
                 }
             }
