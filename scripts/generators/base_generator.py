@@ -293,7 +293,13 @@ class BaseGenerator(OutputGenerator):
         version = self.currentFeature if isinstance(self.currentFeature, Version) else None
         protect = extension.protect if extension is not None else None
 
-        self.vk.commands[name] = Command(name, alias, extension, version, protect, returnType,
+        # These coammds have no way from the XML to detect they would be an instance command
+        specialInstanceCommand = ['vkCreateInstance', 'vkEnumerateInstanceExtensionProperties','vkEnumerateInstanceLayerProperties', 'vkEnumerateInstanceVersion']
+        instance = len(params) > 0 and (params[0].type == 'VkInstance' or params[0].type == 'VkPhysicalDevice' or name in specialInstanceCommand)
+        device = not instance
+
+        self.vk.commands[name] = Command(name, alias, extension, version, protect,
+                                         instance, device, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
                                          params, cPrototype, cFunctionPointer)
