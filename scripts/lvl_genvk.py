@@ -100,29 +100,39 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for stateless validation source file
-    genOpts['parameter_validation.cpp'] = [
+    genOpts['stateless_validation_helper.cpp'] = [
           ParameterValidationOutputGenerator,
           BaseGeneratorOptions(
-            filename          = 'parameter_validation.cpp',
+            filename          = 'stateless_validation_helper.cpp',
             valid_usage_path  = args.scripts)
           ]
 
-    # Options for stateless validation header file
-    genOpts['parameter_validation.h'] = [
-          ParameterValidationOutputGenerator,
+    genOpts['stateless_validation_helper.h'] = [
+          StatelessValidationHelperOutputGenerator,
           BaseGeneratorOptions(
-            filename          = 'parameter_validation.h',
+            filename          = 'stateless_validation_helper.h',
             valid_usage_path  = args.scripts)
           ]
 
-    # Options for stateless validation enum helper file
     genOpts['enum_flag_bits.h'] = [
-          ParameterValidationOutputGenerator,
+          EnumFlagBitsOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'enum_flag_bits.h',
-            mergeApiNames     = mergeApiNames,
-            valid_usage_path  = args.scripts)
+            mergeApiNames     = mergeApiNames)
+          ]
+
+    genOpts['valid_enum_values.h'] = [
+          ValidEnumValuesOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'valid_enum_values.h',
+            mergeApiNames     = mergeApiNames)
+          ]
+
+    genOpts['valid_enum_values.cpp'] = [
+          ValidEnumValuesOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'valid_enum_values.cpp',
+            mergeApiNames     = mergeApiNames)
           ]
 
     # Options for object_tracker code-generated validation routines
@@ -430,7 +440,7 @@ def genTarget(args):
     else:
         write('No generator options for unknown target:',
               args.target, file=sys.stderr)
-        return none
+        return None
 
 # -extension name
 # For both, "name" may be a single name, or a space-separated list
@@ -498,6 +508,7 @@ if __name__ == '__main__':
 
     from generators.thread_safety_generator import ThreadOutputGenerator
     from generators.parameter_validation_generator import ParameterValidationOutputGenerator
+    from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
     from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
     from generators.helper_file_generator import HelperFileOutputGenerator
@@ -516,6 +527,8 @@ if __name__ == '__main__':
     from generators.typemap_helper_generator import TypemapHelperOutputGenerator
     from generators.object_types_generator import ObjectTypesOutputGenerator
     from generators.safe_struct_generator import SafeStructOutputGenerator
+    from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
+    from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
 
     # create error/warning & diagnostic files
     if (args.errfile):

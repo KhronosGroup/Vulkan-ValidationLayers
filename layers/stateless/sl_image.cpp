@@ -581,9 +581,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
         const auto image_compression_control = LvlFindInChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
         if (image_compression_control) {
-            constexpr VkImageCompressionFlagsEXT AllVkImageCompressionFlagBitsEXT =
-                (VK_IMAGE_COMPRESSION_DEFAULT_EXT | VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT |
-                 VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT | VK_IMAGE_COMPRESSION_DISABLED_EXT);
             skip |= ValidateFlags("vkCreateImage", "VkImageCompressionControlEXT::flags", "VkImageCompressionFlagsEXT",
                                   AllVkImageCompressionFlagBitsEXT, image_compression_control->flags, kOptionalSingleBit,
                                   "VUID-VkImageCompressionControlEXT-flags-06747");
