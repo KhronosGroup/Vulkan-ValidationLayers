@@ -1453,6 +1453,7 @@ void GpuAssisted::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 }
 
 void GpuAssisted::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence) {
+    ValidationStateTracker::PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence);
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo2 *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
