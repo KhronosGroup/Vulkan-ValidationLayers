@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "generated/lvt_function_pointers.h"
+#include "generated/vk_function_pointers.h"
 #include "error_monitor.h"
 
 #if defined(VVL_TESTS_USE_CMAKE)

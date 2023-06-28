@@ -219,7 +219,7 @@ class BaseGenerator(OutputGenerator):
             self.currentFeature = Extension(name, nameEnum, instance, device, depends, vendorTag,
                                             platform, self.featureExtraProtect,
                                             provisional, promotedto, deprecatedby,
-                                            obsoletedby, specialuse)
+                                            obsoletedby, specialuse, [])
             self.vk.extensions[name] = self.currentFeature
         else: # version
             number = interface.get('number')
@@ -289,10 +289,16 @@ class BaseGenerator(OutputGenerator):
                                        paramOptional, paramOptionalPointer,
                                        paramNoautovalidity, paramLength))
 
-        self.vk.commands[name] = Command(name, alias, self.currentFeature, returnType,
+        extension = self.currentFeature if isinstance(self.currentFeature, Extension) else None
+        version = self.currentFeature if isinstance(self.currentFeature, Version) else None
+        protect = extension.protect if extension is not None else None
+
+        self.vk.commands[name] = Command(name, alias, extension, version, protect, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
                                          params, cPrototype, cFunctionPointer)
+        if extension is not None:
+            extension.commands.append(self.vk.commands[name])
 
     #
     # List the enum for the commands

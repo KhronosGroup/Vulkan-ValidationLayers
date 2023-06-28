@@ -13,7 +13,7 @@
 #include <vector>
 #include <iostream>
 
-#include "generated/lvt_function_pointers.h"
+#include "generated/vk_function_pointers.h"
 #include "generated/vk_typemap_helper.h"
 
 // Extensions not allowed to use if promoted

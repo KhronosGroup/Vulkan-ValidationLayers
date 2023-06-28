@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 
-#include "generated/lvt_function_pointers.h"
+#include "generated/vk_function_pointers.h"
 #include "generated/vk_extension_helper.h"
 #include "test_common.h"
 

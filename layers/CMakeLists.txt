@@ -28,8 +28,8 @@ target_sources(VkLayer_utils PRIVATE
     error_message/logging.cpp
     external/xxhash.h
     external/xxhash.cpp
-    ${API_TYPE}/generated/lvt_function_pointers.cpp
-    ${API_TYPE}/generated/lvt_function_pointers.h
+    ${API_TYPE}/generated/vk_function_pointers.cpp
+    ${API_TYPE}/generated/vk_function_pointers.h
     ${API_TYPE}/generated/vk_format_utils.h
     ${API_TYPE}/generated/vk_format_utils.cpp
     ${API_TYPE}/generated/vk_validation_error_messages.h

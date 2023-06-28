@@ -270,7 +270,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/framework/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_khr.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_ext.cpp \
                    $(SRC_DIR)/layers/vulkan/generated/vk_safe_struct_vendor.cpp \
-                   $(SRC_DIR)/layers/vulkan/generated/lvt_function_pointers.cpp
+                   $(SRC_DIR)/layers/vulkan/generated/vk_function_pointers.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/layers/vulkan \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_CPPFLAGS += -isystem $(VULKAN_INCLUDE)
