@@ -1140,5 +1140,5 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-#include "generated/parameter_validation.h"
+#include "generated/stateless_validation_helper.h"
 };  // Class StatelessValidation

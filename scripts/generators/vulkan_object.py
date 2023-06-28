@@ -21,7 +21,7 @@ from enum import IntFlag, Enum, auto
 # not supported until Python 3.9+
 from typing import List, Dict
 
-@dataclass(frozen=True)
+@dataclass
 class Extension:
     """<extension>"""
     name: str
@@ -41,13 +41,17 @@ class Extension:
     obsoletedBy: str
     specialUse: List[str]
 
-@dataclass(frozen=True)
+@dataclass
 class Version:
-    """<feature> which represents a version"""
-    name: str # VK_VERSION_1_0
-    number: str # 1.0
+    """
+    <feature> which represents a version
+    This will NEVER be Version 1.0, since having 'no version' is same as being 1.0
+    """
+    name: str # VK_VERSION_1_1
+    apiName: str # VK_API_VERSION_1_1
+    number: str # 1.1
 
-@dataclass(frozen=True)
+@dataclass
 class Handle:
     """<type> which represents a dispatch handle"""
     name: str
@@ -58,7 +62,7 @@ class Handle:
     device: bool
     dispatchable: bool
 
-@dataclass(frozen=True)
+@dataclass
 class CommandParam:
     """<command/param>"""
     name: str
@@ -66,8 +70,9 @@ class CommandParam:
     alias: str
     externSync: bool
     optional: bool
+    optionalPointer: bool # if type contains a pointer, is the pointer value optional
     noAutoValidity: bool
-    length: str
+    length: str # 'len' from XML showing what is used to set the length of an pointer
 
 class Queues(IntFlag):
     TRANSFER = auto()       # VK_QUEUE_TRANSFER_BIT
@@ -85,7 +90,7 @@ class CommandScope(Enum):
     OUTSIDE = auto()
     BOTH = auto()
 
-@dataclass(frozen=True)
+@dataclass
 class Command:
     """<command>"""
     # Attributes of <command>
@@ -124,7 +129,7 @@ class Command:
     #   (const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);'
     cFunctionPointer: str
 
-@dataclass(frozen=True)
+@dataclass
 class EnumField:
     """<enum> of type enum"""
     name: str
@@ -133,15 +138,16 @@ class EnumField:
     extensions: List[str] # None if part of 1.0 core
     protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
-@dataclass(frozen=True)
+@dataclass
 class Enum:
     """<enums> of type enum"""
     name: str
     bitWidth: int # 32 or 64
     protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+    returnedOnly: bool
     fields: List[EnumField]
 
-@dataclass(frozen=True)
+@dataclass
 class Flag:
     """<enum> of type bitmask"""
     name: str
@@ -152,7 +158,7 @@ class Flag:
     extensions: List[str] # None if part of 1.0 core
     protect: str   # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
-@dataclass(frozen=True)
+@dataclass
 class Bitmask:
     """<enums> of type bitmask"""
     name: str     # ex. 'VkAccessFlagBits2'
@@ -161,13 +167,14 @@ class Bitmask:
     protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
     flags: List[Flag]
 
-@dataclass(frozen=True)
+@dataclass
 class Member:
     """<member>"""
     name: str
     type: str
     externSync: bool
     optional: bool
+    optionalPointer: bool # if type contains a pointer, is the pointer value optional
     noAutoValidity: bool
     length: str
     limitType: str
@@ -179,10 +186,13 @@ class Member:
     #   - VkStructureType sType
     cDeclaration: str
 
-@dataclass(frozen=True)
+@dataclass
 class Struct:
     """<type category="struct"> or <type category="union">"""
     name: str
+    extensions: List[Extension] # All extensions that enable the struct
+    version: Version # None if Version 1.0
+
     union: bool # Unions are just a subset of a Structs
     structExtends: List[str]
     protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
@@ -191,7 +201,7 @@ class Struct:
     allowDuplicate: bool
     members: List[Member]
 
-@dataclass(frozen=True)
+@dataclass
 class FormatComponent:
     """<format/component>"""
     type: str # 'R', 'G', 'B', 'A', 'D', 'S', etc
@@ -199,7 +209,7 @@ class FormatComponent:
     numericFormat: str # 'UNORM', 'SINT', etc
     planeIndex: int # None if no planeIndex in format
 
-@dataclass(frozen=True)
+@dataclass
 class FormatPlane:
     """<format/plane>"""
     index: int
@@ -207,7 +217,7 @@ class FormatPlane:
     heightDivisor: int
     compatible: str
 
-@dataclass(frozen=True)
+@dataclass
 class Format:
     """<format>"""
     name: str
@@ -222,33 +232,33 @@ class Format:
     planes: List[FormatPlane]  # <format/plane>
     spirvImageFormat: str
 
-@dataclass(frozen=True)
+@dataclass
 class SyncSupport:
     """<syncsupport>"""
     queues: List[str]
     stage: List[str]
 
-@dataclass(frozen=True)
+@dataclass
 class SyncEquivalent:
     """<syncequivalent>"""
     stage: List[str]
     access: List[str]
 
-@dataclass(frozen=True)
+@dataclass
 class SyncStage:
     """<syncstage>"""
     name: str
     support: SyncSupport
     equivalent: SyncEquivalent
 
-@dataclass(frozen=True)
+@dataclass
 class SyncAccess:
     """<syncaccess>"""
     name: str
     support: SyncSupport
     equivalent: SyncEquivalent
 
-@dataclass(frozen=True)
+@dataclass
 class SyncPipelineStage:
     """<syncpipelinestage>"""
     order: str
@@ -256,14 +266,14 @@ class SyncPipelineStage:
     after: str
     value: str
 
-@dataclass(frozen=True)
+@dataclass
 class SyncPipeline:
     """<syncpipeline>"""
     name: str
     depends: List[str]
     stages: List[SyncPipelineStage]
 
-@dataclass(frozen=True)
+@dataclass
 class SpirvEnables:
     """What is needed to enable the SPIR-V element"""
     version: str
@@ -275,7 +285,7 @@ class SpirvEnables:
     member: str
     value: str
 
-@dataclass(frozen=True)
+@dataclass
 class Spirv:
     """<spirvextension> and <spirvcapability>"""
     name: str
@@ -288,6 +298,8 @@ class Spirv:
 # This class is designed so all generator scripts can use this to obtain data
 @dataclass
 class VulkanObject():
+    headerVersion: int = 0 # value of VK_HEADER_VERSION
+
     extensions: Dict[str, Extension] = field(default_factory=dict, init=False)
     versions:   Dict[str, Version]   = field(default_factory=dict, init=False)
 

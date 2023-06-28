@@ -105,11 +105,8 @@ typedef enum CMD_TYPE {
         out.append('    kVUIDUndefined,\n')
         for command in filter(lambda x: x.name.startswith('vkCmd'), self.vk.commands.values()):
             name = command.name if command.alias is None else command.alias
-            vuid = f'VUID-{name}-commandBuffer-recording'
-            if vuid not in self.valid_vuids:
-                print(f'Warning: Could not find {vuid} in validusage.json')
-                vuid = vuid.replace('VUID-', 'UNASSIGNED-')
-            out.append(f'    "{vuid}",\n')
+            vuid = getVUID(self.valid_vuids, f'VUID-{name}-commandBuffer-recording')
+            out.append(f'    {vuid},\n')
         out.append('}};')
         self.write("".join(out))
 
@@ -223,11 +220,8 @@ static const std::array<CommandSupportedVideoCoding, CMD_RANGE_SIZE> kGeneratedV
             if command.primary and command.secondary:
                 out.append('    nullptr,\n')
             elif command.primary:
-                vuid = f'VUID-{name}-bufferlevel'
-                if vuid not in self.valid_vuids:
-                    print(f'Warning: Could not find {vuid} in validusage.json')
-                    vuid = vuid.replace('VUID-', 'UNASSIGNED-')
-                out.append(f'    "{vuid}",\n')
+                vuid = getVUID(self.valid_vuids, f'VUID-{name}-bufferlevel')
+                out.append(f'    {vuid},\n')
             else:
                 # Currently there is only "primary" or "primary,secondary" in XML
                 # Hard to predict what might change, so will error out instead if assumption breaks

@@ -114,9 +114,8 @@ class BaseGenerator(OutputGenerator):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         self.vk = VulkanObject()
 
-        # Needed because beginFeature()/endFeatures() wraps all
-        # the genCmd() calls that are created with a given
-        # Version or Extension
+        # reg.py has a `self.featureName` but this is nicer because
+        # it will be either the Version or Extension object
         self.currentFeature = None
 
         # These are custom fields for the Validation Layers
@@ -152,6 +151,14 @@ class BaseGenerator(OutputGenerator):
                 sys.exit(1)
             for json_vuid_string in ExtractVUIDs(vuid_dict):
                 self.valid_vuids.add(json_vuid_string)
+        # List of VUs that should exists, but have a spec bug
+        for vuid in [
+            # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3548
+            "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-arraylength",
+            "VUID-VkImportMemoryHostPointerInfoEXT-pHostPointer-parameter"
+        ]:
+            self.valid_vuids.add(vuid)
+
 
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
@@ -172,8 +179,19 @@ class BaseGenerator(OutputGenerator):
 
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
+        # We do some post processing now
+
+        # Use structs and commands to find which things are returnedOnly
+        for struct in [x for x in self.vk.structs.values() if not x.returnedOnly]:
+            for enum in [self.vk.enums[x.type] for x in struct.members if x.type in self.vk.enums]:
+                enum.returnedOnly = False
+        for command in self.vk.commands.values():
+            for enum in [self.vk.enums[x.type] for x in command.params if x.type in self.vk.enums]:
+                enum.returnedOnly = False
+
         # All inherited generators should run from here
         self.generate()
+
         # This should not have to do anything but call into OutputGenerator
         OutputGenerator.endFile(self)
 
@@ -205,8 +223,10 @@ class BaseGenerator(OutputGenerator):
             self.vk.extensions[name] = self.currentFeature
         else: # version
             number = interface.get('number')
-            self.currentFeature = Version(name, number)
-            self.vk.versions[name] = self.currentFeature
+            if number != '1.0':
+                apiName = name.replace('VK_', 'VK_API_')
+                self.currentFeature = Version(name, apiName, number)
+                self.vk.versions[name] = self.currentFeature
 
     def endFeature(self):
         OutputGenerator.endFeature(self)
@@ -257,11 +277,17 @@ class BaseGenerator(OutputGenerator):
             paramType = textIfFind(param, 'type')
             paramAlias = param.get('alias')
             paramExternsync = boolGet(param, 'externsync')
-            paramOptional = boolGet(param, 'optional')
             paramNoautovalidity = boolGet(param, 'noautovalidity')
             paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
+
+            # See Member::optional code for details of this
+            optionalValues = splitIfGet(param, 'optional')
+            paramOptional = optionalValues is not None and optionalValues[0].lower() == "true"
+            paramOptionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
+
             params.append(CommandParam(paramName, paramType, paramAlias, paramExternsync,
-                                       paramOptional, paramNoautovalidity, paramLength))
+                                       paramOptional, paramOptionalPointer,
+                                       paramNoautovalidity, paramLength))
 
         self.vk.commands[name] = Command(name, alias, self.currentFeature, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
@@ -270,7 +296,8 @@ class BaseGenerator(OutputGenerator):
 
     #
     # List the enum for the commands
-    def genGroup(self, groupinfo, name, alias):
+    # TODO - Seems empty groups like `VkDeviceDeviceMemoryReportCreateInfoEXT` don't show up in here
+    def genGroup(self, groupinfo, groupName, alias):
         if alias is not None:
             return
         # There can be case where the Enum/Bitmask is in a protect, but the individual
@@ -289,15 +316,18 @@ class BaseGenerator(OutputGenerator):
                 protect = elem.get('protect')
 
                 # Some values have multiple extensions (ex VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
-                # genGroup() lists them twice, so need to just remove, update, re-add if we find a duplicate
-                for field in fields:
-                    if field.name == fieldName:
-                        extensions.append(field.extensions)
-                        fields.remove(field)
+                # genGroup() lists them twice
+                updateField = next((x for x in fields if x.name == fieldName), None)
+                if updateField is not None:
+                    # Watch out for edge case like VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE which is a version and ext
+                    if updateField.extensions is None:
+                        updateField = [extensions]
+                    else:
+                        updateField.extensions.append(extensions)
+                else:
+                    fields.append(EnumField(fieldName, negative, extensions, protect))
 
-                fields.append(EnumField(fieldName, negative, extensions, protect))
-
-            self.vk.enums[name] = Enum(name, bitwidth, groupProtect, fields)
+            self.vk.enums[groupName] = Enum(groupName, bitwidth, groupProtect, True, fields)
 
         else: # "bitmask"
             for elem in enumElem.findall('enum'):
@@ -315,27 +345,34 @@ class BaseGenerator(OutputGenerator):
                 protect = elem.get('protect')
 
                 # Some values have multiple extensions (ex VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
-                # genGroup() lists them twice, so need to just remove, update, re-add if we find a duplicate
-                for field in fields:
-                    if field.name == fieldName:
-                        extensions.append(field.extensions)
-                        fields.remove(field)
+                # genGroup() lists them twice
+                updateField = next((x for x in fields if x.name == fieldName), None)
+                if updateField is not None:
+                    updateField.extensions.append(extensions)
+                else:
+                    fields.append(Flag(fieldName, fieldValue, fieldMultiBit, fieldZero,
+                                        extensions, protect))
 
-                fields.append(Flag(fieldName, fieldValue, fieldMultiBit, fieldZero,
-                                      extensions, protect))
-
-            flagName = name.replace('FlagBits', 'Flags')
-            self.vk.bitmasks[name] = Bitmask(name, flagName, bitwidth, groupProtect, fields)
+            flagName = groupName.replace('FlagBits', 'Flags')
+            self.vk.bitmasks[groupName] = Bitmask(groupName, flagName, bitwidth, groupProtect, fields)
 
     def genType(self, typeInfo, typeName, alias):
         OutputGenerator.genType(self, typeInfo, typeName, alias)
-        if alias is not None:
-            return
         typeElem = typeInfo.elem
         protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
+            version = self.currentFeature if isinstance(self.currentFeature, Version) else None
+            extension = [self.currentFeature] if isinstance(self.currentFeature, Extension) else []
+            if alias is not None:
+                struct = self.vk.structs[alias]
+                # Some structs (ex VkAttachmentSampleCountInfoAMD) can have multiple alias pointing to same extension
+                struct.extensions += extension if extension and extension[0] not in struct.extensions else []
+                struct.version = version if struct.version is None else struct.version
+                return
+
             union = category == 'union'
+
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
             structExtends = splitIfGet(typeElem, 'structextends')
@@ -351,32 +388,45 @@ class BaseGenerator(OutputGenerator):
                 type = textIfFind(member, 'type')
                 sType = member.get('values') if member.get('values') is not None else sType
                 externSync = boolGet(member, 'externsync')
-                optional = boolGet(member, 'optional')
                 noautovalidity = boolGet(member, 'noautovalidity')
                 length = member.get('altlen') if member.get('altlen') is not None else member.get('len')
                 limittype = member.get('limittype')
                 cdecl = self.makeCParamDecl(member, 0)
                 pointer = '*' in cdecl
 
-                members.append(Member(name, type, externSync, optional,
-                                      noautovalidity, length, limittype, pointer, cdecl))
-            if len(members) == 0:
-                print(typeName)
+                # if a pointer, this can be a something like:
+                #     optional="true,false" for ppGeometries
+                #     optional="false,true" for pPhysicalDeviceCount
+                # the first is if the variable itself is optional
+                # the second is the value of the pointer is optiona;
+                optionalValues = splitIfGet(member, 'optional')
+                optional = optionalValues is not None and optionalValues[0].lower() == "true"
+                optionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
 
-            self.vk.structs[typeName] = Struct(typeName, union, structExtends, protect, sType,
-                                                returnedOnly, allowDuplicate, members)
+                members.append(Member(name, type, externSync, optional, optionalPointer,
+                                      noautovalidity, length, limittype, pointer, cdecl))
+
+            self.vk.structs[typeName] = Struct(typeName, extension, version, union,
+                                               structExtends, protect, sType, returnedOnly,
+                                               allowDuplicate, members)
 
         elif category == 'handle':
+            if alias is not None:
+                return
             type = typeElem.get('objtypeenum')
             instance = typeElem.get('parent') == 'VkInstance'
             device = not instance
             dispatchable = self.handle_types[typeName] == 'VK_DEFINE_HANDLE'
             self.vk.handles[typeName] = Handle(typeName, type, protect, instance, device, dispatchable)
 
+        elif category == 'define':
+            if typeName == 'VK_HEADER_VERSION':
+                self.vk.headerVersion = typeElem.find('name').tail.strip()
+
         else:
             # not all categories are used
             #   'group'/'enum'/'bitmask' are routed to genGroup instead
-            #   'basetype'/`define`/''include' are only for headers
+            #   'basetype'/'include' are only for headers
             #   'funcpointer` ingore until needed
             return
 

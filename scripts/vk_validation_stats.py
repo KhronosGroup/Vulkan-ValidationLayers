@@ -737,7 +737,7 @@ def main(argv):
         'layers/state_tracker/shader_module.cpp',
         'layers/gpu_validation/gpu_vuids.h',
         'layers/stateless/stateless_validation.h',
-        f'layers/{args.api}/generated/parameter_validation.cpp',
+        f'layers/{args.api}/generated/stateless_validation_helper.cpp',
         f'layers/{args.api}/generated/object_tracker.cpp',
         f'layers/{args.api}/generated/spirv_validation_helper.cpp',
         f'layers/{args.api}/generated/command_validation.cpp',

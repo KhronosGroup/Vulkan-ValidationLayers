@@ -222,8 +222,8 @@ object_lifetimes_sources = [
 ]
 
 stateless_validation_sources = [
-  "layers/vulkan/generated/parameter_validation.cpp",
-  "layers/vulkan/generated/parameter_validation.h",
+  "layers/vulkan/generated/stateless_validation_helper.cpp",
+  "layers/vulkan/generated/stateless_validation_helper.h",
   "layers/vulkan/generated/enum_flag_bits.h",
   "layers/stateless/parameter_name.h",
   "layers/stateless/sl_buffer.cpp",
@@ -288,8 +288,8 @@ chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/vulkan/generated/chassis.cpp",
-  "layers/vulkan/generated/valid_param_values.cpp",
-  "layers/vulkan/generated/valid_param_values.h",
+  "layers/vulkan/generated/valid_enum_values.cpp",
+  "layers/vulkan/generated/valid_enum_values.h",
   "layers/vulkan/generated/chassis.h",
   "layers/vulkan/generated/chassis_dispatch_helper.h",
   "layers/vulkan/generated/layer_chassis_dispatch.cpp",

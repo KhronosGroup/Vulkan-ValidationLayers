@@ -42,3 +42,10 @@ def getFormatedLength(length: str):
         # Spec has now notation for len attributes, using :: instead of platform specific pointer symbol
         result = result.replace('::', '->')
     return result
+
+# Will do a sanity check the VUID exists
+def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
+    if vuid not in valid_vuids:
+        print(f'Warning: Could not find {vuid} in validusage.json')
+        vuid = vuid.replace('VUID-', 'UNASSIGNED-')
+    return vuid if not quotes else f'"{vuid}"'
