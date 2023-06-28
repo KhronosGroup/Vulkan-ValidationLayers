@@ -353,3 +353,43 @@ TEST_F(PositiveGpuAssistedLayer, GpuBufferDeviceAddress) {
     subcase_err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(subcase_err);
 }
+
+// Regression test for semaphore timeout with GPU-AV enabled:
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4968
+TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
+    TEST_DESCRIPTION("Get counter value from the semaphore signaled by queue submit");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>(&sync2_features);
+    GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported";
+    }
+    if (!sync2_features.synchronization2) {
+        GTEST_SKIP() << "synchronization2 not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &timeline_semaphore_features));
+
+    auto semaphore_type_info = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    const auto create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_info);
+    vk_testing::Semaphore semaphore(*m_device, create_info);
+
+    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    signal_info.semaphore = semaphore;
+    signal_info.value = 1;
+    signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo2>();
+    submit_info.signalSemaphoreInfoCount = 1;
+    submit_info.pSignalSemaphoreInfos = &signal_info;
+    ASSERT_VK_SUCCESS(vk::QueueSubmit2(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+
+    std::uint64_t counter = 0;
+    ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
+}
