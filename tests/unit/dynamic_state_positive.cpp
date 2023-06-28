@@ -465,15 +465,15 @@ TEST_F(PositiveDynamicState, DynamicStateDoublePipelineBind) {
     pipe_no_dynamic.InitState();
     pipe_no_dynamic.CreateGraphicsPipeline();
 
-    VkCommandBufferObj m_commandBuffer(m_device, m_commandPool);
-    m_commandBuffer.begin();
-    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer.handle(), VK_TRUE);
-    m_commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.pipeline_);
-    vk::CmdBindPipeline(m_commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    vk::CmdDraw(m_commandBuffer.handle(), 1, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer.handle());
-    m_commandBuffer.end();
+    VkCommandBufferObj command_buffer(m_device, m_commandPool);
+    command_buffer.begin();
+    vk::CmdSetPrimitiveRestartEnableEXT(command_buffer.handle(), VK_TRUE);
+    command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_no_dynamic.pipeline_);
+    vk::CmdBindPipeline(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdEndRenderPass(command_buffer.handle());
+    command_buffer.end();
 }
 
 TEST_F(PositiveDynamicState, SetBeforePipeline) {

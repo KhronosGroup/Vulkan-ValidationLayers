@@ -176,7 +176,7 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
     }
     if (validation == "all" || validation == "core" || validation == "none") {
         if (!features) {
-            features = &validation_features;
+            features = &m_validation_features;
             features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
             features->pNext = first_pnext;
             first_pnext = features;
