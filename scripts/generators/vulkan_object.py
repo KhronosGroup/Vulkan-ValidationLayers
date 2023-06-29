@@ -42,8 +42,14 @@ class Extension:
     specialUse: List[str]
 
     # These are here to allow for easy reverse lookups
-    # Quotes allow us to forward declare the datacalss
-    commands: List['Command']
+    # Quotes allow us to forward declare the dataclass
+    commands: List['Command'] = field(default_factory=list, init=False)
+    enums:    List['Enum']    = field(default_factory=list, init=False)
+    bitmask:  List['Bitmask'] = field(default_factory=list, init=False)
+    # Use the Enum name to see what fields are extended
+    enumFields: Dict[str, List['EnumField']] = field(default_factory=dict, init=False)
+    # Use the Bitmaks name to see what flags are extended
+    flags: Dict[str, List['Flag']] = field(default_factory=dict, init=False)
 
 @dataclass
 class Version:
@@ -142,9 +148,10 @@ class EnumField:
     """<enum> of type enum"""
     name: str
     negative: bool # True if negative values are allowed (ex. VkResult)
-    # some fields are enabled from 2 extensions (ex. VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
-    extensions: List[str] # None if part of 1.0 core
     protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+
+    # some fields are enabled from 2 extensions (ex. VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
+    extensions: List[Extension] # None if part of 1.0 core
 
 @dataclass
 class Enum:
@@ -155,6 +162,10 @@ class Enum:
     returnedOnly: bool
     fields: List[EnumField]
 
+    extensions: List[Extension] # None if part of 1.0 core
+    # Unique list of all extension that are involved in 'fields' (superset of 'extensions')
+    fieldExtensions: List[Extension]
+
 @dataclass
 class Flag:
     """<enum> of type bitmask"""
@@ -162,9 +173,10 @@ class Flag:
     value: int     # Value of flag
     multiBit: bool # if true, more than one bit is set (ex. VK_SHADER_STAGE_ALL_GRAPHICS)
     zero: bool     # if true, the value is zero (ex. VK_PIPELINE_STAGE_NONE)
+    protect: str   # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+
     # some fields are enabled from 2 extensions (ex. VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
     extensions: List[str] # None if part of 1.0 core
-    protect: str   # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 
 @dataclass
 class Bitmask:
@@ -174,6 +186,10 @@ class Bitmask:
     bitWidth: int # 32 or 64
     protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
     flags: List[Flag]
+
+    extensions: List[Extension] # None if part of 1.0 core
+    # Unique list of all extension that are involved in 'flag' (superset of 'extensions')
+    flagExtensions: List[Extension]
 
 @dataclass
 class Member:
