@@ -88,19 +88,21 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
         for enum in [x for x in self.vk.enums.values() if x.name != 'VkStructureType' and not x.returnedOnly]:
             out.extend([f'#ifdef {enum.protect}\n'] if enum.protect else [])
-            out.append(f'''
-template<>
-std::vector<{enum.name}> ValidationObject::ValidParamValues() const {{
-    constexpr std::array Core{enum.name}Enums = {{{", ".join([x.name for x in enum.fields if not x.extensions])}}};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<{enum.name}>> Extended{enum.name}Enums = {{
-''')
-            # TODO - For handle enum fields like VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR where multiple extensions
-            extensions = set([x.extensions[0] for x in enum.fields if x.extensions and len(x.extensions) == 1])
-            for extension in sorted(extensions):
-                out.append(f'        {{ &DeviceExtensions::{extension.lower()}, {{ {", ".join([x.name for x in enum.fields if x.extensions and extension in x.extensions])} }} }},\n')
+            out.append(f'template<>\nstd::vector<{enum.name}> ValidationObject::ValidParamValues() const {{\n')
+
+            # If the field has same/subset extensions as enum, we count it as "core" for the struct
+            coreEnums = [x.name for x in enum.fields if not x.extensions or (x.extensions and all(e in enum.extensions for e in x.extensions))]
+            out.extend([f'    constexpr std::array Core{enum.name}Enums = {{{", ".join(coreEnums)}}};\n'] if coreEnums else [])
+
+            out.append(f'    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<{enum.name}>> Extended{enum.name}Enums = {{\n')
+
+            for extension in [x for x in enum.fieldExtensions if x not in enum.extensions]:
+                out.append(f'        {{ &DeviceExtensions::{extension.name.lower()}, {{ {", ".join([x.name for x in extension.enumFields[enum.name]])} }} }},\n')
             out.append('    };')
+
+            startValue = f'values(Core{enum.name}Enums.cbegin(), Core{enum.name}Enums.cend())' if coreEnums else 'values'
             out.append(f'''
-    std::vector<{enum.name}> values(Core{enum.name}Enums.cbegin(), Core{enum.name}Enums.cend());
+    std::vector<{enum.name}> {startValue};
     std::set<{enum.name}> unique_exts;
     for (const auto& [extension, enums]: Extended{enum.name}Enums) {{
         if (IsExtEnabled(device_extensions.*extension)) {{

@@ -116,10 +116,19 @@ class BaseGenerator(OutputGenerator):
 
         # reg.py has a `self.featureName` but this is nicer because
         # it will be either the Version or Extension object
-        self.currentFeature = None
+        self.currentExtension = None
+        self.currentVersion = None
 
         # These are custom fields for the Validation Layers
         self.valid_vuids = set() # Set of all valid VUIDs
+
+        # Will map alias to promoted name
+        #   ex. ['VK_FILTER_CUBIC_IMG' : 'VK_FILTER_CUBIC_EXT']
+        # When generating any code, there is no reason so use the old name
+        self.enumAliasMap = dict()
+        self.enumFieldAliasMap = dict()
+        self.bitmaskAliasMap = dict()
+        self.flagAliasMap = dict()
 
     def write(self, data):
         # Prevents having to check before writting
@@ -177,9 +186,14 @@ class BaseGenerator(OutputGenerator):
         print("WARNING: This should not be called from the child class")
         return
 
+    # This function is dense, it does all the magic to set the right extensions dependencies!
+    #
     # The issue is if 2 extension expose a command, genCmd() will only
     # show one of the extension, at endFile() we can finally go through
     # and update which things depend on which extensions
+    #
+    # self.featureDictionary is built for use in the reg.py framework
+    # Details found in Vulkan-Docs/scripts/scriptgenerator.py
     def applyExtensionDependency(self):
         for extension in self.vk.extensions.values():
             # dict.key() can be None, so need to double loop
@@ -191,11 +205,93 @@ class BaseGenerator(OutputGenerator):
             #  one or more extension and/or core version names
             for required in dict:
                 for commandName in dict[required]:
-                    e = self.vk.extensions[extension.name]
-                    c = self.vk.commands[commandName]
+                    command = self.vk.commands[commandName]
                     # Make sure list is unique
-                    c.extensions.extend([e] if e not in c.extensions else [])
-                    e.commands.extend([c] if c not in e.commands else [])
+                    command.extensions.extend([extension] if extension not in command.extensions else [])
+                    extension.commands.extend([command] if command not in extension.commands else [])
+
+            # While genGroup() will call twice with aliased value, it doesn't provide all the information we need
+            dict = self.featureDictionary[extension.name]['enumconstant']
+            for required in dict:
+                # group can be a Enum or Bitmask
+                for group in dict[required]:
+                    if group in self.vk.enums:
+                        if group not in extension.enumFields:
+                            extension.enumFields[group] = [] # Dict needs init
+                        enum = self.vk.enums[group]
+                        # Need to convert all alias so they match what is in EnumField
+                        enumList = list(map(lambda x: x if x not in self.enumFieldAliasMap else self.enumFieldAliasMap[x], dict[required][group]))
+
+                        for enumField in [x for x in enum.fields if x.name in enumList]:
+                            # Make sure list is unique
+                            enum.fieldExtensions.extend([extension] if extension not in enum.fieldExtensions else [])
+                            enumField.extensions.extend([extension] if extension not in enumField.extensions else [])
+                            extension.enumFields[group].extend([enumField] if enumField not in extension.enumFields[group] else [])
+
+                    if group in self.vk.bitmasks:
+                        if group not in extension.flags:
+                            extension.flags[group] = [] # Dict needs init
+                        bitmask = self.vk.bitmasks[group]
+                        # Need to convert all alias so they match what is in Flags
+                        flagList = list(map(lambda x: x if x not in self.flagAliasMap else self.flagAliasMap[x], dict[required][group]))
+
+                        for flags in [x for x in bitmask.flags if x.name in flagList]:
+                            # Make sure list is unique
+                            bitmask.extensions.extend([extension] if extension not in bitmask.extensions else [])
+                            flags.extensions.extend([extension] if extension not in flags.extensions else [])
+                            extension.flags[group].extend([flags] if flags not in extension.flags[group] else [])
+
+
+        # Need to do 'enum'/'bitmask' after 'enumconstant' has applied everything so we can add implicit extensions
+        #
+        # Sometimes two extensions enable an Enum, but the newer extension version has extra flags allowed
+        # This information seems to be implicit, so need to update it here
+        # Go through each Flag and append the Enum extension to it
+        #
+        # ex. VkAccelerationStructureTypeKHR where GENERIC_KHR is not allowed with just VK_NV_ray_tracing
+        # This only works because the values are aliased as well, making the KHR a superset enum
+        for extension in self.vk.extensions.values():
+            dict = self.featureDictionary[extension.name]['enum']
+            for required in dict:
+                for group in dict[required]:
+                    for enumName in dict[required][group]:
+                        isAlias = enumName in self.enumAliasMap
+                        enumName = self.enumAliasMap[enumName] if isAlias else enumName
+                        if enumName in self.vk.enums:
+                            enum = self.vk.enums[enumName]
+                            enum.extensions.extend([extension] if extension not in enum.extensions else [])
+                            extension.enums.extend([enum] if enum not in extension.enums else [])
+                            # Update fields with implicit base extension
+                            if isAlias:
+                                continue
+                            enum.fieldExtensions.extend([extension] if extension not in enum.fieldExtensions else [])
+                            for enumField in [x for x in enum.fields if (not x.extensions or (x.extensions and all(e in enum.extensions for e in x.extensions)))]:
+                                enumField.extensions.extend([extension] if extension not in enumField.extensions else [])
+                                if enumName not in extension.enumFields:
+                                    extension.enumFields[enumName] = [] # Dict needs init
+                                extension.enumFields[enumName].extend([enumField] if enumField not in extension.enumFields[enumName] else [])
+
+            dict = self.featureDictionary[extension.name]['bitmask']
+            for required in dict:
+                for group in dict[required]:
+                    for bitmaskName in dict[required][group]:
+                        isAlias = bitmaskName in self.enumAliasMap
+                        bitmaskName = self.bitmaskAliasMap[bitmaskName] if isAlias else bitmaskName
+                        if bitmaskName in self.vk.bitmasks:
+                            bitmask = self.vk.bitmasks[bitmaskName]
+                            bitmask.extensions.extend([extension] if extension not in bitmask.extensions else [])
+                            extension.bitmask.extend([bitmask] if bitmask not in extension.bitmasks else [])
+                            # Update flags with implicit base extension
+                            if isAlias:
+                                continue
+                            bitmask.flagExtensions.extend([extension] if extension not in enum.flagExtensions else [])
+                            for flag in [x for x in enum.flags if (not x.extensions or (x.extensions and all(e in enum.extensions for e in x.extensions)))]:
+                                flag.extensions.extend([extension] if extension not in flag.extensions else [])
+                                if bitmaskName not in extension.flags:
+                                    extension.flags[bitmaskName] = [] # Dict needs init
+                                extension.flags[bitmaskName].extend([flag] if flag not in extension.flags[bitmaskName] else [])
+
+
 
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
@@ -237,21 +333,22 @@ class BaseGenerator(OutputGenerator):
             # Not sure if better way to get this info
             nameEnum = self.featureDictionary[name]['enumconstant'][None][None][1]
 
-            self.currentFeature = Extension(name, nameEnum, instance, device, depends, vendorTag,
+            self.currentExtension = Extension(name, nameEnum, instance, device, depends, vendorTag,
                                             platform, self.featureExtraProtect,
                                             provisional, promotedto, deprecatedby,
-                                            obsoletedby, specialuse, [])
-            self.vk.extensions[name] = self.currentFeature
+                                            obsoletedby, specialuse)
+            self.vk.extensions[name] = self.currentExtension
         else: # version
             number = interface.get('number')
             if number != '1.0':
                 apiName = name.replace('VK_', 'VK_API_')
-                self.currentFeature = Version(name, apiName, number)
-                self.vk.versions[name] = self.currentFeature
+                self.currentVersion = Version(name, apiName, number)
+                self.vk.versions[name] = self.currentVersion
 
     def endFeature(self):
         OutputGenerator.endFeature(self)
-        self.currentFeature = None
+        self.currentExtension = None
+        self.currentVersion = None
 
     #
     # All <command> from XML
@@ -310,16 +407,14 @@ class BaseGenerator(OutputGenerator):
                                        paramOptional, paramOptionalPointer,
                                        paramNoautovalidity, paramLength))
 
-        version = self.currentFeature if isinstance(self.currentFeature, Version) else None
-        extension = self.currentFeature if isinstance(self.currentFeature, Extension) else None
-        protect = extension.protect if extension is not None else None
+        protect = self.currentExtension.protect if self.currentExtension is not None else None
 
         # These coammds have no way from the XML to detect they would be an instance command
         specialInstanceCommand = ['vkCreateInstance', 'vkEnumerateInstanceExtensionProperties','vkEnumerateInstanceLayerProperties', 'vkEnumerateInstanceVersion']
         instance = len(params) > 0 and (params[0].type == 'VkInstance' or params[0].type == 'VkPhysicalDevice' or name in specialInstanceCommand)
         device = not instance
 
-        self.vk.commands[name] = Command(name, alias, [], version, protect,
+        self.vk.commands[name] = Command(name, alias, [], self.currentVersion, protect,
                                          instance, device, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
@@ -329,77 +424,75 @@ class BaseGenerator(OutputGenerator):
     # List the enum for the commands
     # TODO - Seems empty groups like `VkDeviceDeviceMemoryReportCreateInfoEXT` don't show up in here
     def genGroup(self, groupinfo, groupName, alias):
-        if alias is not None:
-            return
         # There can be case where the Enum/Bitmask is in a protect, but the individual
         # fields also have their own protect
-        groupProtect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
+        groupProtect = self.currentExtension.protect if hasattr(self.currentExtension, 'protect') and self.currentExtension.protect is not None else None
         enumElem = groupinfo.elem
         bitwidth = 32 if enumElem.get('bitwidth') is None else enumElem.get('bitwidth')
         fields = []
         if enumElem.get('type') == "enum":
+            if alias is not None:
+                self.enumAliasMap[groupName] = alias
+                return
+
             for elem in enumElem.findall('enum'):
-                if elem.get('alias') is not None:
-                    continue
                 fieldName = elem.get('name')
+
+                if elem.get('alias') is not None:
+                    self.enumFieldAliasMap[fieldName] = elem.get('alias')
+                    continue
+
                 negative = elem.get('dir') != None
-                extensions = None if elem.get('extname') is None else [elem.get('extname')]
                 protect = elem.get('protect')
 
                 # Some values have multiple extensions (ex VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
                 # genGroup() lists them twice
-                updateField = next((x for x in fields if x.name == fieldName), None)
-                if updateField is not None:
-                    # Watch out for edge case like VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE which is a version and ext
-                    if updateField.extensions is None:
-                        updateField = [extensions]
-                    else:
-                        updateField.extensions.append(extensions)
-                else:
-                    fields.append(EnumField(fieldName, negative, extensions, protect))
+                if next((x for x in fields if x.name == fieldName), None) is None:
+                    fields.append(EnumField(fieldName, negative, protect, []))
 
-            self.vk.enums[groupName] = Enum(groupName, bitwidth, groupProtect, True, fields)
+            self.vk.enums[groupName] = Enum(groupName, bitwidth, groupProtect, True, fields, [], [])
 
         else: # "bitmask"
+            if alias is not None:
+                self.bitmaskAliasMap[groupName] = alias
+                return
+
             for elem in enumElem.findall('enum'):
+                flagName = elem.get('name')
+
                 if elem.get('alias') is not None:
+                    self.flagAliasMap[flagName] = elem.get('alias')
                     continue
-                fieldMultiBit = False
-                fieldZero = False
-                fieldValue = intIfGet(elem, 'bitpos')
-                if fieldValue is None:
-                    fieldValue = intIfGet(elem, 'value')
-                    fieldMultiBit = fieldValue != 0
-                    fieldZero = fieldValue == 0
-                fieldName = elem.get('name')
-                extensions = None if elem.get('extname') is None else [elem.get('extname')]
+
+                flagMultiBit = False
+                flagZero = False
+                flagValue = intIfGet(elem, 'bitpos')
+                if flagValue is None:
+                    flagValue = intIfGet(elem, 'value')
+                    flagMultiBit = flagValue != 0
+                    flagZero = flagValue == 0
                 protect = elem.get('protect')
 
                 # Some values have multiple extensions (ex VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT)
                 # genGroup() lists them twice
-                updateField = next((x for x in fields if x.name == fieldName), None)
-                if updateField is not None:
-                    updateField.extensions.append(extensions)
-                else:
-                    fields.append(Flag(fieldName, fieldValue, fieldMultiBit, fieldZero,
-                                        extensions, protect))
+                if next((x for x in fields if x.name == flagName), None) is None:
+                    fields.append(Flag(flagName, flagValue, flagMultiBit, flagZero, protect, []))
 
             flagName = groupName.replace('FlagBits', 'Flags')
-            self.vk.bitmasks[groupName] = Bitmask(groupName, flagName, bitwidth, groupProtect, fields)
+            self.vk.bitmasks[groupName] = Bitmask(groupName, flagName, bitwidth, groupProtect, fields, [], [])
 
     def genType(self, typeInfo, typeName, alias):
         OutputGenerator.genType(self, typeInfo, typeName, alias)
         typeElem = typeInfo.elem
-        protect = self.currentFeature.protect if hasattr(self.currentFeature, 'protect') and self.currentFeature.protect is not None else None
+        protect = self.currentExtension.protect if hasattr(self.currentExtension, 'protect') and self.currentExtension.protect is not None else None
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
-            version = self.currentFeature if isinstance(self.currentFeature, Version) else None
-            extension = [self.currentFeature] if isinstance(self.currentFeature, Extension) else []
+            extension = [self.currentExtension] if self.currentExtension is not None else []
             if alias is not None:
                 struct = self.vk.structs[alias]
                 # Some structs (ex VkAttachmentSampleCountInfoAMD) can have multiple alias pointing to same extension
                 struct.extensions += extension if extension and extension[0] not in struct.extensions else []
-                struct.version = version if struct.version is None else struct.version
+                struct.version = self.currentVersion if struct.version is None else struct.version
                 return
 
             union = category == 'union'
@@ -437,7 +530,7 @@ class BaseGenerator(OutputGenerator):
                 members.append(Member(name, type, externSync, optional, optionalPointer,
                                       noautovalidity, length, limittype, pointer, cdecl))
 
-            self.vk.structs[typeName] = Struct(typeName, extension, version, union,
+            self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, union,
                                                structExtends, protect, sType, returnedOnly,
                                                allowDuplicate, members)
 
