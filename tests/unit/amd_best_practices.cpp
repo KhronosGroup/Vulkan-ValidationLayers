@@ -638,6 +638,11 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     }
 
     InitState();
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     InitSwapchain();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

@@ -22,6 +22,10 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
