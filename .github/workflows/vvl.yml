@@ -184,6 +184,10 @@ jobs:
       steps:
         - uses: actions/checkout@v3
         - uses: lukka/get-cmake@latest
+        - name: Setup ccache
+          uses: hendrikmuhs/ccache-action@v1.2
+          with:
+            key: android-${{ matrix.abi }}-${{ matrix.build_tests }}-${{ matrix.stl_type }}
         - name: Configure
           run: |
             cmake -S . -B build/ --toolchain $ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
@@ -198,6 +202,9 @@ jobs:
             -D UPDATE_DEPS=ON \
             -D BUILD_WERROR=ON \
             -G "Ninja"
+          env:
+            CMAKE_C_COMPILER_LAUNCHER: ccache
+            CMAKE_CXX_COMPILER_LAUNCHER: ccache
         - name: Build
           run: cmake --build build/
         - name: Test
@@ -230,12 +237,13 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: macos-${{ matrix.macos_version }}
-      - name: Add ccache to PATH
-        run: echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
       - name: Install python dependencies
         run: python3 -m pip install jsonschema pyparsing
       - name: Build
         run: python3 scripts/github_ci_build_desktop.py --config release --osx ${{ matrix.macos_version }}
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
   mingw:
     runs-on: windows-latest
