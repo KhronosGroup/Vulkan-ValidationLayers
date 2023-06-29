@@ -20,6 +20,7 @@ static std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY
 // All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
 // enabled/disabled
 VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
     features.enabledValidationFeatureCount = size32(gpu_av_enables);
     // TODO - Add command line flag or env var or another system for setting this to 'zero' to allow for someone writting a new
