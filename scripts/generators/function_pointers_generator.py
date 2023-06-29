@@ -182,7 +182,7 @@ void InitCore(const char *api_name) {
         exit(1);
     }
 ''')
-        out.extend([f'    {x.name[2:]} = reinterpret_cast<PFN_{x.name}>(get_proc_address(lib_handle, "{x.name}"));\n' for x in self.vk.commands.values() if not x.extension])
+        out.extend([f'    {x.name[2:]} = reinterpret_cast<PFN_{x.name}>(get_proc_address(lib_handle, "{x.name}"));\n' for x in self.vk.commands.values() if not x.extensions])
         out.append('}')
 
         out.append('''
@@ -215,9 +215,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         for extension in [x for x in self.vk.extensions.values() if x.device and x.commands]:
             out.extend([f'#ifdef {extension.protect}\n'] if extension.protect else [])
             out.append('        {\n')
-            out.append(f'            "{extension.name}", [](VkInstance, VkDevice device) {{\n')
-            for command in [x for x in extension.commands]:
-                out.append(f'                {command.name[2:]} = reinterpret_cast<PFN_{command.name}>(GetDeviceProcAddr(device, "{command.name}"));\n')
+            instanceCommand = [x for x in extension.commands if x.instance]
+            deviceCommand = [x for x in extension.commands if x.device]
+            out.append(f'            "{extension.name}", [](VkInstance {"instance" if instanceCommand else ""}, VkDevice {"device" if deviceCommand else ""}) {{\n')
+            out.extend([f'                {command.name[2:]} = reinterpret_cast<PFN_{command.name}>(GetDeviceProcAddr(device, "{command.name}"));\n' for command in deviceCommand])
+            out.extend([f'                {command.name[2:]} = reinterpret_cast<PFN_{command.name}>(GetInstanceProcAddr(instance, "{command.name}"));\n' for command in instanceCommand])
             out.append('            }\n')
             out.append('        },\n')
             out.extend([f'#endif //{extension.protect}\n'] if extension.protect else [])
@@ -231,7 +233,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
 ''')
 
         out.append('void ResetAllExtensions() {\n')
-        for command in [x for x in self.vk.commands.values() if x.extension is not None]:
+        for command in [x for x in self.vk.commands.values() if x.extensions]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             out.append(f'    {command.name[2:]} = nullptr;\n')
             out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
