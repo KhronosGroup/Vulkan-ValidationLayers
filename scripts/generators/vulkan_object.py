@@ -100,7 +100,7 @@ class Command:
     # Attributes of <command>
     name: str
     alias: str # Because commands are interfaces into layers/drivers, we need all command alias
-    extension: Extension # Extensions that enable the commanads
+    extensions: List[Extension] # All extensions that enable the struct
     version: Version # None if Version 1.0
     protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
 

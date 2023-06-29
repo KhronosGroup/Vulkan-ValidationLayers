@@ -1284,7 +1284,7 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
 void InitDeviceExtension(VkInstance instance, VkDevice device, const char* extension_name) {
     static const vvl::unordered_map<std::string, std::function<void(VkInstance, VkDevice)>> initializers = {
         {
-            "VK_KHR_swapchain", [](VkInstance, VkDevice device) {
+            "VK_KHR_swapchain", [](VkInstance instance, VkDevice device) {
                 CreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(GetDeviceProcAddr(device, "vkCreateSwapchainKHR"));
                 DestroySwapchainKHR = reinterpret_cast<PFN_vkDestroySwapchainKHR>(GetDeviceProcAddr(device, "vkDestroySwapchainKHR"));
                 GetSwapchainImagesKHR = reinterpret_cast<PFN_vkGetSwapchainImagesKHR>(GetDeviceProcAddr(device, "vkGetSwapchainImagesKHR"));
@@ -1292,19 +1292,17 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 QueuePresentKHR = reinterpret_cast<PFN_vkQueuePresentKHR>(GetDeviceProcAddr(device, "vkQueuePresentKHR"));
                 GetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(GetDeviceProcAddr(device, "vkGetDeviceGroupPresentCapabilitiesKHR"));
                 GetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(GetDeviceProcAddr(device, "vkGetDeviceGroupSurfacePresentModesKHR"));
-                GetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDevicePresentRectanglesKHR"));
                 AcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(GetDeviceProcAddr(device, "vkAcquireNextImage2KHR"));
+                GetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDevicePresentRectanglesKHR"));
             }
         },
         {
-            "VK_KHR_display_swapchain", [](VkInstance, VkDevice device) {
+            "VK_KHR_display_swapchain", [](VkInstance , VkDevice device) {
                 CreateSharedSwapchainsKHR = reinterpret_cast<PFN_vkCreateSharedSwapchainsKHR>(GetDeviceProcAddr(device, "vkCreateSharedSwapchainsKHR"));
             }
         },
         {
-            "VK_KHR_video_queue", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceVideoCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceVideoCapabilitiesKHR"));
-                GetPhysicalDeviceVideoFormatPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceVideoFormatPropertiesKHR"));
+            "VK_KHR_video_queue", [](VkInstance instance, VkDevice device) {
                 CreateVideoSessionKHR = reinterpret_cast<PFN_vkCreateVideoSessionKHR>(GetDeviceProcAddr(device, "vkCreateVideoSessionKHR"));
                 DestroyVideoSessionKHR = reinterpret_cast<PFN_vkDestroyVideoSessionKHR>(GetDeviceProcAddr(device, "vkDestroyVideoSessionKHR"));
                 GetVideoSessionMemoryRequirementsKHR = reinterpret_cast<PFN_vkGetVideoSessionMemoryRequirementsKHR>(GetDeviceProcAddr(device, "vkGetVideoSessionMemoryRequirementsKHR"));
@@ -1315,74 +1313,81 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdBeginVideoCodingKHR = reinterpret_cast<PFN_vkCmdBeginVideoCodingKHR>(GetDeviceProcAddr(device, "vkCmdBeginVideoCodingKHR"));
                 CmdEndVideoCodingKHR = reinterpret_cast<PFN_vkCmdEndVideoCodingKHR>(GetDeviceProcAddr(device, "vkCmdEndVideoCodingKHR"));
                 CmdControlVideoCodingKHR = reinterpret_cast<PFN_vkCmdControlVideoCodingKHR>(GetDeviceProcAddr(device, "vkCmdControlVideoCodingKHR"));
+                GetPhysicalDeviceVideoCapabilitiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoCapabilitiesKHR"));
+                GetPhysicalDeviceVideoFormatPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoFormatPropertiesKHR"));
             }
         },
         {
-            "VK_KHR_video_decode_queue", [](VkInstance, VkDevice device) {
+            "VK_KHR_video_decode_queue", [](VkInstance , VkDevice device) {
                 CmdDecodeVideoKHR = reinterpret_cast<PFN_vkCmdDecodeVideoKHR>(GetDeviceProcAddr(device, "vkCmdDecodeVideoKHR"));
             }
         },
         {
-            "VK_KHR_dynamic_rendering", [](VkInstance, VkDevice device) {
+            "VK_KHR_dynamic_rendering", [](VkInstance , VkDevice device) {
                 CmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(GetDeviceProcAddr(device, "vkCmdBeginRenderingKHR"));
                 CmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(GetDeviceProcAddr(device, "vkCmdEndRenderingKHR"));
             }
         },
         {
-            "VK_KHR_device_group", [](VkInstance, VkDevice device) {
+            "VK_KHR_device_group", [](VkInstance instance, VkDevice device) {
                 GetDeviceGroupPeerMemoryFeaturesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPeerMemoryFeaturesKHR>(GetDeviceProcAddr(device, "vkGetDeviceGroupPeerMemoryFeaturesKHR"));
                 CmdSetDeviceMaskKHR = reinterpret_cast<PFN_vkCmdSetDeviceMaskKHR>(GetDeviceProcAddr(device, "vkCmdSetDeviceMaskKHR"));
                 CmdDispatchBaseKHR = reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(GetDeviceProcAddr(device, "vkCmdDispatchBaseKHR"));
+                GetDeviceGroupPresentCapabilitiesKHR = reinterpret_cast<PFN_vkGetDeviceGroupPresentCapabilitiesKHR>(GetDeviceProcAddr(device, "vkGetDeviceGroupPresentCapabilitiesKHR"));
+                GetDeviceGroupSurfacePresentModesKHR = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModesKHR>(GetDeviceProcAddr(device, "vkGetDeviceGroupSurfacePresentModesKHR"));
+                AcquireNextImage2KHR = reinterpret_cast<PFN_vkAcquireNextImage2KHR>(GetDeviceProcAddr(device, "vkAcquireNextImage2KHR"));
+                GetPhysicalDevicePresentRectanglesKHR = reinterpret_cast<PFN_vkGetPhysicalDevicePresentRectanglesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDevicePresentRectanglesKHR"));
             }
         },
         {
-            "VK_KHR_maintenance1", [](VkInstance, VkDevice device) {
+            "VK_KHR_maintenance1", [](VkInstance , VkDevice device) {
                 TrimCommandPoolKHR = reinterpret_cast<PFN_vkTrimCommandPoolKHR>(GetDeviceProcAddr(device, "vkTrimCommandPoolKHR"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_memory_win32", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_memory_win32", [](VkInstance , VkDevice device) {
                 GetMemoryWin32HandleKHR = reinterpret_cast<PFN_vkGetMemoryWin32HandleKHR>(GetDeviceProcAddr(device, "vkGetMemoryWin32HandleKHR"));
                 GetMemoryWin32HandlePropertiesKHR = reinterpret_cast<PFN_vkGetMemoryWin32HandlePropertiesKHR>(GetDeviceProcAddr(device, "vkGetMemoryWin32HandlePropertiesKHR"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_memory_fd", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_memory_fd", [](VkInstance , VkDevice device) {
                 GetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(GetDeviceProcAddr(device, "vkGetMemoryFdKHR"));
                 GetMemoryFdPropertiesKHR = reinterpret_cast<PFN_vkGetMemoryFdPropertiesKHR>(GetDeviceProcAddr(device, "vkGetMemoryFdPropertiesKHR"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_semaphore_win32", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_semaphore_win32", [](VkInstance , VkDevice device) {
                 ImportSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkImportSemaphoreWin32HandleKHR>(GetDeviceProcAddr(device, "vkImportSemaphoreWin32HandleKHR"));
                 GetSemaphoreWin32HandleKHR = reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(GetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_semaphore_fd", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_semaphore_fd", [](VkInstance , VkDevice device) {
                 ImportSemaphoreFdKHR = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(GetDeviceProcAddr(device, "vkImportSemaphoreFdKHR"));
                 GetSemaphoreFdKHR = reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(GetDeviceProcAddr(device, "vkGetSemaphoreFdKHR"));
             }
         },
         {
-            "VK_KHR_push_descriptor", [](VkInstance, VkDevice device) {
+            "VK_KHR_push_descriptor", [](VkInstance , VkDevice device) {
                 CmdPushDescriptorSetKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSetKHR"));
                 CmdPushDescriptorSetWithTemplateKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplateKHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSetWithTemplateKHR"));
             }
         },
         {
-            "VK_KHR_descriptor_update_template", [](VkInstance, VkDevice device) {
+            "VK_KHR_descriptor_update_template", [](VkInstance , VkDevice device) {
                 CreateDescriptorUpdateTemplateKHR = reinterpret_cast<PFN_vkCreateDescriptorUpdateTemplateKHR>(GetDeviceProcAddr(device, "vkCreateDescriptorUpdateTemplateKHR"));
                 DestroyDescriptorUpdateTemplateKHR = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplateKHR>(GetDeviceProcAddr(device, "vkDestroyDescriptorUpdateTemplateKHR"));
                 UpdateDescriptorSetWithTemplateKHR = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplateKHR>(GetDeviceProcAddr(device, "vkUpdateDescriptorSetWithTemplateKHR"));
+                CmdPushDescriptorSetWithTemplateKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetWithTemplateKHR>(GetDeviceProcAddr(device, "vkCmdPushDescriptorSetWithTemplateKHR"));
             }
         },
         {
-            "VK_KHR_create_renderpass2", [](VkInstance, VkDevice device) {
+            "VK_KHR_create_renderpass2", [](VkInstance , VkDevice device) {
                 CreateRenderPass2KHR = reinterpret_cast<PFN_vkCreateRenderPass2KHR>(GetDeviceProcAddr(device, "vkCreateRenderPass2KHR"));
                 CmdBeginRenderPass2KHR = reinterpret_cast<PFN_vkCmdBeginRenderPass2KHR>(GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR"));
                 CmdNextSubpass2KHR = reinterpret_cast<PFN_vkCmdNextSubpass2KHR>(GetDeviceProcAddr(device, "vkCmdNextSubpass2KHR"));
@@ -1390,89 +1395,89 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_KHR_shared_presentable_image", [](VkInstance, VkDevice device) {
+            "VK_KHR_shared_presentable_image", [](VkInstance , VkDevice device) {
                 GetSwapchainStatusKHR = reinterpret_cast<PFN_vkGetSwapchainStatusKHR>(GetDeviceProcAddr(device, "vkGetSwapchainStatusKHR"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_fence_win32", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_fence_win32", [](VkInstance , VkDevice device) {
                 ImportFenceWin32HandleKHR = reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(GetDeviceProcAddr(device, "vkImportFenceWin32HandleKHR"));
                 GetFenceWin32HandleKHR = reinterpret_cast<PFN_vkGetFenceWin32HandleKHR>(GetDeviceProcAddr(device, "vkGetFenceWin32HandleKHR"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_KHR_external_fence_fd", [](VkInstance, VkDevice device) {
+            "VK_KHR_external_fence_fd", [](VkInstance , VkDevice device) {
                 ImportFenceFdKHR = reinterpret_cast<PFN_vkImportFenceFdKHR>(GetDeviceProcAddr(device, "vkImportFenceFdKHR"));
                 GetFenceFdKHR = reinterpret_cast<PFN_vkGetFenceFdKHR>(GetDeviceProcAddr(device, "vkGetFenceFdKHR"));
             }
         },
         {
-            "VK_KHR_performance_query", [](VkInstance, VkDevice device) {
-                EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(GetDeviceProcAddr(device, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
-                GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"));
+            "VK_KHR_performance_query", [](VkInstance instance, VkDevice device) {
                 AcquireProfilingLockKHR = reinterpret_cast<PFN_vkAcquireProfilingLockKHR>(GetDeviceProcAddr(device, "vkAcquireProfilingLockKHR"));
                 ReleaseProfilingLockKHR = reinterpret_cast<PFN_vkReleaseProfilingLockKHR>(GetDeviceProcAddr(device, "vkReleaseProfilingLockKHR"));
+                EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR = reinterpret_cast<PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR>(GetInstanceProcAddr(instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"));
+                GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"));
             }
         },
         {
-            "VK_KHR_get_memory_requirements2", [](VkInstance, VkDevice device) {
+            "VK_KHR_get_memory_requirements2", [](VkInstance , VkDevice device) {
                 GetImageMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(GetDeviceProcAddr(device, "vkGetImageMemoryRequirements2KHR"));
                 GetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(GetDeviceProcAddr(device, "vkGetBufferMemoryRequirements2KHR"));
                 GetImageSparseMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetImageSparseMemoryRequirements2KHR>(GetDeviceProcAddr(device, "vkGetImageSparseMemoryRequirements2KHR"));
             }
         },
         {
-            "VK_KHR_sampler_ycbcr_conversion", [](VkInstance, VkDevice device) {
+            "VK_KHR_sampler_ycbcr_conversion", [](VkInstance , VkDevice device) {
                 CreateSamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(GetDeviceProcAddr(device, "vkCreateSamplerYcbcrConversionKHR"));
                 DestroySamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(GetDeviceProcAddr(device, "vkDestroySamplerYcbcrConversionKHR"));
             }
         },
         {
-            "VK_KHR_bind_memory2", [](VkInstance, VkDevice device) {
+            "VK_KHR_bind_memory2", [](VkInstance , VkDevice device) {
                 BindBufferMemory2KHR = reinterpret_cast<PFN_vkBindBufferMemory2KHR>(GetDeviceProcAddr(device, "vkBindBufferMemory2KHR"));
                 BindImageMemory2KHR = reinterpret_cast<PFN_vkBindImageMemory2KHR>(GetDeviceProcAddr(device, "vkBindImageMemory2KHR"));
             }
         },
         {
-            "VK_KHR_maintenance3", [](VkInstance, VkDevice device) {
+            "VK_KHR_maintenance3", [](VkInstance , VkDevice device) {
                 GetDescriptorSetLayoutSupportKHR = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupportKHR>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutSupportKHR"));
             }
         },
         {
-            "VK_KHR_draw_indirect_count", [](VkInstance, VkDevice device) {
+            "VK_KHR_draw_indirect_count", [](VkInstance , VkDevice device) {
                 CmdDrawIndirectCountKHR = reinterpret_cast<PFN_vkCmdDrawIndirectCountKHR>(GetDeviceProcAddr(device, "vkCmdDrawIndirectCountKHR"));
                 CmdDrawIndexedIndirectCountKHR = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(GetDeviceProcAddr(device, "vkCmdDrawIndexedIndirectCountKHR"));
             }
         },
         {
-            "VK_KHR_timeline_semaphore", [](VkInstance, VkDevice device) {
+            "VK_KHR_timeline_semaphore", [](VkInstance , VkDevice device) {
                 GetSemaphoreCounterValueKHR = reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(GetDeviceProcAddr(device, "vkGetSemaphoreCounterValueKHR"));
                 WaitSemaphoresKHR = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(GetDeviceProcAddr(device, "vkWaitSemaphoresKHR"));
                 SignalSemaphoreKHR = reinterpret_cast<PFN_vkSignalSemaphoreKHR>(GetDeviceProcAddr(device, "vkSignalSemaphoreKHR"));
             }
         },
         {
-            "VK_KHR_fragment_shading_rate", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceFragmentShadingRatesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceFragmentShadingRatesKHR"));
+            "VK_KHR_fragment_shading_rate", [](VkInstance instance, VkDevice device) {
                 CmdSetFragmentShadingRateKHR = reinterpret_cast<PFN_vkCmdSetFragmentShadingRateKHR>(GetDeviceProcAddr(device, "vkCmdSetFragmentShadingRateKHR"));
+                GetPhysicalDeviceFragmentShadingRatesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceFragmentShadingRatesKHR"));
             }
         },
         {
-            "VK_KHR_present_wait", [](VkInstance, VkDevice device) {
+            "VK_KHR_present_wait", [](VkInstance , VkDevice device) {
                 WaitForPresentKHR = reinterpret_cast<PFN_vkWaitForPresentKHR>(GetDeviceProcAddr(device, "vkWaitForPresentKHR"));
             }
         },
         {
-            "VK_KHR_buffer_device_address", [](VkInstance, VkDevice device) {
+            "VK_KHR_buffer_device_address", [](VkInstance , VkDevice device) {
                 GetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(GetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR"));
                 GetBufferOpaqueCaptureAddressKHR = reinterpret_cast<PFN_vkGetBufferOpaqueCaptureAddressKHR>(GetDeviceProcAddr(device, "vkGetBufferOpaqueCaptureAddressKHR"));
                 GetDeviceMemoryOpaqueCaptureAddressKHR = reinterpret_cast<PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR>(GetDeviceProcAddr(device, "vkGetDeviceMemoryOpaqueCaptureAddressKHR"));
             }
         },
         {
-            "VK_KHR_deferred_host_operations", [](VkInstance, VkDevice device) {
+            "VK_KHR_deferred_host_operations", [](VkInstance , VkDevice device) {
                 CreateDeferredOperationKHR = reinterpret_cast<PFN_vkCreateDeferredOperationKHR>(GetDeviceProcAddr(device, "vkCreateDeferredOperationKHR"));
                 DestroyDeferredOperationKHR = reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(GetDeviceProcAddr(device, "vkDestroyDeferredOperationKHR"));
                 GetDeferredOperationMaxConcurrencyKHR = reinterpret_cast<PFN_vkGetDeferredOperationMaxConcurrencyKHR>(GetDeviceProcAddr(device, "vkGetDeferredOperationMaxConcurrencyKHR"));
@@ -1481,29 +1486,29 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_KHR_pipeline_executable_properties", [](VkInstance, VkDevice device) {
+            "VK_KHR_pipeline_executable_properties", [](VkInstance , VkDevice device) {
                 GetPipelineExecutablePropertiesKHR = reinterpret_cast<PFN_vkGetPipelineExecutablePropertiesKHR>(GetDeviceProcAddr(device, "vkGetPipelineExecutablePropertiesKHR"));
                 GetPipelineExecutableStatisticsKHR = reinterpret_cast<PFN_vkGetPipelineExecutableStatisticsKHR>(GetDeviceProcAddr(device, "vkGetPipelineExecutableStatisticsKHR"));
                 GetPipelineExecutableInternalRepresentationsKHR = reinterpret_cast<PFN_vkGetPipelineExecutableInternalRepresentationsKHR>(GetDeviceProcAddr(device, "vkGetPipelineExecutableInternalRepresentationsKHR"));
             }
         },
         {
-            "VK_KHR_map_memory2", [](VkInstance, VkDevice device) {
+            "VK_KHR_map_memory2", [](VkInstance , VkDevice device) {
                 MapMemory2KHR = reinterpret_cast<PFN_vkMapMemory2KHR>(GetDeviceProcAddr(device, "vkMapMemory2KHR"));
                 UnmapMemory2KHR = reinterpret_cast<PFN_vkUnmapMemory2KHR>(GetDeviceProcAddr(device, "vkUnmapMemory2KHR"));
             }
         },
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {
-            "VK_KHR_video_encode_queue", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR"));
+            "VK_KHR_video_encode_queue", [](VkInstance instance, VkDevice device) {
                 GetEncodedVideoSessionParametersKHR = reinterpret_cast<PFN_vkGetEncodedVideoSessionParametersKHR>(GetDeviceProcAddr(device, "vkGetEncodedVideoSessionParametersKHR"));
                 CmdEncodeVideoKHR = reinterpret_cast<PFN_vkCmdEncodeVideoKHR>(GetDeviceProcAddr(device, "vkCmdEncodeVideoKHR"));
+                GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR"));
             }
         },
 #endif //VK_ENABLE_BETA_EXTENSIONS
         {
-            "VK_KHR_synchronization2", [](VkInstance, VkDevice device) {
+            "VK_KHR_synchronization2", [](VkInstance , VkDevice device) {
                 CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(GetDeviceProcAddr(device, "vkCmdSetEvent2KHR"));
                 CmdResetEvent2KHR = reinterpret_cast<PFN_vkCmdResetEvent2KHR>(GetDeviceProcAddr(device, "vkCmdResetEvent2KHR"));
                 CmdWaitEvents2KHR = reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(GetDeviceProcAddr(device, "vkCmdWaitEvents2KHR"));
@@ -1515,7 +1520,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_KHR_copy_commands2", [](VkInstance, VkDevice device) {
+            "VK_KHR_copy_commands2", [](VkInstance , VkDevice device) {
                 CmdCopyBuffer2KHR = reinterpret_cast<PFN_vkCmdCopyBuffer2KHR>(GetDeviceProcAddr(device, "vkCmdCopyBuffer2KHR"));
                 CmdCopyImage2KHR = reinterpret_cast<PFN_vkCmdCopyImage2KHR>(GetDeviceProcAddr(device, "vkCmdCopyImage2KHR"));
                 CmdCopyBufferToImage2KHR = reinterpret_cast<PFN_vkCmdCopyBufferToImage2KHR>(GetDeviceProcAddr(device, "vkCmdCopyBufferToImage2KHR"));
@@ -1525,24 +1530,24 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_KHR_ray_tracing_maintenance1", [](VkInstance, VkDevice device) {
+            "VK_KHR_ray_tracing_maintenance1", [](VkInstance , VkDevice device) {
                 CmdTraceRaysIndirect2KHR = reinterpret_cast<PFN_vkCmdTraceRaysIndirect2KHR>(GetDeviceProcAddr(device, "vkCmdTraceRaysIndirect2KHR"));
             }
         },
         {
-            "VK_KHR_maintenance4", [](VkInstance, VkDevice device) {
+            "VK_KHR_maintenance4", [](VkInstance , VkDevice device) {
                 GetDeviceBufferMemoryRequirementsKHR = reinterpret_cast<PFN_vkGetDeviceBufferMemoryRequirementsKHR>(GetDeviceProcAddr(device, "vkGetDeviceBufferMemoryRequirementsKHR"));
                 GetDeviceImageMemoryRequirementsKHR = reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(GetDeviceProcAddr(device, "vkGetDeviceImageMemoryRequirementsKHR"));
                 GetDeviceImageSparseMemoryRequirementsKHR = reinterpret_cast<PFN_vkGetDeviceImageSparseMemoryRequirementsKHR>(GetDeviceProcAddr(device, "vkGetDeviceImageSparseMemoryRequirementsKHR"));
             }
         },
         {
-            "VK_KHR_cooperative_matrix", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceCooperativeMatrixPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR"));
+            "VK_KHR_cooperative_matrix", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceCooperativeMatrixPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR"));
             }
         },
         {
-            "VK_EXT_debug_marker", [](VkInstance, VkDevice device) {
+            "VK_EXT_debug_marker", [](VkInstance , VkDevice device) {
                 DebugMarkerSetObjectTagEXT = reinterpret_cast<PFN_vkDebugMarkerSetObjectTagEXT>(GetDeviceProcAddr(device, "vkDebugMarkerSetObjectTagEXT"));
                 DebugMarkerSetObjectNameEXT = reinterpret_cast<PFN_vkDebugMarkerSetObjectNameEXT>(GetDeviceProcAddr(device, "vkDebugMarkerSetObjectNameEXT"));
                 CmdDebugMarkerBeginEXT = reinterpret_cast<PFN_vkCmdDebugMarkerBeginEXT>(GetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT"));
@@ -1551,7 +1556,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_transform_feedback", [](VkInstance, VkDevice device) {
+            "VK_EXT_transform_feedback", [](VkInstance , VkDevice device) {
                 CmdBindTransformFeedbackBuffersEXT = reinterpret_cast<PFN_vkCmdBindTransformFeedbackBuffersEXT>(GetDeviceProcAddr(device, "vkCmdBindTransformFeedbackBuffersEXT"));
                 CmdBeginTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdBeginTransformFeedbackEXT>(GetDeviceProcAddr(device, "vkCmdBeginTransformFeedbackEXT"));
                 CmdEndTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdEndTransformFeedbackEXT>(GetDeviceProcAddr(device, "vkCmdEndTransformFeedbackEXT"));
@@ -1561,7 +1566,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_NVX_binary_import", [](VkInstance, VkDevice device) {
+            "VK_NVX_binary_import", [](VkInstance , VkDevice device) {
                 CreateCuModuleNVX = reinterpret_cast<PFN_vkCreateCuModuleNVX>(GetDeviceProcAddr(device, "vkCreateCuModuleNVX"));
                 CreateCuFunctionNVX = reinterpret_cast<PFN_vkCreateCuFunctionNVX>(GetDeviceProcAddr(device, "vkCreateCuFunctionNVX"));
                 DestroyCuModuleNVX = reinterpret_cast<PFN_vkDestroyCuModuleNVX>(GetDeviceProcAddr(device, "vkDestroyCuModuleNVX"));
@@ -1570,42 +1575,42 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_NVX_image_view_handle", [](VkInstance, VkDevice device) {
+            "VK_NVX_image_view_handle", [](VkInstance , VkDevice device) {
                 GetImageViewHandleNVX = reinterpret_cast<PFN_vkGetImageViewHandleNVX>(GetDeviceProcAddr(device, "vkGetImageViewHandleNVX"));
                 GetImageViewAddressNVX = reinterpret_cast<PFN_vkGetImageViewAddressNVX>(GetDeviceProcAddr(device, "vkGetImageViewAddressNVX"));
             }
         },
         {
-            "VK_AMD_draw_indirect_count", [](VkInstance, VkDevice device) {
+            "VK_AMD_draw_indirect_count", [](VkInstance , VkDevice device) {
                 CmdDrawIndirectCountAMD = reinterpret_cast<PFN_vkCmdDrawIndirectCountAMD>(GetDeviceProcAddr(device, "vkCmdDrawIndirectCountAMD"));
                 CmdDrawIndexedIndirectCountAMD = reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountAMD>(GetDeviceProcAddr(device, "vkCmdDrawIndexedIndirectCountAMD"));
             }
         },
         {
-            "VK_AMD_shader_info", [](VkInstance, VkDevice device) {
+            "VK_AMD_shader_info", [](VkInstance , VkDevice device) {
                 GetShaderInfoAMD = reinterpret_cast<PFN_vkGetShaderInfoAMD>(GetDeviceProcAddr(device, "vkGetShaderInfoAMD"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_NV_external_memory_win32", [](VkInstance, VkDevice device) {
+            "VK_NV_external_memory_win32", [](VkInstance , VkDevice device) {
                 GetMemoryWin32HandleNV = reinterpret_cast<PFN_vkGetMemoryWin32HandleNV>(GetDeviceProcAddr(device, "vkGetMemoryWin32HandleNV"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_EXT_conditional_rendering", [](VkInstance, VkDevice device) {
+            "VK_EXT_conditional_rendering", [](VkInstance , VkDevice device) {
                 CmdBeginConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdBeginConditionalRenderingEXT>(GetDeviceProcAddr(device, "vkCmdBeginConditionalRenderingEXT"));
                 CmdEndConditionalRenderingEXT = reinterpret_cast<PFN_vkCmdEndConditionalRenderingEXT>(GetDeviceProcAddr(device, "vkCmdEndConditionalRenderingEXT"));
             }
         },
         {
-            "VK_NV_clip_space_w_scaling", [](VkInstance, VkDevice device) {
+            "VK_NV_clip_space_w_scaling", [](VkInstance , VkDevice device) {
                 CmdSetViewportWScalingNV = reinterpret_cast<PFN_vkCmdSetViewportWScalingNV>(GetDeviceProcAddr(device, "vkCmdSetViewportWScalingNV"));
             }
         },
         {
-            "VK_EXT_display_control", [](VkInstance, VkDevice device) {
+            "VK_EXT_display_control", [](VkInstance , VkDevice device) {
                 DisplayPowerControlEXT = reinterpret_cast<PFN_vkDisplayPowerControlEXT>(GetDeviceProcAddr(device, "vkDisplayPowerControlEXT"));
                 RegisterDeviceEventEXT = reinterpret_cast<PFN_vkRegisterDeviceEventEXT>(GetDeviceProcAddr(device, "vkRegisterDeviceEventEXT"));
                 RegisterDisplayEventEXT = reinterpret_cast<PFN_vkRegisterDisplayEventEXT>(GetDeviceProcAddr(device, "vkRegisterDisplayEventEXT"));
@@ -1613,44 +1618,44 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_GOOGLE_display_timing", [](VkInstance, VkDevice device) {
+            "VK_GOOGLE_display_timing", [](VkInstance , VkDevice device) {
                 GetRefreshCycleDurationGOOGLE = reinterpret_cast<PFN_vkGetRefreshCycleDurationGOOGLE>(GetDeviceProcAddr(device, "vkGetRefreshCycleDurationGOOGLE"));
                 GetPastPresentationTimingGOOGLE = reinterpret_cast<PFN_vkGetPastPresentationTimingGOOGLE>(GetDeviceProcAddr(device, "vkGetPastPresentationTimingGOOGLE"));
             }
         },
         {
-            "VK_EXT_discard_rectangles", [](VkInstance, VkDevice device) {
+            "VK_EXT_discard_rectangles", [](VkInstance , VkDevice device) {
                 CmdSetDiscardRectangleEXT = reinterpret_cast<PFN_vkCmdSetDiscardRectangleEXT>(GetDeviceProcAddr(device, "vkCmdSetDiscardRectangleEXT"));
                 CmdSetDiscardRectangleEnableEXT = reinterpret_cast<PFN_vkCmdSetDiscardRectangleEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDiscardRectangleEnableEXT"));
                 CmdSetDiscardRectangleModeEXT = reinterpret_cast<PFN_vkCmdSetDiscardRectangleModeEXT>(GetDeviceProcAddr(device, "vkCmdSetDiscardRectangleModeEXT"));
             }
         },
         {
-            "VK_EXT_hdr_metadata", [](VkInstance, VkDevice device) {
+            "VK_EXT_hdr_metadata", [](VkInstance , VkDevice device) {
                 SetHdrMetadataEXT = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(GetDeviceProcAddr(device, "vkSetHdrMetadataEXT"));
             }
         },
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         {
-            "VK_ANDROID_external_memory_android_hardware_buffer", [](VkInstance, VkDevice device) {
+            "VK_ANDROID_external_memory_android_hardware_buffer", [](VkInstance , VkDevice device) {
                 GetAndroidHardwareBufferPropertiesANDROID = reinterpret_cast<PFN_vkGetAndroidHardwareBufferPropertiesANDROID>(GetDeviceProcAddr(device, "vkGetAndroidHardwareBufferPropertiesANDROID"));
                 GetMemoryAndroidHardwareBufferANDROID = reinterpret_cast<PFN_vkGetMemoryAndroidHardwareBufferANDROID>(GetDeviceProcAddr(device, "vkGetMemoryAndroidHardwareBufferANDROID"));
             }
         },
 #endif //VK_USE_PLATFORM_ANDROID_KHR
         {
-            "VK_EXT_sample_locations", [](VkInstance, VkDevice device) {
+            "VK_EXT_sample_locations", [](VkInstance instance, VkDevice device) {
                 CmdSetSampleLocationsEXT = reinterpret_cast<PFN_vkCmdSetSampleLocationsEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleLocationsEXT"));
-                GetPhysicalDeviceMultisamplePropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceMultisamplePropertiesEXT"));
+                GetPhysicalDeviceMultisamplePropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceMultisamplePropertiesEXT"));
             }
         },
         {
-            "VK_EXT_image_drm_format_modifier", [](VkInstance, VkDevice device) {
+            "VK_EXT_image_drm_format_modifier", [](VkInstance , VkDevice device) {
                 GetImageDrmFormatModifierPropertiesEXT = reinterpret_cast<PFN_vkGetImageDrmFormatModifierPropertiesEXT>(GetDeviceProcAddr(device, "vkGetImageDrmFormatModifierPropertiesEXT"));
             }
         },
         {
-            "VK_EXT_validation_cache", [](VkInstance, VkDevice device) {
+            "VK_EXT_validation_cache", [](VkInstance , VkDevice device) {
                 CreateValidationCacheEXT = reinterpret_cast<PFN_vkCreateValidationCacheEXT>(GetDeviceProcAddr(device, "vkCreateValidationCacheEXT"));
                 DestroyValidationCacheEXT = reinterpret_cast<PFN_vkDestroyValidationCacheEXT>(GetDeviceProcAddr(device, "vkDestroyValidationCacheEXT"));
                 MergeValidationCachesEXT = reinterpret_cast<PFN_vkMergeValidationCachesEXT>(GetDeviceProcAddr(device, "vkMergeValidationCachesEXT"));
@@ -1658,14 +1663,14 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_NV_shading_rate_image", [](VkInstance, VkDevice device) {
+            "VK_NV_shading_rate_image", [](VkInstance , VkDevice device) {
                 CmdBindShadingRateImageNV = reinterpret_cast<PFN_vkCmdBindShadingRateImageNV>(GetDeviceProcAddr(device, "vkCmdBindShadingRateImageNV"));
                 CmdSetViewportShadingRatePaletteNV = reinterpret_cast<PFN_vkCmdSetViewportShadingRatePaletteNV>(GetDeviceProcAddr(device, "vkCmdSetViewportShadingRatePaletteNV"));
                 CmdSetCoarseSampleOrderNV = reinterpret_cast<PFN_vkCmdSetCoarseSampleOrderNV>(GetDeviceProcAddr(device, "vkCmdSetCoarseSampleOrderNV"));
             }
         },
         {
-            "VK_NV_ray_tracing", [](VkInstance, VkDevice device) {
+            "VK_NV_ray_tracing", [](VkInstance , VkDevice device) {
                 CreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(GetDeviceProcAddr(device, "vkCreateAccelerationStructureNV"));
                 DestroyAccelerationStructureNV = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(GetDeviceProcAddr(device, "vkDestroyAccelerationStructureNV"));
                 GetAccelerationStructureMemoryRequirementsNV = reinterpret_cast<PFN_vkGetAccelerationStructureMemoryRequirementsNV>(GetDeviceProcAddr(device, "vkGetAccelerationStructureMemoryRequirementsNV"));
@@ -1674,7 +1679,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdCopyAccelerationStructureNV = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureNV>(GetDeviceProcAddr(device, "vkCmdCopyAccelerationStructureNV"));
                 CmdTraceRaysNV = reinterpret_cast<PFN_vkCmdTraceRaysNV>(GetDeviceProcAddr(device, "vkCmdTraceRaysNV"));
                 CreateRayTracingPipelinesNV = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(GetDeviceProcAddr(device, "vkCreateRayTracingPipelinesNV"));
-                GetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(GetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesKHR"));
                 GetRayTracingShaderGroupHandlesNV = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesNV>(GetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesNV"));
                 GetAccelerationStructureHandleNV = reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(GetDeviceProcAddr(device, "vkGetAccelerationStructureHandleNV"));
                 CmdWriteAccelerationStructuresPropertiesNV = reinterpret_cast<PFN_vkCmdWriteAccelerationStructuresPropertiesNV>(GetDeviceProcAddr(device, "vkCmdWriteAccelerationStructuresPropertiesNV"));
@@ -1682,42 +1686,42 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_external_memory_host", [](VkInstance, VkDevice device) {
+            "VK_EXT_external_memory_host", [](VkInstance , VkDevice device) {
                 GetMemoryHostPointerPropertiesEXT = reinterpret_cast<PFN_vkGetMemoryHostPointerPropertiesEXT>(GetDeviceProcAddr(device, "vkGetMemoryHostPointerPropertiesEXT"));
             }
         },
         {
-            "VK_AMD_buffer_marker", [](VkInstance, VkDevice device) {
+            "VK_AMD_buffer_marker", [](VkInstance , VkDevice device) {
                 CmdWriteBufferMarkerAMD = reinterpret_cast<PFN_vkCmdWriteBufferMarkerAMD>(GetDeviceProcAddr(device, "vkCmdWriteBufferMarkerAMD"));
             }
         },
         {
-            "VK_EXT_calibrated_timestamps", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceCalibrateableTimeDomainsEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
+            "VK_EXT_calibrated_timestamps", [](VkInstance instance, VkDevice device) {
                 GetCalibratedTimestampsEXT = reinterpret_cast<PFN_vkGetCalibratedTimestampsEXT>(GetDeviceProcAddr(device, "vkGetCalibratedTimestampsEXT"));
+                GetPhysicalDeviceCalibrateableTimeDomainsEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"));
             }
         },
         {
-            "VK_NV_mesh_shader", [](VkInstance, VkDevice device) {
+            "VK_NV_mesh_shader", [](VkInstance , VkDevice device) {
                 CmdDrawMeshTasksNV = reinterpret_cast<PFN_vkCmdDrawMeshTasksNV>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksNV"));
                 CmdDrawMeshTasksIndirectNV = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectNV>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirectNV"));
                 CmdDrawMeshTasksIndirectCountNV = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectCountNV>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirectCountNV"));
             }
         },
         {
-            "VK_NV_scissor_exclusive", [](VkInstance, VkDevice device) {
+            "VK_NV_scissor_exclusive", [](VkInstance , VkDevice device) {
                 CmdSetExclusiveScissorEnableNV = reinterpret_cast<PFN_vkCmdSetExclusiveScissorEnableNV>(GetDeviceProcAddr(device, "vkCmdSetExclusiveScissorEnableNV"));
                 CmdSetExclusiveScissorNV = reinterpret_cast<PFN_vkCmdSetExclusiveScissorNV>(GetDeviceProcAddr(device, "vkCmdSetExclusiveScissorNV"));
             }
         },
         {
-            "VK_NV_device_diagnostic_checkpoints", [](VkInstance, VkDevice device) {
+            "VK_NV_device_diagnostic_checkpoints", [](VkInstance , VkDevice device) {
                 CmdSetCheckpointNV = reinterpret_cast<PFN_vkCmdSetCheckpointNV>(GetDeviceProcAddr(device, "vkCmdSetCheckpointNV"));
                 GetQueueCheckpointDataNV = reinterpret_cast<PFN_vkGetQueueCheckpointDataNV>(GetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV"));
             }
         },
         {
-            "VK_INTEL_performance_query", [](VkInstance, VkDevice device) {
+            "VK_INTEL_performance_query", [](VkInstance , VkDevice device) {
                 InitializePerformanceApiINTEL = reinterpret_cast<PFN_vkInitializePerformanceApiINTEL>(GetDeviceProcAddr(device, "vkInitializePerformanceApiINTEL"));
                 UninitializePerformanceApiINTEL = reinterpret_cast<PFN_vkUninitializePerformanceApiINTEL>(GetDeviceProcAddr(device, "vkUninitializePerformanceApiINTEL"));
                 CmdSetPerformanceMarkerINTEL = reinterpret_cast<PFN_vkCmdSetPerformanceMarkerINTEL>(GetDeviceProcAddr(device, "vkCmdSetPerformanceMarkerINTEL"));
@@ -1730,52 +1734,52 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_AMD_display_native_hdr", [](VkInstance, VkDevice device) {
+            "VK_AMD_display_native_hdr", [](VkInstance , VkDevice device) {
                 SetLocalDimmingAMD = reinterpret_cast<PFN_vkSetLocalDimmingAMD>(GetDeviceProcAddr(device, "vkSetLocalDimmingAMD"));
             }
         },
         {
-            "VK_EXT_buffer_device_address", [](VkInstance, VkDevice device) {
+            "VK_EXT_buffer_device_address", [](VkInstance , VkDevice device) {
                 GetBufferDeviceAddressEXT = reinterpret_cast<PFN_vkGetBufferDeviceAddressEXT>(GetDeviceProcAddr(device, "vkGetBufferDeviceAddressEXT"));
             }
         },
         {
-            "VK_EXT_tooling_info", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceToolPropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceToolPropertiesEXT"));
+            "VK_EXT_tooling_info", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceToolPropertiesEXT = reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
             }
         },
         {
-            "VK_NV_cooperative_matrix", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceCooperativeMatrixPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceCooperativeMatrixPropertiesNV"));
+            "VK_NV_cooperative_matrix", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceCooperativeMatrixPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixPropertiesNV"));
             }
         },
         {
-            "VK_NV_coverage_reduction_mode", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV = reinterpret_cast<PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV"));
+            "VK_NV_coverage_reduction_mode", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV = reinterpret_cast<PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_EXT_full_screen_exclusive", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceSurfacePresentModes2EXT"));
+            "VK_EXT_full_screen_exclusive", [](VkInstance instance, VkDevice device) {
                 AcquireFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkAcquireFullScreenExclusiveModeEXT>(GetDeviceProcAddr(device, "vkAcquireFullScreenExclusiveModeEXT"));
                 ReleaseFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkReleaseFullScreenExclusiveModeEXT>(GetDeviceProcAddr(device, "vkReleaseFullScreenExclusiveModeEXT"));
                 GetDeviceGroupSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetDeviceGroupSurfacePresentModes2EXT>(GetDeviceProcAddr(device, "vkGetDeviceGroupSurfacePresentModes2EXT"));
+                GetPhysicalDeviceSurfacePresentModes2EXT = reinterpret_cast<PFN_vkGetPhysicalDeviceSurfacePresentModes2EXT>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModes2EXT"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_EXT_line_rasterization", [](VkInstance, VkDevice device) {
+            "VK_EXT_line_rasterization", [](VkInstance , VkDevice device) {
                 CmdSetLineStippleEXT = reinterpret_cast<PFN_vkCmdSetLineStippleEXT>(GetDeviceProcAddr(device, "vkCmdSetLineStippleEXT"));
             }
         },
         {
-            "VK_EXT_host_query_reset", [](VkInstance, VkDevice device) {
+            "VK_EXT_host_query_reset", [](VkInstance , VkDevice device) {
                 ResetQueryPoolEXT = reinterpret_cast<PFN_vkResetQueryPoolEXT>(GetDeviceProcAddr(device, "vkResetQueryPoolEXT"));
             }
         },
         {
-            "VK_EXT_extended_dynamic_state", [](VkInstance, VkDevice device) {
+            "VK_EXT_extended_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetCullModeEXT = reinterpret_cast<PFN_vkCmdSetCullModeEXT>(GetDeviceProcAddr(device, "vkCmdSetCullModeEXT"));
                 CmdSetFrontFaceEXT = reinterpret_cast<PFN_vkCmdSetFrontFaceEXT>(GetDeviceProcAddr(device, "vkCmdSetFrontFaceEXT"));
                 CmdSetPrimitiveTopologyEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveTopologyEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveTopologyEXT"));
@@ -1791,12 +1795,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_swapchain_maintenance1", [](VkInstance, VkDevice device) {
+            "VK_EXT_swapchain_maintenance1", [](VkInstance , VkDevice device) {
                 ReleaseSwapchainImagesEXT = reinterpret_cast<PFN_vkReleaseSwapchainImagesEXT>(GetDeviceProcAddr(device, "vkReleaseSwapchainImagesEXT"));
             }
         },
         {
-            "VK_NV_device_generated_commands", [](VkInstance, VkDevice device) {
+            "VK_NV_device_generated_commands", [](VkInstance , VkDevice device) {
                 GetGeneratedCommandsMemoryRequirementsNV = reinterpret_cast<PFN_vkGetGeneratedCommandsMemoryRequirementsNV>(GetDeviceProcAddr(device, "vkGetGeneratedCommandsMemoryRequirementsNV"));
                 CmdPreprocessGeneratedCommandsNV = reinterpret_cast<PFN_vkCmdPreprocessGeneratedCommandsNV>(GetDeviceProcAddr(device, "vkCmdPreprocessGeneratedCommandsNV"));
                 CmdExecuteGeneratedCommandsNV = reinterpret_cast<PFN_vkCmdExecuteGeneratedCommandsNV>(GetDeviceProcAddr(device, "vkCmdExecuteGeneratedCommandsNV"));
@@ -1806,12 +1810,12 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_depth_bias_control", [](VkInstance, VkDevice device) {
+            "VK_EXT_depth_bias_control", [](VkInstance , VkDevice device) {
                 CmdSetDepthBias2EXT = reinterpret_cast<PFN_vkCmdSetDepthBias2EXT>(GetDeviceProcAddr(device, "vkCmdSetDepthBias2EXT"));
             }
         },
         {
-            "VK_EXT_private_data", [](VkInstance, VkDevice device) {
+            "VK_EXT_private_data", [](VkInstance , VkDevice device) {
                 CreatePrivateDataSlotEXT = reinterpret_cast<PFN_vkCreatePrivateDataSlotEXT>(GetDeviceProcAddr(device, "vkCreatePrivateDataSlotEXT"));
                 DestroyPrivateDataSlotEXT = reinterpret_cast<PFN_vkDestroyPrivateDataSlotEXT>(GetDeviceProcAddr(device, "vkDestroyPrivateDataSlotEXT"));
                 SetPrivateDataEXT = reinterpret_cast<PFN_vkSetPrivateDataEXT>(GetDeviceProcAddr(device, "vkSetPrivateDataEXT"));
@@ -1820,13 +1824,13 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
-            "VK_EXT_metal_objects", [](VkInstance, VkDevice device) {
+            "VK_EXT_metal_objects", [](VkInstance , VkDevice device) {
                 ExportMetalObjectsEXT = reinterpret_cast<PFN_vkExportMetalObjectsEXT>(GetDeviceProcAddr(device, "vkExportMetalObjectsEXT"));
             }
         },
 #endif //VK_USE_PLATFORM_METAL_EXT
         {
-            "VK_EXT_descriptor_buffer", [](VkInstance, VkDevice device) {
+            "VK_EXT_descriptor_buffer", [](VkInstance , VkDevice device) {
                 GetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutSizeEXT"));
                 GetDescriptorSetLayoutBindingOffsetEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutBindingOffsetEXT"));
                 GetDescriptorEXT = reinterpret_cast<PFN_vkGetDescriptorEXT>(GetDeviceProcAddr(device, "vkGetDescriptorEXT"));
@@ -1841,36 +1845,36 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_NV_fragment_shading_rate_enums", [](VkInstance, VkDevice device) {
+            "VK_NV_fragment_shading_rate_enums", [](VkInstance , VkDevice device) {
                 CmdSetFragmentShadingRateEnumNV = reinterpret_cast<PFN_vkCmdSetFragmentShadingRateEnumNV>(GetDeviceProcAddr(device, "vkCmdSetFragmentShadingRateEnumNV"));
             }
         },
         {
-            "VK_EXT_image_compression_control", [](VkInstance, VkDevice device) {
+            "VK_EXT_image_compression_control", [](VkInstance , VkDevice device) {
                 GetImageSubresourceLayout2EXT = reinterpret_cast<PFN_vkGetImageSubresourceLayout2EXT>(GetDeviceProcAddr(device, "vkGetImageSubresourceLayout2EXT"));
             }
         },
         {
-            "VK_EXT_device_fault", [](VkInstance, VkDevice device) {
+            "VK_EXT_device_fault", [](VkInstance , VkDevice device) {
                 GetDeviceFaultInfoEXT = reinterpret_cast<PFN_vkGetDeviceFaultInfoEXT>(GetDeviceProcAddr(device, "vkGetDeviceFaultInfoEXT"));
             }
         },
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_NV_acquire_winrt_display", [](VkInstance, VkDevice device) {
-                AcquireWinrtDisplayNV = reinterpret_cast<PFN_vkAcquireWinrtDisplayNV>(GetDeviceProcAddr(device, "vkAcquireWinrtDisplayNV"));
-                GetWinrtDisplayNV = reinterpret_cast<PFN_vkGetWinrtDisplayNV>(GetDeviceProcAddr(device, "vkGetWinrtDisplayNV"));
+            "VK_NV_acquire_winrt_display", [](VkInstance instance, VkDevice ) {
+                AcquireWinrtDisplayNV = reinterpret_cast<PFN_vkAcquireWinrtDisplayNV>(GetInstanceProcAddr(instance, "vkAcquireWinrtDisplayNV"));
+                GetWinrtDisplayNV = reinterpret_cast<PFN_vkGetWinrtDisplayNV>(GetInstanceProcAddr(instance, "vkGetWinrtDisplayNV"));
             }
         },
 #endif //VK_USE_PLATFORM_WIN32_KHR
         {
-            "VK_EXT_vertex_input_dynamic_state", [](VkInstance, VkDevice device) {
+            "VK_EXT_vertex_input_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetVertexInputEXT = reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(GetDeviceProcAddr(device, "vkCmdSetVertexInputEXT"));
             }
         },
 #ifdef VK_USE_PLATFORM_FUCHSIA
         {
-            "VK_FUCHSIA_external_memory", [](VkInstance, VkDevice device) {
+            "VK_FUCHSIA_external_memory", [](VkInstance , VkDevice device) {
                 GetMemoryZirconHandleFUCHSIA = reinterpret_cast<PFN_vkGetMemoryZirconHandleFUCHSIA>(GetDeviceProcAddr(device, "vkGetMemoryZirconHandleFUCHSIA"));
                 GetMemoryZirconHandlePropertiesFUCHSIA = reinterpret_cast<PFN_vkGetMemoryZirconHandlePropertiesFUCHSIA>(GetDeviceProcAddr(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA"));
             }
@@ -1878,7 +1882,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
 #endif //VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
         {
-            "VK_FUCHSIA_external_semaphore", [](VkInstance, VkDevice device) {
+            "VK_FUCHSIA_external_semaphore", [](VkInstance , VkDevice device) {
                 ImportSemaphoreZirconHandleFUCHSIA = reinterpret_cast<PFN_vkImportSemaphoreZirconHandleFUCHSIA>(GetDeviceProcAddr(device, "vkImportSemaphoreZirconHandleFUCHSIA"));
                 GetSemaphoreZirconHandleFUCHSIA = reinterpret_cast<PFN_vkGetSemaphoreZirconHandleFUCHSIA>(GetDeviceProcAddr(device, "vkGetSemaphoreZirconHandleFUCHSIA"));
             }
@@ -1886,7 +1890,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
 #endif //VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_FUCHSIA
         {
-            "VK_FUCHSIA_buffer_collection", [](VkInstance, VkDevice device) {
+            "VK_FUCHSIA_buffer_collection", [](VkInstance , VkDevice device) {
                 CreateBufferCollectionFUCHSIA = reinterpret_cast<PFN_vkCreateBufferCollectionFUCHSIA>(GetDeviceProcAddr(device, "vkCreateBufferCollectionFUCHSIA"));
                 SetBufferCollectionImageConstraintsFUCHSIA = reinterpret_cast<PFN_vkSetBufferCollectionImageConstraintsFUCHSIA>(GetDeviceProcAddr(device, "vkSetBufferCollectionImageConstraintsFUCHSIA"));
                 SetBufferCollectionBufferConstraintsFUCHSIA = reinterpret_cast<PFN_vkSetBufferCollectionBufferConstraintsFUCHSIA>(GetDeviceProcAddr(device, "vkSetBufferCollectionBufferConstraintsFUCHSIA"));
@@ -1896,28 +1900,28 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #endif //VK_USE_PLATFORM_FUCHSIA
         {
-            "VK_HUAWEI_subpass_shading", [](VkInstance, VkDevice device) {
+            "VK_HUAWEI_subpass_shading", [](VkInstance , VkDevice device) {
                 GetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI = reinterpret_cast<PFN_vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI>(GetDeviceProcAddr(device, "vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI"));
                 CmdSubpassShadingHUAWEI = reinterpret_cast<PFN_vkCmdSubpassShadingHUAWEI>(GetDeviceProcAddr(device, "vkCmdSubpassShadingHUAWEI"));
             }
         },
         {
-            "VK_HUAWEI_invocation_mask", [](VkInstance, VkDevice device) {
+            "VK_HUAWEI_invocation_mask", [](VkInstance , VkDevice device) {
                 CmdBindInvocationMaskHUAWEI = reinterpret_cast<PFN_vkCmdBindInvocationMaskHUAWEI>(GetDeviceProcAddr(device, "vkCmdBindInvocationMaskHUAWEI"));
             }
         },
         {
-            "VK_NV_external_memory_rdma", [](VkInstance, VkDevice device) {
+            "VK_NV_external_memory_rdma", [](VkInstance , VkDevice device) {
                 GetMemoryRemoteAddressNV = reinterpret_cast<PFN_vkGetMemoryRemoteAddressNV>(GetDeviceProcAddr(device, "vkGetMemoryRemoteAddressNV"));
             }
         },
         {
-            "VK_EXT_pipeline_properties", [](VkInstance, VkDevice device) {
+            "VK_EXT_pipeline_properties", [](VkInstance , VkDevice device) {
                 GetPipelinePropertiesEXT = reinterpret_cast<PFN_vkGetPipelinePropertiesEXT>(GetDeviceProcAddr(device, "vkGetPipelinePropertiesEXT"));
             }
         },
         {
-            "VK_EXT_extended_dynamic_state2", [](VkInstance, VkDevice device) {
+            "VK_EXT_extended_dynamic_state2", [](VkInstance , VkDevice device) {
                 CmdSetPatchControlPointsEXT = reinterpret_cast<PFN_vkCmdSetPatchControlPointsEXT>(GetDeviceProcAddr(device, "vkCmdSetPatchControlPointsEXT"));
                 CmdSetRasterizerDiscardEnableEXT = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetRasterizerDiscardEnableEXT"));
                 CmdSetDepthBiasEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthBiasEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthBiasEnableEXT"));
@@ -1926,18 +1930,18 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_color_write_enable", [](VkInstance, VkDevice device) {
+            "VK_EXT_color_write_enable", [](VkInstance , VkDevice device) {
                 CmdSetColorWriteEnableEXT = reinterpret_cast<PFN_vkCmdSetColorWriteEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetColorWriteEnableEXT"));
             }
         },
         {
-            "VK_EXT_multi_draw", [](VkInstance, VkDevice device) {
+            "VK_EXT_multi_draw", [](VkInstance , VkDevice device) {
                 CmdDrawMultiEXT = reinterpret_cast<PFN_vkCmdDrawMultiEXT>(GetDeviceProcAddr(device, "vkCmdDrawMultiEXT"));
                 CmdDrawMultiIndexedEXT = reinterpret_cast<PFN_vkCmdDrawMultiIndexedEXT>(GetDeviceProcAddr(device, "vkCmdDrawMultiIndexedEXT"));
             }
         },
         {
-            "VK_EXT_opacity_micromap", [](VkInstance, VkDevice device) {
+            "VK_EXT_opacity_micromap", [](VkInstance , VkDevice device) {
                 CreateMicromapEXT = reinterpret_cast<PFN_vkCreateMicromapEXT>(GetDeviceProcAddr(device, "vkCreateMicromapEXT"));
                 DestroyMicromapEXT = reinterpret_cast<PFN_vkDestroyMicromapEXT>(GetDeviceProcAddr(device, "vkDestroyMicromapEXT"));
                 CmdBuildMicromapsEXT = reinterpret_cast<PFN_vkCmdBuildMicromapsEXT>(GetDeviceProcAddr(device, "vkCmdBuildMicromapsEXT"));
@@ -1955,36 +1959,36 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_HUAWEI_cluster_culling_shader", [](VkInstance, VkDevice device) {
+            "VK_HUAWEI_cluster_culling_shader", [](VkInstance , VkDevice device) {
                 CmdDrawClusterHUAWEI = reinterpret_cast<PFN_vkCmdDrawClusterHUAWEI>(GetDeviceProcAddr(device, "vkCmdDrawClusterHUAWEI"));
                 CmdDrawClusterIndirectHUAWEI = reinterpret_cast<PFN_vkCmdDrawClusterIndirectHUAWEI>(GetDeviceProcAddr(device, "vkCmdDrawClusterIndirectHUAWEI"));
             }
         },
         {
-            "VK_EXT_pageable_device_local_memory", [](VkInstance, VkDevice device) {
+            "VK_EXT_pageable_device_local_memory", [](VkInstance , VkDevice device) {
                 SetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(GetDeviceProcAddr(device, "vkSetDeviceMemoryPriorityEXT"));
             }
         },
         {
-            "VK_VALVE_descriptor_set_host_mapping", [](VkInstance, VkDevice device) {
+            "VK_VALVE_descriptor_set_host_mapping", [](VkInstance , VkDevice device) {
                 GetDescriptorSetLayoutHostMappingInfoVALVE = reinterpret_cast<PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE>(GetDeviceProcAddr(device, "vkGetDescriptorSetLayoutHostMappingInfoVALVE"));
                 GetDescriptorSetHostMappingVALVE = reinterpret_cast<PFN_vkGetDescriptorSetHostMappingVALVE>(GetDeviceProcAddr(device, "vkGetDescriptorSetHostMappingVALVE"));
             }
         },
         {
-            "VK_NV_copy_memory_indirect", [](VkInstance, VkDevice device) {
+            "VK_NV_copy_memory_indirect", [](VkInstance , VkDevice device) {
                 CmdCopyMemoryIndirectNV = reinterpret_cast<PFN_vkCmdCopyMemoryIndirectNV>(GetDeviceProcAddr(device, "vkCmdCopyMemoryIndirectNV"));
                 CmdCopyMemoryToImageIndirectNV = reinterpret_cast<PFN_vkCmdCopyMemoryToImageIndirectNV>(GetDeviceProcAddr(device, "vkCmdCopyMemoryToImageIndirectNV"));
             }
         },
         {
-            "VK_NV_memory_decompression", [](VkInstance, VkDevice device) {
+            "VK_NV_memory_decompression", [](VkInstance , VkDevice device) {
                 CmdDecompressMemoryNV = reinterpret_cast<PFN_vkCmdDecompressMemoryNV>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryNV"));
                 CmdDecompressMemoryIndirectCountNV = reinterpret_cast<PFN_vkCmdDecompressMemoryIndirectCountNV>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryIndirectCountNV"));
             }
         },
         {
-            "VK_EXT_extended_dynamic_state3", [](VkInstance, VkDevice device) {
+            "VK_EXT_extended_dynamic_state3", [](VkInstance , VkDevice device) {
                 CmdSetTessellationDomainOriginEXT = reinterpret_cast<PFN_vkCmdSetTessellationDomainOriginEXT>(GetDeviceProcAddr(device, "vkCmdSetTessellationDomainOriginEXT"));
                 CmdSetDepthClampEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthClampEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClampEnableEXT"));
                 CmdSetPolygonModeEXT = reinterpret_cast<PFN_vkCmdSetPolygonModeEXT>(GetDeviceProcAddr(device, "vkCmdSetPolygonModeEXT"));
@@ -2019,48 +2023,97 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_shader_module_identifier", [](VkInstance, VkDevice device) {
+            "VK_EXT_shader_module_identifier", [](VkInstance , VkDevice device) {
                 GetShaderModuleIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleIdentifierEXT>(GetDeviceProcAddr(device, "vkGetShaderModuleIdentifierEXT"));
                 GetShaderModuleCreateInfoIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleCreateInfoIdentifierEXT>(GetDeviceProcAddr(device, "vkGetShaderModuleCreateInfoIdentifierEXT"));
             }
         },
         {
-            "VK_NV_optical_flow", [](VkInstance, VkDevice device) {
-                GetPhysicalDeviceOpticalFlowImageFormatsNV = reinterpret_cast<PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV>(GetDeviceProcAddr(device, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV"));
+            "VK_NV_optical_flow", [](VkInstance instance, VkDevice device) {
                 CreateOpticalFlowSessionNV = reinterpret_cast<PFN_vkCreateOpticalFlowSessionNV>(GetDeviceProcAddr(device, "vkCreateOpticalFlowSessionNV"));
                 DestroyOpticalFlowSessionNV = reinterpret_cast<PFN_vkDestroyOpticalFlowSessionNV>(GetDeviceProcAddr(device, "vkDestroyOpticalFlowSessionNV"));
                 BindOpticalFlowSessionImageNV = reinterpret_cast<PFN_vkBindOpticalFlowSessionImageNV>(GetDeviceProcAddr(device, "vkBindOpticalFlowSessionImageNV"));
                 CmdOpticalFlowExecuteNV = reinterpret_cast<PFN_vkCmdOpticalFlowExecuteNV>(GetDeviceProcAddr(device, "vkCmdOpticalFlowExecuteNV"));
+                GetPhysicalDeviceOpticalFlowImageFormatsNV = reinterpret_cast<PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV"));
             }
         },
         {
-            "VK_EXT_shader_object", [](VkInstance, VkDevice device) {
+            "VK_EXT_shader_object", [](VkInstance , VkDevice device) {
                 CreateShadersEXT = reinterpret_cast<PFN_vkCreateShadersEXT>(GetDeviceProcAddr(device, "vkCreateShadersEXT"));
                 DestroyShaderEXT = reinterpret_cast<PFN_vkDestroyShaderEXT>(GetDeviceProcAddr(device, "vkDestroyShaderEXT"));
                 GetShaderBinaryDataEXT = reinterpret_cast<PFN_vkGetShaderBinaryDataEXT>(GetDeviceProcAddr(device, "vkGetShaderBinaryDataEXT"));
                 CmdBindShadersEXT = reinterpret_cast<PFN_vkCmdBindShadersEXT>(GetDeviceProcAddr(device, "vkCmdBindShadersEXT"));
+                CmdSetCullModeEXT = reinterpret_cast<PFN_vkCmdSetCullModeEXT>(GetDeviceProcAddr(device, "vkCmdSetCullModeEXT"));
+                CmdSetFrontFaceEXT = reinterpret_cast<PFN_vkCmdSetFrontFaceEXT>(GetDeviceProcAddr(device, "vkCmdSetFrontFaceEXT"));
+                CmdSetPrimitiveTopologyEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveTopologyEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveTopologyEXT"));
+                CmdSetViewportWithCountEXT = reinterpret_cast<PFN_vkCmdSetViewportWithCountEXT>(GetDeviceProcAddr(device, "vkCmdSetViewportWithCountEXT"));
+                CmdSetScissorWithCountEXT = reinterpret_cast<PFN_vkCmdSetScissorWithCountEXT>(GetDeviceProcAddr(device, "vkCmdSetScissorWithCountEXT"));
+                CmdBindVertexBuffers2EXT = reinterpret_cast<PFN_vkCmdBindVertexBuffers2EXT>(GetDeviceProcAddr(device, "vkCmdBindVertexBuffers2EXT"));
+                CmdSetDepthTestEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthTestEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthTestEnableEXT"));
+                CmdSetDepthWriteEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthWriteEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthWriteEnableEXT"));
+                CmdSetDepthCompareOpEXT = reinterpret_cast<PFN_vkCmdSetDepthCompareOpEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthCompareOpEXT"));
+                CmdSetDepthBoundsTestEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthBoundsTestEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthBoundsTestEnableEXT"));
+                CmdSetStencilTestEnableEXT = reinterpret_cast<PFN_vkCmdSetStencilTestEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetStencilTestEnableEXT"));
+                CmdSetStencilOpEXT = reinterpret_cast<PFN_vkCmdSetStencilOpEXT>(GetDeviceProcAddr(device, "vkCmdSetStencilOpEXT"));
+                CmdSetVertexInputEXT = reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(GetDeviceProcAddr(device, "vkCmdSetVertexInputEXT"));
+                CmdSetPatchControlPointsEXT = reinterpret_cast<PFN_vkCmdSetPatchControlPointsEXT>(GetDeviceProcAddr(device, "vkCmdSetPatchControlPointsEXT"));
+                CmdSetRasterizerDiscardEnableEXT = reinterpret_cast<PFN_vkCmdSetRasterizerDiscardEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetRasterizerDiscardEnableEXT"));
+                CmdSetDepthBiasEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthBiasEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthBiasEnableEXT"));
+                CmdSetLogicOpEXT = reinterpret_cast<PFN_vkCmdSetLogicOpEXT>(GetDeviceProcAddr(device, "vkCmdSetLogicOpEXT"));
+                CmdSetPrimitiveRestartEnableEXT = reinterpret_cast<PFN_vkCmdSetPrimitiveRestartEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetPrimitiveRestartEnableEXT"));
+                CmdSetTessellationDomainOriginEXT = reinterpret_cast<PFN_vkCmdSetTessellationDomainOriginEXT>(GetDeviceProcAddr(device, "vkCmdSetTessellationDomainOriginEXT"));
+                CmdSetDepthClampEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthClampEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClampEnableEXT"));
+                CmdSetPolygonModeEXT = reinterpret_cast<PFN_vkCmdSetPolygonModeEXT>(GetDeviceProcAddr(device, "vkCmdSetPolygonModeEXT"));
+                CmdSetRasterizationSamplesEXT = reinterpret_cast<PFN_vkCmdSetRasterizationSamplesEXT>(GetDeviceProcAddr(device, "vkCmdSetRasterizationSamplesEXT"));
+                CmdSetSampleMaskEXT = reinterpret_cast<PFN_vkCmdSetSampleMaskEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleMaskEXT"));
+                CmdSetAlphaToCoverageEnableEXT = reinterpret_cast<PFN_vkCmdSetAlphaToCoverageEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAlphaToCoverageEnableEXT"));
+                CmdSetAlphaToOneEnableEXT = reinterpret_cast<PFN_vkCmdSetAlphaToOneEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAlphaToOneEnableEXT"));
+                CmdSetLogicOpEnableEXT = reinterpret_cast<PFN_vkCmdSetLogicOpEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetLogicOpEnableEXT"));
+                CmdSetColorBlendEnableEXT = reinterpret_cast<PFN_vkCmdSetColorBlendEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetColorBlendEnableEXT"));
+                CmdSetColorBlendEquationEXT = reinterpret_cast<PFN_vkCmdSetColorBlendEquationEXT>(GetDeviceProcAddr(device, "vkCmdSetColorBlendEquationEXT"));
+                CmdSetColorWriteMaskEXT = reinterpret_cast<PFN_vkCmdSetColorWriteMaskEXT>(GetDeviceProcAddr(device, "vkCmdSetColorWriteMaskEXT"));
+                CmdSetRasterizationStreamEXT = reinterpret_cast<PFN_vkCmdSetRasterizationStreamEXT>(GetDeviceProcAddr(device, "vkCmdSetRasterizationStreamEXT"));
+                CmdSetConservativeRasterizationModeEXT = reinterpret_cast<PFN_vkCmdSetConservativeRasterizationModeEXT>(GetDeviceProcAddr(device, "vkCmdSetConservativeRasterizationModeEXT"));
+                CmdSetExtraPrimitiveOverestimationSizeEXT = reinterpret_cast<PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT>(GetDeviceProcAddr(device, "vkCmdSetExtraPrimitiveOverestimationSizeEXT"));
+                CmdSetDepthClipEnableEXT = reinterpret_cast<PFN_vkCmdSetDepthClipEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClipEnableEXT"));
+                CmdSetSampleLocationsEnableEXT = reinterpret_cast<PFN_vkCmdSetSampleLocationsEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetSampleLocationsEnableEXT"));
+                CmdSetColorBlendAdvancedEXT = reinterpret_cast<PFN_vkCmdSetColorBlendAdvancedEXT>(GetDeviceProcAddr(device, "vkCmdSetColorBlendAdvancedEXT"));
+                CmdSetProvokingVertexModeEXT = reinterpret_cast<PFN_vkCmdSetProvokingVertexModeEXT>(GetDeviceProcAddr(device, "vkCmdSetProvokingVertexModeEXT"));
+                CmdSetLineRasterizationModeEXT = reinterpret_cast<PFN_vkCmdSetLineRasterizationModeEXT>(GetDeviceProcAddr(device, "vkCmdSetLineRasterizationModeEXT"));
+                CmdSetLineStippleEnableEXT = reinterpret_cast<PFN_vkCmdSetLineStippleEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetLineStippleEnableEXT"));
+                CmdSetDepthClipNegativeOneToOneEXT = reinterpret_cast<PFN_vkCmdSetDepthClipNegativeOneToOneEXT>(GetDeviceProcAddr(device, "vkCmdSetDepthClipNegativeOneToOneEXT"));
+                CmdSetViewportWScalingEnableNV = reinterpret_cast<PFN_vkCmdSetViewportWScalingEnableNV>(GetDeviceProcAddr(device, "vkCmdSetViewportWScalingEnableNV"));
+                CmdSetViewportSwizzleNV = reinterpret_cast<PFN_vkCmdSetViewportSwizzleNV>(GetDeviceProcAddr(device, "vkCmdSetViewportSwizzleNV"));
+                CmdSetCoverageToColorEnableNV = reinterpret_cast<PFN_vkCmdSetCoverageToColorEnableNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageToColorEnableNV"));
+                CmdSetCoverageToColorLocationNV = reinterpret_cast<PFN_vkCmdSetCoverageToColorLocationNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageToColorLocationNV"));
+                CmdSetCoverageModulationModeNV = reinterpret_cast<PFN_vkCmdSetCoverageModulationModeNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageModulationModeNV"));
+                CmdSetCoverageModulationTableEnableNV = reinterpret_cast<PFN_vkCmdSetCoverageModulationTableEnableNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageModulationTableEnableNV"));
+                CmdSetCoverageModulationTableNV = reinterpret_cast<PFN_vkCmdSetCoverageModulationTableNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageModulationTableNV"));
+                CmdSetShadingRateImageEnableNV = reinterpret_cast<PFN_vkCmdSetShadingRateImageEnableNV>(GetDeviceProcAddr(device, "vkCmdSetShadingRateImageEnableNV"));
+                CmdSetRepresentativeFragmentTestEnableNV = reinterpret_cast<PFN_vkCmdSetRepresentativeFragmentTestEnableNV>(GetDeviceProcAddr(device, "vkCmdSetRepresentativeFragmentTestEnableNV"));
+                CmdSetCoverageReductionModeNV = reinterpret_cast<PFN_vkCmdSetCoverageReductionModeNV>(GetDeviceProcAddr(device, "vkCmdSetCoverageReductionModeNV"));
             }
         },
         {
-            "VK_QCOM_tile_properties", [](VkInstance, VkDevice device) {
+            "VK_QCOM_tile_properties", [](VkInstance , VkDevice device) {
                 GetFramebufferTilePropertiesQCOM = reinterpret_cast<PFN_vkGetFramebufferTilePropertiesQCOM>(GetDeviceProcAddr(device, "vkGetFramebufferTilePropertiesQCOM"));
                 GetDynamicRenderingTilePropertiesQCOM = reinterpret_cast<PFN_vkGetDynamicRenderingTilePropertiesQCOM>(GetDeviceProcAddr(device, "vkGetDynamicRenderingTilePropertiesQCOM"));
             }
         },
         {
-            "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance, VkDevice device) {
+            "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetAttachmentFeedbackLoopEnableEXT = reinterpret_cast<PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT"));
             }
         },
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {
-            "VK_QNX_external_memory_screen_buffer", [](VkInstance, VkDevice device) {
+            "VK_QNX_external_memory_screen_buffer", [](VkInstance , VkDevice device) {
                 GetScreenBufferPropertiesQNX = reinterpret_cast<PFN_vkGetScreenBufferPropertiesQNX>(GetDeviceProcAddr(device, "vkGetScreenBufferPropertiesQNX"));
             }
         },
 #endif //VK_USE_PLATFORM_SCREEN_QNX
         {
-            "VK_KHR_acceleration_structure", [](VkInstance, VkDevice device) {
+            "VK_KHR_acceleration_structure", [](VkInstance , VkDevice device) {
                 CreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR"));
                 DestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR"));
                 CmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(GetDeviceProcAddr(device, "vkCmdBuildAccelerationStructuresKHR"));
@@ -2080,9 +2133,10 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_KHR_ray_tracing_pipeline", [](VkInstance, VkDevice device) {
+            "VK_KHR_ray_tracing_pipeline", [](VkInstance , VkDevice device) {
                 CmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(GetDeviceProcAddr(device, "vkCmdTraceRaysKHR"));
                 CreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(GetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
+                GetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(GetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesKHR"));
                 GetRayTracingCaptureReplayShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(GetDeviceProcAddr(device, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR"));
                 CmdTraceRaysIndirectKHR = reinterpret_cast<PFN_vkCmdTraceRaysIndirectKHR>(GetDeviceProcAddr(device, "vkCmdTraceRaysIndirectKHR"));
                 GetRayTracingShaderGroupStackSizeKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupStackSizeKHR>(GetDeviceProcAddr(device, "vkGetRayTracingShaderGroupStackSizeKHR"));
@@ -2090,7 +2144,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_mesh_shader", [](VkInstance, VkDevice device) {
+            "VK_EXT_mesh_shader", [](VkInstance , VkDevice device) {
                 CmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksEXT"));
                 CmdDrawMeshTasksIndirectEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectEXT>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirectEXT"));
                 CmdDrawMeshTasksIndirectCountEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectCountEXT>(GetDeviceProcAddr(device, "vkCmdDrawMeshTasksIndirectCountEXT"));
