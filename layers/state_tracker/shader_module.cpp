@@ -690,12 +690,14 @@ EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instructio
                         if (!max_input_slot || slot.slot > max_input_slot->slot) {
                             max_input_slot = &slot;
                             max_input_slot_variable = &variable;
+                            user_input_components++;
                         }
                     } else if (variable.storage_class == spv::StorageClassOutput) {
                         output_interface_slots[slot] = &variable;
                         if (!max_output_slot || slot.slot > max_output_slot->slot) {
                             max_output_slot = &slot;
                             max_output_slot_variable = &variable;
+                            user_output_components++;
                         }
                     }
                 }

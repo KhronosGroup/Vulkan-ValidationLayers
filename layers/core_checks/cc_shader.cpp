@@ -607,7 +607,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                          pipeline.create_index);
     }
 
-    // The max is a combiniation of both the user defined variables largest values
+    // The max is a combination of both the user defined variables largest values
     // and
     // The total components used by built ins
     const auto max_input_slot =
@@ -615,12 +615,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     const auto max_output_slot = (entrypoint.max_output_slot_variable && entrypoint.max_output_slot) ? *entrypoint.max_output_slot
                                                                                                      : InterfaceSlot(0, 0, 0, 0);
 
-    const uint32_t total_input_components = max_input_slot.slot + entrypoint.builtin_input_components;
-    const uint32_t total_output_components = max_output_slot.slot + entrypoint.builtin_output_components;
+    const uint32_t total_input_components = entrypoint.user_input_components + entrypoint.builtin_input_components;
+    const uint32_t total_output_components = entrypoint.user_output_components + entrypoint.builtin_output_components;
+    const uint32_t max_input_location_index = max_input_slot.Location();
+    const uint32_t max_output_location_index = max_output_slot.Location();
 
     switch (stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
-            if (total_output_components >= limits.maxVertexOutputComponents) {
+            if (total_output_components > limits.maxVertexOutputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Vertex shader output variable (%s) along with %" PRIu32
@@ -629,10 +631,26 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
                                  limits.maxVertexOutputComponents);
             }
+            if(max_input_location_index >= limits.maxVertexInputAttributes) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Vertex shader input variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxVertexInputAttributes (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxVertexInputAttributes);
+            }
+            if(max_output_location_index >= limits.maxVertexOutputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Vertex shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxVertexOutputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxVertexOutputComponents/4);
+            }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            if (total_input_components >= limits.maxTessellationControlPerVertexInputComponents) {
+            if (total_input_components > limits.maxTessellationControlPerVertexInputComponents) {
                 skip |= LogError(
                     module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -644,7 +662,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             }
             if (entrypoint.max_input_slot_variable) {
                 if (entrypoint.max_input_slot_variable->is_patch &&
-                    total_output_components >= limits.maxTessellationControlPerPatchOutputComponents) {
+                    total_output_components > limits.maxTessellationControlPerPatchOutputComponents) {
                     skip |= LogError(
                         module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -656,7 +674,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                         limits.maxTessellationControlPerPatchOutputComponents);
                 }
                 if (!entrypoint.max_input_slot_variable->is_patch &&
-                    total_output_components >= limits.maxTessellationControlPerVertexOutputComponents) {
+                    total_output_components > limits.maxTessellationControlPerVertexOutputComponents) {
                     skip |= LogError(
                         module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -668,10 +686,26 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                         limits.maxTessellationControlPerVertexOutputComponents);
                 }
             }
+            if(max_input_location_index >= limits.maxTessellationControlPerVertexInputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Tessellation control shader input variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxTessellationControlPerVertexInputComponents / 4);
+            }
+            if(max_output_location_index >= limits.maxTessellationControlPerVertexOutputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Tessellation control shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxTessellationControlPerVertexOutputComponents / 4);
+            }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            if (total_input_components >= limits.maxTessellationEvaluationInputComponents) {
+            if (total_input_components > limits.maxTessellationEvaluationInputComponents) {
                 skip |= LogError(
                     module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -681,7 +715,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                     pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
                     limits.maxTessellationEvaluationInputComponents);
             }
-            if (total_output_components >= limits.maxTessellationEvaluationOutputComponents) {
+            if (total_output_components > limits.maxTessellationEvaluationOutputComponents) {
                 skip |= LogError(
                     module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -708,10 +742,26 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                      pipeline.create_index);
                 }
             }
+            if(max_input_location_index >= limits.maxTessellationEvaluationInputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Tessellation evaluation shader input variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxTessellationEvaluationInputComponents / 4);
+            }
+            if(max_output_location_index >= limits.maxTessellationEvaluationOutputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Tessellation evaluation shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxTessellationEvaluationOutputComponents / 4);
+            }
             break;
 
         case VK_SHADER_STAGE_GEOMETRY_BIT:
-            if (total_input_components >= limits.maxGeometryInputComponents) {
+            if (total_input_components > limits.maxGeometryInputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Geometry shader input variable (%s) along with %" PRIu32
@@ -720,7 +770,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
                                  limits.maxGeometryInputComponents);
             }
-            if (total_output_components >= limits.maxGeometryOutputComponents) {
+            if (total_output_components > limits.maxGeometryOutputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Geometry shader output variable (%s) along with %" PRIu32
@@ -729,10 +779,26 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  pipeline.create_index, max_output_slot.Describe().c_str(), entrypoint.builtin_output_components,
                                  limits.maxGeometryOutputComponents);
             }
+            if(max_input_location_index >= limits.maxGeometryInputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Geometry shader input variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxGeometryInputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxGeometryInputComponents / 4);
+            }
+            if(max_output_location_index >= limits.maxGeometryOutputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Geometry shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxGeometryOutputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxGeometryOutputComponents / 4);
+            }
             break;
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
-            if (total_input_components >= limits.maxFragmentInputComponents) {
+            if (total_input_components > limits.maxFragmentInputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "] Fragment shader input variable (%s) along with %" PRIu32
@@ -740,6 +806,22 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%" PRIu32 ")",
                                  pipeline.create_index, max_input_slot.Describe().c_str(), entrypoint.builtin_input_components,
                                  limits.maxFragmentInputComponents);
+            }
+            if(max_input_location_index >= limits.maxFragmentInputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Fragment shader input variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxFragmentInputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxFragmentInputComponents / 4);
+            }
+            if(max_output_location_index >= limits.maxFragmentOutputAttachments) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Fragment shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceLimits::maxFragmentOutputAttachments (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 limits.maxFragmentOutputAttachments);
             }
             break;
 
@@ -788,6 +870,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                      pipeline.create_index, phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives);
                 }
+            }
+            if(max_output_location_index >= phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputComponents / 4) {
+                skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] Mesh shader output variable (%s)"
+                                 "exceeds location limit VkPhysicalDeviceMeshShaderPropertiesEXT::maxMeshOutputComponents / 4 (%" PRIu32 ")",
+                                 pipeline.create_index, max_output_slot.Describe().c_str(),
+                                 phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputComponents / 4);
             }
             break;
 

@@ -388,6 +388,8 @@ struct EntryPoint {
     const InterfaceSlot *max_output_slot = nullptr;
     uint32_t builtin_input_components = 0;
     uint32_t builtin_output_components = 0;
+    uint32_t user_input_components = 0;
+    uint32_t user_output_components = 0;
 
     // Mark if a BuiltIn is written to
     bool written_builtin_point_size{false};
