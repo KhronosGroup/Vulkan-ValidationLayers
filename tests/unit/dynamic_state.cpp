@@ -4856,6 +4856,12 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe_line(*this);
+    pipe_line.InitInfo();
+    pipe_line.InitState();
+    pipe_line.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
 
@@ -4883,6 +4889,16 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDepthBiasRepresentationInfoEXT-floatRepresentation-08948");
     vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
     m_errorMonitor->VerifyFound();
+
+    // Perform a successful call to vk::CmdSetDepthBias2EXT, but bound pipeline has not set depth bias as a dynamic state
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_line.pipeline_);
+    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT;
+    vk::CmdSetDepthBias2EXT(m_commandBuffer->handle(), &depth_bias_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-08608");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
 
     m_commandBuffer->end();
 }

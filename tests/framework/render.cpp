@@ -2045,8 +2045,9 @@ void VkPipelineObj::SetScissor(const vector<VkRect2D> &scissors) {
 
 void VkPipelineObj::MakeDynamic(VkDynamicState state) {
     /* Only add a state once */
-    for (auto it = m_dynamic_state_enables.begin(); it != m_dynamic_state_enables.end(); it++) {
-        if ((*it) == state) return;
+    if (const auto search = std::find(m_dynamic_state_enables.begin(), m_dynamic_state_enables.end(), state);
+        search != m_dynamic_state_enables.end()) {
+        return;
     }
     m_dynamic_state_enables.push_back(state);
 }

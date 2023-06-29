@@ -3157,6 +3157,12 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthBias(VkCommandBuffer comma
     cb_state->RecordStateCmd(CMD_SETDEPTHBIAS, CB_DYNAMIC_STATE_DEPTH_BIAS);
 }
 
+void ValidationStateTracker::PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer,
+                                                               const VkDepthBiasInfoEXT *pDepthBiasInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETDEPTHBIAS2EXT, CB_DYNAMIC_STATE_DEPTH_BIAS);
+}
+
 void ValidationStateTracker::PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
                                                          uint32_t scissorCount, const VkRect2D *pScissors) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
