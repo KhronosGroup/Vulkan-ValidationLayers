@@ -490,13 +490,14 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
                 break;
             }
             case 1: {
-                // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component/location limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
             case 2: {
-                // in and out component limit
+                // in and out location limit
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
@@ -609,13 +610,14 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
                 break;
             }
             case 1: {
-                // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component/location limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
             case 2: {
-                // in and out component limit
+                // in and out location limit
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
@@ -718,13 +720,14 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
                 break;
             }
             case 1: {
-                // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                // in and out component/location limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
             case 2: {
-                // in and out component limit
+                // in and out location limit
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;

@@ -219,11 +219,12 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
             }
             case 1: {
                 // component and location limit (maxVertexOutputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
             case 2: {
-                // just component limit (maxVertexOutputComponents)
+                // just location limit (maxVertexOutputComponents)
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
             }
@@ -235,7 +236,7 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
 }
 
 TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
-    TEST_DESCRIPTION("Test if the max componenets checks are done properly when in a single block");
+    TEST_DESCRIPTION("Test if the max components checks are done properly when in a single block");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -288,7 +289,8 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
 
     // 1 for maxVertexOutputComponents and 1 for maxFragmentInputComponents
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                                      vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                                     "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
 }
 
 TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
@@ -343,7 +345,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
             }
             case 1: {
                 // (maxFragmentInputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             }
             case 2:
