@@ -7704,7 +7704,7 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     StateTracker::PostCallRecordQueueWaitIdle(queue, result);
-    if ((result != VK_SUCCESS) || (!enabled[sync_validation_queue_submit]) || (queue == VK_NULL_HANDLE)) return;
+    if ((result != VK_SUCCESS) || (!layer_settings.validate.sync_queue_submit) || (queue == VK_NULL_HANDLE)) return;
 
     const auto queue_state = GetQueueSyncStateShared(queue);
     if (!queue_state) return;  // Invalid queue
@@ -7739,7 +7739,7 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
-    if (!enabled[sync_validation_queue_submit]) return skip;
+    if (!layer_settings.validate.sync_queue_submit) return skip;
 
     vvl::TlsGuard<QueuePresentCmdState> cmd_state(&skip, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
@@ -7793,7 +7793,7 @@ ResourceUsageRange SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &prese
 
 void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     StateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-    if (!enabled[sync_validation_queue_submit]) return;
+    if (!layer_settings.validate.sync_queue_submit) return;
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
     // static payload
@@ -7817,14 +7817,14 @@ void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapcha
                                                       VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
                                                       VkResult result) {
     StateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, result);
-    if (!enabled[sync_validation_queue_submit]) return;
+    if (!layer_settings.validate.sync_queue_submit) return;
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, result, "vkAcquireNextImageKHR");
 }
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                        uint32_t *pImageIndex, VkResult result) {
     StateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, result);
-    if (!enabled[sync_validation_queue_submit]) return;
+    if (!layer_settings.validate.sync_queue_submit) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex, result, "vkAcquireNextImage2KHR");
 }
@@ -7885,7 +7885,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
-    if (!enabled[sync_validation_queue_submit]) return skip;
+    if (!layer_settings.validate.sync_queue_submit) return skip;
 
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
@@ -7942,7 +7942,7 @@ void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
 
 void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult result) {
     // If this return is above the TlsGuard, then the Validate phase return must also be.
-    if (!enabled[sync_validation_queue_submit]) return;  // Queue submit validation must be affirmatively enabled
+    if (!layer_settings.validate.sync_queue_submit) return;  // Queue submit validation must be affirmatively enabled
 
     // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
     // static payload
@@ -7983,7 +7983,7 @@ void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCou
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
     StateTracker::PostCallRecordGetFenceStatus(device, fence, result);
-    if (!enabled[sync_validation_queue_submit]) return;
+    if (!layer_settings.validate.sync_queue_submit) return;
     if (result == VK_SUCCESS) {
         // fence is signalled, mark it as waited for
         WaitForFence(fence);
@@ -7993,7 +7993,7 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
 void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                                 uint64_t timeout, VkResult result) {
     StateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, result);
-    if (!enabled[sync_validation_queue_submit]) return;
+    if (!layer_settings.validate.sync_queue_submit) return;
     if ((result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
         for (uint32_t i = 0; i < fenceCount; i++) {

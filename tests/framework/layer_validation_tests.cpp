@@ -3325,13 +3325,10 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     // Enable synchronization validation
 
     // Optional feature definition, add if requested (but they can't be defined at the conditional scope)
-    const char *kEnableQueuSubmitSyncValidation = "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT";
-    VkLayerSettingValueDataEXT qs_setting_string_value{};
-    qs_setting_string_value.arrayString.pCharArray = kEnableQueuSubmitSyncValidation;
-    qs_setting_string_value.arrayString.count = strlen(qs_setting_string_value.arrayString.pCharArray);
-    VkLayerSettingValueEXT qs_enable_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
-                                                    qs_setting_string_value};
-    VkLayerSettingsEXT qs_settings{VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &qs_enable_setting_val};
+    std::vector<const char *> input_values{"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT"};
+    std::vector<VkLayerSettingEXT> settings{
+        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(input_values.size()), {&input_values[0]}}};
+    VkLayerSettingsCreateInfoEXT qs_settings{VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, static_cast<uint32_t>(settings.size()), &settings[0]};
 
     if (enable_queue_submit_validation) {
         features_.pNext = &qs_settings;

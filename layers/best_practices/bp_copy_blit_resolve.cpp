@@ -42,7 +42,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     const bool full_clear = ClearAttachmentsIsFullClear(*cmd_state, rectCount, pRects);
 
     if (rp_state->UsesDynamicRendering()) {
-        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if (layer_settings.validate.best_practices_nv) {
             auto pColorAttachments = rp_state->dynamic_rendering_begin_rendering_info.pColorAttachments;
 
             for (uint32_t i = 0; i < attachmentCount; i++) {
@@ -73,7 +73,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
             VkImageAspectFlags aspects = attachment.aspectMask;
 
             if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                if (layer_settings.validate.best_practices_nv) {
                     RecordResetScopeZcullDirection(*cmd_state);
                 }
             }
@@ -91,7 +91,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
                 } else {
                     RecordAttachmentAccess(*cmd_state, fb_attachment, aspects);
                 }
-                if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+                if (layer_settings.validate.best_practices_nv) {
                     const VkFormat format = rp_state->createInfo.pAttachments[fb_attachment].format;
                     RecordClearColor(format, attachment.clearValue.color);
                 }
@@ -170,7 +170,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
                                   "it is more efficient.",
                                   secondary ? "vkCmdExecuteCommands(): " : "", FormatHandle(cmd).c_str());
 
-        if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        if (layer_settings.validate.best_practices_nv) {
             const auto cmd_state = GetRead<bp_state::CommandBuffer>(cmd.commandBuffer());
             assert(cmd_state);
             skip |= ValidateZcullScope(*cmd_state);
@@ -212,7 +212,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
             const auto pColorAttachments = rp->dynamic_rendering_begin_rendering_info.pColorAttachments;
 
-            if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+            if (layer_settings.validate.best_practices_nv) {
                 for (uint32_t i = 0; i < attachmentCount; i++) {
                     const auto& attachment = pAttachments[i];
                     if (attachment.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
@@ -254,7 +254,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                     }
                 }
             }
-            if (VendorCheckEnabled(kBPVendorNVIDIA) && rp->createInfo.pAttachments) {
+            if (layer_settings.validate.best_practices_nv && rp->createInfo.pAttachments) {
                 for (uint32_t attachment_idx = 0; attachment_idx < attachmentCount; ++attachment_idx) {
                     const auto& attachment = pAttachments[attachment_idx];
 
@@ -270,7 +270,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_arm) {
         for (uint32_t attachment_idx = 0; attachment_idx < attachmentCount; attachment_idx++) {
             if (pAttachments[attachment_idx].aspectMask == VK_IMAGE_ASPECT_COLOR_BIT) {
                 bool black_check = false;
@@ -332,7 +332,7 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
                                       string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
     }
 
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
+    skip |= layer_settings.validate.best_practices_arm &&
             LogPerformanceWarning(command_buffer, kVUID_BestPractices_CmdResolveImage_ResolvingImage,
                                   "%s Attempting to use %s to resolve a multisampled image. "
                                   "This is a very slow and extremely bandwidth intensive path. "
@@ -420,7 +420,7 @@ void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
         QueueValidateImage(funcs, "vkCmdClearColorImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordClearColor(dst->createInfo.format, *pColor);
     }
 }
@@ -438,7 +438,7 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearDepthStencilImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         for (uint32_t i = 0; i < rangeCount; i++) {
             RecordResetZcullDirection(*cb, image, pRanges[i]);
         }
@@ -544,14 +544,14 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 
     auto dst = Get<bp_state::Image>(image);
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_ClearAttachment_ClearImage,
             "%s Performance warning: using vkCmdClearColorImage is not recommended. Prefer using LOAD_OP_CLEAR or "
             "vkCmdClearAttachments instead",
             VendorSpecificTag(kBPVendorAMD));
     }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         skip |= ValidateClearColor(commandBuffer, dst->createInfo.format, *pColor);
     }
 
@@ -563,7 +563,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                                                              const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                              const VkImageSubresourceRange* pRanges) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_ClearAttachment_ClearImage,
             "%s Performance warning: using vkCmdClearDepthStencilImage is not recommended. Prefer using LOAD_OP_CLEAR or "
@@ -572,7 +572,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
     }
     const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
     assert(cmd_state);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         for (uint32_t i = 0; i < rangeCount; i++) {
             skip |= ValidateZcull(*cmd_state, image, pRanges[i]);
         }
@@ -590,7 +590,7 @@ bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
     src_image_hex << "0x" << std::hex << HandleToUint64(srcImage);
     dst_image_hex << "0x" << std::hex << HandleToUint64(dstImage);
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         auto src_state = Get<IMAGE_STATE>(srcImage);
         auto dst_state = Get<IMAGE_STATE>(dstImage);
 

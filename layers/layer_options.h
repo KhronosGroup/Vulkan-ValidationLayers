@@ -16,90 +16,123 @@
  * limitations under the License.
  */
 
-#include "generated/chassis.h"
+#pragma once
+
+#include <vulkan/layer/vk_layer_settings.hpp>
+#include <unordered_set>
+#include <array>
+
+#include "containers/custom_containers.h"
+#include "error_message/logging.h"
+
+class ValidationObject;
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
 // Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 
-typedef struct {
-    const char *layer_description;
-    const void *pnext_chain;
-    CHECK_ENABLED &enables;
-    CHECK_DISABLED &disables;
-    std::unordered_set<uint32_t> &message_filter_list;
-    int32_t *duplicate_message_limit;
-    bool *fine_grained_locking;
-} ConfigAndEnvSettings;
+#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+#define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
-static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
-    {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
+enum ValidateGPUBased {
+    VALIDATE_GPU_BASED_NONE = 0,
+    VALIDATE_GPU_BASED_DEBUG_PRINTF,
+    VALIDATE_GPU_BASED_GPU_ASSISTED,
+
+    VALIDATE_GPU_BASED_FIRST = VALIDATE_GPU_BASED_NONE,
+    VALIDATE_GPU_BASED_LAST = VALIDATE_GPU_BASED_GPU_ASSISTED
 };
 
-static const vvl::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
-    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
-     VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
+enum { 
+    VALIDATE_GPU_BASED_COUNT = VALIDATE_GPU_BASED_LAST - VALIDATE_GPU_BASED_FIRST + 1
 };
 
-static const vvl::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
-    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION},
+ValidateGPUBased GetValidateGPUBased(const std::string &value);
+
+enum DebugAction {
+    DEBUG_ACTION_NONE = 0,
+    DEBUG_ACTION_LOG_MSG_BIT = 1 << 0,
+    DEBUG_ACTION_CALLBACK_BIT = 1 << 1,
+    DEBUG_ACTION_DEBUG_OUTPUT_BIT = 1 << 2,
+    DEBUG_ACTION_BREAK_BIT = 1 << 3
 };
 
-static const vvl::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
-    {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
-    {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
-    {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
-    {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
+enum { DEBUG_ACTIONE_COUNT = 4 };
+
+int GetDebugAction(const std::vector<std::string>& flags);
+
+enum DebugMessage {
+    DEBUG_MESSAGE_NONE = 0,
+    DEBUG_MESSAGE_INFO_BIT = 1 << 0,
+    DEBUG_MESSAGE_WARN_BIT = 1 << 1,
+    DEBUG_MESSAGE_PERF_BIT = 1 << 2,
+    DEBUG_MESSAGE_ERROR_BIT = 1 << 3,
+    DEBUG_MESSAGE_DEBUG_BIT = 1 << 4
 };
 
-static const vvl::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
-    {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
-     VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT},
+enum { DEBUG_MESSAGE_COUNT = 5 };
+
+int GetDebugMessage(const std::vector<std::string> &flags);
+
+struct LayerSettings {
+    struct ValidationControl {
+        bool fine_grained_locking{true};
+
+        bool core{true};
+        bool core_image_layout{true};
+        bool core_command_buffer{true};
+        bool core_object_in_use{true};
+        bool core_query{true};
+        bool core_shaders{true};
+        bool core_shaders_caching{true};
+
+        bool unique_handles{true};
+        bool object_lifetime{true};
+        bool stateless_param{true};
+        bool thread_safety{true};
+
+        bool sync{false};
+        bool sync_queue_submit{false};
+
+       ValidateGPUBased gpu_based{VALIDATE_GPU_BASED_NONE};
+
+        bool printf_to_stdout{true};
+        bool printf_verbose{true};
+        int printf_buffer_size{1024};
+        bool printf_vma_linear_output{true};
+
+        bool gpuav_descriptor{true};
+        bool gpuav_reserve_binding_slot{true};
+        bool gpuav_robust_oob{true};
+        bool gpuav_draw_indirect{true};
+        bool gpuav_dispatch_indirect{true};
+        int gpuav_max_buffer_device_addresses{10000};
+
+        bool best_practices{false};
+        bool best_practices_arm{false};
+        bool best_practices_amd{false};
+        bool best_practices_img{false};
+        bool best_practices_nv{false};
+    } ;
+
+    ValidationControl validate;
+
+    struct Debug {
+        int actions{VK_DBG_LAYER_ACTION_LOG_MSG};
+        std::string log_filename;
+
+        int messages{DEBUG_MESSAGE_ERROR_BIT};
+
+        bool enable_message_limit{true};
+        std::uint32_t duplicate_message_limit{10};
+
+        std::unordered_set<uint32_t> message_id_filter;
+    };
+
+    Debug debug;
 };
 
-// This should mirror the 'DisableFlags' enumerated type
-static const std::vector<std::string> DisableFlagNameHelper = {
-    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",               // command_buffer_state,
-    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                      // object_in_use,
-    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                   // query_validation,
-    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",            // image_layout_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",          // object_tracking,
-    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",               // core_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",             // thread_safety,
-    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",            // stateless_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",            // handle_wrapping,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                   // shader_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT"  // shader_validation_caching
-};
+void LogLayerSettings(ValidationObject *context);
 
-// This should mirror the 'EnableFlags' enumerated type
-static const std::vector<std::string> EnableFlagNameHelper = {
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",                       // gpu_validation,
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",  // gpu_validation_reserve_binding_slot,
-    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
-    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
-    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION",             // sync_validation,
-    "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",     // queuesubmit time sync_validation,
-};
-
-void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
+void InitLayerSettings(
+    const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, LayerSettings *layer_settings);

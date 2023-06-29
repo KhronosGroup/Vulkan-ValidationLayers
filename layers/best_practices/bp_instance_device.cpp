@@ -196,7 +196,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                            "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
     }
 
-    if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorIMG)) &&
+    const bool best_practices = layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_img;
+    if (best_practices &&
         (pCreateInfo->pEnabledFeatures != nullptr) && (pCreateInfo->pEnabledFeatures->robustBufferAccess == VK_TRUE)) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_CreateDevice_RobustBufferAccess,
@@ -208,7 +209,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     }
 
     const bool enabled_pageable_device_local_memory = IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory);
-    if (VendorCheckEnabled(kBPVendorNVIDIA) && !enabled_pageable_device_local_memory &&
+    if (layer_settings.validate.best_practices_nv && !enabled_pageable_device_local_memory &&
         std::find(extensions.begin(), extensions.end(), VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME) != extensions.end()) {
         skip |=
             LogPerformanceWarning(device, kVUID_BestPractices_CreateDevice_PageableDeviceLocalMemory,
@@ -498,7 +499,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         auto queue_state = Get<QUEUE_STATE>(queue);
         if (queue_state && queue_state->queueFamilyProperties.queueFlags != (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT)) {
             skip |= LogPerformanceWarning(queue, kVUID_BestPractices_QueueBindSparse_NotAsync,

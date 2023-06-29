@@ -42,7 +42,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                            "same format and VK_IMAGE_CREATE_EXTENDED_USAGE_BIT will not have any effect.");
     }
 
-    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
+    if (layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_img) {
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_CreateImage_NonTransientMSImage,
@@ -54,7 +54,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorArm) && pCreateInfo->samples > kMaxEfficientSamplesArm) {
+    if (layer_settings.validate.best_practices_arm && pCreateInfo->samples > kMaxEfficientSamplesArm) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
             "%s vkCreateImage(): Trying to create an image with %u samples. "
@@ -62,7 +62,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
     }
 
-    if (VendorCheckEnabled(kBPVendorIMG) && pCreateInfo->samples > kMaxEfficientSamplesImg) {
+    if (layer_settings.validate.best_practices_img && pCreateInfo->samples > kMaxEfficientSamplesImg) {
         skip |= LogPerformanceWarning(
             device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
             "%s vkCreateImage(): Trying to create an image with %u samples. "
@@ -71,7 +71,8 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             VendorSpecificTag(kBPVendorIMG), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesImg);
     }
 
-    if (VendorCheckEnabled(kBPVendorIMG) && (pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
+    if (layer_settings.validate.best_practices_img && (
+                                             pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
                                              pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG ||
                                              pCreateInfo->format == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG ||
                                              pCreateInfo->format == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG ||
@@ -85,7 +86,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                                       VendorSpecificTag(kBPVendorIMG));
     }
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         std::stringstream image_hex;
         image_hex << "0x" << std::hex << HandleToUint64(pImage);
 
@@ -119,7 +120,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         std::stringstream image_hex;
         image_hex << "0x" << std::hex << HandleToUint64(pImage);
 

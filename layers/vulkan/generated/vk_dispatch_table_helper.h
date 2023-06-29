@@ -446,11 +446,6 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthCompareOpEXT(VkCommandBuffer co
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {  }
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount, const VkHostImageLayoutTransitionInfoEXT* pTransitions) { return VK_SUCCESS; }
-static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {  }
 static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubGetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {  }
@@ -480,6 +475,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetImageViewOpaqueCaptureDescriptorDat
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate, const VkFragmentShadingRateCombinerOpKHR combinerOps[2]) {  }
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {  }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts, VkDeviceFaultInfoEXT* pFaultInfo) { return VK_SUCCESS; }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 static VKAPI_ATTR VkResult VKAPI_CALL StubAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) { return VK_SUCCESS; }
@@ -563,9 +559,6 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectNV(VkCommandBuffer co
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount, const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer, VkDeviceAddress indirectCommandsAddress, VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {  }
-static VKAPI_ATTR void VKAPI_CALL StubGetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo, VkMemoryRequirements2* pMemoryRequirements) {  }
-static VKAPI_ATTR void VKAPI_CALL StubCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {  }
-static VKAPI_ATTR VkDeviceAddress VKAPI_CALL StubGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo) { return 0; }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {  }
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {  }
@@ -909,11 +902,6 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkCmdSetDepthBoundsTestEnableEXT", { "VK_EXT_extended_dynamic_state", "VK_EXT_shader_object" } },
     { "vkCmdSetStencilTestEnableEXT", { "VK_EXT_extended_dynamic_state", "VK_EXT_shader_object" } },
     { "vkCmdSetStencilOpEXT", { "VK_EXT_extended_dynamic_state", "VK_EXT_shader_object" } },
-    { "vkCopyMemoryToImageEXT", { "VK_EXT_host_image_copy" } },
-    { "vkCopyImageToMemoryEXT", { "VK_EXT_host_image_copy" } },
-    { "vkCopyImageToImageEXT", { "VK_EXT_host_image_copy" } },
-    { "vkTransitionImageLayoutEXT", { "VK_EXT_host_image_copy" } },
-    { "vkGetImageSubresourceLayout2EXT", { "VK_EXT_host_image_copy", "VK_EXT_image_compression_control" } },
     { "vkReleaseSwapchainImagesEXT", { "VK_EXT_swapchain_maintenance1" } },
     { "vkGetGeneratedCommandsMemoryRequirementsNV", { "VK_NV_device_generated_commands" } },
     { "vkCmdPreprocessGeneratedCommandsNV", { "VK_NV_device_generated_commands" } },
@@ -939,6 +927,7 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkGetSamplerOpaqueCaptureDescriptorDataEXT", { "VK_EXT_descriptor_buffer" } },
     { "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", { "VK_EXT_descriptor_buffer" } },
     { "vkCmdSetFragmentShadingRateEnumNV", { "VK_NV_fragment_shading_rate_enums" } },
+    { "vkGetImageSubresourceLayout2EXT", { "VK_EXT_image_compression_control" } },
     { "vkGetDeviceFaultInfoEXT", { "VK_EXT_device_fault" } },
     { "vkCmdSetVertexInputEXT", { "VK_EXT_vertex_input_dynamic_state", "VK_EXT_shader_object" } },
     { "vkGetMemoryZirconHandleFUCHSIA", { "VK_FUCHSIA_external_memory" } },
@@ -986,9 +975,6 @@ const vvl::unordered_map<std::string, small_vector<std::string, 2, size_t>> api_
     { "vkCmdCopyMemoryToImageIndirectNV", { "VK_NV_copy_memory_indirect" } },
     { "vkCmdDecompressMemoryNV", { "VK_NV_memory_decompression" } },
     { "vkCmdDecompressMemoryIndirectCountNV", { "VK_NV_memory_decompression" } },
-    { "vkGetPipelineIndirectMemoryRequirementsNV", { "VK_NV_device_generated_commands_compute" } },
-    { "vkCmdUpdatePipelineIndirectBufferNV", { "VK_NV_device_generated_commands_compute" } },
-    { "vkGetPipelineIndirectDeviceAddressNV", { "VK_NV_device_generated_commands_compute" } },
     { "vkCmdSetTessellationDomainOriginEXT", { "VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object" } },
     { "vkCmdSetDepthClampEnableEXT", { "VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object" } },
     { "vkCmdSetPolygonModeEXT", { "VK_EXT_extended_dynamic_state3", "VK_EXT_shader_object" } },
@@ -1785,16 +1771,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdSetStencilTestEnableEXT == nullptr) { table->CmdSetStencilTestEnableEXT = (PFN_vkCmdSetStencilTestEnableEXT)StubCmdSetStencilTestEnableEXT; }
     table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT) gpa(device, "vkCmdSetStencilOpEXT");
     if (table->CmdSetStencilOpEXT == nullptr) { table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)StubCmdSetStencilOpEXT; }
-    table->CopyMemoryToImageEXT = (PFN_vkCopyMemoryToImageEXT) gpa(device, "vkCopyMemoryToImageEXT");
-    if (table->CopyMemoryToImageEXT == nullptr) { table->CopyMemoryToImageEXT = (PFN_vkCopyMemoryToImageEXT)StubCopyMemoryToImageEXT; }
-    table->CopyImageToMemoryEXT = (PFN_vkCopyImageToMemoryEXT) gpa(device, "vkCopyImageToMemoryEXT");
-    if (table->CopyImageToMemoryEXT == nullptr) { table->CopyImageToMemoryEXT = (PFN_vkCopyImageToMemoryEXT)StubCopyImageToMemoryEXT; }
-    table->CopyImageToImageEXT = (PFN_vkCopyImageToImageEXT) gpa(device, "vkCopyImageToImageEXT");
-    if (table->CopyImageToImageEXT == nullptr) { table->CopyImageToImageEXT = (PFN_vkCopyImageToImageEXT)StubCopyImageToImageEXT; }
-    table->TransitionImageLayoutEXT = (PFN_vkTransitionImageLayoutEXT) gpa(device, "vkTransitionImageLayoutEXT");
-    if (table->TransitionImageLayoutEXT == nullptr) { table->TransitionImageLayoutEXT = (PFN_vkTransitionImageLayoutEXT)StubTransitionImageLayoutEXT; }
-    table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT) gpa(device, "vkGetImageSubresourceLayout2EXT");
-    if (table->GetImageSubresourceLayout2EXT == nullptr) { table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)StubGetImageSubresourceLayout2EXT; }
     table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT) gpa(device, "vkReleaseSwapchainImagesEXT");
     if (table->ReleaseSwapchainImagesEXT == nullptr) { table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT)StubReleaseSwapchainImagesEXT; }
     table->GetGeneratedCommandsMemoryRequirementsNV = (PFN_vkGetGeneratedCommandsMemoryRequirementsNV) gpa(device, "vkGetGeneratedCommandsMemoryRequirementsNV");
@@ -1847,6 +1823,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetAccelerationStructureOpaqueCaptureDescriptorDataEXT == nullptr) { table->GetAccelerationStructureOpaqueCaptureDescriptorDataEXT = (PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT)StubGetAccelerationStructureOpaqueCaptureDescriptorDataEXT; }
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV) gpa(device, "vkCmdSetFragmentShadingRateEnumNV");
     if (table->CmdSetFragmentShadingRateEnumNV == nullptr) { table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)StubCmdSetFragmentShadingRateEnumNV; }
+    table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT) gpa(device, "vkGetImageSubresourceLayout2EXT");
+    if (table->GetImageSubresourceLayout2EXT == nullptr) { table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT)StubGetImageSubresourceLayout2EXT; }
     table->GetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT) gpa(device, "vkGetDeviceFaultInfoEXT");
     if (table->GetDeviceFaultInfoEXT == nullptr) { table->GetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT)StubGetDeviceFaultInfoEXT; }
     table->CmdSetVertexInputEXT = (PFN_vkCmdSetVertexInputEXT) gpa(device, "vkCmdSetVertexInputEXT");
@@ -1959,12 +1937,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdDecompressMemoryNV == nullptr) { table->CmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)StubCmdDecompressMemoryNV; }
     table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV) gpa(device, "vkCmdDecompressMemoryIndirectCountNV");
     if (table->CmdDecompressMemoryIndirectCountNV == nullptr) { table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV)StubCmdDecompressMemoryIndirectCountNV; }
-    table->GetPipelineIndirectMemoryRequirementsNV = (PFN_vkGetPipelineIndirectMemoryRequirementsNV) gpa(device, "vkGetPipelineIndirectMemoryRequirementsNV");
-    if (table->GetPipelineIndirectMemoryRequirementsNV == nullptr) { table->GetPipelineIndirectMemoryRequirementsNV = (PFN_vkGetPipelineIndirectMemoryRequirementsNV)StubGetPipelineIndirectMemoryRequirementsNV; }
-    table->CmdUpdatePipelineIndirectBufferNV = (PFN_vkCmdUpdatePipelineIndirectBufferNV) gpa(device, "vkCmdUpdatePipelineIndirectBufferNV");
-    if (table->CmdUpdatePipelineIndirectBufferNV == nullptr) { table->CmdUpdatePipelineIndirectBufferNV = (PFN_vkCmdUpdatePipelineIndirectBufferNV)StubCmdUpdatePipelineIndirectBufferNV; }
-    table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV) gpa(device, "vkGetPipelineIndirectDeviceAddressNV");
-    if (table->GetPipelineIndirectDeviceAddressNV == nullptr) { table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)StubGetPipelineIndirectDeviceAddressNV; }
     table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT) gpa(device, "vkCmdSetTessellationDomainOriginEXT");
     if (table->CmdSetTessellationDomainOriginEXT == nullptr) { table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)StubCmdSetTessellationDomainOriginEXT; }
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT) gpa(device, "vkCmdSetDepthClampEnableEXT");

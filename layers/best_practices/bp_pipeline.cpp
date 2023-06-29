@@ -126,7 +126,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
         if ((pCreateInfos[i].pRasterizationState) && (pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
             (pCreateInfos[i].pRasterizationState->depthBiasConstantFactor == 0.0f) &&
-            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) && VendorCheckEnabled(kBPVendorArm)) {
+            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) && layer_settings.validate.best_practices_arm) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_CreatePipelines_DepthBias_Zero,
                 "%s Performance Warning: This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
@@ -157,9 +157,9 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 }
             }
         }
-        skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
+        skip |= layer_settings.validate.best_practices_arm && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_nv) {
         auto prev_pipeline = pipeline_cache_.load();
         if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_MultiplePipelineCaches,
@@ -168,7 +168,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                           VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         if (num_pso_ > kMaxRecommendedNumberOfPSOAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_TooManyPipelines,
                                           "%s Performance warning: Too many pipelines created, consider consolidation",
@@ -272,7 +272,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             "pipeline cache, which may help with performance");
     }
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         auto prev_pipeline = pipeline_cache_.load();
         if (pipelineCache && prev_pipeline && pipelineCache != prev_pipeline) {
             skip |= LogPerformanceWarning(
@@ -285,11 +285,11 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const VkComputePipelineCreateInfo& createInfo = pCreateInfos[i];
-        if (VendorCheckEnabled(kBPVendorArm)) {
+        if (layer_settings.validate.best_practices_arm) {
             skip |= ValidateCreateComputePipelineArm(createInfo);
         }
 
-        if (VendorCheckEnabled(kBPVendorAMD)) {
+        if (layer_settings.validate.best_practices_amd) {
             skip |= ValidateCreateComputePipelineAmd(createInfo);
         }
 
@@ -421,7 +421,7 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
     assert(pipeline_info);
     assert(cb);
 
-    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS && layer_settings.validate.best_practices_nv) {
         using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
         auto& tgm = cb->nv.tess_geometry_mesh;
 
@@ -524,7 +524,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkPipelineLayout* pPipelineLayout) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         uint32_t descriptor_size = enabled_features.core.robustBufferAccess ? 4 : 2;
         // Descriptor sets cost 1 DWORD each.
         // Dynamic buffers cost 2 DWORDs each when robust buffer access is OFF.
@@ -552,7 +552,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         bool has_separate_sampler = false;
         size_t fast_space_usage = 0;
 
@@ -632,7 +632,7 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
 
     auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
 
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_nv) {
         if (IsPipelineUsedInFrame(pipeline)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_Pipeline_SortAndBind,
@@ -641,7 +641,7 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
                 VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(pipeline).c_str());
         }
     }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto& tgm = cb->nv.tess_geometry_mesh;
         if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
             LogPerformanceWarning(commandBuffer, kVUID_BestPractices_BindPipeline_SwitchTessGeometryMesh,

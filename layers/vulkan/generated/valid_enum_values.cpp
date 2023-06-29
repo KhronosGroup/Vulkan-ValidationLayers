@@ -1432,7 +1432,6 @@ template<>
 std::vector<VkIndirectCommandsTokenTypeNV> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkIndirectCommandsTokenTypeNVEnums = {VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkIndirectCommandsTokenTypeNV>> ExtendedVkIndirectCommandsTokenTypeNVEnums = {
-        { &DeviceExtensions::vk_nv_device_generated_commands_compute, { VK_INDIRECT_COMMANDS_TOKEN_TYPE_PIPELINE_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_NV } },
         { &DeviceExtensions::vk_ext_mesh_shader, { VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV } },
     };
     std::vector<VkIndirectCommandsTokenTypeNV> values(CoreVkIndirectCommandsTokenTypeNVEnums.cbegin(), CoreVkIndirectCommandsTokenTypeNVEnums.cend());

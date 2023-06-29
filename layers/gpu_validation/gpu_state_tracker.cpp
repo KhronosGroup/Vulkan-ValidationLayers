@@ -227,7 +227,7 @@ gpu_utils_state::CommandBuffer::CommandBuffer(GpuAssistedBase *ga, VkCommandBuff
     : CMD_BUFFER_STATE(ga, cb, pCreateInfo, pool) {}
 
 ReadLockGuard GpuAssistedBase::ReadLock() const {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -235,7 +235,7 @@ ReadLockGuard GpuAssistedBase::ReadLock() const {
 }
 
 WriteLockGuard GpuAssistedBase::WriteLock() {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

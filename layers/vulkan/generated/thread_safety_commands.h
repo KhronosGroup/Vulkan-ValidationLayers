@@ -4895,56 +4895,6 @@ void PostCallRecordCmdSetStencilOpEXT(
     VkStencilOp                                 depthFailOp,
     VkCompareOp                                 compareOp) override;
 
-void PreCallRecordCopyMemoryToImageEXT(
-    VkDevice                                    device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo) override;
-
-void PostCallRecordCopyMemoryToImageEXT(
-    VkDevice                                    device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo,
-    VkResult                                    result) override;
-
-void PreCallRecordCopyImageToMemoryEXT(
-    VkDevice                                    device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo) override;
-
-void PostCallRecordCopyImageToMemoryEXT(
-    VkDevice                                    device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo,
-    VkResult                                    result) override;
-
-void PreCallRecordCopyImageToImageEXT(
-    VkDevice                                    device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo) override;
-
-void PostCallRecordCopyImageToImageEXT(
-    VkDevice                                    device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo,
-    VkResult                                    result) override;
-
-void PreCallRecordTransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions) override;
-
-void PostCallRecordTransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions,
-    VkResult                                    result) override;
-
-void PreCallRecordGetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) override;
-
-void PostCallRecordGetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) override;
-
 void PreCallRecordReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) override;
@@ -5236,6 +5186,18 @@ void PostCallRecordCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,
     const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) override;
+
+void PreCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) override;
+
+void PostCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) override;
 
 void PreCallRecordGetDeviceFaultInfoEXT(
     VkDevice                                    device,
@@ -5817,35 +5779,6 @@ void PostCallRecordCmdDecompressMemoryIndirectCountNV(
     VkDeviceAddress                             indirectCommandsAddress,
     VkDeviceAddress                             indirectCommandsCountAddress,
     uint32_t                                    stride) override;
-
-void PreCallRecordGetPipelineIndirectMemoryRequirementsNV(
-    VkDevice                                    device,
-    const VkComputePipelineCreateInfo*          pCreateInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) override;
-
-void PostCallRecordGetPipelineIndirectMemoryRequirementsNV(
-    VkDevice                                    device,
-    const VkComputePipelineCreateInfo*          pCreateInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) override;
-
-void PreCallRecordCmdUpdatePipelineIndirectBufferNV(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline) override;
-
-void PostCallRecordCmdUpdatePipelineIndirectBufferNV(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline) override;
-
-void PreCallRecordGetPipelineIndirectDeviceAddressNV(
-    VkDevice                                    device,
-    const VkPipelineIndirectDeviceAddressInfoNV* pInfo) override;
-
-void PostCallRecordGetPipelineIndirectDeviceAddressNV(
-    VkDevice                                    device,
-    const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
-    VkDeviceAddress                             result) override;
 
 void PreCallRecordCmdSetTessellationDomainOriginEXT(
     VkCommandBuffer                             commandBuffer,

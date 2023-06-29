@@ -47,7 +47,7 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
     auto cb_node = GetRead<bp_state::CommandBuffer>(commandBuffer);
     assert(cb_node);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         if ((cb_node->GetQueueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {
             skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_AccelerationStructure_NotAsync,
                                           "%s Performance warning: Prefer building acceleration structures on an asynchronous "

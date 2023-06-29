@@ -892,7 +892,7 @@ void GpuAssisted::DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationB
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                             VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
+    if (layer_settings.validate.gpuav_reserve_binding_slot && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
@@ -906,7 +906,7 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
+    if (layer_settings.validate.gpuav_reserve_binding_slot && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {

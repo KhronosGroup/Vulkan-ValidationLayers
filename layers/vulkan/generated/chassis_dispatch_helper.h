@@ -1161,21 +1161,6 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetStencilOpEXT,
     InterceptIdPreCallRecordCmdSetStencilOpEXT,
     InterceptIdPostCallRecordCmdSetStencilOpEXT,
-    InterceptIdPreCallValidateCopyMemoryToImageEXT,
-    InterceptIdPreCallRecordCopyMemoryToImageEXT,
-    InterceptIdPostCallRecordCopyMemoryToImageEXT,
-    InterceptIdPreCallValidateCopyImageToMemoryEXT,
-    InterceptIdPreCallRecordCopyImageToMemoryEXT,
-    InterceptIdPostCallRecordCopyImageToMemoryEXT,
-    InterceptIdPreCallValidateCopyImageToImageEXT,
-    InterceptIdPreCallRecordCopyImageToImageEXT,
-    InterceptIdPostCallRecordCopyImageToImageEXT,
-    InterceptIdPreCallValidateTransitionImageLayoutEXT,
-    InterceptIdPreCallRecordTransitionImageLayoutEXT,
-    InterceptIdPostCallRecordTransitionImageLayoutEXT,
-    InterceptIdPreCallValidateGetImageSubresourceLayout2EXT,
-    InterceptIdPreCallRecordGetImageSubresourceLayout2EXT,
-    InterceptIdPostCallRecordGetImageSubresourceLayout2EXT,
     InterceptIdPreCallValidateReleaseSwapchainImagesEXT,
     InterceptIdPreCallRecordReleaseSwapchainImagesEXT,
     InterceptIdPostCallRecordReleaseSwapchainImagesEXT,
@@ -1251,6 +1236,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV,
+    InterceptIdPreCallValidateGetImageSubresourceLayout2EXT,
+    InterceptIdPreCallRecordGetImageSubresourceLayout2EXT,
+    InterceptIdPostCallRecordGetImageSubresourceLayout2EXT,
     InterceptIdPreCallValidateGetDeviceFaultInfoEXT,
     InterceptIdPreCallRecordGetDeviceFaultInfoEXT,
     InterceptIdPostCallRecordGetDeviceFaultInfoEXT,
@@ -1392,15 +1380,6 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdDecompressMemoryIndirectCountNV,
     InterceptIdPreCallRecordCmdDecompressMemoryIndirectCountNV,
     InterceptIdPostCallRecordCmdDecompressMemoryIndirectCountNV,
-    InterceptIdPreCallValidateGetPipelineIndirectMemoryRequirementsNV,
-    InterceptIdPreCallRecordGetPipelineIndirectMemoryRequirementsNV,
-    InterceptIdPostCallRecordGetPipelineIndirectMemoryRequirementsNV,
-    InterceptIdPreCallValidateCmdUpdatePipelineIndirectBufferNV,
-    InterceptIdPreCallRecordCmdUpdatePipelineIndirectBufferNV,
-    InterceptIdPostCallRecordCmdUpdatePipelineIndirectBufferNV,
-    InterceptIdPreCallValidateGetPipelineIndirectDeviceAddressNV,
-    InterceptIdPreCallRecordGetPipelineIndirectDeviceAddressNV,
-    InterceptIdPostCallRecordGetPipelineIndirectDeviceAddressNV,
     InterceptIdPreCallValidateCmdSetTessellationDomainOriginEXT,
     InterceptIdPreCallRecordCmdSetTessellationDomainOriginEXT,
     InterceptIdPostCallRecordCmdSetTessellationDomainOriginEXT,
@@ -2829,21 +2808,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetStencilOpEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetStencilOpEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetStencilOpEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCopyMemoryToImageEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCopyMemoryToImageEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCopyMemoryToImageEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCopyImageToMemoryEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCopyImageToMemoryEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCopyImageToMemoryEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCopyImageToImageEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCopyImageToImageEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCopyImageToImageEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateTransitionImageLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordTransitionImageLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordTransitionImageLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout2EXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout2EXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateReleaseSwapchainImagesEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordReleaseSwapchainImagesEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordReleaseSwapchainImagesEXT);
@@ -2921,6 +2885,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetFragmentShadingRateEnumNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceFaultInfoEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceFaultInfoEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceFaultInfoEXT);
@@ -3080,15 +3047,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDecompressMemoryIndirectCountNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDecompressMemoryIndirectCountNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDecompressMemoryIndirectCountNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineIndirectMemoryRequirementsNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineIndirectMemoryRequirementsNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineIndirectMemoryRequirementsNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateCmdUpdatePipelineIndirectBufferNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordCmdUpdatePipelineIndirectBufferNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordCmdUpdatePipelineIndirectBufferNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineIndirectDeviceAddressNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineIndirectDeviceAddressNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineIndirectDeviceAddressNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetTessellationDomainOriginEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetTessellationDomainOriginEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetTessellationDomainOriginEXT);

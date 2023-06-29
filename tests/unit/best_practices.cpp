@@ -23,13 +23,15 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_checks_to_enable) {
     // Enable the vendor-specific checks spcified by vendor_checks_to_enable
-    VkLayerSettingValueDataEXT bp_setting_string_value{};
-    bp_setting_string_value.arrayString.pCharArray = vendor_checks_to_enable;
-    bp_setting_string_value.arrayString.count = sizeof(bp_setting_string_value.arrayString.pCharArray);
-    VkLayerSettingValueEXT bp_vendor_all_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
-                                                        bp_setting_string_value};
-    VkLayerSettingsEXT bp_settings{VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &bp_vendor_all_setting_val};
-    features_.pNext = &bp_settings;
+    
+    std::vector<const char *> input_values{vendor_checks_to_enable};
+    std::vector<VkLayerSettingEXT> settings{
+        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(input_values.size()), {&input_values[0]}}};
+
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info{
+        VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, static_cast<uint32_t>(settings.size()), &settings[0]};
+
+    features_.pNext = &layer_settings_create_info;
 
     InitFramework(m_errorMonitor, &features_);
 }

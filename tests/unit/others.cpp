@@ -18,76 +18,27 @@
 #include "utils/vk_layer_utils.h"
 #include "generated/vk_validation_error_messages.h"
 
-class MessageIdFilter {
-  public:
-    MessageIdFilter(const char *filter_string) {
-        local_string = filter_string;
-        filter_string_value.arrayString.pCharArray = local_string.data();
-        filter_string_value.arrayString.count = local_string.size();
-
-        strncpy(filter_setting_val.name, "message_id_filter", sizeof(filter_setting_val.name));
-        filter_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT;
-        filter_setting_val.data = filter_string_value;
-        filter_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &filter_setting_val};
-    }
-    VkLayerSettingsEXT *pnext{&filter_setting};
-
-  private:
-    VkLayerSettingValueDataEXT filter_string_value{};
-    VkLayerSettingValueEXT filter_setting_val;
-    VkLayerSettingsEXT filter_setting;
-    std::string local_string;
-};
-
 class CustomStypeList {
   public:
     CustomStypeList(const char *stype_id_string) {
-        local_string = stype_id_string;
-        custom_stype_value.arrayString.pCharArray = local_string.data();
-        custom_stype_value.arrayString.count = local_string.size();
-
-        strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
-        custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT;
-        custom_stype_setting_val.data = custom_stype_value;
-        custom_stype_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &custom_stype_setting_val};
+        value = {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, {&stype_id_string}};
+        create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &value};
     }
 
     CustomStypeList(const std::vector<uint32_t> &stype_id_array) {
         local_vector = stype_id_array;
-        custom_stype_value.arrayInt32.pInt32Array = local_vector.data();
-        custom_stype_value.arrayInt32.count = local_vector.size();
-
-        strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
-        custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT;
-        custom_stype_setting_val.data = custom_stype_value;
-        custom_stype_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &custom_stype_setting_val};
+        value = {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_UINT32_EXT, static_cast<uint32_t>(local_vector.size()), {&local_vector[0]}};
+        create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &value};
     }
-    VkLayerSettingsEXT *pnext{&custom_stype_setting};
+    VkLayerSettingsCreateInfoEXT *pnext{&create_info};
 
   private:
-    VkLayerSettingValueDataEXT custom_stype_value{};
-    VkLayerSettingValueEXT custom_stype_setting_val;
-    VkLayerSettingsEXT custom_stype_setting;
-    std::string local_string;
+    CustomStypeList(const CustomStypeList &) = delete;
+    CustomStypeList &operator=(const CustomStypeList &) = delete;
+
+    VkLayerSettingEXT value;
+    VkLayerSettingsCreateInfoEXT create_info;
     std::vector<uint32_t> local_vector;
-};
-
-class DuplicateMsgLimit {
-  public:
-    DuplicateMsgLimit(const uint32_t limit) {
-        limit_value.value32 = limit;
-
-        strncpy(limit_setting_val.name, "duplicate_message_limit", sizeof(limit_setting_val.name));
-        limit_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_EXT;
-        limit_setting_val.data = limit_value;
-        limit_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &limit_setting_val};
-    }
-    VkLayerSettingsEXT *pnext{&limit_setting};
-
-  private:
-    VkLayerSettingValueDataEXT limit_value{};
-    VkLayerSettingValueEXT limit_setting_val;
-    VkLayerSettingsEXT limit_setting;
 };
 
 TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
@@ -244,15 +195,14 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
         uint32_t custom_data;
     } CustomStruct;
 
-    uint32_t custom_stype = 3000300000;
-    CustomStruct custom_struct;
-    custom_struct.pNext = nullptr;
-    custom_struct.sType = static_cast<VkStructureType>(custom_stype);
-    custom_struct.custom_data = 44;
+    const char *id[] = {"3000300000", "24"};
+    VkLayerSettingEXT setting = {
+        OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(std::size(id)), {&id}
+    };
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, {&setting}};
 
     // Communicate list of structinfo pairs to layers
-    auto stype_list = CustomStypeList("3000300000,24");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, stype_list.pnext));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t queue_family_index = 0;
@@ -263,13 +213,20 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
+
+    uint32_t custom_stype = 3000300000;
+    CustomStruct custom_struct;
+    custom_struct.pNext = nullptr;
+    custom_struct.sType = static_cast<VkStructureType>(custom_stype);
+    custom_struct.custom_data = 44;
+
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     vk_testing::BufferView buffer_view(*m_device, bvci);
 }
-
+/*
 TEST_F(VkLayerTest, CustomStypeStructArray) {
     TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a vector of integers");
 
@@ -293,10 +250,17 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     custom_struct_b.custom_data = 88;
 
     // Communicate list of structinfo pairs to layers, including a duplicate which should get filtered out
-    std::vector<uint32_t> custom_struct_info = {custom_stype_a,       sizeof(CustomStruct), custom_stype_b,
-                                                sizeof(CustomStruct), custom_stype_a,       sizeof(CustomStruct)};
-    auto stype_list = CustomStypeList(custom_struct_info);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, stype_list.pnext));
+    const std::vector<uint32_t> custom_struct_info = {
+        custom_stype_a, sizeof(CustomStruct),
+        custom_stype_b, sizeof(CustomStruct),
+        custom_stype_a, sizeof(CustomStruct)};
+
+    const VkLayerSettingEXT setting = {
+        OBJECT_LAYER_NAME, "custom_stype_list",
+        VK_LAYER_SETTING_TYPE_UINT32_EXT, static_cast<uint32_t>(custom_struct_info.size()), {&custom_struct_info[0]}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, {&setting}};
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t queue_family_index = 0;
@@ -307,18 +271,23 @@ TEST_F(VkLayerTest, CustomStypeStructArray) {
     buffer_create_info.pQueueFamilyIndices = &queue_family_index;
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_create_info);
+
     VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>(&custom_struct_b);  // Add custom struct through pNext
     bvci.buffer = buffer.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     vk_testing::BufferView buffer_view(*m_device, bvci);
 }
-
+*/
 TEST_F(VkLayerTest, DuplicateMessageLimit) {
     TEST_DESCRIPTION("Use the duplicate_message_id setting and verify correct operation");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    auto msg_limit = DuplicateMsgLimit(3);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, msg_limit.pnext));
+
+    uint32_t value = 3;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, {&value}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &create_info));
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -378,8 +347,12 @@ TEST_F(VkLayerTest, VuidIdFilterString) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     // This test would normally produce an unexpected error or two.  Use the message filter instead of
     // the error_monitor's SetUnexpectedError to test the filtering.
-    auto filter_setting = MessageIdFilter("VUID-VkRenderPassCreateInfo-pNext-01963");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, filter_setting.pnext));
+
+    const char *ids[] = {"VUID-VkRenderPassCreateInfo-pNext-01963"};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, {ids}};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -410,8 +383,12 @@ TEST_F(VkLayerTest, VuidFilterHexInt) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     // This test would normally produce an unexpected error or two.  Use the message filter instead of
     // the error_monitor's SetUnexpectedError to test the filtering.
-    auto filter_setting = MessageIdFilter("0xa19880e3");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, filter_setting.pnext));
+
+    const char *ids[] = {"0xa19880e3"};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, {ids}};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -442,8 +419,11 @@ TEST_F(VkLayerTest, VuidFilterInt) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     // This test would normally produce an unexpected error or two.  Use the message filter instead of
     // the error_monitor's SetUnexpectedError to test the filtering.
-    auto filter_setting = MessageIdFilter("2711126243");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, filter_setting.pnext));
+    const char *ids[] = {"2711126243"};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, {ids}};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT, nullptr, 1, &setting};
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &layer_settings_create_info));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }

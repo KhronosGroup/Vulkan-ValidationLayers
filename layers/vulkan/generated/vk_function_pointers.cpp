@@ -629,11 +629,6 @@ PFN_vkCmdSetDepthCompareOpEXT CmdSetDepthCompareOpEXT;
 PFN_vkCmdSetDepthBoundsTestEnableEXT CmdSetDepthBoundsTestEnableEXT;
 PFN_vkCmdSetStencilTestEnableEXT CmdSetStencilTestEnableEXT;
 PFN_vkCmdSetStencilOpEXT CmdSetStencilOpEXT;
-PFN_vkCopyMemoryToImageEXT CopyMemoryToImageEXT;
-PFN_vkCopyImageToMemoryEXT CopyImageToMemoryEXT;
-PFN_vkCopyImageToImageEXT CopyImageToImageEXT;
-PFN_vkTransitionImageLayoutEXT TransitionImageLayoutEXT;
-PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
 PFN_vkReleaseSwapchainImagesEXT ReleaseSwapchainImagesEXT;
 PFN_vkGetGeneratedCommandsMemoryRequirementsNV GetGeneratedCommandsMemoryRequirementsNV;
 PFN_vkCmdPreprocessGeneratedCommandsNV CmdPreprocessGeneratedCommandsNV;
@@ -663,6 +658,7 @@ PFN_vkGetImageViewOpaqueCaptureDescriptorDataEXT GetImageViewOpaqueCaptureDescri
 PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT GetSamplerOpaqueCaptureDescriptorDataEXT;
 PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT GetAccelerationStructureOpaqueCaptureDescriptorDataEXT;
 PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
+PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
 PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 PFN_vkAcquireWinrtDisplayNV AcquireWinrtDisplayNV;
@@ -746,9 +742,6 @@ PFN_vkCmdCopyMemoryIndirectNV CmdCopyMemoryIndirectNV;
 PFN_vkCmdCopyMemoryToImageIndirectNV CmdCopyMemoryToImageIndirectNV;
 PFN_vkCmdDecompressMemoryNV CmdDecompressMemoryNV;
 PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCountNV;
-PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
-PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
-PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
 PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
 PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
 PFN_vkCmdSetPolygonModeEXT CmdSetPolygonModeEXT;
@@ -1802,15 +1795,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
-            "VK_EXT_host_image_copy", [](VkInstance , VkDevice device) {
-                CopyMemoryToImageEXT = reinterpret_cast<PFN_vkCopyMemoryToImageEXT>(GetDeviceProcAddr(device, "vkCopyMemoryToImageEXT"));
-                CopyImageToMemoryEXT = reinterpret_cast<PFN_vkCopyImageToMemoryEXT>(GetDeviceProcAddr(device, "vkCopyImageToMemoryEXT"));
-                CopyImageToImageEXT = reinterpret_cast<PFN_vkCopyImageToImageEXT>(GetDeviceProcAddr(device, "vkCopyImageToImageEXT"));
-                TransitionImageLayoutEXT = reinterpret_cast<PFN_vkTransitionImageLayoutEXT>(GetDeviceProcAddr(device, "vkTransitionImageLayoutEXT"));
-                GetImageSubresourceLayout2EXT = reinterpret_cast<PFN_vkGetImageSubresourceLayout2EXT>(GetDeviceProcAddr(device, "vkGetImageSubresourceLayout2EXT"));
-            }
-        },
-        {
             "VK_EXT_swapchain_maintenance1", [](VkInstance , VkDevice device) {
                 ReleaseSwapchainImagesEXT = reinterpret_cast<PFN_vkReleaseSwapchainImagesEXT>(GetDeviceProcAddr(device, "vkReleaseSwapchainImagesEXT"));
             }
@@ -2001,13 +1985,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             "VK_NV_memory_decompression", [](VkInstance , VkDevice device) {
                 CmdDecompressMemoryNV = reinterpret_cast<PFN_vkCmdDecompressMemoryNV>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryNV"));
                 CmdDecompressMemoryIndirectCountNV = reinterpret_cast<PFN_vkCmdDecompressMemoryIndirectCountNV>(GetDeviceProcAddr(device, "vkCmdDecompressMemoryIndirectCountNV"));
-            }
-        },
-        {
-            "VK_NV_device_generated_commands_compute", [](VkInstance , VkDevice device) {
-                GetPipelineIndirectMemoryRequirementsNV = reinterpret_cast<PFN_vkGetPipelineIndirectMemoryRequirementsNV>(GetDeviceProcAddr(device, "vkGetPipelineIndirectMemoryRequirementsNV"));
-                CmdUpdatePipelineIndirectBufferNV = reinterpret_cast<PFN_vkCmdUpdatePipelineIndirectBufferNV>(GetDeviceProcAddr(device, "vkCmdUpdatePipelineIndirectBufferNV"));
-                GetPipelineIndirectDeviceAddressNV = reinterpret_cast<PFN_vkGetPipelineIndirectDeviceAddressNV>(GetDeviceProcAddr(device, "vkGetPipelineIndirectDeviceAddressNV"));
             }
         },
         {
@@ -2519,11 +2496,6 @@ void ResetAllExtensions() {
     CmdSetDepthBoundsTestEnableEXT = nullptr;
     CmdSetStencilTestEnableEXT = nullptr;
     CmdSetStencilOpEXT = nullptr;
-    CopyMemoryToImageEXT = nullptr;
-    CopyImageToMemoryEXT = nullptr;
-    CopyImageToImageEXT = nullptr;
-    TransitionImageLayoutEXT = nullptr;
-    GetImageSubresourceLayout2EXT = nullptr;
     ReleaseSwapchainImagesEXT = nullptr;
     GetGeneratedCommandsMemoryRequirementsNV = nullptr;
     CmdPreprocessGeneratedCommandsNV = nullptr;
@@ -2553,6 +2525,7 @@ void ResetAllExtensions() {
     GetSamplerOpaqueCaptureDescriptorDataEXT = nullptr;
     GetAccelerationStructureOpaqueCaptureDescriptorDataEXT = nullptr;
     CmdSetFragmentShadingRateEnumNV = nullptr;
+    GetImageSubresourceLayout2EXT = nullptr;
     GetDeviceFaultInfoEXT = nullptr;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     AcquireWinrtDisplayNV = nullptr;
@@ -2636,9 +2609,6 @@ void ResetAllExtensions() {
     CmdCopyMemoryToImageIndirectNV = nullptr;
     CmdDecompressMemoryNV = nullptr;
     CmdDecompressMemoryIndirectCountNV = nullptr;
-    GetPipelineIndirectMemoryRequirementsNV = nullptr;
-    CmdUpdatePipelineIndirectBufferNV = nullptr;
-    GetPipelineIndirectDeviceAddressNV = nullptr;
     CmdSetTessellationDomainOriginEXT = nullptr;
     CmdSetDepthClampEnableEXT = nullptr;
     CmdSetPolygonModeEXT = nullptr;

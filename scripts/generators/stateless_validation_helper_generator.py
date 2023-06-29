@@ -597,8 +597,8 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             extStructVar = f'allowed_structs_{structTypeName}'
             extStructCount = f'{extStructVar}.size()'
             extStructData = f'{extStructVar}.data()'
-            extraStype = ', VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
-            extraStruct = ', VkInstanceLayerSettingsEXT' if structTypeName == 'VkInstanceCreateInfo' else ''
+            extraStype = ', VK_STRUCTURE_TYPE_LAYER_SETTINGS_EXT' if structTypeName == 'VkInstanceCreateInfo' else ''
+            extraStruct = ', VkLayerSettingsCreateInfoEXT' if structTypeName == 'VkInstanceCreateInfo' else ''
             extStructNames = '"' + ', '.join(struct.extendedBy) + extraStruct + '"'
             extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
             checkExpr.append(f'constexpr std::array {extStructVar} = {{ {extendedBy}{extraStype} }};\n')

@@ -171,7 +171,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
             }
 
             // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
-            if (attachment_needs_readback && (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
+            if (attachment_needs_readback && (layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_img)) {
                 skip |=
                     LogPerformanceWarning(device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
                                           "%s %s: Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
@@ -220,7 +220,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                            pRenderPassBegin->clearValueCount, rp_state->createInfo.attachmentCount);
         }
 
-        if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->createInfo.pAttachments) {
+        if (layer_settings.validate.best_practices_nv && rp_state->createInfo.pAttachments) {
             for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
                 const auto& attachment = rp_state->createInfo.pAttachments[i];
                 if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -240,7 +240,7 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
     auto cmd_state = Get<bp_state::CommandBuffer>(commandBuffer);
     assert(cmd_state);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
             const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -334,7 +334,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
     auto rp = cmd_state->activeRenderPass.get();
     assert(rp);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         IMAGE_VIEW_STATE* depth_image_view = nullptr;
 
         const auto depth_attachment = rp->createInfo.pSubpasses[cmd_state->GetActiveSubpass()].pDepthStencilAttachment;
@@ -452,7 +452,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
     auto rp = cmd_state->activeRenderPass.get();
     assert(rp);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         std::shared_ptr<IMAGE_VIEW_STATE> depth_image_view_shared_ptr;
         IMAGE_VIEW_STATE* depth_image_view = nullptr;
         std::optional<VkAttachmentLoadOp> load_op;
@@ -516,7 +516,7 @@ void BestPractices::RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer) {
     auto rp = cmd_state->activeRenderPass.get();
     assert(rp);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         std::optional<VkAttachmentStoreOp> store_op;
 
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
@@ -636,7 +636,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
         skip |= ValidateZcullScope(*cmd_state);
@@ -649,7 +649,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
         skip |= ValidateZcullScope(*cmd_state);
@@ -661,7 +661,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
         skip |= ValidateZcullScope(*cmd_state);
@@ -672,7 +672,7 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const {
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
         skip |= ValidateZcullScope(*cmd_state);
@@ -683,7 +683,7 @@ bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer
 bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const {
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderingKHR(commandBuffer);
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
         assert(cmd_state);
         skip |= ValidateZcullScope(*cmd_state);
@@ -707,7 +707,8 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
     // Only send the warning when the vendor is enabled and a depth prepass is detected
     bool uses_depth =
         (render_pass_state.depthAttachment || render_pass_state.colorAttachment) &&
-        ((depth_only_arm && VendorCheckEnabled(kBPVendorArm)) || (depth_only_img && VendorCheckEnabled(kBPVendorIMG)));
+                      ((depth_only_arm && layer_settings.validate.best_practices_arm) ||
+                       (depth_only_img && layer_settings.validate.best_practices_img));
 
     if (uses_depth) {
         skip |= LogPerformanceWarning(
@@ -721,7 +722,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 
     RENDER_PASS_STATE* rp = cmd->activeRenderPass.get();
 
-    if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) && rp) {
+    if ((layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_img) && rp) {
         // If we use an attachment on-tile, we should access it in some way. Otherwise,
         // it is redundant to have it be part of the render pass.
         // Only consider it redundant if it will actually consume bandwidth, i.e.

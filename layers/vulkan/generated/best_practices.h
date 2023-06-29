@@ -1374,27 +1374,6 @@ void PostCallRecordCreateHeadlessSurfaceEXT(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) override;
 
-void PostCallRecordCopyMemoryToImageEXT(
-    VkDevice                                    device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo,
-    VkResult                                    result) override;
-
-void PostCallRecordCopyImageToMemoryEXT(
-    VkDevice                                    device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo,
-    VkResult                                    result) override;
-
-void PostCallRecordCopyImageToImageEXT(
-    VkDevice                                    device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo,
-    VkResult                                    result) override;
-
-void PostCallRecordTransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions,
-    VkResult                                    result) override;
-
 void PostCallRecordReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,

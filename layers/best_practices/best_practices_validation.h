@@ -960,7 +960,6 @@ class BestPractices : public ValidationStateTracker {
     };
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
-    bool VendorCheckEnabled(BPVendorFlags vendors) const;
     const char* VendorSpecificTag(BPVendorFlags vendors) const;
 
     void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cmd_state, uint32_t draw_count, const char* caller);

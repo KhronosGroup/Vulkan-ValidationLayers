@@ -29,7 +29,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
         const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
         // if the number of freed sets > 0, it implies they could be recycled instead if desirable
         // this warning is specific to Arm
-        if (VendorCheckEnabled(kBPVendorArm) && pool_state && (pool_state->freed_count > 0)) {
+        if (layer_settings.validate.best_practices_arm && pool_state && (pool_state->freed_count > 0)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse,
                 "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
@@ -104,7 +104,7 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
                                                  const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (layer_settings.validate.best_practices_arm) {
         if ((pCreateInfo->addressModeU != pCreateInfo->addressModeV) || (pCreateInfo->addressModeV != pCreateInfo->addressModeW)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_CreateSampler_DifferentWrappingModes,
@@ -167,7 +167,7 @@ bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_
                                                         const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                                         const VkCopyDescriptorSet* pDescriptorCopies) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         if (descriptorCopyCount > 0) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_UpdateDescriptors_AvoidCopyingDescriptors,
                                           "%s Performance warning: copying descriptor sets is not recommended",
@@ -183,7 +183,7 @@ bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice devic
                                                                   const VkAllocationCallbacks* pAllocator,
                                                                   VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         skip |= LogPerformanceWarning(device, kVUID_BestPractices_UpdateDescriptors_PreferNonTemplate,
                                       "%s Performance warning: using DescriptorSetWithTemplate is not recommended. Prefer using "
                                       "vkUpdateDescriptorSet instead",

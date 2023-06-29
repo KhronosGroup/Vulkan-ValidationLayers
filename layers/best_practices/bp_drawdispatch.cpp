@@ -67,10 +67,10 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
 void BestPractices::RecordCmdDrawType(VkCommandBuffer cmd_buffer, uint32_t draw_count, const char* caller) {
     auto cb_node = GetWrite<bp_state::CommandBuffer>(cmd_buffer);
     assert(cb_node);
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (layer_settings.validate.best_practices_arm) {
         RecordCmdDrawTypeArm(*cb_node, draw_count, caller);
     }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordCmdDrawTypeNVIDIA(*cb_node);
     }
 
@@ -88,8 +88,8 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint3
     // Each TBDR vendor requires a depth pre-pass draw call to have a minimum number of vertices/indices before it counts towards
     // depth prepass warnings First find the lowest enabled draw count
     uint32_t lowestEnabledMinDrawCount = 0;
-    lowestEnabledMinDrawCount = VendorCheckEnabled(kBPVendorArm) * kDepthPrePassMinDrawCountArm;
-    if (VendorCheckEnabled(kBPVendorIMG) && kDepthPrePassMinDrawCountIMG < lowestEnabledMinDrawCount)
+    lowestEnabledMinDrawCount = layer_settings.validate.best_practices_arm * kDepthPrePassMinDrawCountArm;
+    if (layer_settings.validate.best_practices_img && kDepthPrePassMinDrawCountIMG < lowestEnabledMinDrawCount)
         lowestEnabledMinDrawCount = kDepthPrePassMinDrawCountIMG;
 
     if (draw_count >= lowestEnabledMinDrawCount) {
@@ -99,7 +99,7 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_node, uint3
 }
 
 void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     if (cmd_state.nv.depth_test_enable && cmd_state.nv.zcull_direction != bp_state::CommandBufferStateNV::ZcullDirection::Unknown) {
         RecordSetScopeZcullDirection(cmd_state, cmd_state.nv.zcull_direction);
@@ -141,7 +141,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
-        (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
+        (layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_img)) {
         skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
                                       "%s %s: The command buffer contains many small indexed drawcalls "
                                       "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
@@ -150,7 +150,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
                                       kSmallIndexedDrawcallIndices);
     }
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (layer_settings.validate.best_practices_arm) {
         ValidateIndexBufferArm(*cmd_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 

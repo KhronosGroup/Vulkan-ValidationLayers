@@ -43,42 +43,42 @@ class APISpecific:
                     {
                         'include': 'thread_tracker/thread_safety_validation.h',
                         'class': 'ThreadSafety',
-                        'enabled': '!disables[thread_safety]'
+                        'enabled': 'thread_safety'
                     },
                     {
                         'include': 'stateless/stateless_validation.h',
                         'class': 'StatelessValidation',
-                        'enabled': '!disables[stateless_checks]'
+                        'enabled': 'stateless_param'
                     },
                     {
                         'include': 'object_tracker/object_lifetime_validation.h',
                         'class': 'ObjectLifetimes',
-                        'enabled': '!disables[object_tracking]'
+                        'enabled': 'object_lifetime'
                     },
                     {
                         'include': 'core_checks/core_validation.h',
                         'class': 'CoreChecks',
-                        'enabled': '!disables[core_checks]'
+                        'enabled': 'core'
                     },
                     {
                         'include': 'best_practices/best_practices_validation.h',
                         'class': 'BestPractices',
-                        'enabled': 'enables[best_practices]'
+                        'enabled': 'best_practices'
                     },
                     {
                         'include': 'gpu_validation/gpu_validation.h',
                         'class': 'GpuAssisted',
-                        'enabled': 'enables[gpu_validation]'
+                        'enabled': 'gpu_based == VALIDATE_GPU_BASED_GPU_ASSISTED'
                     },
                     {
                         'include': 'gpu_validation/debug_printf.h',
                         'class': 'DebugPrintf',
-                        'enabled': 'enables[debug_printf]'
+                        'enabled': 'gpu_based == VALIDATE_GPU_BASED_DEBUG_PRINTF'
                     },
                     {
                         'include': 'sync/sync_validation.h',
                         'class': 'SyncValidator',
-                        'enabled': 'enables[sync_validation]'
+                        'enabled': 'sync'
                     }
                 ]
 
@@ -292,12 +292,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
 #include "vulkan/vulkan.h"
 #include "utils/cast_utils.h"
-#include "vk_layer_settings_ext.h"
+#include "vulkan/layer/vk_layer_settings_ext.h"
 #include "vk_layer_config.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
 #include "vk_object_types.h"
-#include "vulkan/vk_layer.h"
 #include "vk_enum_string_helper.h"
 #include "utils/vk_layer_extension_utils.h"
 #include "utils/vk_layer_utils.h"
@@ -306,6 +305,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
+#include "layer_options.h"
 
 extern std::atomic<uint64_t> global_unique_id;
 
@@ -365,63 +365,6 @@ public:
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
 
-typedef enum ValidationCheckDisables {
-    VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
-    VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
-    VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
-    VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
-} ValidationCheckDisables;
-
-typedef enum ValidationCheckEnables {
-    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
-    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
-    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
-    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA,
-    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
-    VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT,
-} ValidationCheckEnables;
-
-typedef enum VkValidationFeatureEnable {
-    VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION,
-} VkValidationFeatureEnable;
-
-// CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
-// checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
-// VK_EXT_validation_features extension that can selectively disable or enable checks.
-typedef enum DisableFlags {
-    command_buffer_state,
-    object_in_use,
-    query_validation,
-    image_layout_validation,
-    object_tracking,
-    core_checks,
-    thread_safety,
-    stateless_checks,
-    handle_wrapping,
-    shader_validation,
-    shader_validation_caching,
-    // Insert new disables above this line
-    kMaxDisableFlags,
-} DisableFlags;
-
-typedef enum EnableFlags {
-    gpu_validation,
-    gpu_validation_reserve_binding_slot,
-    best_practices,
-    vendor_specific_arm,
-    vendor_specific_amd,
-    vendor_specific_img,
-    vendor_specific_nvidia,
-    debug_printf,
-    sync_validation,
-    sync_validation_queue_submit,
-    // Insert new enables above this line
-    kMaxEnableFlags,
-} EnableFlags;
-
-typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
-typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
-
 #if defined(__clang__)
 #define DECORATE_PRINTF(_fmt_argnum, _first_param_num)  __attribute__((format (printf, _fmt_argnum, _first_param_num)))
 #elif defined(__GNUC__)
@@ -444,14 +387,12 @@ class ValidationObject {
 
         InstanceExtensions instance_extensions;
         DeviceExtensions device_extensions = {};
-        CHECK_DISABLED disabled = {};
-        CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{true};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
         LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
+        LayerSettings layer_settings;
 
         std::vector<ValidationObject*> object_dispatch;
         LayerObjectTypeId container_type;
@@ -754,7 +695,6 @@ class ValidationObject {
 #include <mutex>
 
 #include "chassis.h"
-#include "layer_options.h"
 #include "layer_chassis_dispatch.h"
 
 thread_local WriteLockGuard* ValidationObject::record_guard{};
@@ -768,11 +708,7 @@ std::atomic<uint64_t> global_unique_id(1ULL);
 vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
 bool wrap_handles = true;
-
-#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
-#define OBJECT_LAYER_DESCRIPTION "khronos_validation"\n
 ''')
-
         out.append('// Include layer validation object definitions\n')
         # Add #include directives for the used layers
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
@@ -795,7 +731,7 @@ bool wrap_handles = true;
 
         out.append('''
 // Layer registration code
-static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &enables, const CHECK_DISABLED &disables) {
+static std::vector<ValidationObject*> CreateObjectDispatch(const LayerSettings& layer_settings) {
     std::vector<ValidationObject*> object_dispatch{};
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
@@ -805,7 +741,7 @@ static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &
             constructor = layer['class']
             constructor += '(nullptr)' if layer['class'] == 'ThreadSafety' else ''
             out.append(f'''
-    if ({layer["enabled"]}) {{
+    if (layer_settings.validate.{layer["enabled"]}) {{
         object_dispatch.emplace_back(new {constructor});
     }}''')
         out.append('\n')
@@ -814,8 +750,7 @@ static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &
 
         out.append('''
 static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, ValidationObject *device_interceptor) {
-    auto disables = instance_interceptor->disabled;
-    auto enables = instance_interceptor->enabled;
+    const LayerSettings& layer_settings = instance_interceptor->layer_settings;
 
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 ''')
@@ -825,7 +760,7 @@ static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, Val
                 constructor += ('(static_cast<ThreadSafety *>(\n' +
                     '            instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)))')
             out.append(f'''
-    if ({layer["enabled"]}) {{
+    if (layer_settings.validate.{layer["enabled"]}) {{
         device_interceptor->object_dispatch.emplace_back(new {constructor});
     }}''')
         out.append('\n')
@@ -881,68 +816,6 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
                     "results and/or produce undefined behavior.",
                     pCreateInfo->ppEnabledExtensionNames[i]);
         }
-    }
-}
-
-void OutputLayerStatusInfo(ValidationObject *context) {
-    std::string list_of_enables;
-    std::string list_of_disables;
-    for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
-        if (context->enabled[i]) {
-            if (list_of_enables.size()) list_of_enables.append(", ");
-            list_of_enables.append(EnableFlagNameHelper[i]);
-        }
-    }
-    if (list_of_enables.size() == 0) {
-        list_of_enables.append("None");
-    }
-    for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
-        if (context->disabled[i]) {
-            if (list_of_disables.size()) list_of_disables.append(", ");
-            list_of_disables.append(DisableFlagNameHelper[i]);
-        }
-    }
-    if (list_of_disables.size() == 0) {
-        list_of_disables.append("None");
-    }
-
-    auto settings_info = GetLayerSettingsFileInfo();
-    std::string settings_status;
-    if (!settings_info->file_found) {
-        settings_status = "None. Default location is ";
-        settings_status.append(settings_info->location);
-        settings_status.append(".");
-    } else {
-        settings_status = "Found at ";
-        settings_status.append(settings_info->location);
-        settings_status.append(" specified by ");
-        switch (settings_info->source) {
-            case kEnvVar:
-                settings_status.append("environment variable (VK_LAYER_SETTINGS_PATH).");
-                break;
-            case kVkConfig:
-                settings_status.append("VkConfig application override.");
-                break;
-            case kLocal:    // Intentionally fall through
-            default:
-                settings_status.append("default location (current working directory).");
-                break;
-        }
-    }
-
-    // Output layer status information message
-    context->LogInfo(context->instance, "UNASSIGNED-CreateInstance-status-message",
-        "Khronos Validation Layer Active:\\n    Settings File: %s\\n    Current Enables: %s.\\n    Current Disables: %s.\\n",
-        settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
-
-    // Create warning message if user is running debug layers.
-#ifndef NDEBUG
-    context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-debug-warning",
-        "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
-#endif
-    if (!context->fine_grained_locking) {
-        context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-locking-warning",
-                                       "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }
 
@@ -1037,20 +910,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
 
-    // Set up enable and disable features flags
-    CHECK_ENABLED local_enables {};
-    CHECK_DISABLED local_disables {};
-    bool lock_setting;
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
-        report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
-    ProcessConfigAndEnvSettings(&config_and_env_settings_data);
+    LayerSettings layer_settings;
+    InitLayerSettings(pCreateInfo, pAllocator, &layer_settings);
+
+    report_data->filter_message_ids = layer_settings.debug.message_id_filter;
+    report_data->duplicate_message_limit = layer_settings.debug.duplicate_message_limit;
+
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
-    std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);
+    std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(layer_settings);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
-    if (local_disables[handle_wrapping]) {
+    if (!layer_settings.validate.unique_handles) {
         wrap_handles = false;
     }
 
@@ -1094,9 +966,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     framework->object_dispatch = local_object_dispatch;
     framework->container_type = LayerObjectTypeInstance;
-    framework->disabled = local_disables;
-    framework->enabled = local_enables;
-    framework->fine_grained_locking = lock_setting;
+    framework->layer_settings = layer_settings;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -1108,13 +978,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // that take as input a physical device, which can be called before a logical device has been created.
     framework->device_extensions.InitFromDeviceCreateInfo(&framework->instance_extensions, specified_version);
 
-    OutputLayerStatusInfo(framework);
+    LogLayerSettings(framework);
 
     for (auto* intercept : framework->object_dispatch) {
         intercept->instance_dispatch_table = framework->instance_dispatch_table;
-        intercept->enabled = framework->enabled;
-        intercept->disabled = framework->disabled;
-        intercept->fine_grained_locking = framework->fine_grained_locking;
+        intercept->layer_settings = framework->layer_settings;
         intercept->instance = *pInstance;
     }
 
@@ -1231,9 +1099,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->report_data = instance_interceptor->report_data;
         object->device_dispatch_table = device_interceptor->device_dispatch_table;
         object->api_version = device_interceptor->api_version;
-        object->disabled = instance_interceptor->disabled;
-        object->enabled = instance_interceptor->enabled;
-        object->fine_grained_locking = instance_interceptor->fine_grained_locking;
+        object->layer_settings = instance_interceptor->layer_settings;
         object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
         object->instance_extensions = instance_interceptor->instance_extensions;
         object->device_extensions = device_interceptor->device_extensions;

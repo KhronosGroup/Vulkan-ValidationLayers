@@ -28,7 +28,7 @@
 #include "generated/enum_flag_bits.h"
 
 ReadLockGuard CoreChecks::ReadLock() const {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -36,7 +36,7 @@ ReadLockGuard CoreChecks::ReadLock() const {
 }
 
 WriteLockGuard CoreChecks::WriteLock() {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

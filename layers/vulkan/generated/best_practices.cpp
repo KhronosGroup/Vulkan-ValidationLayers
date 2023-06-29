@@ -2584,47 +2584,6 @@ void BestPractices::PostCallRecordCreateHeadlessSurfaceEXT(
     }
 }
 
-void BestPractices::PostCallRecordCopyMemoryToImageEXT(
-    VkDevice                                    device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, result);
-    if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyMemoryToImageEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
-    }
-}
-
-void BestPractices::PostCallRecordCopyImageToMemoryEXT(
-    VkDevice                                    device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, result);
-    if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyImageToMemoryEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
-    }
-}
-
-void BestPractices::PostCallRecordCopyImageToImageEXT(
-    VkDevice                                    device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, result);
-    if (result < VK_SUCCESS) {
-        LogErrorCode("vkCopyImageToImageEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
-    }
-}
-
-void BestPractices::PostCallRecordTransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, result);
-    if (result < VK_SUCCESS) {
-        LogErrorCode("vkTransitionImageLayoutEXT", result); // VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_MEMORY_MAP_FAILED
-    }
-}
-
 void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,

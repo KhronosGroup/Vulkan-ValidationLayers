@@ -22,7 +22,7 @@
 
 void BestPractices::PreCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         WriteLockGuard guard{memory_free_events_lock_};
 
         // Release old allocations to avoid overpopulating the container
@@ -53,7 +53,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                       pAllocateInfo->allocationSize, kMinDeviceAllocationSize);
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory) &&
             !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
             skip |= LogPerformanceWarning(
@@ -109,7 +109,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 }
 
 void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
-    if (memory != VK_NULL_HANDLE && VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (memory != VK_NULL_HANDLE && layer_settings.validate.best_practices_nv) {
         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory);
 
         // Exclude memory free events on dedicated allocations, or imported/exported allocations.
@@ -298,7 +298,7 @@ void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkD
 bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
+    if (layer_settings.validate.best_practices_nv && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
         auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
         if (!mem_info->dynamic_priority) {
             skip |=

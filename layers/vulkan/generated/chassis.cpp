@@ -29,7 +29,6 @@
 #include <mutex>
 
 #include "chassis.h"
-#include "layer_options.h"
 #include "layer_chassis_dispatch.h"
 
 thread_local WriteLockGuard* ValidationObject::record_guard{};
@@ -43,10 +42,6 @@ std::atomic<uint64_t> global_unique_id(1ULL);
 vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
 bool wrap_handles = true;
-
-#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
-#define OBJECT_LAYER_DESCRIPTION "khronos_validation"
-
 // Include layer validation object definitions
 #include "thread_tracker/thread_safety_validation.h"
 #include "stateless/stateless_validation.h"
@@ -73,67 +68,66 @@ static constexpr std::array kDeviceExtensions = {
 };
 
 // Layer registration code
-static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED &enables, const CHECK_DISABLED &disables) {
+static std::vector<ValidationObject*> CreateObjectDispatch(const LayerSettings& layer_settings) {
     std::vector<ValidationObject*> object_dispatch{};
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
 
-    if (!disables[thread_safety]) {
+    if (layer_settings.validate.thread_safety) {
         object_dispatch.emplace_back(new ThreadSafety(nullptr));
     }
-    if (!disables[stateless_checks]) {
+    if (layer_settings.validate.stateless_param) {
         object_dispatch.emplace_back(new StatelessValidation);
     }
-    if (!disables[object_tracking]) {
+    if (layer_settings.validate.object_lifetime) {
         object_dispatch.emplace_back(new ObjectLifetimes);
     }
-    if (!disables[core_checks]) {
+    if (layer_settings.validate.core) {
         object_dispatch.emplace_back(new CoreChecks);
     }
-    if (enables[best_practices]) {
+    if (layer_settings.validate.best_practices) {
         object_dispatch.emplace_back(new BestPractices);
     }
-    if (enables[gpu_validation]) {
+    if (layer_settings.validate.gpu_based == VALIDATE_GPU_BASED_GPU_ASSISTED) {
         object_dispatch.emplace_back(new GpuAssisted);
     }
-    if (enables[debug_printf]) {
+    if (layer_settings.validate.gpu_based == VALIDATE_GPU_BASED_DEBUG_PRINTF) {
         object_dispatch.emplace_back(new DebugPrintf);
     }
-    if (enables[sync_validation]) {
+    if (layer_settings.validate.sync) {
         object_dispatch.emplace_back(new SyncValidator);
     }
     return object_dispatch;
 }
 
 static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, ValidationObject *device_interceptor) {
-    auto disables = instance_interceptor->disabled;
-    auto enables = instance_interceptor->enabled;
+    const LayerSettings& layer_settings = instance_interceptor->layer_settings;
 
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
-    if (!disables[thread_safety]) {
+    if (layer_settings.validate.thread_safety) {
         device_interceptor->object_dispatch.emplace_back(new ThreadSafety(static_cast<ThreadSafety *>(
             instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading))));
     }
-    if (!disables[stateless_checks]) {
+    if (layer_settings.validate.stateless_param) {
         device_interceptor->object_dispatch.emplace_back(new StatelessValidation);
     }
-    if (!disables[object_tracking]) {
+    if (layer_settings.validate.object_lifetime) {
         device_interceptor->object_dispatch.emplace_back(new ObjectLifetimes);
     }
-    if (!disables[core_checks]) {
+    if (layer_settings.validate.core) {
         device_interceptor->object_dispatch.emplace_back(new CoreChecks);
     }
-    if (enables[best_practices]) {
+    if (layer_settings.validate.best_practices) {
         device_interceptor->object_dispatch.emplace_back(new BestPractices);
     }
-    if (enables[gpu_validation]) {
+    if (layer_settings.validate.gpu_based == VALIDATE_GPU_BASED_GPU_ASSISTED) {
         device_interceptor->object_dispatch.emplace_back(new GpuAssisted);
     }
-    if (enables[debug_printf]) {
+    if (layer_settings.validate.gpu_based == VALIDATE_GPU_BASED_DEBUG_PRINTF) {
         device_interceptor->object_dispatch.emplace_back(new DebugPrintf);
     }
-    if (enables[sync_validation]) {
+    if (layer_settings.validate.sync) {
         device_interceptor->object_dispatch.emplace_back(new SyncValidator);
     }
 }
@@ -185,68 +179,6 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
                     "results and/or produce undefined behavior.",
                     pCreateInfo->ppEnabledExtensionNames[i]);
         }
-    }
-}
-
-void OutputLayerStatusInfo(ValidationObject *context) {
-    std::string list_of_enables;
-    std::string list_of_disables;
-    for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
-        if (context->enabled[i]) {
-            if (list_of_enables.size()) list_of_enables.append(", ");
-            list_of_enables.append(EnableFlagNameHelper[i]);
-        }
-    }
-    if (list_of_enables.size() == 0) {
-        list_of_enables.append("None");
-    }
-    for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
-        if (context->disabled[i]) {
-            if (list_of_disables.size()) list_of_disables.append(", ");
-            list_of_disables.append(DisableFlagNameHelper[i]);
-        }
-    }
-    if (list_of_disables.size() == 0) {
-        list_of_disables.append("None");
-    }
-
-    auto settings_info = GetLayerSettingsFileInfo();
-    std::string settings_status;
-    if (!settings_info->file_found) {
-        settings_status = "None. Default location is ";
-        settings_status.append(settings_info->location);
-        settings_status.append(".");
-    } else {
-        settings_status = "Found at ";
-        settings_status.append(settings_info->location);
-        settings_status.append(" specified by ");
-        switch (settings_info->source) {
-            case kEnvVar:
-                settings_status.append("environment variable (VK_LAYER_SETTINGS_PATH).");
-                break;
-            case kVkConfig:
-                settings_status.append("VkConfig application override.");
-                break;
-            case kLocal:    // Intentionally fall through
-            default:
-                settings_status.append("default location (current working directory).");
-                break;
-        }
-    }
-
-    // Output layer status information message
-    context->LogInfo(context->instance, "UNASSIGNED-CreateInstance-status-message",
-        "Khronos Validation Layer Active:\n    Settings File: %s\n    Current Enables: %s.\n    Current Disables: %s.\n",
-        settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
-
-    // Create warning message if user is running debug layers.
-#ifndef NDEBUG
-    context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-debug-warning",
-        "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
-#endif
-    if (!context->fine_grained_locking) {
-        context->LogPerformanceWarning(context->instance, "UNASSIGNED-CreateInstance-locking-warning",
-                                       "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }
 
@@ -341,20 +273,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
 
-    // Set up enable and disable features flags
-    CHECK_ENABLED local_enables {};
-    CHECK_DISABLED local_disables {};
-    bool lock_setting;
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
-        report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
-    ProcessConfigAndEnvSettings(&config_and_env_settings_data);
+    LayerSettings layer_settings;
+    InitLayerSettings(pCreateInfo, pAllocator, &layer_settings);
+
+    report_data->filter_message_ids = layer_settings.debug.message_id_filter;
+    report_data->duplicate_message_limit = layer_settings.debug.duplicate_message_limit;
+
     layer_debug_messenger_actions(report_data, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
-    std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(local_enables, local_disables);
+    std::vector<ValidationObject*> local_object_dispatch = CreateObjectDispatch(layer_settings);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
-    if (local_disables[handle_wrapping]) {
+    if (!layer_settings.validate.unique_handles) {
         wrap_handles = false;
     }
 
@@ -398,9 +329,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     framework->object_dispatch = local_object_dispatch;
     framework->container_type = LayerObjectTypeInstance;
-    framework->disabled = local_disables;
-    framework->enabled = local_enables;
-    framework->fine_grained_locking = lock_setting;
+    framework->layer_settings = layer_settings;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -412,13 +341,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // that take as input a physical device, which can be called before a logical device has been created.
     framework->device_extensions.InitFromDeviceCreateInfo(&framework->instance_extensions, specified_version);
 
-    OutputLayerStatusInfo(framework);
+    LogLayerSettings(framework);
 
     for (auto* intercept : framework->object_dispatch) {
         intercept->instance_dispatch_table = framework->instance_dispatch_table;
-        intercept->enabled = framework->enabled;
-        intercept->disabled = framework->disabled;
-        intercept->fine_grained_locking = framework->fine_grained_locking;
+        intercept->layer_settings = framework->layer_settings;
         intercept->instance = *pInstance;
     }
 
@@ -535,9 +462,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->report_data = instance_interceptor->report_data;
         object->device_dispatch_table = device_interceptor->device_dispatch_table;
         object->api_version = device_interceptor->api_version;
-        object->disabled = instance_interceptor->disabled;
-        object->enabled = instance_interceptor->enabled;
-        object->fine_grained_locking = instance_interceptor->fine_grained_locking;
+        object->layer_settings = instance_interceptor->layer_settings;
         object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
         object->instance_extensions = instance_interceptor->instance_extensions;
         object->device_extensions = device_interceptor->device_extensions;
@@ -11678,118 +11603,6 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(
-    VkDevice                                    device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCopyMemoryToImageEXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyMemoryToImageEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
-    }
-    VkResult result = DispatchCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToImageEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(
-    VkDevice                                    device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCopyImageToMemoryEXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyImageToMemoryEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
-    }
-    VkResult result = DispatchCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToMemoryEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(
-    VkDevice                                    device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCopyImageToImageEXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCopyImageToImageEXT(device, pCopyImageToImageInfo);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCopyImageToImageEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo);
-    }
-    VkResult result = DispatchCopyImageToImageEXT(device, pCopyImageToImageInfo);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCopyImageToImageEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateTransitionImageLayoutEXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateTransitionImageLayoutEXT(device, transitionCount, pTransitions);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordTransitionImageLayoutEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions);
-    }
-    VkResult result = DispatchTransitionImageLayoutEXT(device, transitionCount, pTransitions);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordTransitionImageLayoutEXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
-    VkDevice                                    device,
-    VkImage                                     image,
-    const VkImageSubresource2EXT*               pSubresource,
-    VkSubresourceLayout2EXT*                    pLayout) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2EXT]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
-        if (skip) return;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2EXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
-    }
-    DispatchGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2EXT]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
-    }
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(
     VkDevice                                    device,
     const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
@@ -12405,6 +12218,29 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
     for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV]) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    }
+    DispatchGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
     }
 }
 
@@ -13644,72 +13480,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryIndirectCountNV(
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCmdDecompressMemoryIndirectCountNV(commandBuffer, indirectCommandsAddress, indirectCommandsCountAddress, stride);
     }
-}
-
-VKAPI_ATTR void VKAPI_CALL GetPipelineIndirectMemoryRequirementsNV(
-    VkDevice                                    device,
-    const VkComputePipelineCreateInfo*          pCreateInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetPipelineIndirectMemoryRequirementsNV]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
-        if (skip) return;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineIndirectMemoryRequirementsNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
-    }
-    DispatchGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectMemoryRequirementsNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordGetPipelineIndirectMemoryRequirementsNV(device, pCreateInfo, pMemoryRequirements);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdUpdatePipelineIndirectBufferNV(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdUpdatePipelineIndirectBufferNV]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
-        if (skip) return;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdUpdatePipelineIndirectBufferNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
-    }
-    DispatchCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdUpdatePipelineIndirectBufferNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCmdUpdatePipelineIndirectBufferNV(commandBuffer, pipelineBindPoint, pipeline);
-    }
-}
-
-VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
-    VkDevice                                    device,
-    const VkPipelineIndirectDeviceAddressInfoNV* pInfo) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetPipelineIndirectDeviceAddressNV]) {
-        auto lock = intercept->ReadLock();
-        skip |= intercept->PreCallValidateGetPipelineIndirectDeviceAddressNV(device, pInfo);
-        if (skip) return 0;
-    }
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelineIndirectDeviceAddressNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PreCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo);
-    }
-    VkDeviceAddress result = DispatchGetPipelineIndirectDeviceAddressNV(device, pInfo);
-    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelineIndirectDeviceAddressNV]) {
-        auto lock = intercept->WriteLock();
-        intercept->PostCallRecordGetPipelineIndirectDeviceAddressNV(device, pInfo, result);
-    }
-    return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetTessellationDomainOriginEXT(
@@ -15850,11 +15620,6 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdSetDepthBoundsTestEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthBoundsTestEnableEXT}},
     {"vkCmdSetStencilTestEnableEXT", {kFuncTypeDev, (void*)CmdSetStencilTestEnableEXT}},
     {"vkCmdSetStencilOpEXT", {kFuncTypeDev, (void*)CmdSetStencilOpEXT}},
-    {"vkCopyMemoryToImageEXT", {kFuncTypeDev, (void*)CopyMemoryToImageEXT}},
-    {"vkCopyImageToMemoryEXT", {kFuncTypeDev, (void*)CopyImageToMemoryEXT}},
-    {"vkCopyImageToImageEXT", {kFuncTypeDev, (void*)CopyImageToImageEXT}},
-    {"vkTransitionImageLayoutEXT", {kFuncTypeDev, (void*)TransitionImageLayoutEXT}},
-    {"vkGetImageSubresourceLayout2EXT", {kFuncTypeDev, (void*)GetImageSubresourceLayout2EXT}},
     {"vkReleaseSwapchainImagesEXT", {kFuncTypeDev, (void*)ReleaseSwapchainImagesEXT}},
     {"vkGetGeneratedCommandsMemoryRequirementsNV", {kFuncTypeDev, (void*)GetGeneratedCommandsMemoryRequirementsNV}},
     {"vkCmdPreprocessGeneratedCommandsNV", {kFuncTypeDev, (void*)CmdPreprocessGeneratedCommandsNV}},
@@ -15884,6 +15649,7 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetSamplerOpaqueCaptureDescriptorDataEXT", {kFuncTypeDev, (void*)GetSamplerOpaqueCaptureDescriptorDataEXT}},
     {"vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", {kFuncTypeDev, (void*)GetAccelerationStructureOpaqueCaptureDescriptorDataEXT}},
     {"vkCmdSetFragmentShadingRateEnumNV", {kFuncTypeDev, (void*)CmdSetFragmentShadingRateEnumNV}},
+    {"vkGetImageSubresourceLayout2EXT", {kFuncTypeDev, (void*)GetImageSubresourceLayout2EXT}},
     {"vkGetDeviceFaultInfoEXT", {kFuncTypeDev, (void*)GetDeviceFaultInfoEXT}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkAcquireWinrtDisplayNV", {kFuncTypePdev, (void*)AcquireWinrtDisplayNV}},
@@ -15967,9 +15733,6 @@ const vvl::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdCopyMemoryToImageIndirectNV", {kFuncTypeDev, (void*)CmdCopyMemoryToImageIndirectNV}},
     {"vkCmdDecompressMemoryNV", {kFuncTypeDev, (void*)CmdDecompressMemoryNV}},
     {"vkCmdDecompressMemoryIndirectCountNV", {kFuncTypeDev, (void*)CmdDecompressMemoryIndirectCountNV}},
-    {"vkGetPipelineIndirectMemoryRequirementsNV", {kFuncTypeDev, (void*)GetPipelineIndirectMemoryRequirementsNV}},
-    {"vkCmdUpdatePipelineIndirectBufferNV", {kFuncTypeDev, (void*)CmdUpdatePipelineIndirectBufferNV}},
-    {"vkGetPipelineIndirectDeviceAddressNV", {kFuncTypeDev, (void*)GetPipelineIndirectDeviceAddressNV}},
     {"vkCmdSetTessellationDomainOriginEXT", {kFuncTypeDev, (void*)CmdSetTessellationDomainOriginEXT}},
     {"vkCmdSetDepthClampEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthClampEnableEXT}},
     {"vkCmdSetPolygonModeEXT", {kFuncTypeDev, (void*)CmdSetPolygonModeEXT}},

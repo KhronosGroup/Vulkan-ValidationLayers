@@ -608,11 +608,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetDepthBoundsTestEnableEXT CmdSetDepthBoundsTestEnableEXT;
     PFN_vkCmdSetStencilTestEnableEXT CmdSetStencilTestEnableEXT;
     PFN_vkCmdSetStencilOpEXT CmdSetStencilOpEXT;
-    PFN_vkCopyMemoryToImageEXT CopyMemoryToImageEXT;
-    PFN_vkCopyImageToMemoryEXT CopyImageToMemoryEXT;
-    PFN_vkCopyImageToImageEXT CopyImageToImageEXT;
-    PFN_vkTransitionImageLayoutEXT TransitionImageLayoutEXT;
-    PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
     PFN_vkReleaseSwapchainImagesEXT ReleaseSwapchainImagesEXT;
     PFN_vkGetGeneratedCommandsMemoryRequirementsNV GetGeneratedCommandsMemoryRequirementsNV;
     PFN_vkCmdPreprocessGeneratedCommandsNV CmdPreprocessGeneratedCommandsNV;
@@ -640,6 +635,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT GetSamplerOpaqueCaptureDescriptorDataEXT;
     PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT GetAccelerationStructureOpaqueCaptureDescriptorDataEXT;
     PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
+    PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
     PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT;
     PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -705,9 +701,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdCopyMemoryToImageIndirectNV CmdCopyMemoryToImageIndirectNV;
     PFN_vkCmdDecompressMemoryNV CmdDecompressMemoryNV;
     PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCountNV;
-    PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
-    PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
-    PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
     PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
     PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
     PFN_vkCmdSetPolygonModeEXT CmdSetPolygonModeEXT;

@@ -20,15 +20,12 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/best_practices_error_enums.h"
 
-struct VendorSpecificInfo {
-    EnableFlags vendor_id;
-    std::string name;
+const std::map<BPVendorFlagBits, const char*> kVendorInfo = {
+    {kBPVendorArm, "Arm"},
+    {kBPVendorAMD, "AMD"},
+    {kBPVendorIMG, "IMG"},
+    {kBPVendorNVIDIA, "NVIDIA"}
 };
-
-const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {{kBPVendorArm, {vendor_specific_arm, "Arm"}},
-                                                                    {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
-                                                                    {kBPVendorIMG, {vendor_specific_img, "IMG"}},
-                                                                    {kBPVendorNVIDIA, {vendor_specific_nvidia, "NVIDIA"}}};
 
 static constexpr std::array<VkFormat, 12> kCustomClearColorCompressedFormatsNVIDIA = {
     VK_FORMAT_R8G8B8A8_UNORM,           VK_FORMAT_B8G8R8A8_UNORM,           VK_FORMAT_A8B8G8R8_UNORM_PACK32,
@@ -38,7 +35,7 @@ static constexpr std::array<VkFormat, 12> kCustomClearColorCompressedFormatsNVID
 };
 
 ReadLockGuard BestPractices::ReadLock() const {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -46,7 +43,7 @@ ReadLockGuard BestPractices::ReadLock() const {
 }
 
 WriteLockGuard BestPractices::WriteLock() {
-    if (fine_grained_locking) {
+    if (layer_settings.validate.fine_grained_locking) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);
@@ -62,15 +59,6 @@ std::shared_ptr<CMD_BUFFER_STATE> BestPractices::CreateCmdBufferState(VkCommandB
 bp_state::CommandBuffer::CommandBuffer(BestPractices* bp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                                        const COMMAND_POOL_STATE* pool)
     : CMD_BUFFER_STATE(bp, cb, pCreateInfo, pool) {}
-
-bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
-    for (const auto& vendor : kVendorInfo) {
-        if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
-            return true;
-        }
-    }
-    return false;
-}
 
 const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
     // Cache built vendor tags in a map
@@ -88,7 +76,7 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
                 if (!first_vendor) {
                     vendor_tag << ", ";
                 }
-                vendor_tag << vendor.second.name;
+                vendor_tag << vendor.second;
                 first_vendor = false;
             }
         }
@@ -126,7 +114,7 @@ void BestPractices::LogErrorCode(const char* api_name, VkResult result) const {
 
 void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, VkCompareOp new_depth_compare_op,
                                             bool new_depth_test_enable) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     if (cmd_state.nv.depth_compare_op != new_depth_compare_op) {
         switch (new_depth_compare_op) {
@@ -149,7 +137,7 @@ void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, 
 
 void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkImage depth_attachment,
                                          const VkImageSubresourceRange& subresource_range) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     if (depth_attachment == VK_NULL_HANDLE) {
         cmd_state.nv.zcull_scope = {};
@@ -177,13 +165,13 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
 }
 
 void BestPractices::RecordUnbindZcullScope(bp_state::CommandBuffer& cmd_state) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     RecordBindZcullScope(cmd_state, VK_NULL_HANDLE, VkImageSubresourceRange{});
 }
 
 void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_state) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     auto& scope = cmd_state.nv.zcull_scope;
     RecordResetZcullDirection(cmd_state, scope.image, scope.range);
@@ -207,7 +195,7 @@ static void ForEachSubresource(const IMAGE_STATE& image, const VkImageSubresourc
 
 void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
                                               const VkImageSubresourceRange& subresource_range) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     RecordSetZcullDirection(cmd_state, depth_image, subresource_range, bp_state::CommandBufferStateNV::ZcullDirection::Unknown);
 
@@ -229,7 +217,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
 
 void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state,
                                                  bp_state::CommandBufferStateNV::ZcullDirection mode) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     auto& scope = cmd_state.nv.zcull_scope;
     RecordSetZcullDirection(cmd_state, scope.image, scope.range, mode);
@@ -238,7 +226,7 @@ void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_st
 void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
                                             const VkImageSubresourceRange& subresource_range,
                                             bp_state::CommandBufferStateNV::ZcullDirection mode) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
     if (image_it == cmd_state.nv.zcull_per_image.end()) {
@@ -255,7 +243,7 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
 }
 
 void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     // Add one draw to each subresource depending on the current Z-cull direction
     auto& scope = cmd_state.nv.zcull_scope;
@@ -282,7 +270,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
 }
 
 bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state) const {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     bool skip = false;
 
@@ -398,7 +386,7 @@ static std::string MakeCompressedFormatListNVIDIA() {
 }
 
 void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& clear_value) {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     const std::array<uint32_t, 4> raw_color = GetRawClearColor(format, clear_value);
     if (IsClearColorZeroOrOne(format, raw_color)) {
@@ -421,7 +409,7 @@ void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& c
 }
 
 bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value) const {
-    assert(VendorCheckEnabled(kBPVendorNVIDIA));
+    assert(layer_settings.validate.best_practices_nv);
 
     bool skip = false;
 
@@ -639,7 +627,7 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
                    "result in undefined behaviour.");
     }
 
-    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
+    if (layer_settings.validate.best_practices_arm || layer_settings.validate.best_practices_img) {
         ValidateImageInQueueArmImg(function_name, state, last_usage.type, usage, array_layer, mip_level);
     }
 }

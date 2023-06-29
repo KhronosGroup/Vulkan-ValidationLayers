@@ -23,7 +23,7 @@
 
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
-    if (enabled[gpu_validation]) {
+    if (layer_settings.validate.gpu_based == VALIDATE_GPU_BASED_GPU_ASSISTED) {
         ReportSetupProblem(device,
                            "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
                            "Debug Printf disabled.");

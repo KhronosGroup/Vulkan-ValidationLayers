@@ -276,7 +276,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
                                        pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         auto num = num_barriers_objects_.load();
         if (num + imageMemoryBarrierCount + bufferMemoryBarrierCount > kMaxRecommendedBarriersSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdBuffer_highBarrierCount,
@@ -287,7 +287,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
                                           VendorSpecificTag(kBPVendorAMD), num);
         }
     }
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_nv) {
         static constexpr std::array<VkImageLayout, 3> read_layouts = {
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -310,7 +310,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
             }
 
             // general with no storage
-            if (VendorCheckEnabled(kBPVendorAMD) && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+            if (layer_settings.validate.best_practices_amd && image_barrier.newLayout == VK_IMAGE_LAYOUT_GENERAL) {
                 auto image_state = Get<IMAGE_STATE>(pImageMemoryBarriers[i].image);
                 if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     skip |= LogPerformanceWarning(device, kVUID_BestPractices_vkImage_AvoidGeneral,
@@ -362,7 +362,7 @@ bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer comma
     const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
     assert(cmd_state);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         if (barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && barrier.newLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= ValidateZcull(*cmd_state, barrier.image, barrier.subresourceRange);
         }
@@ -407,7 +407,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
         });
     }
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordResetZcullDirection(*cb, barrier.image, barrier.subresourceRange);
     }
 }
@@ -449,7 +449,7 @@ void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer command
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_nv) {
         if (Count<SEMAPHORE_STATE>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores,
                                           "%s %s Performance warning: High number of vkSemaphore objects created. "
@@ -465,7 +465,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
 bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkFence* pFence) const {
     bool skip = false;
-    if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_amd || layer_settings.validate.best_practices_nv) {
         if (Count<FENCE_STATE>() > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_SyncObjects_HighNumberOfFences,
                                           "%s %s Performance warning: High number of VkFence objects created."

@@ -472,7 +472,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
 bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const char *call_source,
                                             uint32_t current_submit_count, const char *vu_id) const {
     bool skip = false;
-    if (disabled[command_buffer_state]) {
+    if (!layer_settings.validate.core_command_buffer) {
         return skip;
     }
 

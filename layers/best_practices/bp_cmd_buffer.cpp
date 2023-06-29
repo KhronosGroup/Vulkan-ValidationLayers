@@ -75,7 +75,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                       "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
     }
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (layer_settings.validate.best_practices_arm) {
         if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
                                           "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
@@ -83,7 +83,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                           VendorSpecificTag(kBPVendorArm));
         }
     }
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         auto cb = GetRead<bp_state::CommandBuffer>(commandBuffer);
         if (cb->num_submits == 1 && !cb->is_one_time_submit) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
@@ -130,7 +130,7 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuf
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordSetDepthTestState(*cb, depthCompareOp, cb->nv.depth_test_enable);
     }
 }
@@ -141,7 +141,7 @@ void BestPractices::PreCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer command
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordSetDepthTestState(*cb, depthCompareOp, cb->nv.depth_test_enable);
     }
 }
@@ -152,7 +152,7 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBu
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depthTestEnable != VK_FALSE);
     }
 }
@@ -163,7 +163,7 @@ void BestPractices::PreCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer comman
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (layer_settings.validate.best_practices_nv) {
         RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depthTestEnable != VK_FALSE);
     }
 }
@@ -185,7 +185,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         }
     }
 
-    if (VendorCheckEnabled(kBPVendorAMD)) {
+    if (layer_settings.validate.best_practices_amd) {
         if (commandBufferCount > 0) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_CmdBuffer_AvoidSecondaryCmdBuffers,
                                           "%s Performance warning: Use of secondary command buffers is not recommended. ",
