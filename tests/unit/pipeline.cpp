@@ -3371,6 +3371,7 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe.AddShader(&fs);
 
+        pipe.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
         const auto raster_state = LvlInitStruct<VkPipelineRasterizationStateCreateInfo>(&depth_bias_representation);
         pipe.SetRasterization(&raster_state);
 
