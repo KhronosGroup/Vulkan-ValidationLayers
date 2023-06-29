@@ -177,9 +177,30 @@ class BaseGenerator(OutputGenerator):
         print("WARNING: This should not be called from the child class")
         return
 
+    # The issue is if 2 extension expose a command, genCmd() will only
+    # show one of the extension, at endFile() we can finally go through
+    # and update which things depend on which extensions
+    def applyExtensionDependency(self):
+        for extension in self.vk.extensions.values():
+            # dict.key() can be None, so need to double loop
+            dict = self.featureDictionary[extension.name]['command']
+
+            # "required" == None
+            #         or
+            #  an additional feature dependency, which is a boolean expression of
+            #  one or more extension and/or core version names
+            for required in dict:
+                for commandName in dict[required]:
+                    e = self.vk.extensions[extension.name]
+                    c = self.vk.commands[commandName]
+                    # Make sure list is unique
+                    c.extensions.extend([e] if e not in c.extensions else [])
+                    e.commands.extend([c] if c not in e.commands else [])
+
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
         # We do some post processing now
+        self.applyExtensionDependency()
 
         # Use structs and commands to find which things are returnedOnly
         for struct in [x for x in self.vk.structs.values() if not x.returnedOnly]:
@@ -289,8 +310,8 @@ class BaseGenerator(OutputGenerator):
                                        paramOptional, paramOptionalPointer,
                                        paramNoautovalidity, paramLength))
 
-        extension = self.currentFeature if isinstance(self.currentFeature, Extension) else None
         version = self.currentFeature if isinstance(self.currentFeature, Version) else None
+        extension = self.currentFeature if isinstance(self.currentFeature, Extension) else None
         protect = extension.protect if extension is not None else None
 
         # These coammds have no way from the XML to detect they would be an instance command
@@ -298,13 +319,11 @@ class BaseGenerator(OutputGenerator):
         instance = len(params) > 0 and (params[0].type == 'VkInstance' or params[0].type == 'VkPhysicalDevice' or name in specialInstanceCommand)
         device = not instance
 
-        self.vk.commands[name] = Command(name, alias, extension, version, protect,
+        self.vk.commands[name] = Command(name, alias, [], version, protect,
                                          instance, device, returnType,
                                          api, tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
                                          params, cPrototype, cFunctionPointer)
-        if extension is not None:
-            extension.commands.append(self.vk.commands[name])
 
     #
     # List the enum for the commands
