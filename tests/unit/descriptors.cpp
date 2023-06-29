@@ -2625,6 +2625,11 @@ TEST_F(NegativeDescriptors, PushDescriptorTemplateDestroyDescriptorSetLayout) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
+    }
+    
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
