@@ -530,6 +530,10 @@ class YcbcrTest : public VkLayerTest {
 class NegativeYcbcr : public YcbcrTest {};
 class PositiveYcbcr : public YcbcrTest {};
 
+class CooperativeMatrixTest : public VkLayerTest {};
+class NegativeCooperativeMatrix : public CooperativeMatrixTest {};
+class PositiveCooperativeMatrix : public CooperativeMatrixTest {};
+
 class VkBufferTest {
   public:
     enum eTestEnFlags {

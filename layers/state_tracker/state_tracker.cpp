@@ -1008,6 +1008,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
         }
 
+        const auto *cooperative_matrix_features_khr = LvlFindInChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(pCreateInfo->pNext);
+        if (cooperative_matrix_features_khr) {
+            enabled_features.cooperative_matrix_features_khr = *cooperative_matrix_features_khr;
+        }
+
         const auto *compute_shader_derivatives_features =
             LvlFindInChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
         if (compute_shader_derivatives_features) {
@@ -1640,6 +1645,22 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
 
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties,
                                                                                cooperative_matrix_properties.data());
+    }
+
+    if (IsExtEnabled(dev_ext.vk_khr_cooperative_matrix)) {
+        // Get the needed KHR cooperative_matrix properties
+        auto cooperative_matrix_props_khr = LvlInitStruct<VkPhysicalDeviceCooperativeMatrixPropertiesKHR>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&cooperative_matrix_props_khr);
+        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        phys_dev_ext_props.cooperative_matrix_props_khr = cooperative_matrix_props_khr;
+
+        uint32_t num_cooperative_matrix_properties_khr = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device, &num_cooperative_matrix_properties_khr,
+                                                                                NULL);
+        cooperative_matrix_properties_khr.resize(num_cooperative_matrix_properties_khr, LvlInitStruct<VkCooperativeMatrixPropertiesKHR>());
+
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device, &num_cooperative_matrix_properties_khr,
+                                                                                cooperative_matrix_properties_khr.data());
     }
 
     // Store queue family data

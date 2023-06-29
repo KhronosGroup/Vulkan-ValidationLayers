@@ -2,11 +2,11 @@
     "repos": [
         {
             "name": "glslang",
-            "url": "https://github.com/KhronosGroup/glslang.git",
+            "url": "https://github.com/archimedus/glslang.git",
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "9575e33186c74a68831c469f7271edf386ea43a5",
+            "commit": "a7260ca8a6a81cddacef5d6b3d80398cd67b94b5",
             "optional": [
                 "tests"
             ]
