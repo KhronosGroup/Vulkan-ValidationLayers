@@ -66,6 +66,7 @@ class Handle:
     """<type> which represents a dispatch handle"""
     name: str
     type: str    # ex. 'VK_OBJECT_TYPE_BUFFER'
+    parent: 'Handle'
     protect: str # ex. 'VK_USE_PLATFORM_ANDROID_KHR'
     # Only one will be True, the other is False
     instance: bool
@@ -78,11 +79,16 @@ class CommandParam:
     name: str
     type: str
     alias: str
-    externSync: bool
-    optional: bool
-    optionalPointer: bool # if type contains a pointer, is the pointer value optional
+
+    pointer: bool # type contains a pointer
     noAutoValidity: bool
     length: str # 'len' from XML showing what is used to set the length of an pointer
+
+    optional: bool
+    optionalPointer: bool # if type contains a pointer, is the pointer value optional
+
+    externSync: bool
+    externSyncPointer: List[str] # if type contains a pointer, might only specific members modified
 
 class Queues(IntFlag):
     TRANSFER = auto()       # VK_QUEUE_TRANSFER_BIT
@@ -106,17 +112,19 @@ class Command:
     # Attributes of <command>
     name: str
     alias: str # Because commands are interfaces into layers/drivers, we need all command alias
+
     extensions: List[Extension] # All extensions that enable the struct
     version: Version # None if Version 1.0
     protect: str # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+
+    returnType: str # 'void', 'VkResult', etc
+
+    params: List[CommandParam] # Each parameter of the command
 
     # Only one will be True, the other is False
     instance: bool
     device: bool
 
-    returnType: str # 'void', 'VkResult', etc
-
-    api: List[str]            # ex. [ 'vulkan' ]
     tasks: List[str]          # ex. [ 'action', 'state', 'synchronization' ]
     queues: Queues            # zero == No Queues found
     successCodes: List[str]   # ex. [ 'VK_SUCCESS', 'VK_INCOMPLETE' ]
@@ -129,7 +137,7 @@ class Command:
     renderPass: CommandScope
     videoCoding: CommandScope
 
-    params: List[CommandParam] # <command/param>
+    implicitExternSyncParams: List[str]
 
     # C prototype string - ex:
     # VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
