@@ -549,6 +549,12 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
 
     m_commandBuffer->begin();
     vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_commandBuffer->handle(), VK_IMAGE_ASPECT_COLOR_BIT);
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
     m_commandBuffer->end();
 }
 
