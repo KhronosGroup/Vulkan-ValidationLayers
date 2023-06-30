@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from generators.vulkan_object import *
-
 # TODO - Remove common_codegen.py
 # This file is trying to replace common_codegen.py using new VulkanObject class
 

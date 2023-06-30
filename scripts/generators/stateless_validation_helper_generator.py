@@ -20,9 +20,9 @@
 
 import os
 import sys
-from generators.generator_utils import *
-from collections import namedtuple
-from common_codegen import *
+
+from generators.generator_utils import (fileIsGeneratedWarning, getVUID)
+from generators.vulkan_object import (Struct)
 from generators.base_generator import BaseGenerator
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):

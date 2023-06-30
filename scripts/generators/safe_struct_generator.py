@@ -20,8 +20,8 @@
 
 import sys
 import os
-from common_codegen import *
-from generators.generator_utils import *
+from generators.generator_utils import (fileIsGeneratedWarning, getFormatedLength)
+from generators.vulkan_object import (Struct, Member)
 from generators.base_generator import BaseGenerator
 
 # Determine if a structure needs a safe_struct helper function

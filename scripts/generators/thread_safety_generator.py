@@ -20,8 +20,9 @@
 
 import os
 import sys
-from generators.generator_utils import *
-from common_codegen import *
+
+from generators.generator_utils import (fileIsGeneratedWarning)
+from generators.vulkan_object import (Command, CommandParam)
 from generators.base_generator import BaseGenerator
 
 def GetParentInstance(param: CommandParam) -> str:
@@ -222,7 +223,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         out.append('    }\n')
             else:
                 if param.type in self.vk.handles and param.type != 'VkPhysicalDevice':
-                    if param.length and ('pPipelines' != param.name) and ('pShaders' != param.name or not 'Create' in command.name):
+                    if param.length and ('pPipelines' != param.name) and ('pShaders' != param.name or 'Create' not in command.name):
                         # Add pointer dereference for array counts that are pointer values
                         dereference = ''
                         for candidate in command.params:
