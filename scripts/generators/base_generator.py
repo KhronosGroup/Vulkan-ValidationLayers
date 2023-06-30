@@ -19,11 +19,18 @@
 import os
 import sys
 import json
-from generator import *
-from common_codegen import *
 
+from generators.vulkan_object import (VulkanObject,
+    Extension, Version, Handle, CommandParam, Queues, CommandScope, Command,
+    EnumField, Enum, Flag, Bitmask, Member, Struct,
+    FormatComponent, FormatPlane, Format,
+    SyncSupport, SyncEquivalent, SyncStage, SyncAccess, SyncPipelineStage, SyncPipeline,
+    SpirvEnables, Spirv)
+
+# These live in the Vulkan-Docs repo, but are pulled in via the
+# Vulkan-Headers/registry folder
+from generator import OutputGenerator, GeneratorOptions, write
 from vkconventions import VulkanConventions
-from generators.vulkan_object import *
 
 # An API style convention object
 vulkanConventions = VulkanConventions()
@@ -168,17 +175,12 @@ class BaseGenerator(OutputGenerator):
         ]:
             self.valid_vuids.add(vuid)
 
-
-        # Initialize members that require the tree
-        self.handle_types = GetHandleTypes(self.registry.tree)
-
         # Not gen*() command to get these, so do it manually
-        platforms = self.registry.tree.findall('platforms/platform')
-        for platform in platforms:
+        for platform in self.registry.tree.findall('platforms/platform'):
             self.vk.platforms[platform.get('name')] = platform.get('protect')
 
-        tags = self.registry.tree.findall('tags')
-        for tag in tags:
+
+        for tag in self.registry.tree.findall('tags'):
             self.vk.vendorTags.append(tag.get('name'))
 
     # This function should be overloaded
@@ -320,7 +322,10 @@ class BaseGenerator(OutputGenerator):
     # Processing point at beginning of each extension definition
     def beginFeature(self, interface, emit):
         OutputGenerator.beginFeature(self, interface, emit)
-        self.featureExtraProtect = GetFeatureProtect(interface)
+        platform = interface.get('platform')
+        self.featureExtraProtec = self.vk.platforms[platform] if platform in self.vk.platforms else None
+        protect = self.vk.platforms[platform] if platform in self.vk.platforms else None
+
         name = interface.get('name')
 
         if interface.tag == 'extension':
@@ -338,8 +343,7 @@ class BaseGenerator(OutputGenerator):
             nameEnum = self.featureDictionary[name]['enumconstant'][None][None][1]
 
             self.currentExtension = Extension(name, nameEnum, instance, device, depends, vendorTag,
-                                            platform, self.featureExtraProtect,
-                                            provisional, promotedto, deprecatedby,
+                                            platform, protect, provisional, promotedto, deprecatedby,
                                             obsoletedby, specialuse)
             self.vk.extensions[name] = self.currentExtension
         else: # version
@@ -460,7 +464,7 @@ class BaseGenerator(OutputGenerator):
                     self.enumFieldAliasMap[fieldName] = elem.get('alias')
                     continue
 
-                negative = elem.get('dir') != None
+                negative = elem.get('dir') is not None
                 protect = elem.get('protect')
 
                 # Some values have multiple extensions (ex VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR)
@@ -559,7 +563,8 @@ class BaseGenerator(OutputGenerator):
             parent = typeElem.get('parent') # will resolve later
             instance = parent == 'VkInstance'
             device = not instance
-            dispatchable = self.handle_types[typeName] == 'VK_DEFINE_HANDLE'
+            dispatchable = typeElem.find('type').text == 'VK_DEFINE_HANDLE'
+
             self.vk.handles[typeName] = Handle(typeName, type, parent, protect, instance, device, dispatchable)
 
         elif category == 'define':

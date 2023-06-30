@@ -16,8 +16,8 @@
 
 import os
 import sys
-from common_codegen import *
-from generators.generator_utils import *
+from generators.generator_utils import (fileIsGeneratedWarning, getVUID)
+from generators.vulkan_object import (Queues, CommandScope)
 from generators.base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
