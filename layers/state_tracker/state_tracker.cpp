@@ -5483,6 +5483,12 @@ void ValidationStateTracker::PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBu
     cb_state->dynamic_state_value.color_write_enable_attachment_count = attachmentCount;
 }
 
+void ValidationStateTracker::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
+                                                                                 VkImageAspectFlags aspectMask) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->RecordStateCmd(CMD_SETATTACHMENTFEEDBACKLOOPENABLEEXT, CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                              VkResult result) {
