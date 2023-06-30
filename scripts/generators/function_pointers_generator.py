@@ -18,8 +18,7 @@
 
 import sys
 import os
-from common_codegen import *
-from generators.generator_utils import *
+from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 class FunctionPointersOutputGenerator(BaseGenerator):

@@ -16,9 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys,os
-from common_codegen import *
-from generators.generator_utils import *
+import sys
+import os
+from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 from typing import List
 
