@@ -639,7 +639,11 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 else: spec_url_id = '1.%s' % spec_list[0]['version']
 
                 # Escape quotes and backslashes when generating C strings for source code
-                db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"')
+                db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"').strip()
+                html_remove_tags = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
+                db_text = re.sub(html_remove_tags, '', db_text)
+                # In future we could use the `/n` to add new lines to a pretty print in the console
+                db_text = db_text.replace('\n', ' ')
                 hfile.write('    {"%s", "%s", "%s"},\n' % (vuid, db_text, spec_url_id))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:

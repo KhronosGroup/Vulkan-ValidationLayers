@@ -3483,7 +3483,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT: { // Covers VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-sType-sType
             if (is_const_param) {
                 VkImageDrmFormatModifierExplicitCreateInfoEXT *structure = (VkImageDrmFormatModifierExplicitCreateInfoEXT *) header;
-                skip |= ValidateArray("VkImageDrmFormatModifierExplicitCreateInfoEXT", "drmFormatModifierPlaneCount", "pPlaneLayouts", structure->drmFormatModifierPlaneCount, &structure->pPlaneLayouts, true, true, kVUIDUndefined, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-pPlaneLayouts-parameter");
+                skip |= ValidateArray("VkImageDrmFormatModifierExplicitCreateInfoEXT", "drmFormatModifierPlaneCount", "pPlaneLayouts", structure->drmFormatModifierPlaneCount, &structure->pPlaneLayouts, true, true, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-arraylength", "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-pPlaneLayouts-parameter");
 
                 if (structure->pPlaneLayouts != nullptr)
                 {
@@ -3593,7 +3593,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 VkImportMemoryHostPointerInfoEXT *structure = (VkImportMemoryHostPointerInfoEXT *) header;
                 skip |= ValidateFlags("VkImportMemoryHostPointerInfoEXT", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kRequiredSingleBit, "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter", "VUID-VkImportMemoryHostPointerInfoEXT-handleType-parameter");
 
-                skip |= ValidateRequiredPointer("VkImportMemoryHostPointerInfoEXT", "pHostPointer", structure->pHostPointer, kVUIDUndefined);
+                skip |= ValidateRequiredPointer("VkImportMemoryHostPointerInfoEXT", "pHostPointer", structure->pHostPointer, "VUID-VkImportMemoryHostPointerInfoEXT-pHostPointer-parameter");
             }
         } break;
 
@@ -17017,7 +17017,7 @@ bool StatelessValidation::PreCallValidateGetMemoryHostPointerPropertiesEXT(
     if (!IsExtEnabled(device_extensions.vk_khr_external_memory)) skip |= OutputExtensionError("vkGetMemoryHostPointerPropertiesEXT", "VK_KHR_external_memory");
     if (!IsExtEnabled(device_extensions.vk_ext_external_memory_host)) skip |= OutputExtensionError("vkGetMemoryHostPointerPropertiesEXT", "VK_EXT_external_memory_host");
     skip |= ValidateFlags("vkGetMemoryHostPointerPropertiesEXT", "handleType", "VkExternalMemoryHandleTypeFlagBits", AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit, "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-parameter", "VUID-vkGetMemoryHostPointerPropertiesEXT-handleType-parameter");
-    skip |= ValidateRequiredPointer("vkGetMemoryHostPointerPropertiesEXT", "pHostPointer", pHostPointer, kVUIDUndefined);
+    skip |= ValidateRequiredPointer("vkGetMemoryHostPointerPropertiesEXT", "pHostPointer", pHostPointer, "VUID-vkGetMemoryHostPointerPropertiesEXT-pHostPointer-parameter");
     skip |= ValidateStructType("vkGetMemoryHostPointerPropertiesEXT", "pMemoryHostPointerProperties", "VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT", pMemoryHostPointerProperties, VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT, true, "VUID-vkGetMemoryHostPointerPropertiesEXT-pMemoryHostPointerProperties-parameter", "VUID-VkMemoryHostPointerPropertiesEXT-sType-sType");
     if (pMemoryHostPointerProperties != nullptr)
     {

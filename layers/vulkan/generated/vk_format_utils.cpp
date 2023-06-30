@@ -406,13 +406,13 @@ static const vvl::unordered_map<VkFormat, FORMAT_INFO> kVkFormatTable = {
         {{COMPONENT_TYPE::R, 64}} }},
     {VK_FORMAT_R64G64_UINT,
         {FORMAT_COMPATIBILITY_CLASS::_128BIT, 16, 1, {1, 1, 1}, 2,
-        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::B, 64}} }},
+        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::G, 64}} }},
     {VK_FORMAT_R64G64_SINT,
         {FORMAT_COMPATIBILITY_CLASS::_128BIT, 16, 1, {1, 1, 1}, 2,
-        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::B, 64}} }},
+        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::G, 64}} }},
     {VK_FORMAT_R64G64_SFLOAT,
         {FORMAT_COMPATIBILITY_CLASS::_128BIT, 16, 1, {1, 1, 1}, 2,
-        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::B, 64}} }},
+        {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::G, 64}} }},
     {VK_FORMAT_R64G64B64_UINT,
         {FORMAT_COMPATIBILITY_CLASS::_192BIT, 24, 1, {1, 1, 1}, 3,
         {{COMPONENT_TYPE::R, 64}, {COMPONENT_TYPE::G, 64}, {COMPONENT_TYPE::B, 64}} }},
@@ -1036,6 +1036,8 @@ bool FormatIsSNORM(VkFormat format) {
         case VK_FORMAT_R16G16_SNORM:
         case VK_FORMAT_R16G16B16_SNORM:
         case VK_FORMAT_R16G16B16A16_SNORM:
+        case VK_FORMAT_BC4_SNORM_BLOCK:
+        case VK_FORMAT_BC5_SNORM_BLOCK:
         case VK_FORMAT_EAC_R11_SNORM_BLOCK:
         case VK_FORMAT_EAC_R11G11_SNORM_BLOCK:
             found = true;
@@ -1061,8 +1063,6 @@ bool FormatIsSRGB(VkFormat format) {
         case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
         case VK_FORMAT_BC2_SRGB_BLOCK:
         case VK_FORMAT_BC3_SRGB_BLOCK:
-        case VK_FORMAT_BC4_SNORM_BLOCK:
-        case VK_FORMAT_BC5_SNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
         case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
         case VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK:
