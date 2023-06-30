@@ -27,15 +27,10 @@ class CommandValidationOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False # Header file generation flag
-        self.sourceFile = False # Source file generation flag
 
     #
     # Called at beginning of processing as file is opened
     def generate(self):
-        self.headerFile = (self.filename == 'command_validation.h')
-        self.sourceFile = (self.filename == 'command_validation.cpp')
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -57,10 +52,12 @@ class CommandValidationOutputGenerator(BaseGenerator):
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'command_validation.h':
             self.generateHeader()
-        else:
+        elif self.filename == 'command_validation.cpp':
             self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
