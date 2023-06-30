@@ -28,13 +28,8 @@ class FunctionPointersOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False # Header file generation flag
-        self.sourceFile = False # Source file generation flag
 
     def generate(self):
-        self.headerFile = (self.filename == 'vk_function_pointers.h')
-        self.sourceFile = (self.filename == 'vk_function_pointers.cpp')
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -57,10 +52,12 @@ class FunctionPointersOutputGenerator(BaseGenerator):
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'vk_function_pointers.h':
             self.generateHeader()
-        else:
+        elif self.filename == 'vk_function_pointers.cpp':
             self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 

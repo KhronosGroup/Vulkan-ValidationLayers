@@ -31,9 +31,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False
-        self.sourceFile = False
-        self.pNextStructFile = False
 
         # Commands to ignore
         self.blacklist = [
@@ -47,12 +44,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetDeviceGroupSurfacePresentModes2EXT'
         ]
 
-
     def generate(self):
-        self.headerFile = (self.filename == 'stateless_validation_helper.h')
-        self.sourceFile = (self.filename == 'stateless_validation_helper.cpp')
-        self.pNextStructFile = (self.filename == 'stateless_validation_pnext_struct.cpp')
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -75,12 +67,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'stateless_validation_helper.h':
             self.generateHeader()
-        if self.pNextStructFile:
+        elif self.filename == 'stateless_validation_helper.cpp':
+            self.generateSource()
+        elif self.filename == 'stateless_validation_pnext_struct.cpp':
             self.generatePnextStruct()
         else:
-            self.generateSource()
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
