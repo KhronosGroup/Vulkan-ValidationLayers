@@ -65,28 +65,28 @@ def makeGenOpts(args):
     # Options for thread safety header code-generation
 
     genOpts['thread_safety_counter_definitions.h'] = [
-          ThreadOutputGenerator,
+          ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_definitions.h',
             mergeApiNames     = mergeApiNames)
         ]
 
     genOpts['thread_safety_counter_instances.h'] = [
-          ThreadOutputGenerator,
+          ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_instances.h',
             mergeApiNames     = mergeApiNames)
         ]
 
     genOpts['thread_safety_counter_bodies.h'] = [
-          ThreadOutputGenerator,
+          ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_counter_bodies.h',
             mergeApiNames     = mergeApiNames)
         ]
 
     genOpts['thread_safety_commands.h'] = [
-          ThreadOutputGenerator,
+          ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety_commands.h',
             mergeApiNames     = mergeApiNames)
@@ -94,7 +94,7 @@ def makeGenOpts(args):
 
     # Options for thread safety source code-generation
     genOpts['thread_safety.cpp'] = [
-          ThreadOutputGenerator,
+          ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'thread_safety.cpp',
             mergeApiNames     = mergeApiNames)
@@ -505,7 +505,7 @@ if __name__ == '__main__':
     # ValidationLayer Generator Modifications
     from generators.base_generator import BaseGeneratorOptions
 
-    from generators.thread_safety_generator import ThreadOutputGenerator
+    from generators.thread_safety_generator import ThreadSafetyOutputGenerator
     from generators.parameter_validation_generator import ParameterValidationOutputGenerator
     from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator

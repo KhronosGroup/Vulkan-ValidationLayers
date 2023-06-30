@@ -1,33 +1,34 @@
+// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See thread_safety_generator.py for modifications
 
-// This file is ***GENERATED***.  Do Not Edit.
-// See thread_safety_generator.py for modifications.
+/***************************************************************************
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// NOLINTBEGIN
+
 #include "chassis.h"
 #include "thread_tracker/thread_safety_validation.h"
-
-
 void ThreadSafety::PreCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkInstance*                                 pInstance) {
-    
 }
 
 void ThreadSafety::PostCallRecordCreateInstance(
@@ -101,7 +102,6 @@ void ThreadSafety::PreCallRecordCreateDevice(
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDevice*                                   pDevice) {
-    
 }
 
 void ThreadSafety::PostCallRecordCreateDevice(
@@ -441,7 +441,7 @@ void ThreadSafety::PreCallRecordResetFences(
     const VkFence*                              pFences) {
     StartReadObjectParentInstance(device, "vkResetFences");
     if (pFences) {
-        for (uint32_t index=0; index < fenceCount; index++) {
+        for (uint32_t index = 0; index < fenceCount; index++) {
             StartWriteObject(pFences[index], "vkResetFences");
         }
     }
@@ -455,7 +455,7 @@ void ThreadSafety::PostCallRecordResetFences(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkResetFences");
     if (pFences) {
-        for (uint32_t index=0; index < fenceCount; index++) {
+        for (uint32_t index = 0; index < fenceCount; index++) {
             FinishWriteObject(pFences[index], "vkResetFences");
         }
     }
@@ -3459,8 +3459,8 @@ void ThreadSafety::PreCallRecordCreateSwapchainKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkSwapchainKHR*                             pSwapchain) {
     StartReadObjectParentInstance(device, "vkCreateSwapchainKHR");
-        StartWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
-        StartWriteObjectParentInstance(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
+    StartWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
+    StartWriteObjectParentInstance(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
     // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
@@ -3471,8 +3471,8 @@ void ThreadSafety::PostCallRecordCreateSwapchainKHR(
     VkSwapchainKHR*                             pSwapchain,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCreateSwapchainKHR");
-        FinishWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
-        FinishWriteObjectParentInstance(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
+    FinishWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
+    FinishWriteObjectParentInstance(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
     if (result == VK_SUCCESS) {
         CreateObjectParentInstance(*pSwapchain);
     }
@@ -3649,7 +3649,7 @@ void ThreadSafety::PreCallRecordCreateSharedSwapchainsKHR(
     VkSwapchainKHR*                             pSwapchains) {
     StartReadObjectParentInstance(device, "vkCreateSharedSwapchainsKHR");
     if (pCreateInfos) {
-        for (uint32_t index=0; index < swapchainCount; index++) {
+        for (uint32_t index = 0; index < swapchainCount; index++) {
             StartWriteObjectParentInstance(pCreateInfos[index].surface, "vkCreateSharedSwapchainsKHR");
             StartWriteObjectParentInstance(pCreateInfos[index].oldSwapchain, "vkCreateSharedSwapchainsKHR");
         }
@@ -3671,7 +3671,7 @@ void ThreadSafety::PostCallRecordCreateSharedSwapchainsKHR(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkCreateSharedSwapchainsKHR");
     if (pCreateInfos) {
-        for (uint32_t index=0; index < swapchainCount; index++) {
+        for (uint32_t index = 0; index < swapchainCount; index++) {
             FinishWriteObjectParentInstance(pCreateInfos[index].surface, "vkCreateSharedSwapchainsKHR");
             FinishWriteObjectParentInstance(pCreateInfos[index].oldSwapchain, "vkCreateSharedSwapchainsKHR");
         }
@@ -3687,7 +3687,6 @@ void ThreadSafety::PostCallRecordCreateSharedSwapchainsKHR(
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-
 void ThreadSafety::PreCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
@@ -3707,10 +3706,9 @@ void ThreadSafety::PostCallRecordCreateXlibSurfaceKHR(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_XLIB_KHR
-
 #ifdef VK_USE_PLATFORM_XCB_KHR
-
 void ThreadSafety::PreCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
@@ -3730,10 +3728,9 @@ void ThreadSafety::PostCallRecordCreateXcbSurfaceKHR(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_XCB_KHR
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-
 void ThreadSafety::PreCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
@@ -3753,10 +3750,9 @@ void ThreadSafety::PostCallRecordCreateWaylandSurfaceKHR(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 void ThreadSafety::PreCallRecordCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
@@ -3776,10 +3772,9 @@ void ThreadSafety::PostCallRecordCreateAndroidSurfaceKHR(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
@@ -3799,8 +3794,8 @@ void ThreadSafety::PostCallRecordCreateWin32SurfaceKHR(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
@@ -4108,7 +4103,6 @@ void ThreadSafety::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
@@ -4124,6 +4118,8 @@ void ThreadSafety::PostCallRecordGetMemoryWin32HandleKHR(
     FinishReadObjectParentInstance(device, "vkGetMemoryWin32HandleKHR");
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
@@ -4140,8 +4136,8 @@ void ThreadSafety::PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetMemoryWin32HandlePropertiesKHR");
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
@@ -4175,10 +4171,6 @@ void ThreadSafety::PostCallRecordGetMemoryFdPropertiesKHR(
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif // VK_USE_PLATFORM_WIN32_KHR
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) {
@@ -4192,6 +4184,8 @@ void ThreadSafety::PostCallRecordImportSemaphoreWin32HandleKHR(
     FinishReadObjectParentInstance(device, "vkImportSemaphoreWin32HandleKHR");
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
@@ -4206,8 +4200,8 @@ void ThreadSafety::PostCallRecordGetSemaphoreWin32HandleKHR(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetSemaphoreWin32HandleKHR");
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordImportSemaphoreFdKHR(
     VkDevice                                    device,
     const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) {
@@ -4407,7 +4401,6 @@ void ThreadSafety::PostCallRecordGetSwapchainStatusKHR(
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) {
@@ -4421,6 +4414,8 @@ void ThreadSafety::PostCallRecordImportFenceWin32HandleKHR(
     FinishReadObjectParentInstance(device, "vkImportFenceWin32HandleKHR");
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
@@ -4435,8 +4430,8 @@ void ThreadSafety::PostCallRecordGetFenceWin32HandleKHR(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetFenceWin32HandleKHR");
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordImportFenceFdKHR(
     VkDevice                                    device,
     const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) {
@@ -4600,9 +4595,6 @@ void ThreadSafety::PostCallRecordBindImageMemory2KHR(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkBindImageMemory2KHR");
 }
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordGetDescriptorSetLayoutSupportKHR(
     VkDevice                                    device,
@@ -4954,7 +4946,6 @@ void ThreadSafety::PostCallRecordUnmapMemory2KHR(
 }
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordGetEncodedVideoSessionParametersKHR(
     VkDevice                                    device,
     const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
@@ -4974,6 +4965,8 @@ void ThreadSafety::PostCallRecordGetEncodedVideoSessionParametersKHR(
     FinishReadObjectParentInstance(device, "vkGetEncodedVideoSessionParametersKHR");
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {
@@ -4987,8 +4980,8 @@ void ThreadSafety::PostCallRecordCmdEncodeVideoKHR(
     FinishWriteObject(commandBuffer, "vkCmdEncodeVideoKHR");
     // Host access to commandBuffer must be externally synchronized
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
 void ThreadSafety::PreCallRecordCmdSetEvent2KHR(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
@@ -5350,11 +5343,6 @@ void ThreadSafety::PostCallRecordDebugReportMessageEXT(
     const char*                                 pMessage) {
     FinishReadObjectParentInstance(instance, "vkDebugReportMessageEXT");
 }
-// TODO - not wrapping EXT function vkDebugMarkerSetObjectTagEXT
-// TODO - not wrapping EXT function vkDebugMarkerSetObjectNameEXT
-// TODO - not wrapping EXT function vkCmdDebugMarkerBeginEXT
-// TODO - not wrapping EXT function vkCmdDebugMarkerEndEXT
-// TODO - not wrapping EXT function vkCmdDebugMarkerInsertEXT
 
 void ThreadSafety::PreCallRecordCmdBindTransformFeedbackBuffersEXT(
     VkCommandBuffer                             commandBuffer,
@@ -5685,12 +5673,6 @@ void ThreadSafety::PostCallRecordCmdDrawIndexedIndirectCountAMD(
     // Host access to commandBuffer must be externally synchronized
 }
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
@@ -5715,7 +5697,6 @@ void ThreadSafety::PostCallRecordGetShaderInfoAMD(
 }
 
 #ifdef VK_USE_PLATFORM_GGP
-
 void ThreadSafety::PreCallRecordCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
@@ -5735,10 +5716,9 @@ void ThreadSafety::PostCallRecordCreateStreamDescriptorSurfaceGGP(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_GGP
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
@@ -5757,13 +5737,9 @@ void ThreadSafety::PostCallRecordGetMemoryWin32HandleNV(
     FinishReadObjectParentInstance(device, "vkGetMemoryWin32HandleNV");
     FinishReadObject(memory, "vkGetMemoryWin32HandleNV");
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_VI_NN
-
 void ThreadSafety::PreCallRecordCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
@@ -5783,8 +5759,8 @@ void ThreadSafety::PostCallRecordCreateViSurfaceNN(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_VI_NN
 
+#endif // VK_USE_PLATFORM_VI_NN
 void ThreadSafety::PreCallRecordCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
     const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {
@@ -5843,7 +5819,6 @@ void ThreadSafety::PostCallRecordReleaseDisplayEXT(
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
 void ThreadSafety::PreCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
@@ -5858,8 +5833,8 @@ void ThreadSafety::PostCallRecordAcquireXlibDisplayEXT(
     VkResult                                    result) {
     FinishReadObjectParentInstance(display, "vkAcquireXlibDisplayEXT");
 }
-#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 void ThreadSafety::PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
@@ -6041,7 +6016,6 @@ void ThreadSafety::PostCallRecordSetHdrMetadataEXT(
 }
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
-
 void ThreadSafety::PreCallRecordCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
@@ -6061,10 +6035,9 @@ void ThreadSafety::PostCallRecordCreateIOSSurfaceMVK(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_IOS_MVK
-
 #ifdef VK_USE_PLATFORM_MACOS_MVK
-
 void ThreadSafety::PreCallRecordCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
@@ -6084,10 +6057,8 @@ void ThreadSafety::PostCallRecordCreateMacOSSurfaceMVK(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_MACOS_MVK
-// TODO - not wrapping EXT function vkSetDebugUtilsObjectNameEXT
-// TODO - not wrapping EXT function vkSetDebugUtilsObjectTagEXT
 
+#endif // VK_USE_PLATFORM_MACOS_MVK
 void ThreadSafety::PreCallRecordQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
@@ -6218,7 +6189,6 @@ void ThreadSafety::PostCallRecordSubmitDebugUtilsMessageEXT(
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 void ThreadSafety::PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
@@ -6234,6 +6204,8 @@ void ThreadSafety::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     FinishReadObjectParentInstance(device, "vkGetAndroidHardwareBufferPropertiesANDROID");
 }
 
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 void ThreadSafety::PreCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
@@ -6248,8 +6220,8 @@ void ThreadSafety::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetMemoryAndroidHardwareBufferANDROID");
 }
-#endif // VK_USE_PLATFORM_ANDROID_KHR
 
+#endif // VK_USE_PLATFORM_ANDROID_KHR
 void ThreadSafety::PreCallRecordCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
     const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {
@@ -6801,9 +6773,6 @@ void ThreadSafety::PostCallRecordGetCalibratedTimestampsEXT(
     FinishReadObjectParentInstance(device, "vkGetCalibratedTimestampsEXT");
 }
 
-#ifdef VK_USE_PLATFORM_GGP
-#endif // VK_USE_PLATFORM_GGP
-
 void ThreadSafety::PreCallRecordCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
@@ -7085,7 +7054,6 @@ void ThreadSafety::PostCallRecordSetLocalDimmingAMD(
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void ThreadSafety::PreCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
@@ -7105,10 +7073,9 @@ void ThreadSafety::PostCallRecordCreateImagePipeSurfaceFUCHSIA(
         CreateObjectParentInstance(*pSurface);
     }
 }
+
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 void ThreadSafety::PreCallRecordCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
@@ -7128,8 +7095,8 @@ void ThreadSafety::PostCallRecordCreateMetalSurfaceEXT(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_METAL_EXT
 
+#endif // VK_USE_PLATFORM_METAL_EXT
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo) {
@@ -7144,7 +7111,6 @@ void ThreadSafety::PostCallRecordGetBufferDeviceAddressEXT(
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) {
@@ -7160,6 +7126,8 @@ void ThreadSafety::PostCallRecordAcquireFullScreenExclusiveModeEXT(
     FinishReadObjectParentInstance(swapchain, "vkAcquireFullScreenExclusiveModeEXT");
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) {
@@ -7175,6 +7143,8 @@ void ThreadSafety::PostCallRecordReleaseFullScreenExclusiveModeEXT(
     FinishReadObjectParentInstance(swapchain, "vkReleaseFullScreenExclusiveModeEXT");
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
@@ -7189,8 +7159,8 @@ void ThreadSafety::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetDeviceGroupSurfacePresentModes2EXT");
 }
-#endif // VK_USE_PLATFORM_WIN32_KHR
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
 void ThreadSafety::PreCallRecordCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
@@ -7671,7 +7641,6 @@ void ThreadSafety::PostCallRecordGetPrivateDataEXT(
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 void ThreadSafety::PreCallRecordExportMetalObjectsEXT(
     VkDevice                                    device,
     VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
@@ -7683,8 +7652,8 @@ void ThreadSafety::PostCallRecordExportMetalObjectsEXT(
     VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
     FinishReadObjectParentInstance(device, "vkExportMetalObjectsEXT");
 }
-#endif // VK_USE_PLATFORM_METAL_EXT
 
+#endif // VK_USE_PLATFORM_METAL_EXT
 void ThreadSafety::PreCallRecordGetDescriptorSetLayoutSizeEXT(
     VkDevice                                    device,
     VkDescriptorSetLayout                       layout,
@@ -7922,7 +7891,6 @@ void ThreadSafety::PostCallRecordGetDeviceFaultInfoEXT(
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 void ThreadSafety::PreCallRecordAcquireWinrtDisplayNV(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display) {
@@ -7935,10 +7903,9 @@ void ThreadSafety::PostCallRecordAcquireWinrtDisplayNV(
     VkResult                                    result) {
     FinishReadObjectParentInstance(display, "vkAcquireWinrtDisplayNV");
 }
+
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-
 void ThreadSafety::PreCallRecordCreateDirectFBSurfaceEXT(
     VkInstance                                  instance,
     const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
@@ -7958,8 +7925,8 @@ void ThreadSafety::PostCallRecordCreateDirectFBSurfaceEXT(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
+#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 void ThreadSafety::PreCallRecordCmdSetVertexInputEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    vertexBindingDescriptionCount,
@@ -7981,7 +7948,6 @@ void ThreadSafety::PostCallRecordCmdSetVertexInputEXT(
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void ThreadSafety::PreCallRecordGetMemoryZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkMemoryGetZirconHandleInfoFUCHSIA*   pGetZirconHandleInfo,
@@ -7997,6 +7963,8 @@ void ThreadSafety::PostCallRecordGetMemoryZirconHandleFUCHSIA(
     FinishReadObjectParentInstance(device, "vkGetMemoryZirconHandleFUCHSIA");
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
@@ -8013,10 +7981,9 @@ void ThreadSafety::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetMemoryZirconHandlePropertiesFUCHSIA");
 }
+
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void ThreadSafety::PreCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) {
@@ -8030,6 +7997,8 @@ void ThreadSafety::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     FinishReadObjectParentInstance(device, "vkImportSemaphoreZirconHandleFUCHSIA");
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkDevice                                    device,
     const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
@@ -8044,10 +8013,9 @@ void ThreadSafety::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetSemaphoreZirconHandleFUCHSIA");
 }
+
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 void ThreadSafety::PreCallRecordCreateBufferCollectionFUCHSIA(
     VkDevice                                    device,
     const VkBufferCollectionCreateInfoFUCHSIA*  pCreateInfo,
@@ -8068,6 +8036,8 @@ void ThreadSafety::PostCallRecordCreateBufferCollectionFUCHSIA(
     }
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
@@ -8085,6 +8055,8 @@ void ThreadSafety::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     FinishReadObject(collection, "vkSetBufferCollectionImageConstraintsFUCHSIA");
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
@@ -8102,6 +8074,8 @@ void ThreadSafety::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     FinishReadObject(collection, "vkSetBufferCollectionBufferConstraintsFUCHSIA");
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordDestroyBufferCollectionFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
@@ -8118,6 +8092,8 @@ void ThreadSafety::PostCallRecordDestroyBufferCollectionFUCHSIA(
     FinishReadObject(collection, "vkDestroyBufferCollectionFUCHSIA");
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+#ifdef VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetBufferCollectionPropertiesFUCHSIA(
     VkDevice                                    device,
     VkBufferCollectionFUCHSIA                   collection,
@@ -8134,8 +8110,8 @@ void ThreadSafety::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(
     FinishReadObjectParentInstance(device, "vkGetBufferCollectionPropertiesFUCHSIA");
     FinishReadObject(collection, "vkGetBufferCollectionPropertiesFUCHSIA");
 }
-#endif // VK_USE_PLATFORM_FUCHSIA
 
+#endif // VK_USE_PLATFORM_FUCHSIA
 void ThreadSafety::PreCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
     VkDevice                                    device,
     VkRenderPass                                renderpass,
@@ -8284,7 +8260,6 @@ void ThreadSafety::PostCallRecordCmdSetPrimitiveRestartEnableEXT(
 }
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 void ThreadSafety::PreCallRecordCreateScreenSurfaceQNX(
     VkInstance                                  instance,
     const VkScreenSurfaceCreateInfoQNX*         pCreateInfo,
@@ -8304,8 +8279,8 @@ void ThreadSafety::PostCallRecordCreateScreenSurfaceQNX(
         CreateObjectParentInstance(*pSurface);
     }
 }
-#endif // VK_USE_PLATFORM_SCREEN_QNX
 
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 void ThreadSafety::PreCallRecordCmdSetColorWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
@@ -8631,9 +8606,6 @@ void ThreadSafety::PostCallRecordGetMicromapBuildSizesEXT(
     VkMicromapBuildSizesInfoEXT*                pSizeInfo) {
     FinishReadObjectParentInstance(device, "vkGetMicromapBuildSizesEXT");
 }
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCmdDrawClusterHUAWEI(
     VkCommandBuffer                             commandBuffer,
@@ -9498,7 +9470,6 @@ void ThreadSafety::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(
 }
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 void ThreadSafety::PreCallRecordGetScreenBufferPropertiesQNX(
     VkDevice                                    device,
     const struct _screen_buffer*                buffer,
@@ -9513,8 +9484,8 @@ void ThreadSafety::PostCallRecordGetScreenBufferPropertiesQNX(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetScreenBufferPropertiesQNX");
 }
-#endif // VK_USE_PLATFORM_SCREEN_QNX
 
+#endif // VK_USE_PLATFORM_SCREEN_QNX
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -9990,3 +9961,6 @@ void ThreadSafety::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(
     FinishReadObject(countBuffer, "vkCmdDrawMeshTasksIndirectCountEXT");
     // Host access to commandBuffer must be externally synchronized
 }
+
+
+// NOLINTEND

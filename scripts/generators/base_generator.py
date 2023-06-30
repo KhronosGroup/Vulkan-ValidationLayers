@@ -48,7 +48,7 @@ def textIfFind(elem, name):
 def intIfGet(elem, name):
     return None if elem.get(name) is None else int(elem.get(name), 0)
 
-def boolGet(elem, name):
+def boolGet(elem, name) -> bool:
     return elem.get(name) is not None and elem.get(name) == "true"
 
 #
@@ -306,6 +306,10 @@ class BaseGenerator(OutputGenerator):
             for enum in [self.vk.enums[x.type] for x in command.params if x.type in self.vk.enums]:
                 enum.returnedOnly = False
 
+        # Turn handle parents into pointers to classess
+        for handle in [x for x in self.vk.handles.values() if x.parent is not None]:
+            handle.parent = self.vk.handles[handle.parent]
+
         # All inherited generators should run from here
         self.generate()
 
@@ -354,9 +358,38 @@ class BaseGenerator(OutputGenerator):
     # All <command> from XML
     def genCmd(self, cmdinfo, name, alias):
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
+
+        params = []
+        for param in cmdinfo.elem.findall('param'):
+            paramName = param.find('name').text
+            paramType = textIfFind(param, 'type')
+            paramAlias = param.get('alias')
+
+            cdecl = self.makeCParamDecl(param, 0)
+            paramPointer = '*' in cdecl
+
+            paramNoautovalidity = boolGet(param, 'noautovalidity')
+            paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
+
+            # See Member::optional code for details of this
+            optionalValues = splitIfGet(param, 'optional')
+            paramOptional = optionalValues is not None and optionalValues[0].lower() == "true"
+            paramOptionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
+
+            # externsync will be 'true' or expression
+            # if expression, it should be same as 'true'
+            paramExternsync = boolGet(param, 'externsync')
+            paramExternSyncPointer = None if paramExternsync else splitIfGet(param, 'externsync')
+            if not paramExternsync and paramExternSyncPointer is not None:
+                paramExternsync = True
+
+            params.append(CommandParam(paramName, paramType, paramAlias,
+                                       paramPointer, paramNoautovalidity, paramLength,
+                                       paramOptional, paramOptionalPointer,
+                                       paramExternsync, paramExternSyncPointer))
+
         attrib = cmdinfo.elem.attrib
         alias = attrib.get('alias')
-        api = splitIfGet(attrib, 'api')
         tasks = splitIfGet(attrib, 'tasks')
 
         queues = 0
@@ -389,24 +422,6 @@ class BaseGenerator(OutputGenerator):
         cPrototype = decls[0]
         cFunctionPointer = decls[1]
 
-        params = []
-        for param in cmdinfo.elem.findall('param'):
-            paramName = param.find('name').text
-            paramType = textIfFind(param, 'type')
-            paramAlias = param.get('alias')
-            paramExternsync = boolGet(param, 'externsync')
-            paramNoautovalidity = boolGet(param, 'noautovalidity')
-            paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
-
-            # See Member::optional code for details of this
-            optionalValues = splitIfGet(param, 'optional')
-            paramOptional = optionalValues is not None and optionalValues[0].lower() == "true"
-            paramOptionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
-
-            params.append(CommandParam(paramName, paramType, paramAlias, paramExternsync,
-                                       paramOptional, paramOptionalPointer,
-                                       paramNoautovalidity, paramLength))
-
         protect = self.currentExtension.protect if self.currentExtension is not None else None
 
         # These coammds have no way from the XML to detect they would be an instance command
@@ -414,11 +429,14 @@ class BaseGenerator(OutputGenerator):
         instance = len(params) > 0 and (params[0].type == 'VkInstance' or params[0].type == 'VkPhysicalDevice' or name in specialInstanceCommand)
         device = not instance
 
+        implicitElem = cmdinfo.elem.find('implicitexternsyncparams')
+        implicitExternSyncParams = [x.text for x in implicitElem.findall('param')] if implicitElem else []
+
         self.vk.commands[name] = Command(name, alias, [], self.currentVersion, protect,
-                                         instance, device, returnType,
-                                         api, tasks, queues, successcodes, errorcodes,
+                                         returnType, params, instance, device,
+                                         tasks, queues, successcodes, errorcodes,
                                          primary, secondary, renderpass, videocoding,
-                                         params, cPrototype, cFunctionPointer)
+                                         implicitExternSyncParams, cPrototype, cFunctionPointer)
 
     #
     # List the enum for the commands
@@ -538,10 +556,11 @@ class BaseGenerator(OutputGenerator):
             if alias is not None:
                 return
             type = typeElem.get('objtypeenum')
-            instance = typeElem.get('parent') == 'VkInstance'
+            parent = typeElem.get('parent') # will resolve later
+            instance = parent == 'VkInstance'
             device = not instance
             dispatchable = self.handle_types[typeName] == 'VK_DEFINE_HANDLE'
-            self.vk.handles[typeName] = Handle(typeName, type, protect, instance, device, dispatchable)
+            self.vk.handles[typeName] = Handle(typeName, type, parent, protect, instance, device, dispatchable)
 
         elif category == 'define':
             if typeName == 'VK_HEADER_VERSION':
