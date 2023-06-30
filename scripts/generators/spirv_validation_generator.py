@@ -35,7 +35,6 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         # should be attempted to be cleared
         self.capabilityExcludeList = [
             'ClusterCullingShadingHUAWEI',
-            'CooperativeMatrixKHR',
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
@@ -85,6 +84,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             {'vulkan' : 'VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM', 'layer' : 'shader_core_builtins_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR', 'layer' : 'ray_tracing_position_fetch_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderTileImageFeaturesEXT', 'layer': 'shader_tile_image_features'},
+            {'vulkan' : 'VkPhysicalDeviceCooperativeMatrixFeaturesKHR', 'layer': 'cooperative_matrix_features_khr'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
