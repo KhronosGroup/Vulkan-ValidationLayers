@@ -1,7 +1,6 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See spirv_grammar_generator.py for modifications
 
-
 /***************************************************************************
  *
  * Copyright (c) 2021-2023 The Khronos Group Inc.
@@ -22,6 +21,8 @@
  * file found in the SPIRV-Headers. Mainly used for SPIR-V util functions.
  *
  ****************************************************************************/
+
+// NOLINTBEGIN
 
 #include "containers/custom_containers.h"
 #include "spirv_grammar_helper.h"
@@ -551,7 +552,6 @@ bool AtomicOperation(uint32_t opcode) {
     return found;
 }
 
-
 // Any non supported operation will be covered with VUID 01090
 bool GroupOperation(uint32_t opcode) {
     bool found = false;
@@ -599,7 +599,6 @@ bool GroupOperation(uint32_t opcode) {
     return found;
 }
 
-
 spv::StorageClass Instruction::StorageClass() const {
     spv::StorageClass storage_class = spv::StorageClassMax;
     switch (Opcode()) {
@@ -612,12 +611,12 @@ spv::StorageClass Instruction::StorageClass() const {
         case spv::OpVariable:
             storage_class = static_cast<spv::StorageClass>(Word(3));
             break;
+
         default:
             break;
     }
     return storage_class;
 }
-
 
 bool ImageGatherOperation(uint32_t opcode) {
     bool found = false;
@@ -634,7 +633,6 @@ bool ImageGatherOperation(uint32_t opcode) {
     return found;
 }
 
-
 bool ImageFetchOperation(uint32_t opcode) {
     bool found = false;
     switch (opcode) {
@@ -646,7 +644,6 @@ bool ImageFetchOperation(uint32_t opcode) {
     }
     return found;
 }
-
 
 bool ImageSampleOperation(uint32_t opcode) {
     bool found = false;
@@ -688,7 +685,6 @@ uint32_t SampledImageAccessOperandsPosition(uint32_t opcode) {
     }
     return position;
 }
-
 
 bool OpcodeHasType(uint32_t opcode) {
     bool has_type = false;
@@ -762,12 +758,12 @@ uint32_t ImageOperandsParamCount(uint32_t image_operand) {
             return 1;
         case spv::ImageOperandsGradMask:
             return 2;
+
         default:
             break;
     }
     return count;
 }
-
 
 const char* string_SpvOpcode(uint32_t opcode) {
     auto format_info = kInstructionTable.find(opcode);
@@ -776,7 +772,7 @@ const char* string_SpvOpcode(uint32_t opcode) {
     } else {
         return "Unknown Opcode";
     }
-};
+}
 
 const char* string_SpvStorageClass(uint32_t storage_class) {
     switch(storage_class) {
@@ -832,10 +828,11 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "DeviceOnlyINTEL";
         case spv::StorageClassHostOnlyINTEL:
             return "HostOnlyINTEL";
+
         default:
             return "Unknown Storage Class";
     }
-};
+}
 
 const char* string_SpvExecutionModel(uint32_t execution_model) {
     switch(execution_model) {
@@ -873,10 +870,11 @@ const char* string_SpvExecutionModel(uint32_t execution_model) {
             return "TaskEXT";
         case spv::ExecutionModelMeshEXT:
             return "MeshEXT";
+
         default:
             return "Unknown Execution Model";
     }
-};
+}
 
 const char* string_SpvDecoration(uint32_t decoration) {
     switch(decoration) {
@@ -1126,10 +1124,11 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "MMHostInterfaceWaitRequestINTEL";
         case spv::DecorationStableKernelArgumentINTEL:
             return "StableKernelArgumentINTEL";
+
         default:
             return "Unknown Decoration";
     }
-};
+}
 
 const char* string_SpvBuiltIn(uint32_t built_in) {
     switch(built_in) {
@@ -1353,10 +1352,11 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "SMIDNV";
         case spv::BuiltInCullMaskKHR:
             return "CullMaskKHR";
+
         default:
             return "Unknown BuiltIn";
     }
-};
+}
 
 const char* string_SpvDim(uint32_t dim) {
     switch(dim) {
@@ -1376,8 +1376,10 @@ const char* string_SpvDim(uint32_t dim) {
             return "SubpassData";
         case spv::DimTileImageDataEXT:
             return "TileImageDataEXT";
+
         default:
             return "Unknown Dim";
     }
-};
+}
 
+// NOLINTEND
