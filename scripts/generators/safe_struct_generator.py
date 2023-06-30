@@ -42,9 +42,6 @@ class SafeStructOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False
-        self.utilFile = False
-        self.sourceFile = False
 
         self.custom_construct_params = {
             # safe_VkGraphicsPipelineCreateInfo needs to know if subpass has color and\or depth\stencil attachments to use its pointers
@@ -76,10 +73,6 @@ class SafeStructOutputGenerator(BaseGenerator):
         return False
 
     def generate(self):
-        self.headerFile = (self.filename == 'vk_safe_struct.h')
-        self.utilFile = (self.filename == 'vk_safe_struct_utils.cpp')
-        self.sourceFile = not self.headerFile and not self.utilFile
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -103,12 +96,12 @@ class SafeStructOutputGenerator(BaseGenerator):
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'vk_safe_struct.h':
             self.generateHeader()
-        elif self.utilFile:
+        elif self.filename == 'vk_safe_struct_utils.cpp':
             self.generateUtil()
         else:
-            self.generateSource()
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 

@@ -28,13 +28,8 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False # Header file generation flag
-        self.sourceFile = False # Source file generation flag
 
     def generate(self):
-        self.headerFile = (self.filename == 'valid_enum_values.h')
-        self.sourceFile = (self.filename == 'valid_enum_values.cpp')
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
 *
@@ -57,10 +52,12 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
         self.write(copyright)
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'valid_enum_values.h':
             self.generateHeader()
-        else:
+        elif self.filename == 'valid_enum_values.cpp':
             self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 

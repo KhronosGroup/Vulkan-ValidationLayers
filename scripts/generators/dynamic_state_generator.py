@@ -29,13 +29,8 @@ class DynamicStateOutputGenerator(BaseGenerator):
                  warnFile = sys.stderr,
                  diagFile = sys.stdout):
         BaseGenerator.__init__(self, errFile, warnFile, diagFile)
-        self.headerFile = False # Header file generation flag
-        self.sourceFile = False # Source file generation flag
 
     def generate(self):
-        self.headerFile = (self.filename == 'dynamic_state_helper.h')
-        self.sourceFile = (self.filename == 'dynamic_state_helper.cpp')
-
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
  *
@@ -58,10 +53,12 @@ class DynamicStateOutputGenerator(BaseGenerator):
 
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.headerFile:
+        if self.filename == 'dynamic_state_helper.h':
             self.generateHeader()
-        else:
+        elif self.filename == 'dynamic_state_helper.cpp':
             self.generateSource()
+        else:
+            self.write(f'\nFile name {self.filename} has no code to generate\n')
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
