@@ -1166,6 +1166,7 @@ class ValidationStateTracker : public ValidationObject {
                                             const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
     void PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                  const VkBool32* pColorWriteEnables) override;
+    void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) override;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     void PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, VkResult result) override;
     void PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, VkResult result) override;
