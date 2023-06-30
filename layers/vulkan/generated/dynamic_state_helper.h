@@ -1,7 +1,6 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See dynamic_state_generator.py for modifications
 
-
 /***************************************************************************
  *
  * Copyright (c) 2023 Valve Corporation
@@ -21,6 +20,7 @@
  ****************************************************************************/
 
 // NOLINTBEGIN
+
 #pragma once
 #include <bitset>
 
