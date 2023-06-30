@@ -107,6 +107,8 @@ struct FeaturePointer {
         : IsEnabled([=](const DeviceFeatures &features) { return features.ray_tracing_position_fetch_features.*ptr; }) {}
     FeaturePointer(VkBool32 VkPhysicalDeviceShaderTileImageFeaturesEXT::*ptr)
         : IsEnabled([=](const DeviceFeatures &features) { return features.shader_tile_image_features.*ptr; }) {}
+    FeaturePointer(VkBool32 VkPhysicalDeviceCooperativeMatrixFeaturesKHR::*ptr)
+        : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features_khr.*ptr; }) {}
 };
 
 // Each instance of the struct will only have a singel field non-null
@@ -304,8 +306,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityTileImageColorReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageColorReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageDepthReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess, nullptr, ""}},
     {spv::CapabilityTileImageStencilReadAccessEXT, {0, &VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityCooperativeMatrixKHR, {0, &VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix, nullptr, ""}},
+    {spv::CapabilityCooperativeMatrixKHR, {0, &VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix, nullptr, ""}},
 };
 // clang-format on
 
@@ -687,6 +688,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "TileImageDepthReadAccessEXT";
          case spv::CapabilityTileImageStencilReadAccessEXT:
             return "TileImageStencilReadAccessEXT";
+         case spv::CapabilityCooperativeMatrixKHR:
+            return "CooperativeMatrixKHR";
         default:
             return "Unhandled OpCapability";
     };
