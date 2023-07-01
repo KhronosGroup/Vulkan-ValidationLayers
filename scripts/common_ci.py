@@ -25,7 +25,7 @@ import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3. Run script with [-h] option for more details.")
-    sys_exit(0)
+    sys.exit(0)
 
 # Use Ninja for all platforms for performance/simplicity
 os.environ['CMAKE_GENERATOR'] = "Ninja"
@@ -52,7 +52,7 @@ def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), co
 
 # Returns true if we are running in GitHub actions
 # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
-def IsGHA(): 
+def IsGHA():
     if 'GITHUB_ACTION' in os.environ:
         return True
     return False

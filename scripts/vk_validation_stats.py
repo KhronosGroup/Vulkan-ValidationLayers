@@ -353,7 +353,6 @@ class Consistency:
             unassigned = set({uv for uv in undef_set if uv.startswith('UNASSIGNED-')})
             undef_set = undef_set - unassigned
         if (len(undef_set) > 0):
-            ok = False
             print("\nFollowing VUIDs found in layer tests are not defined in validusage.json (%d):" % len(undef_set))
             undef = list(undef_set)
             undef.sort()
@@ -373,7 +372,6 @@ class Consistency:
                     unassigned.add(vuid)
             undef_set = undef_set - unassigned
         if (len(undef_set) > 0):
-            ok = False
             print("\nFollowing VUIDs found in tests but are not checked in layer code (%d):" % len(undef_set))
             undef = list(undef_set)
             undef.sort()
@@ -650,7 +648,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 
 class SpirvValidation:
     def __init__(self, repo_path):
-        self.enabled = (repo_path != None)
+        self.enabled = (repo_path is not None)
         self.repo_path = repo_path
         self.version = 'unknown'
         self.source_files = []
@@ -662,7 +660,7 @@ class SpirvValidation:
         self.test_implicit_vuids = set()
 
     def load(self, verbose):
-        if self.enabled == False:
+        if self.enabled is False:
             return
         # Get hash from git if available
         try:
@@ -846,7 +844,7 @@ def main(argv):
 
     # Report status of a single VUID
     if args.vuid:
-        print("\n\nChecking status of <%s>" % args.vuid);
+        print("\n\nChecking status of <%s>" % args.vuid)
         if args.vuid not in val_json.all_vuids and not args.vuid.startswith('UNASSIGNED-'):
             print('  Not a valid VUID string.')
         else:
@@ -864,7 +862,7 @@ def main(argv):
                 print('  Not implemented.')
             if args.vuid in val_tests.all_vuids:
                 print('  Has a test!')
-                test_list = val_tests.vuid_to_tests[get_vuid_status]
+                test_list = val_tests.vuid_to_tests[args.vuid]
                 for test in test_list:
                     print('    => %s' % test)
             else:
