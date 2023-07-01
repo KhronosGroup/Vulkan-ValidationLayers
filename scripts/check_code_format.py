@@ -32,16 +32,13 @@ import os
 import argparse
 import re
 import subprocess
-import sys
 from subprocess import check_output
-from datetime import date
 from argparse import RawDescriptionHelpFormatter
 
 #
 #
 # Color print routine, takes a string matching a txtcolor above and the output string, resets color upon exit
 def CPrint(msg_type, msg_string):
-    color = '\033[0m'
     txtcolors = {'HELP_MSG':    '\033[0;36m',
                  'SUCCESS_MSG': '\033[1;32m',
                  'CONTENT':     '\033[1;39m',
@@ -274,7 +271,6 @@ def main():
 
         commit = c.decode('utf-8')
         diff_range = f'{commit}^...{commit}'
-        rdiff_range = f'{commit}...{commit}^'
 
         commit_message = check_output(['git', 'log', '--pretty="%h %s"', diff_range])
         CPrint('CONTENT', "\nChecking commit: " + commit_message.decode('utf-8'))

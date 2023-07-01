@@ -149,7 +149,7 @@ def main():
     # android_abis = ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"]
     android_abis = [ "arm64-v8a" ]
 
-    apk_dir = common_ci.RepoRelative(f'build-android/bin')
+    apk_dir = common_ci.RepoRelative('build-android/bin')
     cmake_install_dir = common_ci.RepoRelative(f'{apk_dir}/libs')
 
     # NOTE: I'm trying to roughly match what build-android/build_all.sh currently does.
@@ -166,21 +166,21 @@ def main():
         cmake_cmd =  f'cmake -S . -B {build_dir} -G Ninja'
 
         # TODO: Allow user to change config
-        cmake_cmd += f' -D CMAKE_BUILD_TYPE=Release'
+        cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
 
         cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={build_dir}'
         cmake_cmd += f' -D CMAKE_TOOLCHAIN_FILE={android_toolchain}'
 
-        cmake_cmd += f' -D ANDROID_PLATFORM=26'
+        cmake_cmd += ' -D ANDROID_PLATFORM=26'
         cmake_cmd += f' -D CMAKE_ANDROID_ARCH_ABI={abi}'
-        cmake_cmd += f' -D CMAKE_ANDROID_RTTI=YES'
-        cmake_cmd += f' -D CMAKE_ANDROID_EXCEPTIONS=YES'
-        cmake_cmd += f' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
+        cmake_cmd += ' -D CMAKE_ANDROID_RTTI=YES'
+        cmake_cmd += ' -D CMAKE_ANDROID_EXCEPTIONS=YES'
+        cmake_cmd += ' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
 
         cmake_cmd += f' -D CMAKE_INSTALL_LIBDIR={lib_dir}'
 
-        cmake_cmd += f' -D BUILD_TESTS=ON'
-        cmake_cmd += f' -D CMAKE_ANDROID_STL_TYPE=c++_shared'
+        cmake_cmd += ' -D BUILD_TESTS=ON'
+        cmake_cmd += ' -D CMAKE_ANDROID_STL_TYPE=c++_shared'
 
         common_ci.RunShellCmd(cmake_cmd)
 
@@ -199,7 +199,7 @@ def main():
 
         shutil.copyfile(src_shared_stl, dst_shared_stl)
         print(f'-- Installing: {dst_shared_stl}')
-    
+
     generate_apk(SDK_ROOT = android_sdk_root, CMAKE_INSTALL_DIR = cmake_install_dir, APK_DIR = apk_dir)
 
 if __name__ == '__main__':
