@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2023 Valve Corporation
 # Copyright (c) 2023 LunarG, Inc.
 
@@ -14,6 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# NOTE: Android this documentation is crucial for understanding the layout of the NDK.
+# https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md
+
+# NOTE: Environment variables we can rely on users/environments setting.
+# https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#environment-variables-2
+
+import argparse
 import json
 import os
 import sys
@@ -76,7 +83,11 @@ def get_android_resources() -> str:
     return res
 
 # Generate the APK from the CMake binaries
-def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str, APK_DIR: str) -> str:
+def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
+    apk_dir = common_ci.RepoRelative(f'build-android/bin')
+
+    common_ci.RunShellCmd(f'cmake -E copy_directory {CMAKE_INSTALL_DIR} {apk_dir}')
+
     android_manifest = get_android_manifest()
     android_resources = get_android_resources()
 
@@ -87,8 +98,8 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str, APK_DIR: str) -> str:
 
     apk_name = 'VulkanLayerValidationTests'
 
-    unaligned_apk = f'{APK_DIR}/{apk_name}-unaligned.apk'
-    test_apk = f'{APK_DIR}/{apk_name}.apk'
+    unaligned_apk = f'{apk_dir}/{apk_name}-unaligned.apk'
+    test_apk = f'{apk_dir}/{apk_name}.apk'
 
     # Create APK
     common_ci.RunShellCmd(f'aapt package -f -M {android_manifest} -I {android_jar} -S {android_resources} -F {unaligned_apk} {CMAKE_INSTALL_DIR}')
@@ -97,7 +108,7 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str, APK_DIR: str) -> str:
     common_ci.RunShellCmd(f'zipalign -f 4 {unaligned_apk} {test_apk}')
 
     # Create Key (If it doesn't already exist)
-    debug_key = common_ci.RepoRelative(f'{APK_DIR}/debug.keystore')
+    debug_key = common_ci.RepoRelative(f'{apk_dir}/debug.keystore')
     ks_pass = 'android'
     if not os.path.isfile(debug_key):
         dname = 'CN=Android-Debug,O=Android,C=US'
@@ -106,38 +117,53 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str, APK_DIR: str) -> str:
     # Sign APK
     common_ci.RunShellCmd(f'apksigner sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {test_apk}')
 
-# NOTE: Android this documentation is crucial for understanding the layout of the NDK.
-# https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md
-
-# TODO: Handle both c++_shared and c++_static for CMAKE_ANDROID_STL_TYPE
-
-# TODO: Lots of the logic is hardcoded to Android API 26. Including external files like `AndroidManifest.xml`.
-
 # Android APKs can contain binaries for multiple ABIs (armeabi-v7a, arm64-v8a, x86, x86_64).
 # CMake will need to be run multiple times to create a complete test APK that can run on any Android device.
 def main():
-    # Environment variables we can rely on users/environments setting.
-    # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#environment-variables-2
+    configs = ['Release', 'Debug']
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, choices=configs, default=configs[0])
+    parser.add_argument('--app-abi', dest='android_abi', type=str, default="arm64-v8a")
+    parser.add_argument('--app-stl', dest='android_stl', type=str, choices=["c++_static", "c++_shared"], default="c++_static")
+    parser.add_argument('--apk', action='store_true', help='Generate an APK as a post build step.')
+    parser.add_argument('--tests', action='store_true', help='Build tests.')
+    args = parser.parse_args()
+
+    cmake_config = args.config
+    android_abis = args.android_abi.split(" ")
+    android_stl = args.android_stl
+    create_apk = args.apk
+    build_tests = args.tests
+
     if "ANDROID_NDK_HOME" not in os.environ:
         print("Cannot find ANDROID_NDK_HOME!")
         sys.exit(1)
-    elif "ANDROID_SDK_ROOT" not in os.environ:
-        print("Cannot find ANDROID_SDK_ROOT!")
-        sys.exit(1)
 
     android_ndk_home = os.environ.get('ANDROID_NDK_HOME')
-    android_sdk_root = os.environ.get('ANDROID_SDK_ROOT')
     android_toolchain = f'{android_ndk_home}/build/cmake/android.toolchain.cmake'
 
+    # The only tool we require for building is CMake/Ninja
+    required_cli_tools = ['cmake', 'ninja']
+
+    # If we are building an APK we need a few more tools.
+    if create_apk:
+        if "ANDROID_SDK_ROOT" not in os.environ:
+            print("Cannot find ANDROID_SDK_ROOT!")
+            sys.exit(1)
+
+        android_sdk_root = os.environ.get('ANDROID_SDK_ROOT')
+        print(f"ANDROID_SDK_ROOT = {android_sdk_root}")
+        required_cli_tools += ['aapt', 'zipalign', 'keytool', 'apksigner']
+
     print(f"ANDROID_NDK_HOME = {android_ndk_home}")
-    print(f"ANDROID_SDK_ROOT = {android_sdk_root}")
+    print(f"Build configured for {cmake_config} | {android_stl} | {android_abis} | APK {create_apk}")
 
     if not os.path.isfile(android_toolchain):
         print(f'Unable to find android.toolchain.cmake at {android_toolchain}')
         exit(-1)
 
-    # We require a fair amount of tools to be in the PATH
-    for tool in ['cmake', 'ninja', 'aapt', 'zipalign', 'keytool', 'apksigner']:
+    for tool in required_cli_tools:
         path = shutil.which(tool)
         if path is None:
             print(f"Unable to find {tool}!")
@@ -145,12 +171,7 @@ def main():
 
         print(f"Using {tool} : {path}")
 
-    # TODO: Make ABI a cli argument.
-    # android_abis = ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"]
-    android_abis = [ "arm64-v8a" ]
-
-    apk_dir = common_ci.RepoRelative('build-android/bin')
-    cmake_install_dir = common_ci.RepoRelative(f'{apk_dir}/libs')
+    cmake_install_dir = common_ci.RepoRelative(f'build-android/libs')
 
     # NOTE: I'm trying to roughly match what build-android/build_all.sh currently does.
     for abi in android_abis:
@@ -165,22 +186,18 @@ def main():
 
         cmake_cmd =  f'cmake -S . -B {build_dir} -G Ninja'
 
-        # TODO: Allow user to change config
-        cmake_cmd += ' -D CMAKE_BUILD_TYPE=Release'
-
+        cmake_cmd += f' -D CMAKE_BUILD_TYPE={cmake_config}'
         cmake_cmd += f' -D UPDATE_DEPS=ON -D UPDATE_DEPS_DIR={build_dir}'
         cmake_cmd += f' -D CMAKE_TOOLCHAIN_FILE={android_toolchain}'
+        cmake_cmd += f' -D CMAKE_ANDROID_ARCH_ABI={abi}'
+        cmake_cmd += f' -D CMAKE_INSTALL_LIBDIR={lib_dir}'
+        cmake_cmd += f' -D BUILD_TESTS={build_tests}'
+        cmake_cmd += f' -D CMAKE_ANDROID_STL_TYPE={android_stl}'
 
         cmake_cmd += ' -D ANDROID_PLATFORM=26'
-        cmake_cmd += f' -D CMAKE_ANDROID_ARCH_ABI={abi}'
         cmake_cmd += ' -D CMAKE_ANDROID_RTTI=YES'
         cmake_cmd += ' -D CMAKE_ANDROID_EXCEPTIONS=YES'
         cmake_cmd += ' -D ANDROID_USE_LEGACY_TOOLCHAIN_FILE=NO'
-
-        cmake_cmd += f' -D CMAKE_INSTALL_LIBDIR={lib_dir}'
-
-        cmake_cmd += ' -D BUILD_TESTS=ON'
-        cmake_cmd += ' -D CMAKE_ANDROID_STL_TYPE=c++_shared'
 
         common_ci.RunShellCmd(cmake_cmd)
 
@@ -190,17 +207,14 @@ def main():
         install_cmd = f'cmake --install {build_dir} --prefix {cmake_install_dir}'
         common_ci.RunShellCmd(install_cmd)
 
-        if not os.path.isfile(f'{cmake_install_dir}/{lib_dir}/libVulkanLayerValidationTests.so'):
-            print("Unable to find tests!")
-            sys.exit(-1)
+        if android_stl == "c++_shared":
+            src_shared_stl = get_shared_stl(NDK = android_ndk_home, ABI = abi)
+            dst_shared_stl = f'{cmake_install_dir}/{lib_dir}/libc++_shared.so'
+            shutil.copyfile(src_shared_stl, dst_shared_stl)
+            print(f'-- Installing: {dst_shared_stl}')
 
-        src_shared_stl = get_shared_stl(NDK = android_ndk_home, ABI = abi)
-        dst_shared_stl = f'{cmake_install_dir}/{lib_dir}/libc++_shared.so'
-
-        shutil.copyfile(src_shared_stl, dst_shared_stl)
-        print(f'-- Installing: {dst_shared_stl}')
-
-    generate_apk(SDK_ROOT = android_sdk_root, CMAKE_INSTALL_DIR = cmake_install_dir, APK_DIR = apk_dir)
+    if create_apk:
+        generate_apk(SDK_ROOT = android_sdk_root, CMAKE_INSTALL_DIR = cmake_install_dir)
 
 if __name__ == '__main__':
     main()
