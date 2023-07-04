@@ -249,6 +249,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dynamic_state_helper.cpp
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/layer_chassis_dispatch.cpp
+    layer_chassis_dispatch_manual.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp

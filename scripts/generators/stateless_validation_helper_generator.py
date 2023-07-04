@@ -198,7 +198,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
     switch(header->sType) {
 ''')
 
-        for struct in [x for x in self.vk.structs.values() if x.structExtends is not None and not x.returnedOnly]:
+        for struct in [x for x in self.vk.structs.values() if x.extends is not None and not x.returnedOnly]:
             out.extend([f'#ifdef {struct.protect}\n'] if struct.protect else [])
             out.append(f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n')
 
