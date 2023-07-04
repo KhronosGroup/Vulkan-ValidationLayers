@@ -81,6 +81,7 @@ class CommandParam:
     alias: str
 
     pointer: bool # type contains a pointer
+    const: bool # type contains 'const'
     noAutoValidity: bool
     length: str # 'len' from XML showing what is used to set the length of an pointer
 
