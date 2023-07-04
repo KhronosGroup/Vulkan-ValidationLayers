@@ -1,7 +1,6 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See sync_validation_generator.py for modifications
 
-
 /***************************************************************************
  *
  * Copyright (c) 2015-2023 Valve Corporation
@@ -20,6 +19,8 @@
  * limitations under the License.
  ****************************************************************************/
 
+// NOLINTBEGIN
+
 #pragma once
 
 #include <array>
@@ -33,7 +34,6 @@
 static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000040000000000ULL;
 static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x0000400000000000ULL;
 static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x0000800000000000ULL;
-
 // Unique number for each  stage/access combination
 enum SyncStageAccessIndex {
     SYNC_ACCESS_INDEX_NONE = 0,
@@ -459,3 +459,4 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarli
 // Masks of logically later stage flags for a given stage flag
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 
+// NOLINTEND

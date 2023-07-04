@@ -58,6 +58,20 @@ def intIfGet(elem, name):
 def boolGet(elem, name) -> bool:
     return elem.get(name) is not None and elem.get(name) == "true"
 
+def getQueues(elem) -> Queues:
+    queues = 0
+    queues_list = splitIfGet(elem, 'queues')
+    if queues_list is not None:
+        queues |= Queues.TRANSFER if 'transfer' in queues_list else 0
+        queues |= Queues.GRAPHICS if 'graphics' in queues_list else 0
+        queues |= Queues.COMPUTE if 'compute' in queues_list else 0
+        queues |= Queues.PROTECTED if 'protected' in queues_list else 0
+        queues |= Queues.SPARSE_BINDING if 'sparse_binding' in queues_list else 0
+        queues |= Queues.OPTICAL_FLOW if 'opticalflow' in queues_list else 0
+        queues |= Queues.DECODE if 'decode' in queues_list else 0
+        queues |= Queues.ENCODE if 'encode' in queues_list else 0
+    return queues
+
 #
 # Walk the JSON-derived dict and find all "vuid" key values
 def ExtractVUIDs(vuid_dict):
@@ -72,6 +86,10 @@ def ExtractVUIDs(vuid_dict):
                 for listValue in value:
                     for vuid in ExtractVUIDs(listValue):
                         yield vuid
+
+# Shared object used by Sync elements that don't have ones
+maxSyncSupport = SyncSupport(None, None, True)
+maxSyncEquivalent = SyncEquivalent(None, None, True)
 
 # This Generator Option is used across all Validation Layer generators
 # After years of use, it has shown that all the options are unified across each generator (file)
@@ -175,13 +193,22 @@ class BaseGenerator(OutputGenerator):
         ]:
             self.valid_vuids.add(vuid)
 
-        # Not gen*() command to get these, so do it manually
+        # No gen*() command to get these, so do it manually
         for platform in self.registry.tree.findall('platforms/platform'):
             self.vk.platforms[platform.get('name')] = platform.get('protect')
 
-
         for tag in self.registry.tree.findall('tags'):
             self.vk.vendorTags.append(tag.get('name'))
+
+        # No way known to get this from the XML
+        self.vk.queueBits[Queues.TRANSFER]       = 'VK_QUEUE_TRANSFER_BIT'
+        self.vk.queueBits[Queues.GRAPHICS]       = 'VK_QUEUE_GRAPHICS_BIT'
+        self.vk.queueBits[Queues.COMPUTE]        = 'VK_QUEUE_COMPUTE_BIT'
+        self.vk.queueBits[Queues.PROTECTED]      = 'VK_QUEUE_PROTECTED_BIT'
+        self.vk.queueBits[Queues.SPARSE_BINDING] = 'VK_QUEUE_SPARSE_BINDING_BIT'
+        self.vk.queueBits[Queues.OPTICAL_FLOW]   = 'VK_QUEUE_OPTICAL_FLOW_BIT_NV'
+        self.vk.queueBits[Queues.DECODE]         = 'VK_QUEUE_VIDEO_DECODE_BIT_KHR'
+        self.vk.queueBits[Queues.ENCODE]         = 'VK_QUEUE_VIDEO_ENCODE_BIT_KHR'
 
     # This function should be overloaded
     def generate(self):
@@ -293,8 +320,6 @@ class BaseGenerator(OutputGenerator):
                                     extension.flags[bitmaskName] = [] # Dict needs init
                                 extension.flags[bitmaskName].extend([flag] if flag not in extension.flags[bitmaskName] else [])
 
-
-
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
         # We do some post processing now
@@ -311,6 +336,11 @@ class BaseGenerator(OutputGenerator):
         # Turn handle parents into pointers to classess
         for handle in [x for x in self.vk.handles.values() if x.parent is not None]:
             handle.parent = self.vk.handles[handle.parent]
+
+        maxSyncSupport.queues = Queues.ALL
+        maxSyncSupport.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
+        maxSyncEquivalent.accesses = self.vk.bitmasks['VkAccessFlagBits2'].flags
+        maxSyncEquivalent.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
 
         # All inherited generators should run from here
         self.generate()
@@ -396,18 +426,7 @@ class BaseGenerator(OutputGenerator):
         alias = attrib.get('alias')
         tasks = splitIfGet(attrib, 'tasks')
 
-        queues = 0
-        queues_list = splitIfGet(attrib, 'queues')
-        if queues_list is not None:
-            queues |= Queues.TRANSFER if 'transfer' in queues_list else 0
-            queues |= Queues.GRAPHICS if 'graphics' in queues_list else 0
-            queues |= Queues.COMPUTE if 'compute' in queues_list else 0
-            queues |= Queues.PROTECTED if 'protected' in queues_list else 0
-            queues |= Queues.SPARSE_BINDING if 'sparse_binding' in queues_list else 0
-            queues |= Queues.OPTICAL_FLOW if 'opticalflow' in queues_list else 0
-            queues |= Queues.DECODE if 'decode' in queues_list else 0
-            queues |= Queues.ENCODE if 'encode' in queues_list else 0
-
+        queues = getQueues(attrib)
         successcodes = splitIfGet(attrib, 'successcodes')
         errorcodes = splitIfGet(attrib, 'errorcodes')
         cmdbufferlevel = attrib.get('cmdbufferlevel')
@@ -639,44 +658,52 @@ class BaseGenerator(OutputGenerator):
     def genSyncStage(self, sync):
         OutputGenerator.genSyncStage(self, sync)
         syncElem = sync.elem
-        name = syncElem.get('name')
 
-        support = None
+        support = maxSyncSupport
         supportElem = syncElem.find('syncsupport')
         if supportElem is not None:
-            queues = splitIfGet(supportElem, 'queues')
-            stage = splitIfGet(supportElem, 'stage')
-            support = SyncSupport(queues, stage)
+            queues = getQueues(supportElem)
+            stageNames = splitIfGet(supportElem, 'stage')
+            stages = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name in stageNames] if stageNames is not None else None
+            support = SyncSupport(queues, stages, False)
 
-        equivalent = None
+        equivalent = maxSyncEquivalent
         equivalentElem = syncElem.find('syncequivalent')
         if equivalentElem is not None:
-            stage = splitIfGet(equivalentElem, 'stage')
-            access = splitIfGet(equivalentElem, 'access')
-            support = SyncEquivalent(stage, access)
+            stageNames = splitIfGet(equivalentElem, 'stage')
+            stages = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name in stageNames] if stageNames is not None else None
+            accessNames = splitIfGet(equivalentElem, 'access')
+            accesses = [x for x in self.vk.bitmasks['VkAccessFlagBits2'].flags if x.name in accessNames] if accessNames is not None else None
+            equivalent = SyncEquivalent(stages, accesses, False)
 
-        self.vk.syncStage.append(SyncStage(name, support, equivalent))
+        flagName = syncElem.get('name')
+        flag = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name == flagName][0]
+        self.vk.syncStage.append(SyncStage(flag, support, equivalent))
 
     def genSyncAccess(self, sync):
         OutputGenerator.genSyncAccess(self, sync)
         syncElem = sync.elem
-        name = syncElem.get('name')
 
-        support = None
+        support = maxSyncSupport
         supportElem = syncElem.find('syncsupport')
         if supportElem is not None:
-            queues = splitIfGet(supportElem, 'queues')
-            stage = splitIfGet(supportElem, 'stage')
-            support = SyncSupport(queues, stage)
+            queues = getQueues(supportElem)
+            stageNames = splitIfGet(supportElem, 'stage')
+            stages = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name in stageNames] if stageNames is not None else None
+            support = SyncSupport(queues, stages, False)
 
-        equivalent = None
+        equivalent = maxSyncEquivalent
         equivalentElem = syncElem.find('syncequivalent')
         if equivalentElem is not None:
-            stage = splitIfGet(equivalentElem, 'stage')
-            access = splitIfGet(equivalentElem, 'access')
-            support = SyncEquivalent(stage, access)
+            stageNames = splitIfGet(equivalentElem, 'stage')
+            stages = [x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags if x.name in stageNames] if stageNames is not None else None
+            accessNames = splitIfGet(equivalentElem, 'access')
+            accesses = [x for x in self.vk.bitmasks['VkAccessFlagBits2'].flags if x.name in accessNames] if accessNames is not None else None
+            equivalent = SyncEquivalent(stages, accesses, False)
 
-        self.vk.syncAccess.append(SyncAccess(name, support, equivalent))
+        flagName = syncElem.get('name')
+        flag = [x for x in self.vk.bitmasks['VkAccessFlagBits2'].flags if x.name == flagName][0]
+        self.vk.syncAccess.append(SyncAccess(flag, support, equivalent))
 
     def genSyncPipeline(self, sync):
         OutputGenerator.genSyncPipeline(self, sync)
@@ -692,4 +719,3 @@ class BaseGenerator(OutputGenerator):
             stages.append(SyncPipelineStage(order, before, after, value))
 
         self.vk.syncPipeline.append(SyncPipeline(name, depends, stages))
-
