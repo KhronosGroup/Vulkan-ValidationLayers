@@ -111,6 +111,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/sync_validation_types.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/utils/convert_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_chassis_dispatch_manual.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vulkan/generated/valid_enum_values.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp

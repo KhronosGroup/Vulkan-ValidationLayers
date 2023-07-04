@@ -96,7 +96,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for thread safety source code-generation
     genOpts['thread_safety.cpp'] = [
           ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
@@ -139,7 +138,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
           ]
 
-    # Options for object_tracker code-generated validation routines
     genOpts['object_tracker.cpp'] = [
           ObjectTrackerOutputGenerator,
           BaseGeneratorOptions(
@@ -148,7 +146,6 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
-    # Options for object_tracker code-generated prototypes
     genOpts['object_tracker.h'] = [
           ObjectTrackerOutputGenerator,
           BaseGeneratorOptions(
@@ -157,7 +154,6 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
-    # Options for dispatch table helper generator
     genOpts['vk_dispatch_table_helper.h'] = [
           DispatchTableHelperOutputGenerator,
           BaseGeneratorOptions(
@@ -179,7 +175,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for Layer dispatch table generator
     genOpts['vk_layer_dispatch_table.h'] = [
           LayerDispatchTableOutputGenerator,
           BaseGeneratorOptions(
@@ -262,8 +257,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Layer chassis related generation structs
-    # Options for layer chassis header
     genOpts['chassis.h'] = [
           LayerChassisOutputGenerator,
           BaseGeneratorOptions(
@@ -273,7 +266,6 @@ def makeGenOpts(args):
             helper_file_type  = 'layer_chassis_header')
         ]
 
-    # Options for layer chassis source file
     genOpts['chassis.cpp'] = [
           LayerChassisOutputGenerator,
           BaseGeneratorOptions(
@@ -282,8 +274,6 @@ def makeGenOpts(args):
             helper_file_type  = 'layer_chassis_source')
         ]
 
-    # Layer chassis related generation structs
-    # Options for layer chassis header
     genOpts['chassis_dispatch_helper.h'] = [
           LayerChassisOutputGenerator,
           BaseGeneratorOptions(
@@ -292,7 +282,6 @@ def makeGenOpts(args):
             helper_file_type  = 'layer_chassis_helper_header')
         ]
 
-    # Options for layer chassis dispatch source file
     genOpts['layer_chassis_dispatch.cpp'] = [
           LayerChassisDispatchOutputGenerator,
           BaseGeneratorOptions(
@@ -300,7 +289,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for layer chassis dispatch header file
     genOpts['layer_chassis_dispatch.h'] = [
           LayerChassisDispatchOutputGenerator,
           BaseGeneratorOptions(
@@ -308,7 +296,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for best practices code-generated source
     genOpts['best_practices.cpp'] = [
           BestPracticesOutputGenerator,
           BaseGeneratorOptions(
@@ -316,7 +303,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for best_practices code-generated header
     genOpts['best_practices.h'] = [
           BestPracticesOutputGenerator,
           BaseGeneratorOptions(
@@ -338,7 +324,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for spirv_validation_helper code-generated header
     genOpts['spirv_validation_helper.cpp'] = [
           SpirvValidationHelperOutputGenerator,
           BaseGeneratorOptions(filename = 'spirv_validation_helper.cpp')
@@ -362,7 +347,6 @@ def makeGenOpts(args):
             grammar           = args.grammar)
         ]
 
-    # Options for command_validation code-generated header
     genOpts['command_validation.cpp'] = [
           CommandValidationOutputGenerator,
           BaseGeneratorOptions(
@@ -371,7 +355,6 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
-    # generator for command_validation.h
     genOpts['command_validation.h'] = [
           CommandValidationOutputGenerator,
           BaseGeneratorOptions(
@@ -387,7 +370,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # generator for command_validation.h
     genOpts['dynamic_state_helper.h'] = [
           DynamicStateOutputGenerator,
           BaseGeneratorOptions(
@@ -395,7 +377,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # Options for format_utils code-generated header
     genOpts['vk_format_utils.cpp'] = [
           FormatUtilsOutputGenerator,
           BaseGeneratorOptions(
@@ -403,7 +384,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-    # generator for format_utils.h
     genOpts['vk_format_utils.h'] = [
           FormatUtilsOutputGenerator,
           BaseGeneratorOptions(
@@ -501,7 +481,6 @@ if __name__ == '__main__':
 
     from reg import *
     from generator import write
-    from cgenerator import CGeneratorOptions, COutputGenerator
 
     # ValidationLayer Generator Modifications
     from generators.base_generator import BaseGeneratorOptions
@@ -515,7 +494,6 @@ if __name__ == '__main__':
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
     from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
-    from generators.lvt_file_generator import LvtFileOutputGenerator
     from generators.function_pointers_generator import FunctionPointersOutputGenerator
     from generators.best_practices_generator import BestPracticesOutputGenerator
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator

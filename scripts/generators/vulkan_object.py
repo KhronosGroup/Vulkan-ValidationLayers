@@ -141,7 +141,7 @@ class Command:
     implicitExternSyncParams: List[str]
 
     # C prototype string - ex:
-    # VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
+    # VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(
     #   const VkInstanceCreateInfo* pCreateInfo,
     #   const VkAllocationCallbacks* pAllocator,
     #   VkInstance* pInstance);'
@@ -225,14 +225,17 @@ class Struct:
     name: str
     extensions: List[Extension] # All extensions that enable the struct
     version: Version # None if Version 1.0
+    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
+
+    members: List[Member]
 
     union: bool # Unions are just a subset of a Structs
-    structExtends: List[str]
-    protect: str  # ex. 'VK_ENABLE_BETA_EXTENSIONS'
-    sType: str # if 'members[0].type' != 'VkStructureType' will be None
     returnedOnly: bool
-    allowDuplicate: bool
-    members: List[Member]
+
+    sType: str # VK_STRUCTURE_TYPE_*
+    extends: List['Struct'] # Structs that this struct extends
+    extendedBy: List['Struct'] # Struct that can be extended by this struct
+    allowDuplicate: bool # can have a pNext point to itself
 
 @dataclass
 class FormatComponent:

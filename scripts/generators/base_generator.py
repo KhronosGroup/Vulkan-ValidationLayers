@@ -337,6 +337,12 @@ class BaseGenerator(OutputGenerator):
         for handle in [x for x in self.vk.handles.values() if x.parent is not None]:
             handle.parent = self.vk.handles[handle.parent]
 
+        # Update structs extending each other
+        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
+            struct.extends = list(map(lambda x: self.vk.structs[x], struct.extends))
+        for struct in [x for x in self.vk.structs.values() if x.extendedBy is not None]:
+            struct.extendedBy = list(map(lambda x: self.vk.structs[x], struct.extendedBy))
+
         maxSyncSupport.queues = Queues.ALL
         maxSyncSupport.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
         maxSyncEquivalent.accesses = self.vk.bitmasks['VkAccessFlagBits2'].flags
@@ -540,7 +546,10 @@ class BaseGenerator(OutputGenerator):
 
             returnedOnly = boolGet(typeElem, 'returnedonly')
             allowDuplicate = boolGet(typeElem, 'allowduplicate')
-            structExtends = splitIfGet(typeElem, 'structextends')
+
+            # Build a string list now, populate as Struct objects once all structs are known
+            extends = splitIfGet(typeElem, 'structextends')
+            extendedBy = self.registry.validextensionstructs[typeName] if len(self.registry.validextensionstructs[typeName]) > 0 else None
 
             membersElem = typeInfo.elem.findall('.//member')
             members = []
@@ -571,9 +580,9 @@ class BaseGenerator(OutputGenerator):
                 members.append(Member(name, type, externSync, optional, optionalPointer,
                                       noautovalidity, length, limittype, pointer, cdecl))
 
-            self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, union,
-                                               structExtends, protect, sType, returnedOnly,
-                                               allowDuplicate, members)
+            self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, protect, members,
+                                               union, returnedOnly,
+                                               sType, extends, extendedBy, allowDuplicate)
 
         elif category == 'handle':
             if alias is not None:

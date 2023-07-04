@@ -224,7 +224,7 @@ void *SafePnextCopy(const void *pNext, PNextCopyState* copy_state) {
             break;
         }''')
 
-        for struct in [x for x in self.vk.structs.values() if x.structExtends is not None]:
+        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
             out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
         case {struct.sType}:
@@ -273,7 +273,7 @@ void FreePnextChain(const void *pNext) {
             break;
 ''')
 
-        for struct in [x for x in self.vk.structs.values() if x.structExtends is not None]:
+        for struct in [x for x in self.vk.structs.values() if x.extends is not None]:
             out.extend([f'\n#ifdef {struct.protect}'] if struct.protect else [])
             out.append(f'''
         case {struct.sType}:
