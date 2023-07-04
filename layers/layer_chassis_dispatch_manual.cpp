@@ -90,6 +90,25 @@ void CopyExportMetalObjects(const void *src_chain, const void *dst_chain) {
         dst_chain = reinterpret_cast<const VkBaseOutStructure *>(dst_chain)->pNext;
     }
 }
+
+void DispatchExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    safe_VkExportMetalObjectsInfoEXT var_local_pMetalObjectsInfo;
+    safe_VkExportMetalObjectsInfoEXT *local_pMetalObjectsInfo = nullptr;    {
+        if (pMetalObjectsInfo) {
+            local_pMetalObjectsInfo = &var_local_pMetalObjectsInfo;
+            local_pMetalObjectsInfo->initialize(pMetalObjectsInfo);
+            WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo->pNext);
+        }
+    }
+    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (VkExportMetalObjectsInfoEXT*)local_pMetalObjectsInfo);
+    if (pMetalObjectsInfo) { CopyExportMetalObjects(local_pMetalObjectsInfo->pNext, pMetalObjectsInfo->pNext); }
+
+}
+
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 // The VK_EXT_pipeline_creation_feedback extension returns data from the driver -- we've created a copy of the pnext chain, so

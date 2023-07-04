@@ -407,6 +407,7 @@ class BaseGenerator(OutputGenerator):
 
             cdecl = self.makeCParamDecl(param, 0)
             paramPointer = '*' in cdecl
+            paramConst = 'const' in cdecl
 
             paramNoautovalidity = boolGet(param, 'noautovalidity')
             paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
@@ -424,7 +425,7 @@ class BaseGenerator(OutputGenerator):
                 paramExternsync = True
 
             params.append(CommandParam(paramName, paramType, paramAlias,
-                                       paramPointer, paramNoautovalidity, paramLength,
+                                       paramPointer, paramConst, paramNoautovalidity, paramLength,
                                        paramOptional, paramOptionalPointer,
                                        paramExternsync, paramExternSyncPointer))
 
