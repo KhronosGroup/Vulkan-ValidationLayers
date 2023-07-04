@@ -324,9 +324,6 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-# Create an API generator and corresponding generator options based on
-# the requested target and command line options.
-    # Helper file generator options for sync_validation_types.h
     genOpts['sync_validation_types.h'] = [
           SyncValidationOutputGenerator,
           BaseGeneratorOptions(

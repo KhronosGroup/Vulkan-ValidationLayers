@@ -1,7 +1,6 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See sync_validation_generator.py for modifications
 
-
 /***************************************************************************
  *
  * Copyright (c) 2015-2023 Valve Corporation
@@ -20,10 +19,9 @@
  * limitations under the License.
  ****************************************************************************/
 
+// NOLINTBEGIN
+
 #include "sync_validation_types.h"
-
-
-
 const std::array<SyncStageAccessInfoType, 128>& syncStageAccessInfoByStageAccessIndex() {
 static const std::array<SyncStageAccessInfoType, 128> variable = { {
     {
@@ -925,8 +923,6 @@ static const std::array<SyncStageAccessInfoType, 128> variable = { {
 }};
 return variable;
 }
-
-
 const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit() {
     static const std::map<VkPipelineStageFlags2, SyncStageAccessFlags> variable = {
     { VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, (
@@ -1127,7 +1123,6 @@ const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMask
     };
     return variable;
 }
-
 
 const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit() {
     static const std::map<VkAccessFlags2, SyncStageAccessFlags> variable = {
@@ -1346,7 +1341,6 @@ const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAcces
     return variable;
 }
 
-
 const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask() {
     static const std::map<VkPipelineStageFlags2, VkAccessFlags2> variable = {
     { VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, (
@@ -1548,29 +1542,22 @@ const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMa
     return variable;
 }
 
-
 const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags() {
     static const std::map<VkQueueFlagBits, VkPipelineStageFlags2> variable = {
-    { VK_QUEUE_COMPUTE_BIT, (
+    { VK_QUEUE_TRANSFER_BIT, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
-        VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
-        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_HOST_BIT |
-        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV |
-        VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
-        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
-        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
-        VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT |
         VK_PIPELINE_STAGE_2_COPY_BIT |
         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
         VK_PIPELINE_STAGE_2_BLIT_BIT |
-        VK_PIPELINE_STAGE_2_CLEAR_BIT
+        VK_PIPELINE_STAGE_2_CLEAR_BIT |
+        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR
     )},
     { VK_QUEUE_GRAPHICS_BIT, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
+        VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
         VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
         VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
         VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT |
@@ -1581,39 +1568,56 @@ const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQu
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_HOST_BIT |
-        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV |
-        VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
-        VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
-        VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT |
-        VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
-        VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
-        VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT |
-        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
         VK_PIPELINE_STAGE_2_COPY_BIT |
         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
         VK_PIPELINE_STAGE_2_BLIT_BIT |
         VK_PIPELINE_STAGE_2_CLEAR_BIT |
         VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT |
         VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT |
+        VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT |
+        VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
+        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV |
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
+        VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT |
+        VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
+        VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT |
         VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI |
         VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI |
+        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
         VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI
+    )},
+    { VK_QUEUE_COMPUTE_BIT, (
+        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
+        VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_HOST_BIT |
+        VK_PIPELINE_STAGE_2_COPY_BIT |
+        VK_PIPELINE_STAGE_2_RESOLVE_BIT |
+        VK_PIPELINE_STAGE_2_BLIT_BIT |
+        VK_PIPELINE_STAGE_2_CLEAR_BIT |
+        VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
+        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV |
+        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+        VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
+        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
+        VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT
+    )},
+    { VK_QUEUE_PROTECTED_BIT, (
+        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_HOST_BIT
+    )},
+    { VK_QUEUE_SPARSE_BINDING_BIT, (
+        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_HOST_BIT
     )},
     { VK_QUEUE_OPTICAL_FLOW_BIT_NV, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_HOST_BIT |
         VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV
-    )},
-    { VK_QUEUE_TRANSFER_BIT, (
-        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
-        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
-        VK_PIPELINE_STAGE_2_HOST_BIT |
-        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
-        VK_PIPELINE_STAGE_2_COPY_BIT |
-        VK_PIPELINE_STAGE_2_RESOLVE_BIT |
-        VK_PIPELINE_STAGE_2_BLIT_BIT |
-        VK_PIPELINE_STAGE_2_CLEAR_BIT
     )},
     { VK_QUEUE_VIDEO_DECODE_BIT_KHR, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
@@ -1630,7 +1634,6 @@ const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQu
     };
     return variable;
 }
-
 
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages() {
     static const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {
@@ -1866,7 +1869,6 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarli
     return variable;
 }
 
-
 const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages() {
     static const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {
     { VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, (
@@ -2098,3 +2100,4 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
 }
 
 
+// NOLINTEND

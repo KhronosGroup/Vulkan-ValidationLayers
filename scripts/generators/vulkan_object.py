@@ -99,6 +99,7 @@ class Queues(IntFlag):
     OPTICAL_FLOW = auto()   # VK_QUEUE_OPTICAL_FLOW_BIT_NV
     DECODE = auto()         # VK_QUEUE_VIDEO_DECODE_BIT_KHR
     ENCODE = auto()         # VK_QUEUE_VIDEO_ENCODE_BIT_KHR
+    ALL = TRANSFER | GRAPHICS | COMPUTE | PROTECTED | SPARSE_BINDING | OPTICAL_FLOW | DECODE | ENCODE
 
 class CommandScope(Enum):
     NONE = auto()
@@ -267,26 +268,28 @@ class Format:
 @dataclass
 class SyncSupport:
     """<syncsupport>"""
-    queues: List[str]
-    stage: List[str]
+    queues: Queues
+    stages: List[Flag] # VkPipelineStageFlagBits2
+    max: bool # If this supports max values
 
 @dataclass
 class SyncEquivalent:
     """<syncequivalent>"""
-    stage: List[str]
-    access: List[str]
+    stages: List[Flag] # VkPipelineStageFlagBits2
+    accesses: List[Flag] # VkAccessFlagBits2
+    max: bool # If this equivalent to everything
 
 @dataclass
 class SyncStage:
     """<syncstage>"""
-    name: str
+    flag: Flag # VkPipelineStageFlagBits2
     support: SyncSupport
     equivalent: SyncEquivalent
 
 @dataclass
 class SyncAccess:
     """<syncaccess>"""
-    name: str
+    flag: Flag # VkAccessFlagBits2
     support: SyncSupport
     equivalent: SyncEquivalent
 
@@ -348,7 +351,9 @@ class VulkanObject():
 
     spirv: List[Spirv]               = field(default_factory=list, init=False)
 
-    # # ex. [ 'xlib' : 'VK_USE_PLATFORM_XLIB_KHR' ]
+    # ex. [ 'xlib' : 'VK_USE_PLATFORM_XLIB_KHR' ]
     platforms: Dict[str, str]        = field(default_factory=dict, init=False)
-    # # List of all vendor Sufix names (ex. 'KHR', 'EXT', etc. )
+    # List of all vendor Sufix names (ex. 'KHR', 'EXT', etc. )
     vendorTags: List[str]            = field(default_factory=list, init=False)
+    # ex. [ Queues.COMPUTE : 'VK_QUEUE_COMPUTE_BIT' ]
+    queueBits: Dict[IntFlag, str]    = field(default_factory=dict, init=False)
