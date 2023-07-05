@@ -1,31 +1,34 @@
+// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See layer_chassis_generator.py for modifications
 
-// This file is ***GENERATED***.  Do Not Edit.
-// See layer_chassis_generator.py for modifications.
+/***************************************************************************
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+* Copyright (c) 2023-2023 RasterGrid Kft.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- * Copyright (c) 2023-2023 RasterGrid Kft.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// NOLINTBEGIN
+
 #pragma once
 
-
 // This source code creates dispatch vectors for each chassis api intercept,
-// i.e., PreCallValidateFoo, PreCallRecordFoo, PostCallRecordFoo, etc., ensuring that 
-// each vector contains only the validation objects that override that particular base 
+// i.e., PreCallValidateFoo, PreCallRecordFoo, PostCallRecordFoo, etc., ensuring that
+// each vector contains only the validation objects that override that particular base
 // class virtual function. Preventing non-overridden calls from reaching the default
 // functions saved about 5% in multithreaded applications.
 
@@ -1649,7 +1652,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     };
 
     intercept_vectors.resize(InterceptIdCount);
-
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceQueue);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceQueue);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceQueue);
@@ -2211,24 +2213,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSharedSwapchainsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSharedSwapchainsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSharedSwapchainsKHR);
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-#endif
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-#endif
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateVideoSessionKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateVideoSessionKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateVideoSessionKHR);
@@ -2449,8 +2433,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordUnmapMemory2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordUnmapMemory2KHR);
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     BUILD_DISPATCH_VECTOR(PreCallValidateGetEncodedVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetEncodedVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetEncodedVideoSessionParametersKHR);
@@ -2577,14 +2559,10 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderInfoAMD);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderInfoAMD);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderInfoAMD);
-#ifdef VK_USE_PLATFORM_GGP
-#endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryWin32HandleNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryWin32HandleNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryWin32HandleNV);
-#endif
-#ifdef VK_USE_PLATFORM_VI_NN
 #endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginConditionalRenderingEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginConditionalRenderingEXT);
@@ -2595,10 +2573,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetViewportWScalingNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetViewportWScalingNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetViewportWScalingNV);
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#endif
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateDisplayPowerControlEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordDisplayPowerControlEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordDisplayPowerControlEXT);
@@ -2629,10 +2603,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateSetHdrMetadataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetHdrMetadataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetHdrMetadataEXT);
-#ifdef VK_USE_PLATFORM_IOS_MVK
-#endif
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateSetDebugUtilsObjectNameEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetDebugUtilsObjectNameEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetDebugUtilsObjectNameEXT);
@@ -2778,15 +2748,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateSetLocalDimmingAMD);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetLocalDimmingAMD);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetLocalDimmingAMD);
-#ifdef VK_USE_PLATFORM_FUCHSIA
-#endif
-#ifdef VK_USE_PLATFORM_METAL_EXT
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferDeviceAddressEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferDeviceAddressEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferDeviceAddressEXT);
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     BUILD_DISPATCH_VECTOR(PreCallValidateAcquireFullScreenExclusiveModeEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordAcquireFullScreenExclusiveModeEXT);
@@ -2927,14 +2891,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceFaultInfoEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceFaultInfoEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceFaultInfoEXT);
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-#endif
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetVertexInputEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetVertexInputEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetVertexInputEXT);
@@ -3013,10 +2969,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPrimitiveRestartEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPrimitiveRestartEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPrimitiveRestartEnableEXT);
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
-#endif
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
-#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetColorWriteEnableEXT);
@@ -3304,5 +3256,6 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMeshTasksIndirectCountEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountEXT);
-};
+}
 
+// NOLINTEND

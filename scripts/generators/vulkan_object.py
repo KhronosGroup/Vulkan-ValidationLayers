@@ -142,7 +142,7 @@ class Command:
     implicitExternSyncParams: List[str]
 
     # C prototype string - ex:
-    # VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(
+    # VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
     #   const VkInstanceCreateInfo* pCreateInfo,
     #   const VkAllocationCallbacks* pAllocator,
     #   VkInstance* pInstance);'
