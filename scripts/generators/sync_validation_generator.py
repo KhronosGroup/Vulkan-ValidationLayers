@@ -167,10 +167,16 @@ static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(1
         out.append('};\n')
 
         out.append('\n')
-        out.append('using SyncStageAccessFlags = std::bitset<128>;\n')
+
+        syncStageAccessFlagsSize = 192
+        out.append(f'using SyncStageAccessFlags = std::bitset<{syncStageAccessFlagsSize}>;\n')
         out.append('// Unique bit for each stage/access combination\n')
         for access in [x for x in self.stageAccessCombo if x['stage_access_bit'] is not None]:
             out.append(f'static const SyncStageAccessFlags {access["stage_access_bit"]} = (SyncStageAccessFlags(1) << {access["stage_access"]});\n')
+
+        if len(self.stageAccessCombo) > syncStageAccessFlagsSize:
+            print("The bitset is too small, errors will occur, need to increase syncStageAccessFlagsSize\n")
+            sys.exit(1)
 
         out.append(f'''
 struct SyncStageAccessInfoType {{
@@ -300,8 +306,8 @@ const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLater
             'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT',
             'VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT',
         ]
-        for queue in [x for x in self.vk.queueBits.keys() if x != (Queues.SPARSE_BINDING | Queues.PROTECTED)]:
-            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues & queue and x.flag.name not in ignoreQueueFlag]
+        for queue in [x for x in self.vk.queueBits.keys()]:
+            stages = [x.flag.name for x in self.vk.syncStage if x.support.queues & queue and x.flag.name not in ignoreQueueFlag and x.equivalent.max]
             out.append(f'    {{ {self.vk.queueBits[queue]}, (\n        {separator.join(stages)}\n    )}},\n')
         out.append('    };\n')
         out.append('    return variable;\n')
