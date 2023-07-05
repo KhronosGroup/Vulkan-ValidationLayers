@@ -166,7 +166,7 @@ enum SyncStageAccessIndex {
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 127,
 };
 
-using SyncStageAccessFlags = std::bitset<128>;
+using SyncStageAccessFlags = std::bitset<192>;
 // Unique bit for each stage/access combination
 static const SyncStageAccessFlags SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT = (SyncStageAccessFlags(1) << SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ);
 static const SyncStageAccessFlags SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT = (SyncStageAccessFlags(1) << SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT);
