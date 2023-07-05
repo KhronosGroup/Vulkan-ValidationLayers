@@ -16,6 +16,10 @@
 
 static constexpr bool IsFloatFormat(SpvReflectFormat format) {
     switch (format) {
+        case SPV_REFLECT_FORMAT_R16_SFLOAT:
+        case SPV_REFLECT_FORMAT_R16G16_SFLOAT:
+        case SPV_REFLECT_FORMAT_R16G16B16_SFLOAT:
+        case SPV_REFLECT_FORMAT_R16G16B16A16_SFLOAT:
         case SPV_REFLECT_FORMAT_R32_SFLOAT:
         case SPV_REFLECT_FORMAT_R32G32_SFLOAT:
         case SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:
@@ -52,6 +56,10 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
         }
     }
 
+    const bool isSigned = (description.traits.numeric.scalar.signedness != 0);
+    const bool is32Bit = (description.traits.numeric.scalar.width == 32);
+    const std::string width = is32Bit ? "" : std::to_string(description.traits.numeric.scalar.width);
+
     switch (description.op) {
         case SpvOp::SpvOpTypeBool: {
             type += "bool";
@@ -59,19 +67,22 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
         }
         case SpvOp::SpvOpTypeFloat: {
             type += "float";
+            type += is32Bit ? "" : (width + "_t");
             break;
         }
         case SpvOp::SpvOpTypeInt: {
-            if (description.traits.numeric.scalar.signedness == 0) {
-                type += "u";
-            }
+            type += !isSigned ? "u" : "";
             type += "int";
+            type += is32Bit ? "" : (width + "_t");
             break;
         }
         case SpvOp::SpvOpTypeVector: {
             if (!IsFloatFormat(format)) {
-                type += (description.traits.numeric.scalar.signedness == 0) ? "u" : "i";
+                type += isSigned ? "i" : "u";
+            } else if (!is32Bit) {
+                type += "f";
             }
+            type += is32Bit ? "" : width;
             type += "vec";
             const uint32_t component_count = description.traits.numeric.vector.component_count;
             type += std::to_string(component_count);
@@ -146,6 +157,11 @@ bool Hopper::CreatePassThroughVertex() {
     BuildOrderedVariableMap(input_variables, variable_ordered_map);
 
     std::string shader = "#version 450\n";
+    // Add extensions regardless, keeps things simple
+    shader += "#extension GL_EXT_shader_explicit_arithmetic_types: enable\n";
+    shader += "#extension GL_EXT_shader_16bit_storage: enable\n";
+    shader += "#extension GL_EXT_shader_8bit_storage: enable\n";
+
     for (auto entry : variable_ordered_map) {
         const SpvReflectInterfaceVariable& variable = *entry.second;
         if (IsBuiltinType(variable)) {

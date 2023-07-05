@@ -40,7 +40,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=ON"
             ],
-            "commit": "04cdb2d344706052c7a2d359294e830ebac63e74"
+            "commit": "870fd1e17aff8ede9aa12e647754780067306fe6"
         },
         {
             "name": "SPIRV-Reflect",
@@ -48,7 +48,7 @@
             "sub_dir": "SPIRV-Reflect",
             "install_dir": "SPIRV-Reflect",
             "build_step": "skip",
-            "commit": "87442baff70befd0523a0e7148fc4e68b71f4bb9",
+            "commit": "8f91541618da0c756a556f00fde722fae0c1b412",
             "optional": [
                 "tests"
             ]
