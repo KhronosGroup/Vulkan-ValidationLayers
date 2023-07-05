@@ -200,8 +200,8 @@ bool Hopper::CreatePipelineLayout() {
 
 // Some Builtins like 'gl_in' of tessellation shaders are structs and so the gl_* identifiers are reserved. Can't assume all
 // structs are Builtins.
-bool Hopper::IsBuiltinType(SpvReflectInterfaceVariable* variable) {
-    return (variable->built_in >= 0 || (variable->name && std::string(variable->name).find("gl_") == 0));
+bool Hopper::IsBuiltinType(const SpvReflectInterfaceVariable& variable) {
+    return (variable.built_in >= 0 || (variable.name && std::string(variable.name).find("gl_") == 0));
 }
 
 bool Hopper::CreateShaderStage(size_t code_size, const void* code, VkShaderStageFlagBits stage, const char* name) {
@@ -223,7 +223,7 @@ bool Hopper::CreateShaderStage(size_t code_size, const void* code, VkShaderStage
     return true;
 }
 
-static uint32_t DescriptionLocationsConsumed(SpvReflectTypeDescription& description) {
+static uint32_t DescriptionLocationsConsumed(const SpvReflectTypeDescription& description) {
     const uint32_t scalar_bytes = description.traits.numeric.scalar.width / 8;
     const uint32_t bytes_in_location = 16;
     uint32_t vector_location_consumed = 1;
@@ -242,9 +242,9 @@ static uint32_t DescriptionLocationsConsumed(SpvReflectTypeDescription& descript
     return vector_location_consumed * column_count;
 }
 
-bool Hopper::CreateVertexAttributeDescriptions(SpvReflectInterfaceVariable& variable) {
+bool Hopper::CreateVertexAttributeDescriptions(const SpvReflectInterfaceVariable& variable) {
     bool success = true;
-    SpvReflectTypeDescription& description = *variable.type_description;
+    const SpvReflectTypeDescription& description = *variable.type_description;
     if (variable.member_count > 0) {
         if (description.op == SpvOp::SpvOpTypeArray) {
             // SPIRV-Reflect can't handle array-of-structs currently
@@ -333,7 +333,7 @@ bool Hopper::CreateGraphicsPipeline() {
 
         if (shader_stage == VK_SHADER_STAGE_VERTEX_BIT) {
             for (uint32_t i = 0; i < input_variables.size(); i++) {
-                SpvReflectInterfaceVariable* input_variable = input_variables[i];
+                const SpvReflectInterfaceVariable& input_variable = *input_variables[i];
                 // built in types (gl_VertexIndex, etc) are not part of the vertex input
                 // Any negative value means it is not part of the SpvBuiltIn
                 if (IsBuiltinType(input_variable) == true) {
@@ -344,9 +344,9 @@ bool Hopper::CreateGraphicsPipeline() {
                 // It is not valid to have Locations decorations on nested struct blocks.
                 // Since the value is "zero" for not being set, simpler to just know here where it is decorated.
                 // No decoration == "zero" implicitly (which is the default)
-                block_location = input_variable->location;
+                block_location = input_variable.location;
 
-                success = CreateVertexAttributeDescriptions(*input_variable);
+                success = CreateVertexAttributeDescriptions(input_variable);
                 if (!success) return false;
             }
 

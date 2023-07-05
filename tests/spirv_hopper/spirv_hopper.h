@@ -33,15 +33,15 @@ class Hopper {
     bool Reflect();
     bool CreateShaderStage(size_t code_size, const void* code, VkShaderStageFlagBits stage, const char* name = "main");
     bool CreatePipelineLayout();
-    bool CreateVertexAttributeDescriptions(SpvReflectInterfaceVariable& variable);
+    bool CreateVertexAttributeDescriptions(const SpvReflectInterfaceVariable& variable);
     bool CreateGraphicsPipeline();
     bool CreateGraphicsMeshPipeline();
     bool CreateComputePipeline();
 
     // For Pass Through shaders
-    bool IsBuiltinType(SpvReflectInterfaceVariable* variable);
+    bool IsBuiltinType(const SpvReflectInterfaceVariable& variable);
     std::string GetTypeDescription(SpvReflectTypeDescription& description, SpvReflectFormat format);
-    std::string DefineCustomStruct(SpvReflectInterfaceVariable& variable);
+    std::string DefineCustomStruct(const SpvReflectInterfaceVariable& variable);
     void BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
                                  std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map);
     bool BuildPassThroughShader(std::string& source, VkShaderStageFlagBits stage);

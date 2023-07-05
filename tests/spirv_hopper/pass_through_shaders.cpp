@@ -99,7 +99,7 @@ std::string Hopper::GetTypeDescription(SpvReflectTypeDescription& description, S
     return type;
 }
 
-std::string Hopper::DefineCustomStruct(SpvReflectInterfaceVariable& variable) {
+std::string Hopper::DefineCustomStruct(const SpvReflectInterfaceVariable& variable) {
     SpvReflectTypeDescription& description = *variable.type_description;
     std::string shader = "struct ";
     shader += (description.type_name) ? description.type_name : "UNKNOWN_STRUCT_" + std::to_string(description.id);
@@ -133,7 +133,7 @@ std::string Hopper::DefineCustomStruct(SpvReflectInterfaceVariable& variable) {
 void Hopper::BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
                                      std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map) {
     for (auto variable : variables) {
-        if (!IsBuiltinType(variable) && variable->type_description->op == SpvOp::SpvOpTypeStruct) {
+        if (!IsBuiltinType(*variable) && variable->type_description->op == SpvOp::SpvOpTypeStruct) {
             variable_ordered_map.insert({variable->type_description->id, variable});
         } else {
             variable_ordered_map.insert({variable->spirv_id, variable});
@@ -147,37 +147,37 @@ bool Hopper::CreatePassThroughVertex() {
 
     std::string shader = "#version 450\n";
     for (auto entry : variable_ordered_map) {
-        SpvReflectInterfaceVariable* variable = entry.second;
+        const SpvReflectInterfaceVariable& variable = *entry.second;
         if (IsBuiltinType(variable)) {
             continue;
-        } else if ((shader_stage == VK_SHADER_STAGE_GEOMETRY_BIT && variable->format == SPV_REFLECT_FORMAT_UNDEFINED)) {
+        } else if ((shader_stage == VK_SHADER_STAGE_GEOMETRY_BIT && variable.format == SPV_REFLECT_FORMAT_UNDEFINED)) {
             // TODO - Figure out why some Geometry shaders can these bogus variables
             continue;
         }
 
         // Need to define struct to match
-        if (variable->type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(*variable);
+        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
+            shader += DefineCustomStruct(variable);
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
-        const uint32_t component = (variable->component > 3) ? 0 : variable->component;
+        const uint32_t component = (variable.component > 3) ? 0 : variable.component;
 
         shader += "layout(location = ";
-        shader += std::to_string(variable->location);
+        shader += std::to_string(variable.location);
         if (component > 0) {
             shader += ", component = " + std::to_string(component);
         }
         shader += ") out ";
-        shader += GetTypeDescription(*variable->type_description, variable->format);
+        shader += GetTypeDescription(*variable.type_description, variable.format);
         shader += " ";
         // Names might not be valid GLSL names, so just give unique name
-        shader += "var_" + std::to_string(variable->location) + "_" + std::to_string(component);
+        shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
 
         // Vertex output into Gemometry are not actually arrays
         if (shader_stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
-            for (uint32_t i = 0; i < variable->array.dims_count; i++) {
-                shader += "[" + std::to_string(variable->array.dims[i]) + "]";
+            for (uint32_t i = 0; i < variable.array.dims_count; i++) {
+                shader += "[" + std::to_string(variable.array.dims[i]) + "]";
             }
         }
         shader += ";\n";
@@ -202,32 +202,32 @@ bool Hopper::CreatePassThroughTessellationEval() {
     shader += "layout(triangles, equal_spacing, cw) in;\n";
 
     for (auto entry : variable_ordered_map) {
-        SpvReflectInterfaceVariable* variable = entry.second;
+        const SpvReflectInterfaceVariable& variable = *entry.second;
         if (IsBuiltinType(variable) == true) {
             continue;
         }
 
         // Need to define struct to match
-        if (variable->type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(*variable);
+        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
+            shader += DefineCustomStruct(variable);
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
-        const uint32_t component = (variable->component > 3) ? 0 : variable->component;
+        const uint32_t component = (variable.component > 3) ? 0 : variable.component;
 
         shader += "layout(location = ";
-        shader += std::to_string(variable->location);
+        shader += std::to_string(variable.location);
         if (component > 0) {
             shader += ", component = " + std::to_string(component);
         }
         shader += ") in ";
-        if (variable->type_description->type_name != nullptr) {
-            std::string patch = DefineCustomStruct(*variable);
+        if (variable.type_description->type_name != nullptr) {
+            std::string patch = DefineCustomStruct(variable);
             shader.insert(patchIndex, patch);
         }
-        shader += GetTypeDescription(*variable->type_description, variable->format);
+        shader += GetTypeDescription(*variable.type_description, variable.format);
         shader += " ";
-        shader += "var_" + std::to_string(variable->location) + "_" + std::to_string(component);
+        shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
         shader += "[]";
         shader += ";\n";
     }
@@ -244,32 +244,32 @@ bool Hopper::CreatePassThroughTessellationControl() {
     shader += "layout(vertices = 3) out;\n";
 
     for (auto entry : variable_ordered_map) {
-        SpvReflectInterfaceVariable* variable = entry.second;
+        const SpvReflectInterfaceVariable& variable = *entry.second;
         if (IsBuiltinType(variable) == true) {
             continue;
         }
 
         // Need to define struct to match
-        if (variable->type_description->op == SpvOp::SpvOpTypeStruct) {
-            shader += DefineCustomStruct(*variable);
+        if (variable.type_description->op == SpvOp::SpvOpTypeStruct) {
+            shader += DefineCustomStruct(variable);
         }
 
         // over 3 is invalid, means not set, zero is default implicit value
-        const uint32_t component = (variable->component > 3) ? 0 : variable->component;
+        const uint32_t component = (variable.component > 3) ? 0 : variable.component;
 
         shader += "layout(location = ";
-        shader += std::to_string(variable->location);
+        shader += std::to_string(variable.location);
         if (component > 0) {
             shader += ", component = " + std::to_string(component);
         }
         shader += ") out ";
-        if (variable->type_description->type_name != nullptr) {
-            std::string patch = DefineCustomStruct(*variable);
+        if (variable.type_description->type_name != nullptr) {
+            std::string patch = DefineCustomStruct(variable);
             shader.insert(patchIndex, patch);
         }
-        shader += GetTypeDescription(*variable->type_description, variable->format);
+        shader += GetTypeDescription(*variable.type_description, variable.format);
         shader += " ";
-        shader += "var_" + std::to_string(variable->location) + "_" + std::to_string(component);
+        shader += "var_" + std::to_string(variable.location) + "_" + std::to_string(component);
         shader += "[]";
         shader += ";\n";
     }
