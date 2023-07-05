@@ -12,6 +12,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <vector>
+#include <map>
 #include "spirv_reflect.h"
 
 struct VulkanInstance;
@@ -41,6 +42,8 @@ class Hopper {
     bool IsBuiltinType(SpvReflectInterfaceVariable* variable);
     std::string GetTypeDescription(SpvReflectTypeDescription& description, SpvReflectFormat format);
     std::string DefineCustomStruct(SpvReflectInterfaceVariable& variable);
+    void BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
+                                 std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map);
     bool BuildPassThroughShader(std::string& source, VkShaderStageFlagBits stage);
     bool CreatePassThroughVertex();
     bool CreatePassThroughVertexNoInterface();

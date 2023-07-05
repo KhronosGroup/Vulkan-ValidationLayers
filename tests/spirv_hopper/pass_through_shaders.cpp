@@ -119,10 +119,36 @@ std::string Hopper::DefineCustomStruct(SpvReflectInterfaceVariable& variable) {
     return shader;
 }
 
+// The following is possible if any order of struct variables is taken
+//
+// struct A {
+//    B x;
+// }
+// struct B {
+//    int y;
+// }
+//
+// we can't forward declare in GLSL, so first get all structs, since it is SSA, just print
+// out the structs by ID found
+void Hopper::BuildOrderedVariableMap(std::vector<SpvReflectInterfaceVariable*>& variables,
+                                     std::map<uint32_t, SpvReflectInterfaceVariable*>& variable_ordered_map) {
+    for (auto variable : variables) {
+        if (!IsBuiltinType(variable) && variable->type_description->op == SpvOp::SpvOpTypeStruct) {
+            variable_ordered_map.insert({variable->type_description->id, variable});
+        } else {
+            variable_ordered_map.insert({variable->spirv_id, variable});
+        }
+    }
+}
+
 bool Hopper::CreatePassThroughVertex() {
+    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
+    BuildOrderedVariableMap(input_variables, variable_ordered_map);
+
     std::string shader = "#version 450\n";
-    for (auto variable : input_variables) {
-        if (IsBuiltinType(variable) == true) {
+    for (auto entry : variable_ordered_map) {
+        SpvReflectInterfaceVariable* variable = entry.second;
+        if (IsBuiltinType(variable)) {
             continue;
         } else if ((shader_stage == VK_SHADER_STAGE_GEOMETRY_BIT && variable->format == SPV_REFLECT_FORMAT_UNDEFINED)) {
             // TODO - Figure out why some Geometry shaders can these bogus variables
@@ -168,11 +194,15 @@ bool Hopper::CreatePassThroughVertexNoInterface() {
 
 // TODO - The CreatePassThrough*() function share a lot, could make a common
 bool Hopper::CreatePassThroughTessellationEval() {
+    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
+    BuildOrderedVariableMap(output_variables, variable_ordered_map);
+
     std::string shader = "#version 450\n";
     const size_t patchIndex = shader.size();
     shader += "layout(triangles, equal_spacing, cw) in;\n";
 
-    for (auto variable : output_variables) {
+    for (auto entry : variable_ordered_map) {
+        SpvReflectInterfaceVariable* variable = entry.second;
         if (IsBuiltinType(variable) == true) {
             continue;
         }
@@ -206,11 +236,15 @@ bool Hopper::CreatePassThroughTessellationEval() {
 }
 
 bool Hopper::CreatePassThroughTessellationControl() {
+    std::map<uint32_t, SpvReflectInterfaceVariable*> variable_ordered_map;
+    BuildOrderedVariableMap(input_variables, variable_ordered_map);
+
     std::string shader = "#version 450\n";
     const size_t patchIndex = shader.size();
     shader += "layout(vertices = 3) out;\n";
 
-    for (auto variable : input_variables) {
+    for (auto entry : variable_ordered_map) {
+        SpvReflectInterfaceVariable* variable = entry.second;
         if (IsBuiltinType(variable) == true) {
             continue;
         }
