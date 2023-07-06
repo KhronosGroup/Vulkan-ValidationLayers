@@ -187,9 +187,7 @@ class BaseGenerator(OutputGenerator):
                 self.valid_vuids.add(json_vuid_string)
         # List of VUs that should exists, but have a spec bug
         for vuid in [
-            # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3548
-            "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-drmFormatModifierPlaneCount-arraylength",
-            "VUID-VkImportMemoryHostPointerInfoEXT-pHostPointer-parameter"
+            # Currently no bugs!
         ]:
             self.valid_vuids.add(vuid)
 

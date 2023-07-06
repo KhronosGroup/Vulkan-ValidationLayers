@@ -373,31 +373,31 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
         return cleanup
 
     #
-    # top_level indicates if elements are passed directly into the function else they're below a ptr/struct
+    # topLevel indicates if elements are passed directly into the function else they're below a ptr/struct
     # isCreate means that this is API creates or allocates NDOs
     # isDestroy indicates that this API destroys or frees NDOs
-    def uniquifyMembers(self, members: List[Member], indent: str, prefix: str, array_index: int, isCreate: bool, isDestroy: bool, top_level: bool):
+    def uniquifyMembers(self, members: List[Member], indent: str, prefix: str, arrayIndex: int, isCreate: bool, isDestroy: bool, topLevel: bool):
         decls = ''
         pre_code = ''
         post_code = ''
-        index = f'index{str(array_index)}'
-        array_index += 1
+        index = f'index{str(arrayIndex)}'
+        arrayIndex += 1
         # Process any NDOs in this structure and recurse for any sub-structs in this struct
         for member in members:
             # Handle NDOs
             if self.isNonDispatchable(member.type):
                 count_name = member.length
-                if (count_name is not None) and not top_level:
+                if (count_name is not None) and not topLevel:
                     count_name = f'{prefix}{member.length}'
 
-                if (not top_level) or (not isCreate) or (not member.pointer):
+                if (not topLevel) or (not isCreate) or (not member.pointer):
                     if count_name is not None:
-                        if top_level:
+                        if topLevel:
                             decls += f'{indent}{member.type} var_local_{prefix}{member.name}[DISPATCH_MAX_STACK_ALLOCATIONS];\n'
                             decls += f'{indent}{member.type} *local_{prefix}{member.name} = nullptr;\n'
                         pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
                         indent = self.incIndent(indent)
-                        if top_level:
+                        if topLevel:
                             pre_code += f'{indent}    local_{prefix}{member.name} = {count_name} > DISPATCH_MAX_STACK_ALLOCATIONS ? new {member.type}[{count_name}] : var_local_{prefix}{member.name};\n'
                             pre_code += f'{indent}    for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{\n'
                             indent = self.incIndent(indent)
@@ -410,13 +410,13 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         pre_code += f'{indent}    }}\n'
                         indent = self.decIndent(indent)
                         pre_code += f'{indent}    }}\n'
-                        if top_level:
+                        if topLevel:
                             post_code += f'{indent}if (local_{prefix}{member.name} != var_local_{prefix}{member.name})\n'
                             indent = self.incIndent(indent)
                             post_code += f'{indent}delete[] local_{member.name};\n'
                             indent = self.decIndent(indent)
                     else:
-                        if top_level:
+                        if topLevel:
                             if not isDestroy:
                                 pre_code += f'{indent}    {member.name} = layer_data->Unwrap({member.name});\n'
                         else:
@@ -440,7 +440,7 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         # Check if this function can be deferred.
                         deferred_name = next((x.name for x in members if x.type == 'VkDeferredOperationKHR'), None)
                         # Update struct prefix
-                        if top_level:
+                        if topLevel:
                             new_prefix = f'local_{member.name}'
                             # Declare safe_VarType for struct
                             decls += f'{indent}{safe_type} *{new_prefix} = nullptr;\n'
@@ -448,11 +448,11 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                             new_prefix = f'{prefix}{member.name}'
                         pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
                         indent = self.incIndent(indent)
-                        if top_level:
+                        if topLevel:
                             pre_code += f'{indent}    {new_prefix} = new {safe_type}[{member.length}];\n'
                         pre_code += f'{indent}    for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         indent = self.incIndent(indent)
-                        if top_level:
+                        if topLevel:
                             if 'safe_' in safe_type:
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR
                                 if member.type == "VkAccelerationStructureBuildGeometryInfoKHR":
@@ -465,7 +465,7 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                                 pre_code += f'{indent}    WrapPnextChainHandles(layer_data, {new_prefix}[{index}].pNext);\n'
                         local_prefix = f'{new_prefix}[{index}].'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, local_prefix, array_index, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, local_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
@@ -473,14 +473,14 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         pre_code += f'{indent}    }}\n'
                         indent = self.decIndent(indent)
                         pre_code += f'{indent}    }}\n'
-                        if top_level:
+                        if topLevel:
                             post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.length, deferred_name)
                     # Single Struct
                     elif member.pointer:
                         # Check if this function can be deferred.
                         deferred_name = next((x.name for x in members if x.type == 'VkDeferredOperationKHR'), None)
                         # Update struct prefix
-                        if top_level:
+                        if topLevel:
                             new_prefix = f'local_{member.name}->'
                             if deferred_name is None:
                                 decls += f'{indent}{safe_type} var_local_{prefix}{member.name};\n'
@@ -490,7 +490,7 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         # Declare safe_VarType for struct
                         pre_code += f'{indent}    if ({prefix}{member.name}) {{\n'
                         indent = self.incIndent(indent)
-                        if top_level:
+                        if topLevel:
                             if deferred_name is None:
                                 pre_code += f'{indent}    local_{prefix}{member.name} = &var_local_{prefix}{member.name};\n'
                             else:
@@ -504,7 +504,7 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                             else:
                                 pre_code += f'{indent}    *local_{prefix}{member.name} = *{member.name};\n'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, array_index, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
@@ -512,16 +512,16 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                             pre_code += f'{indent}    WrapPnextChainHandles(layer_data, {new_prefix}pNext);\n'
                         indent = self.decIndent(indent)
                         pre_code += f'{indent}    }}\n'
-                        if top_level:
+                        if topLevel:
                             post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.length, deferred_name)
                     else:
                         # Update struct prefix
-                        if top_level:
+                        if topLevel:
                             sys.exit(1)
                         else:
                             new_prefix = f'{prefix}{member.name}.'
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, array_index, isCreate, isDestroy, False)
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquifyMembers(struct.members, indent, new_prefix, arrayIndex, isCreate, isDestroy, False)
                         decls += tmp_decl
                         pre_code += tmp_pre
                         post_code += tmp_post
