@@ -28,7 +28,7 @@
             "name": "SPIRV-Headers",
             "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
             "sub_dir": "shaderc/third_party/spirv-tools/external/spirv-headers",
-            "commit": "3469b164e25cee24435029a569933cb42578db5d"
+            "commit": "d0006a3938d7acedffb26ab517fe3e95b5288cc6"
         },
         {
             "name": "robin-hood-hashing",

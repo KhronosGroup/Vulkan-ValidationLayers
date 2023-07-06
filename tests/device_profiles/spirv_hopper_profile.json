@@ -337,6 +337,13 @@
                     "shaderTileImageColorReadAccess": true,
                     "shaderTileImageDepthReadAccess": true,
                     "shaderTileImageStencilReadAccess": true
+                },
+                "VkPhysicalDeviceCooperativeMatrixFeaturesKHR": {
+                    "cooperativeMatrix": true,
+                    "cooperativeMatrixRobustBufferAccess": true
+                },
+                "VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR": {
+                    "rayTracingPositionFetch": true
                 }
             },
             "properties": {
@@ -751,6 +758,7 @@
                 "VK_NVX_multiview_per_view_attributes": 1,
                 "VK_NV_compute_shader_derivatives": 1,
                 "VK_NV_cooperative_matrix": 1,
+                "VK_KHR_cooperative_matrix": 1,
                 "VK_NV_fragment_coverage_to_color": 1,
                 "VK_NV_fragment_shader_barycentric": 1,
                 "VK_NV_fragment_shading_rate_enums": 1,
@@ -768,7 +776,8 @@
                 "VK_NV_shading_rate_image": 1,
                 "VK_NV_viewport_array2": 1,
                 "VK_QCOM_image_processing": 1,
-                "VK_EXT_shader_tile_image": 1
+                "VK_EXT_shader_tile_image": 1,
+                "VK_KHR_ray_tracing_position_fetch": 1
             },
             "formats": {},
             "queueFamiliesProperties": [

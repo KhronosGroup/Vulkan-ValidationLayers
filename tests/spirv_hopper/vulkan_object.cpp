@@ -175,8 +175,19 @@ VulkanInstance::VulkanInstance() {
             LvlInitStruct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(&physical_device_transform_feedback_features);
         auto physical_device_fragment_density_map_features =
             LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(&physical_device_shader_image_atomic_int64_features);
+        auto physical_device_shader_sm_builtins_features_nv =
+            LvlInitStruct<VkPhysicalDeviceShaderSMBuiltinsFeaturesNV>(&physical_device_fragment_density_map_features);
+        auto physical_device_core_builtins_features_arm =
+            LvlInitStruct<VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM>(&physical_device_shader_sm_builtins_features_nv);
+        auto physical_device_shader_tile_image_features =
+            LvlInitStruct<VkPhysicalDeviceShaderTileImageFeaturesEXT>(&physical_device_core_builtins_features_arm);
+        auto physical_device_cooperative_matrix_features_nv =
+            LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&physical_device_shader_tile_image_features);
+        auto physical_device_cooperative_matrix_features =
+            LvlInitStruct<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(&physical_device_cooperative_matrix_features_nv);
+
         auto physical_device_vulkan11_features =
-            LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&physical_device_fragment_density_map_features);
+            LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&physical_device_cooperative_matrix_features);
         auto physical_device_vulkan12_features =
             LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&physical_device_vulkan11_features);
         auto physical_device_vulkan13_features =

@@ -26,7 +26,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "3469b164e25cee24435029a569933cb42578db5d"
+            "commit": "d0006a3938d7acedffb26ab517fe3e95b5288cc6"
         },
         {
             "name": "SPIRV-Tools",
@@ -48,7 +48,7 @@
             "sub_dir": "SPIRV-Reflect",
             "install_dir": "SPIRV-Reflect",
             "build_step": "skip",
-            "commit": "8f91541618da0c756a556f00fde722fae0c1b412",
+            "commit": "88e7d79acea221bd170084935e95d3221329009e",
             "optional": [
                 "tests"
             ]
