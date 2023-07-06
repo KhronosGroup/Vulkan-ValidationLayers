@@ -488,7 +488,7 @@ void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
 }
 
 std::shared_future<void> SEMAPHORE_STATE::Wait(uint64_t payload) {
-    auto guard = ReadLock();
+    auto guard = WriteLock();
     if (payload <= completed_.payload) {
         std::promise<void> already_done;
         auto result = already_done.get_future();
