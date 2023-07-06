@@ -1,27 +1,27 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See helper_file_generator.py for modifications
-
+// See safe_struct_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
+// NOLINTBEGIN
 
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
@@ -33,7 +33,6 @@
 #include <vector>
 
 #include <vulkan/vk_layer.h>
-
 
 safe_VkAttachmentSampleCountInfoAMD::safe_VkAttachmentSampleCountInfoAMD(const VkAttachmentSampleCountInfoAMD* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1008,7 +1007,6 @@ void safe_VkTextureLODGatherFormatPropertiesAMD::initialize(const safe_VkTexture
 }
 #ifdef VK_USE_PLATFORM_GGP
 
-
 safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP(const VkStreamDescriptorSurfaceCreateInfoGGP* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -1071,7 +1069,6 @@ void safe_VkStreamDescriptorSurfaceCreateInfoGGP::initialize(const safe_VkStream
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_GGP
-
 
 safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const VkPhysicalDeviceCornerSampledImageFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1242,7 +1239,6 @@ void safe_VkExportMemoryAllocateInfoNV::initialize(const safe_VkExportMemoryAllo
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-
 safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const VkImportMemoryWin32HandleInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     handleType(in_struct->handleType),
@@ -1305,9 +1301,7 @@ void safe_VkImportMemoryWin32HandleInfoNV::initialize(const safe_VkImportMemoryW
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const VkExportMemoryWin32HandleInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1392,9 +1386,7 @@ void safe_VkExportMemoryWin32HandleInfoNV::initialize(const safe_VkExportMemoryW
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV(const VkWin32KeyedMutexAcquireReleaseInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1638,9 +1630,7 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoNV::initialize(const safe_VkWin32Ke
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_VI_NN
-
 
 safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCreateInfoNN* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1704,7 +1694,6 @@ void safe_VkViSurfaceCreateInfoNN::initialize(const safe_VkViSurfaceCreateInfoNN
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_VI_NN
-
 
 safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV(const VkPipelineViewportWScalingStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2039,7 +2028,6 @@ void safe_VkPipelineViewportSwizzleStateCreateInfoNV::initialize(const safe_VkPi
 }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-
 safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID(const VkAndroidHardwareBufferUsageANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     androidHardwareBufferUsage(in_struct->androidHardwareBufferUsage)
@@ -2096,9 +2084,7 @@ void safe_VkAndroidHardwareBufferUsageANDROID::initialize(const safe_VkAndroidHa
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID(const VkAndroidHardwareBufferPropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2162,9 +2148,7 @@ void safe_VkAndroidHardwareBufferPropertiesANDROID::initialize(const safe_VkAndr
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const VkAndroidHardwareBufferFormatPropertiesANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2264,9 +2248,7 @@ void safe_VkAndroidHardwareBufferFormatPropertiesANDROID::initialize(const safe_
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID(const VkImportAndroidHardwareBufferInfoANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2325,9 +2307,7 @@ void safe_VkImportAndroidHardwareBufferInfoANDROID::initialize(const safe_VkImpo
     buffer = copy_src->buffer;
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const VkMemoryGetAndroidHardwareBufferInfoANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2385,9 +2365,7 @@ void safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::initialize(const safe_VkM
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const VkExternalFormatANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2445,9 +2423,7 @@ void safe_VkExternalFormatANDROID::initialize(const safe_VkExternalFormatANDROID
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkAndroidHardwareBufferFormatProperties2ANDROID::safe_VkAndroidHardwareBufferFormatProperties2ANDROID(const VkAndroidHardwareBufferFormatProperties2ANDROID* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2547,7 +2523,6 @@ void safe_VkAndroidHardwareBufferFormatProperties2ANDROID::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 
 safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV(const VkPipelineCoverageToColorStateCreateInfoNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4745,7 +4720,6 @@ void safe_VkDeviceMemoryOverallocationCreateInfoAMD::initialize(const safe_VkDev
 }
 #ifdef VK_USE_PLATFORM_GGP
 
-
 safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const VkPresentFrameTokenGGP* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     frameToken(in_struct->frameToken)
@@ -4802,7 +4776,6 @@ void safe_VkPresentFrameTokenGGP::initialize(const safe_VkPresentFrameTokenGGP* 
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_GGP
-
 
 safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -5966,7 +5939,6 @@ void safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::initialize(const safe_VkSwap
 }
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
-
 safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const VkImagePipeSurfaceCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -6029,7 +6001,6 @@ void safe_VkImagePipeSurfaceCreateInfoFUCHSIA::initialize(const safe_VkImagePipe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkPhysicalDeviceShaderCoreProperties2AMD::safe_VkPhysicalDeviceShaderCoreProperties2AMD(const VkPhysicalDeviceShaderCoreProperties2AMD* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8719,7 +8690,6 @@ void safe_VkCopyCommandTransformInfoQCOM::initialize(const safe_VkCopyCommandTra
 }
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
-
 safe_VkImportMemoryZirconHandleInfoFUCHSIA::safe_VkImportMemoryZirconHandleInfoFUCHSIA(const VkImportMemoryZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     handleType(in_struct->handleType),
@@ -8782,9 +8752,7 @@ void safe_VkImportMemoryZirconHandleInfoFUCHSIA::initialize(const safe_VkImportM
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkMemoryZirconHandlePropertiesFUCHSIA::safe_VkMemoryZirconHandlePropertiesFUCHSIA(const VkMemoryZirconHandlePropertiesFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8842,9 +8810,7 @@ void safe_VkMemoryZirconHandlePropertiesFUCHSIA::initialize(const safe_VkMemoryZ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkMemoryGetZirconHandleInfoFUCHSIA::safe_VkMemoryGetZirconHandleInfoFUCHSIA(const VkMemoryGetZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8908,9 +8874,7 @@ void safe_VkMemoryGetZirconHandleInfoFUCHSIA::initialize(const safe_VkMemoryGetZ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::safe_VkImportSemaphoreZirconHandleInfoFUCHSIA(const VkImportSemaphoreZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8986,9 +8950,7 @@ void safe_VkImportSemaphoreZirconHandleInfoFUCHSIA::initialize(const safe_VkImpo
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::safe_VkSemaphoreGetZirconHandleInfoFUCHSIA(const VkSemaphoreGetZirconHandleInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9052,9 +9014,7 @@ void safe_VkSemaphoreGetZirconHandleInfoFUCHSIA::initialize(const safe_VkSemapho
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferCollectionCreateInfoFUCHSIA::safe_VkBufferCollectionCreateInfoFUCHSIA(const VkBufferCollectionCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9112,9 +9072,7 @@ void safe_VkBufferCollectionCreateInfoFUCHSIA::initialize(const safe_VkBufferCol
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkImportMemoryBufferCollectionFUCHSIA::safe_VkImportMemoryBufferCollectionFUCHSIA(const VkImportMemoryBufferCollectionFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9178,9 +9136,7 @@ void safe_VkImportMemoryBufferCollectionFUCHSIA::initialize(const safe_VkImportM
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferCollectionImageCreateInfoFUCHSIA::safe_VkBufferCollectionImageCreateInfoFUCHSIA(const VkBufferCollectionImageCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9244,9 +9200,7 @@ void safe_VkBufferCollectionImageCreateInfoFUCHSIA::initialize(const safe_VkBuff
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferCollectionConstraintsInfoFUCHSIA::safe_VkBufferCollectionConstraintsInfoFUCHSIA(const VkBufferCollectionConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9328,9 +9282,7 @@ void safe_VkBufferCollectionConstraintsInfoFUCHSIA::initialize(const safe_VkBuff
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferConstraintsInfoFUCHSIA::safe_VkBufferConstraintsInfoFUCHSIA(const VkBufferConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9398,9 +9350,7 @@ void safe_VkBufferConstraintsInfoFUCHSIA::initialize(const safe_VkBufferConstrai
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferCollectionBufferCreateInfoFUCHSIA::safe_VkBufferCollectionBufferCreateInfoFUCHSIA(const VkBufferCollectionBufferCreateInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9464,9 +9414,7 @@ void safe_VkBufferCollectionBufferCreateInfoFUCHSIA::initialize(const safe_VkBuf
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkSysmemColorSpaceFUCHSIA::safe_VkSysmemColorSpaceFUCHSIA(const VkSysmemColorSpaceFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9524,9 +9472,7 @@ void safe_VkSysmemColorSpaceFUCHSIA::initialize(const safe_VkSysmemColorSpaceFUC
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkBufferCollectionPropertiesFUCHSIA::safe_VkBufferCollectionPropertiesFUCHSIA(const VkBufferCollectionPropertiesFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9643,9 +9589,7 @@ void safe_VkBufferCollectionPropertiesFUCHSIA::initialize(const safe_VkBufferCol
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkImageFormatConstraintsInfoFUCHSIA::safe_VkImageFormatConstraintsInfoFUCHSIA(const VkImageFormatConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9768,9 +9712,7 @@ void safe_VkImageFormatConstraintsInfoFUCHSIA::initialize(const safe_VkImageForm
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkImageConstraintsInfoFUCHSIA::safe_VkImageConstraintsInfoFUCHSIA(const VkImageConstraintsInfoFUCHSIA* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9881,7 +9823,6 @@ void safe_VkImageConstraintsInfoFUCHSIA::initialize(const safe_VkImageConstraint
     }
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 
 safe_VkSubpassShadingPipelineCreateInfoHUAWEI::safe_VkSubpassShadingPipelineCreateInfoHUAWEI(const VkSubpassShadingPipelineCreateInfoHUAWEI* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10232,7 +10173,6 @@ void safe_VkPhysicalDeviceExternalMemoryRDMAFeaturesNV::initialize(const safe_Vk
 }
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
-
 safe_VkScreenSurfaceCreateInfoQNX::safe_VkScreenSurfaceCreateInfoQNX(const VkScreenSurfaceCreateInfoQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -10343,9 +10283,7 @@ void safe_VkScreenSurfaceCreateInfoQNX::initialize(const safe_VkScreenSurfaceCre
     }
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV(const VkPhysicalDeviceDisplacementMicromapFeaturesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10403,9 +10341,7 @@ void safe_VkPhysicalDeviceDisplacementMicromapFeaturesNV::initialize(const safe_
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV(const VkPhysicalDeviceDisplacementMicromapPropertiesNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10463,9 +10399,7 @@ void safe_VkPhysicalDeviceDisplacementMicromapPropertiesNV::initialize(const saf
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV(const VkAccelerationStructureTrianglesDisplacementMicromapNV* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10688,7 +10622,6 @@ void safe_VkAccelerationStructureTrianglesDisplacementMicromapNV::initialize(con
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI::safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13183,7 +13116,6 @@ void safe_VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM::initialize(const
 }
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
-
 safe_VkScreenBufferPropertiesQNX::safe_VkScreenBufferPropertiesQNX(const VkScreenBufferPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     allocationSize(in_struct->allocationSize),
@@ -13246,9 +13178,7 @@ void safe_VkScreenBufferPropertiesQNX::initialize(const safe_VkScreenBufferPrope
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 
 safe_VkScreenBufferFormatPropertiesQNX::safe_VkScreenBufferFormatPropertiesQNX(const VkScreenBufferFormatPropertiesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13354,9 +13284,7 @@ void safe_VkScreenBufferFormatPropertiesQNX::initialize(const safe_VkScreenBuffe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 
 safe_VkImportScreenBufferInfoQNX::safe_VkImportScreenBufferInfoQNX(const VkImportScreenBufferInfoQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13435,9 +13363,7 @@ void safe_VkImportScreenBufferInfoQNX::initialize(const safe_VkImportScreenBuffe
     }
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 
 safe_VkExternalFormatQNX::safe_VkExternalFormatQNX(const VkExternalFormatQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13495,9 +13421,7 @@ void safe_VkExternalFormatQNX::initialize(const safe_VkExternalFormatQNX* copy_s
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-
 
 safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX(const VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13555,3 +13479,5 @@ void safe_VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX::initialize(cons
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+// NOLINTEND

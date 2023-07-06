@@ -1,27 +1,27 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See helper_file_generator.py for modifications
-
+// See safe_struct_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
+// NOLINTBEGIN
 
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
@@ -33,7 +33,6 @@
 #include <vector>
 
 #include <vulkan/vk_layer.h>
-
 
 safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const VkSwapchainCreateInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3319,7 +3318,6 @@ void safe_VkRenderingFragmentShadingRateAttachmentInfoKHR::initialize(const safe
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-
 safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR(const VkImportMemoryWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     handleType(in_struct->handleType),
@@ -3388,9 +3386,7 @@ void safe_VkImportMemoryWin32HandleInfoKHR::initialize(const safe_VkImportMemory
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkExportMemoryWin32HandleInfoKHR::safe_VkExportMemoryWin32HandleInfoKHR(const VkExportMemoryWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3481,9 +3477,7 @@ void safe_VkExportMemoryWin32HandleInfoKHR::initialize(const safe_VkExportMemory
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR(const VkMemoryWin32HandlePropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3541,9 +3535,7 @@ void safe_VkMemoryWin32HandlePropertiesKHR::initialize(const safe_VkMemoryWin32H
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR(const VkMemoryGetWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3607,7 +3599,6 @@ void safe_VkMemoryGetWin32HandleInfoKHR::initialize(const safe_VkMemoryGetWin32H
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR(const VkImportMemoryFdInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3789,7 +3780,6 @@ void safe_VkMemoryGetFdInfoKHR::initialize(const safe_VkMemoryGetFdInfoKHR* copy
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::safe_VkWin32KeyedMutexAcquireReleaseInfoKHR(const VkWin32KeyedMutexAcquireReleaseInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4033,9 +4023,7 @@ void safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::initialize(const safe_VkWin32K
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoKHR(const VkImportSemaphoreWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4117,9 +4105,7 @@ void safe_VkImportSemaphoreWin32HandleInfoKHR::initialize(const safe_VkImportSem
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkExportSemaphoreWin32HandleInfoKHR::safe_VkExportSemaphoreWin32HandleInfoKHR(const VkExportSemaphoreWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4210,9 +4196,7 @@ void safe_VkExportSemaphoreWin32HandleInfoKHR::initialize(const safe_VkExportSem
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkD3D12FenceSubmitInfoKHR::safe_VkD3D12FenceSubmitInfoKHR(const VkD3D12FenceSubmitInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4340,9 +4324,7 @@ void safe_VkD3D12FenceSubmitInfoKHR::initialize(const safe_VkD3D12FenceSubmitInf
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR(const VkSemaphoreGetWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4406,7 +4388,6 @@ void safe_VkSemaphoreGetWin32HandleInfoKHR::initialize(const safe_VkSemaphoreGet
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR(const VkImportSemaphoreFdInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4825,7 +4806,6 @@ void safe_VkSharedPresentSurfaceCapabilitiesKHR::initialize(const safe_VkSharedP
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-
 safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR(const VkImportFenceWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     fence(in_struct->fence),
@@ -4906,9 +4886,7 @@ void safe_VkImportFenceWin32HandleInfoKHR::initialize(const safe_VkImportFenceWi
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkExportFenceWin32HandleInfoKHR::safe_VkExportFenceWin32HandleInfoKHR(const VkExportFenceWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -4999,9 +4977,7 @@ void safe_VkExportFenceWin32HandleInfoKHR::initialize(const safe_VkExportFenceWi
     }
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR(const VkFenceGetWin32HandleInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -5065,7 +5041,6 @@ void safe_VkFenceGetWin32HandleInfoKHR::initialize(const safe_VkFenceGetWin32Han
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR(const VkImportFenceFdInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -6171,7 +6146,6 @@ void safe_VkDisplayPlaneCapabilities2KHR::initialize(const safe_VkDisplayPlaneCa
 }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-
 safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(const VkPhysicalDevicePortabilitySubsetFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     constantAlphaColorBlendFactors(in_struct->constantAlphaColorBlendFactors),
@@ -6312,9 +6286,7 @@ void safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR::initialize(const safe_Vk
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR(const VkPhysicalDevicePortabilitySubsetPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -6372,7 +6344,6 @@ void safe_VkPhysicalDevicePortabilitySubsetPropertiesKHR::initialize(const safe_
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceShaderClockFeaturesKHR::safe_VkPhysicalDeviceShaderClockFeaturesKHR(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8588,7 +8559,6 @@ void safe_VkPhysicalDevicePresentIdFeaturesKHR::initialize(const safe_VkPhysical
 }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-
 safe_VkVideoEncodeInfoKHR::safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -8744,9 +8714,7 @@ void safe_VkVideoEncodeInfoKHR::initialize(const safe_VkVideoEncodeInfoKHR* copy
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeCapabilitiesKHR::safe_VkVideoEncodeCapabilitiesKHR(const VkVideoEncodeCapabilitiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8840,9 +8808,7 @@ void safe_VkVideoEncodeCapabilitiesKHR::initialize(const safe_VkVideoEncodeCapab
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR(const VkQueryPoolVideoEncodeFeedbackCreateInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8900,9 +8866,7 @@ void safe_VkQueryPoolVideoEncodeFeedbackCreateInfoKHR::initialize(const safe_VkQ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeUsageInfoKHR::safe_VkVideoEncodeUsageInfoKHR(const VkVideoEncodeUsageInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8972,9 +8936,7 @@ void safe_VkVideoEncodeUsageInfoKHR::initialize(const safe_VkVideoEncodeUsageInf
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeRateControlLayerInfoKHR::safe_VkVideoEncodeRateControlLayerInfoKHR(const VkVideoEncodeRateControlLayerInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9050,9 +9012,7 @@ void safe_VkVideoEncodeRateControlLayerInfoKHR::initialize(const safe_VkVideoEnc
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeRateControlInfoKHR::safe_VkVideoEncodeRateControlInfoKHR(const VkVideoEncodeRateControlInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9176,9 +9136,7 @@ void safe_VkVideoEncodeRateControlInfoKHR::initialize(const safe_VkVideoEncodeRa
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR(const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9258,9 +9216,7 @@ void safe_VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR::initialize(const safe_
         pVideoProfile = new safe_VkVideoProfileInfoKHR(*copy_src->pVideoProfile);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeQualityLevelPropertiesKHR::safe_VkVideoEncodeQualityLevelPropertiesKHR(const VkVideoEncodeQualityLevelPropertiesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9324,9 +9280,7 @@ void safe_VkVideoEncodeQualityLevelPropertiesKHR::initialize(const safe_VkVideoE
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeQualityLevelInfoKHR::safe_VkVideoEncodeQualityLevelInfoKHR(const VkVideoEncodeQualityLevelInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9384,9 +9338,7 @@ void safe_VkVideoEncodeQualityLevelInfoKHR::initialize(const safe_VkVideoEncodeQ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeSessionParametersGetInfoKHR::safe_VkVideoEncodeSessionParametersGetInfoKHR(const VkVideoEncodeSessionParametersGetInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9444,9 +9396,7 @@ void safe_VkVideoEncodeSessionParametersGetInfoKHR::initialize(const safe_VkVide
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::safe_VkVideoEncodeSessionParametersFeedbackInfoKHR(const VkVideoEncodeSessionParametersFeedbackInfoKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -9504,7 +9454,6 @@ void safe_VkVideoEncodeSessionParametersFeedbackInfoKHR::initialize(const safe_V
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR::safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR(const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10399,7 +10348,6 @@ struct ASGeomKHRExtraData {
 };
 
 vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGeomKHRExtraData*, 4> as_geom_khr_host_alloc;
-
 safe_VkAccelerationStructureGeometryKHR::safe_VkAccelerationStructureGeometryKHR(const VkAccelerationStructureGeometryKHR* in_struct, const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     geometryType(in_struct->geometryType),
@@ -12186,3 +12134,5 @@ void safe_VkPhysicalDeviceRayQueryFeaturesKHR::initialize(const safe_VkPhysicalD
     rayQuery = copy_src->rayQuery;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+
+// NOLINTEND

@@ -374,17 +374,18 @@ class BaseGenerator(OutputGenerator):
             obsoletedby = interface.get('obsoletedby')
             specialuse = splitIfGet(interface, 'specialuse')
             # Not sure if better way to get this info
-            nameEnum = self.featureDictionary[name]['enumconstant'][None][None][1]
+            nameString = self.featureDictionary[name]['enumconstant'][None][None][1]
 
-            self.currentExtension = Extension(name, nameEnum, instance, device, depends, vendorTag,
+            self.currentExtension = Extension(name, nameString, instance, device, depends, vendorTag,
                                             platform, protect, provisional, promotedto, deprecatedby,
                                             obsoletedby, specialuse)
             self.vk.extensions[name] = self.currentExtension
         else: # version
             number = interface.get('number')
             if number != '1.0':
-                apiName = name.replace('VK_', 'VK_API_')
-                self.currentVersion = Version(name, apiName, number)
+                nameApi = name.replace('VK_', 'VK_API_')
+                nameString = f'"{name}"'
+                self.currentVersion = Version(name, nameString, nameApi, number)
                 self.vk.versions[name] = self.currentVersion
 
     def endFeature(self):
@@ -408,7 +409,15 @@ class BaseGenerator(OutputGenerator):
             paramConst = 'const' in cdecl
 
             paramNoautovalidity = boolGet(param, 'noautovalidity')
-            paramLength = param.get('altlen') if param.get('altlen') is not None else param.get('len')
+
+            nullTerminated = False
+            length = param.get('altlen') if param.get('altlen') is not None else param.get('len')
+            if length:
+                # we will either find it like "null-terminated" or "enabledExtensionCount,null-terminated"
+                # This finds both
+                nullTerminated = 'null-terminated' in length
+                length = length.replace(',null-terminated', '') if 'null-terminated' in length else length
+                length = None if length == 'null-terminated' else length
 
             # See Member::optional code for details of this
             optionalValues = splitIfGet(param, 'optional')
@@ -423,7 +432,8 @@ class BaseGenerator(OutputGenerator):
                 paramExternsync = True
 
             params.append(CommandParam(paramName, paramType, paramAlias,
-                                       paramPointer, paramConst, paramNoautovalidity, paramLength,
+                                       paramPointer, paramConst, paramNoautovalidity,
+                                       length, nullTerminated,
                                        paramOptional, paramOptionalPointer,
                                        paramExternsync, paramExternSyncPointer))
 
@@ -553,6 +563,7 @@ class BaseGenerator(OutputGenerator):
             membersElem = typeInfo.elem.findall('.//member')
             members = []
             sType = None
+
             for member in membersElem:
                 for comment in member.findall('comment'):
                     member.remove(comment)
@@ -562,10 +573,21 @@ class BaseGenerator(OutputGenerator):
                 sType = member.get('values') if member.get('values') is not None else sType
                 externSync = boolGet(member, 'externsync')
                 noautovalidity = boolGet(member, 'noautovalidity')
-                length = member.get('altlen') if member.get('altlen') is not None else member.get('len')
                 limittype = member.get('limittype')
+
+                nullTerminated = False
+                length = member.get('altlen') if member.get('altlen') is not None else member.get('len')
+                if length:
+                    # we will either find it like "null-terminated" or "enabledExtensionCount,null-terminated"
+                    # This finds both
+                    nullTerminated = 'null-terminated' in length
+                    length = length.replace(',null-terminated', '') if 'null-terminated' in length else length
+                    length = None if length == 'null-terminated' else length
+
                 cdecl = self.makeCParamDecl(member, 0)
                 pointer = '*' in cdecl
+                # Some structs like VkTransformMatrixKHR have a 2D array
+                staticArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
 
                 # if a pointer, this can be a something like:
                 #     optional="true,false" for ppGeometries
@@ -577,7 +599,9 @@ class BaseGenerator(OutputGenerator):
                 optionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
 
                 members.append(Member(name, type, externSync, optional, optionalPointer,
-                                      noautovalidity, length, limittype, pointer, cdecl))
+                                      noautovalidity,limittype,
+                                      length, nullTerminated, pointer, staticArray,
+                                      cdecl))
 
             self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, protect, members,
                                                union, returnedOnly,

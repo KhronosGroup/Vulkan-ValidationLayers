@@ -204,7 +204,7 @@ def makeGenOpts(args):
         ]
 
     genOpts['vk_safe_struct_core.cpp'] = [
-          HelperFileOutputGenerator,
+          SafeStructOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_safe_struct_core.cpp',
             mergeApiNames     = mergeApiNames,
@@ -212,7 +212,7 @@ def makeGenOpts(args):
         ]
 
     genOpts['vk_safe_struct_khr.cpp'] = [
-          HelperFileOutputGenerator,
+          SafeStructOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_safe_struct_khr.cpp',
             mergeApiNames     = mergeApiNames,
@@ -220,7 +220,7 @@ def makeGenOpts(args):
         ]
 
     genOpts['vk_safe_struct_ext.cpp'] = [
-          HelperFileOutputGenerator,
+          SafeStructOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_safe_struct_ext.cpp',
             mergeApiNames     = mergeApiNames,
@@ -228,7 +228,7 @@ def makeGenOpts(args):
         ]
 
     genOpts['vk_safe_struct_vendor.cpp'] = [
-          HelperFileOutputGenerator,
+          SafeStructOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_safe_struct_vendor.cpp',
             mergeApiNames     = mergeApiNames,
@@ -243,11 +243,10 @@ def makeGenOpts(args):
         ]
 
     genOpts['vk_extension_helper.h'] = [
-          HelperFileOutputGenerator,
+          ExtensionHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'vk_extension_helper.h',
-            mergeApiNames     = mergeApiNames,
-            helper_file_type  = 'extension_helper_header')
+            mergeApiNames     = mergeApiNames)
         ]
 
     genOpts['vk_typemap_helper.h'] = [
@@ -490,7 +489,7 @@ if __name__ == '__main__':
     from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
     from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
-    from generators.helper_file_generator import HelperFileOutputGenerator
+    from generators.extension_helper_generator import ExtensionHelperOutputGenerator
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
     from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator

@@ -203,10 +203,10 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             out.append(f'        case {struct.sType}: {{ // Covers VUID-{struct.name}-sType-sType\n')
 
             if struct.version and not struct.extensions:
-                out.append(f'''            if (api_version < {struct.version.apiName}) {{
+                out.append(f'''            if (api_version < {struct.version.nameApi}) {{
                 skip |= LogError(
                            instance, pnext_vuid,
-                           "%s: Includes a pNext pointer (%s) to a VkStructureType ({struct.sType}) which was added in {struct.version.apiName} but the "
+                           "%s: Includes a pNext pointer (%s) to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
                            "current effective API version is %s.",
                            api_name, parameter_name.get_name().c_str(), StringAPIVersion(api_version).c_str());
             }}\n''')
@@ -217,7 +217,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
                 extension = struct.extensions[0]
                 out.append('            if (is_const_param) {\n')
                 if extension.device:
-                    out.append(f'                if ((is_physdev_api && !SupportedByPdev(physical_device, {extension.nameEnum})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{')
+                    out.append(f'                if ((is_physdev_api && !SupportedByPdev(physical_device, {extension.nameString})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()}))) {{')
                 elif extension.instance:
                     out.append(f'                if (!instance_extensions.{extension.name.lower()}) {{')
                 out.append(f'''                        skip |= LogError(
