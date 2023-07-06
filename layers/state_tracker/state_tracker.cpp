@@ -1408,6 +1408,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                 LvlFindInChain<VkPhysicalDeviceDepthBiasControlFeaturesEXT>(pCreateInfo->pNext)) {
             enabled_features.depth_bias_control_features = *depth_bias_control_features;
         }
+
+        if (const auto host_image_copy_features = LvlFindInChain<VkPhysicalDeviceHostImageCopyFeaturesEXT>(pCreateInfo->pNext);
+            host_image_copy_features) {
+            enabled_features.host_image_copy_features = *host_image_copy_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -1625,6 +1630,22 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_properties);
+    if ((phys_dev_props->host_image_copy_properties.copySrcLayoutCount > 0) ||
+        (phys_dev_props->host_image_copy_properties.copyDstLayoutCount > 0)) {
+        // Have to allocate memory for the layout lists
+        host_image_copy_src_layouts.resize(phys_dev_props->host_image_copy_properties.copySrcLayoutCount);
+        host_image_copy_dst_layouts.resize(phys_dev_props->host_image_copy_properties.copyDstLayoutCount);
+        if (phys_dev_props->host_image_copy_properties.copySrcLayoutCount > 0) {
+            phys_dev_props->host_image_copy_properties.pCopySrcLayouts = host_image_copy_src_layouts.data();
+        }
+        if (phys_dev_props->host_image_copy_properties.copyDstLayoutCount > 0) {
+            phys_dev_props->host_image_copy_properties.pCopyDstLayouts = host_image_copy_dst_layouts.data();
+        }
+        // Call again (without init) to fill in lists
+        GetPhysicalDeviceExtProperties<false>(physical_device, dev_ext.vk_ext_host_image_copy,
+                                              &phys_dev_props->host_image_copy_properties);
+    }
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_props);
     }
