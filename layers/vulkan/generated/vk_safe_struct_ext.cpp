@@ -1,27 +1,27 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See helper_file_generator.py for modifications
-
+// See safe_struct_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
+// NOLINTBEGIN
 
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
@@ -33,7 +33,6 @@
 #include <vector>
 
 #include <vulkan/vk_layer.h>
-
 
 safe_VkRenderingFragmentDensityMapAttachmentInfoEXT::safe_VkRenderingFragmentDensityMapAttachmentInfoEXT(const VkRenderingFragmentDensityMapAttachmentInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -625,7 +624,6 @@ void safe_VkPipelineRasterizationStateStreamCreateInfoEXT::initialize(const safe
 }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-
 safe_VkVideoEncodeH264CapabilitiesEXT::safe_VkVideoEncodeH264CapabilitiesEXT(const VkVideoEncodeH264CapabilitiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -754,9 +752,7 @@ void safe_VkVideoEncodeH264CapabilitiesEXT::initialize(const safe_VkVideoEncodeH
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264QualityLevelPropertiesEXT::safe_VkVideoEncodeH264QualityLevelPropertiesEXT(const VkVideoEncodeH264QualityLevelPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -862,9 +858,7 @@ void safe_VkVideoEncodeH264QualityLevelPropertiesEXT::initialize(const safe_VkVi
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264SessionCreateInfoEXT::safe_VkVideoEncodeH264SessionCreateInfoEXT(const VkVideoEncodeH264SessionCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -928,9 +922,7 @@ void safe_VkVideoEncodeH264SessionCreateInfoEXT::initialize(const safe_VkVideoEn
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264SessionParametersAddInfoEXT::safe_VkVideoEncodeH264SessionParametersAddInfoEXT(const VkVideoEncodeH264SessionParametersAddInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1058,9 +1050,7 @@ void safe_VkVideoEncodeH264SessionParametersAddInfoEXT::initialize(const safe_Vk
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::safe_VkVideoEncodeH264SessionParametersCreateInfoEXT(const VkVideoEncodeH264SessionParametersCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1146,9 +1136,7 @@ void safe_VkVideoEncodeH264SessionParametersCreateInfoEXT::initialize(const safe
         pParametersAddInfo = new safe_VkVideoEncodeH264SessionParametersAddInfoEXT(*copy_src->pParametersAddInfo);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264SessionParametersGetInfoEXT::safe_VkVideoEncodeH264SessionParametersGetInfoEXT(const VkVideoEncodeH264SessionParametersGetInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1224,9 +1212,7 @@ void safe_VkVideoEncodeH264SessionParametersGetInfoEXT::initialize(const safe_Vk
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT::safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT(const VkVideoEncodeH264SessionParametersFeedbackInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1290,9 +1276,7 @@ void safe_VkVideoEncodeH264SessionParametersFeedbackInfoEXT::initialize(const sa
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264NaluSliceInfoEXT::safe_VkVideoEncodeH264NaluSliceInfoEXT(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1377,9 +1361,7 @@ void safe_VkVideoEncodeH264NaluSliceInfoEXT::initialize(const safe_VkVideoEncode
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264PictureInfoEXT::safe_VkVideoEncodeH264PictureInfoEXT(const VkVideoEncodeH264PictureInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1512,9 +1494,7 @@ void safe_VkVideoEncodeH264PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264DpbSlotInfoEXT::safe_VkVideoEncodeH264DpbSlotInfoEXT(const VkVideoEncodeH264DpbSlotInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1593,9 +1573,7 @@ void safe_VkVideoEncodeH264DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264ProfileInfoEXT::safe_VkVideoEncodeH264ProfileInfoEXT(const VkVideoEncodeH264ProfileInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1653,9 +1631,7 @@ void safe_VkVideoEncodeH264ProfileInfoEXT::initialize(const safe_VkVideoEncodeH2
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264RateControlInfoEXT::safe_VkVideoEncodeH264RateControlInfoEXT(const VkVideoEncodeH264RateControlInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1737,9 +1713,7 @@ void safe_VkVideoEncodeH264RateControlInfoEXT::initialize(const safe_VkVideoEnco
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264RateControlLayerInfoEXT::safe_VkVideoEncodeH264RateControlLayerInfoEXT(const VkVideoEncodeH264RateControlLayerInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1827,9 +1801,7 @@ void safe_VkVideoEncodeH264RateControlLayerInfoEXT::initialize(const safe_VkVide
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH264GopRemainingFrameInfoEXT::safe_VkVideoEncodeH264GopRemainingFrameInfoEXT(const VkVideoEncodeH264GopRemainingFrameInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -1905,9 +1877,7 @@ void safe_VkVideoEncodeH264GopRemainingFrameInfoEXT::initialize(const safe_VkVid
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265CapabilitiesEXT::safe_VkVideoEncodeH265CapabilitiesEXT(const VkVideoEncodeH265CapabilitiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2055,9 +2025,7 @@ void safe_VkVideoEncodeH265CapabilitiesEXT::initialize(const safe_VkVideoEncodeH
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265SessionCreateInfoEXT::safe_VkVideoEncodeH265SessionCreateInfoEXT(const VkVideoEncodeH265SessionCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2121,9 +2089,7 @@ void safe_VkVideoEncodeH265SessionCreateInfoEXT::initialize(const safe_VkVideoEn
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265QualityLevelPropertiesEXT::safe_VkVideoEncodeH265QualityLevelPropertiesEXT(const VkVideoEncodeH265QualityLevelPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2223,9 +2189,7 @@ void safe_VkVideoEncodeH265QualityLevelPropertiesEXT::initialize(const safe_VkVi
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265SessionParametersAddInfoEXT::safe_VkVideoEncodeH265SessionParametersAddInfoEXT(const VkVideoEncodeH265SessionParametersAddInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2391,9 +2355,7 @@ void safe_VkVideoEncodeH265SessionParametersAddInfoEXT::initialize(const safe_Vk
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::safe_VkVideoEncodeH265SessionParametersCreateInfoEXT(const VkVideoEncodeH265SessionParametersCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2485,9 +2447,7 @@ void safe_VkVideoEncodeH265SessionParametersCreateInfoEXT::initialize(const safe
         pParametersAddInfo = new safe_VkVideoEncodeH265SessionParametersAddInfoEXT(*copy_src->pParametersAddInfo);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265SessionParametersGetInfoEXT::safe_VkVideoEncodeH265SessionParametersGetInfoEXT(const VkVideoEncodeH265SessionParametersGetInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2575,9 +2535,7 @@ void safe_VkVideoEncodeH265SessionParametersGetInfoEXT::initialize(const safe_Vk
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT::safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT(const VkVideoEncodeH265SessionParametersFeedbackInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2647,9 +2605,7 @@ void safe_VkVideoEncodeH265SessionParametersFeedbackInfoEXT::initialize(const sa
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2734,9 +2690,7 @@ void safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT::initialize(const safe_VkVide
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265PictureInfoEXT::safe_VkVideoEncodeH265PictureInfoEXT(const VkVideoEncodeH265PictureInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2863,9 +2817,7 @@ void safe_VkVideoEncodeH265PictureInfoEXT::initialize(const safe_VkVideoEncodeH2
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265DpbSlotInfoEXT::safe_VkVideoEncodeH265DpbSlotInfoEXT(const VkVideoEncodeH265DpbSlotInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -2944,9 +2896,7 @@ void safe_VkVideoEncodeH265DpbSlotInfoEXT::initialize(const safe_VkVideoEncodeH2
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265ProfileInfoEXT::safe_VkVideoEncodeH265ProfileInfoEXT(const VkVideoEncodeH265ProfileInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3004,9 +2954,7 @@ void safe_VkVideoEncodeH265ProfileInfoEXT::initialize(const safe_VkVideoEncodeH2
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265RateControlInfoEXT::safe_VkVideoEncodeH265RateControlInfoEXT(const VkVideoEncodeH265RateControlInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3088,9 +3036,7 @@ void safe_VkVideoEncodeH265RateControlInfoEXT::initialize(const safe_VkVideoEnco
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265RateControlLayerInfoEXT::safe_VkVideoEncodeH265RateControlLayerInfoEXT(const VkVideoEncodeH265RateControlLayerInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3178,9 +3124,7 @@ void safe_VkVideoEncodeH265RateControlLayerInfoEXT::initialize(const safe_VkVide
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkVideoEncodeH265GopRemainingFrameInfoEXT::safe_VkVideoEncodeH265GopRemainingFrameInfoEXT(const VkVideoEncodeH265GopRemainingFrameInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -3256,7 +3200,6 @@ void safe_VkVideoEncodeH265GopRemainingFrameInfoEXT::initialize(const safe_VkVid
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 
 safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT(const VkValidationFlagsEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8181,7 +8124,6 @@ void safe_VkPipelineRasterizationProvokingVertexStateCreateInfoEXT::initialize(c
 }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-
 safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoEXT(const VkSurfaceFullScreenExclusiveInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     fullScreenExclusive(in_struct->fullScreenExclusive)
@@ -8238,9 +8180,7 @@ void safe_VkSurfaceFullScreenExclusiveInfoEXT::initialize(const safe_VkSurfaceFu
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT(const VkSurfaceCapabilitiesFullScreenExclusiveEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8298,9 +8238,7 @@ void safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::initialize(const safe_VkS
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT(const VkSurfaceFullScreenExclusiveWin32InfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -8358,7 +8296,6 @@ void safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::initialize(const safe_VkSurf
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 
 safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT(const VkHeadlessSurfaceCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10491,7 +10428,6 @@ void safe_VkPhysicalDeviceCustomBorderColorFeaturesEXT::initialize(const safe_Vk
 }
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
-
 safe_VkExportMetalObjectCreateInfoEXT::safe_VkExportMetalObjectCreateInfoEXT(const VkExportMetalObjectCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     exportObjectType(in_struct->exportObjectType)
@@ -10548,9 +10484,7 @@ void safe_VkExportMetalObjectCreateInfoEXT::initialize(const safe_VkExportMetalO
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalObjectsInfoEXT::safe_VkExportMetalObjectsInfoEXT(const VkExportMetalObjectsInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType)
@@ -10602,9 +10536,7 @@ void safe_VkExportMetalObjectsInfoEXT::initialize(const safe_VkExportMetalObject
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalDeviceInfoEXT::safe_VkExportMetalDeviceInfoEXT(const VkExportMetalDeviceInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10662,9 +10594,7 @@ void safe_VkExportMetalDeviceInfoEXT::initialize(const safe_VkExportMetalDeviceI
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalCommandQueueInfoEXT::safe_VkExportMetalCommandQueueInfoEXT(const VkExportMetalCommandQueueInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10728,9 +10658,7 @@ void safe_VkExportMetalCommandQueueInfoEXT::initialize(const safe_VkExportMetalC
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalBufferInfoEXT::safe_VkExportMetalBufferInfoEXT(const VkExportMetalBufferInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10794,9 +10722,7 @@ void safe_VkExportMetalBufferInfoEXT::initialize(const safe_VkExportMetalBufferI
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkImportMetalBufferInfoEXT::safe_VkImportMetalBufferInfoEXT(const VkImportMetalBufferInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10854,9 +10780,7 @@ void safe_VkImportMetalBufferInfoEXT::initialize(const safe_VkImportMetalBufferI
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalTextureInfoEXT::safe_VkExportMetalTextureInfoEXT(const VkExportMetalTextureInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -10938,9 +10862,7 @@ void safe_VkExportMetalTextureInfoEXT::initialize(const safe_VkExportMetalTextur
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkImportMetalTextureInfoEXT::safe_VkImportMetalTextureInfoEXT(const VkImportMetalTextureInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -11004,9 +10926,7 @@ void safe_VkImportMetalTextureInfoEXT::initialize(const safe_VkImportMetalTextur
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalIOSurfaceInfoEXT::safe_VkExportMetalIOSurfaceInfoEXT(const VkExportMetalIOSurfaceInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -11070,9 +10990,7 @@ void safe_VkExportMetalIOSurfaceInfoEXT::initialize(const safe_VkExportMetalIOSu
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkImportMetalIOSurfaceInfoEXT::safe_VkImportMetalIOSurfaceInfoEXT(const VkImportMetalIOSurfaceInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -11130,9 +11048,7 @@ void safe_VkImportMetalIOSurfaceInfoEXT::initialize(const safe_VkImportMetalIOSu
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkExportMetalSharedEventInfoEXT::safe_VkExportMetalSharedEventInfoEXT(const VkExportMetalSharedEventInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -11202,9 +11118,7 @@ void safe_VkExportMetalSharedEventInfoEXT::initialize(const safe_VkExportMetalSh
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkImportMetalSharedEventInfoEXT::safe_VkImportMetalSharedEventInfoEXT(const VkImportMetalSharedEventInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -11262,7 +11176,6 @@ void safe_VkImportMetalSharedEventInfoEXT::initialize(const safe_VkImportMetalSh
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
-
 
 safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT::safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(const VkPhysicalDeviceDescriptorBufferPropertiesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -13670,7 +13583,6 @@ void safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT::initialize(const safe_VkPh
 }
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
-
 safe_VkDirectFBSurfaceCreateInfoEXT::safe_VkDirectFBSurfaceCreateInfoEXT(const VkDirectFBSurfaceCreateInfoEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -13781,7 +13693,6 @@ void safe_VkDirectFBSurfaceCreateInfoEXT::initialize(const safe_VkDirectFBSurfac
     }
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
 
 safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT::safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT(const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* in_struct, [[maybe_unused]] PNextCopyState* copy_state) :
     sType(in_struct->sType),
@@ -18837,3 +18748,5 @@ void safe_VkPhysicalDeviceMeshShaderPropertiesEXT::initialize(const safe_VkPhysi
         maxMeshWorkGroupSize[i] = copy_src->maxMeshWorkGroupSize[i];
     }
 }
+
+// NOLINTEND

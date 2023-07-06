@@ -25,7 +25,7 @@ from typing import List, Dict
 class Extension:
     """<extension>"""
     name: str
-    nameEnum: str # ex 'VK_KHR_SURFACE_EXTENSION_NAME'
+    nameString: str # marco with string, ex. VK_KHR_SURFACE_EXTENSION_NAME
 
     # Only one will be True, the other is False
     instance: bool
@@ -36,7 +36,7 @@ class Extension:
     platform: str # ex. 'android'
     protect: str # ex. 'VK_USE_PLATFORM_ANDROID_KHR'
     provisional: bool
-    promotedTo: str
+    promotedTo: str # ex. 'VK_VERSION_1_1'
     deprecatedBy: str
     obsoletedBy: str
     specialUse: List[str]
@@ -58,7 +58,8 @@ class Version:
     This will NEVER be Version 1.0, since having 'no version' is same as being 1.0
     """
     name: str # VK_VERSION_1_1
-    apiName: str # VK_API_VERSION_1_1
+    nameString: str # "VK_VERSION_1_1" (no marco, so has quotes)
+    nameApi: str # VK_API_VERSION_1_1
     number: str # 1.1
 
 @dataclass
@@ -83,7 +84,9 @@ class CommandParam:
     pointer: bool # type contains a pointer
     const: bool # type contains 'const'
     noAutoValidity: bool
-    length: str # 'len' from XML showing what is used to set the length of an pointer
+
+    length: str # the known length of pointer, will never be 'null-terminated'
+    nullTerminated: bool # If a UTF-8 string that will be null-terminated
 
     optional: bool
     optionalPointer: bool # if type contains a pointer, is the pointer value optional
@@ -210,9 +213,12 @@ class Member:
     optional: bool
     optionalPointer: bool # if type contains a pointer, is the pointer value optional
     noAutoValidity: bool
-    length: str
-    limitType: str
+    limitType: str # ex. 'max', 'bitmask', 'bits', 'min,mul'
+
+    length: str # the known length of pointer, will never be 'null-terminated'
+    nullTerminated: bool # If a UTF-8 string that will be null-terminated
     pointer: bool # type contains a pointer
+    staticArray: List[str]
 
     # C string of member, example:
     #   - const void* pNext
