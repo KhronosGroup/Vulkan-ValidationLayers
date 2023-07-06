@@ -691,8 +691,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateReferencePictureUseCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateImageSampleCount(VkCommandBuffer, const IMAGE_STATE& image_state, VkSampleCountFlagBits sample_count,
-                                  const char* location, const std::string& msgCode) const;
+    bool ValidateImageSampleCount(const VulkanTypedHandle handle, const IMAGE_STATE& image_state,
+                                  VkSampleCountFlagBits sample_count, const char* location, const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, CMD_TYPE cmd_type) const;
@@ -962,9 +962,18 @@ class CoreChecks : public ValidationStateTracker {
                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                      uint32_t attachment_index, const char* variable_name) const;
     template <typename RegionType>
+    bool ValidateBufferMemoryImageCopyData(const VulkanTypedHandle handle, uint32_t regionCount, const RegionType* pRegions,
+                                           const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type, bool from_image,
+                                           bool is_memory) const;
+    template <typename InfoPointer>
+    bool ValidateMemoryImageCopyCommon(VkDevice device, InfoPointer iPointer, bool from_image) const;
+    template <typename RegionType>
     bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
                                      const IMAGE_STATE& image_state, const char* function, CMD_TYPE cmd_type,
                                      bool image_to_buffer) const;
+    bool ValidateCopyImageLayout(const VkDevice device, const VkImage image, const uint32_t layout_count,
+                                 const VkImageLayout* supported_image_layouts, const VkImageLayout image_layout,
+                                 const char* func_name, const char* field_name, const char* supported_name, const char* vuid) const;
     bool ValidateBufferViewRange(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
                                  const VkPhysicalDeviceLimits* device_limits) const;
     bool ValidateBufferViewBuffer(const BUFFER_STATE& buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
@@ -1209,7 +1218,7 @@ class CoreChecks : public ValidationStateTracker {
                                      uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
 
     template <typename RegionType>
-    bool ValidateImageBounds(VkCommandBuffer cb, const IMAGE_STATE& image_state, const uint32_t regionCount,
+    bool ValidateImageBounds(const VulkanTypedHandle typed_handle, const IMAGE_STATE& image_state, const uint32_t regionCount,
                              const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
@@ -1221,10 +1230,10 @@ class CoreChecks : public ValidationStateTracker {
                                                                 const RegionType* region, const uint32_t i, const char* function,
                                                                 const char* vuid) const;
 
-    bool ValidateImageMipLevel(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img, uint32_t mip_level, const uint32_t i,
+    bool ValidateImageMipLevel(const VulkanTypedHandle handle, const IMAGE_STATE& img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
 
-    bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img, const uint32_t base_layer,
+    bool ValidateImageArrayLayerRange(const VulkanTypedHandle handle, const IMAGE_STATE& img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
                                       const char* vuid) const;
     bool ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, const char* apiName) const;
