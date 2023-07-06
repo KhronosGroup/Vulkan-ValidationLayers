@@ -125,8 +125,8 @@ class ObjectLifetimes : public ValidationObject {
         return nullptr;
     };
 
-    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool null_allowed,
-                             const char *invalid_handle_code, const char *wrong_device_code, const char *api_name) const {
+    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_code,
+                             const char *wrong_device_code, const char *api_name) const {
         // Look for object in object map
         if (!object_map[object_type].contains(object_handle)) {
             // If object is an image, also look for it in the swapchain image map
@@ -179,8 +179,7 @@ class ObjectLifetimes : public ValidationObject {
             return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, api_name);
         }
 
-        return CheckObjectValidity(HandleToUint64(object), object_type, null_allowed, invalid_handle_code, wrong_device_code,
-                                   api_name);
+        return CheckObjectValidity(HandleToUint64(object), object_type, invalid_handle_code, wrong_device_code, api_name);
     }
 
     template <typename T1>

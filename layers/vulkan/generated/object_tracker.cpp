@@ -1,36 +1,33 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See object_tracker_generator.py for modifications
 
-
 /***************************************************************************
- *
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2023 Google Inc.
- * Copyright (c) 2023-2023 RasterGrid Kft.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2023 The Khronos Group Inc.
+* Copyright (c) 2015-2023 Valve Corporation
+* Copyright (c) 2015-2023 LunarG, Inc.
+* Copyright (c) 2015-2023 Google Inc.
+* Copyright (c) 2015-2023 RasterGrid Kft.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
+// NOLINTBEGIN
 
 #include "chassis.h"
 #include "object_tracker/object_lifetime_validation.h"
-
 ReadLockGuard ObjectLifetimes::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
-
-
 
 // ObjectTracker undestroyed objects validation function
 bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) const {
@@ -43,6 +40,7 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance) cons
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     return skip;
 }
+
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device) const {
     bool skip = false;
     const std::string error_code = "VUID-vkDestroyDevice-device-00378";
@@ -95,6 +93,7 @@ void ObjectLifetimes::DestroyLeakedInstanceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeDebugReportCallbackEXT);
     DestroyUndestroyedObjects(kVulkanObjectTypeDebugUtilsMessengerEXT);
 }
+
 void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);
     DestroyUndestroyedObjects(kVulkanObjectTypeBuffer);
@@ -136,8 +135,6 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeOpticalFlowSessionNV);
     DestroyUndestroyedObjects(kVulkanObjectTypeShaderEXT);
 }
-
-
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceFeatures(
     VkPhysicalDevice                            physicalDevice,
@@ -3298,7 +3295,6 @@ void ObjectLifetimes::PostCallRecordCreateSharedSwapchainsKHR(
     }
 
 }
-
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 
 bool ObjectLifetimes::PreCallValidateCreateXlibSurfaceKHR(
@@ -3323,7 +3319,6 @@ void ObjectLifetimes::PostCallRecordCreateXlibSurfaceKHR(
 
 }
 #endif // VK_USE_PLATFORM_XLIB_KHR
-
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(
@@ -3337,7 +3332,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR
     return skip;
 }
 #endif // VK_USE_PLATFORM_XLIB_KHR
-
 #ifdef VK_USE_PLATFORM_XCB_KHR
 
 bool ObjectLifetimes::PreCallValidateCreateXcbSurfaceKHR(
@@ -3362,7 +3356,6 @@ void ObjectLifetimes::PostCallRecordCreateXcbSurfaceKHR(
 
 }
 #endif // VK_USE_PLATFORM_XCB_KHR
-
 #ifdef VK_USE_PLATFORM_XCB_KHR
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
@@ -3376,7 +3369,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
     return skip;
 }
 #endif // VK_USE_PLATFORM_XCB_KHR
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
 bool ObjectLifetimes::PreCallValidateCreateWaylandSurfaceKHR(
@@ -3401,7 +3393,6 @@ void ObjectLifetimes::PostCallRecordCreateWaylandSurfaceKHR(
 
 }
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
@@ -3414,7 +3405,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWaylandPresentationSupport
     return skip;
 }
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 bool ObjectLifetimes::PreCallValidateCreateAndroidSurfaceKHR(
@@ -3439,7 +3429,6 @@ void ObjectLifetimes::PostCallRecordCreateAndroidSurfaceKHR(
 
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateCreateWin32SurfaceKHR(
@@ -3464,7 +3453,6 @@ void ObjectLifetimes::PostCallRecordCreateWin32SurfaceKHR(
 
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
@@ -3859,7 +3847,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKH
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandleKHR(
@@ -3875,7 +3862,6 @@ bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandleKHR(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
@@ -3923,7 +3909,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalSemaphorePropertie
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateImportSemaphoreWin32HandleKHR(
@@ -3938,7 +3923,6 @@ bool ObjectLifetimes::PreCallValidateImportSemaphoreWin32HandleKHR(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetSemaphoreWin32HandleKHR(
@@ -4101,7 +4085,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateImportFenceWin32HandleKHR(
@@ -4116,7 +4099,6 @@ bool ObjectLifetimes::PreCallValidateImportFenceWin32HandleKHR(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetFenceWin32HandleKHR(
@@ -4628,7 +4610,6 @@ bool ObjectLifetimes::PreCallValidateUnmapMemory2KHR(
 
     return skip;
 }
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
@@ -4641,7 +4622,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPro
     return skip;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetEncodedVideoSessionParametersKHR(
@@ -4659,7 +4639,6 @@ bool ObjectLifetimes::PreCallValidateGetEncodedVideoSessionParametersKHR(
     return skip;
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(
@@ -5324,7 +5303,6 @@ bool ObjectLifetimes::PreCallValidateGetShaderInfoAMD(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_GGP
 
 bool ObjectLifetimes::PreCallValidateCreateStreamDescriptorSurfaceGGP(
@@ -5364,7 +5342,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalImageFormatPropert
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandleNV(
@@ -5379,7 +5356,6 @@ bool ObjectLifetimes::PreCallValidateGetMemoryWin32HandleNV(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_VI_NN
 
 bool ObjectLifetimes::PreCallValidateCreateViSurfaceNN(
@@ -5445,7 +5421,6 @@ bool ObjectLifetimes::PreCallValidateReleaseDisplayEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 bool ObjectLifetimes::PreCallValidateAcquireXlibDisplayEXT(
@@ -5459,7 +5434,6 @@ bool ObjectLifetimes::PreCallValidateAcquireXlibDisplayEXT(
     return skip;
 }
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 bool ObjectLifetimes::PreCallValidateGetRandROutputDisplayEXT(
@@ -5633,7 +5607,6 @@ bool ObjectLifetimes::PreCallValidateSetHdrMetadataEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_IOS_MVK
 
 bool ObjectLifetimes::PreCallValidateCreateIOSSurfaceMVK(
@@ -5658,7 +5631,6 @@ void ObjectLifetimes::PostCallRecordCreateIOSSurfaceMVK(
 
 }
 #endif // VK_USE_PLATFORM_IOS_MVK
-
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 
 bool ObjectLifetimes::PreCallValidateCreateMacOSSurfaceMVK(
@@ -5788,7 +5760,6 @@ bool ObjectLifetimes::PreCallValidateSubmitDebugUtilsMessageEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 bool ObjectLifetimes::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
@@ -5801,7 +5772,6 @@ bool ObjectLifetimes::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
     return skip;
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 bool ObjectLifetimes::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
@@ -6454,7 +6424,6 @@ bool ObjectLifetimes::PreCallValidateSetLocalDimmingAMD(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateCreateImagePipeSurfaceFUCHSIA(
@@ -6479,7 +6448,6 @@ void ObjectLifetimes::PostCallRecordCreateImagePipeSurfaceFUCHSIA(
 
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
 bool ObjectLifetimes::PreCallValidateCreateMetalSurfaceEXT(
@@ -6543,7 +6511,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedS
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
@@ -6560,7 +6527,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(
@@ -6573,7 +6539,6 @@ bool ObjectLifetimes::PreCallValidateAcquireFullScreenExclusiveModeEXT(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(
@@ -6586,7 +6551,6 @@ bool ObjectLifetimes::PreCallValidateReleaseFullScreenExclusiveModeEXT(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(
@@ -7168,7 +7132,6 @@ bool ObjectLifetimes::PreCallValidateGetDeviceFaultInfoEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateAcquireWinrtDisplayNV(
@@ -7181,7 +7144,6 @@ bool ObjectLifetimes::PreCallValidateAcquireWinrtDisplayNV(
     return skip;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool ObjectLifetimes::PreCallValidateGetWinrtDisplayNV(
@@ -7204,7 +7166,6 @@ void ObjectLifetimes::PostCallRecordGetWinrtDisplayNV(
 
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
-
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 bool ObjectLifetimes::PreCallValidateCreateDirectFBSurfaceEXT(
@@ -7229,7 +7190,6 @@ void ObjectLifetimes::PostCallRecordCreateDirectFBSurfaceEXT(
 
 }
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(
@@ -7254,7 +7214,6 @@ bool ObjectLifetimes::PreCallValidateCmdSetVertexInputEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetMemoryZirconHandleFUCHSIA(
@@ -7270,7 +7229,6 @@ bool ObjectLifetimes::PreCallValidateGetMemoryZirconHandleFUCHSIA(
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
@@ -7284,7 +7242,6 @@ bool ObjectLifetimes::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
@@ -7299,7 +7256,6 @@ bool ObjectLifetimes::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
@@ -7315,7 +7271,6 @@ bool ObjectLifetimes::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateCreateBufferCollectionFUCHSIA(
@@ -7340,7 +7295,6 @@ void ObjectLifetimes::PostCallRecordCreateBufferCollectionFUCHSIA(
 
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(
@@ -7354,7 +7308,6 @@ bool ObjectLifetimes::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
@@ -7368,7 +7321,6 @@ bool ObjectLifetimes::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA
     return skip;
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateDestroyBufferCollectionFUCHSIA(
@@ -7391,7 +7343,6 @@ void ObjectLifetimes::PreCallRecordDestroyBufferCollectionFUCHSIA(
 
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
-
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
 bool ObjectLifetimes::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(
@@ -7503,7 +7454,6 @@ bool ObjectLifetimes::PreCallValidateCmdSetPrimitiveRestartEnableEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 bool ObjectLifetimes::PreCallValidateCreateScreenSurfaceQNX(
@@ -7528,7 +7478,6 @@ void ObjectLifetimes::PostCallRecordCreateScreenSurfaceQNX(
 
 }
 #endif // VK_USE_PLATFORM_SCREEN_QNX
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(
@@ -8423,7 +8372,6 @@ bool ObjectLifetimes::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(
 
     return skip;
 }
-
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 bool ObjectLifetimes::PreCallValidateGetScreenBufferPropertiesQNX(
@@ -8738,4 +8686,4 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(
     return skip;
 }
 
-
+// NOLINTEND

@@ -77,7 +77,7 @@ bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object, VkObjectType core
                                     api_name);
     }
 
-    return CheckObjectValidity(object, object_type, null_allowed, invalid_handle_code, wrong_device_code, api_name);
+    return CheckObjectValidity(object, object_type, invalid_handle_code, wrong_device_code, api_name);
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
