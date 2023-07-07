@@ -43,9 +43,9 @@ struct CommandBufferSubmitState {
         skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
         auto cmd = cb_state.commandBuffer();
         current_cmds.push_back(cmd);
-        skip |= core->ValidatePrimaryCommandBufferState(loc, cb_state,
-                                                        static_cast<int>(std::count(current_cmds.begin(), current_cmds.end(), cmd)),
-                                                        &qfo_image_scoreboards, &qfo_buffer_scoreboards);
+        skip |= core->ValidatePrimaryCommandBufferState(
+            loc, cb_state, static_cast<uint32_t>(std::count(current_cmds.begin(), current_cmds.end(), cmd)), &qfo_image_scoreboards,
+            &qfo_buffer_scoreboards);
         skip |= core->ValidateQueueFamilyIndices(loc, cb_state, queue_state->Queue());
 
         for (const auto &descriptor_set : cb_state.validate_descriptorsets_in_queuesubmit) {
@@ -472,17 +472,19 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const char *call_source, int current_submit_count,
-                                            const char *vu_id) const {
+bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, const char *call_source,
+                                            uint32_t current_submit_count, const char *vu_id) const {
     bool skip = false;
-    if (disabled[command_buffer_state]) return skip;
+    if (disabled[command_buffer_state]) {
+        return skip;
+    }
+
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
-    if ((cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) &&
-        (cb_state.submitCount + current_submit_count > 1)) {
+    if (const uint64_t submissions = cb_state.submitCount + current_submit_count;
+        (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
         skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_CommandBufferSingleSubmitViolation,
-                         "%s was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted 0x%" PRIxLEAST64
-                         "times.",
-                         report_data->FormatHandle(cb_state.commandBuffer()).c_str(), cb_state.submitCount + current_submit_count);
+                         "%s recorded with VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT has been submitted %" PRIu64 " times.",
+                         report_data->FormatHandle(cb_state.commandBuffer()).c_str(), submissions);
     }
 
     // Validate that cmd buffers have been updated
@@ -526,7 +528,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const
 }
 
 bool CoreChecks::ValidatePrimaryCommandBufferState(
-    const Location &loc, const CMD_BUFFER_STATE &cb_state, int current_submit_count,
+    const Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t current_submit_count,
     QFOTransferCBScoreboards<QFOImageTransferBarrier> *qfo_image_scoreboards,
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards) const {
     using sync_vuid_maps::GetQueueSubmitVUID;

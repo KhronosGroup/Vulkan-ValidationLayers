@@ -225,8 +225,7 @@ TEST_F(NegativeCommand, Sync2SecondaryCommandbufferAsPrimary) {
 }
 
 TEST_F(NegativeCommand, CommandBufferTwoSubmits) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -272,8 +271,7 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -926,7 +924,6 @@ TEST_F(NegativeCommand, SimultaneousUseSecondarySingleExecute) {
 TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     TEST_DESCRIPTION("Submit the same command buffer twice in one submit looking for simultaneous use and one time submit errors");
     const char *simultaneous_use_message = "is already in use and is not marked for simultaneous use";
-    const char *one_shot_message = "VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted";
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkCommandBuffer cmd_bufs[2];
@@ -960,7 +957,7 @@ TEST_F(NegativeCommand, SimultaneousUseOneShot) {
     vk::CmdSetViewport(cmd_bufs[1], 0, 1, &viewport);
     vk::EndCommandBuffer(cmd_bufs[1]);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pCommandBuffers-00071");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, one_shot_message);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation");
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);

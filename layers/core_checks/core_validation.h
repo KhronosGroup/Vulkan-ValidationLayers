@@ -587,7 +587,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode) const;
-    bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const char* call_source, int current_submit_count,
+    bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const char* call_source, uint32_t current_submit_count,
                                     const char* vu_id) const;
     bool ValidateCommandBufferSimultaneousUse(const Location& loc, const CMD_BUFFER_STATE& cb_state,
                                               int current_submit_count) const;
@@ -739,7 +739,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateQFOTransferBarrierUniqueness(const Location& loc, const CMD_BUFFER_STATE* cb_state, const Barrier& barrier,
                                               const QFOTransferBarrierSets<TransferBarrier>& barrier_sets) const;
 
-    bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE& cb_state, int current_submit_count,
+    bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE& cb_state, uint32_t current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
     bool ValidatePipelineRenderpassDraw(const LAST_BOUND_STATE& last_bound_state, CMD_TYPE cmd_type) const;
