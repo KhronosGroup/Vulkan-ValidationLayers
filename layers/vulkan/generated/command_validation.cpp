@@ -1252,12 +1252,12 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cm
     // Validate the given command being added to the specified cmd buffer,
     // flagging errors if CB is not in the recording state or if there's an issue with the Cmd ordering
     switch (cb_state.state) {
-        case CB_RECORDING:
+        case CbState::Recording:
             skip |= ValidateCmdSubpassState(cb_state, cmd);
             break;
 
-        case CB_INVALID_COMPLETE:
-        case CB_INVALID_INCOMPLETE:
+        case CbState::InvalidComplete:
+        case CbState::InvalidIncomplete:
             skip |= ReportInvalidCommandBuffer(cb_state, caller_name);
             break;
 

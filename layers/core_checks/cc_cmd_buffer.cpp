@@ -305,12 +305,12 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             }
         }
     }
-    if (CB_RECORDING == cb_state->state) {
+    if (CbState::Recording == cb_state->state) {
         skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                          "vkBeginCommandBuffer(): Cannot call Begin on %s in the RECORDING state. Must first call "
                          "vkEndCommandBuffer().",
                          report_data->FormatHandle(commandBuffer).c_str());
-    } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
+    } else if (CbState::Recorded == cb_state->state || CbState::InvalidComplete == cb_state->state) {
         VkCommandPool cmd_pool = cb_state->createInfo.commandPool;
         const auto *pool = cb_state->command_pool;
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
@@ -346,9 +346,9 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
         skip |= InsideRenderPass(cb_state, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
 
-    if (cb_state.state == CB_INVALID_COMPLETE || cb_state.state == CB_INVALID_INCOMPLETE) {
+    if (cb_state.state == CbState::InvalidComplete || cb_state.state == CbState::InvalidIncomplete) {
         skip |= ReportInvalidCommandBuffer(cb_state, "vkEndCommandBuffer()");
-    } else if (CB_RECORDING != cb_state.state) {
+    } else if (CbState::Recording != cb_state.state) {
         skip |= LogError(
             commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00059",
             "vkEndCommandBuffer(): Cannot call End on %s when not in the RECORDING state. Must first call vkBeginCommandBuffer().",

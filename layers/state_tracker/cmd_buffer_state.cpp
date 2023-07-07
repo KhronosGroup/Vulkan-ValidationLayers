@@ -130,7 +130,7 @@ void CMD_BUFFER_STATE::ResetCBState() {
     hasRenderPassInstance = false;
     suspendsRenderPassInstance = false;
     resumesRenderPassInstance = false;
-    state = CB_NEW;
+    state = CbState::New;
     command_count = 0;
     submitCount = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
@@ -295,10 +295,10 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
             }
         }
         if (found_invalid) {
-            if (state == CB_RECORDING) {
-                state = CB_INVALID_INCOMPLETE;
-            } else if (state == CB_RECORDED) {
-                state = CB_INVALID_COMPLETE;
+            if (state == CbState::Recording) {
+                state = CbState::InvalidIncomplete;
+            } else if (state == CbState::Recorded) {
+                state = CbState::InvalidComplete;
             }
             broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
         }
@@ -834,14 +834,14 @@ void CMD_BUFFER_STATE::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
 }
 
 void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
-    if (CB_RECORDED == state || CB_INVALID_COMPLETE == state) {
+    if (CbState::Recorded == state || CbState::InvalidComplete == state) {
         Reset();
     }
 
     descriptorset_cache.clear();
 
     // Set updated state here in case implicit reset occurs above
-    state = CB_RECORDING;
+    state = CbState::Recording;
     beginInfo = *pBeginInfo;
     if (beginInfo.pInheritanceInfo && (createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         inheritanceInfo = *(beginInfo.pInheritanceInfo);
@@ -909,7 +909,7 @@ void CMD_BUFFER_STATE::End(VkResult result) {
     // Cached validation is specific to a specific recording of a specific command buffer.
     descriptorset_cache.clear();
     if (VK_SUCCESS == result) {
-        state = CB_RECORDED;
+        state = CbState::Recorded;
     }
 }
 
