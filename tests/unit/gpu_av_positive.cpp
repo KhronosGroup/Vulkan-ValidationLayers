@@ -393,3 +393,140 @@ TEST_F(PositiveGpuAssistedLayer, GetCounterFromSignaledSemaphoreAfterSubmit) {
     std::uint64_t counter = 0;
     ASSERT_VK_SUCCESS(vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
 }
+
+TEST_F(PositiveGpuAssistedLayer, MutableBuffer) {
+    TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    if (IsPlatform(kShieldTVb)) {
+        GTEST_SKIP() << "This test should not run on Shield TV";
+    }
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
+    if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
+        GTEST_SKIP() << "mutableDescriptorType feature not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPhysicalDeviceProperties properties = {};
+    vk::GetPhysicalDeviceProperties(gpu(), &properties);
+    if (properties.limits.maxBoundDescriptorSets < 8) {
+        GTEST_SKIP() << "maxBoundDescriptorSets is too low";
+    }
+
+    char const *csSource = R"glsl(
+        #version 450
+        layout(constant_id=0) const uint _const_2_0 = 1;
+        layout(constant_id=1) const uint _const_3_0 = 1;
+        layout(std430, binding=0) readonly restrict buffer _SrcBuf_0_0 {
+            layout(offset=0) uint src[256];
+        };
+        layout(std430, binding=1) writeonly restrict buffer _DstBuf_1_0 {
+            layout(offset=0) uint dst[2][256];
+        };
+        layout (local_size_x = 256, local_size_y = 1) in;
+
+        void main() {
+            uint word = src[_const_2_0 + gl_GlobalInvocationID.x];
+            word = (word & 0xFF00FF00u) >> 8 |
+                (word & 0x00FF00FFu) << 8;
+            dst[0][_const_3_0 + gl_GlobalInvocationID.x] = word;
+            dst[1][_const_3_0 + gl_GlobalInvocationID.x] = word;
+        }
+    )glsl";
+
+    VkDescriptorType desc_types[2] = {
+        VK_DESCRIPTOR_TYPE_SAMPLER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    };
+
+    VkMutableDescriptorTypeListEXT lists[3] = {};
+    lists[1].descriptorTypeCount = 2;
+    lists[1].pDescriptorTypes = desc_types;
+
+    auto mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
+    mdtci.mutableDescriptorTypeListCount = 3;
+    mdtci.pMutableDescriptorTypeLists = lists;
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    OneOffDescriptorSet descriptor_set_0(m_device,
+                                         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                          {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
+                                         0, &mdtci);
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set_0.layout_});
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    auto pipeline_info = LvlInitStruct<VkComputePipelineCreateInfo>();
+    pipeline_info.flags = 0;
+    pipeline_info.layout = pipeline_layout.handle();
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage = cs.GetStageCreateInfo();
+
+    VkPipeline pipeline;
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
+
+    VkBufferObj buffer_0;
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_ci.size = 262144;
+    buffer_0.init(*m_device, buffer_ci);
+    VkBufferObj buffer_1;
+    buffer_1.init(*m_device, buffer_ci);
+
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = descriptor_set_0.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    VkDescriptorBufferInfo buffer_info_0 = {buffer_0.handle(), 0, 1024};
+    descriptor_write.pBufferInfo = &buffer_info_0;
+
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+
+    auto descriptor_copy = LvlInitStruct<VkCopyDescriptorSet>();
+    // copy the storage descriptor to the first mutable descriptor
+    descriptor_copy.srcSet = descriptor_set_0.set_;
+    descriptor_copy.srcBinding = 0;
+    descriptor_copy.dstSet = descriptor_set_0.set_;
+    descriptor_copy.dstBinding = 1;
+    descriptor_copy.dstArrayElement = 1;
+    descriptor_copy.descriptorCount = 1;
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &descriptor_copy);
+
+    // copy the first mutable descriptor to the second storage desc
+    descriptor_copy.srcBinding = 1;
+    descriptor_copy.srcArrayElement = 1;
+    descriptor_copy.dstBinding = 1;
+    descriptor_copy.dstArrayElement = 0;
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &descriptor_copy);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set_0.set_, 0, nullptr);
+
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyPipeline(m_device->device(), pipeline, nullptr);
+}
