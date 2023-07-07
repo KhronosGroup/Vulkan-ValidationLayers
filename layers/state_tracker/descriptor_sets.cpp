@@ -531,7 +531,12 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet
         auto &src = *src_iter;
         auto &dst = *dst_iter;
         if (src_iter.updated()) {
-            dst.CopyUpdate(*this, *state_data_, src, src_iter.CurrentBinding().IsBindless(), src_iter.CurrentBinding().type);
+            auto type = src_iter.CurrentBinding().type;
+            if (type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+                const auto &mutable_src = static_cast<const MutableDescriptor &>(src);
+                type = mutable_src.ActiveType();
+            }
+            dst.CopyUpdate(*this, *state_data_, src, src_iter.CurrentBinding().IsBindless(), type);
             some_update_ = true;
             ++change_count_;
             dst_iter.updated(true);
@@ -1048,6 +1053,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, co
             default:
                 break;
         }
+        src_size = mutable_src.GetBufferSize();
     }
     SetDescriptorType(src_type, src_size);
 }
