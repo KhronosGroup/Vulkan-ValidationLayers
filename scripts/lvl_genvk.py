@@ -104,7 +104,7 @@ def makeGenOpts(args):
         ]
 
     genOpts['stateless_validation_helper.cpp'] = [
-          ParameterValidationOutputGenerator,
+          StatelessValidationHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'stateless_validation_helper.cpp',
             valid_usage_path  = args.scripts)
@@ -485,7 +485,6 @@ if __name__ == '__main__':
     from generators.base_generator import BaseGeneratorOptions
 
     from generators.thread_safety_generator import ThreadSafetyOutputGenerator
-    from generators.parameter_validation_generator import ParameterValidationOutputGenerator
     from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
     from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator

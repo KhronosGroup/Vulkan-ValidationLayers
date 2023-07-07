@@ -21,7 +21,7 @@
 import sys
 import os
 import re
-from generators.generator_utils import (fileIsGeneratedWarning, getFormatedLength)
+from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Struct, Member)
 from generators.base_generator import BaseGenerator
 
@@ -36,6 +36,18 @@ def needSafeStruct(struct: Struct) -> bool:
         if member.pointer:
             return True
     return False
+
+# Takes the `len` or `altlen` found in the XML and formats it in C++ friendly way
+def getFormatedLength(length: str):
+    result = None
+    if length is not None and length != 'null-terminated':
+        # For string arrays, 'len' can look like 'count,null-terminated', indicating that we
+        # have a null terminated array of strings.  We strip the null-terminated from the
+        # 'len' field and only return the parameter specifying the string count
+        result = length if 'null-terminated' not in length else length.split(',')[0]
+        # Spec has now notation for len attributes, using :: instead of platform specific pointer symbol
+        result = result.replace('::', '->')
+    return result
 
 class SafeStructOutputGenerator(BaseGenerator):
     def __init__(self,
@@ -155,12 +167,13 @@ char *SafeStringCopy(const char *in_string);
                             out.append(f'    safe_{member.type} {member.name};\n')
                         continue
 
-                initialize = '{}' if member.pointer and canInitialize else ''
-                if member.pointer and canInitialize:
-                    canInitialize = not struct.union # Prevents union from initializing agian
+                explicitInitialize = member.pointer  and 'PFN_' not in member.type and canInitialize
+                initialize = '{}' if explicitInitialize else ''
+                # Prevents union from initializing agian
+                canInitialize = not struct.union if explicitInitialize else canInitialize
 
                 # TOOD - don't need formatted helper
-                if (getFormatedLength(member.length) is not None) and self.containsObjectHandle(member):
+                if (getFormatedLength(member.length) is not None) and self.containsObjectHandle(member) and not member.staticArray:
                     out.append(f'    {member.type}* {member.name}{initialize};\n')
                 else:
                     out.append(f'{member.cDeclaration}{initialize};\n')
@@ -905,14 +918,13 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
 
             copy_pnext = ''
             copy_strings = ''
-
             for member in struct.members:
                 m_type = member.type
                 if member.name == 'pNext':
                     copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext, copy_state);\n'
                 if member.type in self.vk.structs and needSafeStruct(self.vk.structs[member.type]):
                     m_type = f'safe_{member.type}'
-                if member.pointer and 'safe_' not in m_type and not self.typeContainsObjectHandle(member.type, False):
+                if member.pointer and 'safe_' not in m_type and 'PFN_' not in member.type and not self.typeContainsObjectHandle(member.type, False):
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
                         if member.name != 'pNext':
@@ -985,7 +997,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                                 destruct_txt += f'    if ({member.name})\n'
                                 destruct_txt += f'        delete[] {member.name};\n'
                 elif member.staticArray or member.length is not None:
-                    if member.length is None:
+                    if member.staticArray:
                         construct_txt += f'    for (uint32_t i = 0; i < {member.staticArray[0]}; ++i) {{\n'
                         construct_txt += f'        {member.name}[i] = in_struct->{member.name}[i];\n'
                         construct_txt += '    }\n'
@@ -1008,7 +1020,7 @@ vl_concurrent_unordered_map<const safe_VkAccelerationStructureGeometryKHR*, ASGe
                             construct_txt += f'            {member.name}[i] = {array_element};\n'
                         construct_txt += '        }\n'
                         construct_txt += '    }\n'
-                elif member.pointer:
+                elif member.pointer and 'PFN_' not in member.type:
                     default_init_list += f'\n    {member.name}(nullptr),'
                     init_list += f'\n    {member.name}(nullptr),'
                     init_func_txt += f'    {member.name} = nullptr;\n'

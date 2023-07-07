@@ -81,18 +81,25 @@ class CommandParam:
     type: str
     alias: str
 
-    pointer: bool # type contains a pointer
-    const: bool # type contains 'const'
     noAutoValidity: bool
 
+    const: bool # type contains 'const'
     length: str # the known length of pointer, will never be 'null-terminated'
     nullTerminated: bool # If a UTF-8 string that will be null-terminated
+    pointer: bool # type contains a pointer
+    staticArray: List[str]
 
     optional: bool
     optionalPointer: bool # if type contains a pointer, is the pointer value optional
 
     externSync: bool
     externSyncPointer: List[str] # if type contains a pointer, might only specific members modified
+
+    # C string of member, example:
+    #   - const void* pNext
+    #   - VkFormat format
+    #   - VkStructureType sType
+    cDeclaration: str
 
 class Queues(IntFlag):
     TRANSFER = auto()       # VK_QUEUE_TRANSFER_BIT
@@ -209,16 +216,20 @@ class Member:
     """<member>"""
     name: str
     type: str
-    externSync: bool
-    optional: bool
-    optionalPointer: bool # if type contains a pointer, is the pointer value optional
+
     noAutoValidity: bool
     limitType: str # ex. 'max', 'bitmask', 'bits', 'min,mul'
 
+    const: bool # type contains 'const'
     length: str # the known length of pointer, will never be 'null-terminated'
     nullTerminated: bool # If a UTF-8 string that will be null-terminated
     pointer: bool # type contains a pointer
     staticArray: List[str]
+
+    optional: bool
+    optionalPointer: bool # if type contains a pointer, is the pointer value optional
+
+    externSync: bool
 
     # C string of member, example:
     #   - const void* pNext
