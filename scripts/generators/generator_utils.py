@@ -21,18 +21,6 @@
 def fileIsGeneratedWarning(file: str) -> str:
     return f'// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n// See {file} for modifications\n'
 
-# Takes the `len` or `altlen` found in the XML and formats it in C++ friendly way
-def getFormatedLength(length: str):
-    result = None
-    if length is not None and length != 'null-terminated':
-        # For string arrays, 'len' can look like 'count,null-terminated', indicating that we
-        # have a null terminated array of strings.  We strip the null-terminated from the
-        # 'len' field and only return the parameter specifying the string count
-        result = length if 'null-terminated' not in length else length.split(',')[0]
-        # Spec has now notation for len attributes, using :: instead of platform specific pointer symbol
-        result = result.replace('::', '->')
-    return result
-
 # Will do a sanity check the VUID exists
 def getVUID(valid_vuids: set, vuid: str, quotes: bool = True) -> str:
     if vuid not in valid_vuids:

@@ -405,8 +405,9 @@ class BaseGenerator(OutputGenerator):
             paramAlias = param.get('alias')
 
             cdecl = self.makeCParamDecl(param, 0)
-            paramPointer = '*' in cdecl
+            pointer = '*' in cdecl or paramType.startswith('PFN_')
             paramConst = 'const' in cdecl
+            staticArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
 
             paramNoautovalidity = boolGet(param, 'noautovalidity')
 
@@ -419,23 +420,25 @@ class BaseGenerator(OutputGenerator):
                 length = length.replace(',null-terminated', '') if 'null-terminated' in length else length
                 length = None if length == 'null-terminated' else length
 
+            if staticArray and not length:
+                length = ','.join(staticArray)
+
             # See Member::optional code for details of this
             optionalValues = splitIfGet(param, 'optional')
-            paramOptional = optionalValues is not None and optionalValues[0].lower() == "true"
-            paramOptionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
+            optional = optionalValues is not None and optionalValues[0].lower() == "true"
+            optionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
 
             # externsync will be 'true' or expression
             # if expression, it should be same as 'true'
-            paramExternsync = boolGet(param, 'externsync')
-            paramExternSyncPointer = None if paramExternsync else splitIfGet(param, 'externsync')
-            if not paramExternsync and paramExternSyncPointer is not None:
-                paramExternsync = True
+            externSync = boolGet(param, 'externsync')
+            externSyncPointer = None if externSync else splitIfGet(param, 'externsync')
+            if not externSync and externSyncPointer is not None:
+                externSync = True
 
-            params.append(CommandParam(paramName, paramType, paramAlias,
-                                       paramPointer, paramConst, paramNoautovalidity,
-                                       length, nullTerminated,
-                                       paramOptional, paramOptionalPointer,
-                                       paramExternsync, paramExternSyncPointer))
+            params.append(CommandParam(paramName, paramType, paramAlias, paramNoautovalidity,
+                                       paramConst, length, nullTerminated, pointer, staticArray,
+                                       optional, optionalPointer,
+                                       externSync, externSyncPointer, cdecl))
 
         attrib = cmdinfo.elem.attrib
         alias = attrib.get('alias')
@@ -585,9 +588,13 @@ class BaseGenerator(OutputGenerator):
                     length = None if length == 'null-terminated' else length
 
                 cdecl = self.makeCParamDecl(member, 0)
-                pointer = '*' in cdecl
+                pointer = '*' in cdecl or type.startswith('PFN_')
+                const = 'const' in cdecl
                 # Some structs like VkTransformMatrixKHR have a 2D array
                 staticArray = [x[:-1] for x in cdecl.split('[') if x.endswith(']')]
+
+                if staticArray and not length:
+                    length = ','.join(staticArray)
 
                 # if a pointer, this can be a something like:
                 #     optional="true,false" for ppGeometries
@@ -598,10 +605,10 @@ class BaseGenerator(OutputGenerator):
                 optional = optionalValues is not None and optionalValues[0].lower() == "true"
                 optionalPointer = optionalValues is not None and len(optionalValues) > 1 and optionalValues[1].lower() == "true"
 
-                members.append(Member(name, type, externSync, optional, optionalPointer,
-                                      noautovalidity,limittype,
-                                      length, nullTerminated, pointer, staticArray,
-                                      cdecl))
+                members.append(Member(name, type, noautovalidity, limittype,
+                                      const, length, nullTerminated, pointer, staticArray,
+                                      optional, optionalPointer,
+                                      externSync, cdecl))
 
             self.vk.structs[typeName] = Struct(typeName, extension, self.currentVersion, protect, members,
                                                union, returnedOnly,
