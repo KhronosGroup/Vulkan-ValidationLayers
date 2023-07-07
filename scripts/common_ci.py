@@ -257,15 +257,17 @@ def RunVVLTests():
 
     lvt_cmd = os.path.join(TEST_INSTALL_DIR, 'bin', 'vk_layer_validation_tests')
 
-    # The following test fail with thread sanitization enabled.
+    # The following test(s) fail with thread sanitization enabled.
     failing_tsan_tests = '-VkPositiveLayerTest.QueueThreading'
     failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedExplicitReset'
     failing_tsan_tests += ':NegativeCommand.SecondaryCommandBufferRerecordedNoReset'
     failing_tsan_tests += ':NegativeSyncVal.CopyOptimalImageHazards'
     failing_tsan_tests += ':NegativeViewportInheritance.BasicUsage'
     failing_tsan_tests += ':NegativeViewportInheritance.MultiViewport'
-    # NOTE: This test fails sporadically. Make sure to run multiple times.
+    # NOTE: These test(s) fails sporadically.
+    # These need extra care to prevent a regression in the future.
     failing_tsan_tests += ':PositiveSyncObject.WaitTimelineSemThreadRace'
+    failing_tsan_tests += ':PositiveQuery.ResetQueryPoolFromDifferentCB'
 
     RunShellCmd(lvt_cmd + f" --gtest_filter={failing_tsan_tests}", env=lvt_env)
 
