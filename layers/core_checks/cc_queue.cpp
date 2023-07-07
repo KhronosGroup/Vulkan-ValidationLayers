@@ -487,17 +487,17 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE &cb_state, co
 
     // Validate that cmd buffers have been updated
     switch (cb_state.state) {
-        case CB_INVALID_INCOMPLETE:
-        case CB_INVALID_COMPLETE:
+        case CbState::InvalidIncomplete:
+        case CbState::InvalidComplete:
             skip |= ReportInvalidCommandBuffer(cb_state, call_source);
             break;
 
-        case CB_NEW:
+        case CbState::New:
             skip |= LogError(cb_state.commandBuffer(), vu_id, "%s used in the call to %s is unrecorded and contains no commands.",
                              report_data->FormatHandle(cb_state.commandBuffer()).c_str(), call_source);
             break;
 
-        case CB_RECORDING:
+        case CbState::Recording:
             skip |= LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_NoEndCommandBuffer,
                              "You must call vkEndCommandBuffer() on %s before this call to %s!",
                              report_data->FormatHandle(cb_state.commandBuffer()).c_str(), call_source);
@@ -557,7 +557,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                                  report_data->FormatHandle(sub_cb->primaryCommandBuffer).c_str());
             }
 
-            if (sub_cb->state != CB_RECORDED) {
+            if (sub_cb->state != CbState::Recorded) {
                 const char *const finished_cb_vuid = (loc.function == Func::vkQueueSubmit)
                                                          ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
                                                          : "VUID-vkQueueSubmit2-commandBuffer-03876";
