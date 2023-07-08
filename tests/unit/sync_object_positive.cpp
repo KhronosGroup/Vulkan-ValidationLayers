@@ -14,9 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-#include <array>
-#include <thread>
-
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <poll.h>
 #endif

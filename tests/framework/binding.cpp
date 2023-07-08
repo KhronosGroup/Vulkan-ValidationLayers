@@ -19,11 +19,7 @@
 #include "binding.h"
 
 #include <string.h>  // memset(), memcmp()
-#include <algorithm>
 #include <cassert>
-#include <iostream>
-#include <vector>
-
 #include "generated/vk_typemap_helper.h"
 #include "generated/vk_format_utils.h"
 

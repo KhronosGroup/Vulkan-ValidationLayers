@@ -17,7 +17,6 @@
  */
 
 #include "layer_options.h"
-#include "xxhash.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
 // part of the VVL but not the layer utils library.

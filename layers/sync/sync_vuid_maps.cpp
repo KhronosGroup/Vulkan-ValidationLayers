@@ -16,14 +16,11 @@
  * limitations under the License.
  */
 #include "sync/sync_vuid_maps.h"
-#include "sync/sync_utils.h"
 #include "error_message/core_error_location.h"
 #include "core_checks/core_validation.h"
 #include "generated/enum_flag_bits.h"
 
 #include <cassert>
-#include <array>
-#include <vector>
 
 namespace sync_vuid_maps {
 using core_error::Entry;

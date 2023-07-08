@@ -19,11 +19,8 @@
 
 #include "render.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <utility>
-#include <vector>
 
 #include "generated/vk_format_utils.h"
 #include "generated/vk_extension_helper.h"

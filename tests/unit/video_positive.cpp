@@ -10,10 +10,6 @@
  */
 
 #include "../framework/video_objects.h"
-#include "generated/vk_extension_helper.h"
-
-#include <algorithm>
-#include <chrono>
 
 class VkPositiveVideoLayerTest : public VkVideoLayerTest {};
 

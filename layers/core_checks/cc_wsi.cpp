@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <assert.h>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "generated/vk_enum_string_helper.h"

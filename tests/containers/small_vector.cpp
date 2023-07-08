@@ -13,11 +13,6 @@
 
 #include "../framework/test_common.h"
 
-#include "containers/custom_containers.h"
-
-#include <algorithm>
-#include <limits>
-
 template <typename T, typename U>
 bool HaveSameElementsUpTo(const T& l1, const U& l2, size_t n) {
     for (size_t i = 0; i < n; ++i) {
