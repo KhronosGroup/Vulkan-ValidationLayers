@@ -13,7 +13,6 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "error_message/validation_error_enums.h"
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"

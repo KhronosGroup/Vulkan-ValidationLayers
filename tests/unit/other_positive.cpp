@@ -15,15 +15,7 @@
 #include "generated/vk_safe_struct.h"
 #include "generated/vk_extension_helper.h"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
 #include <cstdlib>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "utils/cast_utils.h"
 
 TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter with stateless validation disabled");

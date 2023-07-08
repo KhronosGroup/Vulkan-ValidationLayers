@@ -14,10 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-
 void GraphicsLibraryTest::InitBasicGraphicsLibrary(void *pNextFeatures) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());

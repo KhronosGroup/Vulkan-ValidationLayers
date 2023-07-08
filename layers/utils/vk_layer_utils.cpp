@@ -18,11 +18,8 @@
 #include "vk_layer_utils.h"
 
 #include <string.h>
-#include <string>
-#include <vector>
 
 #include "vulkan/vulkan.h"
-#include "vk_layer_config.h"
 
 static const uint8_t kUtF8OneByteCode = 0xC0;
 static const uint8_t kUtF8OneByteMask = 0xE0;

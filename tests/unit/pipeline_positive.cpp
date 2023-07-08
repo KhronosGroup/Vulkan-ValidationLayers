@@ -14,15 +14,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "generated/vk_extension_helper.h"
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "utils/cast_utils.h"
-
 TEST_F(PositivePipeline, ComplexTypes) {
     TEST_DESCRIPTION("Smoke test for complex types across VS/FS boundary");
     ASSERT_NO_FATAL_FAILURE(Init());

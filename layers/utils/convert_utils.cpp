@@ -118,7 +118,6 @@ static safe_VkSubpassDependency2 ToV2KHR(const VkSubpassDependency& in_struct, i
 }
 
 safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info) {
-    using std::vector;
     safe_VkRenderPassCreateInfo2 out_struct;
     const auto multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(create_info.pNext);
     const auto* input_attachment_aspect_info = LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(create_info.pNext);
@@ -156,7 +155,7 @@ safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRender
     }
 
     // translate VkRenderPassInputAttachmentAspectCreateInfo into vector
-    vector<vector<VkImageAspectFlags>> input_attachment_aspect_masks(out_struct.subpassCount);
+    std::vector<std::vector<VkImageAspectFlags>> input_attachment_aspect_masks(out_struct.subpassCount);
     // set defaults
     for (uint32_t si = 0; si < out_struct.subpassCount; ++si) {
         if (create_info.pSubpasses) {
