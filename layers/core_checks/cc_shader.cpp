@@ -1198,7 +1198,7 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
                                                    VkPipelineShaderStageCreateFlags flags) const {
     bool skip = false;
 
@@ -1210,12 +1210,18 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE &mo
             "but the VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::subgroupSizeControl feature is not enabled.");
     }
 
-    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0 &&
-        !enabled_features.core13.computeFullSubgroups) {
-        skip |= LogError(
-            module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
-            "VkPipelineShaderStageCreateInfo flags contain VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the "
-            "VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::computeFullSubgroups feature is not enabled");
+    if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
+        if (!enabled_features.core13.computeFullSubgroups) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-02785",
+                             "VkPipelineShaderStageCreateInfo flags contain "
+                             "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the "
+                             "VkPhysicalDeviceSubgroupSizeControlFeaturesEXT::computeFullSubgroups feature is not enabled");
+        } else if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-flags-08988",
+                             "VkPipelineShaderStageCreateInfo flags contain "
+                             "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
+                             string_VkShaderStageFlagBits(stage));
+        }
     }
 
     return skip;
@@ -2691,7 +2697,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         skip |= ValidateShaderResolveQCOM(module_state, stage, pipeline);
     }
     if (IsExtEnabled(device_extensions.vk_ext_subgroup_size_control)) {
-        skip |= ValidateShaderSubgroupSizeControl(module_state, create_info->flags);
+        skip |= ValidateShaderSubgroupSizeControl(module_state, stage, create_info->flags);
     }
     if (IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) && IsExtEnabled(device_extensions.vk_khr_multiview)) {
         if (stage == VK_SHADER_STAGE_FRAGMENT_BIT &&
