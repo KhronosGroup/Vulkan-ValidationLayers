@@ -21,7 +21,6 @@
 # all Vulkan  functions. The resultant factory layer allows rapid development of
 # layers and interceptors.
 
-import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Command)
@@ -120,11 +119,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'VK_EXT_tooling_info'
     ]
 
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
     def getApiFunctionType(self, command: Command) -> str:
             if command.name in [
@@ -737,8 +733,6 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
     }
 }
 
-static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device);
-
 void OutputLayerStatusInfo(ValidationObject *context) {
     std::string list_of_enables;
     std::string list_of_disables;
@@ -1102,7 +1096,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->InitObjectDispatchVectors();
 
     DeviceExtensionWhitelist(device_interceptor, pCreateInfo, *pDevice);
-    DeviceExtensionWarnlist(device_interceptor, pCreateInfo, *pDevice);
 
     return result;
 }
@@ -1515,22 +1508,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
 }
 ''')
 
-        out.append('static const std::set<std::string> kDeviceWarnExtensionNames {\n')
-        for ext in self.warnExtensions:
-            out.append(f'    "{ext}",\n')
-        out.append('};\n')
-        out.append('''
-static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        // Check for recognized device extensions
-        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceWarnExtensionNames)) {
-            layer_data->LogWarning(layer_data->device, kVUIDUndefined,
-                    "Device Extension %s validation support is incomplete, incorrect results are possible.",
-                    pCreateInfo->ppEnabledExtensionNames[i]);
-        }
-    }
-}\n
-''')
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions and x.name not in self.manual_functions]:
             out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
             prototype = command.cPrototype.replace('VKAPI_CALL vk', 'VKAPI_CALL ').replace(');', ') {\n')

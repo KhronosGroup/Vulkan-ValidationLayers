@@ -16,58 +16,62 @@
 # limitations under the License.
 
 import argparse
-import pdb
 import sys
-import time
 import os
+from xml.etree import ElementTree
 
-# Simple timer functions
-startTime = None
+def RunGenerator(api: str, registry: str, grammar: str, directory: str, target: str):
 
-def startTimer(timeit):
-    global startTime
-    if timeit:
-        startTime = time.process_time()
+    # These live in the Vulkan-Docs repo, but are pulled in via the
+    # Vulkan-Headers/registry folder
+    # At runtime we inject python path to find these helper scripts
+    scripts = os.path.dirname(registry)
+    scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
+    registry_headers_path = os.path.join(scripts_directory_path, scripts)
+    sys.path.insert(0, registry_headers_path)
+    from reg import Registry
 
-def endTimer(timeit, msg):
-    global startTime
-    if timeit:
-        endTime = time.process_time()
-        write(msg, endTime - startTime, file=sys.stderr)
-        startTime = None
-
-# Turn a list of strings into a regexp string matching exactly those strings
-def makeREstring(list, default = None):
-    if len(list) > 0 or default is None:
-        return '^(' + '|'.join(list) + ')$'
-    else:
-        return default
-
-# Returns a directory of [ generator function, generator options ] indexed
-# by specified short names. The generator options incorporate the following
-# parameters:
-#
-# args is an parsed argument object; see below for the fields that are used.
-def makeGenOpts(args):
-    global genOpts
-    genOpts = {}
+    from generators.base_generator import BaseGeneratorOptions
+    from generators.thread_safety_generator import ThreadSafetyOutputGenerator
+    from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
+    from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
+    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
+    from generators.extension_helper_generator import ExtensionHelperOutputGenerator
+    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
+    from generators.layer_chassis_generator import LayerChassisOutputGenerator
+    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
+    from generators.function_pointers_generator import FunctionPointersOutputGenerator
+    from generators.best_practices_generator import BestPracticesOutputGenerator
+    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
+    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
+    from generators.command_validation_generator import CommandValidationOutputGenerator
+    from generators.format_utils_generator import FormatUtilsOutputGenerator
+    from generators.dynamic_state_generator import DynamicStateOutputGenerator
+    from generators.sync_validation_generator import SyncValidationOutputGenerator
+    from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
+    from generators.typemap_helper_generator import TypemapHelperOutputGenerator
+    from generators.object_types_generator import ObjectTypesOutputGenerator
+    from generators.safe_struct_generator import SafeStructOutputGenerator
+    from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
+    from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
+    from generators.spirv_tool_commit_id_generator import SpirvToolCommitIdOutputGenerator
 
     # Allow downstream users to merge other (e.g. the main "vulkan") API into
     # the API for which code is generated
     mergeApiNames = None
 
-    # Extensions to warn about, if enabled(list of extensions)
-    warnExtensions = args.warnExtensions
-
     # Output target directory
     from generators.base_generator import SetOutputDirectory
     from generators.base_generator import SetTargetApiName
-    SetOutputDirectory(args.directory)
-    SetTargetApiName(args.api)
+    SetOutputDirectory(directory)
+    SetTargetApiName(api)
+
+    valid_usage_file = os.path.join(scripts, 'validusage.json')
+
+    genOpts = {}
 
     # ValidationLayer Generators
     # Options for thread safety header code-generation
-
     genOpts['thread_safety_counter_definitions.h'] = [
           ThreadSafetyOutputGenerator,
           BaseGeneratorOptions(
@@ -107,14 +111,14 @@ def makeGenOpts(args):
           StatelessValidationHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'stateless_validation_helper.cpp',
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
           ]
 
     genOpts['stateless_validation_helper.h'] = [
           StatelessValidationHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'stateless_validation_helper.h',
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
           ]
 
     genOpts['enum_flag_bits.h'] = [
@@ -143,7 +147,7 @@ def makeGenOpts(args):
           BaseGeneratorOptions(
             filename          = 'object_tracker.cpp',
             mergeApiNames     = mergeApiNames,
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
         ]
 
     genOpts['object_tracker.h'] = [
@@ -151,7 +155,7 @@ def makeGenOpts(args):
           BaseGeneratorOptions(
             filename          = 'object_tracker.h',
             mergeApiNames     = mergeApiNames,
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
         ]
 
     genOpts['vk_dispatch_table_helper.h'] = [
@@ -261,7 +265,6 @@ def makeGenOpts(args):
           BaseGeneratorOptions(
             filename          = 'chassis.h',
             mergeApiNames     = mergeApiNames,
-            warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_header')
         ]
 
@@ -269,7 +272,6 @@ def makeGenOpts(args):
           LayerChassisOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'chassis.cpp',
-            warnExtensions    = warnExtensions,
             helper_file_type  = 'layer_chassis_source')
         ]
 
@@ -334,7 +336,7 @@ def makeGenOpts(args):
           SpirvGrammarHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'spirv_grammar_helper.cpp',
-            grammar           = args.grammar)
+            grammar           = grammar)
         ]
 
     # Options for spirv_grammar_helper code-generated header
@@ -343,7 +345,13 @@ def makeGenOpts(args):
           SpirvGrammarHelperOutputGenerator,
           BaseGeneratorOptions(
             filename          = 'spirv_grammar_helper.h',
-            grammar           = args.grammar)
+            grammar           = grammar)
+        ]
+
+    genOpts['spirv_tools_commit_id.h'] = [
+          SpirvToolCommitIdOutputGenerator,
+          BaseGeneratorOptions(
+            filename          = 'spirv_tools_commit_id.h')
         ]
 
     genOpts['command_validation.cpp'] = [
@@ -351,7 +359,7 @@ def makeGenOpts(args):
           BaseGeneratorOptions(
             filename          = 'command_validation.cpp',
             mergeApiNames     = mergeApiNames,
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
         ]
 
     genOpts['command_validation.h'] = [
@@ -359,7 +367,7 @@ def makeGenOpts(args):
           BaseGeneratorOptions(
             filename          = 'command_validation.h',
             mergeApiNames     = mergeApiNames,
-            valid_usage_path  = args.scripts)
+            valid_usage_file  = valid_usage_file)
         ]
 
     genOpts['dynamic_state_helper.cpp'] = [
@@ -390,36 +398,31 @@ def makeGenOpts(args):
             mergeApiNames     = mergeApiNames)
         ]
 
-# Generate a target based on the options in the matching genOpts{} object.
-# This is encapsulated in a function so it can be profiled and/or timed.
-# The args parameter is an parsed argument object containing the following
-# fields that are used:
-#   target - target to generate
-#   directory - directory to generate it in
-#   interfaces
-def genTarget(args):
-    global genOpts
+    if (target not in genOpts.keys()):
+        print(f'ERROR: No generator options for unknown target: {target}', file=sys.stderr)
+        return
 
-    # Create generator options with parameters specified on command line
-    makeGenOpts(args)
+    createGenerator = genOpts[target][0]
+    gen = createGenerator()
 
-    if (args.target in genOpts.keys()):
-        createGenerator = genOpts[args.target][0]
-        options = genOpts[args.target][1]
+    options = genOpts[target][1]
 
-        if not args.quiet:
-            write('* Building', options.filename, file=sys.stderr)
+    # Create the registry object with the specified generator and generator
+    # options. The options are set before XML loading as they may affect it.
+    reg = Registry(gen, options)
 
-        gen = createGenerator(errFile=errWarn,
-                              warnFile=errWarn,
-                              diagFile=diag)
-        if not args.quiet:
-            write('* Generated', options.filename, file=sys.stderr)
-        return (gen, options)
-    else:
-        write('No generator options for unknown target:',
-              args.target, file=sys.stderr)
-        return None
+    # Parse the specified registry XML into an ElementTree object
+    tree = ElementTree.parse(registry)
+
+    # Filter out non-Vulkan extensions
+    if api == 'vulkan':
+        [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and options.apiname not in sup.split(',')]
+
+    # Load the XML tree into the registry object
+    reg.loadElementTree(tree)
+
+    # Finally, use the output generator to create the requested target
+    reg.apiGen()
 
 # -extension name
 # For both, "name" may be a single name, or a space-separated list
@@ -431,126 +434,18 @@ if __name__ == '__main__':
                         default='vulkan',
                         choices=['vulkan'],
                         help='Specify API name to generate')
-    parser.add_argument('-warnExtensions', action='append',
-                        default=[],
-                        help='Specify an extension with partial support. Warning will be log if it is enabled')
-    parser.add_argument('-debug', action='store_true',
-                        help='Enable debugging')
-    parser.add_argument('-dump', action='store_true',
-                        help='Enable dump to stderr')
-    parser.add_argument('-diagfile', action='store',
-                        default=None,
-                        help='Write diagnostics to specified file')
-    parser.add_argument('-errfile', action='store',
-                        default=None,
-                        help='Write errors and warnings to specified file instead of stderr')
     parser.add_argument('-registry', action='store',
                         default='vk.xml',
                         help='Use specified registry file instead of vk.xml')
     parser.add_argument('-grammar', action='store',
                         default='spirv.core.grammar.json',
                         help='Use specified grammar file instead of spirv.core.grammar.json')
-    parser.add_argument('-time', action='store_true',
-                        help='Enable timing')
-    parser.add_argument('-validate', action='store_true',
-                        help='Enable XML group validation')
     parser.add_argument('-o', action='store', dest='directory',
                         default='.',
                         help='Create target and related files in specified directory')
     parser.add_argument('target', metavar='target', nargs='?',
                         help='Specify target')
-    parser.add_argument('-quiet', action='store_true', default=True,
-                        help='Suppress script output during normal execution.')
-    parser.add_argument('-verbose', action='store_false', dest='quiet', default=True,
-                        help='Enable script output during normal execution.')
-
-    # This argument tells us where to load the script from the Vulkan-Headers registry
-    parser.add_argument('-scripts', action='store',
-                        help='Find additional scripts in this directory')
 
     args = parser.parse_args()
 
-    # default scripts path to be same as registry
-    if not args.scripts:
-        args.scripts = os.path.dirname(args.registry)
-
-    scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
-    registry_headers_path = os.path.join(scripts_directory_path, args.scripts)
-    sys.path.insert(0, registry_headers_path)
-
-    from reg import *
-    from generator import write
-
-    # ValidationLayer Generator Modifications
-    from generators.base_generator import BaseGeneratorOptions
-
-    from generators.thread_safety_generator import ThreadSafetyOutputGenerator
-    from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
-    from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
-    from generators.dispatch_table_helper_generator import DispatchTableHelperOutputGenerator
-    from generators.extension_helper_generator import ExtensionHelperOutputGenerator
-    from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
-    from generators.layer_chassis_generator import LayerChassisOutputGenerator
-    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
-    from generators.function_pointers_generator import FunctionPointersOutputGenerator
-    from generators.best_practices_generator import BestPracticesOutputGenerator
-    from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
-    from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
-    from generators.command_validation_generator import CommandValidationOutputGenerator
-    from generators.format_utils_generator import FormatUtilsOutputGenerator
-    from generators.dynamic_state_generator import DynamicStateOutputGenerator
-    from generators.sync_validation_generator import SyncValidationOutputGenerator
-    from generators.enum_string_helper_generator import EnumStringHelperOutputGenerator
-    from generators.typemap_helper_generator import TypemapHelperOutputGenerator
-    from generators.object_types_generator import ObjectTypesOutputGenerator
-    from generators.safe_struct_generator import SafeStructOutputGenerator
-    from generators.enum_flag_bits_generator import EnumFlagBitsOutputGenerator
-    from generators.valid_enum_values_generator import ValidEnumValuesOutputGenerator
-
-    # create error/warning & diagnostic files
-    if (args.errfile):
-        errWarn = open(args.errfile, 'w', encoding='utf-8')
-    else:
-        errWarn = sys.stderr
-
-    if (args.diagfile):
-        diag = open(args.diagfile, 'w', encoding='utf-8')
-    else:
-        diag = None
-
-    # Create the API generator & generator options
-    (gen, options) = genTarget(args)
-
-    # Create the registry object with the specified generator and generator
-    # options. The options are set before XML loading as they may affect it.
-    reg = Registry(gen, options)
-
-    # Parse the specified registry XML into an ElementTree object
-    startTimer(args.time)
-    tree = etree.parse(args.registry)
-    endTimer(args.time, '* Time to make ElementTree =')
-
-    # Filter out non-Vulkan extensions
-    if args.api == 'vulkan':
-        [exts.remove(e) for exts in tree.findall('extensions') for e in exts.findall('extension') if (sup := e.get('supported')) is not None and options.apiname not in sup.split(',')]
-
-    # Load the XML tree into the registry object
-    startTimer(args.time)
-    reg.loadElementTree(tree)
-    endTimer(args.time, '* Time to parse ElementTree =')
-
-    if (args.validate):
-        reg.validateGroups()
-
-    if (args.dump):
-        write('* Dumping registry to regdump.txt', file=sys.stderr)
-        reg.dumpReg(filehandle = open('regdump.txt', 'w', encoding='utf-8'))
-
-    # Finally, use the output generator to create the requested target
-    if (args.debug):
-        pdb.run('reg.apiGen()')
-    else:
-        startTimer(args.time)
-        reg.apiGen()
-        endTimer(args.time, '* Time to generate ' + options.filename + ' =')
-        genTarget(args)
+    RunGenerator(args.api, args.registry, args.grammar, args.directory, args.target)

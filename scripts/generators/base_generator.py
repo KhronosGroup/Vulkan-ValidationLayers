@@ -98,10 +98,9 @@ class BaseGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  filename: str = None,
                  helper_file_type: str = None,
-                 valid_usage_path: str = None,
+                 valid_usage_file: str = None,
                  lvt_file_type: str = None,
                  mergeApiNames: str = None,
-                 warnExtensions: list = [],
                  grammar: str = None):
         GeneratorOptions.__init__(self,
                 conventions = vulkanConventions,
@@ -120,23 +119,19 @@ class BaseGeneratorOptions(GeneratorOptions):
         self.alignFuncParam   = 48
 
         # These are custom fields for VVL
-        # This allows passing data from lvl_genvk.py into each Generator (file)
+        # This allows passing data from run_generator.py into each Generator (file)
         self.filename = filename
         self.helper_file_type = helper_file_type
-        self.valid_usage_path = valid_usage_path
+        self.valid_usage_file = valid_usage_file
         self.lvt_file_type = lvt_file_type
-        self.warnExtensions = warnExtensions
         self.grammar = grammar
 
 #
 # This object handles all the parsing from reg.py generator scripts in the Vulkan-Headers
 # It will grab all the data and form it into a single object the rest of the generators will use
 class BaseGenerator(OutputGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        OutputGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        OutputGenerator.__init__(self, None, None, None)
         self.vk = VulkanObject()
 
         # reg.py has a `self.featureName` but this is nicer because
@@ -166,22 +161,20 @@ class BaseGenerator(OutputGenerator):
 
         self.filename = genOpts.filename
         self.helper_file_type = genOpts.helper_file_type
-        self.valid_usage_path = genOpts.valid_usage_path
+        self.valid_usage_file = genOpts.valid_usage_file
         self.lvt_file_type = genOpts.lvt_file_type
-        self.warnExtensions = genOpts.warnExtensions
         self.grammar = genOpts.grammar
 
         # Build a set of all vuid text strings found in validusage.json
-        if self.valid_usage_path is not None:
-            vu_json_filename = os.path.join(self.valid_usage_path, 'validusage.json')
-            if not os.path.isfile(vu_json_filename):
-                print(f'Error: Could not find, or error loading {vu_json_filename}')
+        if self.valid_usage_file is not None:
+            if not os.path.isfile(self.valid_usage_file):
+                print(f'Error: Could not find, or error loading {self.valid_usage_file}')
                 sys.exit(1)
-            json_file = open(vu_json_filename, 'r', encoding='utf-8')
+            json_file = open(self.valid_usage_file, 'r', encoding='utf-8')
             vuid_dict = json.load(json_file)
             json_file.close()
             if len(vuid_dict) == 0:
-                print(f'Error: Failed to load {vu_json_filename}')
+                print(f'Error: Failed to load {self.valid_usage_file}')
                 sys.exit(1)
             for json_vuid_string in ExtractVUIDs(vuid_dict):
                 self.valid_vuids.add(json_vuid_string)

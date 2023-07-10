@@ -18,7 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
 import re
 from generators.generator_utils import (fileIsGeneratedWarning)
@@ -50,11 +49,8 @@ def getFormatedLength(length: str):
     return result
 
 class SafeStructOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
         self.custom_construct_params = {
             # safe_VkGraphicsPipelineCreateInfo needs to know if subpass has color and\or depth\stencil attachments to use its pointers

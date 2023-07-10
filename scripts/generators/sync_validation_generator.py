@@ -50,11 +50,8 @@ def SortSetBasedOnOrder(stage_set, stage_order):
 
 
 class SyncValidationOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
         # List of all stages sorted according to enum numeric value.
         # This does not include stages similar to ALL_GRAPHICS that represent multiple stages

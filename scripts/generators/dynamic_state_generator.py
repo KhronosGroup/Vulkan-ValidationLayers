@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
@@ -23,11 +22,8 @@ from generators.base_generator import BaseGenerator
 # DynamicStateOutputGenerator - Generate SPIR-V validation
 # for SPIR-V extensions and capabilities
 class DynamicStateOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
     def generate(self):
         copyright = f'''{fileIsGeneratedWarning(os.path.basename(__file__))}

@@ -43,11 +43,8 @@ def commonParamSwitch(variableName):
 # Generate SPIR-V grammar helper for SPIR-V opcodes, enums, etc
 # Has zero relationship to the Vulkan API (doesn't use vk.xml)
 class SpirvGrammarHelperOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
         self.opcodes = dict()
         self.atomicsOps = []
@@ -79,7 +76,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
     # Emulates the gen*() functions the vk.xml calls
     #
     # In the future, IF more then this generator wants to use the grammar
-    # it would be better to move the file opening to lvl_genvk.py
+    # it would be better to move the file opening to run_generator.py
     def parseGrammar(self, grammar):
         with open(grammar, 'r') as jsonFile:
             data = json.load(jsonFile)
