@@ -15,7 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(PositiveCooperativeMatrix, CooperativeMatrixNV) {
+TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -84,14 +84,12 @@ TEST_F(PositiveCooperativeMatrix, CooperativeMatrixNV) {
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixNV-06316");
-    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddNV-06317");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(PositiveCooperativeMatrix, CooperativeMatrixKHR) {
+TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);

@@ -531,8 +531,8 @@ class NegativeYcbcr : public YcbcrTest {};
 class PositiveYcbcr : public YcbcrTest {};
 
 class CooperativeMatrixTest : public VkLayerTest {};
-class NegativeCooperativeMatrix : public CooperativeMatrixTest {};
-class PositiveCooperativeMatrix : public CooperativeMatrixTest {};
+class NegativeShaderCooperativeMatrix : public CooperativeMatrixTest {};
+class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
 
 class VkBufferTest {
   public:
