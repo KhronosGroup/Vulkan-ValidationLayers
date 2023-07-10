@@ -15,7 +15,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 
-TEST_F(NegativeCooperativeMatrix, KHRSpecInfo) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRSpecInfo) {
     TEST_DESCRIPTION("Test VK_KHR_cooperative_matrix.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -69,8 +69,8 @@ TEST_F(NegativeCooperativeMatrix, KHRSpecInfo) {
     )glsl";
 
     const uint32_t specData[] = {
-        16,
-        8,
+        63,
+        65,
     };
     VkSpecializationMapEntry entries[] = {
         {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
@@ -90,23 +90,12 @@ TEST_F(NegativeCooperativeMatrix, KHRSpecInfo) {
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    // Ignore messages that types and sizes are unsupported by implementation
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08975");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-KSize-08977");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08979");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08981");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08976");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982");
-    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-06316");
-    m_errorMonitor->SetUnexpectedError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-06317");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeMatrix, KHRUnsupportedStage) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRUnsupportedStage) {
     TEST_DESCRIPTION("Test error using cooperative matrix in unsupported stage");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -170,13 +159,14 @@ TEST_F(NegativeCooperativeMatrix, KHRUnsupportedStage) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982");
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-cooperativeMatrixSupportedStages-08985");
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeMatrix, KHRParametersMatchProperties) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRParametersMatchProperties) {
     TEST_DESCRIPTION("Test that parameters match one of the matrices in any of the supported VkCooperativeMatrixPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -232,7 +222,7 @@ TEST_F(NegativeCooperativeMatrix, KHRParametersMatchProperties) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
     TEST_DESCRIPTION("Local workgroup size in the X dimension of the pipeline multiple of subgroupSize");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -306,12 +296,13 @@ TEST_F(NegativeCooperativeMatrix, KHRDimXMultipleSubgroupSize) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982");
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-module-08987");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeMatrix, KHRSameScope) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRSameScope) {
     TEST_DESCRIPTION("In OpCooperativeMatrixMulAddKHR all matrices should have same scope");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -388,14 +379,19 @@ TEST_F(NegativeCooperativeMatrix, KHRSameScope) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08978");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08980");
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-08982");
+
+    // SPIR-V code is expected to be bad after specialization, due to scopes are different
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
+
+    // Expect gl_ScopeInvocation will not be found in the implementation
     m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-scope-08984");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeMatrix, MatchSizeWithProperties) {
+TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     TEST_DESCRIPTION("Check size match properties");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -506,7 +502,11 @@ TEST_F(NegativeCooperativeMatrix, MatchSizeWithProperties) {
                 m_errorMonitor->SetAllowedFailureMsg(y.name);
             }
         }
+
+        // Allow SPIR-V tests to be accepted as Vertex Shader, while it essentially Compute Shader
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderModuleCreateInfo-pCode-01379");
+
+        // There is no way to avoid this message
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
 
         CreateComputePipelineHelper pipe(*this);
@@ -519,7 +519,7 @@ TEST_F(NegativeCooperativeMatrix, MatchSizeWithProperties) {
     }
 }
 
-TEST_F(NegativeCooperativeMatrix, KHRSignedCheck) {
+TEST_F(NegativeShaderCooperativeMatrix, KHRSignedCheck) {
     TEST_DESCRIPTION("Test that if component type of is signed check that appropriate MatrixSignedComponents is present");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -626,10 +626,12 @@ TEST_F(NegativeCooperativeMatrix, KHRSignedCheck) {
             }
         }
 
+        // Ignore messages that types and sizes are unsupported by implementation
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08975");
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-KSize-08977");
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08979");
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-MSize-08981");
+
         pipe.CreateComputePipeline();
 
         m_errorMonitor->VerifyFound();

@@ -1404,8 +1404,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.depth_bias_control_features = *depth_bias_control_features;
         }
 
-        if (const auto cooperative_matrix_features_khr = LvlFindInChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(pCreateInfo->pNext)) {
-            enabled_features.cooperative_matrix_features_khr = *cooperative_matrix_features_khr;
+        if (const auto cooperative_matrix_features = LvlFindInChain<VkPhysicalDeviceCooperativeMatrixFeaturesKHR>(pCreateInfo->pNext)) {
+            enabled_features.cooperative_matrix_features_khr = *cooperative_matrix_features;
         }
     }
 
