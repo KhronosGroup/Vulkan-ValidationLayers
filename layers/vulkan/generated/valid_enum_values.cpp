@@ -1363,38 +1363,6 @@ std::vector<VkValidationFeatureDisableEXT> ValidationObject::ValidParamValues() 
 }
 
 template<>
-std::vector<VkComponentTypeNV> ValidationObject::ValidParamValues() const {
-    constexpr std::array CoreVkComponentTypeNVEnums = {VK_COMPONENT_TYPE_FLOAT16_NV, VK_COMPONENT_TYPE_FLOAT32_NV, VK_COMPONENT_TYPE_FLOAT64_NV, VK_COMPONENT_TYPE_SINT8_NV, VK_COMPONENT_TYPE_SINT16_NV, VK_COMPONENT_TYPE_SINT32_NV, VK_COMPONENT_TYPE_SINT64_NV, VK_COMPONENT_TYPE_UINT8_NV, VK_COMPONENT_TYPE_UINT16_NV, VK_COMPONENT_TYPE_UINT32_NV, VK_COMPONENT_TYPE_UINT64_NV};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkComponentTypeNV>> ExtendedVkComponentTypeNVEnums = {
-    };
-    std::vector<VkComponentTypeNV> values(CoreVkComponentTypeNVEnums.cbegin(), CoreVkComponentTypeNVEnums.cend());
-    std::set<VkComponentTypeNV> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkComponentTypeNVEnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
-
-template<>
-std::vector<VkScopeNV> ValidationObject::ValidParamValues() const {
-    constexpr std::array CoreVkScopeNVEnums = {VK_SCOPE_DEVICE_NV, VK_SCOPE_WORKGROUP_NV, VK_SCOPE_SUBGROUP_NV, VK_SCOPE_QUEUE_FAMILY_NV};
-    static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkScopeNV>> ExtendedVkScopeNVEnums = {
-    };
-    std::vector<VkScopeNV> values(CoreVkScopeNVEnums.cbegin(), CoreVkScopeNVEnums.cend());
-    std::set<VkScopeNV> unique_exts;
-    for (const auto& [extension, enums]: ExtendedVkScopeNVEnums) {
-        if (IsExtEnabled(device_extensions.*extension)) {
-            unique_exts.insert(enums.cbegin(), enums.cend());
-        }
-    }
-    std::copy(unique_exts.cbegin(), unique_exts.cend(), std::back_inserter(values));
-    return values;
-}
-
-template<>
 std::vector<VkCoverageReductionModeNV> ValidationObject::ValidParamValues() const {
     constexpr std::array CoreVkCoverageReductionModeNVEnums = {VK_COVERAGE_REDUCTION_MODE_MERGE_NV, VK_COVERAGE_REDUCTION_MODE_TRUNCATE_NV};
     static const vvl::unordered_map<const ExtEnabled DeviceExtensions::*, std::vector<VkCoverageReductionModeNV>> ExtendedVkCoverageReductionModeNVEnums = {

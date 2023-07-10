@@ -964,7 +964,7 @@ VkComponentTypeNV GetComponentType(const Instruction *insn) {
                 case 64:
                     return insn->Word(3) != 0 ? VK_COMPONENT_TYPE_SINT64_NV : VK_COMPONENT_TYPE_UINT64_NV;
                 default:
-                    return VK_COMPONENT_TYPE_MAX_ENUM_NV;
+                    return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
             }
         case spv::OpTypeFloat:
             switch (insn->Word(2)) {
@@ -975,10 +975,10 @@ VkComponentTypeNV GetComponentType(const Instruction *insn) {
                 case 64:
                     return VK_COMPONENT_TYPE_FLOAT64_NV;
                 default:
-                    return VK_COMPONENT_TYPE_MAX_ENUM_NV;
+                    return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
             }
         default:
-            return VK_COMPONENT_TYPE_MAX_ENUM_NV;
+            return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
     }
 }
 
@@ -999,7 +999,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
         VkComponentTypeNV component_type;
         bool all_constant;
 
-        CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_NV), all_constant(false) {}
+        CoopMatType() : scope(0), rows(0), cols(0), component_type(VK_COMPONENT_TYPE_MAX_ENUM_KHR), all_constant(false) {}
 
         void Init(uint32_t id, const SHADER_MODULE_STATE &module_state, const safe_VkSpecializationInfo *spec,
                   const vvl::unordered_map<uint32_t, uint32_t> &id_to_spec_id) {

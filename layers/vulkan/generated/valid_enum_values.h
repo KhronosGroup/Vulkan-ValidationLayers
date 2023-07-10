@@ -99,8 +99,6 @@ template<> std::vector<VkPerformanceParameterTypeINTEL> ValidationObject::ValidP
 template<> std::vector<VkPerformanceValueTypeINTEL> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkValidationFeatureEnableEXT> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkValidationFeatureDisableEXT> ValidationObject::ValidParamValues() const;
-template<> std::vector<VkComponentTypeNV> ValidationObject::ValidParamValues() const;
-template<> std::vector<VkScopeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkCoverageReductionModeNV> ValidationObject::ValidParamValues() const;
 template<> std::vector<VkProvokingVertexModeEXT> ValidationObject::ValidParamValues() const;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
