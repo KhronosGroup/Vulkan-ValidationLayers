@@ -22,11 +22,8 @@ from generators.base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
 class CommandValidationOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
     #
     # Called at beginning of processing as file is opened

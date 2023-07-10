@@ -26,15 +26,64 @@ import sys
 import tempfile
 import difflib
 import json
+from run_generator import RunGenerator
 
 # helper to define paths relative to the repo root
 def repo_relative(path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
-# files to exclude from --verify check
-verify_exclude = ['.clang-format']
-
 def main(argv):
+    # files to exclude from --verify check
+    verify_exclude = ['.clang-format']
+
+    generated_layer_files = [
+        "chassis.cpp",
+        "chassis.h",
+        "chassis_dispatch_helper.h",
+        "layer_chassis_dispatch.cpp",
+        "layer_chassis_dispatch.h",
+        "object_tracker.cpp",
+        "object_tracker.h",
+        "stateless_validation_helper.cpp",
+        "stateless_validation_helper.h",
+        "enum_flag_bits.h",
+        "valid_enum_values.cpp",
+        "valid_enum_values.h",
+        "sync_validation_types.cpp",
+        "sync_validation_types.h",
+        "thread_safety.cpp",
+        "thread_safety_commands.h",
+        "thread_safety_counter_definitions.h",
+        "thread_safety_counter_instances.h",
+        "thread_safety_counter_bodies.h",
+        "vk_dispatch_table_helper.h",
+        "vk_enum_string_helper.h",
+        "vk_extension_helper.h",
+        "vk_layer_dispatch_table.h",
+        "vk_object_types.h",
+        "vk_safe_struct.h",
+        "vk_safe_struct_utils.cpp",
+        "vk_safe_struct_core.cpp",
+        "vk_safe_struct_khr.cpp",
+        "vk_safe_struct_ext.cpp",
+        "vk_safe_struct_vendor.cpp",
+        "vk_function_pointers.cpp",
+        "vk_function_pointers.h",
+        "vk_typemap_helper.h",
+        "best_practices.h",
+        "best_practices.cpp",
+        "spirv_validation_helper.cpp",
+        "spirv_grammar_helper.cpp",
+        "spirv_grammar_helper.h",
+        "command_validation.cpp",
+        "command_validation.h",
+        "dynamic_state_helper.cpp",
+        "dynamic_state_helper.h",
+        "vk_format_utils.cpp",
+        "vk_format_utils.h",
+        "spirv_tools_commit_id.h"
+    ]
+
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('--api',
                         default='vulkan',
@@ -44,70 +93,10 @@ def main(argv):
     parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
     parser.add_argument('--generated-version', help='sets the header version used to generate the repo')
     group = parser.add_mutually_exclusive_group()
+    group.add_argument('--target', help='only generate file name passed in')
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
     args = parser.parse_args(argv)
-
-    # We need modules from the registry directory, add it here so no one has to set it in PYTHONPATH
-    sys.path.insert(0, args.registry)
-
-    gen_cmds = [*[[repo_relative('scripts/lvl_genvk.py'),
-                   '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
-                   '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
-                   '-quiet',
-                   '-api', args.api,
-                   filename] for filename in ["chassis.cpp",
-                                              "chassis.h",
-                                              "chassis_dispatch_helper.h",
-                                              "layer_chassis_dispatch.cpp",
-                                              "layer_chassis_dispatch.h",
-                                              "object_tracker.cpp",
-                                              "object_tracker.h",
-                                              "stateless_validation_helper.cpp",
-                                              "stateless_validation_helper.h",
-                                              "enum_flag_bits.h",
-                                              "valid_enum_values.cpp",
-                                              "valid_enum_values.h",
-                                              "sync_validation_types.cpp",
-                                              "sync_validation_types.h",
-                                              "thread_safety.cpp",
-                                              "thread_safety_commands.h",
-                                              "thread_safety_counter_definitions.h",
-                                              "thread_safety_counter_instances.h",
-                                              "thread_safety_counter_bodies.h",
-                                              "vk_dispatch_table_helper.h",
-                                              "vk_enum_string_helper.h",
-                                              "vk_extension_helper.h",
-                                              "vk_layer_dispatch_table.h",
-                                              "vk_object_types.h",
-                                              "vk_safe_struct.h",
-                                              "vk_safe_struct_utils.cpp",
-                                              "vk_safe_struct_core.cpp",
-                                              "vk_safe_struct_khr.cpp",
-                                              "vk_safe_struct_ext.cpp",
-                                              "vk_safe_struct_vendor.cpp",
-                                              "vk_function_pointers.cpp",
-                                              "vk_function_pointers.h",
-                                              "vk_typemap_helper.h",
-                                              "best_practices.h",
-                                              "best_practices.cpp",
-                                              "spirv_validation_helper.cpp",
-                                              "spirv_grammar_helper.cpp",
-                                              "spirv_grammar_helper.h",
-                                              "command_validation.cpp",
-                                              "command_validation.h",
-                                              "dynamic_state_helper.cpp",
-                                              "dynamic_state_helper.h",
-                                              "vk_format_utils.cpp",
-                                              "vk_format_utils.h"]],
-                [repo_relative('scripts/vk_validation_stats.py'),
-                 os.path.abspath(os.path.join(args.registry, 'validusage.json')),
-                 '-export_header'],
-                [repo_relative('scripts/generators/external_revision_generator.py'),
-                 '--json_file', repo_relative('scripts/known_good.json'),
-                 '--json_keys', 'repos,3,commit',
-                 '-s', 'SPIRV_TOOLS_COMMIT_ID',
-                 '-o', 'spirv_tools_commit_id.h']]
 
     repo_dir = repo_relative(f'layers/{args.api}/generated')
 
@@ -135,21 +124,30 @@ def main(argv):
         # generate directly in the repo
         gen_dir = repo_dir
 
-    # run each code generator
-    for cmd in gen_cmds:
+    # Filter if --target is passed in
+    generated_layer_files = [x for x in generated_layer_files if (args.target and args.target == x) or (args.target is None)]
+    for index, file in enumerate(generated_layer_files, start=1):
+        registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
+        grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
+        print(f'[{index}|{len(generated_layer_files)}] Generating {file}')
+        RunGenerator(args.api, registry, grammar, gen_dir, file)
+
+    # Generate vk_validation_error_messages.h
+    try:
+        cmd = [repo_relative("scripts/vk_validation_stats.py"),
+               os.path.abspath(os.path.join(args.registry, "validusage.json")),
+              '-export_header']
         print(' '.join(cmd))
-        try:
-            subprocess.check_call([sys.executable] + cmd, cwd=gen_dir)
-        except Exception as e:
-            print('ERROR:', str(e))
-            return 1
+        subprocess.check_call([sys.executable] + cmd, cwd=gen_dir)
+    except Exception as e:
+        print('ERROR:', str(e))
+        return 1
 
     # optional post-generation steps
     if args.verify:
         # compare contents of temp dir and repo
         temp_files = set(os.listdir(temp_dir))
         repo_files = set(os.listdir(repo_dir))
-        files_match = True
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
             temp_filename = os.path.join(temp_dir, filename)
             repo_filename = os.path.join(repo_dir, filename)
@@ -159,25 +157,22 @@ def main(argv):
                 continue
             elif filename not in repo_files:
                 print('ERROR: Missing repo file', filename)
-                files_match = False
+                return 2
             elif filename not in temp_files:
                 print('ERROR: Missing generator for', filename)
-                files_match = False
+                return 3
             elif not filecmp.cmp(temp_filename, repo_filename, shallow=False):
                 print('ERROR: Repo files do not match generator output for', filename)
-                files_match = False
                 # print line diff on file mismatch
                 with open(temp_filename) as temp_file, open(repo_filename) as repo_file:
                     print(''.join(difflib.unified_diff(temp_file.readlines(),
                                                        repo_file.readlines(),
                                                        fromfile='temp/' + filename,
                                                        tofile=  'repo/' + filename)))
+                return 4
 
         # return code for test scripts
-        if files_match:
-            print('SUCCESS: Repo files match generator output')
-            return 0
-        return 1
+        print('SUCCESS: Repo files match generator output')
 
     elif args.incremental:
         # copy missing or differing files from temp directory to repo

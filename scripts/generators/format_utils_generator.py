@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Format)
@@ -53,11 +52,8 @@ def formatHasNumericFormat(format: Format, numericFormat: str):
     return True
 
 class FormatUtilsOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 

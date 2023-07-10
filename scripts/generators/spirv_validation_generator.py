@@ -23,11 +23,8 @@ from generators.base_generator import BaseGenerator
 #
 # Generate SPIR-V validation for SPIR-V extensions and capabilities
 class SpirvValidationHelperOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
         # Sometimes the Vulkan-Headers XML will mention new SPIR-V capability or extensions
         # That require an update of the SPIRV-Headers which might not be ready to pull in.

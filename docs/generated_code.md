@@ -40,7 +40,12 @@ NOTE: `VVL_CODEGEN` is `OFF` by default to allow users to build `VVL` via `add_s
 
 ## Tips
 
-If only dealing with a single file, comment out all the other file names in `scripts/generate_source.py` to speed up testing iterations.
+If only dealing with a single file,  run `scripts/generate_source.py` with `--target`
+
+```bash
+# Example - only generates chassis.h
+scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ --target chassis.h
+```
 
 # Adding and Editing code generation
 
@@ -109,7 +114,7 @@ Code generation is **not** a bottleneck for performance, but trying add/edit/deb
 
 # How it works
 
-`generate_source.py` sets up the environment and then calls into `lvl_genvk.py` where each file is generated at a time. Many of the generation scripts will generate both the `.cpp` source and `.h` header.
+`generate_source.py` sets up the environment and then calls into `run_generator.py` where each file is generated at a time. Many of the generation scripts will generate both the `.cpp` source and `.h` header.
 
 The Vulkan code is generated from [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 

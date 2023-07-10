@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -i
+#!/usr/bin/env python3
 #
 # Copyright (c) 2015-2023 The Khronos Group Inc.
 # Copyright (c) 2015-2023 Valve Corporation
@@ -18,14 +18,29 @@
 # limitations under the License.
 
 import os
+import json
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
-class LayerDispatchTableOutputGenerator(BaseGenerator):
+class SpirvToolCommitIdOutputGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
     def generate(self):
+        json_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'known_good.json'))
+
+        commit_id = 'COMMIT NOT FOUND'
+        with open(json_file) as json_stream:
+            json_data = json.load(json_stream)
+            commit_id = [x for x in json_data['repos'] if x['name'] == 'SPIRV-Tools'][0]['commit']
+
+        try:
+            str_as_int = int(commit_id, 16)
+        except ValueError:
+            raise ValueError(f'commit ID for SPIRV_TOOLS_COMMIT_ID ({commit_id}) must be a SHA1 hash.')
+        if len(commit_id) != 40:
+            raise ValueError(f'commit ID for SPIRV_TOOLS_COMMIT_ID ({commit_id}) must be a SHA1 hash.')
+
         out = []
         out.append(f'''{fileIsGeneratedWarning(os.path.basename(__file__))}
 /***************************************************************************
@@ -46,35 +61,11 @@ class LayerDispatchTableOutputGenerator(BaseGenerator):
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-****************************************************************************/\n''')
-        out.append('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
+****************************************************************************/
 
-        out.append('''
 #pragma once
 
-typedef PFN_vkVoidFunction (VKAPI_PTR *PFN_GetPhysicalDeviceProcAddr)(VkInstance instance, const char* pName);
 ''')
-        out.append('''
-// Instance function pointer dispatch table
-typedef struct VkLayerInstanceDispatchTable_ {
-    PFN_GetPhysicalDeviceProcAddr GetPhysicalDeviceProcAddr;
 
-''')
-        for command in [x for x in self.vk.commands.values() if x.instance]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
-            out.append(f'    PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
-        out.append('} VkLayerInstanceDispatchTable;\n')
-
-        out.append('''
-// Device function pointer dispatch table
-typedef struct VkLayerDispatchTable_ {
-''')
-        for command in [x for x in self.vk.commands.values() if x.device]:
-            out.extend([f'#ifdef {command.protect}\n'] if command.protect else [])
-            out.append(f'    PFN_{command.name} {command.name[2:]};\n')
-            out.extend([f'#endif //{command.protect}\n'] if command.protect else [])
-        out.append('} VkLayerDispatchTable;\n')
-
-        out.append('// NOLINTEND') # Wrap for clang-tidy to ignore
+        out.append(f'#define SPIRV_TOOLS_COMMIT_ID "{commit_id}"')
         self.write("".join(out))

@@ -19,7 +19,6 @@
 # limitations under the License.
 
 import os
-import sys
 
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Command, Param)
@@ -37,11 +36,8 @@ def GetParentInstance(param: Param) -> str:
     return 'ParentInstance' if param.type in wrapParenet else ''
 
 class ThreadSafetyOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
         # Commands shadowed by interface functions and are not implemented
         self.manual_commands = [

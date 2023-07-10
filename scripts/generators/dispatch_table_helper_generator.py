@@ -17,18 +17,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import os
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.base_generator import BaseGenerator
 
 class DispatchTableHelperOutputGenerator(BaseGenerator):
     """Generate dispatch tables header based on XML element attributes"""
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
 
     def generate(self):
         out = []

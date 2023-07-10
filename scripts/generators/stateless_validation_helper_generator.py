@@ -19,20 +19,15 @@
 # limitations under the License.
 
 import os
-import sys
 import re
-
 from generators.generator_utils import (fileIsGeneratedWarning)
 from generators.vulkan_object import (Member)
 from generators.base_generator import BaseGenerator
 from typing import List
 
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
-    def __init__(self,
-                 errFile = sys.stderr,
-                 warnFile = sys.stderr,
-                 diagFile = sys.stdout):
-        BaseGenerator.__init__(self, errFile, warnFile, diagFile)
+    def __init__(self):
+        BaseGenerator.__init__(self)
         self.INDENT_SPACES = 4
         # These functions have additional, custom-written checks in the utils cpp file. CodeGen will automatically add a call
         # to those functions of the form 'bool manual_PreCallValidateAPIName', where the 'vk' is dropped.
