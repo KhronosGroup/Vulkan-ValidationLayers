@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
+if (CMAKE_VERSION VERSION_LESS "3.19")
+    message(FATAL_ERROR "This file utilizes JSON parsing functionality added in 3.19!")
+endif()
 
 # "CMAKE_ANDROID_STL_TYPE specifies the C++ STL implementation to be used. Earlier NDK releases
 # supported a range of different options, but projects should now use either c++_shared or c++_static.
@@ -65,6 +68,13 @@ target_link_libraries(vk_layer_validation_tests PRIVATE android_glue)
 set_target_properties(vk_layer_validation_tests PROPERTIES OUTPUT_NAME "VulkanLayerValidationTests")
 
 install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# https://stackoverflow.com/questions/76631917/cmake-how-to-install-shared-stl-libraries-for-android/76656492#76656492
+if ("${CMAKE_ANDROID_STL_TYPE}" MATCHES "shared")
+    file(READ "${CMAKE_ANDROID_NDK}/meta/abis.json" JSON_FILE)
+    string(JSON TRIPLE GET "${JSON_FILE}" "${CMAKE_ANDROID_ARCH_ABI}" "triple")
+    install(FILES "${CMAKE_SYSROOT}/usr/lib/${TRIPLE}/libc++_shared.so" DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+endif()
 
 find_program(GNU_NM NAMES nm)
 if (GNU_NM)

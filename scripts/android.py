@@ -27,45 +27,6 @@ import sys
 import shutil
 import common_ci
 
-# https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#STL
-# "If using the shared variant, libc++_shared.so must be included in the APK."
-def get_shared_stl(NDK : str, ABI : str) -> str:
-    # https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#architectures
-    # "abis.json" lets us get the triple based on the abi.
-    with open(f"{NDK}/meta/abis.json") as f:
-        abis_json = json.load(f)
-    triple = abis_json[ABI]['triple']
-
-    # Unlike the triple there doesn't seem to be a way to programatically retreive the host-tag.
-    # However, this is robust enough considering it's hardcoded in multiple places in the NDK.
-    if sys.platform.startswith('linux'):
-        host_tag = 'linux-x86_64'
-    elif sys.platform == 'darwin':
-        host_tag = 'darwin-x86_64'
-    elif sys.platform == 'win32' or sys.platform == 'cygwin':
-        host_tag = 'windows-x86_64'
-    else:
-        sys.exit(f'Unsupported platform: {sys.platform}')
-
-    # "https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#sysroot"
-    # The Android sysroot is installed to <NDK>/toolchains/llvm/prebuilt/<host-tag>/sysroot
-    sysroot = f'{NDK}/toolchains/llvm/prebuilt/{host_tag}/sysroot'
-    if not os.path.isdir(sysroot):
-        print("Unable to find sysroot!")
-        print('NDK = {NDK}')
-        print('HOST TAG = {host_tag}')
-        sys.exit(-1)
-
-    # https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#STL
-    # This library is installed to <NDK>/sysroot/usr/lib/<triple>."
-    src_shared_stl = f'{sysroot}/usr/lib/{triple}/libc++_shared.so'
-    if not os.path.isfile(src_shared_stl):
-        print("Unable to find libc++_shared.so!")
-        print('Triple = {triple}')
-        sys.exit(-1)
-
-    return src_shared_stl
-
 # Manifest file describing out test application
 def get_android_manifest() -> str:
     manifest = common_ci.RepoRelative('build-android/AndroidManifest.xml')
@@ -206,12 +167,6 @@ def main():
 
         install_cmd = f'cmake --install {build_dir} --prefix {cmake_install_dir}'
         common_ci.RunShellCmd(install_cmd)
-
-        if android_stl == "c++_shared":
-            src_shared_stl = get_shared_stl(NDK = android_ndk_home, ABI = abi)
-            dst_shared_stl = f'{cmake_install_dir}/{lib_dir}/libc++_shared.so'
-            shutil.copyfile(src_shared_stl, dst_shared_stl)
-            print(f'-- Installing: {dst_shared_stl}')
 
     if create_apk:
         generate_apk(SDK_ROOT = android_sdk_root, CMAKE_INSTALL_DIR = cmake_install_dir)
